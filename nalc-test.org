@@ -1,4 +1,49 @@
-nalc-test Plan Summary
+nalc-test
+
+# Example format
+
+"Tests the calc-times command."
+
+(nalc-test-declare-start-cond
+  (null calc-hyperbolic-flag)
+  (null calc-option-flag))
+
+(nalc-test-declare-stack)
+2:  3
+1:  2
+    .
+
+(nalc-test-declare-start-point 'h)
+(nalc-test-declare-command 'calc-times)
+(nalc-test-declare-end-point 'h)
+
+(nalc-test-declare-output)
+1:  6
+    .
+
+(nalc-test-declare-end-cond
+;; These optional conditions are checked at the end to verify the test.
+)
+
+** More
+   - Automatically generates tests for keep-args.
+   - Automatically generates tests for contextual modes (equation, line, subformula, etc).
+
+** Notes
+   `start-point` and `end-point` can take the following forms:
+   - h (default value, the home area, same place point is moved after calc-align-stack-window)
+   - h* (anywhere in the "home" area)
+   # These values are contextualized to the affected line
+   - ^ (start of entry)
+   - ^ + 1 (start of entry plus 1 character )
+   - $ (end of entry, past the last character)
+   - $ - 2(end of entry minus 2 characters)
+   - p (prefix area)
+   - p + 1 (prefix area plus 1 character)
+   - 4 (the fourth character, alias for ^ + 3)
+   - 4 (the fourth character, alias for ^ + 3)
+   # These values specify the line
+   - 1:4 (the fourth character of the first line)
 
 * File format
 =.nalc-test= files (not =.el= — calc display like =2:  3= isn't valid elisp, so a
