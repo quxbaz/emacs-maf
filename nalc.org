@@ -1,4 +1,4 @@
-Calc
+#+title: nalc
 
 * Guides and Conventions
   A command should take an explicit number of arguments - never implicit.
@@ -27,11 +27,43 @@ Calc
   [[https://www.gnu.org/software/emacs/manual/html_mono/calc.html#Stack-Access][stack access]]
   [[https://www.gnu.org/software/emacs/manual/html_mono/calc.html#Symbolic-Lisp-Functions][symbolic lisp functions]]
 
+* Plan
+  I want to move all of the calc customizations in @my/calc/ into a new package
+  called "lac". How should we go about this? I want to make as few changes as
+  possible. Just relocate. Some other things:
+  - Also create a minor-mode package.
+  - This package should be its own git project (how to handle this?)
+
 * Steps
   1) Organize .org file
   2) Develop clac-test
   3) Rewrite main macro
   4) Read calc manual
+
+* Todo
+** TODO Add function to get calc buffer
+** TODO If on home line, stick point to the "."
+** TODO Replace noun with digit entry if point is on sub-formula
+** TODO Remove keep-point flag in macro
+** TODO Add plus and minus clac functions
+
+* TODO Add sin/cos/tan and inverse functions.
+* TODO Also "stick" point to beginning or end of entry's expression. and also over =, !=, <=/=>
+* TODO When point is over equation symbol, operate on both sides (unless map is -1).
+* TODO k k (my/calc-evaluate N) should work on fractions and division.
+* TODO g i (my/calc-graph-quick-with-range) interval form a:b should work with spaces 'a b'
+* TODO (calc-fraction ARG) and calc-float should work contextually.
+* TODO (my/calc-factor-by-gcd) should factor out negative numbers (leave the leading term in the binomial positive).
+* TODO Make (my/calc-sel-negate) contextual.
+* TODO Should have a form to collect the numerator.
+  3:2 sqrt(2) -> 3 sqrt(2) / 2
+* TODO S-up/down should toggle +/-, ln/e, */, log/^, etc.
+* TODO Take: y = 1:2 - (5 x - 5 k)^-2 / 2 and represent the negative power as a reciprocal.
+* TODO (my/calc-quick-variable) should be contextual.
+* TODO ( and ) should move to next opening/closing paren.
+* TODO (my/calc-collect-fractions) -> 16:3 x / 1
+* TODO Line option (calc-option &optional N) should be bound to single key without modifiers.
+* TODO (my/calc-log-exp-rules) on line should transform entire line.
 
 * Bugs
   - (my/calc-factor-by-gcd) not working
@@ -59,43 +91,24 @@ Calc
     balanced.
   - Equal command doesn't work with point on line 1, but works on home.
 
+* BUG: (my/calc-factor-by-gcd) on `x y - 2 x` isn't working.
+  BUG: 3 y - 24
+* BUG (my/calc-backward-noun) and (my/calc-forward-noun) should ignore line prefix.
+
 * Issues
   - C-g leaves and moves point to home instead of leaving digit entry and retaining point.
 
-* Todo
-** TODO Add function to get calc buffer
-** TODO If on home line, stick point to the "."
-** TODO Replace noun with digit entry if point is on sub-formula
-** TODO Remove keep-point flag in macro
-** TODO Add plus and minus clac functions
-
-* TODO Add sin/cos/tan and inverse functions.
-* TODO Also "stick" point to beginning or end of entry's expression. and also over =, !=, <=/=>
-* TODO When point is over equation symbol, operate on both sides (unless map is -1).
-* TODO k k (my/calc-evaluate N) should work on fractions and division.
-* TODO g i (my/calc-graph-quick-with-range) interval form a:b should work with spaces 'a b'
-* TODO (calc-fraction ARG) and calc-float should work contextually.
-* TODO (my/calc-factor-by-gcd) should factor out negative numbers (leave the leading term in the binomial positive).
-* TODO Make (my/calc-sel-negate) contextual.
-* BUG: (my/calc-factor-by-gcd) on `x y - 2 x` isn't working.
-  BUG: 3 y - 24
-* TODO Should have a form to collect the numerator.
-  3:2 sqrt(2) -> 3 sqrt(2) / 2
-* TODO S-up/down should toggle +/-, ln/e, */, log/^, etc.
-* TODO Take: y = 1:2 - (5 x - 5 k)^-2 / 2 and represent the negative power as a reciprocal.
-* TODO (my/calc-quick-variable) should be contextual.
-* BUG (my/calc-backward-noun) and (my/calc-forward-noun) should ignore line prefix.
-* TODO ( and ) should move to next opening/closing paren.
-* TODO (my/calc-collect-fractions) -> 16:3 x / 1
-* TODO Line option (calc-option &optional N) should be bound to single key without modifiers.
-* TODO (my/calc-log-exp-rules) on line should transform entire line.
-
-* Plan
-  I want to move all of the calc customizations in @my/calc/ into a new package
-  called "lac". How should we go about this? I want to make as few changes as
-  possible. Just relocate. Some other things:
-  - Also create a minor-mode package.
-  - This package should be its own git project (how to handle this?)
+* BACKLOG
+** Issue: j D (my/calc-sel-distribute)
+   Doesn't work contextually. Should work like 'j M'. Work on stack item when at home.
+** Instead of having to use the default bindings 'a m &', can you make 'a m o' work?
+   This should invert both sides of an equation. Normally the binding would use
+   '&' instead of 'o', but 'o' is more convenient and I have that bound to
+   'calc-inv' The issue is that the 'a m' sequence expects standard keybindings.
+** Flatten conditions
+   : Not worth it. Makes the code more complicated actually.
+   (my/calc-replace-expr-dwim)
+   Flatten the conditions for clarity without duplicating code.
 
 * Highlighting
   - in selection mode, highlight the selection
@@ -124,46 +137,6 @@ Calc
   Use transient mode for prefix commands
   Swap _ and -
   Show all formulas buffer
-
-* Debug
-  Always show calc-stack (in better format).
-
-* Buffer
-  Binary functions should noop on targeting subformula at stack=1. They have nowhere to take args from.
-  If line level operation, then stack-2 is the subject and stack=1 is the arg, same as in home target operation.
-  Search cplx in emacs manual and see if that's why some operations don't work like
-  17.5.7.7 Symbolic Functions
-  common-constant-factor
-  Rewrite as a package from the beginning. Better interactive tests.
-  Calc prepare selection to calc find selected part
-  Stack should be normal numbers? Only encased when necessary?
-  Are new entries plain or cplx numbers?
-  What about cplx numbers?
-  Save as atoms
-  Debug to print. Show display representation and debug representation.
-  How does restore calc stack work? Does it store as atoms or cplx?
-  When restored are the cplx numbers still unique?
-  Remove m parameter. Always take args from stack. New options dictates how many options.
-  Rewrite digit entry mode. No more auto push on nondigit entry.
-  Point is 1 branch binary
-  Flag areas where you manually edit the stack structure. Need to be very careful
-  Is there an inverse to encase atoms that doesn't simplify?
-  l F (factor-auto) should prefer negative number in factor
-  Full formula buffer should have "recents" section.
-  Attach notes to saved formulas
-  Tab should be contextual
-
-* BACKLOG
-** Issue: j D (my/calc-sel-distribute)
-   Doesn't work contextually. Should work like 'j M'. Work on stack item when at home.
-** Instead of having to use the default bindings 'a m &', can you make 'a m o' work?
-   This should invert both sides of an equation. Normally the binding would use
-   '&' instead of 'o', but 'o' is more convenient and I have that bound to
-   'calc-inv' The issue is that the 'a m' sequence expects standard keybindings.
-** Flatten conditions
-   : Not worth it. Makes the code more complicated actually.
-   (my/calc-replace-expr-dwim)
-   Flatten the conditions for clarity without duplicating code.
 
 * Refactor
   Context
@@ -194,3 +167,31 @@ Calc
   4. Branches on :mode — emitting body once or twice — using cl-flet to expose replace-expr
 
   No call-site changes (bindings, options, body syntax all preserved).
+
+* Debug
+  Always show calc-stack (in better format).
+
+* Buffer
+  Binary functions should noop on targeting subformula at stack=1. They have nowhere to take args from.
+  If line level operation, then stack-2 is the subject and stack=1 is the arg, same as in home target operation.
+  Search cplx in emacs manual and see if that's why some operations don't work like
+  17.5.7.7 Symbolic Functions
+  common-constant-factor
+  Rewrite as a package from the beginning. Better interactive tests.
+  Calc prepare selection to calc find selected part
+  Stack should be normal numbers? Only encased when necessary?
+  Are new entries plain or cplx numbers?
+  What about cplx numbers?
+  Save as atoms
+  Debug to print. Show display representation and debug representation.
+  How does restore calc stack work? Does it store as atoms or cplx?
+  When restored are the cplx numbers still unique?
+  Remove m parameter. Always take args from stack. New options dictates how many options.
+  Rewrite digit entry mode. No more auto push on nondigit entry.
+  Point is 1 branch binary
+  Flag areas where you manually edit the stack structure. Need to be very careful
+  Is there an inverse to encase atoms that doesn't simplify?
+  l F (factor-auto) should prefer negative number in factor
+  Full formula buffer should have "recents" section.
+  Attach notes to saved formulas
+  Tab should be contextual
