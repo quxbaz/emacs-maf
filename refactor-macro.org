@@ -3,26 +3,31 @@ Refactoring the Macro
 * Refactor
   Context
 
-  The macro is ~192 lines and hard to read because all dispatch logic lives inside deeply nested quasiquotes. The
-  compile-time cond on opt-line/opt-map generates different ASTs for different option combinations, whole-line-form
-  is a large quasiquoted fragment inlined into two branches, and wrapped-body vs body-for-map are near-identical
-  variants. Goal: move all runtime dispatch into a plain Elisp function, shrinking the macro to option-parsing + thin
-   glue code.
+  The macro is ~192 lines and hard to read because all dispatch logic lives
+  inside deeply nested quasiquotes. The compile-time cond on opt-line/opt-map
+  generates different ASTs for different option combinations, whole-line-form is
+  a large quasiquoted fragment inlined into two branches, and wrapped-body vs
+  body-for-map are near-identical variants. Goal: move all runtime dispatch into
+  a plain Elisp function, shrinking the macro to option-parsing + thin glue
+  code.
 
   ---
   Root causes of complexity
 
-  1. Compile-time branching — opt-line and opt-map are compile-time constants, forcing all context dispatch into
-  quasiquote soup rather than a plain cond.
-  2. whole-line-form — a 6-line quasiquoted fragment computed at expansion time and spliced into two branches.
-  3. wrapped-body vs body-for-map — nearly identical; differ only in whether calc-wrapper and pop-forms are appended.
-  4. Equation-map body duplication — body must expand twice with different cl-flet bindings; irreducible, but can be
-  isolated cleanly.
+  1. Compile-time branching — opt-line and opt-map are compile-time constants,
+     forcing all context dispatch into quasiquote soup rather than a plain cond.
+  2. whole-line-form — a 6-line quasiquoted fragment computed at expansion time
+     and spliced into two branches.
+  3. wrapped-body vs body-for-map — nearly identical; differ only in whether
+     calc-wrapper and pop-forms are appended.
+  4. Equation-map body duplication — body must expand twice with different
+     cl-flet bindings; irreducible, but can be isolated cleanly.
 
   ---
   Approach: extract my/calc-dwim--resolve
 
-  Move all context detection and replacer construction into a new runtime function. The macro becomes a thin shell:
+  Move all context detection and replacer construction into a new runtime
+  function. The macro becomes a thin shell:
   1. Parses options at compile time (unchanged)
   2. Evaluates runtime inputs into let bindings
   3. Calls my/calc-dwim--resolve to get a context plist
