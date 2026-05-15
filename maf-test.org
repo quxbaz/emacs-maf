@@ -10,20 +10,6 @@ Uses `read` for all forms — no custom state machine.
 arguments, one string per display line.
 Stack lines (`N:  expr`) are parsed with `math-read-expr`.
 
-* Key semantics
-- Stack entries pushed bottom-first via `calc-push`
-- Output compared with `math-equal` / `math-normalize`
-- `maf-test-declare-start-cond` / `maf-test-declare-end-cond` forms are evaled and
-  asserted
-
-* ERT integration
-`maf-test-register-file` loads a `.el` file and evals an `ert-deftest` form.
-`maf-test-load-directory` is called from `test-init.el` so maf-test tests run
-alongside existing ERT tests with no change to the test runner invocation.
-
-* Single new file
-`my/calc/tests/maf-test.el` — parser + runner + ERT registration.
-
 * Example format
 
 #+begin_src emacs-lisp
@@ -49,11 +35,25 @@ alongside existing ERT tests with no change to the test runner invocation.
 (maf-test-declare-end-cond)
 #+end_src
 
-* automatic test generation
+* Key semantics
+- Stack entries pushed bottom-first via `calc-push`
+- Output compared with `math-equal` / `math-normalize`
+- `maf-test-declare-start-cond` / `maf-test-declare-end-cond` forms are evaled and
+  asserted
+
+* ERT integration
+`maf-test-register-file` loads a `.el` file and evals an `ert-deftest` form.
+`maf-test-load-directory` is called from `test-init.el` so maf-test tests run
+alongside existing ERT tests with no change to the test runner invocation.
+Implementation lives in `my/calc/tests/maf-test.el` — parser + runner + ERT registration.
+
+* Reference
+
+** Automatic test generation
   - Automatically generates tests for keep-args.
   - Automatically generates tests for contextual modes (equation, line, subformula, etc).
 
-* Point notation reference
+** Point notation reference
   `start-point` and `end-point` can take the following forms:
   - `h` (default — home area, the `.` line)
   - `h*` (anywhere in the home area)
