@@ -1,69 +1,66 @@
 #+title: maf-test
 
 * File format
-Plain `.el` files, loaded with `load-file`.
-One file = one ERT test.
+  Plain `.el` files, loaded with `load-file`.
+  One file = one ERT test.
 
 * Parser
-Uses `read` for all forms — no custom state machine.
-`maf-test-declare-stack` and `maf-test-declare-output` take `&rest` string
-arguments, one string per display line.
-Stack lines (`N:  expr`) are parsed with `math-read-expr`.
+  Uses `read` for all forms — no custom state machine.
+  `maf-test-declare-stack` and `maf-test-declare-output` take `&rest` string
+  arguments, one string per display line.
+  Stack lines (`N:  expr`) are parsed with `math-read-expr`.
 
 * Example format
+  #+begin_src emacs-lisp
+  "Tests the calc-times command."
 
-#+begin_src emacs-lisp
-"Tests the calc-times command."
+  (maf-test-declare-start-cond
+    (null calc-hyperbolic-flag)
+    (null calc-option-flag))
 
-(maf-test-declare-start-cond
-  (null calc-hyperbolic-flag)
-  (null calc-option-flag))
+  (maf-test-declare-stack
+    "2:  3"
+    "1:  2"
+    "    .")
 
-(maf-test-declare-stack
-  "2:  3"
-  "1:  2"
-  "    .")
+  (maf-test-declare-start-point 'h)
+  (maf-test-declare-command 'calc-times)
+  (maf-test-declare-end-point 'h)
 
-(maf-test-declare-start-point 'h)
-(maf-test-declare-command 'calc-times)
-(maf-test-declare-end-point 'h)
+  (maf-test-declare-output
+    "1:  6"
+    "    .")
 
-(maf-test-declare-output
-  "1:  6"
-  "    .")
-
-(maf-test-declare-end-cond)
-#+end_src
+  (maf-test-declare-end-cond)
+  #+end_src
 
 * Key semantics
-- Stack entries pushed bottom-first via `calc-push`
-- Output compared with `math-equal` / `math-normalize`
-- `maf-test-declare-start-cond` / `maf-test-declare-end-cond` forms are evaled and
-  evaluated and asserted
+  - Stack entries pushed bottom-first via `calc-push`
+  - Output compared with `math-equal` / `math-normalize`
+  - `maf-test-declare-start-cond` / `maf-test-declare-end-cond` forms are evaled and
+    evaluated and asserted
 
 * ERT integration
-`maf-test-register-file` loads a `.el` file and evals an `ert-deftest` form.
-`maf-test-load-directory` is called from `test-init.el` so maf-test tests run
-alongside existing ERT tests with no change to the test runner invocation.
-Implementation lives in `my/calc/tests/maf-test.el` — parser + runner + ERT registration.
+  `maf-test-register-file` loads a `.el` file and evals an `ert-deftest` form.
+  `maf-test-load-directory` is called from `test-init.el` so maf-test tests run
+  alongside existing ERT tests with no change to the test runner invocation.
+  Implementation lives in `my/calc/tests/maf-test.el` — parser + runner + ERT registration.
 
 * Reference
-
 ** Automatic test generation
-  - Automatically generates tests for keep-args.
-  - Automatically generates tests for contextual modes (equation, line, sub-formula, etc).
-
+   - Automatically generates tests for keep-args.
+   - Automatically generates tests for contextual modes (equation, line, sub-formula, etc).
 ** Point notation reference
-  `start-point` and `end-point` can take the following forms:
-  - `h` (default — home area, the `.` line)
-  - `h*` (anywhere in the home area)
-  # These values are contextualized to the affected line
-  - `^` (start of entry)
-  - `^ + 1` (start of entry plus 1 character)
-  - `$` (end of entry, past the last character)
-  - `$ - 2` (end of entry minus 2 characters)
-  - `p` (prefix area)
-  - `p + 1` (prefix area plus 1 character)
-  - `4` (the fourth character, alias for `^ + 3`)
-  # These values specify the line explicitly
-  - `1:4` (the fourth character of the first line)
+   `start-point` and `end-point` can take the following forms:
+   - `h` (default — home area, the `.` line)
+   - `h*` (anywhere in the home area)
+   # These values are contextualized to the affected line
+   - `^` (start of entry)
+   - `^ + 1` (start of entry plus 1 character)
+   - `$` (end of entry, past the last character)
+   - `$ - 2` (end of entry minus 2 characters)
+   - `p` (prefix area)
+   - `p + 1` (prefix area plus 1 character)
+   - `4` (the fourth character, alias for `^ + 3`)
+   # These values specify the line explicitly
+   - `1:4` (the fourth character of the first line)
