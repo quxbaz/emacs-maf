@@ -51,7 +51,7 @@ Implementation lives in `my/calc/tests/maf-test.el` — parser + runner + ERT re
 
 ** Automatic test generation
   - Automatically generates tests for keep-args.
-  - Automatically generates tests for contextual modes (equation, line, subformula, etc).
+  - Automatically generates tests for contextual modes (equation, line, sub-formula, etc).
 
 ** Point notation reference
   `start-point` and `end-point` can take the following forms:
