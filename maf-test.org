@@ -45,8 +45,7 @@ Stack lines (`N:  expr`) are parsed with `math-read-expr`.
 `maf-test-register-file` loads a `.el` file and evals an `ert-deftest` form.
 `maf-test-load-directory` is called from `test-init.el` so maf-test tests run
 alongside existing ERT tests with no change to the test runner invocation.
-
-Implementation: `my/calc/tests/maf-test.el` — parser + runner + ERT registration.
+Implementation lives in `my/calc/tests/maf-test.el` — parser + runner + ERT registration.
 
 * Reference
 
