@@ -1,4 +1,4 @@
-#+title: nex
+#+title: maf
 
 * Guides and Conventions
   A command should take an explicit number of arguments - never implicit.
@@ -29,14 +29,14 @@
 
 * Plan
   I want to move all of the calc customizations in @my/calc/ into a new package
-  called "nex". How should we go about this? I want to make as few changes as
+  called "maf". How should we go about this? I want to make as few changes as
   possible. Just relocate. Some other things:
   - Also create a minor-mode package.
   - This package should be its own git project (how to handle this?)
 
 * Steps
   1) Organize .org file
-  2) Develop nex-test
+  2) Develop maf-test
   3) Rewrite main macro
   4) Read calc manual
 
@@ -141,7 +141,7 @@
 
 * New macro form
   #+BEGIN_SRC emacs-lisp :results silent
-  (nex-defcmd my/calc-factor (expr replace)
+  (maf-defcmd my/calc-factor (expr replace)
     (:prefix "fctr" :enable-map -1 :force-line t)
     "Factor the active selection or whole stack entry at point."
     (replace (calcFunc-factor expr)))
