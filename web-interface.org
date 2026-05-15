@@ -1,4 +1,4 @@
-CALC WEB INTERFACE
+#+title: Calc Web Interface
 
 A browser-based rendering layer for Emacs Calc. The browser is a dumb
 terminal: it captures raw key input, sends it to Emacs over WebSocket,
