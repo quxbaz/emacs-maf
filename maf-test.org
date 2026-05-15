@@ -49,11 +49,11 @@ alongside existing ERT tests with no change to the test runner invocation.
 (maf-test-declare-end-cond)
 #+end_src
 
-* More
+* automatic test generation
   - Automatically generates tests for keep-args.
   - Automatically generates tests for contextual modes (equation, line, subformula, etc).
 
-* Notes
+* Point notation reference
   `start-point` and `end-point` can take the following forms:
   - `h` (default — home area, the `.` line)
   - `h*` (anywhere in the home area)
