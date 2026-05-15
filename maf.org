@@ -40,7 +40,7 @@
   3) Rewrite main macro
   4) Read calc manual
 
-* Todo [0/26]
+* Todo [0/30]
   - [ ] Add function to get calc buffer
   - [ ] If on home line, stick point to the "."
   - [ ] Replace noun with digit entry if point is on sub-formula
@@ -72,6 +72,10 @@
     how many options.
   - [ ] Only allow unary and binary commands.
   - [ ] Add command to isolate current sub-formula on current side of equation.
+  - [ ] l F (my/calc-factor-by-gcd) should prefer negative value in factor.
+  - [ ] Full formula buffer should have "recents" section.
+  - [ ] Saved formulas should support "notes" that display in full formula buffer.
+  - [ ] TAB command to swap lines should be contextual
 
 * Bugs
   - (my/calc-factor-by-gcd) not working
@@ -146,13 +150,3 @@
   - Are new entries plain or cplx numbers?
   - How does restore-calc-stack work? Does it store as atoms or cplx?
   - When restored, are the cplx numbers still unique?
-
-* Buffer
-  Rewrite digit entry mode. No more auto push on nondigit entry.
-  Point is 1 branch binary
-  Flag areas where you manually edit the stack structure. Need to be very careful
-  Is there an inverse to encase atoms that doesn't simplify?
-  l F (factor-auto) should prefer negative number in factor
-  Full formula buffer should have "recents" section.
-  Attach notes to saved formulas
-  Tab should be contextual
