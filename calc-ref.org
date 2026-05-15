@@ -1,5 +1,11 @@
 #+title: Calc Reference
 
+* calc
+
+** (calc-load-everything)
+   Load all Calc extension modules. Ensures all Calc functions are available
+   before calling them programmatically.
+
 * Formula
 
 ** (math-common-constant-factor EXPR)  [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-common_002dconstant_002dfactor][manual]]
@@ -194,9 +200,3 @@
    Scroll the Calc stack window so the home line (.) is visible near the
    bottom. Positions the window start accordingly and moves point to the home
    line. If called from outside the Calc buffer, switches to it first.
-
-* Loading
-
-** (calc-load-everything)
-   Load all Calc extension modules. Ensures all Calc functions are available
-   before calling them programmatically.
