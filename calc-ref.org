@@ -6,14 +6,29 @@
    Load all Calc extension modules. Ensures all Calc functions are available
    before calling them programmatically.
 
+   #+begin_src emacs-lisp :results silent
+   (calc-load-everything)
+   #+end_src
+
 * Formula
 
 ** (math-common-constant-factor EXPR)  [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-common_002dconstant_002dfactor][manual]]
    Returns the *constant* factor in `EXPR`.
 
+   #+begin_src emacs-lisp :results silent
+   (math-common-constant-factor '(+ (* 6 x) (* 4 y)))  ;; => 2
+   (math-common-constant-factor '(+ (* 3 x) y))        ;; => 1
+   #+end_src
+
 ** (calc-encase-atoms X)  [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-calc_002dencase_002datoms][manual]]
    Modifies `X` in-place (via `setcar`) so every sub-formula is a unique atom,
    using the `(cplx n 0)` trick from `calc-prepare-selection`.
+
+   #+begin_src emacs-lisp :results silent
+   (let ((x (list '+ 1 1)))
+     (calc-encase-atoms x)
+     x)  ;; => (+ (cplx 1 0) (cplx 1 0))  — two distinct objects
+   #+end_src
 
 ** (math-expr-contains EXPR VAR)  [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-expr_002dcontains][manual]]
    Return non-nil if `VAR` occurs as a subexpression of `EXPR`. Uses `equal`
@@ -21,15 +36,35 @@
    `f(a, a)`, both `a`s are `equal` but not `eq`, so this function would
    find either.
 
+   #+begin_src emacs-lisp :results silent
+   (math-expr-contains '(+ x (* 2 y)) 'x)  ;; => t
+   (math-expr-contains '(+ x (* 2 y)) 'z)  ;; => nil
+   #+end_src
+
 ** (math-expr-contains-count EXPR VAR)  [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-expr_002dcontains_002dcount][manual]]
    Return the number of occurrences of `VAR` in `EXPR`, or nil if none.
+
+   #+begin_src emacs-lisp :results silent
+   (math-expr-contains-count '(+ x (* 2 x)) 'x)  ;; => 2
+   (math-expr-contains-count '(+ x 1) 'z)         ;; => nil
+   #+end_src
 
 ** (math-expr-depends EXPR VAR)  [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-expr_002ddepends][manual]]
    Return true if `EXPR` and `VAR` share any variable.
 
+   #+begin_src emacs-lisp :results silent
+   (math-expr-depends '(+ x 1) 'y)  ;; => nil
+   (math-expr-depends '(+ x y) 'y)  ;; => t
+   #+end_src
+
 ** (math-expr-contains-vars EXPR)  [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-expr_002dcontains_002dvars][manual]]
    Return true if `EXPR` contains any variables; nil if it contains only
    constants and functions with constant arguments.
+
+   #+begin_src emacs-lisp :results silent
+   (math-expr-contains-vars '(+ x 1))  ;; => t
+   (math-expr-contains-vars '(+ 1 2))  ;; => nil
+   #+end_src
 
 ** (math-expr-subst EXPR OLD NEW)  [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-expr_002dsubst][manual]]
    Return a copy of `EXPR` with all occurrences of `OLD` replaced by `NEW`.
@@ -56,6 +91,11 @@
    a polynomial. Degree is the highest power of `VAR` in the expanded form. A
    constant expression (no `VAR`) has degree 0.
 
+   #+begin_src emacs-lisp :results silent
+   (math-polynomial-p '(+ (^ x 2) (* 3 x) 1) 'x)  ;; => 2
+   (math-polynomial-p '(calcFunc-sin x) 'x)         ;; => nil
+   #+end_src
+
 ** (math-is-polynomial EXPR VAR DEGREE LOOSE)  [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-is_002dpolynomial][manual]]
    Return a coefficient list `(a0 a1 ... an)` for `a0 + a1*var + ... + an*var^n`,
    or nil if `EXPR` is not a polynomial in `VAR`. `DEGREE` caps the maximum
@@ -75,6 +115,10 @@
    called as `(pred subexpr)` with `mpb-top-expr` bound to the original `EXPR`;
    use it to add extra conditions or collect all suitable subexpressions.
 
+   #+begin_src emacs-lisp :results silent
+   (math-polynomial-base '(+ (^ x 2) (* 3 x)) nil)  ;; => x
+   #+end_src
+
 * Simplification & rewriting
 
 ** (math-simplify-extended A)  [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-simplify_002dextended][manual]]
@@ -82,6 +126,10 @@
    safe (e.g., simplifies `sqrt(x^2)` to `x`, valid only when `x` is positive).
    Implemented by binding `math-living-dangerously` to `t` and calling
    `math-simplify`. Dangerous rules check this variable before firing.
+
+   #+begin_src emacs-lisp :results silent
+   (math-simplify-extended '(calcFunc-sqrt (^ x 2)))  ;; => x
+   #+end_src
 
 ** (math-defsimplify FUNCS BODY)  [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-math_002ddefsimplify][manual]]
    Macro that registers a simplification rule, typically as a top-level form.
@@ -109,10 +157,22 @@
    names in `EXPR` used to narrow the search (the compiler tags each rule with
    its rarest function name).
 
+   #+begin_src emacs-lisp :results silent
+   ;; CRULES must be built with math-compile-rewrites first
+   (let ((rules (math-compile-rewrites '(vec (calcFunc-eq (^ a 2) (* a a))))))
+     (math-apply-rewrites '(^ x 2) rules nil))  ;; => (* x x)
+   #+end_src
+
 ** (math-match-patterns PAT VEC NOT-FLAG)  [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-match_002dpatterns][manual]]
    Return a new vector of elements from `VEC` that match (or, if `NOT-FLAG` is
    non-nil, don't match) any pattern in `PAT`. `PAT` is an uncompiled pattern
    set or pattern set variable.
+
+   #+begin_src emacs-lisp :results silent
+   ;; Keep only elements matching x^n
+   (math-match-patterns '(vec (^ a n)) '(vec (^ x 2) x (^ y 3)) nil)
+   ;; => (vec (^ x 2) (^ y 3))
+   #+end_src
 
 * Solving
 
@@ -135,9 +195,22 @@
    Like `math-solve-for`, but `EXPR` is an equation or inequality. A bare
    expression is treated as `EXPR` = 0. Returns an equation or inequality, or nil.
 
+   #+begin_src emacs-lisp :results silent
+   (math-solve-eqn '(calcFunc-eq (+ x 3) 7) 'x nil)  ;; => (calcFunc-eq x 4)
+   (math-solve-eqn '(+ x 3) 'x nil)                   ;; => (calcFunc-eq x -3)
+   #+end_src
+
 ** (math-solve-system EXPRS VARS FULL)  [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-solve_002dsystem][manual]]
    Solve a system of equations. `EXPRS` and `VARS` are typically equal-length
    vectors.
+
+   #+begin_src emacs-lisp :results silent
+   ;; x + y = 3, x - y = 1  =>  x = 2, y = 1
+   (math-solve-system '(vec (calcFunc-eq (+ x y) 3)
+                            (calcFunc-eq (- x y) 1))
+                      '(vec x y) nil)
+   ;; => (vec (calcFunc-eq x 2) (calcFunc-eq y 1))
+   #+end_src
 
 * Selection
 
@@ -158,10 +231,20 @@
    sub-formulas are `eq`. The next time the entry is used in a computation,
    `calc-normalize` restores them to plain numbers.
 
+   #+begin_src emacs-lisp :results silent
+   (calc-prepare-selection)    ;; prepare entry under cursor
+   (calc-prepare-selection 2)  ;; prepare stack entry 2
+   #+end_src
+
 ** (calc-find-selected-part)  [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-calc_002dfind_002dselected_002dpart][manual]]
    Find the smallest sub-formula containing the cursor. Assumes
    `calc-prepare-selection` has been called first. Returns nil if the cursor
    is not on any part of the formula.
+
+   #+begin_src emacs-lisp :results silent
+   (calc-prepare-selection)
+   (calc-find-selected-part)  ;; => sub-formula under cursor, or nil
+   #+end_src
 
 ** (calc-find-sub-formula EXPR PART)  [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-calc_002dfind_002dsub_002dformula][manual]]
    Search `EXPR` for `PART` by object identity (`eq`). Returns:
@@ -182,6 +265,10 @@
    Return the stack index of the entry whose display region contains buffer
    position `PT`. The result is suitable for passing to `calc-cursor-stack-index`.
 
+   #+begin_src emacs-lisp :results silent
+   (calc-locate-cursor-element (point))  ;; => stack index at cursor position
+   #+end_src
+
 * Display
 
 ** (math-format-value A &optional W)  [[https://www.gnu.org/software/emacs/manual/html_node/calc/Formatting-Lisp-Functions.html#index-format_002dvalue][manual]]
@@ -190,13 +277,27 @@
    to string via `math-composition-to-string` with no line breaking. `W`
    optionally limits the output width.
 
+   #+begin_src emacs-lisp :results silent
+   (math-format-value '(+ x 1))   ;; => "x + 1"
+   (math-format-value '(^ x 2))   ;; => "x^2"
+   #+end_src
+
 ** (math-format-stack-value ENTRY)
    Format a complete stack entry for display in the Calc buffer. `ENTRY` is a
    list `(value lines selection)`. Handles selection highlighting, left label
    (`calc-left-label`), and line numbering (`calc-line-numbering`). Sets
    `calc-selection-cache-entry` and `calc-any-selections` as side effects.
 
+   #+begin_src emacs-lisp :results silent
+   ;; ENTRY format: (value display-lines selection)
+   (math-format-stack-value (list '(+ x 1) nil nil))
+   #+end_src
+
 ** (calc-align-stack-window)
    Scroll the Calc stack window so the home line (.) is visible near the
    bottom. Positions the window start accordingly and moves point to the home
    line. If called from outside the Calc buffer, switches to it first.
+
+   #+begin_src emacs-lisp :results silent
+   (calc-align-stack-window)
+   #+end_src
