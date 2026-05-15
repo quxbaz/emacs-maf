@@ -5,66 +5,52 @@
   =(math-common-constant-factor EXPR)=
   Returns the *constant* factor in `EXPR`.
 
-  =(calc-find-sub-formula EXPR PART)=
-  Search `EXPR` for `PART` by object identity (`eq`). Returns:
-  - `t` — `EXPR` itself is `PART`
-  - N — `PART` is found within the Nth argument of `EXPR` (1-based)
-  - `nil` — `PART` is not in `EXPR`
-
-  The index N can be passed to `calc-find-nth-part` to retrieve the child.
-  Does not account for associativity.
-
-  #+begin_src emacs-lisp :results silent
-  (let* ((expr '(+ a (* b c)))
-         (sub  (nth 2 expr)))            ;; (* b c)
-    (calc-find-sub-formula expr sub))    ;; => 2
-  #+end_src
-
   =(calc-encase-atoms X)=
   Modifies `X` in-place (via `setcar`) so every sub-formula is a unique atom,
   using the `(cplx n 0)` trick from `calc-prepare-selection`.
 
-  =(expr-contains EXPR VAR)=
+  =(math-expr-contains EXPR VAR)=
   Return non-nil if `VAR` occurs as a subexpression of `EXPR`. Uses `equal`
   (structural equality), unlike `calc-find-sub-formula` which uses `eq`. In
   `f(a, a)`, both `a`s are `equal` but not `eq`, so this function would
   find either.
 
-  =(expr-contains-count EXPR VAR)=
+  =(math-expr-contains-count EXPR VAR)=
   Return the number of occurrences of `VAR` in `EXPR`, or nil if none.
 
-  =(expr-depends EXPR VAR)=
+  =(math-expr-depends EXPR VAR)=
   Return true if `EXPR` and `VAR` share any variable.
 
-  =(expr-contains-vars EXPR)=
+  =(math-expr-contains-vars EXPR)=
   Return true if `EXPR` contains any variables; nil if it contains only
   constants and functions with constant arguments.
 
-  =(expr-subst EXPR OLD NEW)=
+  =(math-expr-subst EXPR OLD NEW)=
   Return a copy of `EXPR` with all occurrences of `OLD` replaced by `NEW`.
   Handles lambda dummy variables correctly.
 
   #+begin_src emacs-lisp :results silent
-  (expr-subst '(+ x (* 2 x)) 'x 5)  ;; => (+ 5 (* 2 5))
+  (math-expr-subst '(+ x (* 2 x)) 'x 5)  ;; => (+ 5 (* 2 5))
   #+end_src
 
-  =(multi-subst EXPR OLD NEW)=
-  Like `expr-subst`, but `OLD` and `NEW` are lists substituted simultaneously.
-  If lists differ in length, trailing elements of the longer list are ignored.
+  =(math-multi-subst EXPR OLD NEW)=
+  Like `math-expr-subst`, but `OLD` and `NEW` are lists substituted
+  simultaneously. If lists differ in length, trailing elements of the longer
+  list are ignored.
 
   #+begin_src emacs-lisp :results silent
   ;; Swap x and y: sequential subst would give (+ y y), simultaneous gives (+ y x)
-  (multi-subst '(+ x y) '(x y) '(y x))  ;; => (+ y x)
+  (math-multi-subst '(+ x y) '(x y) '(y x))  ;; => (+ y x)
   #+end_src
 
 * Polynomials
 
-  =(polynomial-p EXPR VAR)=
+  =(math-polynomial-p EXPR VAR)=
   Return the degree of `EXPR` as a polynomial in `VAR`, or nil if it is not
   a polynomial. Degree is the highest power of `VAR` in the expanded form. A
   constant expression (no `VAR`) has degree 0.
 
-  =(is-polynomial EXPR VAR DEGREE LOOSE)=
+  =(math-is-polynomial EXPR VAR DEGREE LOOSE)=
   Return a coefficient list `(a0 a1 ... an)` for `a0 + a1*var + ... + an*var^n`,
   or nil if `EXPR` is not a polynomial in `VAR`. `DEGREE` caps the maximum
   accepted degree (recommended to avoid huge lists on inputs like `(x+1)^1000`).
@@ -73,11 +59,11 @@
   as they are not polynomials; never returns nil in loose mode.
 
   #+begin_src emacs-lisp :results silent
-  (is-polynomial '(+ (* 2 x) 3) 'x nil nil)     ;; => (3 2)      i.e. 3 + 2x
-  (is-polynomial '(+ (^ x 2) -1) 'x nil nil)    ;; => (-1 0 1)   i.e. -1 + x^2
+  (math-is-polynomial '(+ (* 2 x) 3) 'x nil nil)     ;; => (3 2)      i.e. 3 + 2x
+  (math-is-polynomial '(+ (^ x 2) -1) 'x nil nil)    ;; => (-1 0 1)   i.e. -1 + x^2
   #+end_src
 
-  =(polynomial-base EXPR PRED)=
+  =(math-polynomial-base EXPR PRED)=
   Return a variable in `EXPR` such that `EXPR` is a polynomial in it, or nil.
   For multivariate expressions, the choice is arbitrary. `PRED`, if given, is
   called as `(pred subexpr)` with `mpb-top-expr` bound to the original `EXPR`;
@@ -85,16 +71,17 @@
 
 * Simplification & rewriting
 
-  =(simplify-extended EXPR)=
-  Simplify `EXPR` with additional rules that are more thorough but not always
-  safe (e.g., simplifies `sqrt(x^2)` to `x`, valid only when `x` is positive).
+  =(math-simplify-extended A)=
+  Simplify `A` with additional rules that are more thorough but not always safe
+  (e.g., simplifies `sqrt(x^2)` to `x`, valid only when `x` is positive).
   Implemented by binding `math-living-dangerously` to `t` and calling
-  `simplify`. Dangerous rules check this variable before firing.
+  `math-simplify`. Dangerous rules check this variable before firing.
 
   =(math-defsimplify FUNCS BODY)=
-  Macro that registers a simplification rule, typically as a top-level form. `FUNCS` is a symbol (e.g., `+`, `calcFunc-sqrt`) or list of
-  symbols; the rule applies to calls to any of those functions. `BODY` is
-  written as a function body with `expr` bound to the matched call.
+  Macro that registers a simplification rule, typically as a top-level form.
+  `FUNCS` is a symbol (e.g., `+`, `calcFunc-sqrt`) or list of symbols; the rule
+  applies to calls to any of those functions. `BODY` is written as a function
+  body with `expr` bound to the matched call.
 
   Return nil or the original `expr` to skip; any other value replaces `expr`.
   Rules are tried in definition order; the first match wins and restarts the
@@ -109,21 +96,21 @@
          (math-neg (list 'calcFunc-arcsinh (math-neg (nth 1 expr))))))
   #+end_src
 
-  =(apply-rewrites EXPR CRULES HEADS)=
+  =(math-apply-rewrites EXPR CRULES HEADS)=
   Apply compiled rewrite rule set `CRULES` to `EXPR` at the top level only,
   making at most one rewrite. Returns the rewritten expression, or nil if no
   rule matched or produced a change. `HEADS` is optional: a list of function
   names in `EXPR` used to narrow the search (the compiler tags each rule with
   its rarest function name).
 
-  =(match-patterns PAT VEC NOT-FLAG)=
+  =(math-match-patterns PAT VEC NOT-FLAG)=
   Return a new vector of elements from `VEC` that match (or, if `NOT-FLAG` is
   non-nil, don't match) any pattern in `PAT`. `PAT` is an uncompiled pattern
   set or pattern set variable.
 
 * Solving
 
-  =(solve-for LHS RHS VAR FULL)=
+  =(math-solve-for LHS RHS VAR FULL)=
   Solve `LHS` = `RHS` for `VAR`, returning the right-hand side, or nil if
   unsolvable. `VAR` must appear in `LHS` or `RHS`. The return value does not
   contain `VAR` (unlike the user-level `solve`/`finv`). If `FULL` is non-nil,
@@ -131,18 +118,18 @@
 
   #+begin_src emacs-lisp :results silent
   ;; 2x + 3 = 7  =>  x = 2
-  (solve-for '(+ (* 2 x) 3) 7 'x nil)  ;; => 2
+  (math-solve-for '(+ (* 2 x) 3) 7 'x nil)  ;; => 2
   #+end_src
 
   Inverses for custom functions are registered via a `math-inverse` property.
   Use `(math-solve-get-sign x)` and `(math-solve-get-int x)` to introduce
   arbitrary sign/integer variables; these return `x` unchanged in non-full mode.
 
-  =(solve-eqn EXPR VAR FULL)=
-  Like `solve-for`, but `EXPR` is an equation or inequality. A bare expression
-  is treated as `EXPR` = 0. Returns an equation or inequality, or nil.
+  =(math-solve-eqn EXPR VAR FULL)=
+  Like `math-solve-for`, but `EXPR` is an equation or inequality. A bare
+  expression is treated as `EXPR` = 0. Returns an equation or inequality, or nil.
 
-  =(solve-system EXPRS VARS FULL)=
+  =(math-solve-system EXPRS VARS FULL)=
   Solve a system of equations. `EXPRS` and `VARS` are typically equal-length
   vectors.
 
@@ -169,6 +156,21 @@
   Find the smallest sub-formula containing the cursor. Assumes
   `calc-prepare-selection` has been called first. Returns nil if the cursor
   is not on any part of the formula.
+
+  =(calc-find-sub-formula EXPR PART)=
+  Search `EXPR` for `PART` by object identity (`eq`). Returns:
+  - `t` — `EXPR` itself is `PART`
+  - N — `PART` is found within the Nth argument of `EXPR` (1-based)
+  - `nil` — `PART` is not in `EXPR`
+
+  The index N can be passed to `calc-find-nth-part` to retrieve the child.
+  Does not account for associativity.
+
+  #+begin_src emacs-lisp :results silent
+  (let* ((expr '(+ a (* b c)))
+         (sub  (nth 2 expr)))            ;; (* b c)
+    (calc-find-sub-formula expr sub))    ;; => 2
+  #+end_src
 
   =(calc-locate-cursor-element PT)=
   Return the stack index of the entry whose display region contains buffer
