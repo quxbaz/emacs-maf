@@ -49,21 +49,21 @@ alongside existing ERT tests with no change to the test runner invocation.
 (maf-test-declare-end-cond)
 #+end_src
 
-** More
-   - Automatically generates tests for keep-args.
-   - Automatically generates tests for contextual modes (equation, line, subformula, etc).
+* More
+  - Automatically generates tests for keep-args.
+  - Automatically generates tests for contextual modes (equation, line, subformula, etc).
 
-** Notes
-   `start-point` and `end-point` can take the following forms:
-   - `h` (default — home area, the `.` line)
-   - `h*` (anywhere in the home area)
-   # These values are contextualized to the affected line
-   - `^` (start of entry)
-   - `^ + 1` (start of entry plus 1 character)
-   - `$` (end of entry, past the last character)
-   - `$ - 2` (end of entry minus 2 characters)
-   - `p` (prefix area)
-   - `p + 1` (prefix area plus 1 character)
-   - `4` (the fourth character, alias for `^ + 3`)
-   # These values specify the line explicitly
-   - `1:4` (the fourth character of the first line)
+* Notes
+  `start-point` and `end-point` can take the following forms:
+  - `h` (default — home area, the `.` line)
+  - `h*` (anywhere in the home area)
+  # These values are contextualized to the affected line
+  - `^` (start of entry)
+  - `^ + 1` (start of entry plus 1 character)
+  - `$` (end of entry, past the last character)
+  - `$ - 2` (end of entry minus 2 characters)
+  - `p` (prefix area)
+  - `p + 1` (prefix area plus 1 character)
+  - `4` (the fourth character, alias for `^ + 3`)
+  # These values specify the line explicitly
+  - `1:4` (the fourth character of the first line)
