@@ -179,37 +179,30 @@
      Returns the *constant* factor in `expr`
 ** Selection, sub-formulas
    - `(calc-find-selected-part)`
-     Find the smallest sub-formula of the current formula that contains the
-     cursor. This assumes `calc-prepare-selection` has been called already. If the
-     cursor is not actually on any part of the formula, this returns nil.
+     Find the smallest sub-formula containing the cursor. Assumes
+     `calc-prepare-selection` has been called first. Returns nil if the cursor
+     is not on any part of the formula.
    - `(calc-prepare-selection)`
 
-     Prepare a stack entry for selection operations. If num is omitted, the
-     stack entry containing the cursor is used; otherwise, it is the number of
-     the stack entry to use. This function stores useful information about the
-     current stack entry into a set of variables. calc-selection-cache-num
-     contains the number of the stack entry involved (equal to num if you
-     specified it); calc-selection-cache-entry contains the stack entry as a
-     list (such as calc-top-list would return with entry as the selection mode);
-     and calc-selection-cache-comp contains a special “tagged” composition (see
-     I/O and Formatting Functions) which allows Calc to relate cursor positions
-     in the buffer with their corresponding sub-formulas.
+     Prepare a stack entry for selection operations. `num` specifies which
+     entry to use; if omitted, the entry containing the cursor is used.
 
-     A slight complication arises in the selection mechanism because formulas may
-     contain small integers. For example, in the vector ‘[1, 2, 1]’ the first and
-     last elements are eq to each other; selections are recorded as the actual Lisp
-     object that appears somewhere in the tree of the whole formula, but storing 1
-     would falsely select both 1’s in the vector. So calc-prepare-selection also
-     checks the stack entry and replaces any plain integers with “complex number”
-     lists of the form ‘(cplx n 0)’. This list will be displayed the same as a plain
-     n and the change will be completely invisible to the user, but it will guarantee
-     that no two sub-formulas of the stack entry will be eq to each other. Next time
-     the stack entry is involved in a computation, calc-normalize will replace these
-     lists with plain numbers again, again invisibly to the user.
+     Stores results in: `calc-selection-cache-num` (the entry number used),
+     `calc-selection-cache-entry` (the entry as a list, as `calc-top-list`
+     would return with entry as the selection mode), and
+     `calc-selection-cache-comp` (a “tagged” composition mapping cursor
+     positions to sub-formulas; see I/O and Formatting Functions).
+
+     A complication: formulas can contain duplicate small integers. In
+     `[1, 2, 1]`, both `1`s are `eq` in Lisp, so storing `1` as a selection
+     would falsely match both. To prevent this, `calc-prepare-selection`
+     replaces plain integers with `(cplx n 0)` lists — displayed identically
+     but distinct objects, so no two sub-formulas are `eq`. The next time the
+     entry is used in a computation, `calc-normalize` restores them to plain
+     numbers.
    - `(calc-encase-atoms)`
-     This modifies the formula x to ensure that each part of the formula is a
-     unique atom, using the ‘(cplx n 0)’ trick described above. This function
-     may use setcar to modify the formula in-place.
+     Modifies `x` in-place (via `setcar`) so every sub-formula is a unique
+     atom, using the `(cplx n 0)` trick from `calc-prepare-selection`.
 
 * Buffer
   Stack should be normal numbers? Only encased when necessary?
