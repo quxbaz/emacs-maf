@@ -1,4 +1,4 @@
-Refactoring the Macro
+Refactoring Command Macro
 
 * Refactor
   Context
