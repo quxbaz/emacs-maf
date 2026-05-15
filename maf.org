@@ -40,7 +40,7 @@
   3) Rewrite main macro
   4) Read calc manual
 
-* Todo [0/23]
+* Todo [0/24]
   - [ ] Add function to get calc buffer
   - [ ] If on home line, stick point to the "."
   - [ ] Replace noun with digit entry if point is on sub-formula
@@ -68,7 +68,8 @@
     They have nowhere to take args from.
   - [ ] If command is line-target, then m=2 is the subject and m=1 is the arg,
     same as if point were at home.
-
+  - [ ] Remove `m` parameter. Always take args from stack. New options dictate
+    how many options.
 
 * Bugs
   - (my/calc-factor-by-gcd) not working
@@ -173,15 +174,16 @@
   Swap _ and -
   Show all formulas buffer
 
+* Debug
+  - Debug to print. Show display representation and debug representation.
+
+* Questions
+  - Stack should be normal numbers? Only encased when necessary?
+  - Are new entries plain or cplx numbers?
+  - How does restore-calc-stack work? Does it store as atoms or cplx?
+  - When restored, are the cplx numbers still unique?
+
 * Buffer
-  Stack should be normal numbers? Only encased when necessary?
-  Are new entries plain or cplx numbers?
-  What about cplx numbers?
-  Save as atoms
-  Debug to print. Show display representation and debug representation.
-  How does restore calc stack work? Does it store as atoms or cplx?
-  When restored are the cplx numbers still unique?
-  Remove m parameter. Always take args from stack. New options dictates how many options.
   Rewrite digit entry mode. No more auto push on nondigit entry.
   Point is 1 branch binary
   Flag areas where you manually edit the stack structure. Need to be very careful
