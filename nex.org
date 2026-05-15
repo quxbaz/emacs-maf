@@ -1,4 +1,4 @@
-#+title: nalc
+#+title: nex
 
 * Guides and Conventions
   A command should take an explicit number of arguments - never implicit.
@@ -29,40 +29,41 @@
 
 * Plan
   I want to move all of the calc customizations in @my/calc/ into a new package
-  called "lac". How should we go about this? I want to make as few changes as
+  called "nex". How should we go about this? I want to make as few changes as
   possible. Just relocate. Some other things:
   - Also create a minor-mode package.
   - This package should be its own git project (how to handle this?)
 
 * Steps
   1) Organize .org file
-  2) Develop clac-test
+  2) Develop nex-test
   3) Rewrite main macro
   4) Read calc manual
 
-* Todo
-** TODO Add function to get calc buffer
-** TODO If on home line, stick point to the "."
-** TODO Replace noun with digit entry if point is on sub-formula
-** TODO Remove keep-point flag in macro
-** TODO Add plus and minus clac functions
-** TODO Add sin/cos/tan and inverse functions.
-** TODO Also "stick" point to beginning or end of entry's expression. and also over =, !=, <=/=>
-** TODO When point is over equation symbol, operate on both sides (unless map is -1).
-** TODO k k (my/calc-evaluate N) should work on fractions and division.
-** TODO g i (my/calc-graph-quick-with-range) interval form a:b should work with spaces 'a b'
-** TODO (calc-fraction ARG) and calc-float should work contextually.
-** TODO (my/calc-factor-by-gcd) should factor out negative numbers (leave the leading term in the binomial positive).
-** TODO Make (my/calc-sel-negate) contextual.
-** TODO Should have a form to collect the numerator.
-   3:2 sqrt(2) -> 3 sqrt(2) / 2
-** TODO S-up/down should toggle +/-, ln/e, */, log/^, etc.
-** TODO Take: y = 1:2 - (5 x - 5 k)^-2 / 2 and represent the negative power as a reciprocal.
-** TODO (my/calc-quick-variable) should be contextual.
-** TODO ( and ) should move to next opening/closing paren.
-** TODO (my/calc-collect-fractions) -> 16:3 x / 1
-** TODO Line option (calc-option &optional N) should be bound to single key without modifiers.
-** TODO (my/calc-log-exp-rules) on line should transform entire line.
+* Todo [0/21]
+  - [ ] Add function to get calc buffer
+  - [ ] If on home line, stick point to the "."
+  - [ ] Replace noun with digit entry if point is on sub-formula
+  - [ ] Remove keep-point flag in macro
+  - [ ] Add plus and minus clac functions
+  - [ ] Add sin/cos/tan and inverse functions.
+  - [ ] Also "stick" point to beginning or end of entry's expression. and also over =, !=, <=/=>
+  - [ ] When point is over equation symbol, operate on both sides (unless map is -1).
+  - [ ] k k (my/calc-evaluate N) should work on fractions and division.
+  - [ ] g i (my/calc-graph-quick-with-range) interval form a:b should work with spaces 'a b'
+  - [ ] (calc-fraction ARG) and calc-float should work contextually.
+  - [ ] (my/calc-factor-by-gcd) should factor out negative numbers (leave the leading term in the binomial positive).
+  - [ ] Make (my/calc-sel-negate) contextual.
+  - [ ] Should have a form to collect the numerator.
+    3:2 sqrt(2) -> 3 sqrt(2) / 2
+  - [ ] S-up/down should toggle +/-, ln/e, */, log/^, etc.
+  - [ ] Take: y = 1:2 - (5 x - 5 k)^-2 / 2 and represent the negative power as a reciprocal.
+  - [ ] (my/calc-quick-variable) should be contextual.
+  - [ ] ( and ) should move to next opening/closing paren.
+  - [ ] (my/calc-collect-fractions) -> 16:3 x / 1
+  - [ ] Line option (calc-option &optional N) should be bound to single key without modifiers.
+  - [ ] (my/calc-log-exp-rules) on line should transform entire line.
+  - [ ] Binary arity functions should noop on targeting subformula at stack=1. They have nowhere to take args from.
 
 * Bugs
   - (my/calc-factor-by-gcd) not working
@@ -140,7 +141,7 @@
 
 * New macro form
   #+BEGIN_SRC emacs-lisp :results silent
-  (lac-defcmd my/calc-factor (expr replace)
+  (nex-defcmd my/calc-factor (expr replace)
     (:prefix "fctr" :enable-map -1 :force-line t)
     "Factor the active selection or whole stack entry at point."
     (replace (calcFunc-factor expr)))
@@ -151,8 +152,6 @@
   - highlight both sides of equation separately with different colors
 
 * Package
-  calx
-  clac
   Vim bindings (noun, verb, char)
   Highlight subformula
   Binding for "home"
@@ -168,7 +167,6 @@
 
 * Buffer
   Always show calc-stack (in better format).
-  Binary functions should noop on targeting subformula at stack=1. They have nowhere to take args from.
   If line level operation, then stack-2 is the subject and stack=1 is the arg, same as in home target operation.
   Search cplx in emacs manual and see if that's why some operations don't work like
   17.5.7.7 Symbolic Functions
