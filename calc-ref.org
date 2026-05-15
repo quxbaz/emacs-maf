@@ -14,13 +14,13 @@
   The index N can be passed to `calc-find-nth-part` to retrieve the child.
   Does not account for associativity.
 
-  #+begin_src emacs-lisp
+  #+begin_src emacs-lisp :results silent
   (let* ((expr '(+ a (* b c)))
          (sub  (nth 2 expr)))            ;; (* b c)
     (calc-find-sub-formula expr sub))    ;; => 2
   #+end_src
 
-  =(calc-encase-atoms)=
+  =(calc-encase-atoms X)=
   Modifies `X` in-place (via `setcar`) so every sub-formula is a unique atom,
   using the `(cplx n 0)` trick from `calc-prepare-selection`.
 
@@ -44,7 +44,7 @@
   Return a copy of `EXPR` with all occurrences of `OLD` replaced by `NEW`.
   Handles lambda dummy variables correctly.
 
-  #+begin_src emacs-lisp
+  #+begin_src emacs-lisp :results silent
   (expr-subst '(+ x (* 2 x)) 'x 5)  ;; => (+ 5 (* 2 5))
   #+end_src
 
@@ -52,7 +52,7 @@
   Like `expr-subst`, but `OLD` and `NEW` are lists substituted simultaneously.
   If lists differ in length, trailing elements of the longer list are ignored.
 
-  #+begin_src emacs-lisp
+  #+begin_src emacs-lisp :results silent
   ;; Swap x and y: sequential subst would give (+ y y), simultaneous gives (+ y x)
   (multi-subst '(+ x y) '(x y) '(y x))  ;; => (+ y x)
   #+end_src
@@ -72,7 +72,7 @@
   If `LOOSE` is non-nil, coefficients may themselves depend on `VAR` as long
   as they are not polynomials; never returns nil in loose mode.
 
-  #+begin_src emacs-lisp
+  #+begin_src emacs-lisp :results silent
   (is-polynomial '(+ (* 2 x) 3) 'x nil nil)     ;; => (3 2)      i.e. 3 + 2x
   (is-polynomial '(+ (^ x 2) -1) 'x nil nil)    ;; => (-1 0 1)   i.e. -1 + x^2
   #+end_src
@@ -92,8 +92,7 @@
   `simplify`. Dangerous rules check this variable before firing.
 
   =(math-defsimplify FUNCS BODY)=
-  Macro. Register a simplification rule, typically as a top-level form like
-  `defun`. `FUNCS` is a symbol (e.g., `+`, `calcFunc-sqrt`) or list of
+  Macro that registers a simplification rule, typically as a top-level form. `FUNCS` is a symbol (e.g., `+`, `calcFunc-sqrt`) or list of
   symbols; the rule applies to calls to any of those functions. `BODY` is
   written as a function body with `expr` bound to the matched call.
 
@@ -103,7 +102,7 @@
   The arguments of the matched call are already simplified before the rule
   runs, and may be rearranged destructively.
 
-  #+begin_src emacs-lisp
+  #+begin_src emacs-lisp :results silent
   ;; arcsinh(-x) => -arcsinh(x)
   (math-defsimplify calcFunc-arcsinh
     (and (math-looks-negp (nth 1 expr))
@@ -130,7 +129,7 @@
   contain `VAR` (unlike the user-level `solve`/`finv`). If `FULL` is non-nil,
   includes dummy signs and integers.
 
-  #+begin_src emacs-lisp
+  #+begin_src emacs-lisp :results silent
   ;; 2x + 3 = 7  =>  x = 2
   (solve-for '(+ (* 2 x) 3) 7 'x nil)  ;; => 2
   #+end_src
@@ -149,7 +148,7 @@
 
 * Selection
 
-  =(calc-prepare-selection)=
+  =(calc-prepare-selection &optional NUM)=
   Prepare a stack entry for selection operations. `NUM` specifies which entry
   to use; if omitted, the entry containing the cursor is used.
 
