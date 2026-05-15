@@ -40,7 +40,7 @@
   3) Rewrite main macro
   4) Read calc manual
 
-* Todo [0/24]
+* Todo [0/25]
   - [ ] Add function to get calc buffer
   - [ ] If on home line, stick point to the "."
   - [ ] Replace noun with digit entry if point is on sub-formula
@@ -70,6 +70,7 @@
     same as if point were at home.
   - [ ] Remove `m` parameter. Always take args from stack. New options dictate
     how many options.
+  - [ ] Only allow unary and binary commands.
 
 * Bugs
   - (my/calc-factor-by-gcd) not working
