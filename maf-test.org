@@ -39,13 +39,14 @@ Stack lines (`N:  expr`) are parsed with `math-read-expr`.
 - Stack entries pushed bottom-first via `calc-push`
 - Output compared with `math-equal` / `math-normalize`
 - `maf-test-declare-start-cond` / `maf-test-declare-end-cond` forms are evaled and
-  asserted
+  evaluated and asserted
 
 * ERT integration
 `maf-test-register-file` loads a `.el` file and evals an `ert-deftest` form.
 `maf-test-load-directory` is called from `test-init.el` so maf-test tests run
 alongside existing ERT tests with no change to the test runner invocation.
-Implementation lives in `my/calc/tests/maf-test.el` — parser + runner + ERT registration.
+
+Implementation: `my/calc/tests/maf-test.el` — parser + runner + ERT registration.
 
 * Reference
 
