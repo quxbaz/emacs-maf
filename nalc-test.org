@@ -1,6 +1,32 @@
-nalc-test
+#+title: nalc-test
 
-# Example format
+* File format
+=.nalc-test= files (not =.el= — calc display like =2:  3= isn't valid elisp, so a
+dedicated extension avoids read errors).
+One file = one ERT test.
+
+* Parser
+State machine that uses =read= for s-expressions and switches to raw-text
+capture after =(nalc-test-declare-stack)= / =(nalc-test-declare-output)=, collecting
+lines until the next =(=.
+Stack lines (=N:  expr=) are parsed with =math-read-expr=.
+
+* Key semantics
+- ="H"= in point specs = home (=.= line)
+- Stack entries pushed bottom-first via =calc-push=
+- Output compared with =math-equal= / =math-normalize=
+- =nalc-test-declare-start-cond= / =nalc-test-declare-end-cond= forms are evaled and
+  asserted
+
+* ERT integration
+=nalc-test-register-file= parses a =.nalc-test= file and evals an =ert-deftest= form.
+=nalc-test-load-directory= is called from =test-init.el= so nalc-test tests run
+alongside existing ERT tests with no change to the test runner invocation.
+
+* Single new file
+=my/calc/tests/nalc-test.el= — parser + runner + ERT registration.
+
+* Example format
 
 "Tests the calc-times command."
 
@@ -44,29 +70,3 @@ nalc-test
    - 4 (the fourth character, alias for ^ + 3)
    # These values specify the line
    - 1:4 (the fourth character of the first line)
-
-* File format
-=.nalc-test= files (not =.el= — calc display like =2:  3= isn't valid elisp, so a
-dedicated extension avoids read errors).
-One file = one ERT test.
-
-* Parser
-State machine that uses =read= for s-expressions and switches to raw-text
-capture after =(nalc-test-declare-stack)= / =(nalc-test-declare-output)=, collecting
-lines until the next =(=.
-Stack lines (=N:  expr=) are parsed with =math-read-expr=.
-
-* Key semantics
-- ="H"= in point specs = home (=.= line)
-- Stack entries pushed bottom-first via =calc-push=
-- Output compared with =math-equal= / =math-normalize=
-- =nalc-test-declare-start-cond= / =nalc-test-declare-end-cond= forms are evaled and
-  asserted
-
-* ERT integration
-=nalc-test-register-file= parses a =.nalc-test= file and evals an =ert-deftest= form.
-=nalc-test-load-directory= is called from =test-init.el= so nalc-test tests run
-alongside existing ERT tests with no change to the test runner invocation.
-
-* Single new file
-=my/calc/tests/nalc-test.el= — parser + runner + ERT registration.
