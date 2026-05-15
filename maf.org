@@ -40,7 +40,7 @@
   3) Rewrite main macro
   4) Read calc manual
 
-* Todo [0/21]
+* Todo [0/23]
   - [ ] Add function to get calc buffer
   - [ ] If on home line, stick point to the "."
   - [ ] Replace noun with digit entry if point is on sub-formula
@@ -52,7 +52,8 @@
   - [ ] k k (my/calc-evaluate N) should work on fractions and division.
   - [ ] g i (my/calc-graph-quick-with-range) interval form a:b should work with spaces 'a b'
   - [ ] (calc-fraction ARG) and calc-float should work contextually.
-  - [ ] (my/calc-factor-by-gcd) should factor out negative numbers (leave the leading term in the binomial positive).
+  - [ ] (my/calc-factor-by-gcd) should factor out negative numbers (leave the
+    leading term in the binomial positive).
   - [ ] Make (my/calc-sel-negate) contextual.
   - [ ] Should have a form to collect the numerator.
     3:2 sqrt(2) -> 3 sqrt(2) / 2
@@ -63,7 +64,11 @@
   - [ ] (my/calc-collect-fractions) -> 16:3 x / 1
   - [ ] Line option (calc-option &optional N) should be bound to single key without modifiers.
   - [ ] (my/calc-log-exp-rules) on line should transform entire line.
-  - [ ] Binary arity functions should noop on targeting subformula at stack=1. They have nowhere to take args from.
+  - [ ] Binary arity functions should noop on targeting sub-formula at stack=1.
+    They have nowhere to take args from.
+  - [ ] If command is line-target, then m=2 is the subject and m=1 is the arg,
+    same as if point were at home.
+
 
 * Bugs
   - (my/calc-factor-by-gcd) not working
@@ -151,13 +156,16 @@
   - in selection mode, highlight the selection
   - highlight both sides of equation separately with different colors
 
-* Package
+* Major features
   Vim bindings (noun, verb, char)
-  Highlight subformula
+  Persistent sub-formula highlighting
+  Debug modes
+
+* Package
   Binding for "home"
   Args buffer
   Config file with all config settings and default values
-  calx: calc with alternative ux
+   calx: calc with alternative ux
   How to use macro with def math
   Alternative graphing
   Alternative trail. Should support time travel and finding old single entries.
@@ -165,14 +173,45 @@
   Swap _ and -
   Show all formulas buffer
 
+* Useful calc stuff
+** Math
+   - `(math-common-constant-factor EXPR)`
+     Returns the *constant* factor in `expr`
+** Selection, sub-formulas
+   - `(calc-find-selected-part)`
+     Find the smallest sub-formula of the current formula that contains the
+     cursor. This assumes `calc-prepare-selection` has been called already. If the
+     cursor is not actually on any part of the formula, this returns nil.
+   - `(calc-prepare-selection)`
+
+     Prepare a stack entry for selection operations. If num is omitted, the
+     stack entry containing the cursor is used; otherwise, it is the number of
+     the stack entry to use. This function stores useful information about the
+     current stack entry into a set of variables. calc-selection-cache-num
+     contains the number of the stack entry involved (equal to num if you
+     specified it); calc-selection-cache-entry contains the stack entry as a
+     list (such as calc-top-list would return with entry as the selection mode);
+     and calc-selection-cache-comp contains a special “tagged” composition (see
+     I/O and Formatting Functions) which allows Calc to relate cursor positions
+     in the buffer with their corresponding sub-formulas.
+
+     A slight complication arises in the selection mechanism because formulas may
+     contain small integers. For example, in the vector ‘[1, 2, 1]’ the first and
+     last elements are eq to each other; selections are recorded as the actual Lisp
+     object that appears somewhere in the tree of the whole formula, but storing 1
+     would falsely select both 1’s in the vector. So calc-prepare-selection also
+     checks the stack entry and replaces any plain integers with “complex number”
+     lists of the form ‘(cplx n 0)’. This list will be displayed the same as a plain
+     n and the change will be completely invisible to the user, but it will guarantee
+     that no two sub-formulas of the stack entry will be eq to each other. Next time
+     the stack entry is involved in a computation, calc-normalize will replace these
+     lists with plain numbers again, again invisibly to the user.
+   - `(calc-encase-atoms)`
+     This modifies the formula x to ensure that each part of the formula is a
+     unique atom, using the ‘(cplx n 0)’ trick described above. This function
+     may use setcar to modify the formula in-place.
+
 * Buffer
-  Always show calc-stack (in better format).
-  If line level operation, then stack-2 is the subject and stack=1 is the arg, same as in home target operation.
-  Search cplx in emacs manual and see if that's why some operations don't work like
-  17.5.7.7 Symbolic Functions
-  common-constant-factor
-  Rewrite as a package from the beginning. Better interactive tests.
-  Calc prepare selection to calc find selected part
   Stack should be normal numbers? Only encased when necessary?
   Are new entries plain or cplx numbers?
   What about cplx numbers?
