@@ -173,37 +173,6 @@
   Swap _ and -
   Show all formulas buffer
 
-* Useful calc stuff
-** Math
-   - `(math-common-constant-factor EXPR)`
-     Returns the *constant* factor in `expr`
-** Selection, sub-formulas
-   - `(calc-find-selected-part)`
-     Find the smallest sub-formula containing the cursor. Assumes
-     `calc-prepare-selection` has been called first. Returns nil if the cursor
-     is not on any part of the formula.
-   - `(calc-prepare-selection)`
-
-     Prepare a stack entry for selection operations. `num` specifies which
-     entry to use; if omitted, the entry containing the cursor is used.
-
-     Stores results in: `calc-selection-cache-num` (the entry number used),
-     `calc-selection-cache-entry` (the entry as a list, as `calc-top-list`
-     would return with entry as the selection mode), and
-     `calc-selection-cache-comp` (a “tagged” composition mapping cursor
-     positions to sub-formulas; see I/O and Formatting Functions).
-
-     A complication: formulas can contain duplicate small integers. In
-     `[1, 2, 1]`, both `1`s are `eq` in Lisp, so storing `1` as a selection
-     would falsely match both. To prevent this, `calc-prepare-selection`
-     replaces plain integers with `(cplx n 0)` lists — displayed identically
-     but distinct objects, so no two sub-formulas are `eq`. The next time the
-     entry is used in a computation, `calc-normalize` restores them to plain
-     numbers.
-   - `(calc-encase-atoms)`
-     Modifies `x` in-place (via `setcar`) so every sub-formula is a unique
-     atom, using the `(cplx n 0)` trick from `calc-prepare-selection`.
-
 * Buffer
   Stack should be normal numbers? Only encased when necessary?
   Are new entries plain or cplx numbers?
