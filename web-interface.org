@@ -5,7 +5,7 @@ terminal: it captures raw key input, sends it to Emacs over WebSocket,
 and renders the calc stack as MathJax expressions. Emacs-Calc is the
 sole computation engine.
 
-** Architecture
+* Architecture
 
 #+begin_example
 Browser (HTML/CSS/JS)
@@ -26,9 +26,9 @@ Browser
 The Emacs calc buffer remains functional in parallel. All state lives
 in Emacs; the browser has none.
 
-** Components
+* Components
 
-*** 1. Emacs WebSocket Server (~calc-web.el~)
+** 1. Emacs WebSocket Server (~calc-web.el~)
 
 - Minor mode ~calc-web-mode~ starts/stops the server cleanly
 - ~websocket-server~ on a configurable port (default 7070)
@@ -46,7 +46,7 @@ in Emacs; the browser has none.
     (calc-web--stop-server)))
 #+end_src
 
-*** 2. Key Router
+** 2. Key Router
 
 Receives ~{key: "Q"}~ or ~{key: "f l"}~ from browser.
 
@@ -57,7 +57,7 @@ Receives ~{key: "Q"}~ or ~{key: "f l"}~ from browser.
   before dispatching, clear after
 - Unknown key: send ~{error: "unbound: KEY"}~ back to browser
 
-*** 3. Stack Serializer
+** 3. Stack Serializer
 
 #+begin_src elisp
 (defun calc-web--serialize-stack ()
@@ -76,15 +76,15 @@ Also serialize:
 - Trail entry for the last operation
 - Error message if last command signaled
 
-*** 4. Browser Client (~calc-web.html~ / ~calc-web.js~)
+** 4. Browser Client (~calc-web.html~ / ~calc-web.js~)
 
-**** Connection
+*** Connection
 #+begin_src js
 const ws = new WebSocket("ws://localhost:7070");
 ws.onmessage = ({data}) => render(JSON.parse(data));
 #+end_src
 
-**** Key capture
+*** Key capture
 Intercept ~keydown~ on ~document~. Map browser key names to calc key
 strings (~"Enter"~ → ~"RET"~, ~"Backspace"~ → ~"DEL"~, etc.). Send:
 #+begin_src js
@@ -93,7 +93,7 @@ ws.send(JSON.stringify({key: calcKey}));
 
 Suppress default browser behavior for keys calc uses (~"/"~, ~"*"~, etc.).
 
-**** Rendering
+*** Rendering
 Stack entries arrive as LaTeX strings. Render with MathJax:
 #+begin_src js
 function render({stack, flags, error}) {
@@ -109,35 +109,35 @@ function render({stack, flags, error}) {
 }
 #+end_src
 
-**** UI elements
+*** UI elements
 - Stack display (main area)
 - Modifier indicator bar (~HYP~, ~INV~, ~OPT~ active states)
 - Error/message line
 - Optional: trail panel
 
-** Phases
+* Phases
 
-*** Phase 1 — Core (working prototype)
+** Phase 1 — Core (working prototype)
 - [ ] ~calc-web.el~: server, key router (single keys only), stack serializer
 - [ ] ~calc-web.html~: connect, keydown capture, MathJax stack render
 - [ ] ~post-command-hook~ push
 - [ ] Basic CSS layout
 
-*** Phase 2 — Polish
+** Phase 2 — Polish
 - [ ] Chord support (~f l~, ~a f~, etc.)
 - [ ] Modifier flag display and routing (~H~, ~I~, ~J~)
 - [ ] Error forwarding and display
 - [ ] Trail display
 - [ ] Smooth MathJax re-render (diff and retypeset only changed entries)
 
-*** Phase 3 — Release prep
+** Phase 3 — Release prep
 - [ ] Configurable port
 - [ ] ~calc-web-mode~ start/stop cleanly
 - [ ] README and install instructions
 - [ ] ~package.el~-compatible structure
 - [ ] Consider: algebraic entry (minibuffer mirroring — complex, optional)
 
-** Files
+* Files
 
 | File              | Purpose                          |
 |-------------------+----------------------------------|
@@ -146,12 +146,12 @@ function render({stack, flags, error}) {
 | ~calc-web.js~       | WebSocket client + render logic  |
 | ~calc-web.css~      | Stack layout and styling         |
 
-** Dependencies
+* Dependencies
 
 - Emacs: ~websocket.el~, ~json.el~ (built-in since 27)
 - Browser: MathJax 3 (CDN or local)
 
-** Open Questions
+* Open Questions
 
 1. Algebraic entry — mirror calc's minibuffer in the browser? Deferred
    to Phase 3; adds significant complexity.
