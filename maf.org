@@ -77,6 +77,9 @@
   - [ ] Saved formulas should support "notes" that display in full formula buffer.
   - [ ] TAB command to swap lines should be contextual
 
+* Main features
+  - Make edit-mode obsolete. Implement free-edit-mode, like editing a dired buffer.
+
 * Bugs
   - (my/calc-factor-by-gcd) not working
   - Some commands like * and / don't work in "prefix" area on home line.
