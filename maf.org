@@ -149,7 +149,7 @@
   - Debug to print. Show display representation and debug representation.
 
 * Questions
-  - Stack should be normal numbers? Only encased when necessary?
+  - Should stack should be normal numbers? Only encased when necessary?
   - Are new entries plain or cplx numbers?
   - How does restore-calc-stack work? Does it store as atoms or cplx?
   - When restored, are the cplx numbers still unique?
