@@ -1,5 +1,5 @@
 #!/bin/bash
 
-# Run Emacs in debugging context.
+# Run emacs in debugging context.
 
 emacs --debug-init --eval '(switch-to-buffer "*Messages*")'
