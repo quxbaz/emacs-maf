@@ -36,8 +36,9 @@
 
 * Steps
   1) Organize .org file
-  2) Develop maf-test
-  3) Rewrite main macro
+  2) Write macro first then develop maf-test based on the various option
+     combinations and input types (expression, line, equation, etc)
+  3) Develop maf-test
   4) Read calc manual
 
 * Todo [0/31]
