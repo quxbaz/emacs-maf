@@ -1,5 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Run emacs in a debugging context.
 
-emacs --debug-init --eval '(switch-to-buffer "*Messages*")'
+emacs --debug-init \
+      --eval '(setq debug-on-error t)' \
+      --eval '(switch-to-buffer "*Messages*")' \
+      --eval '(when (get-buffer "*Warnings*") (display-buffer "*Warnings*"))' \
+      "$@"
