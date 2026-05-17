@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+# Run the maf ERT test suite in batch mode.
+#
+# Usage: ./run-tests                  # run all tests
+#        ./run-tests SELECTOR         # ERT selector, e.g. '"calc-times"' or t
+
+# -e: exit on first failing command.  -u: error on unset variable references.
+set -eu
+
+# Run from the repo root so the -L paths resolve regardless of CWD.
+cd "$(dirname "$0")"
+
+# --batch                          : no UI, exit when done
+# -L . / -L test                   : add repo root and test/ to load-path
+# -l ert                           : built-in test runner
+# -l test/test-init.el             : registers every test/cases/*.el
+# -f ert-run-tests-batch-and-exit  : run, print results, exit non-zero on failure
+# "$@"                             : forward extra args (e.g. an ERT selector)
+emacs --batch \
+      -L . \
+      -L test \
+      -l ert \
+      -l test/test-init.el \
+      -f ert-run-tests-batch-and-exit \
+      "$@"
