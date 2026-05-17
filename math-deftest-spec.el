@@ -3,10 +3,8 @@
 
 (maf-deftest factor
 
-  ;; `times` should expand to `maf-test-case-times`
-  ;;
   ;; Auto-generated test case names: factor/home, factor/sub-formula,
-  ;; factor/line-end, factor/line-start, factor/option-flag
+  ;; factor/line-end, factor/line-start, factor/equation, factor/option-flag
   ;;
   ;; The macro should expand into multiple tests for different contexts.
   ;; `maf-test-x`, `math-test-y`, and `maf-test-out` don't refer to stack
@@ -19,9 +17,10 @@
   ;;
   ;; 1. Point is at home: x=stack-1 (the subject), y=stack (the argument)
   ;; 2. Point is on a sub-formula: x=sub-formula (the subject, y=stack (the argument)
-  ;;    Example (point is on the `+`, so the sub-formula is 16 + 4):
   ;;
-  ;;      2: y = 16 x + 4 * q
+  ;;    EXAMPLE - point is on the `+`, so the sub-formula is 16 + 4:
+  ;;
+  ;;      2: y = 16 x + 4
   ;;      1: 4
   ;;
   ;;    Auto-generated test case expects output to be:
@@ -33,6 +32,12 @@
   ;; 3b. Line IS an equation of inequality: x=LHS and RHS, y=stack.
   ;;     The command is executed on both sides using y as the argument.
   ;;     Some commands NEVER operate on equations and default to line context.
+  ;;
+  ;;     The primary mechanism for creating custom commands is the macro
+  ;;     (maf-defcmd). It declares a list of options including if equation
+  ;;     mapping is disabled for the command. Through this, the test should
+  ;;     understand if a test should not be generated.
+  ;;
   ;; 4. Point is at the start of the line: same as (3)
   ;; 5. Point is on an entry and Option flag is one: x=the entry, y=stack
 
