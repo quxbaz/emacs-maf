@@ -1,4 +1,4 @@
-(defmacro maf-deftest (name doc body)
+(defmacro maf-deftest (name doc &rest body)
   (declare (indent 1)))
 
 (maf-deftest factor
