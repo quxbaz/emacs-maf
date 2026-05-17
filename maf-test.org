@@ -4,6 +4,11 @@
   Plain `.el` files, loaded with `load-file`.
   One file = one ERT test.
 
+* Notes
+  - You need to define separate tests for equation and line contexts. For
+    example, if you're testing mult and x=3 and y=2, and output should be 6 -
+    how do you generate an equation map test?
+
 * Parser
   Uses `read` for all forms — no custom state machine.
   `maf-test-declare-stack` and `maf-test-declare-output` take `&rest` string
