@@ -32,7 +32,7 @@
   "Toggle MAF mode.
 When enabled, provides contextual commands for manipulating Calc
 expressions on the stack and home line."
-  :lighter " MAF"
+  :lighter " maf"
   :keymap maf-mode-map
   :group 'maf)
 
