@@ -8,6 +8,9 @@
   - You need to define separate tests for equation and line contexts. For
     example, if you're testing mult and x=3 and y=2, and output should be 6 -
     how do you generate an equation map test?
+  - Actually you *can* auto-generate equation form from expression. Both sides
+    of equation will be the same. Does this work?
+  - Implicit form should expand to explicit stack form.
 
 * Parser
   Uses `read` for all forms — no custom state machine.
