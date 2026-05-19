@@ -167,4 +167,4 @@
   - Apply effects function
   - Data based, refactor as much into pure functions as possible, the replace
     function, point restoration. Only apply effects at the end.
-  - What would a functional programming approach look like
+  - What would a functional programming approach look like?
