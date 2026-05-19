@@ -163,8 +163,7 @@
 
 * Refactor
   - Plain object instead of struct [?]
-  - In push, use return value instead of replace function
-  - Apply effects function
+  - In push, use return value instead of replace function?
   - Data based, refactor as much into pure functions as possible, the replace
     function, point restoration. Only apply effects at the end.
   - What would a functional programming approach look like?
