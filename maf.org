@@ -46,7 +46,7 @@
   - [ ] If on home line, stick point to the "."
   - [ ] Replace noun with digit entry if point is on sub-formula
   - [ ] Remove keep-point flag in macro
-  - [ ] Add plus and minus clac functions
+  - [ ] Add plus and minus calc functions
   - [ ] Add sin/cos/tan and inverse functions.
   - [ ] Also "stick" point to beginning or end of entry's expression. and also over =, !=, <=/=>
   - [ ] When point is over equation symbol, operate on both sides (unless map is -1).
@@ -106,7 +106,7 @@
     x > 1
     (my/calc-commute)
     1 > x
-  - (my/calc-commute) doensn't work properly. It doesn't keep the equation
+  - (my/calc-commute) doesn't work properly. It doesn't keep the equation
     balanced.
   - Equal command doesn't work with point on line 1, but works on home.
 ** BUG: (my/calc-factor-by-gcd) on `x y - 2 x` isn't working.
@@ -157,3 +157,14 @@
   - Are new entries plain or cplx numbers?
   - How does restore-calc-stack work? Does it store as atoms or cplx?
   - When restored, are the cplx numbers still unique?
+
+* Musings
+  - Do we need a difference / conciliation engine?
+
+* Refactor
+  - Plain object instead of struct [?]
+  - In push, use return value instead of replace function
+  - Apply effects function
+  - Data based, refactor as much into pure functions as possible, the replace
+    function, point restoration. Only apply effects at the end.
+  - What would a functional programming approach look like
