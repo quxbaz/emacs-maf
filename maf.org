@@ -41,7 +41,7 @@
   3) Develop maf-test
   4) Read calc manual
 
-* Todo [0/31]
+* Todo [0/32]
   - [ ] Add function to get calc buffer
   - [ ] If on home line, stick point to the "."
   - [ ] Replace noun with digit entry if point is on sub-formula
@@ -78,6 +78,9 @@
   - [ ] Saved formulas should support "notes" that display in full formula buffer.
   - [ ] TAB command to swap lines should work contextually.
   - [ ] a a (calc-apart) should work contextually.
+  - [ ] Add command to move to parent expression.
+    1:  y = 2 (x| + 3)^2 - 12
+    ->  y = 2 (x + 3)|^2 - 12
 
 * Notes
   - Try to use (defmath) macro if possible.
