@@ -492,11 +492,6 @@ BODY (as a lexical variable, or as a `cl-flet'-bound function in the
 case of `commit'). Presence of `arg' promotes the command to BINARY
 arity (see the section comment above).")
 
-(defconst my/defcmd--known-options
-  '(:prefix :wrap :simp :map? :line?)
-  "Option keywords accepted by `my/defcmd'.
-See the section comment above for what each keyword controls.")
-
 (defun my/defcmd--validate-bindings (bindings name)
   "Signal an error if BINDINGS contains any name not allowed.
 The allowed set is `my/defcmd--known-bindings'. NAME is the function
@@ -505,38 +500,35 @@ being defined; used in the error message."
     (when unknown
       (error "Unknown binding(s) in my/defcmd %s: %s" name unknown))))
 
-(defun my/defcmd--parse-rest (rest name)
-  "Parse the after-BINDINGS tail of a `my/defcmd' source form.
+(cl-defstruct my/defcmd--opts
+  (prefix "")
+  (wrap   t)
+  (simp   nil)
+  (map?   t)
+  (line?  nil))
 
-REST is everything after NAME and BINDINGS. Returns the list
-\(DOCSTRING OPTS BODY) where:
-
-  - DOCSTRING is the first form if it is a string AND there is more
-    content after it; nil otherwise. (The trailing-content guard
-    prevents stealing a lone string body, since the macro must always
-    emit at least one body form.)
-
-  - OPTS is an alist of (:keyword . value) pairs collected while the
-    next form is a keyword. Body forms never begin with a keyword in
-    practice, so this heuristic is unambiguous.
-
-  - BODY is everything that remains after the docstring and keyword
-    pairs have been peeled off.
-
-Signals an error if any keyword in OPTS is not in
-`my/defcmd--known-options'. NAME is the function being defined; used
-in the error message."
-  (let ((docstring (and (stringp (car rest)) (cdr rest) (pop rest)))
-        (opts nil))
+(defun my/defcmd--collect-opts (rest name)
+  "Consume leading :key val pairs from REST; return (opts . body).
+Signals an error immediately on an unrecognized keyword."
+  (let ((opts (make-my/defcmd--opts)))
     (while (keywordp (car rest))
       (let ((k (pop rest))
             (v (pop rest)))
-        (push (cons k v) opts)))
-    (let ((unknown (cl-set-difference (mapcar #'car opts)
-                                      my/defcmd--known-options)))
-      (when unknown
-        (error "Unknown option(s) in my/defcmd %s: %s" name unknown)))
-    (list docstring opts rest)))
+        (pcase k
+          (:prefix (setf (my/defcmd--opts-prefix opts) v))
+          (:wrap   (setf (my/defcmd--opts-wrap   opts) v))
+          (:simp   (setf (my/defcmd--opts-simp   opts) v))
+          (:map?   (setf (my/defcmd--opts-map?   opts) v))
+          (:line?  (setf (my/defcmd--opts-line?  opts) v))
+          (_       (error "Unknown option in my/defcmd %s: %s" name k)))))
+    (cons opts rest)))
+
+(defun my/defcmd--parse-rest (rest name)
+  "Parse the after-BINDINGS tail of a `my/defcmd' source form.
+Returns (DOCSTRING OPTS BODY) where OPTS is a `my/defcmd--opts' struct."
+  (let ((docstring (and (stringp (car rest)) (cdr rest) (pop rest))))
+    (pcase-let ((`(,opts . ,body) (my/defcmd--collect-opts rest name)))
+      (list docstring opts body))))
 
 (defmacro my/defcmd (name bindings &rest rest)
   "Define a no-arg interactive calc command NAME wrapping `my/calc-push'.
@@ -568,8 +560,8 @@ See the section comment above this defmacro for syntax and keywords."
                 ;; depends on the others' values (only on pre-body state).
                 (tgt (my/calc--resolve-target
                       ,(if binary? 2 1)
-                      ,(alist-get :line? opts nil)
-                      ,(not (eq (alist-get :map? opts t) -1))))
+                      ,(my/defcmd--opts-line? opts)
+                      ,(not (eq (my/defcmd--opts-map? opts) -1))))
                 (cs (my/calc--capture-cursor-state))
                 ;; Binary-only fetch -- guarded so unary doesn't error
                 ;; on an empty stack.
@@ -579,9 +571,9 @@ See the section comment above this defmacro for syntax and keywords."
             tgt arg-val
             (lambda (,sym-expr ,raw-commit-fn ,sym-arg)
               ,@lambda-body)
-            :prefix ,(alist-get :prefix opts "")
-            :wrap   ,(alist-get :wrap   opts t)
-            :simp   ,(alist-get :simp   opts nil))
+            :prefix ,(my/defcmd--opts-prefix opts)
+            :wrap   ,(my/defcmd--opts-wrap   opts)
+            :simp   ,(my/defcmd--opts-simp   opts))
            (my/calc--restore-cursor cs (my/calc--target-kind tgt)))))))
 
 
