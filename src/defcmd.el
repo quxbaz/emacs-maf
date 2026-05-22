@@ -8,12 +8,16 @@
 
 (defun maf-defcmd--parse-opts (forms)
   "TODO: Add docstring"
-  "opts")
+  "OPTS")
+
+(defun maf-defcmd--parse-body (forms)
+  "TODO: Add docstring"
+  "BODY")
 
 (defun maf-defcmd--parse-rest (forms)
   (let ((docstring (maf-defcmd--parse-docstring forms))
         (opts (maf-defcmd--parse-opts forms))
-        (body 3))
+        (body (maf-defcmd--parse-body forms)))
     `(,docstring ,opts ,body)))
 
 (defmacro maf-defcmd (name bindings &rest rest)
