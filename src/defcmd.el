@@ -1,9 +1,35 @@
-(defmacro maf-cmd (bindings &rest body)
-  (declare (indent 2)))
+;; -*- lexical-binding: t; -*-
+
+(defun maf--get-options (body)
+  "Takes options returns in a structured format."
+  nil)
+
+(defmacro maf-defcmd (name bindings &rest body)
+  (declare (indent 2))
+  `(defmath ,name (a b)
+     (interactive "p")
+     ,@body))
 
 
 ;; Example
-(maf-cmd mult (expr arg commit)
-  :prefix "*"
-  (let ((product (calcFunc-mul expr arg)))
-    (commit product)))
+(maf-defcmd maf/mult ()
+
+  ;; :prefix "*"
+  ;; :simp t
+  ;; :map t
+
+  (let ((product (* expr arg)))
+    ;; (commit product)
+    product
+    )
+
+  )
+
+(with-current-buffer (calc-select-buffer)
+  (calc-reset 0)
+  (calc-push '(var x var-x))
+  (calc-push 1)
+  (call-interactively 'calc-maf/mult))
+
+
+;; Testing
