@@ -1,12 +1,18 @@
 ;; -*- lexical-binding: t; -*-
 
-(defun maf-defcmd--collect-opts (forms)
+
+(defun maf-defcmd--parse-docstring (forms)
+  "TODO: Add docstring"
+  (if (stringp (car forms))
+      (car forms)))
+
+(defun maf-defcmd--parse-opts (forms)
   "TODO: Add docstring"
   "opts")
 
 (defun maf-defcmd--parse-rest (forms)
-  (let ((docstring (if (stringp (car forms)) (pop forms)))
-        (opts (maf-defcmd--collect-opts forms))
+  (let ((docstring (maf-defcmd--parse-docstring forms))
+        (opts (maf-defcmd--parse-opts forms))
         (body 3))
     `(,docstring ,opts ,body)))
 
