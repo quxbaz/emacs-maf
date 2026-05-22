@@ -3,11 +3,13 @@
 
 (defun maf-defcmd--parse-docstring (forms)
   "TODO: Add docstring"
-  (if (stringp (car forms))
-      (car forms)))
+  (when (stringp (car forms))
+    (car forms)))
 
 (defun maf-defcmd--parse-opts (forms)
   "TODO: Add docstring"
+  (when (stringp (car forms))
+    (setq forms (cdr forms)))
   "OPTS")
 
 (defun maf-defcmd--parse-body (forms)
