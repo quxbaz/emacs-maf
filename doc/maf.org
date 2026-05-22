@@ -87,6 +87,8 @@
 
 * Main features
   - Make edit-mode obsolete. Implement free-edit-mode, like editing a dired buffer.
+  - Submodules: graphing submodule, vim bindings submodule, etc. Toggle on to
+    enable a section of features.
 
 * Bugs
   - (my/calc-factor-by-gcd) not working
