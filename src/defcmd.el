@@ -1,6 +1,6 @@
 ;; -*- lexical-binding: t; -*-
 
-(defun maf--get-options (body)
+(defun maf--collect-options (body)
   "Takes options returns in a structured format."
   nil)
 
