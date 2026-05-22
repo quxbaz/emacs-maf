@@ -10,7 +10,11 @@
   "TODO: Add docstring"
   (when (stringp (car forms))
     (setq forms (cdr forms)))
-  "OPTS")
+  (let (final-opts)
+    (while (keywordp (car forms))
+      (seq-let (k v) (list (pop forms) (pop forms))
+        (push (cons k v) final-opts)))
+    final-opts))
 
 (defun maf-defcmd--parse-body (forms)
   "TODO: Add docstring"
