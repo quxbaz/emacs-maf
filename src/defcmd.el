@@ -1,7 +1,7 @@
 ;; -*- lexical-binding: t; -*-
 
 (defun maf--collect-options (body)
-  "Takes options returns in a structured format."
+  "Returns options in a structured format."
   nil)
 
 (defmacro maf-defcmd (name bindings &rest body)
