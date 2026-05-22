@@ -5,7 +5,7 @@
   nil)
 
 (defmacro maf-defcmd (name bindings &rest body)
-  (declare (indent 2))
+  (declare (indent 2) (doc-string 3))
   `(defmath ,name (a b)
      (interactive "p")
      ,@body))
@@ -14,14 +14,14 @@
 ;; Example
 (maf-defcmd maf/mult ()
 
-  ;; :prefix "*"
-  ;; :simp t
-  ;; :map t
+  :prefix "*"
+  :simp t
+  :map t
 
-  (let ((product (* expr arg)))
-    ;; (commit product)
-    product
-    )
+  ;; (let ((product (* expr arg)))
+  ;;   ;; (commit product)
+  ;;   product
+  ;;   )
 
   )
 
