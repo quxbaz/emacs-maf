@@ -1,12 +1,12 @@
 ;; -*- lexical-binding: t; -*-
 
-;; (defun maf--collect-opts (body)
-;;   "TODO"
-;;   nil)
+(defun maf-defcmd--collect-opts (forms)
+  "TODO: Add docstring"
+  "opts")
 
 (defun maf-defcmd--parse-rest (forms)
-  (let ((docstring 1)
-        (opts 2)
+  (let ((docstring (if (stringp (car forms)) (pop forms)))
+        (opts (maf-defcmd--collect-opts forms))
         (body 3))
     `(,docstring ,opts ,body)))
 
