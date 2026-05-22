@@ -1,22 +1,37 @@
 ;; -*- lexical-binding: t; -*-
 
-(defun maf--collect-options (body)
-  "Returns options in a structured format."
-  nil)
+;; (defun maf--collect-opts (body)
+;;   "TODO"
+;;   nil)
 
-(defmacro maf-defcmd (name bindings &rest body)
+(defun maf-defcmd--parse-rest (forms)
+  (let ((docstring 1)
+        (opts 2)
+        (body 3))
+    `(,docstring ,opts ,body)))
+
+(defmacro maf-defcmd (name bindings &rest rest)
   (declare (indent 2) (doc-string 3))
-  `(defmath ,name (a b)
-     (interactive "p")
-     ,@body))
+  (seq-let (docstring opts body) (maf-defcmd--parse-rest rest)
+    (message "docstring = %s" docstring)
+    (message "opts = %s" opts)
+    (message "body = %s" body))
+  ;; `(defmath ,name (a b)
+  ;;    (interactive "p")
+  ;;    ,@body)
+  )
 
 
 ;; Example
 (maf-defcmd maf/mult ()
 
+  "This is an example docstring."
+
   :prefix "*"
   :simp t
   :map t
+
+  (+ 1 2)
 
   ;; (let ((product (* expr arg)))
   ;;   ;; (commit product)
@@ -25,11 +40,11 @@
 
   )
 
-(with-current-buffer (calc-select-buffer)
-  (calc-reset 0)
-  (calc-push '(var x var-x))
-  (calc-push 1)
-  (call-interactively 'calc-maf/mult))
+;; (with-current-buffer (calc-select-buffer)
+;;   (calc-reset 0)
+;;   (calc-push '(var x var-x))
+;;   (calc-push 1)
+;;   (call-interactively 'calc-maf/mult))
 
 
 ;; Testing
