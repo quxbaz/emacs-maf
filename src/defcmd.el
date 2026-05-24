@@ -62,6 +62,8 @@ Possible contexts, in order of priority:
 ;;
 ;; For example, if point is at home, and the command is 'binary, this function
 ;; should pop the top stack value and push `val` onto the stack.
+;;
+;; It should handle the rest of the possible contexts appropriately.
 (defun maf--defcmd-commit (val context)
   ;; do stuff here
   (message "val = %s" val)
