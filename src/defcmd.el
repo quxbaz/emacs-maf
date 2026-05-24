@@ -62,20 +62,24 @@ Possible contexts, in order of priority:
 
     ;; (setcar bindings 42)
 
-    `(defun ,name ()
+    ;; (setcar bindings 33)
+
+    `(defun ,name (,(car bindings) ,(nth 1 bindings) ,(nth 2 bindings))
        ,docstring
        (interactive)
        ;; @NOW
        ;; Bind bindings in let form here.
        ;;
-       ;;
-       ;;
+       ;; TODO: Use positional bindings instead of named bindings.
        ;;
        ;; TODO: Make bindings hygienic
-       (let ((expr 42)
-             (arg nil))
-         (cl-flet ((commit (x) (message "%s" x)))
-           ,@body)))
+       (cl-flet ((commit (x) (message "%s" x)))
+         ,@body)
+       ;; (let ((expr 42)
+       ;;       (arg nil))
+       ;;   (cl-flet ((commit (x) (message "%s" x)))
+       ;;     ,@body))
+       )
 
     ;; `(defmath ,name (a b)
     ;;    (interactive "p")
