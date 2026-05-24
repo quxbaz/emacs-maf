@@ -53,8 +53,10 @@ Possible contexts, in order of priority:
     `(defun ,name ()
        ,@(when docstring (list docstring))
        (interactive)
-       (funcall (lambda ,bindings ,@body)
-                42 1 (lambda (x) (message "commit: %s" x))))))
+       (let ((,(car bindings) 42)
+             (,(nth 1 bindings) 2))
+         (cl-flet ((commit (val) (message "commit = %s" val)))
+           ,@body)))))
 
 
 ;; ====================
@@ -87,4 +89,4 @@ Possible contexts, in order of priority:
     (calc-push 3)
     (call-interactively 'maf-double)))
 
-(test-double)
+(test-mult)
