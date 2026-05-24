@@ -53,15 +53,6 @@ Possible contexts, in order of priority:
                                           (calc-top 2 'full)))))
           (t nil))))
 
-;; (defun maf--defcmd-bind-values (expr arg commit context)
-;;   "Set EXPR, ARG, and COMMIT symbols from CONTEXT."
-;;   (set expr (alist-get :expr context))
-;;   (set arg (alist-get :arg context))
-;;   (set commit (lambda (val)
-;;                 (maf--with-calc-buffer
-;;                   (calc-pop 2)
-;;                   (calc-push val)))))
-
 (defmacro maf-defcmd (name bindings &rest rest)
   (declare (indent 2) (doc-string 3))
   (pcase-let* ((`(,docstring ,opts ,body) (maf--defcmd-parse-rest rest))
