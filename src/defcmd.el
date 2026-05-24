@@ -56,15 +56,18 @@ Possible contexts, in order of priority:
 
     ;; @NOW: Extract bindings into (expr arg commit)
 
-    ;; (let (((car bindings) (gensym "expr-")))
+    ;; (let (((car bindings) (gensym "expr-")))xpr
     ;;   (message "bindings = %s" (car bindings)))
+
+    ;; (setcar bindings 42)
 
     `(defun ,name ()
        ,docstring
        (interactive)
        ;; @NOW
+       ;; Bind bindings in let form here.
        (let ((expr 42))
-         (cl-flet ((commit (expr) (message "%s" expr)))
+         (cl-flet ((commit (x) (message "%s" x)))
            ,@body)))
 
     ;; `(defmath ,name (a b)
