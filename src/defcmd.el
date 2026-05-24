@@ -37,7 +37,7 @@
         (body (maf--defcmd-parse-body forms)))
     `(,docstring ,opts ,body)))
 
-(defun maf--resolve-context ()
+(defun maf--resolve-context (opts)
   "Inspect point and calc state; return a context descriptor.
 
 Possible contexts, in order of priority:
@@ -48,21 +48,36 @@ Possible contexts, in order of priority:
   entry      Whole stack entry; point is at EOL, line-prefix zone, or line mode is forced."
   (maf--with-calc-buffer
     (cond ((maf--at-home-p) `((:kind . home)
-                              (:expr . ,(calc-top 1 'full))))
+                              (:expr . ,(calc-top 1 'full))
+                              (:arg  . ,(when (eq (alist-get :arity opts) 'binary)
+                                          (calc-top 2 'full)))))
           (t nil))))
+
+(defun maf--defcmd-bind-values (expr arg commit context)
+  "Set EXPR, ARG, and COMMIT symbols from CONTEXT."
+  (set expr (alist-get :expr (alist-get :expr context)))
+  (set arg (alist-get :arg (alist-get :expr context)))
+  (set commit (lambda (val)
+                (maf--with-calc-buffer
+                  (calc-pop 2)
+                  (calc-push val)))))
 
 (defmacro maf-defcmd (name bindings &rest rest)
   (declare (indent 2) (doc-string 3))
-  (pcase-let ((`(,docstring ,opts ,body) (maf--defcmd-parse-rest rest))
-              (`(,expr ,arg ,commit) bindings))
+  (pcase-let* ((`(,docstring ,opts ,body) (maf--defcmd-parse-rest rest))
+               (`(,expr ,arg ,commit) bindings))
     (maf--defcmd-validate-opts opts)
     `(defun ,name ()
        ,@(when docstring (list docstring))
        (interactive)
-       (let ((,expr 42)
-             (,arg 2))
-         (cl-flet ((,commit (val) (message "commit = %s" val)))
-           ,@body)))))
+       (let ((context (maf--resolve-context ',opts)))
+         (maf--defcmd-bind-values ',expr ',arg ',commit context))
+       ;; (maf--defcmd-commit ,@bindings context)
+       ;; (let ((,expr 42)
+       ;;       (,arg 2))
+       ;;   (cl-flet ((,commit (val) (message "commit = %s" val)))
+       ;;     ,@body))
+       )))
 
 
 ;; ===================
