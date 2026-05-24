@@ -66,6 +66,8 @@ Possible contexts, in order of priority:
        (interactive)
        ;; @NOW
        ;; Bind bindings in let form here.
+       ;;
+       ;; TODO: Make hygienic
        (let ((expr 42))
          (cl-flet ((commit (x) (message "%s" x)))
            ,@body)))
