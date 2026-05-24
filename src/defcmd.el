@@ -54,14 +54,14 @@ Possible contexts, in order of priority:
 (defmacro maf-defcmd (name bindings &rest rest)
   (declare (indent 2) (doc-string 3))
   (pcase-let ((`(,docstring ,opts ,body) (maf--defcmd-parse-rest rest))
-              (`(,expr-binding ,arg-binding ,commit-binding) bindings))
+              (`(,expr ,arg ,commit) bindings))
     (maf--defcmd-validate-opts opts)
     `(defun ,name ()
        ,@(when docstring (list docstring))
        (interactive)
-       (let ((,expr-binding 42)
-             (,arg-binding 2))
-         (cl-flet ((,commit-binding (val) (message "commit = %s" val)))
+       (let ((,expr 42)
+             (,arg 2))
+         (cl-flet ((,commit (val) (message "commit = %s" val)))
            ,@body)))))
 
 
