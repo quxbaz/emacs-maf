@@ -28,6 +28,17 @@
         (body (maf-defcmd--parse-body forms)))
     `(,docstring ,opts ,body)))
 
+(defun maf--resolve-context ()
+  "Inspect point and calc state; return a context descriptor.
+
+Possible contexts:
+  selection  Active calc selection; expr is the selected sub-expression.
+  subexpr    Point is inside formula text and a sub-formula is detected.
+  entry      Whole stack entry; point is at EOL, line-prefix, or line mode is forced.
+  home       Point is at or below the . line; operates on stack level opt-m.
+  equation   Entry is a relation (=, !=, <, <=, >, >=); body runs once per side."
+  )
+
 (defmacro maf-defcmd (name bindings &rest rest)
   (declare (indent 2) (doc-string 3))
   (seq-let (docstring opts body) (maf-defcmd--parse-rest rest)
