@@ -53,14 +53,14 @@ Possible contexts, in order of priority:
                                           (calc-top 2 'full)))))
           (t nil))))
 
-(defun maf--defcmd-bind-values (expr arg commit context)
-  "Set EXPR, ARG, and COMMIT symbols from CONTEXT."
-  (set expr (alist-get :expr context))
-  (set arg (alist-get :arg context))
-  (set commit (lambda (val)
-                (maf--with-calc-buffer
-                  (calc-pop 2)
-                  (calc-push val)))))
+;; (defun maf--defcmd-bind-values (expr arg commit context)
+;;   "Set EXPR, ARG, and COMMIT symbols from CONTEXT."
+;;   (set expr (alist-get :expr context))
+;;   (set arg (alist-get :arg context))
+;;   (set commit (lambda (val)
+;;                 (maf--with-calc-buffer
+;;                   (calc-pop 2)
+;;                   (calc-push val)))))
 
 (defmacro maf-defcmd (name bindings &rest rest)
   (declare (indent 2) (doc-string 3))
@@ -71,13 +71,10 @@ Possible contexts, in order of priority:
        ,@(when docstring (list docstring))
        (interactive)
        (let ((context (maf--resolve-context ',opts)))
-         (maf--defcmd-bind-values ',expr ',arg ',commit context))
-       ;; (maf--defcmd-commit ,@bindings context)
-       ;; (let ((,expr 42)
-       ;;       (,arg 2))
-       ;;   (cl-flet ((,commit (val) (message "commit = %s" val)))
-       ;;     ,@body))
-       )))
+         (let ((,expr (alist-get :expr context))
+               (,arg (alist-get :arg context)))
+           (cl-flet ((commit (x) (message "x = %s" x)))
+             ,@body))))))
 
 
 ;; ===================
@@ -92,11 +89,13 @@ Possible contexts, in order of priority:
     ;; :simp t
     ;; :map t
     (commit (calcFunc-mul expr arg)))
+
   (maf--with-calc-buffer
     (calc-reset 0)
     ;; (calc-push '(var x var-x))
     (calc-push 2)
     (calc-push 3)
+    (calc-align-stack-window)
     (call-interactively 'maf-mult)))
 
 (defun test-double ()
@@ -105,6 +104,7 @@ Possible contexts, in order of priority:
     :arity 'unary
     :prefix "double"
     (commit (calcFunc-mul expr 2)))
+
   (maf--with-calc-buffer
     (calc-reset 0)
     ;; (calc-push '(var x var-x))
