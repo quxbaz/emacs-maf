@@ -23,7 +23,7 @@ Prefers the current buffer if it is in calc-mode, then looks for
 
 (defun maf--at-home-p ()
   "Return t if point is past the last stack entry (at the . line or below)."
-  (with-current-buffer (maf--find-calc-buffer)
-    (<= (calc-locate-cursor-element (point)) 0)))
+  (maf--with-calc-buffer
+   (<= (calc-locate-cursor-element (point)) 0)))
 
 (provide 'maf-lib)
