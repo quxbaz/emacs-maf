@@ -49,27 +49,35 @@ Possible contexts, in order of priority:
 (defmacro maf-defcmd (name bindings &rest rest)
   (declare (indent 2) (doc-string 3))
   (seq-let (docstring opts body) (maf-defcmd--parse-rest rest)
-    (message "docstring = %s" docstring)
-    (message "opts = %s" opts)
-    (message "body = %s" body))
-  ;; `(defmath ,name (a b)
-  ;;    (interactive "p")
-  ;;    ,@body)
-  )
+    ;; (message "docstring = %s" docstring)
+    ;; (message "opts = %s" opts)
+    ;; (message "body = %s" body)
+
+    `(defun ,name ()
+       ,docstring
+       (interactive)
+       )
+
+    ;; `(defmath ,name (a b)
+    ;;    (interactive "p")
+    ;;    ,@body)
+
+    ))
 
 
 ;; ====================
 ;; TESTING
 ;; ====================
-(maf-defcmd maf/mult (expr arg commit)
+(maf-defcmd maf-mult (expr arg commit)
   "Test multiplication function."
   :prefix "mult"
   ;; :simp t
   ;; :map t
-  (commit (calcFunc-mul 2 3)))
+  (commit (calcFunc-mul expr arg)))
 
-;; (with-current-buffer (calc-select-buffer)
-;;   (calc-reset 0)
-;;   (calc-push '(var x var-x))
-;;   (calc-push 1)
-;;   (call-interactively 'calc-maf/mult))
+(maf--with-calc-buffer
+  (calc-reset 0)
+  ;; (calc-push '(var x var-x))
+  (calc-push 2)
+  (calc-push 3)
+  (call-interactively 'maf-mult))
