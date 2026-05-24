@@ -11,9 +11,11 @@
 
 * Stack
 ** Stack entry format
-   Each element of ~calc-stack~ is a list ~(formula priority selection)~:
+   Each element of ~calc-stack~ is a list ~(formula lines selection)~:
    - ~car~ / index 0 — the full formula (a Lisp s-expression)
-   - ~nth 1~ — display priority (integer; normally ~1~)
+   - ~nth 1~ — display line count (integer); initialized to ~1~ on push, updated
+     to the actual rendered height by ~math-format-stack-value~ via ~calc-count-lines~.
+     Used by ~calc-substack-height~ for cursor positioning.
    - ~nth 2~ — active selection sub-formula, or ~nil~ if none
 
    Plain integers are replaced with ~(cplx n 0)~ by ~calc-prepare-selection~
