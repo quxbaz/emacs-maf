@@ -49,6 +49,7 @@ Possible contexts, in order of priority:
 (defmacro maf-defcmd (name bindings &rest rest)
   (declare (indent 2) (doc-string 3))
   (seq-let (docstring opts body) (maf-defcmd--parse-rest rest)
+
     ;; (message "docstring = %s" docstring)
     ;; (message "opts = %s" opts)
     ;; (message "body = %s" body)
@@ -56,7 +57,7 @@ Possible contexts, in order of priority:
     `(defun ,name ()
        ,docstring
        (interactive)
-       )
+       ,@body)
 
     ;; `(defmath ,name (a b)
     ;;    (interactive "p")
