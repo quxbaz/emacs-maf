@@ -50,15 +50,11 @@ Possible contexts, in order of priority:
 (defmacro maf-defcmd (name bindings &rest rest)
   (declare (indent 2) (doc-string 3))
   (seq-let (docstring opts body) (maf-defcmd--parse-rest rest)
-    (let* ((sym-expr   (if (memq 'expr   bindings) 'expr   (gensym)))
-           (sym-arg    (if (memq 'arg    bindings) 'arg    (gensym)))
-           (sym-commit (if (memq 'commit bindings) 'commit (gensym))))
-      `(defun ,name ()
-         ,@(when docstring (list docstring))
-         (interactive)
-         (funcall (lambda (,sym-expr ,sym-arg ,sym-commit)
-                    ,@body)
-                  42 1 (lambda (x) (message "commit: %s" x)))))))
+    `(defun ,name ()
+       ,@(when docstring (list docstring))
+       (interactive)
+       (funcall (lambda ,bindings ,@body)
+                42 1 (lambda (x) (message "commit: %s" x))))))
 
 
 ;; ====================
