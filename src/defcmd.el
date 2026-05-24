@@ -68,7 +68,8 @@ Possible contexts, in order of priority:
        ;; Bind bindings in let form here.
        ;;
        ;; TODO: Make hygienic
-       (let ((expr 42))
+       (let ((expr 42)
+             (arg nil))
          (cl-flet ((commit (x) (message "%s" x)))
            ,@body)))
 
@@ -98,8 +99,9 @@ Possible contexts, in order of priority:
     (call-interactively 'maf-mult)))
 
 (defun test-double ()
-  (maf-defcmd maf-double (expr commit)
+  (maf-defcmd maf-double (expr arg commit)
     "Test multiplication function."
+    :arity 'unary
     :prefix "double"
     (commit (calcFunc-mul expr 2)))
   (maf--with-calc-buffer
