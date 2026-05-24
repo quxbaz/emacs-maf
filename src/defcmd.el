@@ -8,8 +8,8 @@
 
 (defun maf-defcmd--parse-opts (forms)
   "TODO: Add docstring"
-  (when (stringp (car forms))
-    (setq forms (cdr forms)))
+  ;; Strip docstring
+  (when (stringp (car forms)) (pop forms))
   (let (final-opts)
     (while (keywordp (car forms))
       (seq-let (k v) (list (pop forms) (pop forms))
@@ -18,8 +18,10 @@
 
 (defun maf-defcmd--parse-body (forms)
   "TODO: Add docstring"
-  ;; @TODO
-  "BODY")
+  ;; Strip docstring and options
+  (when (stringp (car forms)) (pop forms))
+  (while (keywordp (car forms)) (pop forms) (pop forms))
+  forms)
 
 (defun maf-defcmd--parse-rest (forms)
   (let ((docstring (maf-defcmd--parse-docstring forms))
