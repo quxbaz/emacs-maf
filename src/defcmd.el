@@ -16,8 +16,7 @@
   (let (final-opts)
     (while (keywordp (car forms))
       (seq-let (k v) (list (pop forms) (pop forms))
-        ;; Unwrap quotes so values are assigned to symbols, not quoted symbols.
-        (push (cons k (if (eq (car-safe v) 'quote) (cadr v) v)) final-opts)))
+        (push (cons k v) final-opts)))
     final-opts))
 
 (defun maf--defcmd-validate-opts (opts)
@@ -94,7 +93,7 @@ Possible contexts, in order of priority:
 (defun test-mult ()
   (maf-defcmd maf-mult (expr arg commit)
     "Test multiplication function."
-    :arity 'binary
+    :arity binary
     :prefix "mult"
     ;; :simp t
     ;; :map t
@@ -111,7 +110,7 @@ Possible contexts, in order of priority:
 (defun test-double ()
   (maf-defcmd maf-double (expr arg commit)
     "Test multiplication function."
-    :arity 'unary
+    :arity unary
     :prefix "double"
     (commit (calcFunc-mul expr 2)))
 
