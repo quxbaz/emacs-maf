@@ -2,15 +2,10 @@
 
 (cl-defstruct sketch/calc--target
   kind
-
   m
-
   expr
-
   parent-formula
-
   rel-op
-
   lhs rhs)
 
 (defun sketch/calc--resolve-target (opt-m opt-line equation-map?)
