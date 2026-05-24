@@ -33,9 +33,9 @@
 
 Possible contexts:
   selection  Active calc selection; expr is the selected sub-expression.
-  subexpr    Point is inside formula text and a sub-formula is detected.
-  entry      Whole stack entry; point is at EOL, line-prefix, or line mode is forced.
-  home       Point is at or below the . line; operates on stack level opt-m.
+  subexpr    Implicit selection. Point is inside an entry.
+  entry      Whole stack entry; point is at EOL, line-prefix zone, or line mode is forced.
+  home       Point is at or below the . line.
   equation   Entry is a relation (=, !=, <, <=, >, >=); body runs once per side."
   )
 
