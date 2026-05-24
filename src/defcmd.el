@@ -79,11 +79,11 @@ Possible contexts, in order of priority:
     `(defun ,name ()
        ,@(when docstring (list docstring))
        (interactive)
-       (let ((,context (maf--resolve-context ',opts)))
-         (let ((,expr (alist-get :expr ,context))
-               (,arg (alist-get :arg ,context)))
-           (cl-flet ((,commit (val) (maf--defcmd-commit val ,context)))
-             ,@body))))))
+       (let* ((,context (maf--resolve-context ',opts))
+              (,expr (alist-get :expr ,context))
+              (,arg (alist-get :arg ,context)))
+         (cl-flet ((,commit (val) (maf--defcmd-commit val ,context)))
+           ,@body)))))
 
 
 ;; ===================
