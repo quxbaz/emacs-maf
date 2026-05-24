@@ -47,20 +47,21 @@ Possible contexts, in order of priority:
   equation   Entry is a relation (=, !=, <, <=, >, >=); body runs once per side.
   entry      Whole stack entry; point is at EOL, line-prefix zone, or line mode is forced."
   (maf--with-calc-buffer
-   (cond ((maf--at-home-p) `((:kind . home)
-                             (:expr . ,(calc-top 1 'full))))
-         (t nil))))
+    (cond ((maf--at-home-p) `((:kind . home)
+                              (:expr . ,(calc-top 1 'full))))
+          (t nil))))
 
 (defmacro maf-defcmd (name bindings &rest rest)
   (declare (indent 2) (doc-string 3))
-  (seq-let (docstring opts body) (maf--defcmd-parse-rest rest)
+  (pcase-let ((`(,docstring ,opts ,body) (maf--defcmd-parse-rest rest))
+              (`(,expr-sym ,arg-sym ,commit-sym) bindings))
     (maf--defcmd-validate-opts opts)
     `(defun ,name ()
        ,@(when docstring (list docstring))
        (interactive)
-       (let ((,(car bindings) 42)
-             (,(nth 1 bindings) 2))
-         (cl-flet ((,(nth 2 bindings) (val) (message "commit = %s" val)))
+       (let ((,expr-sym 42)
+             (,arg-sym 2))
+         (cl-flet ((,commit-sym (val) (message "commit = %s" val)))
            ,@body)))))
 
 
