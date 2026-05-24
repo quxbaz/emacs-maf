@@ -26,7 +26,6 @@ over both sides. When nil, equations are returned as plain entries."
        :kind 'selection
        :m m
        :expr (nth 2 entry)
-
        :parent-formula (car entry))))
 
    ((sketch/calc-point-is-at-home-p)
@@ -38,14 +37,11 @@ over both sides. When nil, equations are returned as plain entries."
    (t
     (let* ((m (calc-locate-cursor-element (point)))
            (full (car (nth m calc-stack)))
-
            (line? (or opt-line calc-option-flag))
-
            (sub (and (not line?)
                      (not (eolp))
                      (not (sketch/calc-point-is-in-line-prefix-p))
                      (sketch/calc-subformula-at-point)))
-
            (rel (and equation-map? (null sub) (sketch/calc-rel-op-p full))))
       (cond
        (sub (make-sketch/calc--target
@@ -55,7 +51,6 @@ over both sides. When nil, equations are returned as plain entries."
        (rel (make-sketch/calc--target
              :kind 'equation :m m
              :expr full
-
              :rel-op rel
              :lhs (nth 1 full)
              :rhs (nth 2 full)))
@@ -69,18 +64,14 @@ KIND, M, PARENT come from the resolver; KEEP-ARGS preserves the
 `calc-keep-args' behavior of the original macro (when set, pushes the
 new value on top instead of replacing in place)."
   (pcase kind
-
     ('selection
      (calc-pop-push-record-list
       1 prefix (calc-replace-sub-formula parent old new) m new))
-
     ('subexpr
      (calc-pop-push-record-list
       1 prefix (calc-replace-sub-formula parent old new) m))
-
     ('entry
      (calc-pop-push-record-list 1 prefix new m))
-
     ('home
      (calc-pop-push-record-list 1 prefix new (if keep-args 1 m)))))
 
@@ -125,16 +116,13 @@ caller is responsible for that (`sketch/defcmd' handles it automatically)."
   (let* ((keep-args calc-keep-args-flag)
          (kind (sketch/calc--target-kind tgt)))
     (cl-flet ((run-body (expr replacer)
-
                 (if (eq simp -1)
                     (sketch/calc-without-simplification
                      (funcall body-fn expr replacer arg-val))
                   (funcall body-fn expr replacer arg-val)))
               (binary-pop ()
-
                 (when arg-val (calc-pop-stack 1))))
       (pcase kind
-
         ('equation
          (let ((lhs (sketch/calc--target-lhs tgt))
                (rhs (sketch/calc--target-rhs tgt))
@@ -145,7 +133,6 @@ caller is responsible for that (`sketch/defcmd' handles it automatically)."
             (run-body rhs (lambda (e) (setq rhs e)))
             (calc-pop-push-record-list 1 prefix (list op lhs rhs) tm)
             (binary-pop))))
-
         (_
          (let* ((expr   (sketch/calc--target-expr tgt))
                 (tm     (sketch/calc--target-m tgt))
@@ -211,13 +198,9 @@ See the section comment above this defmacro for syntax and keywords."
   (declare (indent 2) (doc-string 3))
   (sketch/defcmd--validate-bindings bindings name)
   (seq-let (docstring opts body) (sketch/defcmd--parse-rest rest name)
-    (let* (
-
-           (binary? (memq 'arg bindings))
-
+    (let* ((binary? (memq 'arg bindings))
            (sym-expr (if (memq 'expr bindings) 'expr (gensym "_unused-expr-")))
            (sym-arg  (if (memq 'arg  bindings) 'arg  (gensym "_unused-arg-")))
-
            (raw-commit-fn (gensym "_commit-fn-"))
            (lambda-body
             (if (memq 'commit bindings)
@@ -227,14 +210,11 @@ See the section comment above this defmacro for syntax and keywords."
       `(defun ,name ()
          ,@(when docstring (list docstring))
          (interactive)
-         (let* (
-
-                (tgt (sketch/calc--resolve-target
+         (let* ((tgt (sketch/calc--resolve-target
                       ,(if binary? 2 1)
                       ,(sketch/defcmd--opts-line? opts)
                       ,(not (eq (sketch/defcmd--opts-map? opts) -1))))
                 (cs (sketch/calc--capture-cursor-state))
-
                 (arg-val ,(when binary?
                             '(sketch/calc-without-simplification (calc-top-n 1)))))
            (sketch/calc-push
