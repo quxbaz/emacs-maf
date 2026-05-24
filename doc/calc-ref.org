@@ -11,36 +11,36 @@
 
 * Stack
 ** Stack entry format
-   Each element of ~calc-stack~ is a list ~(formula lines selection)~:
-   - ~car~ / index 0 — the full formula (a Lisp s-expression)
-   - ~nth 1~ — display line count (integer); initialized to ~1~ on push, updated
-     to the actual rendered height by ~math-format-stack-value~ via ~calc-count-lines~.
-     Used by ~calc-substack-height~ for cursor positioning.
-   - ~nth 2~ — active selection sub-formula, or ~nil~ if none
+   Each element of `calc-stack` is a list `(formula lines selection)`:
+   - `car` / index 0 — the full formula (a Lisp s-expression)
+   - `nth 1` — display line count (integer); initialized to `1` on push, updated
+     to the actual rendered height by `math-format-stack-value` via `calc-count-lines`.
+     Used by `calc-substack-height` for cursor positioning.
+   - `nth 2` — active selection sub-formula, or `nil` if none
 
-   Plain integers are replaced with ~(cplx n 0)~ by ~calc-prepare-selection~
-   so that duplicate small integers are distinct objects (~eq~-wise). They are
-   restored to plain numbers by ~calc-normalize~ on next use.
+   Plain integers are replaced with `(cplx n 0)` by `calc-prepare-selection`
+   so that duplicate small integers are distinct objects (`eq`-wise). They are
+   restored to plain numbers by `calc-normalize` on next use.
 
    Stack level 1 is the top.
 
 ** (calc-get-stack-element X &optional SEL-MODE)
-   Low-level accessor. Given a raw stack entry ~X~, return a part of it
-   according to ~SEL-MODE~:
+   Low-level accessor. Given a raw stack entry `X`, return a part of it
+   according to `SEL-MODE`:
 
-   | ~SEL-MODE~ | returns                                            |
+   | `SEL-MODE` | returns                                            |
    |------------+----------------------------------------------------|
-   | ~nil~      | selection (~nth 2~) if active and ~calc-use-selections~; else formula (~car~) |
-   | ~'entry~   | ~X~ itself                                         |
-   | ~'sel~     | ~(nth 2 x)~ — the selection sub-expression         |
-   | ~'full~    | ~(car x)~ — full formula, ignoring selection       |
-   | other      | ~calc-sel-error~                                   |
+   | `nil`      | selection (`nth 2`) if active and `calc-use-selections`; else formula (`car`) |
+   | `'entry`   | `X` itself                                         |
+   | `'sel`     | `(nth 2 x)` — the selection sub-expression         |
+   | `'full`    | `(car x)` — full formula, ignoring selection       |
+   | other      | `calc-sel-error`                                   |
 
-   Called internally by ~calc-top~ and ~calc-top-list~; rarely needed directly.
+   Called internally by `calc-top` and `calc-top-list`; rarely needed directly.
 
 ** (calc-top &optional N SEL-MODE)
-   Return the Nth stack entry (default 1 = top) according to ~SEL-MODE~.
-   Does not normalize. Use ~calc-top-n~ if normalization is wanted.
+   Return the Nth stack entry (default 1 = top) according to `SEL-MODE`.
+   Does not normalize. Use `calc-top-n` if normalization is wanted.
 
    #+begin_src emacs-lisp :results silent
    (calc-top 1)          ;; formula at top (selection-aware)
@@ -50,25 +50,25 @@
    #+end_src
 
 ** (calc-top-n &optional N SEL-MODE)
-   Like ~calc-top~, but normalizes the result and checks it is complete.
+   Like `calc-top`, but normalizes the result and checks it is complete.
    Use when you need a canonical formula and don't mind the precision
-   round-trip that ~calc-normalize~ may introduce.
+   round-trip that `calc-normalize` may introduce.
 
    #+begin_src emacs-lisp :results silent
    (calc-top-n 1)  ;; normalized formula at top
    #+end_src
 
 ** (calc-top-list &optional N M SEL-MODE)
-   Return a list of ~N~ entries starting at stack level ~M~ (default both 1),
-   in bottom-to-top order (level ~M+N-1~ first, level ~M~ last). Does not
-   normalize. ~SEL-MODE~ is the same as for ~calc-top~.
+   Return a list of `N` entries starting at stack level `M` (default both 1),
+   in bottom-to-top order (level `M+N-1` first, level `M` last). Does not
+   normalize. `SEL-MODE` is the same as for `calc-top`.
 
    #+begin_src emacs-lisp :results silent
    (calc-top-list 2 1)  ;; top two entries, bottom-to-top order
    #+end_src
 
 ** (calc-top-list-n &optional N M SEL-MODE)
-   Like ~calc-top-list~, but normalizes every entry.
+   Like `calc-top-list`, but normalizes every entry.
 
    #+begin_src emacs-lisp :results silent
    (calc-top-list-n 2 1)  ;; normalized top two entries
