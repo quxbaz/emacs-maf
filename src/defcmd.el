@@ -16,7 +16,8 @@
   (let (final-opts)
     (while (keywordp (car forms))
       (seq-let (k v) (list (pop forms) (pop forms))
-        (push (cons k v) final-opts)))
+        ;; Unwrap quotes so values are assigned to symbols, not quoted symbols.
+        (push (cons k (if (eq (car-safe v) 'quote) (cadr v) v)) final-opts)))
     final-opts))
 
 (defun maf--defcmd-validate-opts (opts)
@@ -46,9 +47,13 @@ Possible contexts, in order of priority:
   subexpr    Implicit selection. Point is inside an entry.
   equation   Entry is a relation (=, !=, <, <=, >, >=); body runs once per side.
   entry      Whole stack entry; point is at EOL, line-prefix zone, or line mode is forced."
-  (message "HERE")
-  (pp "opts")
-  (pp opts)
+
+  (with-current-buffer (get-buffer "*scratch*")
+    (end-of-buffer)
+    (pp (equal (alist-get :arity opts) 'binary) (get-buffer "*scratch*"))
+    (let ((print-quoted nil))
+      (print (alist-get :arity opts) (get-buffer "*scratch*"))))
+
   (maf--with-calc-buffer
     (cond ((maf--at-home-p) `((:kind . home)
                               (:expr . ,(calc-top 1 'full))
