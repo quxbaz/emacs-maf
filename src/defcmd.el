@@ -43,7 +43,7 @@ Possible contexts, in order of priority:
   entry      Whole stack entry; point is at EOL, line-prefix zone, or line mode is forced."
   (cond ((maf--at-home-p) '((:kind . 'home)
                             (:expr (calc-top 1 'full))))
-        (t DEFAULT)))
+        (t nil)))
 
 (defmacro maf-defcmd (name bindings &rest rest)
   (declare (indent 2) (doc-string 3))
