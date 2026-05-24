@@ -62,9 +62,9 @@ Possible contexts, in order of priority:
 
     ;; (setcar bindings 42)
 
-    ;; (setcar bindings 33)
+    (setcar bindings 33)
 
-    `(defun ,name (,(car bindings) ,(nth 1 bindings) ,(nth 2 bindings))
+    `(defun ,name ()
        ,docstring
        (interactive)
        ;; @NOW
