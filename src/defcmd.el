@@ -58,23 +58,15 @@ Possible contexts, in order of priority:
   )
 
 
+;; ====================
 ;; TESTING
-(maf-defcmd maf/mult ()
-
-  "This is an example docstring."
-
-  :prefix "*"
-  :simp t
-  :map t
-
-  (+ 1 2)
-
-  ;; (let ((product (* expr arg)))
-  ;;   ;; (commit product)
-  ;;   product
-  ;;   )
-
-  )
+;; ====================
+(maf-defcmd maf/mult (expr arg commit)
+  "Test multiplication function."
+  :prefix "mult"
+  ;; :simp t
+  ;; :map t
+  (commit (calcFunc-mul 2 3)))
 
 ;; (with-current-buffer (calc-select-buffer)
 ;;   (calc-reset 0)
