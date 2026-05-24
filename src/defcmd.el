@@ -1,4 +1,7 @@
 ;; -*- lexical-binding: t; -*-
+;;
+;;
+
 
 (defun maf-defcmd--parse-docstring (forms)
   "Return the docstring from FORMS if the first element is a string, else nil."
