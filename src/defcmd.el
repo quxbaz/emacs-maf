@@ -9,6 +9,7 @@
   (when (stringp (car forms))
     (car forms)))
 
+;; TODO: Make :arity opt required
 (defun maf-defcmd--parse-opts (forms)
   "Return an alist of keyword-value pairs from FORMS, skipping a leading docstring."
   ;; Strip docstring
@@ -67,7 +68,10 @@ Possible contexts, in order of priority:
        ;; @NOW
        ;; Bind bindings in let form here.
        ;;
-       ;; TODO: Make hygienic
+       ;;
+       ;;
+       ;;
+       ;; TODO: Make bindings hygienic
        (let ((expr 42)
              (arg nil))
          (cl-flet ((commit (x) (message "%s" x)))
