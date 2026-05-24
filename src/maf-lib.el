@@ -16,6 +16,11 @@ Prefers the current buffer if it is in calc-mode, then looks for
                     (with-current-buffer buf (derived-mode-p 'calc-mode)))
                   (buffer-list)))))
 
+(defmacro maf--with-calc-buffer (&rest body)
+  "Evaluate BODY in the calc buffer."
+  `(with-current-buffer (maf--find-calc-buffer)
+     ,@body))
+
 (defun maf--at-home-p ()
   "Return t if point is past the last stack entry (at the . line or below)."
   (with-current-buffer (maf--find-calc-buffer)

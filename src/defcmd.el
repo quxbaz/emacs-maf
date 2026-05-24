@@ -41,8 +41,8 @@ Possible contexts, in order of priority:
   subexpr    Implicit selection. Point is inside an entry.
   equation   Entry is a relation (=, !=, <, <=, >, >=); body runs once per side.
   entry      Whole stack entry; point is at EOL, line-prefix zone, or line mode is forced."
-  (cond ((maf--at-home-p) '((:kind . 'home)
-                            (:expr (calc-top 1 'full))))
+  (cond ((maf--at-home-p) `((:kind . home)
+                            (:expr . ,(calc-top 1 'full))))
         (t nil)))
 
 (defmacro maf-defcmd (name bindings &rest rest)
@@ -57,7 +57,7 @@ Possible contexts, in order of priority:
   )
 
 
-;; Example
+;; TESTING
 (maf-defcmd maf/mult ()
 
   "This is an example docstring."
@@ -80,6 +80,3 @@ Possible contexts, in order of priority:
 ;;   (calc-push '(var x var-x))
 ;;   (calc-push 1)
 ;;   (call-interactively 'calc-maf/mult))
-
-
-;; Testing
