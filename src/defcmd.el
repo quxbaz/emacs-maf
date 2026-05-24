@@ -53,6 +53,11 @@ Possible contexts, in order of priority:
                                           (calc-top 2 'full)))))
           (t nil))))
 
+(defun maf--defcmd-commit (val context)
+  ;; do stuff here
+  (message "%s" val)
+  )
+
 (defmacro maf-defcmd (name bindings &rest rest)
   (declare (indent 2) (doc-string 3))
   (pcase-let* ((`(,docstring ,opts ,body) (maf--defcmd-parse-rest rest))
@@ -65,7 +70,7 @@ Possible contexts, in order of priority:
        (let ((,context (maf--resolve-context ',opts)))
          (let ((,expr (alist-get :expr ,context))
                (,arg (alist-get :arg ,context)))
-           (cl-flet ((commit (x) (message "x = %s" x)))
+           (cl-flet ((,commit (val) (maf--defcmd-commit val ,context)))
              ,@body))))))
 
 
