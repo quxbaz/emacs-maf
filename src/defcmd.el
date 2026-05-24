@@ -69,7 +69,7 @@ Possible contexts, in order of priority:
 ;; TESTING
 ;; ====================
 
-(defun test-pow ()
+(defun test-mult ()
   (maf-defcmd maf-mult (expr arg commit)
     "Test multiplication function."
     :arity 'binary
