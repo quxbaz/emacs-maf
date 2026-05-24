@@ -57,7 +57,10 @@ Possible contexts, in order of priority:
     `(defun ,name ()
        ,docstring
        (interactive)
-       ,@body)
+       ;; @NOW
+       (let ((expr 42))
+         (cl-flet ((commit (expr) (message "%s" expr)))
+           ,@body)))
 
     ;; `(defmath ,name (a b)
     ;;    (interactive "p")
@@ -69,16 +72,30 @@ Possible contexts, in order of priority:
 ;; ====================
 ;; TESTING
 ;; ====================
-(maf-defcmd maf-mult (expr arg commit)
-  "Test multiplication function."
-  :prefix "mult"
-  ;; :simp t
-  ;; :map t
-  (commit (calcFunc-mul expr arg)))
 
-(maf--with-calc-buffer
-  (calc-reset 0)
-  ;; (calc-push '(var x var-x))
-  (calc-push 2)
-  (calc-push 3)
-  (call-interactively 'maf-mult))
+(defun test-mult ()
+  (maf-defcmd maf-mult (expr arg commit)
+    "Test multiplication function."
+    :prefix "mult"
+    ;; :simp t
+    ;; :map t
+    (commit (calcFunc-mul expr arg)))
+  (maf--with-calc-buffer
+    (calc-reset 0)
+    ;; (calc-push '(var x var-x))
+    (calc-push 2)
+    (calc-push 3)
+    (call-interactively 'maf-mult)))
+
+(defun test-double ()
+  (maf-defcmd maf-double (expr commit)
+    "Test multiplication function."
+    :prefix "double"
+    (commit (calcFunc-mul expr 2)))
+  (maf--with-calc-buffer
+    (calc-reset 0)
+    ;; (calc-push '(var x var-x))
+    (calc-push 3)
+    (call-interactively 'maf-double)))
+
+(test-double)
