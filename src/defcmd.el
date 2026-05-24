@@ -54,6 +54,14 @@ Possible contexts, in order of priority:
                                           (calc-top 2 'full)))))
           (t nil))))
 
+;; @NOW
+;;
+;; This function takes a value (user provided) and context structure. Given the
+;; context, it pushes or replaces the given value into the correct location, and
+;; then pops the values where necessary.
+;;
+;; For example, if point is at home, and the command is 'binary, this function
+;; should pop the top stack value and push `val` onto the stack.
 (defun maf--defcmd-commit (val context)
   ;; do stuff here
   (message "val = %s" val)
