@@ -1,7 +1,6 @@
 #+title: Calc Reference
 
 * calc
-
 ** (calc-load-everything)
    Load all Calc extension modules. Ensures all Calc functions are available
    before calling them programmatically.
@@ -11,7 +10,6 @@
    #+end_src
 
 * Formula
-
 ** (math-common-constant-factor EXPR)  [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-common_002dconstant_002dfactor][manual]]
    Returns the *constant* factor in `EXPR`.
 
@@ -85,7 +83,6 @@
    #+end_src
 
 * Polynomials
-
 ** (math-polynomial-p EXPR VAR)  [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-polynomial_002dp][manual]]
    Return the degree of `EXPR` as a polynomial in `VAR`, or nil if it is not
    a polynomial. Degree is the highest power of `VAR` in the expanded form. A
@@ -120,7 +117,6 @@
    #+end_src
 
 * Simplification & rewriting
-
 ** (math-simplify-extended A)  [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-simplify_002dextended][manual]]
    Simplify `A` with additional rules that are more thorough but not always
    safe (e.g., simplifies `sqrt(x^2)` to `x`, valid only when `x` is positive).
@@ -175,7 +171,6 @@
    #+end_src
 
 * Solving
-
 ** (math-solve-for LHS RHS VAR FULL)  [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-solve_002dfor][manual]]
    Solve `LHS` = `RHS` for `VAR`, returning the right-hand side, or nil if
    unsolvable. `VAR` must appear in `LHS` or `RHS`. The return value does not
@@ -213,7 +208,6 @@
    #+end_src
 
 * Selection
-
 ** (calc-prepare-selection &optional NUM)  [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-calc_002dprepare_002dselection][manual]]
    Prepare a stack entry for selection operations. `NUM` specifies which entry
    to use; if omitted, the entry containing the cursor is used.
@@ -269,8 +263,70 @@
    (calc-locate-cursor-element (point))  ;; => stack index at cursor position
    #+end_src
 
-* Display
+* Stack
+** Stack entry format
+   Each element of ~calc-stack~ is a list ~(formula priority selection)~:
+   - ~car~ / index 0 — the full formula (a Lisp s-expression)
+   - ~nth 1~ — display priority (integer; normally ~1~)
+   - ~nth 2~ — active selection sub-formula, or ~nil~ if none
 
+   Plain integers are replaced with ~(cplx n 0)~ by ~calc-prepare-selection~
+   so that duplicate small integers are distinct objects (~eq~-wise). They are
+   restored to plain numbers by ~calc-normalize~ on next use.
+
+   Stack level 1 is the top.
+
+** (calc-get-stack-element X &optional SEL-MODE)
+   Low-level accessor. Given a raw stack entry ~X~, return a part of it
+   according to ~SEL-MODE~:
+
+   | ~SEL-MODE~ | returns                                            |
+   |------------+----------------------------------------------------|
+   | ~nil~      | selection (~nth 2~) if active and ~calc-use-selections~; else formula (~car~) |
+   | ~'entry~   | ~X~ itself                                         |
+   | ~'sel~     | ~(nth 2 x)~ — the selection sub-expression         |
+   | ~'full~    | ~(car x)~ — full formula, ignoring selection       |
+   | other      | ~calc-sel-error~                                   |
+
+   Called internally by ~calc-top~ and ~calc-top-list~; rarely needed directly.
+
+** (calc-top &optional N SEL-MODE)
+   Return the Nth stack entry (default 1 = top) according to ~SEL-MODE~.
+   Does not normalize. Use ~calc-top-n~ if normalization is wanted.
+
+   #+begin_src emacs-lisp :results silent
+   (calc-top 1)          ;; formula at top (selection-aware)
+   (calc-top 1 'full)    ;; full formula, ignoring any active selection
+   (calc-top 1 'sel)     ;; active selection sub-expression
+   (calc-top 1 'entry)   ;; raw entry: (formula priority selection)
+   #+end_src
+
+** (calc-top-n &optional N SEL-MODE)
+   Like ~calc-top~, but normalizes the result and checks it is complete.
+   Use when you need a canonical formula and don't mind the precision
+   round-trip that ~calc-normalize~ may introduce.
+
+   #+begin_src emacs-lisp :results silent
+   (calc-top-n 1)  ;; normalized formula at top
+   #+end_src
+
+** (calc-top-list &optional N M SEL-MODE)
+   Return a list of ~N~ entries starting at stack level ~M~ (default both 1),
+   in bottom-to-top order (level ~M+N-1~ first, level ~M~ last). Does not
+   normalize. ~SEL-MODE~ is the same as for ~calc-top~.
+
+   #+begin_src emacs-lisp :results silent
+   (calc-top-list 2 1)  ;; top two entries, bottom-to-top order
+   #+end_src
+
+** (calc-top-list-n &optional N M SEL-MODE)
+   Like ~calc-top-list~, but normalizes every entry.
+
+   #+begin_src emacs-lisp :results silent
+   (calc-top-list-n 2 1)  ;; normalized top two entries
+   #+end_src
+
+* Display
 ** (math-format-value A &optional W)  [[https://www.gnu.org/software/emacs/manual/html_node/calc/Formatting-Lisp-Functions.html#index-format_002dvalue][manual]]
    Format `A` as a display string. For plain scalars in nil/flat/unform language
    modes, delegates to `math-format-number`. Otherwise composes `A` and converts
