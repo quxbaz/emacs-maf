@@ -50,42 +50,15 @@ Possible contexts, in order of priority:
 (defmacro maf-defcmd (name bindings &rest rest)
   (declare (indent 2) (doc-string 3))
   (seq-let (docstring opts body) (maf-defcmd--parse-rest rest)
-
-    ;; (message "docstring = %s" docstring)
-    ;; (message "opts = %s" opts)
-    ;; (message "body = %s" body)
-
-    ;; @NOW: Extract bindings into (expr arg commit)
-
-    ;; (let (((car bindings) (gensym "expr-")))xpr
-    ;;   (message "bindings = %s" (car bindings)))
-
-    ;; (setcar bindings 42)
-
-    (setcar bindings 33)
-
-    `(defun ,name ()
-       ,docstring
-       (interactive)
-       ;; @NOW
-       ;; Bind bindings in let form here.
-       ;;
-       ;; TODO: Use positional bindings instead of named bindings.
-       ;;
-       ;; TODO: Make bindings hygienic
-       (cl-flet ((commit (x) (message "%s" x)))
-         ,@body)
-       ;; (let ((expr 42)
-       ;;       (arg nil))
-       ;;   (cl-flet ((commit (x) (message "%s" x)))
-       ;;     ,@body))
-       )
-
-    ;; `(defmath ,name (a b)
-    ;;    (interactive "p")
-    ;;    ,@body)
-
-    ))
+    (let* ((sym-expr   (if (memq 'expr   bindings) 'expr   (gensym)))
+           (sym-arg    (if (memq 'arg    bindings) 'arg    (gensym)))
+           (sym-commit (if (memq 'commit bindings) 'commit (gensym))))
+      `(defun ,name ()
+         ,@(when docstring (list docstring))
+         (interactive)
+         (funcall (lambda (,sym-expr ,sym-arg ,sym-commit)
+                    ,@body)
+                  42 1 (lambda (x) (message "commit: %s" x)))))))
 
 
 ;; ====================
