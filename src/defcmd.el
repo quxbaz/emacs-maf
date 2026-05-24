@@ -56,7 +56,7 @@ Possible contexts, in order of priority:
 (defun maf--defcmd-bind-values (expr arg commit context)
   "Set EXPR, ARG, and COMMIT symbols from CONTEXT."
   (set expr (alist-get :expr (alist-get :expr context)))
-  (set arg (alist-get :arg (alist-get :expr context)))
+  (set arg (alist-get :arg (alist-get :arg context)))
   (set commit (lambda (val)
                 (maf--with-calc-buffer
                   (calc-pop 2)
