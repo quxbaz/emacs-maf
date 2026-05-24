@@ -65,9 +65,9 @@ Possible contexts, in order of priority:
            ,@body)))))
 
 
-;; ====================
-;; TESTING
-;; ====================
+;; ===================
+;; ***** TESTING *****
+;; ===================
 
 (defun test-mult ()
   (maf-defcmd maf-mult (expr arg commit)
