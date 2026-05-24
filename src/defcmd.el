@@ -1,6 +1,5 @@
 ;; -*- lexical-binding: t; -*-
 
-
 (defun maf-defcmd--parse-docstring (forms)
   "TODO: Add docstring"
   (when (stringp (car forms))
