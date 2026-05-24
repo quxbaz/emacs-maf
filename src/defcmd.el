@@ -1,6 +1,6 @@
 ;; -*- lexical-binding: t; -*-
 ;;
-;;
+;; defcmd.el
 
 
 (defun maf-defcmd--parse-docstring (forms)
@@ -40,7 +40,8 @@ Possible contexts, in order of priority:
   subexpr    Implicit selection. Point is inside an entry.
   equation   Entry is a relation (=, !=, <, <=, >, >=); body runs once per side.
   entry      Whole stack entry; point is at EOL, line-prefix zone, or line mode is forced."
-  )
+  (cond (COND BODY)
+        (t DEFAULT)))
 
 (defmacro maf-defcmd (name bindings &rest rest)
   (declare (indent 2) (doc-string 3))
