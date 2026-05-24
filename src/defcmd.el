@@ -2,6 +2,7 @@
 ;;
 ;; defcmd.el
 
+(require 'maf-lib)
 
 (defun maf-defcmd--parse-docstring (forms)
   "Return the docstring from FORMS if the first element is a string, else nil."
