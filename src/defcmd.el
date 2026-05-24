@@ -20,9 +20,9 @@
     final-opts))
 
 (defun maf--defcmd-validate-opts (opts)
-  ;; TODO: Make :arity opt required
-  (unless (alist-get :arity opts))
-  )
+  "Validate OPTS, signaling an error if any are invalid."
+  (unless (alist-get :arity opts)
+    (error "maf-defcmd: missing required option :arity")))
 
 (defun maf--defcmd-parse-body (forms)
   "Return the body forms from FORMS, skipping a leading docstring and keyword-value pairs."
@@ -71,6 +71,7 @@ Possible contexts, in order of priority:
 (defun test-pow ()
   (maf-defcmd maf-mult (expr arg commit)
     "Test multiplication function."
+    :arity 'binary
     :prefix "mult"
     ;; :simp t
     ;; :map t
