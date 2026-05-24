@@ -31,12 +31,12 @@
 (defun maf--resolve-context ()
   "Inspect point and calc state; return a context descriptor.
 
-Possible contexts:
+Possible contexts, in order of priority:
   selection  Active calc selection; expr is the selected sub-expression.
-  subexpr    Implicit selection. Point is inside an entry.
-  entry      Whole stack entry; point is at EOL, line-prefix zone, or line mode is forced.
   home       Point is at or below the . line.
-  equation   Entry is a relation (=, !=, <, <=, >, >=); body runs once per side."
+  subexpr    Implicit selection. Point is inside an entry.
+  equation   Entry is a relation (=, !=, <, <=, >, >=); body runs once per side.
+  entry      Whole stack entry; point is at EOL, line-prefix zone, or line mode is forced."
   )
 
 (defmacro maf-defcmd (name bindings &rest rest)
