@@ -5,7 +5,7 @@
 ;; maf library functions
 
 
-(defun maf--get-calc-buffer ()
+(defun maf--find-calc-buffer ()
   "Find the calc buffer.
 Prefers the current buffer if it is in calc-mode, then looks for
 *Calculator* by name, then falls back to any live buffer in calc-mode."
@@ -18,5 +18,5 @@ Prefers the current buffer if it is in calc-mode, then looks for
 
 (defun maf--at-home-p ()
   "Return t if point is past the last stack entry (at the . line or below)."
-  (with-current-buffer (my/calc-find-buffer)
+  (with-current-buffer (maf--find-calc-buffer)
     (<= (calc-locate-cursor-element (point)) 0)))
