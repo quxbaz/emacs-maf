@@ -54,6 +54,8 @@ Possible contexts, in order of priority:
     ;; (message "opts = %s" opts)
     ;; (message "body = %s" body)
 
+    ;; @NOW: Extract bindings into (expr arg commit)
+
     `(defun ,name ()
        ,docstring
        (interactive)
