@@ -1,12 +1,12 @@
 ;; -*- lexical-binding: t; -*-
 
 (defun maf-defcmd--parse-docstring (forms)
-  "TODO: Add docstring"
+  "Return the docstring from FORMS if the first element is a string, else nil."
   (when (stringp (car forms))
     (car forms)))
 
 (defun maf-defcmd--parse-opts (forms)
-  "TODO: Add docstring"
+  "Return an alist of keyword-value pairs from FORMS, skipping a leading docstring."
   ;; Strip docstring
   (when (stringp (car forms)) (pop forms))
   (let (final-opts)
@@ -16,7 +16,7 @@
     final-opts))
 
 (defun maf-defcmd--parse-body (forms)
-  "TODO: Add docstring"
+  "Return the body forms from FORMS, skipping a leading docstring and keyword-value pairs."
   ;; Strip docstring and options
   (when (stringp (car forms)) (pop forms))
   (while (keywordp (car forms)) (pop forms) (pop forms))
