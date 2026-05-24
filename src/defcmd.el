@@ -46,6 +46,9 @@ Possible contexts, in order of priority:
   subexpr    Implicit selection. Point is inside an entry.
   equation   Entry is a relation (=, !=, <, <=, >, >=); body runs once per side.
   entry      Whole stack entry; point is at EOL, line-prefix zone, or line mode is forced."
+  (message "HERE")
+  (pp "opts")
+  (pp opts)
   (maf--with-calc-buffer
     (cond ((maf--at-home-p) `((:kind . home)
                               (:expr . ,(calc-top 1 'full))
@@ -55,7 +58,9 @@ Possible contexts, in order of priority:
 
 (defun maf--defcmd-commit (val context)
   ;; do stuff here
-  (message "%s" val)
+  (message "val = %s" val)
+  ;; (let ((kind VALUE))
+  ;;   )
   )
 
 (defmacro maf-defcmd (name bindings &rest rest)
