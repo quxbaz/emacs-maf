@@ -9,7 +9,6 @@
   (when (stringp (car forms))
     (car forms)))
 
-;; TODO: Make :arity opt required
 (defun maf--defcmd-parse-opts (forms)
   "Return an alist of keyword-value pairs from FORMS, skipping a leading docstring."
   ;; Strip docstring
@@ -19,6 +18,11 @@
       (seq-let (k v) (list (pop forms) (pop forms))
         (push (cons k v) final-opts)))
     final-opts))
+
+(defun maf--defcmd-validate-opts (opts)
+  ;; TODO: Make :arity opt required
+  (unless (alist-get :arity opts))
+  )
 
 (defun maf--defcmd-parse-body (forms)
   "Return the body forms from FORMS, skipping a leading docstring and keyword-value pairs."
@@ -50,7 +54,7 @@ Possible contexts, in order of priority:
 (defmacro maf-defcmd (name bindings &rest rest)
   (declare (indent 2) (doc-string 3))
   (seq-let (docstring opts body) (maf--defcmd-parse-rest rest)
-    ;; (maf--def-cmd-validate-opts)
+    (maf--defcmd-validate-opts opts)
     `(defun ,name ()
        ,@(when docstring (list docstring))
        (interactive)
