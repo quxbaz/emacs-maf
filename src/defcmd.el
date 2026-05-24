@@ -56,6 +56,9 @@ Possible contexts, in order of priority:
 
     ;; @NOW: Extract bindings into (expr arg commit)
 
+    ;; (let (((car bindings) (gensym "expr-")))
+    ;;   (message "bindings = %s" (car bindings)))
+
     `(defun ,name ()
        ,docstring
        (interactive)
