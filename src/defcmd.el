@@ -4,13 +4,13 @@
 
 (require 'maf-lib)
 
-(defun maf-defcmd--parse-docstring (forms)
+(defun maf--defcmd-parse-docstring (forms)
   "Return the docstring from FORMS if the first element is a string, else nil."
   (when (stringp (car forms))
     (car forms)))
 
 ;; TODO: Make :arity opt required
-(defun maf-defcmd--parse-opts (forms)
+(defun maf--defcmd-parse-opts (forms)
   "Return an alist of keyword-value pairs from FORMS, skipping a leading docstring."
   ;; Strip docstring
   (when (stringp (car forms)) (pop forms))
@@ -20,17 +20,17 @@
         (push (cons k v) final-opts)))
     final-opts))
 
-(defun maf-defcmd--parse-body (forms)
+(defun maf--defcmd-parse-body (forms)
   "Return the body forms from FORMS, skipping a leading docstring and keyword-value pairs."
   ;; Strip docstring and options
   (when (stringp (car forms)) (pop forms))
   (while (keywordp (car forms)) (pop forms) (pop forms))
   forms)
 
-(defun maf-defcmd--parse-rest (forms)
-  (let ((docstring (maf-defcmd--parse-docstring forms))
-        (opts (maf-defcmd--parse-opts forms))
-        (body (maf-defcmd--parse-body forms)))
+(defun maf--defcmd-parse-rest (forms)
+  (let ((docstring (maf--defcmd-parse-docstring forms))
+        (opts (maf--defcmd-parse-opts forms))
+        (body (maf--defcmd-parse-body forms)))
     `(,docstring ,opts ,body)))
 
 (defun maf--resolve-context ()
@@ -49,13 +49,14 @@ Possible contexts, in order of priority:
 
 (defmacro maf-defcmd (name bindings &rest rest)
   (declare (indent 2) (doc-string 3))
-  (seq-let (docstring opts body) (maf-defcmd--parse-rest rest)
+  (seq-let (docstring opts body) (maf--defcmd-parse-rest rest)
+    ;; (maf--def-cmd-validate-opts)
     `(defun ,name ()
        ,@(when docstring (list docstring))
        (interactive)
        (let ((,(car bindings) 42)
              (,(nth 1 bindings) 2))
-         (cl-flet ((commit (val) (message "commit = %s" val)))
+         (cl-flet ((,(nth 2 bindings) (val) (message "commit = %s" val)))
            ,@body)))))
 
 
@@ -63,7 +64,7 @@ Possible contexts, in order of priority:
 ;; TESTING
 ;; ====================
 
-(defun test-mult ()
+(defun test-pow ()
   (maf-defcmd maf-mult (expr arg commit)
     "Test multiplication function."
     :prefix "mult"
