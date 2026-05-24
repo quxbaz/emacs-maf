@@ -1,6 +1,6 @@
 ;; -*- lexical-binding: t; -*-
 ;;
-;; lib.el
+;; maf-lib.el
 ;;
 ;; maf library functions
 
