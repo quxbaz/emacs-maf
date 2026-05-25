@@ -13,7 +13,7 @@ Form 1 runs at 0.5s, form 2 at 1.0s, form 3 at 1.5s, etc."
     `(let ((,buf (current-buffer)))
        ,@(cl-loop for form in body
                   for i from 1
-                  collect `(run-at-time ,(* 0.25 i) nil
+                  collect `(run-at-time ,(* 0.3 i) nil
                                         (lambda ()
                                           (with-current-buffer ,buf ,form)))))))
 
