@@ -65,9 +65,8 @@ Possible contexts, in order of priority:
 ;; It should handle the rest of the possible contexts appropriately.
 (defun maf--defcmd-commit (val context)
   ;; do stuff here
-  (message "val = %s" val)
-  ;; (let ((kind VALUE))
-  ;;   )
+  (pcase (alist-get :target context)
+    (calc-pop-push-record-list 1 ,opt-prefix new-expr (if keep-args 1 ,opt-m)))
   )
 
 (defmacro maf-defcmd (name bindings &rest rest)
