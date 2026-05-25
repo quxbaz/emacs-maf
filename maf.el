@@ -19,6 +19,12 @@
 
 ;;; Code:
 
+(add-to-list 'load-path (expand-file-name "src" (file-name-directory load-file-name)))
+
+(require 'maf-lib)
+(require 'maf-debug)
+(require 'maf-defcmd)
+
 (defgroup maf nil
   "Math-Algebra-Formulas: an alternative UX for Emacs Calc."
   :group 'calc

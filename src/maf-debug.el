@@ -3,3 +3,14 @@
 ;; maf-debug.el
 ;;
 ;; maf debug functions
+
+(defmacro maf-debug/slowly (&rest body)
+  "Run each form in BODY on a timer, spaced 0.5s apart.
+Form 1 runs at 0.5s, form 2 at 1.0s, form 3 at 1.5s, etc."
+  (declare (indent 0))
+  `(progn
+     ,@(cl-loop for form in body
+                for i from 1
+                collect `(run-at-time ,(* 0.5 i) nil (lambda () ,form)))))
+
+(provide 'maf-debug)

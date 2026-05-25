@@ -99,6 +99,7 @@ Possible :target values, in order of priority:
          (cl-flet ((,commit (val) (maf--defcmd-commit val ,context)))
            ,@body)))))
 
+(provide 'maf-defcmd)
 
 ;; ===================
 ;; ***** TESTING *****
