@@ -47,7 +47,7 @@ Possible contexts, in order of priority:
   equation   Entry is a relation (=, !=, <, <=, >, >=); body runs once per side.
   entry      Whole stack entry; point is at EOL, line-prefix zone, or line mode is forced."
   (maf--with-calc-buffer
-    (cond ((maf--at-home-p) `((:kind . home)
+    (cond ((maf--at-home-p) `((:target . home)
                               (:expr . ,(calc-top 1 'full))
                               (:arg  . ,(when (eq (alist-get :arity opts) 'binary)
                                           (calc-top 2 'full)))))
