@@ -11,7 +11,7 @@
     position: fixed;
     top: 0;
     left: 0;
-    width: 460px;
+    width: 400px;
     height: 100vh;
     overflow-y: auto;
     padding: 20px;
@@ -22,7 +22,7 @@
   }
   #table-of-contents h2 { margin-top: 0; font-size: 1.1em; }
   #table-of-contents ul { padding-left: 1.2em; }
-  #content { margin-left: 500px; max-width: 880px; padding: 20px; }
+  #content { margin-left: 440px; max-width: 880px; padding: 20px; }
 </style>
 #+end_export
 
