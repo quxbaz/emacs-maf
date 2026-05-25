@@ -47,8 +47,12 @@
          (keep calc-keep-args-flag))
     `((:target . home)
       (:expr   . ,(calc-top 1 'full))
-      (:arg    . ,(cond (unary? nil) (binary? (calc-top 2 'full))))
-      (:pop-n  . ,(if keep 0 (cond (unary? 1) (binary? 2)))))))
+      (:arg    . ,(cond (unary? nil)
+                        (binary? (calc-top 2 'full))
+                        (t (error "Unknown arity: %s" arity))))
+      (:pop-n  . ,(if keep 0 (cond (unary? 1)
+                                   (binary? 2)
+                                   (t (error "Unknown arity: %s" arity))))))))
 
 (defun maf--resolve-target-subexpr (opts) nil)   ;; TODO
 (defun maf--resolve-target-equation (opts) nil)  ;; TODO
@@ -70,12 +74,12 @@ Possible :target values, in order of priority:
   entry      Whole stack entry; point is at EOL, line-prefix zone, or line mode is forced."
   (maf--with-calc-buffer
     (append (cond
-             ;; ((maf--at-selection-p) (maf--resolve-target-selection opts)) ;; TODO
-             ((maf--at-home-p)        (maf--resolve-target-home opts))
-             ;; ((maf--at-subexpr-p)  (maf--resolve-target-subexpr opts))    ;; TODO
-             ;; ((maf--at-equation-p) (maf--resolve-target-equation opts))   ;; TODO
-             ;; ((maf--at-entry-p)    (maf--resolve-target-entry opts))      ;; TODO
-             (t nil))
+             ((maf--at-selection-p) (maf--resolve-target-selection opts)) ;; TODO
+             ((maf--at-home-p)      (maf--resolve-target-home opts))
+             ((maf--at-subexpr-p)   (maf--resolve-target-subexpr opts))   ;; TODO
+             ((maf--at-equation-p)  (maf--resolve-target-equation opts))  ;; TODO
+             ((maf--at-entry-p)     (maf--resolve-target-entry opts))     ;; TODO
+             (t (error "Could not resolve target at point")))
             ;; Also include options declared in the defcmd body like :arity, :prefix, etc
             opts
             ;; Include some useful properties as well like calc flag states
