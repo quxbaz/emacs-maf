@@ -52,12 +52,14 @@ Possible :target values, in order of priority:
   equation   Entry is a relation (=, !=, <, <=, >, >=); body runs once per side.
   entry      Whole stack entry; point is at EOL, line-prefix zone, or line mode is forced."
   (maf--with-calc-buffer
-    (let ((keep calc-keep-args-flag))
+    (let ((keep calc-keep-args-flag)
+          (arity (alist-get :arity opts))
+          (unary? (eq arity 'unary))
+          (binary? (eq arity 'binary)))
       (append (cond ((maf--at-home-p) `((:target . home)
                                         (:expr   . ,(calc-top 1 'full))
-                                        (:arg    . ,(when (eq (alist-get :arity opts) 'binary)
-                                                      (calc-top 2 'full)))
-                                        (:pop-n  . ,(if keep 0 2))))
+                                        (:arg    . ,(when binary? (calc-top 2 'full)))
+                                        (:pop-n  . ,(if keep 0 (if binary? 2 1)))))
                     (t nil))
               ;; Also include options declared in the defcmd body like :arity, :prefix, etc
               opts
