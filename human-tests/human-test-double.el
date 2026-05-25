@@ -1,14 +1,11 @@
-(maf-defcmd maf-mult (expr arg commit)
+(maf-defcmd maf-double (expr arg commit)
   "Test multiplication function."
-  :arity binary
-  :prefix "mult"
-  ;; :simp t
-  ;; :map t
-  (commit (calcFunc-mul expr arg)))
+  :arity unary
+  :prefix "doub"
+  (commit (calcFunc-mul expr 2)))
 
 (maf--with-calc-buffer
   (calc-reset 0)
   (maf-debug-slowly
-    (calc-push 3)
-    (calc-push 2)
-    (call-interactively 'maf-mult)))
+    (calc-push 10)
+    (call-interactively 'maf-double)))
