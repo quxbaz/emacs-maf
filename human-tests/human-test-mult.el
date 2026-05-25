@@ -1,5 +1,5 @@
 (maf-defcmd maf-mult (expr arg commit)
-  "Test multiplication function."
+  "Multiplication command."
   :arity binary
   :prefix "mult"
   (commit (calcFunc-mul expr arg)))
