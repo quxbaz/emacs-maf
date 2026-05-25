@@ -1,5 +1,14 @@
 #+title: Calc Reference
-#+HTML_HEAD: <style> body { font-family: sans-serif; line-height: 1.5; } a { text-decoration: none; } code { padding: 3px 6px; background: beige; } </style>
+#+begin_export html
+<style>
+  body { font-family: sans-serif; line-height: 1.5; }
+  h3 { margin-top: 40px; margin-bottom: 6px; }
+  a { text-decoration: none; }
+  code { padding: 3px 6px; background: beige; }
+  pre { background: hsl(229 56% 92% / 1); }
+  .outline-text-3 { padding: 10px 20px; background: hsl(0 0% 96% / 1); }
+</style>
+#+end_export
 
 * calc
 ** (calc-load-everything)
