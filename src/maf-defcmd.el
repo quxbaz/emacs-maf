@@ -1,6 +1,10 @@
 ;; -*- lexical-binding: t; -*-
 ;;
 ;; maf-defcmd.el
+;;
+;; Defines the `maf-defcmd' macro for declaring contextual calc commands.
+;; A defcmd inspects point and the calc stack at call time, resolves a context
+;; (home, entry, selection, etc.), and commits its result to the right location.
 
 (require 'maf-lib)
 (require 'maf-resolve)
