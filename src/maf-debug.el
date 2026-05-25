@@ -16,6 +16,12 @@ Form 1 runs at DELAY, form 2 at 2*DELAY, form 3 at 3*DELAY, etc."
                                       (lambda (buf) (with-current-buffer buf ,form))
                                       --maf-buf--))))
 
+(defmacro maf-debug-use-calc-buffer (&rest body)
+  "Evaluate BODY with the calc window selected."
+  (declare (indent 0))
+  `(with-selected-window (get-buffer-window (maf--find-calc-buffer))
+     ,@body))
+
 (defun maf-debug-open-calc-right ()
   "Ensure calc is open in the right window, splitting if needed.
 - One window: splits right, then shows calc in the new window.
