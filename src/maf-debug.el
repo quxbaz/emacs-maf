@@ -4,7 +4,7 @@
 ;;
 ;; maf debug functions
 
-(defmacro maf-debug-step (&rest body)
+(defmacro maf-debug-slowly (&rest body)
   "Run each form in BODY on a timer, spaced 0.5s apart.
 Form 1 runs at 0.5s, form 2 at 1.0s, form 3 at 1.5s, etc."
   (declare (indent 0))
