@@ -4,7 +4,6 @@
 ;;
 ;; maf library functions
 
-
 (defun maf--find-calc-buffer ()
   "Find the calc buffer.
 Prefers the current buffer if it is in calc-mode, then looks for
