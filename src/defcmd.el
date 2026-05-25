@@ -52,15 +52,17 @@ Possible :target values, in order of priority:
   equation   Entry is a relation (=, !=, <, <=, >, >=); body runs once per side.
   entry      Whole stack entry; point is at EOL, line-prefix zone, or line mode is forced."
   (maf--with-calc-buffer
-    (append (cond ((maf--at-home-p) `((:target . home)
-                                      (:expr   . ,(calc-top 1 'full))
-                                      (:arg    . ,(when (eq (alist-get :arity opts) 'binary)
-                                                    (calc-top 2 'full)))))
-                  (t nil))
-            ;; Also include all options declared in the defcmd body
-            opts
-            ;; Include useful properties as well like flag states
-            `((:keep . ,calc-keep-args-flag)))))
+    (let ((keep calc-keep-args-flag))
+      (append (cond ((maf--at-home-p) `((:target . home)
+                                        (:expr   . ,(calc-top 1 'full))
+                                        (:arg    . ,(when (eq (alist-get :arity opts) 'binary)
+                                                      (calc-top 2 'full)))
+                                        (:pop-n  . ,(if keep 0 2))))
+                    (t nil))
+              ;; Also include options declared in the defcmd body like :arity, :prefix, etc
+              opts
+              ;; Include some useful properties as well like calc flag states
+              `((:keep . ,keep))))))
 
 ;; @NOW
 ;;
@@ -74,11 +76,11 @@ Possible :target values, in order of priority:
 ;; It should handle the rest of the possible contexts appropriately.
 (defun maf--defcmd-commit (val context)
   (let* ((target (alist-get :target context))
+         (prefix (alist-get :prefix context))
          (arity (alist-get :arity context))
-         (keep (alist-get :keep context)))
+         (pop-n (alist-get :pop-n context)))
     (pcase target
-      ('home
-       (calc-pop-push-record-list 1 "PREFIX-TODO" 42)))))
+      ('home (calc-pop-push-record-list pop-n prefix val)))))
 
 (defmacro maf-defcmd (name bindings &rest rest)
   (declare (indent 2) (doc-string 3))
@@ -112,8 +114,8 @@ Possible :target values, in order of priority:
   (maf--with-calc-buffer
     (calc-reset 0)
     ;; (calc-push '(var x var-x))
-    (calc-push 2)
     (calc-push 3)
+    (calc-push 2)
     (calc-align-stack-window)
     (call-interactively 'maf-mult)))
 
