@@ -1,8 +1,10 @@
 (maf-defcmd maf-double (expr arg commit)
-  "Test multiplication function."
+  "Test doubling function."
   :arity unary
   :prefix "doub"
   (commit (calcFunc-mul expr 2)))
+
+(maf-debug--open-calc-right)
 
 (maf--with-calc-buffer
   (calc-reset 0)
