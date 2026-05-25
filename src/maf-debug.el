@@ -16,4 +16,18 @@ Form 1 runs at 0.3s, form 2 at 0.6s, form 3 at 0.9s, etc."
                                       (lambda (buf) (with-current-buffer buf ,form))
                                       --maf-buf--))))
 
+(defun maf-debug--open-calc-right ()
+  "Ensure calc is open in the right window, splitting if needed.
+- One window: splits right, then shows calc in the new window.
+- Right window already has calc: no-op.
+- Right window exists with another buffer: replaces it with calc."
+  (when (one-window-p)
+    (split-window-right))
+  (let ((right-win (next-window)))
+    (unless (with-current-buffer (window-buffer right-win)
+              (derived-mode-p 'calc-mode))
+      (unless (get-buffer "*Calculator*")
+        (save-window-excursion (calc)))
+      (set-window-buffer right-win "*Calculator*"))))
+
 (provide 'maf-debug)
