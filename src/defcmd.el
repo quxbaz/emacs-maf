@@ -58,8 +58,8 @@ Possible :target values, in order of priority:
            (binary? (eq arity 'binary)))
       (append (cond ((maf--at-home-p) `((:target . home)
                                         (:expr   . ,(calc-top 1 'full))
-                                        (:arg    . ,(when binary? (calc-top 2 'full)))
-                                        (:pop-n  . ,(if keep 0 (if binary? 2 1)))))
+                                        (:arg    . ,(cond (unary? nil) (binary? (calc-top 2 'full))))
+                                        (:pop-n  . ,(if keep 0 (cond (unary? 1) (binary? 2))))))
                     (t nil))
               ;; Also include options declared in the defcmd body like :arity, :prefix, etc
               opts
