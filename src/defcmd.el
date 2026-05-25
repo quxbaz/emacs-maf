@@ -67,9 +67,12 @@ Possible contexts, in order of priority:
 ;; It should handle the rest of the possible contexts appropriately.
 (defun maf--defcmd-commit (val context)
   ;; do stuff here
-  (pcase (alist-get :target context)
-    (calc-pop-push-record-list 1 ,opt-prefix new-expr (if keep-args 1 ,opt-m)))
-  )
+  (let* ((target (alist-get :target context))
+         (arity (alist-get :arity context))
+         (keep-args (alist-get :keep-args context)))
+    (pcase target
+      ('home
+       (calc-pop-push-record-list 0 "PREFIX-TODO" 42)))))
 
 (defmacro maf-defcmd (name bindings &rest rest)
   (declare (indent 2) (doc-string 3))
