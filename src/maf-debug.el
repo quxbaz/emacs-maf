@@ -16,7 +16,7 @@ Form 1 runs at DELAY, form 2 at 2*DELAY, form 3 at 3*DELAY, etc."
                                       (lambda (buf) (with-current-buffer buf ,form))
                                       --maf-buf--))))
 
-(defun maf-debug--open-calc-right ()
+(defun maf-debug-open-calc-right ()
   "Ensure calc is open in the right window, splitting if needed.
 - One window: splits right, then shows calc in the new window.
 - Right window already has calc: no-op.

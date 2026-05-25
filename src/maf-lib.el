@@ -21,6 +21,12 @@ Prefers the current buffer if it is in calc-mode, then looks for
   `(with-current-buffer (maf--find-calc-buffer)
      ,@body))
 
+(defmacro maf-debug-use-calc-buffer (&rest body)
+  "Evaluate BODY with the calc window selected."
+  (declare (indent 0))
+  `(with-selected-window (get-buffer-window (maf--find-calc-buffer))
+     ,@body))
+
 (defun maf--at-selection-p ()
   "Return t if any stack entry has an active selection (selection mode on)."
   (maf--with-calc-buffer
