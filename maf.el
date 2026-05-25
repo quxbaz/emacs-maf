@@ -19,7 +19,7 @@
 
 ;;; Code:
 
-(add-to-list 'load-path (expand-file-name "src" (file-name-directory load-file-name)))
+(add-to-list 'load-path (expand-file-name "src" (file-name-directory (or load-file-name buffer-file-name))))
 
 (require 'maf-lib)
 (require 'maf-debug)
