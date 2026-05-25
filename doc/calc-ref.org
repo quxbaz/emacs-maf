@@ -1,8 +1,9 @@
 #+title: Calc Reference
+#+HTML_HEAD: <style>code { background: beige; }</style>
 
 * calc
 ** (calc-load-everything)
-   `(calc-load-everything)`
+   =(calc-load-everything)=
 
    Load all Calc extension modules. Ensures all Calc functions are available
    before calling them programmatically.
@@ -13,40 +14,40 @@
 
 * Stack
 ** Stack entry format
-   Each element of `calc-stack` is a list `(formula lines selection)`:
-   - `car` / index 0 — the full formula (a Lisp s-expression)
-   - `nth 1` — display line count (integer); initialized to `1` on push, updated
-     to the actual rendered height by `math-format-stack-value` via `calc-count-lines`.
-     Used by `calc-substack-height` for cursor positioning.
-   - `nth 2` — active selection sub-formula, or `nil` if none
+   Each element of =calc-stack= is a list =(formula lines selection)=:
+   - =car= / index 0 — the full formula (a Lisp s-expression)
+   - =nth 1= — display line count (integer); initialized to =1= on push, updated
+     to the actual rendered height by =math-format-stack-value= via =calc-count-lines=.
+     Used by =calc-substack-height= for cursor positioning.
+   - =nth 2= — active selection sub-formula, or =nil= if none
 
-   Plain integers are replaced with `(cplx n 0)` by `calc-prepare-selection`
-   so that duplicate small integers are distinct objects (`eq`-wise). They are
-   restored to plain numbers by `calc-normalize` on next use.
+   Plain integers are replaced with =(cplx n 0)= by =calc-prepare-selection=
+   so that duplicate small integers are distinct objects (=eq=-wise). They are
+   restored to plain numbers by =calc-normalize= on next use.
 
    Stack level 1 is the top.
 
 ** (calc-get-stack-element)
-   `(calc-get-stack-element X &optional SEL-MODE)`
+   =(calc-get-stack-element X &optional SEL-MODE)=
 
-   Low-level accessor. Given a raw stack entry `X`, return a part of it
-   according to `SEL-MODE`:
+   Low-level accessor. Given a raw stack entry =X=, return a part of it
+   according to =SEL-MODE=:
 
-   | `SEL-MODE` | returns                                            |
+   | =SEL-MODE= | returns                                            |
    |------------+----------------------------------------------------|
-   | `nil`      | selection (`nth 2`) if active and `calc-use-selections`; else formula (`car`) |
-   | `'entry`   | `X` itself                                         |
-   | `'sel`     | `(nth 2 x)` — the selection sub-expression         |
-   | `'full`    | `(car x)` — full formula, ignoring selection       |
-   | other      | `calc-sel-error`                                   |
+   | =nil=      | selection (=nth 2=) if active and =calc-use-selections=; else formula (=car=) |
+   | ='entry=   | =X= itself                                         |
+   | ='sel=     | =(nth 2 x)= — the selection sub-expression         |
+   | ='full=    | =(car x)= — full formula, ignoring selection       |
+   | other      | =calc-sel-error=                                   |
 
-   Called internally by `calc-top` and `calc-top-list`; rarely needed directly.
+   Called internally by =calc-top= and =calc-top-list=; rarely needed directly.
 
 ** (calc-top)
-   `(calc-top &optional N SEL-MODE)`
+   =(calc-top &optional N SEL-MODE)=
 
-   Return the Nth stack entry (default 1 = top) according to `SEL-MODE`.
-   Does not normalize. Use `calc-top-n` if normalization is wanted.
+   Return the Nth stack entry (default 1 = top) according to =SEL-MODE=.
+   Does not normalize. Use =calc-top-n= if normalization is wanted.
 
    #+begin_src emacs-lisp :results silent
    (calc-top 1)          ;; formula at top (selection-aware)
@@ -56,53 +57,53 @@
    #+end_src
 
 ** (calc-top-n)
-   `(calc-top-n &optional N SEL-MODE)`
+   =(calc-top-n &optional N SEL-MODE)=
 
-   Like `calc-top`, but normalizes the result and checks it is complete.
+   Like =calc-top=, but normalizes the result and checks it is complete.
    Use when you need a canonical formula and don't mind the precision
-   round-trip that `calc-normalize` may introduce.
+   round-trip that =calc-normalize= may introduce.
 
    #+begin_src emacs-lisp :results silent
    (calc-top-n 1)  ;; normalized formula at top
    #+end_src
 
 ** (calc-top-list)
-   `(calc-top-list &optional N M SEL-MODE)`
+   =(calc-top-list &optional N M SEL-MODE)=
 
-   Return a list of `N` entries starting at stack level `M` (default both 1),
-   in bottom-to-top order (level `M+N-1` first, level `M` last). Does not
-   normalize. `SEL-MODE` is the same as for `calc-top`.
+   Return a list of =N= entries starting at stack level =M= (default both 1),
+   in bottom-to-top order (level =M+N-1= first, level =M= last). Does not
+   normalize. =SEL-MODE= is the same as for =calc-top=.
 
    #+begin_src emacs-lisp :results silent
    (calc-top-list 2 1)  ;; top two entries, bottom-to-top order
    #+end_src
 
 ** (calc-top-list-n)
-   `(calc-top-list-n &optional N M SEL-MODE)`
+   =(calc-top-list-n &optional N M SEL-MODE)=
 
-   Like `calc-top-list`, but normalizes every entry.
+   Like =calc-top-list=, but normalizes every entry.
 
    #+begin_src emacs-lisp :results silent
    (calc-top-list-n 2 1)  ;; normalized top two entries
    #+end_src
 
 ** (calc-pop-push-record-list)
-   `(calc-pop-push-record-list N PREFIX VALS &optional M SELS)`
+   =(calc-pop-push-record-list N PREFIX VALS &optional M SELS)=
 
-   Replace `N` stack entries starting at level `M` (default 1) with `VALS`, and
-   record the operation in the trail under `PREFIX`. The standard way to commit
+   Replace =N= stack entries starting at level =M= (default 1) with =VALS=, and
+   record the operation in the trail under =PREFIX=. The standard way to commit
    the result of a command: pop the inputs, push the result, leave a trail entry.
 
-   - `N` — number of entries to pop.
-   - `PREFIX` — trail label (string). If nil, no trail entry is recorded.
-   - `VALS` — a list of formulas to push, or a single formula (auto-wrapped in
+   - =N= — number of entries to pop.
+   - =PREFIX= — trail label (string). If nil, no trail entry is recorded.
+   - =VALS= — a list of formulas to push, or a single formula (auto-wrapped in
      a list). Pushed in order so the last element ends up at the top of the stack.
-   - `M` — bottom-most stack level affected (default 1 = top).
-   - `SELS` — optional list of selections paired with `VALS`.
+   - =M= — bottom-most stack level affected (default 1 = top).
+   - =SELS= — optional list of selections paired with =VALS=.
 
-   If `calc-any-selections` is set and `SELS` is nil, falls through to
-   `calc-replace-selections` instead of popping. Signals if the stack does not
-   contain `N + M - 1` entries.
+   If =calc-any-selections= is set and =SELS= is nil, falls through to
+   =calc-replace-selections= instead of popping. Signals if the stack does not
+   contain =N + M - 1= entries.
 
    #+begin_src emacs-lisp :results silent
    ;; Pop 2, push their product, record under "mult"
@@ -115,9 +116,9 @@
 
 * Formula
 ** (math-common-constant-factor) [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-common_002dconstant_002dfactor][manual]]
-   `(math-common-constant-factor EXPR)`
+   =(math-common-constant-factor EXPR)=
 
-   Returns the *constant* factor in `EXPR`.
+   Returns the *constant* factor in =EXPR=.
 
    #+begin_src emacs-lisp :results silent
    (math-common-constant-factor '(+ (* 6 x) (* 4 y)))  ;; => 2
@@ -125,10 +126,10 @@
    #+end_src
 
 ** (calc-encase-atoms) [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-calc_002dencase_002datoms][manual]]
-   `(calc-encase-atoms X)`
+   =(calc-encase-atoms X)=
 
-   Modifies `X` in-place (via `setcar`) so every sub-formula is a unique atom,
-   using the `(cplx n 0)` trick from `calc-prepare-selection`.
+   Modifies =X= in-place (via =setcar=) so every sub-formula is a unique atom,
+   using the =(cplx n 0)= trick from =calc-prepare-selection=.
 
    #+begin_src emacs-lisp :results silent
    (let ((x (list '+ 1 1)))
@@ -137,11 +138,11 @@
    #+end_src
 
 ** (math-expr-contains) [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-expr_002dcontains][manual]]
-   `(math-expr-contains EXPR VAR)`
+   =(math-expr-contains EXPR VAR)=
 
-   Return non-nil if `VAR` occurs as a subexpression of `EXPR`. Uses `equal`
-   (structural equality), unlike `calc-find-sub-formula` which uses `eq`. In
-   `f(a, a)`, both `a`s are `equal` but not `eq`, so this function would
+   Return non-nil if =VAR= occurs as a subexpression of =EXPR=. Uses =equal=
+   (structural equality), unlike =calc-find-sub-formula= which uses =eq=. In
+   =f(a, a)=, both =a=s are =equal= but not =eq=, so this function would
    find either.
 
    #+begin_src emacs-lisp :results silent
@@ -150,9 +151,9 @@
    #+end_src
 
 ** (math-expr-contains-count) [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-expr_002dcontains_002dcount][manual]]
-   `(math-expr-contains-count EXPR VAR)`
+   =(math-expr-contains-count EXPR VAR)=
 
-   Return the number of occurrences of `VAR` in `EXPR`, or nil if none.
+   Return the number of occurrences of =VAR= in =EXPR=, or nil if none.
 
    #+begin_src emacs-lisp :results silent
    (math-expr-contains-count '(+ x (* 2 x)) 'x)  ;; => 2
@@ -160,9 +161,9 @@
    #+end_src
 
 ** (math-expr-depends) [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-expr_002ddepends][manual]]
-   `(math-expr-depends EXPR VAR)`
+   =(math-expr-depends EXPR VAR)=
 
-   Return true if `EXPR` and `VAR` share any variable.
+   Return true if =EXPR= and =VAR= share any variable.
 
    #+begin_src emacs-lisp :results silent
    (math-expr-depends '(+ x 1) 'y)  ;; => nil
@@ -170,9 +171,9 @@
    #+end_src
 
 ** (math-expr-contains-vars) [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-expr_002dcontains_002dvars][manual]]
-   `(math-expr-contains-vars EXPR)`
+   =(math-expr-contains-vars EXPR)=
 
-   Return true if `EXPR` contains any variables; nil if it contains only
+   Return true if =EXPR= contains any variables; nil if it contains only
    constants and functions with constant arguments.
 
    #+begin_src emacs-lisp :results silent
@@ -181,9 +182,9 @@
    #+end_src
 
 ** (math-expr-subst) [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-expr_002dsubst][manual]]
-   `(math-expr-subst EXPR OLD NEW)`
+   =(math-expr-subst EXPR OLD NEW)=
 
-   Return a copy of `EXPR` with all occurrences of `OLD` replaced by `NEW`.
+   Return a copy of =EXPR= with all occurrences of =OLD= replaced by =NEW=.
    Handles lambda dummy variables correctly.
 
    #+begin_src emacs-lisp :results silent
@@ -191,9 +192,9 @@
    #+end_src
 
 ** (math-multi-subst) [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-multi_002dsubst][manual]]
-   `(math-multi-subst EXPR OLD NEW)`
+   =(math-multi-subst EXPR OLD NEW)=
 
-   Like `math-expr-subst`, but `OLD` and `NEW` are lists substituted
+   Like =math-expr-subst=, but =OLD= and =NEW= are lists substituted
    simultaneously. If lists differ in length, trailing elements of the longer
    list are ignored.
 
@@ -204,11 +205,11 @@
 
 * Polynomials
 ** (math-polynomial-p) [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-polynomial_002dp][manual]]
-   `(math-polynomial-p EXPR VAR)`
+   =(math-polynomial-p EXPR VAR)=
 
-   Return the degree of `EXPR` as a polynomial in `VAR`, or nil if it is not
-   a polynomial. Degree is the highest power of `VAR` in the expanded form. A
-   constant expression (no `VAR`) has degree 0.
+   Return the degree of =EXPR= as a polynomial in =VAR=, or nil if it is not
+   a polynomial. Degree is the highest power of =VAR= in the expanded form. A
+   constant expression (no =VAR=) has degree 0.
 
    #+begin_src emacs-lisp :results silent
    (math-polynomial-p '(+ (^ x 2) (* 3 x) 1) 'x)  ;; => 2
@@ -216,13 +217,13 @@
    #+end_src
 
 ** (math-is-polynomial) [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-is_002dpolynomial][manual]]
-   `(math-is-polynomial EXPR VAR DEGREE LOOSE)`
+   =(math-is-polynomial EXPR VAR DEGREE LOOSE)=
 
-   Return a coefficient list `(a0 a1 ... an)` for `a0 + a1*var + ... + an*var^n`,
-   or nil if `EXPR` is not a polynomial in `VAR`. `DEGREE` caps the maximum
-   accepted degree (recommended to avoid huge lists on inputs like `(x+1)^1000`).
+   Return a coefficient list =(a0 a1 ... an)= for =a0 + a1*var + ... + an*var^n=,
+   or nil if =EXPR= is not a polynomial in =VAR=. =DEGREE= caps the maximum
+   accepted degree (recommended to avoid huge lists on inputs like =(x+1)^1000=).
 
-   If `LOOSE` is non-nil, coefficients may themselves depend on `VAR` as long
+   If =LOOSE= is non-nil, coefficients may themselves depend on =VAR= as long
    as they are not polynomials; never returns nil in loose mode.
 
    #+begin_src emacs-lisp :results silent
@@ -231,11 +232,11 @@
    #+end_src
 
 ** (math-polynomial-base) [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-polynomial_002dbase][manual]]
-   `(math-polynomial-base EXPR PRED)`
+   =(math-polynomial-base EXPR PRED)=
 
-   Return a variable in `EXPR` such that `EXPR` is a polynomial in it, or nil.
-   For multivariate expressions, the choice is arbitrary. `PRED`, if given, is
-   called as `(pred subexpr)` with `mpb-top-expr` bound to the original `EXPR`;
+   Return a variable in =EXPR= such that =EXPR= is a polynomial in it, or nil.
+   For multivariate expressions, the choice is arbitrary. =PRED=, if given, is
+   called as =(pred subexpr)= with =mpb-top-expr= bound to the original =EXPR=;
    use it to add extra conditions or collect all suitable subexpressions.
 
    #+begin_src emacs-lisp :results silent
@@ -244,28 +245,28 @@
 
 * Simplification & rewriting
 ** (math-simplify-extended) [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-simplify_002dextended][manual]]
-   `(math-simplify-extended A)`
+   =(math-simplify-extended A)=
 
-   Simplify `A` with additional rules that are more thorough but not always
-   safe (e.g., simplifies `sqrt(x^2)` to `x`, valid only when `x` is positive).
-   Implemented by binding `math-living-dangerously` to `t` and calling
-   `math-simplify`. Dangerous rules check this variable before firing.
+   Simplify =A= with additional rules that are more thorough but not always
+   safe (e.g., simplifies =sqrt(x^2)= to =x=, valid only when =x= is positive).
+   Implemented by binding =math-living-dangerously= to =t= and calling
+   =math-simplify=. Dangerous rules check this variable before firing.
 
    #+begin_src emacs-lisp :results silent
    (math-simplify-extended '(calcFunc-sqrt (^ x 2)))  ;; => x
    #+end_src
 
 ** (math-defsimplify) [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-math_002ddefsimplify][manual]]
-   `(math-defsimplify FUNCS BODY)`
+   =(math-defsimplify FUNCS BODY)=
 
    Macro that registers a simplification rule, typically as a top-level form.
-   `FUNCS` is a symbol (e.g., `+`, `calcFunc-sqrt`) or list of symbols; the
-   rule applies to calls to any of those functions. `BODY` is written as a
-   function body with `expr` bound to the matched call.
+   =FUNCS= is a symbol (e.g., =+=, =calcFunc-sqrt=) or list of symbols; the
+   rule applies to calls to any of those functions. =BODY= is written as a
+   function body with =expr= bound to the matched call.
 
-   Return nil or the original `expr` to skip; any other value replaces `expr`.
+   Return nil or the original =expr= to skip; any other value replaces =expr=.
    Rules are tried in definition order; the first match wins and restarts the
-   loop. `BODY` must be plain Lisp — `defmath` conveniences are not available.
+   loop. =BODY= must be plain Lisp — =defmath= conveniences are not available.
    The arguments of the matched call are already simplified before the rule
    runs, and may be rearranged destructively.
 
@@ -277,12 +278,12 @@
    #+end_src
 
 ** (math-apply-rewrites) [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-apply_002drewrites][manual]]
-   `(math-apply-rewrites EXPR CRULES HEADS)`
+   =(math-apply-rewrites EXPR CRULES HEADS)=
 
-   Apply compiled rewrite rule set `CRULES` to `EXPR` at the top level only,
+   Apply compiled rewrite rule set =CRULES= to =EXPR= at the top level only,
    making at most one rewrite. Returns the rewritten expression, or nil if no
-   rule matched or produced a change. `HEADS` is optional: a list of function
-   names in `EXPR` used to narrow the search (the compiler tags each rule with
+   rule matched or produced a change. =HEADS= is optional: a list of function
+   names in =EXPR= used to narrow the search (the compiler tags each rule with
    its rarest function name).
 
    #+begin_src emacs-lisp :results silent
@@ -292,10 +293,10 @@
    #+end_src
 
 ** (math-match-patterns) [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-match_002dpatterns][manual]]
-   `(math-match-patterns PAT VEC NOT-FLAG)`
+   =(math-match-patterns PAT VEC NOT-FLAG)=
 
-   Return a new vector of elements from `VEC` that match (or, if `NOT-FLAG` is
-   non-nil, don't match) any pattern in `PAT`. `PAT` is an uncompiled pattern
+   Return a new vector of elements from =VEC= that match (or, if =NOT-FLAG= is
+   non-nil, don't match) any pattern in =PAT=. =PAT= is an uncompiled pattern
    set or pattern set variable.
 
    #+begin_src emacs-lisp :results silent
@@ -306,11 +307,11 @@
 
 * Solving
 ** (math-solve-for) [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-solve_002dfor][manual]]
-   `(math-solve-for LHS RHS VAR FULL)`
+   =(math-solve-for LHS RHS VAR FULL)=
 
-   Solve `LHS` = `RHS` for `VAR`, returning the right-hand side, or nil if
-   unsolvable. `VAR` must appear in `LHS` or `RHS`. The return value does not
-   contain `VAR` (unlike the user-level `solve`/`finv`). If `FULL` is non-nil,
+   Solve =LHS= = =RHS= for =VAR=, returning the right-hand side, or nil if
+   unsolvable. =VAR= must appear in =LHS= or =RHS=. The return value does not
+   contain =VAR= (unlike the user-level =solve=/=finv=). If =FULL= is non-nil,
    includes dummy signs and integers.
 
    #+begin_src emacs-lisp :results silent
@@ -318,15 +319,15 @@
    (math-solve-for '(+ (* 2 x) 3) 7 'x nil)  ;; => 2
    #+end_src
 
-   Inverses for custom functions are registered via a `math-inverse` property.
-   Use `(math-solve-get-sign x)` and `(math-solve-get-int x)` to introduce
-   arbitrary sign/integer variables; these return `x` unchanged in non-full mode.
+   Inverses for custom functions are registered via a =math-inverse= property.
+   Use =(math-solve-get-sign x)= and =(math-solve-get-int x)= to introduce
+   arbitrary sign/integer variables; these return =x= unchanged in non-full mode.
 
 ** (math-solve-eqn) [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-solve_002deqn][manual]]
-   `(math-solve-eqn EXPR VAR FULL)`
+   =(math-solve-eqn EXPR VAR FULL)=
 
-   Like `math-solve-for`, but `EXPR` is an equation or inequality. A bare
-   expression is treated as `EXPR` = 0. Returns an equation or inequality, or nil.
+   Like =math-solve-for=, but =EXPR= is an equation or inequality. A bare
+   expression is treated as =EXPR= = 0. Returns an equation or inequality, or nil.
 
    #+begin_src emacs-lisp :results silent
    (math-solve-eqn '(calcFunc-eq (+ x 3) 7) 'x nil)  ;; => (calcFunc-eq x 4)
@@ -334,9 +335,9 @@
    #+end_src
 
 ** (math-solve-system) [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-solve_002dsystem][manual]]
-   `(math-solve-system EXPRS VARS FULL)`
+   =(math-solve-system EXPRS VARS FULL)=
 
-   Solve a system of equations. `EXPRS` and `VARS` are typically equal-length
+   Solve a system of equations. =EXPRS= and =VARS= are typically equal-length
    vectors.
 
    #+begin_src emacs-lisp :results silent
@@ -349,23 +350,23 @@
 
 * Selection
 ** (calc-prepare-selection) [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-calc_002dprepare_002dselection][manual]]
-   `(calc-prepare-selection &optional NUM)`
+   =(calc-prepare-selection &optional NUM)=
 
-   Prepare a stack entry for selection operations. `NUM` specifies which entry
+   Prepare a stack entry for selection operations. =NUM= specifies which entry
    to use; if omitted, the entry containing the cursor is used.
 
-   Stores results in: `calc-selection-cache-num` (the entry number used),
-   `calc-selection-cache-entry` (the entry as a list, as `calc-top-list` would
-   return with entry as the selection mode), and `calc-selection-cache-comp`
+   Stores results in: =calc-selection-cache-num= (the entry number used),
+   =calc-selection-cache-entry= (the entry as a list, as =calc-top-list= would
+   return with entry as the selection mode), and =calc-selection-cache-comp=
    (a "tagged" composition mapping cursor positions to sub-formulas; see I/O
    and Formatting Functions).
 
-   A complication: formulas can contain duplicate small integers. In `[1, 2, 1]`,
-   both `1`s are `eq` in Lisp, so storing `1` as a selection would falsely match
-   both. To prevent this, `calc-prepare-selection` replaces plain integers with
-   `(cplx n 0)` lists — displayed identically but distinct objects, so no two
-   sub-formulas are `eq`. The next time the entry is used in a computation,
-   `calc-normalize` restores them to plain numbers.
+   A complication: formulas can contain duplicate small integers. In =[1, 2, 1]=,
+   both =1=s are =eq= in Lisp, so storing =1= as a selection would falsely match
+   both. To prevent this, =calc-prepare-selection= replaces plain integers with
+   =(cplx n 0)= lists — displayed identically but distinct objects, so no two
+   sub-formulas are =eq=. The next time the entry is used in a computation,
+   =calc-normalize= restores them to plain numbers.
 
    #+begin_src emacs-lisp :results silent
    (calc-prepare-selection)    ;; prepare entry under cursor
@@ -373,10 +374,10 @@
    #+end_src
 
 ** (calc-find-selected-part) [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-calc_002dfind_002dselected_002dpart][manual]]
-   `(calc-find-selected-part)`
+   =(calc-find-selected-part)=
 
    Find the smallest sub-formula containing the cursor. Assumes
-   `calc-prepare-selection` has been called first. Returns nil if the cursor
+   =calc-prepare-selection= has been called first. Returns nil if the cursor
    is not on any part of the formula.
 
    #+begin_src emacs-lisp :results silent
@@ -385,14 +386,14 @@
    #+end_src
 
 ** (calc-find-sub-formula) [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-calc_002dfind_002dsub_002dformula][manual]]
-   `(calc-find-sub-formula EXPR PART)`
+   =(calc-find-sub-formula EXPR PART)=
 
-   Search `EXPR` for `PART` by object identity (`eq`). Returns:
-   - `t` — `EXPR` itself is `PART`
-   - N — `PART` is found within the Nth argument of `EXPR` (1-based)
-   - `nil` — `PART` is not in `EXPR`
+   Search =EXPR= for =PART= by object identity (=eq=). Returns:
+   - =t= — =EXPR= itself is =PART=
+   - N — =PART= is found within the Nth argument of =EXPR= (1-based)
+   - =nil= — =PART= is not in =EXPR=
 
-   The index N can be passed to `calc-find-nth-part` to retrieve the child.
+   The index N can be passed to =calc-find-nth-part= to retrieve the child.
    Does not account for associativity.
 
    #+begin_src emacs-lisp :results silent
@@ -402,10 +403,10 @@
    #+end_src
 
 ** (calc-locate-cursor-element)
-   `(calc-locate-cursor-element PT)`
+   =(calc-locate-cursor-element PT)=
 
    Return the stack index of the entry whose display region contains buffer
-   position `PT`. The result is suitable for passing to `calc-cursor-stack-index`.
+   position =PT=. The result is suitable for passing to =calc-cursor-stack-index=.
 
    #+begin_src emacs-lisp :results silent
    (calc-locate-cursor-element (point))  ;; => stack index at cursor position
@@ -413,11 +414,11 @@
 
 * Display
 ** (math-format-value) [[https://www.gnu.org/software/emacs/manual/html_node/calc/Formatting-Lisp-Functions.html#index-format_002dvalue][manual]]
-   `(math-format-value A &optional W)`
+   =(math-format-value A &optional W)=
 
-   Format `A` as a display string. For plain scalars in nil/flat/unform language
-   modes, delegates to `math-format-number`. Otherwise composes `A` and converts
-   to string via `math-composition-to-string` with no line breaking. `W`
+   Format =A= as a display string. For plain scalars in nil/flat/unform language
+   modes, delegates to =math-format-number=. Otherwise composes =A= and converts
+   to string via =math-composition-to-string= with no line breaking. =W=
    optionally limits the output width.
 
    #+begin_src emacs-lisp :results silent
@@ -426,12 +427,12 @@
    #+end_src
 
 ** (math-format-stack-value)
-   `(math-format-stack-value ENTRY)`
+   =(math-format-stack-value ENTRY)=
 
-   Format a complete stack entry for display in the Calc buffer. `ENTRY` is a
-   list `(value lines selection)`. Handles selection highlighting, left label
-   (`calc-left-label`), and line numbering (`calc-line-numbering`). Sets
-   `calc-selection-cache-entry` and `calc-any-selections` as side effects.
+   Format a complete stack entry for display in the Calc buffer. =ENTRY= is a
+   list =(value lines selection)=. Handles selection highlighting, left label
+   (=calc-left-label=), and line numbering (=calc-line-numbering=). Sets
+   =calc-selection-cache-entry= and =calc-any-selections= as side effects.
 
    #+begin_src emacs-lisp :results silent
    ;; ENTRY format: (value display-lines selection)
@@ -439,7 +440,7 @@
    #+end_src
 
 ** (calc-align-stack-window)
-   `(calc-align-stack-window)`
+   =(calc-align-stack-window)=
 
    Scroll the Calc stack window so the home line (.) is visible near the
    bottom. Positions the window start accordingly and moves point to the home
