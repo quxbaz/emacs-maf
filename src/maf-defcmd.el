@@ -77,12 +77,13 @@ Possible :target values, in order of priority:
 ;;
 ;; It should handle the rest of the possible contexts appropriately.
 (defun maf--defcmd-commit (val context)
-  (let* ((target (alist-get :target context))
-         (prefix (alist-get :prefix context))
-         (arity (alist-get :arity context))
-         (pop-n (alist-get :pop-n context)))
-    (pcase target
-      ('home (calc-pop-push-record-list pop-n prefix val)))))
+  (maf--with-calc-buffer
+    (let* ((target (alist-get :target context))
+           (prefix (alist-get :prefix context))
+           (arity (alist-get :arity context))
+           (pop-n (alist-get :pop-n context)))
+      (pcase target
+        ('home (calc-pop-push-record-list pop-n prefix val))))))
 
 (defmacro maf-defcmd (name bindings &rest rest)
   (declare (indent 2) (doc-string 3))
