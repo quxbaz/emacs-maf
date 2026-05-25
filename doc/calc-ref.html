@@ -1,0 +1,1081 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<!-- 2026-05-25 Mon 14:49 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Calc Reference</title>
+<meta name="author" content="David Yeung" />
+<meta name="generator" content="Org Mode" />
+<style type="text/css">
+  #content { max-width: 60em; margin: auto; }
+  .title  { text-align: center;
+             margin-bottom: .2em; }
+  .subtitle { text-align: center;
+              font-size: medium;
+              font-weight: bold;
+              margin-top:0; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { font-family: monospace; color: green; }
+  .priority { font-family: monospace; color: orange; }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .org-right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .org-left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .org-center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #e6e6e6;
+    border-radius: 3px;
+    background-color: #f2f2f2;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: auto;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    top: -8px;
+    right: 12px;
+    padding: 3px;
+    color: #555;
+    background-color: #f2f2f299;
+  }
+  pre.src:hover:before { display: inline; margin-top: 14px;}
+  /* Languages per Org manual */
+  pre.src-asymptote:before { content: 'Asymptote'; }
+  pre.src-awk:before { content: 'Awk'; }
+  pre.src-authinfo::before { content: 'Authinfo'; }
+  pre.src-C:before { content: 'C'; }
+  /* pre.src-C++ doesn't work in CSS */
+  pre.src-clojure:before { content: 'Clojure'; }
+  pre.src-css:before { content: 'CSS'; }
+  pre.src-D:before { content: 'D'; }
+  pre.src-ditaa:before { content: 'ditaa'; }
+  pre.src-dot:before { content: 'Graphviz'; }
+  pre.src-calc:before { content: 'Emacs Calc'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-fortran:before { content: 'Fortran'; }
+  pre.src-gnuplot:before { content: 'gnuplot'; }
+  pre.src-haskell:before { content: 'Haskell'; }
+  pre.src-hledger:before { content: 'hledger'; }
+  pre.src-java:before { content: 'Java'; }
+  pre.src-js:before { content: 'Javascript'; }
+  pre.src-latex:before { content: 'LaTeX'; }
+  pre.src-ledger:before { content: 'Ledger'; }
+  pre.src-lisp:before { content: 'Lisp'; }
+  pre.src-lilypond:before { content: 'Lilypond'; }
+  pre.src-lua:before { content: 'Lua'; }
+  pre.src-matlab:before { content: 'MATLAB'; }
+  pre.src-mscgen:before { content: 'Mscgen'; }
+  pre.src-ocaml:before { content: 'Objective Caml'; }
+  pre.src-octave:before { content: 'Octave'; }
+  pre.src-org:before { content: 'Org mode'; }
+  pre.src-oz:before { content: 'OZ'; }
+  pre.src-plantuml:before { content: 'Plantuml'; }
+  pre.src-processing:before { content: 'Processing.js'; }
+  pre.src-python:before { content: 'Python'; }
+  pre.src-R:before { content: 'R'; }
+  pre.src-ruby:before { content: 'Ruby'; }
+  pre.src-sass:before { content: 'Sass'; }
+  pre.src-scheme:before { content: 'Scheme'; }
+  pre.src-screen:before { content: 'Gnu Screen'; }
+  pre.src-sed:before { content: 'Sed'; }
+  pre.src-sh:before { content: 'shell'; }
+  pre.src-sql:before { content: 'SQL'; }
+  pre.src-sqlite:before { content: 'SQLite'; }
+  /* additional languages in org.el's org-babel-load-languages alist */
+  pre.src-forth:before { content: 'Forth'; }
+  pre.src-io:before { content: 'IO'; }
+  pre.src-J:before { content: 'J'; }
+  pre.src-makefile:before { content: 'Makefile'; }
+  pre.src-maxima:before { content: 'Maxima'; }
+  pre.src-perl:before { content: 'Perl'; }
+  pre.src-picolisp:before { content: 'Pico Lisp'; }
+  pre.src-scala:before { content: 'Scala'; }
+  pre.src-shell:before { content: 'Shell Script'; }
+  pre.src-ebnf2ps:before { content: 'ebfn2ps'; }
+  /* additional language identifiers per "defun org-babel-execute"
+       in ob-*.el */
+  pre.src-cpp:before  { content: 'C++'; }
+  pre.src-abc:before  { content: 'ABC'; }
+  pre.src-coq:before  { content: 'Coq'; }
+  pre.src-groovy:before  { content: 'Groovy'; }
+  /* additional language identifiers from org-babel-shell-names in
+     ob-shell.el: ob-shell is the only babel language using a lambda to put
+     the execution function name together. */
+  pre.src-bash:before  { content: 'bash'; }
+  pre.src-csh:before  { content: 'csh'; }
+  pre.src-ash:before  { content: 'ash'; }
+  pre.src-dash:before  { content: 'dash'; }
+  pre.src-ksh:before  { content: 'ksh'; }
+  pre.src-mksh:before  { content: 'mksh'; }
+  pre.src-posh:before  { content: 'posh'; }
+  /* Additional Emacs modes also supported by the LaTeX listings package */
+  pre.src-ada:before { content: 'Ada'; }
+  pre.src-asm:before { content: 'Assembler'; }
+  pre.src-caml:before { content: 'Caml'; }
+  pre.src-delphi:before { content: 'Delphi'; }
+  pre.src-html:before { content: 'HTML'; }
+  pre.src-idl:before { content: 'IDL'; }
+  pre.src-mercury:before { content: 'Mercury'; }
+  pre.src-metapost:before { content: 'MetaPost'; }
+  pre.src-modula-2:before { content: 'Modula-2'; }
+  pre.src-pascal:before { content: 'Pascal'; }
+  pre.src-ps:before { content: 'PostScript'; }
+  pre.src-prolog:before { content: 'Prolog'; }
+  pre.src-simula:before { content: 'Simula'; }
+  pre.src-tcl:before { content: 'tcl'; }
+  pre.src-tex:before { content: 'TeX'; }
+  pre.src-plain-tex:before { content: 'Plain TeX'; }
+  pre.src-verilog:before { content: 'Verilog'; }
+  pre.src-vhdl:before { content: 'VHDL'; }
+  pre.src-xml:before { content: 'XML'; }
+  pre.src-nxml:before { content: 'XML'; }
+  /* add a generic configuration mode; LaTeX export needs an additional
+     (add-to-list 'org-latex-listings-langs '(conf " ")) in .emacs */
+  pre.src-conf:before { content: 'Configuration File'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.org-right  { text-align: center;  }
+  th.org-left   { text-align: center;   }
+  th.org-center { text-align: center; }
+  td.org-right  { text-align: right;  }
+  td.org-left   { text-align: left;   }
+  td.org-center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara { display: inline; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .equation-container {
+    display: table;
+    text-align: center;
+    width: 100%;
+  }
+  .equation {
+    vertical-align: middle;
+  }
+  .equation-label {
+    display: table-cell;
+    text-align: right;
+    vertical-align: middle;
+  }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  .org-svg { }
+</style>
+<style>code { background: beige; }</style>
+</head>
+<body>
+<div id="content" class="content">
+<h1 class="title">Calc Reference</h1>
+<div id="table-of-contents" role="doc-toc">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents" role="doc-toc">
+<ul>
+<li><a href="#org5493dc5">1. calc</a>
+<ul>
+<li><a href="#org211adb5">1.1. (calc-load-everything)</a></li>
+</ul>
+</li>
+<li><a href="#orgf9c3b76">2. Stack</a>
+<ul>
+<li><a href="#org153328a">2.1. Stack entry format</a></li>
+<li><a href="#org976666b">2.2. (calc-get-stack-element)</a></li>
+<li><a href="#org81c33cf">2.3. (calc-top)</a></li>
+<li><a href="#org35928be">2.4. (calc-top-n)</a></li>
+<li><a href="#orge8c00f7">2.5. (calc-top-list)</a></li>
+<li><a href="#org44c5208">2.6. (calc-top-list-n)</a></li>
+<li><a href="#org57b8ba1">2.7. (calc-pop-push-record-list)</a></li>
+</ul>
+</li>
+<li><a href="#org3b21ee5">3. Formula</a>
+<ul>
+<li><a href="#orgf8d4227">3.1. (math-common-constant-factor) manual</a></li>
+<li><a href="#org0c7bc0f">3.2. (calc-encase-atoms) manual</a></li>
+<li><a href="#orgd1b512b">3.3. (math-expr-contains) manual</a></li>
+<li><a href="#orgb5142c3">3.4. (math-expr-contains-count) manual</a></li>
+<li><a href="#orgdc2f7fc">3.5. (math-expr-depends) manual</a></li>
+<li><a href="#orgc7022c4">3.6. (math-expr-contains-vars) manual</a></li>
+<li><a href="#orgaad6e7c">3.7. (math-expr-subst) manual</a></li>
+<li><a href="#orga8ad1cb">3.8. (math-multi-subst) manual</a></li>
+</ul>
+</li>
+<li><a href="#orgac0580e">4. Polynomials</a>
+<ul>
+<li><a href="#orgde00e90">4.1. (math-polynomial-p) manual</a></li>
+<li><a href="#orgd0c5351">4.2. (math-is-polynomial) manual</a></li>
+<li><a href="#orgdecaa9a">4.3. (math-polynomial-base) manual</a></li>
+</ul>
+</li>
+<li><a href="#org573fbd4">5. Simplification &amp; rewriting</a>
+<ul>
+<li><a href="#org9fc877c">5.1. (math-simplify-extended) manual</a></li>
+<li><a href="#org0c780c1">5.2. (math-defsimplify) manual</a></li>
+<li><a href="#org6e818d2">5.3. (math-apply-rewrites) manual</a></li>
+<li><a href="#orgdf1f22c">5.4. (math-match-patterns) manual</a></li>
+</ul>
+</li>
+<li><a href="#org0acba59">6. Solving</a>
+<ul>
+<li><a href="#orga52f7e2">6.1. (math-solve-for) manual</a></li>
+<li><a href="#org2cd24a9">6.2. (math-solve-eqn) manual</a></li>
+<li><a href="#orgc031584">6.3. (math-solve-system) manual</a></li>
+</ul>
+</li>
+<li><a href="#org62045fe">7. Selection</a>
+<ul>
+<li><a href="#org4a2fcfe">7.1. (calc-prepare-selection) manual</a></li>
+<li><a href="#org2ab4bf4">7.2. (calc-find-selected-part) manual</a></li>
+<li><a href="#org422a699">7.3. (calc-find-sub-formula) manual</a></li>
+<li><a href="#org17aecd0">7.4. (calc-locate-cursor-element)</a></li>
+</ul>
+</li>
+<li><a href="#orgdaea466">8. Display</a>
+<ul>
+<li><a href="#orgdd5ce85">8.1. (math-format-value) manual</a></li>
+<li><a href="#org3b55beb">8.2. (math-format-stack-value)</a></li>
+<li><a href="#orgab9fcc3">8.3. (calc-align-stack-window)</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-org5493dc5" class="outline-2">
+<h2 id="org5493dc5"><span class="section-number-2">1.</span> calc</h2>
+<div class="outline-text-2" id="text-1">
+</div>
+<div id="outline-container-org211adb5" class="outline-3">
+<h3 id="org211adb5"><span class="section-number-3">1.1.</span> (calc-load-everything)</h3>
+<div class="outline-text-3" id="text-1-1">
+<p>
+<code>(calc-load-everything)</code>
+</p>
+
+<p>
+Load all Calc extension modules. Ensures all Calc functions are available
+before calling them programmatically.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(calc-load-everything)
+</pre>
+</div>
+</div>
+</div>
+</div>
+<div id="outline-container-orgf9c3b76" class="outline-2">
+<h2 id="orgf9c3b76"><span class="section-number-2">2.</span> Stack</h2>
+<div class="outline-text-2" id="text-2">
+</div>
+<div id="outline-container-org153328a" class="outline-3">
+<h3 id="org153328a"><span class="section-number-3">2.1.</span> Stack entry format</h3>
+<div class="outline-text-3" id="text-2-1">
+<p>
+Each element of <code>calc-stack</code> is a list <code>(formula lines selection)</code>:
+</p>
+<ul class="org-ul">
+<li><code>car</code> / index 0 — the full formula (a Lisp s-expression)</li>
+<li><code>nth 1</code> — display line count (integer); initialized to <code>1</code> on push, updated
+to the actual rendered height by <code>math-format-stack-value</code> via <code>calc-count-lines</code>.
+Used by <code>calc-substack-height</code> for cursor positioning.</li>
+<li><code>nth 2</code> — active selection sub-formula, or <code>nil</code> if none</li>
+</ul>
+
+<p>
+Plain integers are replaced with <code>(cplx n 0)</code> by <code>calc-prepare-selection</code>
+so that duplicate small integers are distinct objects (<code>eq</code>-wise). They are
+restored to plain numbers by <code>calc-normalize</code> on next use.
+</p>
+
+<p>
+Stack level 1 is the top.
+</p>
+</div>
+</div>
+<div id="outline-container-org976666b" class="outline-3">
+<h3 id="org976666b"><span class="section-number-3">2.2.</span> (calc-get-stack-element)</h3>
+<div class="outline-text-3" id="text-2-2">
+<p>
+<code>(calc-get-stack-element X &amp;optional SEL-MODE)</code>
+</p>
+
+<p>
+Low-level accessor. Given a raw stack entry <code>X</code>, return a part of it
+according to <code>SEL-MODE</code>:
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left"><code>SEL-MODE</code></th>
+<th scope="col" class="org-left">returns</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left"><code>nil</code></td>
+<td class="org-left">selection (<code>nth 2</code>) if active and <code>calc-use-selections</code>; else formula (<code>car</code>)</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>'entry</code></td>
+<td class="org-left"><code>X</code> itself</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>'sel</code></td>
+<td class="org-left"><code>(nth 2 x)</code> — the selection sub-expression</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>'full</code></td>
+<td class="org-left"><code>(car x)</code> — full formula, ignoring selection</td>
+</tr>
+
+<tr>
+<td class="org-left">other</td>
+<td class="org-left"><code>calc-sel-error</code></td>
+</tr>
+</tbody>
+</table>
+
+<p>
+Called internally by <code>calc-top</code> and <code>calc-top-list</code>; rarely needed directly.
+</p>
+</div>
+</div>
+<div id="outline-container-org81c33cf" class="outline-3">
+<h3 id="org81c33cf"><span class="section-number-3">2.3.</span> (calc-top)</h3>
+<div class="outline-text-3" id="text-2-3">
+<p>
+<code>(calc-top &amp;optional N SEL-MODE)</code>
+</p>
+
+<p>
+Return the Nth stack entry (default 1 = top) according to <code>SEL-MODE</code>.
+Does not normalize. Use <code>calc-top-n</code> if normalization is wanted.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(calc-top 1)          ;; formula at top (selection-aware)
+(calc-top 1 'full)    ;; full formula, ignoring any active selection
+(calc-top 1 'sel)     ;; active selection sub-expression
+(calc-top 1 'entry)   ;; raw entry: (formula priority selection)
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org35928be" class="outline-3">
+<h3 id="org35928be"><span class="section-number-3">2.4.</span> (calc-top-n)</h3>
+<div class="outline-text-3" id="text-2-4">
+<p>
+<code>(calc-top-n &amp;optional N SEL-MODE)</code>
+</p>
+
+<p>
+Like <code>calc-top</code>, but normalizes the result and checks it is complete.
+Use when you need a canonical formula and don't mind the precision
+round-trip that <code>calc-normalize</code> may introduce.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(calc-top-n 1)  ;; normalized formula at top
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orge8c00f7" class="outline-3">
+<h3 id="orge8c00f7"><span class="section-number-3">2.5.</span> (calc-top-list)</h3>
+<div class="outline-text-3" id="text-2-5">
+<p>
+<code>(calc-top-list &amp;optional N M SEL-MODE)</code>
+</p>
+
+<p>
+Return a list of <code>N</code> entries starting at stack level <code>M</code> (default both 1),
+in bottom-to-top order (level <code>M+N-1</code> first, level <code>M</code> last). Does not
+normalize. <code>SEL-MODE</code> is the same as for <code>calc-top</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(calc-top-list 2 1)  ;; top two entries, bottom-to-top order
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org44c5208" class="outline-3">
+<h3 id="org44c5208"><span class="section-number-3">2.6.</span> (calc-top-list-n)</h3>
+<div class="outline-text-3" id="text-2-6">
+<p>
+<code>(calc-top-list-n &amp;optional N M SEL-MODE)</code>
+</p>
+
+<p>
+Like <code>calc-top-list</code>, but normalizes every entry.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(calc-top-list-n 2 1)  ;; normalized top two entries
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org57b8ba1" class="outline-3">
+<h3 id="org57b8ba1"><span class="section-number-3">2.7.</span> (calc-pop-push-record-list)</h3>
+<div class="outline-text-3" id="text-2-7">
+<p>
+<code>(calc-pop-push-record-list N PREFIX VALS &amp;optional M SELS)</code>
+</p>
+
+<p>
+Replace <code>N</code> stack entries starting at level <code>M</code> (default 1) with <code>VALS</code>, and
+record the operation in the trail under <code>PREFIX</code>. The standard way to commit
+the result of a command: pop the inputs, push the result, leave a trail entry.
+</p>
+
+<ul class="org-ul">
+<li><code>N</code> — number of entries to pop.</li>
+<li><code>PREFIX</code> — trail label (string). If nil, no trail entry is recorded.</li>
+<li><code>VALS</code> — a list of formulas to push, or a single formula (auto-wrapped in
+a list). Pushed in order so the last element ends up at the top of the stack.</li>
+<li><code>M</code> — bottom-most stack level affected (default 1 = top).</li>
+<li><code>SELS</code> — optional list of selections paired with <code>VALS</code>.</li>
+</ul>
+
+<p>
+If <code>calc-any-selections</code> is set and <code>SELS</code> is nil, falls through to
+<code>calc-replace-selections</code> instead of popping. Signals if the stack does not
+contain <code>N + M - 1</code> entries.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">;; Pop 2, push their product, record under "mult"
+(calc-pop-push-record-list 2 "mult" (list (calcFunc-mul (calc-top 2 'full)
+                                                        (calc-top 1 'full))))
+
+;; Single-value form: VALS may be the formula itself
+(calc-pop-push-record-list 1 "double" (calcFunc-mul (calc-top 1 'full) 2))
+</pre>
+</div>
+</div>
+</div>
+</div>
+<div id="outline-container-org3b21ee5" class="outline-2">
+<h2 id="org3b21ee5"><span class="section-number-2">3.</span> Formula</h2>
+<div class="outline-text-2" id="text-3">
+</div>
+<div id="outline-container-orgf8d4227" class="outline-3">
+<h3 id="orgf8d4227"><span class="section-number-3">3.1.</span> (math-common-constant-factor) <a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-common_002dconstant_002dfactor">manual</a></h3>
+<div class="outline-text-3" id="text-3-1">
+<p>
+<code>(math-common-constant-factor EXPR)</code>
+</p>
+
+<p>
+Returns the <b>constant</b> factor in <code>EXPR</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(math-common-constant-factor '(+ (* 6 x) (* 4 y)))  ;; =&gt; 2
+(math-common-constant-factor '(+ (* 3 x) y))        ;; =&gt; 1
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org0c7bc0f" class="outline-3">
+<h3 id="org0c7bc0f"><span class="section-number-3">3.2.</span> (calc-encase-atoms) <a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-calc_002dencase_002datoms">manual</a></h3>
+<div class="outline-text-3" id="text-3-2">
+<p>
+<code>(calc-encase-atoms X)</code>
+</p>
+
+<p>
+Modifies <code>X</code> in-place (via <code>setcar</code>) so every sub-formula is a unique atom,
+using the <code>(cplx n 0)</code> trick from <code>calc-prepare-selection</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(let ((x (list '+ 1 1)))
+  (calc-encase-atoms x)
+  x)  ;; =&gt; (+ (cplx 1 0) (cplx 1 0))  — two distinct objects
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orgd1b512b" class="outline-3">
+<h3 id="orgd1b512b"><span class="section-number-3">3.3.</span> (math-expr-contains) <a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-expr_002dcontains">manual</a></h3>
+<div class="outline-text-3" id="text-3-3">
+<p>
+<code>(math-expr-contains EXPR VAR)</code>
+</p>
+
+<p>
+Return non-nil if <code>VAR</code> occurs as a subexpression of <code>EXPR</code>. Uses <code>equal</code>
+(structural equality), unlike <code>calc-find-sub-formula</code> which uses <code>eq</code>. In
+<code>f(a, a)</code>, both <code>a=s are =equal</code> but not <code>eq</code>, so this function would
+find either.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(math-expr-contains '(+ x (* 2 y)) 'x)  ;; =&gt; t
+(math-expr-contains '(+ x (* 2 y)) 'z)  ;; =&gt; nil
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orgb5142c3" class="outline-3">
+<h3 id="orgb5142c3"><span class="section-number-3">3.4.</span> (math-expr-contains-count) <a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-expr_002dcontains_002dcount">manual</a></h3>
+<div class="outline-text-3" id="text-3-4">
+<p>
+<code>(math-expr-contains-count EXPR VAR)</code>
+</p>
+
+<p>
+Return the number of occurrences of <code>VAR</code> in <code>EXPR</code>, or nil if none.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(math-expr-contains-count '(+ x (* 2 x)) 'x)  ;; =&gt; 2
+(math-expr-contains-count '(+ x 1) 'z)         ;; =&gt; nil
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orgdc2f7fc" class="outline-3">
+<h3 id="orgdc2f7fc"><span class="section-number-3">3.5.</span> (math-expr-depends) <a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-expr_002ddepends">manual</a></h3>
+<div class="outline-text-3" id="text-3-5">
+<p>
+<code>(math-expr-depends EXPR VAR)</code>
+</p>
+
+<p>
+Return true if <code>EXPR</code> and <code>VAR</code> share any variable.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(math-expr-depends '(+ x 1) 'y)  ;; =&gt; nil
+(math-expr-depends '(+ x y) 'y)  ;; =&gt; t
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orgc7022c4" class="outline-3">
+<h3 id="orgc7022c4"><span class="section-number-3">3.6.</span> (math-expr-contains-vars) <a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-expr_002dcontains_002dvars">manual</a></h3>
+<div class="outline-text-3" id="text-3-6">
+<p>
+<code>(math-expr-contains-vars EXPR)</code>
+</p>
+
+<p>
+Return true if <code>EXPR</code> contains any variables; nil if it contains only
+constants and functions with constant arguments.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(math-expr-contains-vars '(+ x 1))  ;; =&gt; t
+(math-expr-contains-vars '(+ 1 2))  ;; =&gt; nil
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orgaad6e7c" class="outline-3">
+<h3 id="orgaad6e7c"><span class="section-number-3">3.7.</span> (math-expr-subst) <a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-expr_002dsubst">manual</a></h3>
+<div class="outline-text-3" id="text-3-7">
+<p>
+<code>(math-expr-subst EXPR OLD NEW)</code>
+</p>
+
+<p>
+Return a copy of <code>EXPR</code> with all occurrences of <code>OLD</code> replaced by <code>NEW</code>.
+Handles lambda dummy variables correctly.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(math-expr-subst '(+ x (* 2 x)) 'x 5)  ;; =&gt; (+ 5 (* 2 5))
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orga8ad1cb" class="outline-3">
+<h3 id="orga8ad1cb"><span class="section-number-3">3.8.</span> (math-multi-subst) <a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-multi_002dsubst">manual</a></h3>
+<div class="outline-text-3" id="text-3-8">
+<p>
+<code>(math-multi-subst EXPR OLD NEW)</code>
+</p>
+
+<p>
+Like <code>math-expr-subst</code>, but <code>OLD</code> and <code>NEW</code> are lists substituted
+simultaneously. If lists differ in length, trailing elements of the longer
+list are ignored.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">;; Swap x and y: sequential subst would give (+ y y), simultaneous gives (+ y x)
+(math-multi-subst '(+ x y) '(x y) '(y x))  ;; =&gt; (+ y x)
+</pre>
+</div>
+</div>
+</div>
+</div>
+<div id="outline-container-orgac0580e" class="outline-2">
+<h2 id="orgac0580e"><span class="section-number-2">4.</span> Polynomials</h2>
+<div class="outline-text-2" id="text-4">
+</div>
+<div id="outline-container-orgde00e90" class="outline-3">
+<h3 id="orgde00e90"><span class="section-number-3">4.1.</span> (math-polynomial-p) <a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-polynomial_002dp">manual</a></h3>
+<div class="outline-text-3" id="text-4-1">
+<p>
+<code>(math-polynomial-p EXPR VAR)</code>
+</p>
+
+<p>
+Return the degree of <code>EXPR</code> as a polynomial in <code>VAR</code>, or nil if it is not
+a polynomial. Degree is the highest power of <code>VAR</code> in the expanded form. A
+constant expression (no <code>VAR</code>) has degree 0.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(math-polynomial-p '(+ (^ x 2) (* 3 x) 1) 'x)  ;; =&gt; 2
+(math-polynomial-p '(calcFunc-sin x) 'x)         ;; =&gt; nil
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orgd0c5351" class="outline-3">
+<h3 id="orgd0c5351"><span class="section-number-3">4.2.</span> (math-is-polynomial) <a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-is_002dpolynomial">manual</a></h3>
+<div class="outline-text-3" id="text-4-2">
+<p>
+<code>(math-is-polynomial EXPR VAR DEGREE LOOSE)</code>
+</p>
+
+<p>
+Return a coefficient list <code>(a0 a1 ... an)</code> for <code>a0 + a1*var + ... + an*var^n</code>,
+or nil if <code>EXPR</code> is not a polynomial in <code>VAR</code>. <code>DEGREE</code> caps the maximum
+accepted degree (recommended to avoid huge lists on inputs like <code>(x+1)^1000</code>).
+</p>
+
+<p>
+If <code>LOOSE</code> is non-nil, coefficients may themselves depend on <code>VAR</code> as long
+as they are not polynomials; never returns nil in loose mode.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(math-is-polynomial '(+ (* 2 x) 3) 'x nil nil)     ;; =&gt; (3 2)      i.e. 3 + 2x
+(math-is-polynomial '(+ (^ x 2) -1) 'x nil nil)    ;; =&gt; (-1 0 1)   i.e. -1 + x^2
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orgdecaa9a" class="outline-3">
+<h3 id="orgdecaa9a"><span class="section-number-3">4.3.</span> (math-polynomial-base) <a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-polynomial_002dbase">manual</a></h3>
+<div class="outline-text-3" id="text-4-3">
+<p>
+<code>(math-polynomial-base EXPR PRED)</code>
+</p>
+
+<p>
+Return a variable in <code>EXPR</code> such that <code>EXPR</code> is a polynomial in it, or nil.
+For multivariate expressions, the choice is arbitrary. <code>PRED</code>, if given, is
+called as <code>(pred subexpr)</code> with <code>mpb-top-expr</code> bound to the original <code>EXPR</code>;
+use it to add extra conditions or collect all suitable subexpressions.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(math-polynomial-base '(+ (^ x 2) (* 3 x)) nil)  ;; =&gt; x
+</pre>
+</div>
+</div>
+</div>
+</div>
+<div id="outline-container-org573fbd4" class="outline-2">
+<h2 id="org573fbd4"><span class="section-number-2">5.</span> Simplification &amp; rewriting</h2>
+<div class="outline-text-2" id="text-5">
+</div>
+<div id="outline-container-org9fc877c" class="outline-3">
+<h3 id="org9fc877c"><span class="section-number-3">5.1.</span> (math-simplify-extended) <a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-simplify_002dextended">manual</a></h3>
+<div class="outline-text-3" id="text-5-1">
+<p>
+<code>(math-simplify-extended A)</code>
+</p>
+
+<p>
+Simplify <code>A</code> with additional rules that are more thorough but not always
+safe (e.g., simplifies <code>sqrt(x^2)</code> to <code>x</code>, valid only when <code>x</code> is positive).
+Implemented by binding <code>math-living-dangerously</code> to <code>t</code> and calling
+<code>math-simplify</code>. Dangerous rules check this variable before firing.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(math-simplify-extended '(calcFunc-sqrt (^ x 2)))  ;; =&gt; x
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org0c780c1" class="outline-3">
+<h3 id="org0c780c1"><span class="section-number-3">5.2.</span> (math-defsimplify) <a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-math_002ddefsimplify">manual</a></h3>
+<div class="outline-text-3" id="text-5-2">
+<p>
+<code>(math-defsimplify FUNCS BODY)</code>
+</p>
+
+<p>
+Macro that registers a simplification rule, typically as a top-level form.
+<code>FUNCS</code> is a symbol (e.g., <code>+</code>, <code>calcFunc-sqrt</code>) or list of symbols; the
+rule applies to calls to any of those functions. <code>BODY</code> is written as a
+function body with <code>expr</code> bound to the matched call.
+</p>
+
+<p>
+Return nil or the original <code>expr</code> to skip; any other value replaces <code>expr</code>.
+Rules are tried in definition order; the first match wins and restarts the
+loop. <code>BODY</code> must be plain Lisp — <code>defmath</code> conveniences are not available.
+The arguments of the matched call are already simplified before the rule
+runs, and may be rearranged destructively.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">;; arcsinh(-x) =&gt; -arcsinh(x)
+(math-defsimplify calcFunc-arcsinh
+  (and (math-looks-negp (nth 1 expr))
+       (math-neg (list 'calcFunc-arcsinh (math-neg (nth 1 expr))))))
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org6e818d2" class="outline-3">
+<h3 id="org6e818d2"><span class="section-number-3">5.3.</span> (math-apply-rewrites) <a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-apply_002drewrites">manual</a></h3>
+<div class="outline-text-3" id="text-5-3">
+<p>
+<code>(math-apply-rewrites EXPR CRULES HEADS)</code>
+</p>
+
+<p>
+Apply compiled rewrite rule set <code>CRULES</code> to <code>EXPR</code> at the top level only,
+making at most one rewrite. Returns the rewritten expression, or nil if no
+rule matched or produced a change. <code>HEADS</code> is optional: a list of function
+names in <code>EXPR</code> used to narrow the search (the compiler tags each rule with
+its rarest function name).
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">;; CRULES must be built with math-compile-rewrites first
+(let ((rules (math-compile-rewrites '(vec (calcFunc-eq (^ a 2) (* a a))))))
+  (math-apply-rewrites '(^ x 2) rules nil))  ;; =&gt; (* x x)
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orgdf1f22c" class="outline-3">
+<h3 id="orgdf1f22c"><span class="section-number-3">5.4.</span> (math-match-patterns) <a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-match_002dpatterns">manual</a></h3>
+<div class="outline-text-3" id="text-5-4">
+<p>
+<code>(math-match-patterns PAT VEC NOT-FLAG)</code>
+</p>
+
+<p>
+Return a new vector of elements from <code>VEC</code> that match (or, if <code>NOT-FLAG</code> is
+non-nil, don't match) any pattern in <code>PAT</code>. <code>PAT</code> is an uncompiled pattern
+set or pattern set variable.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">;; Keep only elements matching x^n
+(math-match-patterns '(vec (^ a n)) '(vec (^ x 2) x (^ y 3)) nil)
+;; =&gt; (vec (^ x 2) (^ y 3))
+</pre>
+</div>
+</div>
+</div>
+</div>
+<div id="outline-container-org0acba59" class="outline-2">
+<h2 id="org0acba59"><span class="section-number-2">6.</span> Solving</h2>
+<div class="outline-text-2" id="text-6">
+</div>
+<div id="outline-container-orga52f7e2" class="outline-3">
+<h3 id="orga52f7e2"><span class="section-number-3">6.1.</span> (math-solve-for) <a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-solve_002dfor">manual</a></h3>
+<div class="outline-text-3" id="text-6-1">
+<p>
+<code>(math-solve-for LHS RHS VAR FULL)</code>
+</p>
+
+<p>
+Solve <code>LHS</code> = <code>RHS</code> for <code>VAR</code>, returning the right-hand side, or nil if
+unsolvable. <code>VAR</code> must appear in <code>LHS</code> or <code>RHS</code>. The return value does not
+contain <code>VAR</code> (unlike the user-level <code>solve=/=finv</code>). If <code>FULL</code> is non-nil,
+includes dummy signs and integers.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">;; 2x + 3 = 7  =&gt;  x = 2
+(math-solve-for '(+ (* 2 x) 3) 7 'x nil)  ;; =&gt; 2
+</pre>
+</div>
+
+<p>
+Inverses for custom functions are registered via a <code>math-inverse</code> property.
+Use <code>(math-solve-get-sign x)</code> and <code>(math-solve-get-int x)</code> to introduce
+arbitrary sign/integer variables; these return <code>x</code> unchanged in non-full mode.
+</p>
+</div>
+</div>
+<div id="outline-container-org2cd24a9" class="outline-3">
+<h3 id="org2cd24a9"><span class="section-number-3">6.2.</span> (math-solve-eqn) <a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-solve_002deqn">manual</a></h3>
+<div class="outline-text-3" id="text-6-2">
+<p>
+<code>(math-solve-eqn EXPR VAR FULL)</code>
+</p>
+
+<p>
+Like <code>math-solve-for</code>, but <code>EXPR</code> is an equation or inequality. A bare
+expression is treated as <code>EXPR</code> = 0. Returns an equation or inequality, or nil.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(math-solve-eqn '(calcFunc-eq (+ x 3) 7) 'x nil)  ;; =&gt; (calcFunc-eq x 4)
+(math-solve-eqn '(+ x 3) 'x nil)                   ;; =&gt; (calcFunc-eq x -3)
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orgc031584" class="outline-3">
+<h3 id="orgc031584"><span class="section-number-3">6.3.</span> (math-solve-system) <a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-solve_002dsystem">manual</a></h3>
+<div class="outline-text-3" id="text-6-3">
+<p>
+<code>(math-solve-system EXPRS VARS FULL)</code>
+</p>
+
+<p>
+Solve a system of equations. <code>EXPRS</code> and <code>VARS</code> are typically equal-length
+vectors.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">;; x + y = 3, x - y = 1  =&gt;  x = 2, y = 1
+(math-solve-system '(vec (calcFunc-eq (+ x y) 3)
+                         (calcFunc-eq (- x y) 1))
+                   '(vec x y) nil)
+;; =&gt; (vec (calcFunc-eq x 2) (calcFunc-eq y 1))
+</pre>
+</div>
+</div>
+</div>
+</div>
+<div id="outline-container-org62045fe" class="outline-2">
+<h2 id="org62045fe"><span class="section-number-2">7.</span> Selection</h2>
+<div class="outline-text-2" id="text-7">
+</div>
+<div id="outline-container-org4a2fcfe" class="outline-3">
+<h3 id="org4a2fcfe"><span class="section-number-3">7.1.</span> (calc-prepare-selection) <a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-calc_002dprepare_002dselection">manual</a></h3>
+<div class="outline-text-3" id="text-7-1">
+<p>
+<code>(calc-prepare-selection &amp;optional NUM)</code>
+</p>
+
+<p>
+Prepare a stack entry for selection operations. <code>NUM</code> specifies which entry
+to use; if omitted, the entry containing the cursor is used.
+</p>
+
+<p>
+Stores results in: <code>calc-selection-cache-num</code> (the entry number used),
+<code>calc-selection-cache-entry</code> (the entry as a list, as <code>calc-top-list</code> would
+return with entry as the selection mode), and <code>calc-selection-cache-comp</code>
+(a "tagged" composition mapping cursor positions to sub-formulas; see I/O
+and Formatting Functions).
+</p>
+
+<p>
+A complication: formulas can contain duplicate small integers. In <code>[1, 2, 1]</code>,
+both <code>1=s are =eq</code> in Lisp, so storing <code>1</code> as a selection would falsely match
+both. To prevent this, <code>calc-prepare-selection</code> replaces plain integers with
+<code>(cplx n 0)</code> lists — displayed identically but distinct objects, so no two
+sub-formulas are <code>eq</code>. The next time the entry is used in a computation,
+<code>calc-normalize</code> restores them to plain numbers.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(calc-prepare-selection)    ;; prepare entry under cursor
+(calc-prepare-selection 2)  ;; prepare stack entry 2
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org2ab4bf4" class="outline-3">
+<h3 id="org2ab4bf4"><span class="section-number-3">7.2.</span> (calc-find-selected-part) <a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-calc_002dfind_002dselected_002dpart">manual</a></h3>
+<div class="outline-text-3" id="text-7-2">
+<p>
+<code>(calc-find-selected-part)</code>
+</p>
+
+<p>
+Find the smallest sub-formula containing the cursor. Assumes
+<code>calc-prepare-selection</code> has been called first. Returns nil if the cursor
+is not on any part of the formula.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(calc-prepare-selection)
+(calc-find-selected-part)  ;; =&gt; sub-formula under cursor, or nil
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org422a699" class="outline-3">
+<h3 id="org422a699"><span class="section-number-3">7.3.</span> (calc-find-sub-formula) <a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-calc_002dfind_002dsub_002dformula">manual</a></h3>
+<div class="outline-text-3" id="text-7-3">
+<p>
+<code>(calc-find-sub-formula EXPR PART)</code>
+</p>
+
+<p>
+Search <code>EXPR</code> for <code>PART</code> by object identity (<code>eq</code>). Returns:
+</p>
+<ul class="org-ul">
+<li><code>t</code> — <code>EXPR</code> itself is <code>PART</code></li>
+<li>N — <code>PART</code> is found within the Nth argument of <code>EXPR</code> (1-based)</li>
+<li><code>nil</code> — <code>PART</code> is not in <code>EXPR</code></li>
+</ul>
+
+<p>
+The index N can be passed to <code>calc-find-nth-part</code> to retrieve the child.
+Does not account for associativity.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(let* ((expr '(+ a (* b c)))
+       (sub  (nth 2 expr)))            ;; (* b c)
+  (calc-find-sub-formula expr sub))    ;; =&gt; 2
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org17aecd0" class="outline-3">
+<h3 id="org17aecd0"><span class="section-number-3">7.4.</span> (calc-locate-cursor-element)</h3>
+<div class="outline-text-3" id="text-7-4">
+<p>
+<code>(calc-locate-cursor-element PT)</code>
+</p>
+
+<p>
+Return the stack index of the entry whose display region contains buffer
+position <code>PT</code>. The result is suitable for passing to <code>calc-cursor-stack-index</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(calc-locate-cursor-element (point))  ;; =&gt; stack index at cursor position
+</pre>
+</div>
+</div>
+</div>
+</div>
+<div id="outline-container-orgdaea466" class="outline-2">
+<h2 id="orgdaea466"><span class="section-number-2">8.</span> Display</h2>
+<div class="outline-text-2" id="text-8">
+</div>
+<div id="outline-container-orgdd5ce85" class="outline-3">
+<h3 id="orgdd5ce85"><span class="section-number-3">8.1.</span> (math-format-value) <a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Formatting-Lisp-Functions.html#index-format_002dvalue">manual</a></h3>
+<div class="outline-text-3" id="text-8-1">
+<p>
+<code>(math-format-value A &amp;optional W)</code>
+</p>
+
+<p>
+Format <code>A</code> as a display string. For plain scalars in nil/flat/unform language
+modes, delegates to <code>math-format-number</code>. Otherwise composes <code>A</code> and converts
+to string via <code>math-composition-to-string</code> with no line breaking. <code>W</code>
+optionally limits the output width.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(math-format-value '(+ x 1))   ;; =&gt; "x + 1"
+(math-format-value '(^ x 2))   ;; =&gt; "x^2"
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org3b55beb" class="outline-3">
+<h3 id="org3b55beb"><span class="section-number-3">8.2.</span> (math-format-stack-value)</h3>
+<div class="outline-text-3" id="text-8-2">
+<p>
+<code>(math-format-stack-value ENTRY)</code>
+</p>
+
+<p>
+Format a complete stack entry for display in the Calc buffer. <code>ENTRY</code> is a
+list <code>(value lines selection)</code>. Handles selection highlighting, left label
+(<code>calc-left-label</code>), and line numbering (<code>calc-line-numbering</code>). Sets
+<code>calc-selection-cache-entry</code> and <code>calc-any-selections</code> as side effects.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">;; ENTRY format: (value display-lines selection)
+(math-format-stack-value (list '(+ x 1) nil nil))
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orgab9fcc3" class="outline-3">
+<h3 id="orgab9fcc3"><span class="section-number-3">8.3.</span> (calc-align-stack-window)</h3>
+<div class="outline-text-3" id="text-8-3">
+<p>
+<code>(calc-align-stack-window)</code>
+</p>
+
+<p>
+Scroll the Calc stack window so the home line (.) is visible near the
+bottom. Positions the window start accordingly and moves point to the home
+line. If called from outside the Calc buffer, switches to it first.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-emacs-lisp">(calc-align-stack-window)
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="postamble" class="status">
+<p class="author">Author: David Yeung</p>
+<p class="date">Created: 2026-05-25 Mon 14:49</p>
+<p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
+</div>
+</body>
+</html>
