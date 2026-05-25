@@ -79,7 +79,11 @@ top 2 stack values and push VAL onto the stack."
            (prefix (alist-get :prefix context))
            (pop-n (alist-get :pop-n context)))
       (pcase target
-        ('home (calc-pop-push-record-list pop-n prefix val))))))
+        ('home      (calc-pop-push-record-list pop-n prefix val))
+        ('selection nil)   ;; TODO
+        ('subexpr   nil)   ;; TODO
+        ('equation  nil)   ;; TODO
+        ('entry     nil))))) ;; TODO
 
 (defmacro maf-defcmd (name bindings &rest rest)
   (declare (indent 2) (doc-string 3))
