@@ -80,7 +80,6 @@ Possible :target values, in order of priority:
   (maf--with-calc-buffer
     (let* ((target (alist-get :target context))
            (prefix (alist-get :prefix context))
-           (arity (alist-get :arity context))
            (pop-n (alist-get :pop-n context)))
       (pcase target
         ('home (calc-pop-push-record-list pop-n prefix val))))))
