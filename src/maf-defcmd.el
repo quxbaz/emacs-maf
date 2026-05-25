@@ -72,10 +72,8 @@ Possible :target values, in order of priority:
 ;; context, it pushes or replaces the given value into the correct location, and
 ;; then pops the values where necessary.
 ;;
-;; For example, if point is at home, and the command is 'binary, this function
-;; should pop the top stack value and push `val` onto the stack.
-;;
-;; It should handle the rest of the possible contexts appropriately.
+;; For example, if point is at home, and the function arity is binary, then this
+;; function pops the top 2 stack values and pushes `val` onto the stack.
 (defun maf--defcmd-commit (val context)
   (maf--with-calc-buffer
     (let* ((target (alist-get :target context))
