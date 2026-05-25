@@ -43,7 +43,7 @@
 The returned alist contains:
   - target-specific keys (:target, :expr, :arg) for the matched target
   - all entries from OPTS (e.g. :arity, :prefix), merged in
-  - ambient calc state (:keep-args)
+  - ambient calc state (:keep)
 
 Possible :target values, in order of priority:
   selection  Active calc selection; expr is the selected sub-expression.
@@ -60,7 +60,7 @@ Possible :target values, in order of priority:
             ;; Also include all options declared in the defcmd body
             opts
             ;; Include useful properties as well like flag states
-            `((:keep-args . ,calc-keep-args-flag)))))
+            `((:keep . ,calc-keep-args-flag)))))
 
 ;; @NOW
 ;;
@@ -75,10 +75,10 @@ Possible :target values, in order of priority:
 (defun maf--defcmd-commit (val context)
   (let* ((target (alist-get :target context))
          (arity (alist-get :arity context))
-         (keep-args (alist-get :keep-args context)))
+         (keep (alist-get :keep context)))
     (pcase target
       ('home
-       (calc-pop-push-record-list 0 "PREFIX-TODO" 42)))))
+       (calc-pop-push-record-list 1 "PREFIX-TODO" 42)))))
 
 (defmacro maf-defcmd (name bindings &rest rest)
   (declare (indent 2) (doc-string 3))
