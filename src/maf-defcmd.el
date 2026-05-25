@@ -66,8 +66,6 @@ Possible :target values, in order of priority:
               ;; Include some useful properties as well like calc flag states
               `((:keep . ,keep))))))
 
-;; @NOW
-;;
 ;; This function takes a value (user provided) and context structure. Given the
 ;; context, it pushes or replaces the given value into the correct location, and
 ;; then pops the values where necessary.
