@@ -56,11 +56,16 @@ Possible :target values, in order of priority:
            (arity (alist-get :arity opts))
            (unary? (eq arity 'unary))
            (binary? (eq arity 'binary)))
-      (append (cond ((maf--at-home-p) `((:target . home)
-                                        (:expr   . ,(calc-top 1 'full))
-                                        (:arg    . ,(cond (unary? nil) (binary? (calc-top 2 'full))))
-                                        (:pop-n  . ,(if keep 0 (cond (unary? 1) (binary? 2))))))
-                    (t nil))
+      (append (cond
+               ;; ((maf--at-selection-p) `((:target . selection))) ;; TODO
+               ((maf--at-home-p) `((:target . home)
+                                   (:expr   . ,(calc-top 1 'full))
+                                   (:arg    . ,(cond (unary? nil) (binary? (calc-top 2 'full))))
+                                   (:pop-n  . ,(if keep 0 (cond (unary? 1) (binary? 2))))))
+               ;; ((maf--at-subexpr-p)  `((:target . subexpr)))    ;; TODO
+               ;; ((maf--at-equation-p) `((:target . equation)))   ;; TODO
+               ;; ((maf--at-entry-p)    `((:target . entry)))      ;; TODO
+               (t nil))
               ;; Also include options declared in the defcmd body like :arity, :prefix, etc
               opts
               ;; Include some useful properties as well like calc flag states
@@ -79,8 +84,8 @@ top 2 stack values and push VAL onto the stack."
            (prefix (alist-get :prefix context))
            (pop-n (alist-get :pop-n context)))
       (pcase target
-        ('home      (calc-pop-push-record-list pop-n prefix val))
         ('selection nil)   ;; TODO
+        ('home      (calc-pop-push-record-list pop-n prefix val))
         ('subexpr   nil)   ;; TODO
         ('equation  nil)   ;; TODO
         ('entry     nil))))) ;; TODO
