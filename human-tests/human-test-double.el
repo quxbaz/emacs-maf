@@ -8,6 +8,6 @@
 
 (maf--with-calc-buffer
   (calc-reset 0)
-  (maf-debug-slowly
+  (maf-debug-slowly 0.3
     (calc-push 10)
     (call-interactively 'maf-double)))

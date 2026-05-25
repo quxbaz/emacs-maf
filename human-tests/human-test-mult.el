@@ -8,7 +8,7 @@
 
 (maf--with-calc-buffer
   (calc-reset 0)
-  (maf-debug-slowly
+  (maf-debug-slowly 0.3
     (calc-push 3)
     (calc-push 2)
     (call-interactively 'maf-mult)))
