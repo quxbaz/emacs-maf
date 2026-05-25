@@ -115,8 +115,8 @@ Possible :target values, in order of priority:
     (commit (calcFunc-mul expr arg)))
 
   (maf--with-calc-buffer
+    (calc-reset 0)
     (maf-debug-slowly
-      (calc-reset 0)
       (calc-push 3)
       (calc-push 2)
       (call-interactively 'maf-mult))))
