@@ -115,10 +115,11 @@ Possible :target values, in order of priority:
 
   (maf--with-calc-buffer
     (calc-reset 0)
-    ;; (calc-push '(var x var-x))
     (calc-push 3)
+    (sit-for 0.5)
     (calc-push 2)
     (calc-align-stack-window)
+    (sit-for 0.5)
     (call-interactively 'maf-mult)))
 
 (defun test-double ()
