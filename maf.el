@@ -23,6 +23,7 @@
 
 (require 'maf-lib)
 (require 'maf-debug)
+(require 'maf-resolve)
 (require 'maf-defcmd)
 
 (defgroup maf nil
