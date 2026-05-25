@@ -5,6 +5,7 @@
   (commit (calcFunc-mul expr 2)))
 
 (maf-debug--open-calc-right)
+(maf-debug-use-calc-buffer)
 
 (maf-debug-use-calc-buffer
   (calc-reset 0)
