@@ -24,6 +24,13 @@
   #table-of-contents ul { padding-left: 1.2em; }
   #content { margin-left: 440px; max-width: 880px; padding: 20px; }
 </style>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('#content a').forEach(a => {
+      if (a.textContent.trim() === 'manual') { a.target = '_blank'; a.rel = 'noopener'; }
+    });
+  });
+</script>
 #+end_export
 
 * calc
@@ -152,9 +159,8 @@
    #+end_src
 
 ** (calc-encase-atoms)
-   [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-calc_002dencase_002datoms][manual]]
-
    =(calc-encase-atoms X)=
+   [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-calc_002dencase_002datoms][manual]]
 
    Modifies =X= in-place (via =setcar=) so every sub-formula is a unique atom,
    using the =(cplx n 0)= trick from =calc-prepare-selection=.
@@ -166,9 +172,8 @@
    #+end_src
 
 ** (math-expr-contains)
-   [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-expr_002dcontains][manual]]
-
    =(math-expr-contains EXPR VAR)=
+   [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-expr_002dcontains][manual]]
 
    Return non-nil if =VAR= occurs as a subexpression of =EXPR=. Uses =equal=
    (structural equality), unlike =calc-find-sub-formula= which uses =eq=. In
@@ -181,9 +186,8 @@
    #+end_src
 
 ** (math-expr-contains-count)
-   [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-expr_002dcontains_002dcount][manual]]
-
    =(math-expr-contains-count EXPR VAR)=
+   [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-expr_002dcontains_002dcount][manual]]
 
    Return the number of occurrences of =VAR= in =EXPR=, or nil if none.
 
@@ -193,9 +197,8 @@
    #+end_src
 
 ** (math-expr-depends)
-   [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-expr_002ddepends][manual]]
-
    =(math-expr-depends EXPR VAR)=
+   [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-expr_002ddepends][manual]]
 
    Return true if =EXPR= and =VAR= share any variable.
 
@@ -205,9 +208,8 @@
    #+end_src
 
 ** (math-expr-contains-vars)
-   [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-expr_002dcontains_002dvars][manual]]
-
    =(math-expr-contains-vars EXPR)=
+   [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-expr_002dcontains_002dvars][manual]]
 
    Return true if =EXPR= contains any variables; nil if it contains only
    constants and functions with constant arguments.
@@ -218,9 +220,8 @@
    #+end_src
 
 ** (math-expr-subst)
-   [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-expr_002dsubst][manual]]
-
    =(math-expr-subst EXPR OLD NEW)=
+   [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-expr_002dsubst][manual]]
 
    Return a copy of =EXPR= with all occurrences of =OLD= replaced by =NEW=.
    Handles lambda dummy variables correctly.
@@ -230,9 +231,8 @@
    #+end_src
 
 ** (math-multi-subst)
-   [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-multi_002dsubst][manual]]
-
    =(math-multi-subst EXPR OLD NEW)=
+   [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-multi_002dsubst][manual]]
 
    Like =math-expr-subst=, but =OLD= and =NEW= are lists substituted
    simultaneously. If lists differ in length, trailing elements of the longer
@@ -245,9 +245,8 @@
 
 * Polynomials
 ** (math-polynomial-p)
-   [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-polynomial_002dp][manual]]
-
    =(math-polynomial-p EXPR VAR)=
+   [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-polynomial_002dp][manual]]
 
    Return the degree of =EXPR= as a polynomial in =VAR=, or nil if it is not
    a polynomial. Degree is the highest power of =VAR= in the expanded form. A
@@ -259,9 +258,8 @@
    #+end_src
 
 ** (math-is-polynomial)
-   [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-is_002dpolynomial][manual]]
-
    =(math-is-polynomial EXPR VAR DEGREE LOOSE)=
+   [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-is_002dpolynomial][manual]]
 
    Return a coefficient list =(a0 a1 ... an)= for =a0 + a1*var + ... + an*var^n=,
    or nil if =EXPR= is not a polynomial in =VAR=. =DEGREE= caps the maximum
@@ -276,9 +274,8 @@
    #+end_src
 
 ** (math-polynomial-base)
-   [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-polynomial_002dbase][manual]]
-
    =(math-polynomial-base EXPR PRED)=
+   [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-polynomial_002dbase][manual]]
 
    Return a variable in =EXPR= such that =EXPR= is a polynomial in it, or nil.
    For multivariate expressions, the choice is arbitrary. =PRED=, if given, is
@@ -291,9 +288,8 @@
 
 * Simplification & rewriting
 ** (math-simplify-extended)
-   [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-simplify_002dextended][manual]]
-
    =(math-simplify-extended A)=
+   [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-simplify_002dextended][manual]]
 
    Simplify =A= with additional rules that are more thorough but not always
    safe (e.g., simplifies =sqrt(x^2)= to =x=, valid only when =x= is positive).
@@ -305,9 +301,8 @@
    #+end_src
 
 ** (math-defsimplify)
-   [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-math_002ddefsimplify][manual]]
-
    =(math-defsimplify FUNCS BODY)=
+   [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-math_002ddefsimplify][manual]]
 
    Macro that registers a simplification rule, typically as a top-level form.
    =FUNCS= is a symbol (e.g., =+=, =calcFunc-sqrt=) or list of symbols; the
@@ -328,9 +323,8 @@
    #+end_src
 
 ** (math-apply-rewrites)
-   [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-apply_002drewrites][manual]]
-
    =(math-apply-rewrites EXPR CRULES HEADS)=
+   [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-apply_002drewrites][manual]]
 
    Apply compiled rewrite rule set =CRULES= to =EXPR= at the top level only,
    making at most one rewrite. Returns the rewritten expression, or nil if no
@@ -345,9 +339,8 @@
    #+end_src
 
 ** (math-match-patterns)
-   [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-match_002dpatterns][manual]]
-
    =(math-match-patterns PAT VEC NOT-FLAG)=
+   [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-match_002dpatterns][manual]]
 
    Return a new vector of elements from =VEC= that match (or, if =NOT-FLAG= is
    non-nil, don't match) any pattern in =PAT=. =PAT= is an uncompiled pattern
@@ -361,9 +354,8 @@
 
 * Solving
 ** (math-solve-for)
-   [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-solve_002dfor][manual]]
-
    =(math-solve-for LHS RHS VAR FULL)=
+   [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-solve_002dfor][manual]]
 
    Solve =LHS= = =RHS= for =VAR=, returning the right-hand side, or nil if
    unsolvable. =VAR= must appear in =LHS= or =RHS=. The return value does not
@@ -380,9 +372,8 @@
    arbitrary sign/integer variables; these return =x= unchanged in non-full mode.
 
 ** (math-solve-eqn)
-   [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-solve_002deqn][manual]]
-
    =(math-solve-eqn EXPR VAR FULL)=
+   [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-solve_002deqn][manual]]
 
    Like =math-solve-for=, but =EXPR= is an equation or inequality. A bare
    expression is treated as =EXPR= = 0. Returns an equation or inequality, or nil.
@@ -393,9 +384,8 @@
    #+end_src
 
 ** (math-solve-system)
-   [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-solve_002dsystem][manual]]
-
    =(math-solve-system EXPRS VARS FULL)=
+   [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-solve_002dsystem][manual]]
 
    Solve a system of equations. =EXPRS= and =VARS= are typically equal-length
    vectors.
@@ -410,9 +400,8 @@
 
 * Selection
 ** (calc-prepare-selection)
-   [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-calc_002dprepare_002dselection][manual]]
-
    =(calc-prepare-selection &optional NUM)=
+   [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-calc_002dprepare_002dselection][manual]]
 
    Prepare a stack entry for selection operations. =NUM= specifies which entry
    to use; if omitted, the entry containing the cursor is used.
@@ -436,9 +425,8 @@
    #+end_src
 
 ** (calc-find-selected-part)
-   [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-calc_002dfind_002dselected_002dpart][manual]]
-
    =(calc-find-selected-part)=
+   [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-calc_002dfind_002dselected_002dpart][manual]]
 
    Find the smallest sub-formula containing the cursor. Assumes
    =calc-prepare-selection= has been called first. Returns nil if the cursor
@@ -450,9 +438,8 @@
    #+end_src
 
 ** (calc-find-sub-formula)
-   [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-calc_002dfind_002dsub_002dformula][manual]]
-
    =(calc-find-sub-formula EXPR PART)=
+   [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-calc_002dfind_002dsub_002dformula][manual]]
 
    Search =EXPR= for =PART= by object identity (=eq=). Returns:
    - =t= — =EXPR= itself is =PART=
@@ -480,9 +467,8 @@
 
 * Display
 ** (math-format-value)
-   [[https://www.gnu.org/software/emacs/manual/html_node/calc/Formatting-Lisp-Functions.html#index-format_002dvalue][manual]]
-
    =(math-format-value A &optional W)=
+   [[https://www.gnu.org/software/emacs/manual/html_node/calc/Formatting-Lisp-Functions.html#index-format_002dvalue][manual]]
 
    Format =A= as a display string. For plain scalars in nil/flat/unform language
    modes, delegates to =math-format-number=. Otherwise composes =A= and converts
