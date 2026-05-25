@@ -5,7 +5,7 @@
   h3 { margin-top: 40px; margin-bottom: 6px; }
   a { text-decoration: none; }
   code { padding: 3px 6px; background: hsl(48 56% 88% / 1); }
-  pre { background: hsl(229 56% 92% / 1); }
+  pre { margin-left: 0; margin-right: 0; background: hsl(229 56% 92% / 1); }
   .outline-text-3 { padding: 10px 20px; background: hsl(0 0% 96% / 1); }
 </style>
 #+end_export
