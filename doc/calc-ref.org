@@ -23,6 +23,7 @@
   }
   #table-of-contents h2 { margin-top: 0; font-size: 1.1em; }
   #table-of-contents ul { padding-left: 1.2em; }
+  #text-table-of-contents > ul > li { margin-bottom: 8px; }
   #content { margin-left: 440px; max-width: 880px; padding: 20px; }
 </style>
 <script>
