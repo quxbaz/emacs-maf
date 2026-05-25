@@ -66,13 +66,14 @@ Possible :target values, in order of priority:
               ;; Include some useful properties as well like calc flag states
               `((:keep . ,keep))))))
 
-;; This function takes a value (user provided) and context structure. Given the
-;; context, it pushes or replaces the given value into the correct location, and
-;; then pops the values where necessary.
-;;
-;; For example, if point is at home, and the function arity is binary, then this
-;; function pops the top 2 stack values and pushes `val` onto the stack.
 (defun maf--defcmd-commit (val context)
+  "Commit VAL into the calc buffer according to CONTEXT.
+
+Given the context, push or replace VAL into the correct location and pop
+values where necessary.
+
+For example, if point is at home and the command's arity is binary, pop the
+top 2 stack values and push VAL onto the stack."
   (maf--with-calc-buffer
     (let* ((target (alist-get :target context))
            (prefix (alist-get :prefix context))
