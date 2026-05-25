@@ -38,9 +38,14 @@
     `(,docstring ,opts ,body)))
 
 (defun maf--resolve-context (opts)
-  "Inspect point and calc state; return a context descriptor.
+  "Inspect point and calc state; return a context descriptor alist.
 
-Possible contexts, in order of priority:
+The returned alist contains:
+  - target-specific keys (:target, :expr, :arg) for the matched target
+  - all entries from OPTS (e.g. :arity, :prefix), merged in
+  - ambient calc state (:keep-args)
+
+Possible :target values, in order of priority:
   selection  Active calc selection; expr is the selected sub-expression.
   home       Point is at or below the . line.
   subexpr    Implicit selection. Point is inside an entry.
@@ -52,9 +57,10 @@ Possible contexts, in order of priority:
                                       (:arg    . ,(when (eq (alist-get :arity opts) 'binary)
                                                     (calc-top 2 'full)))))
                   (t nil))
-            ;; These props are added to all cases
-            `((:prefix . ,(alist-get :prefix opts))
-              (:keep-args . ,calc-keep-args-flag)))))
+            ;; Also include all options declared in the defcmd body
+            opts
+            ;; Include extra useful properties as well like flag states
+            `((:keep-args . ,calc-keep-args-flag)))))
 
 ;; @NOW
 ;;
