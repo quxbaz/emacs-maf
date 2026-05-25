@@ -73,7 +73,6 @@ Possible :target values, in order of priority:
 ;;
 ;; It should handle the rest of the possible contexts appropriately.
 (defun maf--defcmd-commit (val context)
-  ;; do stuff here
   (let* ((target (alist-get :target context))
          (arity (alist-get :arity context))
          (keep-args (alist-get :keep-args context)))
