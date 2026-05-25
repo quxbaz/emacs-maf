@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2026-05-25 Mon 15:21 -->
+<!-- 2026-05-25 Mon 15:22 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Calc Reference</title>
@@ -201,69 +201,69 @@
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents" role="doc-toc">
 <ul>
-<li><a href="#orgf79c6e2">1. calc</a>
+<li><a href="#orgc0c8895">1. calc</a>
 <ul>
-<li><a href="#org04e420a">1.1. (calc-load-everything)</a></li>
+<li><a href="#org563905b">1.1. (calc-load-everything)</a></li>
 </ul>
 </li>
-<li><a href="#org448e577">2. Stack</a>
+<li><a href="#org824163f">2. Stack</a>
 <ul>
-<li><a href="#orga7ac474">2.1. Stack entry format</a></li>
-<li><a href="#org19a8ebf">2.2. (calc-get-stack-element)</a></li>
-<li><a href="#org384e857">2.3. (calc-top)</a></li>
-<li><a href="#org7f7ddea">2.4. (calc-top-n)</a></li>
-<li><a href="#orgb6585ec">2.5. (calc-top-list)</a></li>
-<li><a href="#org4c292db">2.6. (calc-top-list-n)</a></li>
-<li><a href="#orgc6dd2dc">2.7. (calc-pop-push-record-list)</a></li>
+<li><a href="#org8343d1e">2.1. Stack entry format</a></li>
+<li><a href="#org6701564">2.2. (calc-get-stack-element)</a></li>
+<li><a href="#org5df86c0">2.3. (calc-top)</a></li>
+<li><a href="#orge0cb3d0">2.4. (calc-top-n)</a></li>
+<li><a href="#orge2d293d">2.5. (calc-top-list)</a></li>
+<li><a href="#org4fb3739">2.6. (calc-top-list-n)</a></li>
+<li><a href="#orge2fbb6f">2.7. (calc-pop-push-record-list)</a></li>
 </ul>
 </li>
-<li><a href="#org8e8da79">3. Formula</a>
+<li><a href="#org3114990">3. Formula</a>
 <ul>
-<li><a href="#org0533fff">3.1. (math-common-constant-factor)</a></li>
-<li><a href="#org765c349">3.2. (calc-encase-atoms)</a></li>
-<li><a href="#orgc0721c9">3.3. (math-expr-contains)</a></li>
-<li><a href="#orgb924c9f">3.4. (math-expr-contains-count)</a></li>
-<li><a href="#orgc3e6d42">3.5. (math-expr-depends)</a></li>
-<li><a href="#org1ff816d">3.6. (math-expr-contains-vars)</a></li>
-<li><a href="#orgc07c06a">3.7. (math-expr-subst)</a></li>
-<li><a href="#org293615c">3.8. (math-multi-subst)</a></li>
+<li><a href="#org37054c0">3.1. (math-common-constant-factor)</a></li>
+<li><a href="#org815b8fe">3.2. (calc-encase-atoms)</a></li>
+<li><a href="#orgc5dc662">3.3. (math-expr-contains)</a></li>
+<li><a href="#org7d2dc2f">3.4. (math-expr-contains-count)</a></li>
+<li><a href="#org9a40afe">3.5. (math-expr-depends)</a></li>
+<li><a href="#org4e098c4">3.6. (math-expr-contains-vars)</a></li>
+<li><a href="#org20eee23">3.7. (math-expr-subst)</a></li>
+<li><a href="#orgb9ee3c1">3.8. (math-multi-subst)</a></li>
 </ul>
 </li>
-<li><a href="#orgb3baa3f">4. Polynomials</a>
+<li><a href="#orge2605b6">4. Polynomials</a>
 <ul>
-<li><a href="#org64c5eaf">4.1. (math-polynomial-p)</a></li>
-<li><a href="#org3d58251">4.2. (math-is-polynomial)</a></li>
-<li><a href="#orge46241e">4.3. (math-polynomial-base)</a></li>
+<li><a href="#org66794a6">4.1. (math-polynomial-p)</a></li>
+<li><a href="#orgd6eba92">4.2. (math-is-polynomial)</a></li>
+<li><a href="#org195f5ee">4.3. (math-polynomial-base)</a></li>
 </ul>
 </li>
-<li><a href="#org488bbb3">5. Simplification &amp; rewriting</a>
+<li><a href="#org56befa0">5. Simplification &amp; rewriting</a>
 <ul>
-<li><a href="#org7ee22f6">5.1. (math-simplify-extended)</a></li>
-<li><a href="#org885f1b4">5.2. (math-defsimplify)</a></li>
-<li><a href="#orgd80ca51">5.3. (math-apply-rewrites)</a></li>
-<li><a href="#org9c79256">5.4. (math-match-patterns)</a></li>
+<li><a href="#org4c5fae8">5.1. (math-simplify-extended)</a></li>
+<li><a href="#org5e22c28">5.2. (math-defsimplify)</a></li>
+<li><a href="#orgb57b24b">5.3. (math-apply-rewrites)</a></li>
+<li><a href="#org0ff915b">5.4. (math-match-patterns)</a></li>
 </ul>
 </li>
-<li><a href="#orgd8c92d9">6. Solving</a>
+<li><a href="#org4205e46">6. Solving</a>
 <ul>
-<li><a href="#org5bfe9c5">6.1. (math-solve-for)</a></li>
-<li><a href="#orgb820471">6.2. (math-solve-eqn)</a></li>
-<li><a href="#org8582f4f">6.3. (math-solve-system)</a></li>
+<li><a href="#org8c86eb2">6.1. (math-solve-for)</a></li>
+<li><a href="#org61d2f2b">6.2. (math-solve-eqn)</a></li>
+<li><a href="#orgd859042">6.3. (math-solve-system)</a></li>
 </ul>
 </li>
-<li><a href="#orgcc8a969">7. Selection</a>
+<li><a href="#orgd134888">7. Selection</a>
 <ul>
-<li><a href="#org6f14fab">7.1. (calc-prepare-selection)</a></li>
-<li><a href="#orga2d75cd">7.2. (calc-find-selected-part)</a></li>
-<li><a href="#org1194698">7.3. (calc-find-sub-formula)</a></li>
-<li><a href="#org1ad40c8">7.4. (calc-locate-cursor-element)</a></li>
+<li><a href="#org55ea32d">7.1. (calc-prepare-selection)</a></li>
+<li><a href="#orgf6ec1f5">7.2. (calc-find-selected-part)</a></li>
+<li><a href="#orgcfc8379">7.3. (calc-find-sub-formula)</a></li>
+<li><a href="#org073907d">7.4. (calc-locate-cursor-element)</a></li>
 </ul>
 </li>
-<li><a href="#org38064a4">8. Display</a>
+<li><a href="#org367d9eb">8. Display</a>
 <ul>
-<li><a href="#org514c7b1">8.1. (math-format-value)</a></li>
-<li><a href="#org9e27f10">8.2. (math-format-stack-value)</a></li>
-<li><a href="#org53275e0">8.3. (calc-align-stack-window)</a></li>
+<li><a href="#org4c78f78">8.1. (math-format-value)</a></li>
+<li><a href="#org7a23bd9">8.2. (math-format-stack-value)</a></li>
+<li><a href="#org120588a">8.3. (calc-align-stack-window)</a></li>
 </ul>
 </li>
 </ul>
@@ -297,16 +297,16 @@
 <script>
   document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('#content a').forEach(a => {
-      if (a.textContent.trim() === 'manual') { a.target = '_blank'; a.rel = 'noopener'; }
+      if (a.textContent.trim() === '(manual)') { a.target = '_blank'; a.rel = 'noopener'; }
     });
   });
 </script>
-<div id="outline-container-orgf79c6e2" class="outline-2">
-<h2 id="orgf79c6e2"><span class="section-number-2">1.</span> calc</h2>
+<div id="outline-container-orgc0c8895" class="outline-2">
+<h2 id="orgc0c8895"><span class="section-number-2">1.</span> calc</h2>
 <div class="outline-text-2" id="text-1">
 </div>
-<div id="outline-container-org04e420a" class="outline-3">
-<h3 id="org04e420a"><span class="section-number-3">1.1.</span> (calc-load-everything)</h3>
+<div id="outline-container-org563905b" class="outline-3">
+<h3 id="org563905b"><span class="section-number-3">1.1.</span> (calc-load-everything)</h3>
 <div class="outline-text-3" id="text-1-1">
 <p>
 <code>(calc-load-everything)</code>
@@ -324,12 +324,12 @@ before calling them programmatically.
 </div>
 </div>
 </div>
-<div id="outline-container-org448e577" class="outline-2">
-<h2 id="org448e577"><span class="section-number-2">2.</span> Stack</h2>
+<div id="outline-container-org824163f" class="outline-2">
+<h2 id="org824163f"><span class="section-number-2">2.</span> Stack</h2>
 <div class="outline-text-2" id="text-2">
 </div>
-<div id="outline-container-orga7ac474" class="outline-3">
-<h3 id="orga7ac474"><span class="section-number-3">2.1.</span> Stack entry format</h3>
+<div id="outline-container-org8343d1e" class="outline-3">
+<h3 id="org8343d1e"><span class="section-number-3">2.1.</span> Stack entry format</h3>
 <div class="outline-text-3" id="text-2-1">
 <p>
 Each element of <code>calc-stack</code> is a list <code>(formula lines selection)</code>:
@@ -353,8 +353,8 @@ Stack level 1 is the top.
 </p>
 </div>
 </div>
-<div id="outline-container-org19a8ebf" class="outline-3">
-<h3 id="org19a8ebf"><span class="section-number-3">2.2.</span> (calc-get-stack-element)</h3>
+<div id="outline-container-org6701564" class="outline-3">
+<h3 id="org6701564"><span class="section-number-3">2.2.</span> (calc-get-stack-element)</h3>
 <div class="outline-text-3" id="text-2-2">
 <p>
 <code>(calc-get-stack-element X &amp;optional SEL-MODE)</code>
@@ -412,8 +412,8 @@ Called internally by <code>calc-top</code> and <code>calc-top-list</code>; rarel
 </p>
 </div>
 </div>
-<div id="outline-container-org384e857" class="outline-3">
-<h3 id="org384e857"><span class="section-number-3">2.3.</span> (calc-top)</h3>
+<div id="outline-container-org5df86c0" class="outline-3">
+<h3 id="org5df86c0"><span class="section-number-3">2.3.</span> (calc-top)</h3>
 <div class="outline-text-3" id="text-2-3">
 <p>
 <code>(calc-top &amp;optional N SEL-MODE)</code>
@@ -433,8 +433,8 @@ Does not normalize. Use <code>calc-top-n</code> if normalization is wanted.
 </div>
 </div>
 </div>
-<div id="outline-container-org7f7ddea" class="outline-3">
-<h3 id="org7f7ddea"><span class="section-number-3">2.4.</span> (calc-top-n)</h3>
+<div id="outline-container-orge0cb3d0" class="outline-3">
+<h3 id="orge0cb3d0"><span class="section-number-3">2.4.</span> (calc-top-n)</h3>
 <div class="outline-text-3" id="text-2-4">
 <p>
 <code>(calc-top-n &amp;optional N SEL-MODE)</code>
@@ -452,8 +452,8 @@ round-trip that <code>calc-normalize</code> may introduce.
 </div>
 </div>
 </div>
-<div id="outline-container-orgb6585ec" class="outline-3">
-<h3 id="orgb6585ec"><span class="section-number-3">2.5.</span> (calc-top-list)</h3>
+<div id="outline-container-orge2d293d" class="outline-3">
+<h3 id="orge2d293d"><span class="section-number-3">2.5.</span> (calc-top-list)</h3>
 <div class="outline-text-3" id="text-2-5">
 <p>
 <code>(calc-top-list &amp;optional N M SEL-MODE)</code>
@@ -471,8 +471,8 @@ normalize. <code>SEL-MODE</code> is the same as for <code>calc-top</code>.
 </div>
 </div>
 </div>
-<div id="outline-container-org4c292db" class="outline-3">
-<h3 id="org4c292db"><span class="section-number-3">2.6.</span> (calc-top-list-n)</h3>
+<div id="outline-container-org4fb3739" class="outline-3">
+<h3 id="org4fb3739"><span class="section-number-3">2.6.</span> (calc-top-list-n)</h3>
 <div class="outline-text-3" id="text-2-6">
 <p>
 <code>(calc-top-list-n &amp;optional N M SEL-MODE)</code>
@@ -488,8 +488,8 @@ Like <code>calc-top-list</code>, but normalizes every entry.
 </div>
 </div>
 </div>
-<div id="outline-container-orgc6dd2dc" class="outline-3">
-<h3 id="orgc6dd2dc"><span class="section-number-3">2.7.</span> (calc-pop-push-record-list)</h3>
+<div id="outline-container-orge2fbb6f" class="outline-3">
+<h3 id="orge2fbb6f"><span class="section-number-3">2.7.</span> (calc-pop-push-record-list)</h3>
 <div class="outline-text-3" id="text-2-7">
 <p>
 <code>(calc-pop-push-record-list N PREFIX VALS &amp;optional M SELS)</code>
@@ -528,16 +528,16 @@ contain <code>N + M - 1</code> entries.
 </div>
 </div>
 </div>
-<div id="outline-container-org8e8da79" class="outline-2">
-<h2 id="org8e8da79"><span class="section-number-2">3.</span> Formula</h2>
+<div id="outline-container-org3114990" class="outline-2">
+<h2 id="org3114990"><span class="section-number-2">3.</span> Formula</h2>
 <div class="outline-text-2" id="text-3">
 </div>
-<div id="outline-container-org0533fff" class="outline-3">
-<h3 id="org0533fff"><span class="section-number-3">3.1.</span> (math-common-constant-factor)</h3>
+<div id="outline-container-org37054c0" class="outline-3">
+<h3 id="org37054c0"><span class="section-number-3">3.1.</span> (math-common-constant-factor)</h3>
 <div class="outline-text-3" id="text-3-1">
 <p>
 <code>(math-common-constant-factor EXPR)</code>
-<a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-common_002dconstant_002dfactor">manual</a>
+<a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-common_002dconstant_002dfactor">(manual)</a>
 </p>
 
 <p>
@@ -551,12 +551,12 @@ Returns the <b>constant</b> factor in <code>EXPR</code>.
 </div>
 </div>
 </div>
-<div id="outline-container-org765c349" class="outline-3">
-<h3 id="org765c349"><span class="section-number-3">3.2.</span> (calc-encase-atoms)</h3>
+<div id="outline-container-org815b8fe" class="outline-3">
+<h3 id="org815b8fe"><span class="section-number-3">3.2.</span> (calc-encase-atoms)</h3>
 <div class="outline-text-3" id="text-3-2">
 <p>
 <code>(calc-encase-atoms X)</code>
-<a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-calc_002dencase_002datoms">manual</a>
+<a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-calc_002dencase_002datoms">(manual)</a>
 </p>
 
 <p>
@@ -572,12 +572,12 @@ using the <code>(cplx n 0)</code> trick from <code>calc-prepare-selection</code>
 </div>
 </div>
 </div>
-<div id="outline-container-orgc0721c9" class="outline-3">
-<h3 id="orgc0721c9"><span class="section-number-3">3.3.</span> (math-expr-contains)</h3>
+<div id="outline-container-orgc5dc662" class="outline-3">
+<h3 id="orgc5dc662"><span class="section-number-3">3.3.</span> (math-expr-contains)</h3>
 <div class="outline-text-3" id="text-3-3">
 <p>
 <code>(math-expr-contains EXPR VAR)</code>
-<a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-expr_002dcontains">manual</a>
+<a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-expr_002dcontains">(manual)</a>
 </p>
 
 <p>
@@ -594,12 +594,12 @@ find either.
 </div>
 </div>
 </div>
-<div id="outline-container-orgb924c9f" class="outline-3">
-<h3 id="orgb924c9f"><span class="section-number-3">3.4.</span> (math-expr-contains-count)</h3>
+<div id="outline-container-org7d2dc2f" class="outline-3">
+<h3 id="org7d2dc2f"><span class="section-number-3">3.4.</span> (math-expr-contains-count)</h3>
 <div class="outline-text-3" id="text-3-4">
 <p>
 <code>(math-expr-contains-count EXPR VAR)</code>
-<a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-expr_002dcontains_002dcount">manual</a>
+<a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-expr_002dcontains_002dcount">(manual)</a>
 </p>
 
 <p>
@@ -613,12 +613,12 @@ Return the number of occurrences of <code>VAR</code> in <code>EXPR</code>, or ni
 </div>
 </div>
 </div>
-<div id="outline-container-orgc3e6d42" class="outline-3">
-<h3 id="orgc3e6d42"><span class="section-number-3">3.5.</span> (math-expr-depends)</h3>
+<div id="outline-container-org9a40afe" class="outline-3">
+<h3 id="org9a40afe"><span class="section-number-3">3.5.</span> (math-expr-depends)</h3>
 <div class="outline-text-3" id="text-3-5">
 <p>
 <code>(math-expr-depends EXPR VAR)</code>
-<a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-expr_002ddepends">manual</a>
+<a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-expr_002ddepends">(manual)</a>
 </p>
 
 <p>
@@ -632,12 +632,12 @@ Return true if <code>EXPR</code> and <code>VAR</code> share any variable.
 </div>
 </div>
 </div>
-<div id="outline-container-org1ff816d" class="outline-3">
-<h3 id="org1ff816d"><span class="section-number-3">3.6.</span> (math-expr-contains-vars)</h3>
+<div id="outline-container-org4e098c4" class="outline-3">
+<h3 id="org4e098c4"><span class="section-number-3">3.6.</span> (math-expr-contains-vars)</h3>
 <div class="outline-text-3" id="text-3-6">
 <p>
 <code>(math-expr-contains-vars EXPR)</code>
-<a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-expr_002dcontains_002dvars">manual</a>
+<a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-expr_002dcontains_002dvars">(manual)</a>
 </p>
 
 <p>
@@ -652,12 +652,12 @@ constants and functions with constant arguments.
 </div>
 </div>
 </div>
-<div id="outline-container-orgc07c06a" class="outline-3">
-<h3 id="orgc07c06a"><span class="section-number-3">3.7.</span> (math-expr-subst)</h3>
+<div id="outline-container-org20eee23" class="outline-3">
+<h3 id="org20eee23"><span class="section-number-3">3.7.</span> (math-expr-subst)</h3>
 <div class="outline-text-3" id="text-3-7">
 <p>
 <code>(math-expr-subst EXPR OLD NEW)</code>
-<a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-expr_002dsubst">manual</a>
+<a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-expr_002dsubst">(manual)</a>
 </p>
 
 <p>
@@ -671,12 +671,12 @@ Handles lambda dummy variables correctly.
 </div>
 </div>
 </div>
-<div id="outline-container-org293615c" class="outline-3">
-<h3 id="org293615c"><span class="section-number-3">3.8.</span> (math-multi-subst)</h3>
+<div id="outline-container-orgb9ee3c1" class="outline-3">
+<h3 id="orgb9ee3c1"><span class="section-number-3">3.8.</span> (math-multi-subst)</h3>
 <div class="outline-text-3" id="text-3-8">
 <p>
 <code>(math-multi-subst EXPR OLD NEW)</code>
-<a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-multi_002dsubst">manual</a>
+<a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-multi_002dsubst">(manual)</a>
 </p>
 
 <p>
@@ -693,16 +693,16 @@ list are ignored.
 </div>
 </div>
 </div>
-<div id="outline-container-orgb3baa3f" class="outline-2">
-<h2 id="orgb3baa3f"><span class="section-number-2">4.</span> Polynomials</h2>
+<div id="outline-container-orge2605b6" class="outline-2">
+<h2 id="orge2605b6"><span class="section-number-2">4.</span> Polynomials</h2>
 <div class="outline-text-2" id="text-4">
 </div>
-<div id="outline-container-org64c5eaf" class="outline-3">
-<h3 id="org64c5eaf"><span class="section-number-3">4.1.</span> (math-polynomial-p)</h3>
+<div id="outline-container-org66794a6" class="outline-3">
+<h3 id="org66794a6"><span class="section-number-3">4.1.</span> (math-polynomial-p)</h3>
 <div class="outline-text-3" id="text-4-1">
 <p>
 <code>(math-polynomial-p EXPR VAR)</code>
-<a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-polynomial_002dp">manual</a>
+<a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-polynomial_002dp">(manual)</a>
 </p>
 
 <p>
@@ -718,12 +718,12 @@ constant expression (no <code>VAR</code>) has degree 0.
 </div>
 </div>
 </div>
-<div id="outline-container-org3d58251" class="outline-3">
-<h3 id="org3d58251"><span class="section-number-3">4.2.</span> (math-is-polynomial)</h3>
+<div id="outline-container-orgd6eba92" class="outline-3">
+<h3 id="orgd6eba92"><span class="section-number-3">4.2.</span> (math-is-polynomial)</h3>
 <div class="outline-text-3" id="text-4-2">
 <p>
 <code>(math-is-polynomial EXPR VAR DEGREE LOOSE)</code>
-<a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-is_002dpolynomial">manual</a>
+<a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-is_002dpolynomial">(manual)</a>
 </p>
 
 <p>
@@ -744,12 +744,12 @@ as they are not polynomials; never returns nil in loose mode.
 </div>
 </div>
 </div>
-<div id="outline-container-orge46241e" class="outline-3">
-<h3 id="orge46241e"><span class="section-number-3">4.3.</span> (math-polynomial-base)</h3>
+<div id="outline-container-org195f5ee" class="outline-3">
+<h3 id="org195f5ee"><span class="section-number-3">4.3.</span> (math-polynomial-base)</h3>
 <div class="outline-text-3" id="text-4-3">
 <p>
 <code>(math-polynomial-base EXPR PRED)</code>
-<a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-polynomial_002dbase">manual</a>
+<a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-polynomial_002dbase">(manual)</a>
 </p>
 
 <p>
@@ -766,16 +766,16 @@ use it to add extra conditions or collect all suitable subexpressions.
 </div>
 </div>
 </div>
-<div id="outline-container-org488bbb3" class="outline-2">
-<h2 id="org488bbb3"><span class="section-number-2">5.</span> Simplification &amp; rewriting</h2>
+<div id="outline-container-org56befa0" class="outline-2">
+<h2 id="org56befa0"><span class="section-number-2">5.</span> Simplification &amp; rewriting</h2>
 <div class="outline-text-2" id="text-5">
 </div>
-<div id="outline-container-org7ee22f6" class="outline-3">
-<h3 id="org7ee22f6"><span class="section-number-3">5.1.</span> (math-simplify-extended)</h3>
+<div id="outline-container-org4c5fae8" class="outline-3">
+<h3 id="org4c5fae8"><span class="section-number-3">5.1.</span> (math-simplify-extended)</h3>
 <div class="outline-text-3" id="text-5-1">
 <p>
 <code>(math-simplify-extended A)</code>
-<a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-simplify_002dextended">manual</a>
+<a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-simplify_002dextended">(manual)</a>
 </p>
 
 <p>
@@ -791,12 +791,12 @@ Implemented by binding <code>math-living-dangerously</code> to <code>t</code> an
 </div>
 </div>
 </div>
-<div id="outline-container-org885f1b4" class="outline-3">
-<h3 id="org885f1b4"><span class="section-number-3">5.2.</span> (math-defsimplify)</h3>
+<div id="outline-container-org5e22c28" class="outline-3">
+<h3 id="org5e22c28"><span class="section-number-3">5.2.</span> (math-defsimplify)</h3>
 <div class="outline-text-3" id="text-5-2">
 <p>
 <code>(math-defsimplify FUNCS BODY)</code>
-<a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-math_002ddefsimplify">manual</a>
+<a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-math_002ddefsimplify">(manual)</a>
 </p>
 
 <p>
@@ -823,12 +823,12 @@ runs, and may be rearranged destructively.
 </div>
 </div>
 </div>
-<div id="outline-container-orgd80ca51" class="outline-3">
-<h3 id="orgd80ca51"><span class="section-number-3">5.3.</span> (math-apply-rewrites)</h3>
+<div id="outline-container-orgb57b24b" class="outline-3">
+<h3 id="orgb57b24b"><span class="section-number-3">5.3.</span> (math-apply-rewrites)</h3>
 <div class="outline-text-3" id="text-5-3">
 <p>
 <code>(math-apply-rewrites EXPR CRULES HEADS)</code>
-<a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-apply_002drewrites">manual</a>
+<a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-apply_002drewrites">(manual)</a>
 </p>
 
 <p>
@@ -847,12 +847,12 @@ its rarest function name).
 </div>
 </div>
 </div>
-<div id="outline-container-org9c79256" class="outline-3">
-<h3 id="org9c79256"><span class="section-number-3">5.4.</span> (math-match-patterns)</h3>
+<div id="outline-container-org0ff915b" class="outline-3">
+<h3 id="org0ff915b"><span class="section-number-3">5.4.</span> (math-match-patterns)</h3>
 <div class="outline-text-3" id="text-5-4">
 <p>
 <code>(math-match-patterns PAT VEC NOT-FLAG)</code>
-<a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-match_002dpatterns">manual</a>
+<a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-match_002dpatterns">(manual)</a>
 </p>
 
 <p>
@@ -870,16 +870,16 @@ set or pattern set variable.
 </div>
 </div>
 </div>
-<div id="outline-container-orgd8c92d9" class="outline-2">
-<h2 id="orgd8c92d9"><span class="section-number-2">6.</span> Solving</h2>
+<div id="outline-container-org4205e46" class="outline-2">
+<h2 id="org4205e46"><span class="section-number-2">6.</span> Solving</h2>
 <div class="outline-text-2" id="text-6">
 </div>
-<div id="outline-container-org5bfe9c5" class="outline-3">
-<h3 id="org5bfe9c5"><span class="section-number-3">6.1.</span> (math-solve-for)</h3>
+<div id="outline-container-org8c86eb2" class="outline-3">
+<h3 id="org8c86eb2"><span class="section-number-3">6.1.</span> (math-solve-for)</h3>
 <div class="outline-text-3" id="text-6-1">
 <p>
 <code>(math-solve-for LHS RHS VAR FULL)</code>
-<a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-solve_002dfor">manual</a>
+<a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-solve_002dfor">(manual)</a>
 </p>
 
 <p>
@@ -902,12 +902,12 @@ arbitrary sign/integer variables; these return <code>x</code> unchanged in non-f
 </p>
 </div>
 </div>
-<div id="outline-container-orgb820471" class="outline-3">
-<h3 id="orgb820471"><span class="section-number-3">6.2.</span> (math-solve-eqn)</h3>
+<div id="outline-container-org61d2f2b" class="outline-3">
+<h3 id="org61d2f2b"><span class="section-number-3">6.2.</span> (math-solve-eqn)</h3>
 <div class="outline-text-3" id="text-6-2">
 <p>
 <code>(math-solve-eqn EXPR VAR FULL)</code>
-<a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-solve_002deqn">manual</a>
+<a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-solve_002deqn">(manual)</a>
 </p>
 
 <p>
@@ -922,12 +922,12 @@ expression is treated as <code>EXPR</code> = 0. Returns an equation or inequalit
 </div>
 </div>
 </div>
-<div id="outline-container-org8582f4f" class="outline-3">
-<h3 id="org8582f4f"><span class="section-number-3">6.3.</span> (math-solve-system)</h3>
+<div id="outline-container-orgd859042" class="outline-3">
+<h3 id="orgd859042"><span class="section-number-3">6.3.</span> (math-solve-system)</h3>
 <div class="outline-text-3" id="text-6-3">
 <p>
 <code>(math-solve-system EXPRS VARS FULL)</code>
-<a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-solve_002dsystem">manual</a>
+<a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-solve_002dsystem">(manual)</a>
 </p>
 
 <p>
@@ -946,16 +946,16 @@ vectors.
 </div>
 </div>
 </div>
-<div id="outline-container-orgcc8a969" class="outline-2">
-<h2 id="orgcc8a969"><span class="section-number-2">7.</span> Selection</h2>
+<div id="outline-container-orgd134888" class="outline-2">
+<h2 id="orgd134888"><span class="section-number-2">7.</span> Selection</h2>
 <div class="outline-text-2" id="text-7">
 </div>
-<div id="outline-container-org6f14fab" class="outline-3">
-<h3 id="org6f14fab"><span class="section-number-3">7.1.</span> (calc-prepare-selection)</h3>
+<div id="outline-container-org55ea32d" class="outline-3">
+<h3 id="org55ea32d"><span class="section-number-3">7.1.</span> (calc-prepare-selection)</h3>
 <div class="outline-text-3" id="text-7-1">
 <p>
 <code>(calc-prepare-selection &amp;optional NUM)</code>
-<a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-calc_002dprepare_002dselection">manual</a>
+<a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-calc_002dprepare_002dselection">(manual)</a>
 </p>
 
 <p>
@@ -987,12 +987,12 @@ sub-formulas are <code>eq</code>. The next time the entry is used in a computati
 </div>
 </div>
 </div>
-<div id="outline-container-orga2d75cd" class="outline-3">
-<h3 id="orga2d75cd"><span class="section-number-3">7.2.</span> (calc-find-selected-part)</h3>
+<div id="outline-container-orgf6ec1f5" class="outline-3">
+<h3 id="orgf6ec1f5"><span class="section-number-3">7.2.</span> (calc-find-selected-part)</h3>
 <div class="outline-text-3" id="text-7-2">
 <p>
 <code>(calc-find-selected-part)</code>
-<a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-calc_002dfind_002dselected_002dpart">manual</a>
+<a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-calc_002dfind_002dselected_002dpart">(manual)</a>
 </p>
 
 <p>
@@ -1008,12 +1008,12 @@ is not on any part of the formula.
 </div>
 </div>
 </div>
-<div id="outline-container-org1194698" class="outline-3">
-<h3 id="org1194698"><span class="section-number-3">7.3.</span> (calc-find-sub-formula)</h3>
+<div id="outline-container-orgcfc8379" class="outline-3">
+<h3 id="orgcfc8379"><span class="section-number-3">7.3.</span> (calc-find-sub-formula)</h3>
 <div class="outline-text-3" id="text-7-3">
 <p>
 <code>(calc-find-sub-formula EXPR PART)</code>
-<a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-calc_002dfind_002dsub_002dformula">manual</a>
+<a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-calc_002dfind_002dsub_002dformula">(manual)</a>
 </p>
 
 <p>
@@ -1038,8 +1038,8 @@ Does not account for associativity.
 </div>
 </div>
 </div>
-<div id="outline-container-org1ad40c8" class="outline-3">
-<h3 id="org1ad40c8"><span class="section-number-3">7.4.</span> (calc-locate-cursor-element)</h3>
+<div id="outline-container-org073907d" class="outline-3">
+<h3 id="org073907d"><span class="section-number-3">7.4.</span> (calc-locate-cursor-element)</h3>
 <div class="outline-text-3" id="text-7-4">
 <p>
 <code>(calc-locate-cursor-element PT)</code>
@@ -1057,16 +1057,16 @@ position <code>PT</code>. The result is suitable for passing to <code>calc-curso
 </div>
 </div>
 </div>
-<div id="outline-container-org38064a4" class="outline-2">
-<h2 id="org38064a4"><span class="section-number-2">8.</span> Display</h2>
+<div id="outline-container-org367d9eb" class="outline-2">
+<h2 id="org367d9eb"><span class="section-number-2">8.</span> Display</h2>
 <div class="outline-text-2" id="text-8">
 </div>
-<div id="outline-container-org514c7b1" class="outline-3">
-<h3 id="org514c7b1"><span class="section-number-3">8.1.</span> (math-format-value)</h3>
+<div id="outline-container-org4c78f78" class="outline-3">
+<h3 id="org4c78f78"><span class="section-number-3">8.1.</span> (math-format-value)</h3>
 <div class="outline-text-3" id="text-8-1">
 <p>
 <code>(math-format-value A &amp;optional W)</code>
-<a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Formatting-Lisp-Functions.html#index-format_002dvalue">manual</a>
+<a href="https://www.gnu.org/software/emacs/manual/html_node/calc/Formatting-Lisp-Functions.html#index-format_002dvalue">(manual)</a>
 </p>
 
 <p>
@@ -1083,8 +1083,8 @@ optionally limits the output width.
 </div>
 </div>
 </div>
-<div id="outline-container-org9e27f10" class="outline-3">
-<h3 id="org9e27f10"><span class="section-number-3">8.2.</span> (math-format-stack-value)</h3>
+<div id="outline-container-org7a23bd9" class="outline-3">
+<h3 id="org7a23bd9"><span class="section-number-3">8.2.</span> (math-format-stack-value)</h3>
 <div class="outline-text-3" id="text-8-2">
 <p>
 <code>(math-format-stack-value ENTRY)</code>
@@ -1104,8 +1104,8 @@ list <code>(value lines selection)</code>. Handles selection highlighting, left 
 </div>
 </div>
 </div>
-<div id="outline-container-org53275e0" class="outline-3">
-<h3 id="org53275e0"><span class="section-number-3">8.3.</span> (calc-align-stack-window)</h3>
+<div id="outline-container-org120588a" class="outline-3">
+<h3 id="org120588a"><span class="section-number-3">8.3.</span> (calc-align-stack-window)</h3>
 <div class="outline-text-3" id="text-8-3">
 <p>
 <code>(calc-align-stack-window)</code>
@@ -1127,7 +1127,7 @@ line. If called from outside the Calc buffer, switches to it first.
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: David Yeung</p>
-<p class="date">Created: 2026-05-25 Mon 15:21</p>
+<p class="date">Created: 2026-05-25 Mon 15:22</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
