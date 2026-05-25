@@ -1,6 +1,6 @@
 ;; -*- lexical-binding: t; -*-
 ;;
-;; defcmd.el
+;; maf-defcmd.el
 
 (require 'maf-lib)
 
