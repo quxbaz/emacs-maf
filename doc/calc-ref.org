@@ -1,5 +1,5 @@
 #+title: Calc Reference
-#+HTML_HEAD: <style>body {font-family: sans-serif; line-height: 1.5; } code { background: beige; }</style>
+#+HTML_HEAD: <style> body { font-family: sans-serif; line-height: 1.5; } a { text-decoration: none; } code { background: beige; } </style>
 
 * calc
 ** (calc-load-everything)
