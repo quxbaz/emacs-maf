@@ -22,22 +22,36 @@ Prefers the current buffer if it is in calc-mode, then looks for
      ,@body))
 
 (defun maf--at-selection-p ()
-  "Return t if the stack entry under point has an active selection."
+  "Return t if any stack entry has an active selection (selection mode on)."
   (maf--with-calc-buffer
-    (let ((idx (calc-locate-cursor-element (point))))
-      (and (> idx 0)
-           (calc-top idx 'sel)
-           t))))
+    (and calc-use-selections
+         (seq-some (lambda (elt) (nth 2 elt)) calc-stack)
+         t)))
 
 (defun maf--at-home-p ()
   "Return t if point is past the last stack entry (at the . line or below)."
   (maf--with-calc-buffer
     (<= (calc-locate-cursor-element (point)) 0)))
 
-(defun maf--at-subexpr-p ()
-  "Return t if point is on a sub-expression within an entry's formula text."
+(defun maf--at-line-prefix-p ()
+  "Return t if point is in the line-number prefix (e.g. \"1: \") of a stack entry."
   (maf--with-calc-buffer
     (and (> (calc-locate-cursor-element (point)) 0)
+         (not (eolp))
+         (save-excursion
+           (let ((col (current-column)))
+             (beginning-of-line)
+             (and (looking-at " *[0-9]+: +")
+                  (< col (- (match-end 0) (point)))))))))
+
+(defun maf--at-subexpr-p ()
+  "Return t if point is on a sub-expression within an entry's formula text.
+False when point is at EOL or in the line-prefix zone, even if there is a
+sub-expression on the line; those positions route to equation/entry targets."
+  (maf--with-calc-buffer
+    (and (> (calc-locate-cursor-element (point)) 0)
+         (not (eolp))
+         (not (maf--at-line-prefix-p))
          (save-excursion
            (ignore-errors
              (calc-prepare-selection)
