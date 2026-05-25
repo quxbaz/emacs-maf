@@ -22,8 +22,12 @@ Prefers the current buffer if it is in calc-mode, then looks for
      ,@body))
 
 (defun maf--at-selection-p ()
-  "Return t if there is an active calc selection at point."
-  nil) ;; TODO
+  "Return t if the stack entry under point has an active selection."
+  (maf--with-calc-buffer
+    (let ((idx (calc-locate-cursor-element (point))))
+      (and (> idx 0)
+           (calc-top idx 'sel)
+           t))))
 
 (defun maf--at-home-p ()
   "Return t if point is past the last stack entry (at the . line or below)."
@@ -31,15 +35,30 @@ Prefers the current buffer if it is in calc-mode, then looks for
     (<= (calc-locate-cursor-element (point)) 0)))
 
 (defun maf--at-subexpr-p ()
-  "Return t if point is inside a stack entry (implicit selection)."
-  nil) ;; TODO
+  "Return t if point is on a sub-expression within an entry's formula text."
+  (maf--with-calc-buffer
+    (and (> (calc-locate-cursor-element (point)) 0)
+         (save-excursion
+           (ignore-errors
+             (calc-prepare-selection)
+             (and (calc-find-selected-part) t))))))
 
 (defun maf--at-equation-p ()
-  "Return t if point is on a stack entry that is a relation (=, !=, <, <=, >, >=)."
-  nil) ;; TODO
+  "Return t if the stack entry under point is a relation (=, !=, <, <=, >, >=)."
+  (maf--with-calc-buffer
+    (let* ((idx (calc-locate-cursor-element (point)))
+           (expr (and (> idx 0) (calc-top idx 'full))))
+      (and (consp expr)
+           (memq (car expr) '(calcFunc-eq calcFunc-neq
+                              calcFunc-lt calcFunc-leq
+                              calcFunc-gt calcFunc-geq))
+           t))))
 
 (defun maf--at-entry-p ()
-  "Return t if point selects a whole stack entry (EOL, line-prefix zone, or line mode forced)."
-  nil) ;; TODO
+  "Return t if point is on a stack entry line.
+This is the catch-all when no more specific target (selection, subexpr,
+equation) matches in the priority cascade."
+  (maf--with-calc-buffer
+    (> (calc-locate-cursor-element (point)) 0)))
 
 (provide 'maf-lib)
