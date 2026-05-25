@@ -59,7 +59,7 @@ Possible :target values, in order of priority:
                   (t nil))
             ;; Also include all options declared in the defcmd body
             opts
-            ;; Include bonus useful properties as well like flag states
+            ;; Include useful properties as well like flag states
             `((:keep-args . ,calc-keep-args-flag)))))
 
 ;; @NOW
