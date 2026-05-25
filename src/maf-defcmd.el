@@ -37,6 +37,23 @@
         (body (maf--defcmd-parse-body forms)))
     `(,docstring ,opts ,body)))
 
+(defun maf--resolve-target-selection (opts) nil) ;; TODO
+
+(defun maf--resolve-target-home (opts)
+  "Return the home target's context alist."
+  (let* ((arity (alist-get :arity opts))
+         (unary? (eq arity 'unary))
+         (binary? (eq arity 'binary))
+         (keep calc-keep-args-flag))
+    `((:target . home)
+      (:expr   . ,(calc-top 1 'full))
+      (:arg    . ,(cond (unary? nil) (binary? (calc-top 2 'full))))
+      (:pop-n  . ,(if keep 0 (cond (unary? 1) (binary? 2)))))))
+
+(defun maf--resolve-target-subexpr (opts) nil)   ;; TODO
+(defun maf--resolve-target-equation (opts) nil)  ;; TODO
+(defun maf--resolve-target-entry (opts) nil)     ;; TODO
+
 (defun maf--resolve-context (opts)
   "Inspect point and calc state; return a context descriptor alist.
 
@@ -52,24 +69,17 @@ Possible :target values, in order of priority:
   equation   Entry is a relation (=, !=, <, <=, >, >=); body runs once per side.
   entry      Whole stack entry; point is at EOL, line-prefix zone, or line mode is forced."
   (maf--with-calc-buffer
-    (let* ((keep calc-keep-args-flag)
-           (arity (alist-get :arity opts))
-           (unary? (eq arity 'unary))
-           (binary? (eq arity 'binary)))
-      (append (cond
-               ;; ((maf--at-selection-p) `((:target . selection))) ;; TODO
-               ((maf--at-home-p) `((:target . home)
-                                   (:expr   . ,(calc-top 1 'full))
-                                   (:arg    . ,(cond (unary? nil) (binary? (calc-top 2 'full))))
-                                   (:pop-n  . ,(if keep 0 (cond (unary? 1) (binary? 2))))))
-               ;; ((maf--at-subexpr-p)  `((:target . subexpr)))    ;; TODO
-               ;; ((maf--at-equation-p) `((:target . equation)))   ;; TODO
-               ;; ((maf--at-entry-p)    `((:target . entry)))      ;; TODO
-               (t nil))
-              ;; Also include options declared in the defcmd body like :arity, :prefix, etc
-              opts
-              ;; Include some useful properties as well like calc flag states
-              `((:keep . ,keep))))))
+    (append (cond
+             ;; ((maf--at-selection-p) (maf--resolve-target-selection opts)) ;; TODO
+             ((maf--at-home-p)        (maf--resolve-target-home opts))
+             ;; ((maf--at-subexpr-p)  (maf--resolve-target-subexpr opts))    ;; TODO
+             ;; ((maf--at-equation-p) (maf--resolve-target-equation opts))   ;; TODO
+             ;; ((maf--at-entry-p)    (maf--resolve-target-entry opts))      ;; TODO
+             (t nil))
+            ;; Also include options declared in the defcmd body like :arity, :prefix, etc
+            opts
+            ;; Include some useful properties as well like calc flag states
+            `((:keep . ,calc-keep-args-flag)))))
 
 (defun maf--defcmd-commit (val context)
   "Commit VAL into the calc buffer according to CONTEXT.
