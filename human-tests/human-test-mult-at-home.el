@@ -4,11 +4,11 @@
   :prefix "mult"
   (commit (calcFunc-mul expr arg)))
 
-(maf-debug--open-calc-right)
+(maf-debug-open-calc-right)
+(maf-debug-use-calc-buffer)
 
-(maf-debug-use-calc-buffer
-  (calc-reset 0)
-  (maf-debug-slowly 0.3
-    (calc-push 3)
-    (calc-push 2)
-    (call-interactively 'maf-mult)))
+(calc-reset 0)
+(maf-debug-slowly 0.3
+  (calc-push 3)
+  (calc-push 2)
+  (call-interactively 'maf-mult))
