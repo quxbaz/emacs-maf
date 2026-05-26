@@ -14,6 +14,5 @@
   (calc-refresh)
   (goto-char 7)
   (call-interactively 'calc-select-here)
-  ;; @NOW
   (call-interactively 'maf-mult)
-  )
+  (calc-clear-selections))
