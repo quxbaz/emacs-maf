@@ -43,4 +43,10 @@ active selection. Returns nil if no selections are active."
           m
         (maf--sel-topmost-m)))))
 
+(defun maf--sel-effective-expr ()
+  "Return the selected sub-formula at the effective position, or nil if none."
+  (maf--with-calc-buffer
+    (let ((m (maf--sel-effective-m)))
+      (and m (calc-top m 'sel)))))
+
 (provide 'maf-sel)
