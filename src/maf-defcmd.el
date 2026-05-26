@@ -63,10 +63,9 @@ top 2 stack values and push VAL onto the stack."
          (let* ((expr         (alist-get :expr context))
                 (full-formula (calc-top m 'full))
                 (new-formula  (calc-replace-sub-formula full-formula expr val)))
-           ;; For binary, pop the arg from the top first; the selected entry
-           ;; then shifts up by pop-n levels. resolve guarantees m > pop-n.
-           (when (> pop-n 0) (calc-pop-stack pop-n))
-           (calc-pop-push-record-list 1 prefix new-formula (- m pop-n) val)))
+           (calc-pop-push-record-list 1 prefix new-formula m val)
+           ;; For binary, consume the arg from the top after the replace.
+           (when (> pop-n 0) (calc-pop-stack pop-n))))
         ('home      (calc-pop-push-record-list pop-n prefix val))
         ('subexpr   nil)   ;; TODO
         ('equation  nil)   ;; TODO
