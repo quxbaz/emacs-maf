@@ -9,6 +9,13 @@
 Each form runs in the buffer that was current when this macro was called.
 Form 1 runs at DELAY, form 2 at 2*DELAY, form 3 at 3*DELAY, etc."
   (declare (indent 1))
+  ;; Capture the window, not just the buffer. Point is per-window in Emacs,
+  ;; so operations like goto-char and calc-select-here must run with the
+  ;; correct window selected or they read/write the wrong point.
+  ;;
+  ;; The window value is passed via run-at-time's extra-args rather than
+  ;; closed over, so this works regardless of whether the call site uses
+  ;; lexical or dynamic binding.
   `(let ((--maf-win-- (selected-window)))
      ,@(cl-loop for form in body
                 for i from 1
@@ -30,6 +37,9 @@ Form 1 runs at DELAY, form 2 at 2*DELAY, form 3 at 3*DELAY, etc."
   (let ((right-win (next-window)))
     (unless (with-current-buffer (window-buffer right-win)
               (derived-mode-p 'calc-mode))
+      ;; Start calc without disturbing the window layout, then place the
+      ;; resulting buffer in right-win explicitly. set-window-buffer replaces
+      ;; whatever is there rather than splitting beneath it.
       (unless (get-buffer "*Calculator*")
         (save-window-excursion (calc)))
       (set-window-buffer right-win "*Calculator*"))))
