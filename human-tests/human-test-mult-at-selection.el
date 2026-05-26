@@ -15,8 +15,8 @@
   (goto-char 7)
   (call-interactively 'calc-select-here)
 
-  (calc-prepare-selection)
-  (message "%s" (calc-find-selected-part))
+  ;; (calc-prepare-selection)
+  ;; (message "%s" (calc-find-selected-part))
 
   ;; (calc-refresh)
   ;; (call-interactively 'maf-mult)
