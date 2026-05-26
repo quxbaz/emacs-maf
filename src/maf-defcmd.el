@@ -56,9 +56,17 @@ top 2 stack values and push VAL onto the stack."
   (maf--with-calc-buffer
     (let* ((target (alist-get :target context))
            (prefix (alist-get :prefix context))
-           (pop-n (alist-get :pop-n context)))
+           (pop-n  (alist-get :pop-n context))
+           (m      (alist-get :m context)))
       (pcase target
-        ('selection nil)   ;; TODO
+        ('selection
+         (let* ((expr         (alist-get :expr context))
+                (full-formula (calc-top m 'full))
+                (new-formula  (calc-replace-sub-formula full-formula expr val)))
+           ;; For binary, pop the arg from the top first; the selected entry
+           ;; then shifts up by pop-n levels. resolve guarantees m > pop-n.
+           (when (> pop-n 0) (calc-pop-stack pop-n))
+           (calc-pop-push-record-list 1 prefix new-formula (- m pop-n) val)))
         ('home      (calc-pop-push-record-list pop-n prefix val))
         ('subexpr   nil)   ;; TODO
         ('equation  nil)   ;; TODO
