@@ -30,7 +30,29 @@ Form 1 runs at DELAY, form 2 at 2*DELAY, form 3 at 3*DELAY, etc."
                                           (deactivate-mark t)
                                           ,form
                                           (deactivate-mark t)))
-                                      --maf-win--))))
+                                      --maf-win--))
+     nil))
+
+(defmacro maf-debug-slowly-each (delay after &rest body)
+  "Like `maf-debug-slowly', but run AFTER immediately after each form in BODY.
+AFTER runs in the same window/timer context as the form it follows, so it
+can inspect state (e.g. point, calc stack) as left by that form."
+  (declare (indent 2))
+  `(let ((--maf-win-- (selected-window)))
+     ,@(cl-loop for form in body
+                for i from 1
+                collect `(run-at-time ,(* delay i) nil
+                                      (lambda (win)
+                                        (setq current-prefix-arg nil)
+                                        (with-selected-window win
+                                          (deactivate-mark t)
+                                          ,form
+                                          (princ "\n")
+                                          (prin1 ',form)
+                                          ,after
+                                          (deactivate-mark t)))
+                                      --maf-win--))
+     nil))
 
 (defun maf-debug-use-calc-buffer ()
   "Select the calc window, moving point there permanently."
