@@ -4,8 +4,8 @@
   :prefix "doub"
   (commit (calcFunc-mul expr 2)))
 
-(maf-debug-setup-test)
+(maf--debug-setup-test)
 
-(maf-debug-slowly 0.3
+(maf--debug-slowly 0.3
   (calc-push 10)
   (call-interactively 'maf-double))
