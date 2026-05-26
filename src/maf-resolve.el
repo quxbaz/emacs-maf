@@ -10,15 +10,25 @@
 (defun maf--resolve-target-selection (opts)
   "Return the selection target's context alist.
 :expr is the selected sub-expression. The chosen entry is the one under point
-when it has a selection, otherwise the top-most entry with an active selection."
+when it has a selection, otherwise the top-most entry with an active selection.
+
+For binary commands, :arg is the top of the stack. Binary commands require the
+selected entry to be below the top (:m > 1); otherwise the arg would be the
+entry containing the selection, which has no coherent commit semantics."
   (maf--with-calc-buffer
     (let* ((arity (alist-get :arity opts))
-           (keep calc-keep-args-flag))
+           (keep calc-keep-args-flag)
+           (m (maf--sel-effective-m)))
+      ;; When the selected entry IS the top, :arg would be the full formula
+      ;; containing the selection — operating on yourself. Reject this combo
+      ;; rather than guess a commit semantic. User fix: move the selection
+      ;; (or its containing entry) below the top, or use a unary command.
+      (when (and (eq arity 'binary) (= m 1))
+        (error "Binary commands on selection require the selected entry below the top"))
       `((:target . selection)
         (:expr   . ,(maf--sel-effective-expr))
-        ;; TODO: Handle issue here. If 'binary and m=1, then what's the arg?
         (:arg    . ,(pcase arity ('unary nil) ('binary (calc-top 1 'full))))
-        (:m      . ,(maf--sel-effective-m))
+        (:m      . ,m)
         (:pop-n  . ,(if keep 0 (pcase arity ('unary 0) ('binary 1))))))))
 
 (defun maf--resolve-target-home (opts)
