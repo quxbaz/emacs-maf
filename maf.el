@@ -22,6 +22,7 @@
 (add-to-list 'load-path (expand-file-name "src" (file-name-directory (or load-file-name buffer-file-name))))
 
 (require 'maf-lib)
+(require 'maf-sel)
 (require 'maf-debug)
 (require 'maf-resolve)
 (require 'maf-defcmd)
