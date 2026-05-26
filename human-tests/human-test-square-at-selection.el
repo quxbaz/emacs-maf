@@ -14,4 +14,9 @@
   (goto-char 7)
   (call-interactively 'calc-select-here)
   (call-interactively 'maf-square)
-  (calc-clear-selections))
+  (progn
+    (calc-clear-selections)
+    (unless (= (calc-stack-size) 2)
+      (error "FAIL square-at-selection: expected size 2, got %d" (calc-stack-size)))
+    (message "PASS square-at-selection — top=%S bottom=%S"
+             (calc-top 1 'full) (calc-top 2 'full))))
