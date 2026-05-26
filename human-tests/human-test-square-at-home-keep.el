@@ -7,6 +7,7 @@
 (maf--debug-setup-test)
 
 (maf--debug-slowly 0.3
-  (calc-push 4)
-  (call-interactively 'calc-keep-args)
+  (progn
+    (calc-push 4)
+    (call-interactively 'calc-keep-args))
   (call-interactively 'maf-square))
