@@ -15,7 +15,7 @@ when it has a selection, otherwise the top-most entry with an active selection."
   (maf--with-calc-buffer
     `((:target    . selection)
       (:expr      . ,(maf--sel-effective-expr))
-      (:entry-idx . ,(maf--sel-effective-m)))))
+      (:m         . ,(maf--sel-effective-m)))))
 
 (defun maf--resolve-target-home (opts)
   "Return the home target's context alist."
