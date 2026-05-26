@@ -24,8 +24,13 @@
   "Return the stack position of the top-most entry with an active selection,
 or nil if no entry has one."
   (maf--with-calc-buffer
-    (cl-loop for i from 1 to (calc-stack-size)
-             when (calc-top i 'sel)
+    ;; Walk the cons cells once (O(n)) rather than using calc-top which re-indexes
+    ;; from the head each iteration (O(n^2)). nthcdr skips the sentinel and any
+    ;; entries hidden by calc-stack-top truncation, so i=1 lands on the first
+    ;; visible entry — matching calc-top's notion of position M.
+    (cl-loop for elt in (nthcdr calc-stack-top calc-stack)
+             for i from 1
+             when (nth 2 elt)
              return i)))
 
 (defun maf--effective-selection-m ()
