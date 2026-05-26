@@ -25,8 +25,14 @@ entry containing the selection, which has no coherent commit semantics."
       `((:target . selection)
         (:expr   . ,(maf--sel-effective-expr))
         (:arg    . ,(pcase arity ('unary nil) ('binary (calc-top 1 'full))))
+        ;; Stack position of the selected entry (1 = top).
         (:m      . ,m)
-        (:pop-n  . ,(if keep 0 (pcase arity ('unary 0) ('binary 1))))))))
+        ;; keep-args: push at top; else replace the selected entry in place.
+        (:push-m . ,(if keep 1 m))
+        ;; keep-args: insert (don't pop the selected entry); else replace (pop 1).
+        (:push-n . ,(if keep 0 1))
+        ;; Pop after the push (consumes the binary arg in non-keep mode).
+        (:post-pop-n . ,(if keep 0 (pcase arity ('unary 0) ('binary 1))))))))
 
 (defun maf--resolve-target-home (opts)
   "Return the home target's context alist."
@@ -36,7 +42,9 @@ entry containing the selection, which has no coherent commit semantics."
       `((:target . home)
         (:expr   . ,(calc-top 1 'full))
         (:arg    . ,(pcase arity ('unary nil) ('binary (calc-top 2 'full))))
-        (:pop-n  . ,(if keep 0 (pcase arity ('unary 1) ('binary 2))))))))
+        (:push-m . 1)
+        (:push-n . ,(if keep 0 (pcase arity ('unary 1) ('binary 2))))
+        (:post-pop-n . 0)))))
 
 (defun maf--resolve-target-subexpr (opts)
   "Return the subexpr target's context alist.
