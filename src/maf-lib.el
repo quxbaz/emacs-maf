@@ -31,9 +31,7 @@ Must be called with the calc buffer current."
 (defun maf--at-selection-p ()
   "Return t if any stack entry has an active selection (selection mode on)."
   (maf--with-calc-buffer
-    (and calc-use-selections
-         (seq-some (lambda (elt) (nth 2 elt)) calc-stack)
-         t)))
+    (maf--active-selection-p)))
 
 (defun maf--at-home-p ()
   "Return t if point is past the last stack entry (at the . line or below)."
