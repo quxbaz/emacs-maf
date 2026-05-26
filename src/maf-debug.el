@@ -82,4 +82,13 @@ can inspect state (e.g. point, calc stack) as left by that form."
         (save-window-excursion (calc)))
       (set-window-buffer right-win "*Calculator*"))))
 
+;; TEMP
+(global-set-key
+ (kbd "<f4>")
+ (let ((test "human-test-mult-at-selection.el")
+      (dir  (expand-file-name "human-tests/" (file-name-directory (locate-library "maf")))))
+   (lambda ()
+     (interactive)
+     (load-file (expand-file-name test dir)))))
+
 (provide 'maf-debug)
