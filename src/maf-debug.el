@@ -27,9 +27,9 @@ Form 1 runs at DELAY, form 2 at 2*DELAY, form 3 at 3*DELAY, etc."
                                         ;; inside the body.
                                         (setq current-prefix-arg nil)
                                         (with-selected-window win
-                                          (deactivate-mark)
+                                          (deactivate-mark t)
                                           ,form
-                                          (deactivate-mark)))
+                                          (deactivate-mark t)))
                                       --maf-win--))))
 
 (defun maf-debug-use-calc-buffer ()
