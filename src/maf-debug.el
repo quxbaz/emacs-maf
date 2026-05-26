@@ -83,7 +83,7 @@ can inspect state (e.g. point, calc stack) as left by that form."
       (set-window-buffer right-win "*Calculator*"))))
 
 ;; TEMP: Convenient way to run a specific test from anywhere.
-(let ((test "human-test-mult-at-selection.el")
+(let ((test "human-test-mult-at-selection-keep.el")
       (dir  (expand-file-name "human-tests/" (file-name-directory (locate-library "maf")))))
   (global-set-key (kbd "<f4>") (lambda ()
                                  (interactive)
