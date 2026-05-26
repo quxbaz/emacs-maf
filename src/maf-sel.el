@@ -10,7 +10,7 @@
   "Return t if any stack entry has an active selection."
   (maf--with-calc-buffer
     (and calc-use-selections
-         ;; calc stack entries are (val disp sel); sel is non-nil when selected.
+         ;; stack entries are (formula lines selection); selection is non-nil when active.
          (seq-some (lambda (elt) (nth 2 elt)) calc-stack)
          t)))
 
@@ -18,14 +18,14 @@
   "Return t if the stack entry at point has an active selection."
   (maf--with-calc-buffer
     (let ((m (calc-locate-cursor-element (point))))
-      (and (nth 2 (nth m calc-stack)) t))))
+      (and (> m 0) (calc-top m 'sel) t))))
 
 (defun maf--topmost-selection-m ()
   "Return the stack position of the top-most entry with an active selection,
 or nil if no entry has one."
   (maf--with-calc-buffer
-    (cl-loop for i from 1 below (length calc-stack)
-             when (nth 2 (nth i calc-stack))
+    (cl-loop for i from 1 to (calc-stack-size)
+             when (calc-top i 'sel)
              return i)))
 
 (defun maf--effective-selection-m ()
@@ -34,8 +34,9 @@ or nil if no entry has one."
 Prefers the selection at the current line, falling back to the top-most
 active selection. Returns nil if no selections are active."
   (maf--with-calc-buffer
-    (if (maf--selection-at-point-p)
-        (calc-locate-cursor-element (point))
-      (maf--topmost-selection-m))))
+    (let ((m (calc-locate-cursor-element (point))))
+      (if (and (> m 0) (calc-top m 'sel))
+          m
+        (maf--topmost-selection-m)))))
 
 (provide 'maf-sel)
