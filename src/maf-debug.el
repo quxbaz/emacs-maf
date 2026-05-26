@@ -4,6 +4,13 @@
 ;;
 ;; maf debug functions
 
+(defun maf-debug-setup-test ()
+  "Prepare the frame for a human test.
+Opens calc in the right window if needed, focuses it, and resets the stack."
+  (maf-debug-open-calc-right)
+  (maf-debug-use-calc-buffer)
+  (calc-reset 0))
+
 (defmacro maf-debug-slowly (delay &rest body)
   "Run each form in BODY on a timer, spaced DELAY seconds apart.
 Each form runs in the buffer that was current when this macro was called.
