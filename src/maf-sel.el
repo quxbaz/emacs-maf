@@ -4,9 +4,7 @@
 ;;
 ;; maf selection functions
 
-(require 'maf-lib)
-
-(defun maf--active-selection-p ()
+(defun maf--any-selection-p ()
   "Return t if any stack entry has an active selection.
 Must be called with the calc buffer current."
   (and calc-use-selections
@@ -14,32 +12,25 @@ Must be called with the calc buffer current."
        (seq-some (lambda (elt) (nth 2 elt)) calc-stack)
        t))
 
-(defun maf--at-selection-p ()
-  "Return t if any stack entry has an active selection (selection mode on)."
-  (maf--with-calc-buffer
-    (maf--active-selection-p)))
-
-(defun maf--active-selection-at-line-p ()
+(defun maf--selection-on-line-p ()
   "Return t if the stack entry at point has an active selection."
   (let ((m (calc-locate-cursor-element (point))))
     (and (nth 2 (nth m calc-stack)) t)))
 
-(defun maf--first-active-entry-m ()
-  "Return the POSITION of the first stack entry with an active selection
-beginning from the top of the stack, or nil if there are no active selections."
+(defun maf--topmost-selection-pos ()
+  "Return the stack position of the top-most entry with an active selection,
+or nil if no entry has one."
   (cl-loop for i from 1 below (length calc-stack)
            when (nth 2 (nth i calc-stack))
            return i))
 
-(defun maf--active-entry-m-dwim ()
-  "Return stack POSITION of active selection at point, or top-most selection.
+(defun maf--selection-pos-dwim ()
+  "Return the stack position of the selection to operate on.
 
-Returns the stack position (m) of the active selection at the current
-line. If no selection exists at point, returns the position of the first
-active selection from the top of the stack. Returns nil if no selections
-are active."
-  (if (maf--active-selection-at-line-p)
+Prefers the selection at the current line, falling back to the top-most
+active selection. Returns nil if no selections are active."
+  (if (maf--selection-on-line-p)
       (calc-locate-cursor-element (point))
-    (maf--first-active-entry-m)))
+    (maf--topmost-selection-pos)))
 
 (provide 'maf-sel)
