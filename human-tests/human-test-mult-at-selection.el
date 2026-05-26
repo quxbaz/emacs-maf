@@ -10,14 +10,12 @@
 
 (maf-debug-slowly 0.3
   (calc-push '(+ (* 20 (var x var-x)) 10))
-  (calc-push 2)
+  (progn
+    (calc-push 2)
+    (calc-refresh))
   (calc-refresh)
   (goto-char 7)
   (call-interactively 'calc-select-here)
-
-  ;; (calc-prepare-selection)
-  ;; (message "%s" (calc-find-selected-part))
-
-  ;; (calc-refresh)
-  ;; (call-interactively 'maf-mult)
+  ;; @NOW
+  (call-interactively 'maf-mult)
   )
