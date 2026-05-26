@@ -21,19 +21,6 @@ Prefers the current buffer if it is in calc-mode, then looks for
   `(with-current-buffer (maf--find-calc-buffer)
      ,@body))
 
-(defun maf--active-selection-p ()
-  "Return t if any stack entry has an active selection.
-Must be called with the calc buffer current."
-  (and calc-use-selections
-       ;; calc stack entries are (val disp sel); sel is non-nil when selected.
-       (seq-some (lambda (elt) (nth 2 elt)) calc-stack)
-       t))
-
-(defun maf--at-selection-p ()
-  "Return t if any stack entry has an active selection (selection mode on)."
-  (maf--with-calc-buffer
-    (maf--active-selection-p)))
-
 (defun maf--at-home-p ()
   "Return t if point is past the last stack entry (at the . line or below)."
   (maf--with-calc-buffer
