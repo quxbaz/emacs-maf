@@ -13,9 +13,15 @@
 when it has a selection, otherwise the top-most entry with an active selection."
   (ignore opts)
   (maf--with-calc-buffer
-    `((:target    . selection)
-      (:expr      . ,(maf--sel-effective-expr))
-      (:m         . ,(maf--sel-effective-m)))))
+    (let* ((arity (alist-get :arity opts))
+           (keep calc-keep-args-flag))
+      `((:target . selection)
+        (:expr   . ,(maf--sel-effective-expr))
+        ;; TODO: Handle issue here. If 'binary and m=1, then what's the arg?
+        (:arg    . ,(pcase arity ('unary nil) ('binary (calc-top 1 'full))))
+        (:m      . ,(maf--sel-effective-m))
+        (:pop-n  . ,(if keep 0 (pcase arity ('unary 0) ('binary 1))))
+        ))))
 
 (defun maf--resolve-target-home (opts)
   "Return the home target's context alist."
