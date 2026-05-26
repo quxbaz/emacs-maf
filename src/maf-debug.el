@@ -9,12 +9,12 @@
 Each form runs in the buffer that was current when this macro was called.
 Form 1 runs at DELAY, form 2 at 2*DELAY, form 3 at 3*DELAY, etc."
   (declare (indent 1))
-  `(let ((--maf-buf-- (current-buffer)))
+  `(let ((--maf-win-- (selected-window)))
      ,@(cl-loop for form in body
                 for i from 1
                 collect `(run-at-time ,(* delay i) nil
-                                      (lambda (buf) (with-current-buffer buf ,form))
-                                      --maf-buf--))))
+                                      (lambda (win) (with-selected-window win ,form))
+                                      --maf-win--))))
 
 (defun maf-debug-use-calc-buffer ()
   "Select the calc window, moving point there permanently."
