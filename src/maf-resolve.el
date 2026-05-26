@@ -39,11 +39,11 @@ Point is inside an entry's formula text; :expr is the implicit sub-expression
 under cursor. Commit replaces the sub-expression in-place."
   (ignore opts)
   (maf--with-calc-buffer
-    (let ((idx (calc-locate-cursor-element (point))))
-      (calc-prepare-selection idx)
-      `((:target    . subexpr)
-        (:expr      . ,(calc-find-selected-part))
-        (:entry-idx . ,idx)))))
+    (let ((m (calc-locate-cursor-element (point))))
+      (calc-prepare-selection m)
+      `((:target . subexpr)
+        (:expr   . ,(calc-find-selected-part))
+        (:m      . ,m)))))
 
 (defun maf--resolve-target-equation (opts)
   "Return the equation target's context alist.
@@ -52,13 +52,13 @@ side: commit must iterate with :expr bound to :lhs, then to :rhs.
 TODO: the macro/commit dispatch doesn't yet implement the per-side iteration."
   (ignore opts)
   (maf--with-calc-buffer
-    (let* ((idx  (calc-locate-cursor-element (point)))
-           (expr (calc-top idx 'full)))
-      `((:target    . equation)
-        (:expr      . ,expr)
-        (:lhs       . ,(nth 1 expr))
-        (:rhs       . ,(nth 2 expr))
-        (:entry-idx . ,idx)))))
+    (let* ((m    (calc-locate-cursor-element (point)))
+           (expr (calc-top m 'full)))
+      `((:target . equation)
+        (:expr   . ,expr)
+        (:lhs    . ,(nth 1 expr))
+        (:rhs    . ,(nth 2 expr))
+        (:m      . ,m)))))
 
 (defun maf--resolve-target-entry (opts)
   "Return the entry target's context alist.
@@ -66,10 +66,10 @@ Point is on a stack entry but not on a sub-expression; :expr is the whole
 formula. Commit replaces the entry in-place."
   (ignore opts)
   (maf--with-calc-buffer
-    (let ((idx (calc-locate-cursor-element (point))))
-      `((:target    . entry)
-        (:expr      . ,(calc-top idx 'full))
-        (:entry-idx . ,idx)))))
+    (let ((m (calc-locate-cursor-element (point))))
+      `((:target . entry)
+        (:expr   . ,(calc-top m 'full))
+        (:m      . ,m)))))
 
 (defun maf--resolve-context (opts)
   "Inspect point and calc state; return a context descriptor alist.
