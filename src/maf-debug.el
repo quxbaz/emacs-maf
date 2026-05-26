@@ -26,8 +26,10 @@ Form 1 runs at DELAY, form 2 at 2*DELAY, form 3 at 3*DELAY, etc."
                                         ;; so they don't affect interactive calls
                                         ;; inside the body.
                                         (setq current-prefix-arg nil)
-                                        (deactivate-mark)
-                                        (with-selected-window win ,form))
+                                        (with-selected-window win
+                                          (deactivate-mark)
+                                          ,form
+                                          (deactivate-mark)))
                                       --maf-win--))))
 
 (defun maf-debug-use-calc-buffer ()
