@@ -16,4 +16,10 @@
   (progn
     (call-interactively 'calc-keep-args)
     (call-interactively 'maf-mult))
-  (calc-clear-selections))
+  (progn
+    (calc-clear-selections)
+    (unless (= (calc-stack-size) 3)
+      (error "FAIL mult-at-selection-keep: expected size 3, got %d" (calc-stack-size)))
+    (unless (equal (calc-top 2 'full) 2)
+      (error "FAIL mult-at-selection-keep: expected pos 2 to be 2, got %S" (calc-top 2 'full)))
+    (message "PASS mult-at-selection-keep — top=%S" (calc-top 1 'full))))
