@@ -26,7 +26,8 @@ Prefers the current buffer if it is in calc-mode, then looks for
 Must be called with the calc buffer current."
   (and calc-use-selections
        ;; calc stack entries are (val disp sel); sel is non-nil when selected.
-       (seq-some (lambda (elt) (nth 2 elt)) calc-stack)))
+       (seq-some (lambda (elt) (nth 2 elt)) calc-stack)
+       t))
 
 (defun maf--at-selection-p ()
   "Return t if any stack entry has an active selection (selection mode on)."
