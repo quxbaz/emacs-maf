@@ -7,11 +7,10 @@
 (maf--debug-setup-test)
 
 (maf--debug-slowly 0.3
-  (calc-push '(+ (* 20 (var x var-x)) 10))
+  (calc-push '(+ (* 10 (var x var-x)) 4))
   (progn
-    (calc-push 2)
+    (calc-push 42)
     (calc-refresh))
-  (calc-refresh)
   (goto-char 7)
   (call-interactively 'calc-select-here)
   (call-interactively 'maf-square)
