@@ -9,7 +9,7 @@
 (maf--debug-slowly 0.3
   (calc-push '(+ (* 10 (var x var-x)) 4))
   (progn
-    (calc-push 42)
+    (calc-push '(var c var-c))
     (calc-refresh))
   (goto-char 7)
   (call-interactively 'calc-select-here)
