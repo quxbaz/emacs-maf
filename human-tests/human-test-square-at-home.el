@@ -1,11 +1,11 @@
-(maf-defcmd maf-double (expr arg commit)
-  "Doubling command."
+(maf-defcmd maf-square (expr arg commit)
+  "Square command."
   :arity unary
-  :prefix "doub"
-  (commit (calcFunc-mul expr 2)))
+  :prefix "sqr"
+  (commit (calcFunc-mul expr expr)))
 
 (maf--debug-setup-test)
 
 (maf--debug-slowly 0.3
-  (calc-push 10)
-  (call-interactively 'maf-double))
+  (calc-push 4)
+  (call-interactively 'maf-square))
