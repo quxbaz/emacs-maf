@@ -11,7 +11,6 @@
   (progn
     (calc-push 2)
     (calc-refresh))
-  (calc-refresh)
   (goto-char 7)
   (call-interactively 'calc-select-here)
   (call-interactively 'maf-mult)
