@@ -16,4 +16,8 @@
   (progn
     (call-interactively 'calc-keep-args)
     (call-interactively 'maf-square))
-  (calc-clear-selections))
+  (progn
+    (calc-clear-selections)
+    (unless (= (calc-stack-size) 3)
+      (error "FAIL square-at-selection-keep: expected size 3, got %d" (calc-stack-size)))
+    (message "PASS square-at-selection-keep — top=%S" (calc-top 1 'full))))
