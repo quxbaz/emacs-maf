@@ -5,6 +5,7 @@
 ;; Resolve point and calc state into a target-specific context descriptor.
 
 (require 'maf-lib)
+(require 'maf-sel)
 
 (defun maf--resolve-target-selection (opts)
   "Return the selection target's context alist.
