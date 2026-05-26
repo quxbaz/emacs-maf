@@ -10,5 +10,7 @@
 
 (maf-debug-slowly 0.3
   (calc-push 3)
-  (calc-push 2)
+  (progn
+    (calc-push 2)
+    (calc-refresh))
   (call-interactively 'maf-mult))
