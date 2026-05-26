@@ -3,6 +3,35 @@
 ;; maf-resolve.el
 ;;
 ;; Resolve point and calc state into a target-specific context descriptor.
+;;
+;; ----------------------------------------------------------------------------
+;; Context schema (alist returned by `maf--resolve-context')
+;; ----------------------------------------------------------------------------
+;;
+;; Target-specific keys (produced by `maf--resolve-target-*'):
+;;
+;;   :target       Symbol identifying the target: home, selection, subexpr,
+;;                 equation, or entry.
+;;   :expr         The expression the command operates on (full formula or
+;;                 selected sub-formula, depending on target).
+;;   :arg          Second operand for binary commands; nil for unary.
+;;   :m            Stack position (1 = top) of the target entry. Only set when
+;;                 the target lives at a specific stack level (e.g. selection).
+;;
+;; Commit instructions (consumed by `maf--defcmd-commit'):
+;;
+;;   :push-m       Stack level where the result is pushed.
+;;   :push-n       N argument to `calc-pop-push-record-list' — number of
+;;                 entries popped at :push-m before pushing.
+;;   :post-pop-n   Number of entries popped from the top *after* the push,
+;;                 to consume extra inputs (e.g. the binary arg on selection).
+;;
+;; Merged in by `maf--resolve-context':
+;;
+;;   :arity        From OPTS: unary or binary.
+;;   :prefix       From OPTS: calc trail label.
+;;   :keep         Snapshot of `calc-keep-args-flag' at resolve time.
+;;   ...any other keyword option passed to `maf-defcmd'.
 
 (require 'maf-lib)
 (require 'maf-sel)
@@ -25,13 +54,9 @@ entry containing the selection, which has no coherent commit semantics."
       `((:target . selection)
         (:expr   . ,(maf--sel-effective-expr))
         (:arg    . ,(pcase arity ('unary nil) ('binary (calc-top 1 'full))))
-        ;; Stack position of the selected entry (1 = top).
         (:m      . ,m)
-        ;; keep-args: push at top; else replace the selected entry in place.
         (:push-m . ,(if keep 1 m))
-        ;; keep-args: insert (don't pop the selected entry); else replace (pop 1).
         (:push-n . ,(if keep 0 1))
-        ;; Pop after the push (consumes the binary arg in non-keep mode).
         (:post-pop-n . ,(if keep 0 (pcase arity ('unary 0) ('binary 1))))))))
 
 (defun maf--resolve-target-home (opts)
@@ -100,11 +125,11 @@ Possible :target values, in order of priority:
   entry      Whole stack entry; point is at EOL, line-prefix zone, or line mode is forced."
   (maf--with-calc-buffer
     (append (cond
-             ((maf--sel-any-p) (maf--resolve-target-selection opts)) ;; TODO
-             ((maf--at-home-p)       (maf--resolve-target-home opts))
-             ((maf--at-subexpr-p)    (maf--resolve-target-subexpr opts))   ;; TODO
-             ((maf--at-equation-p)   (maf--resolve-target-equation opts))  ;; TODO
-             ((maf--at-entry-p)      (maf--resolve-target-entry opts))     ;; TODO
+             ((maf--sel-any-p)     (maf--resolve-target-selection opts)) ;; TODO
+             ((maf--at-home-p)     (maf--resolve-target-home opts))
+             ((maf--at-subexpr-p)  (maf--resolve-target-subexpr opts))   ;; TODO
+             ((maf--at-equation-p) (maf--resolve-target-equation opts))  ;; TODO
+             ((maf--at-entry-p)    (maf--resolve-target-entry opts))     ;; TODO
              (t (error "Could not resolve target at point")))
             ;; Also include options declared in the defcmd body like :arity, :prefix, etc
             opts
