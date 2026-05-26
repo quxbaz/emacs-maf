@@ -19,10 +19,7 @@ entry containing the selection, which has no coherent commit semantics."
     (let* ((arity (alist-get :arity opts))
            (keep calc-keep-args-flag)
            (m (maf--sel-effective-m)))
-      ;; When the selected entry IS the top, :arg would be the full formula
-      ;; containing the selection — operating on yourself. Reject this combo
-      ;; rather than guess a commit semantic. User fix: move the selection
-      ;; (or its containing entry) below the top, or use a unary command.
+      ;; If m=1 and arity=binary then there's nowhere to take the arg from - reject.
       (when (and (eq arity 'binary) (= m 1))
         (error "Binary commands on selection require the selected entry below the top"))
       `((:target . selection)
