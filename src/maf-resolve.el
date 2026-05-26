@@ -10,16 +10,10 @@
 (defun maf--resolve-target-selection (opts)
   "Return the selection target's context alist.
 :expr is the selected sub-expression. The chosen entry is the one under point
-when its has a selection, otherwise the top-most entry with an active selection."
+when it has a selection, otherwise the top-most entry with an active selection."
   (ignore opts)
   (maf--with-calc-buffer
-    (let* ((line-idx (calc-locate-cursor-element (point)))
-           (idx (or (and (> line-idx 0)
-                         (calc-top line-idx 'sel)
-                         line-idx)
-                    (cl-loop for i from 1 to (calc-stack-size)
-                             when (calc-top i 'sel)
-                             return i))))
+    (let ((idx (maf--sel-effective-m)))
       `((:target    . selection)
         (:expr      . ,(calc-top idx 'sel))
         (:entry-idx . ,idx)))))
