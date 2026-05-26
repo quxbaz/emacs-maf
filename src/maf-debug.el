@@ -82,7 +82,7 @@ can inspect state (e.g. point, calc stack) as left by that form."
         (save-window-excursion (calc)))
       (set-window-buffer right-win "*Calculator*"))))
 
-;; TEMP
+;; TEMP: Convenient way to run a specific test from anywhere.
 (global-set-key
  (kbd "<f4>")
  (let ((test "human-test-mult-at-selection.el")
