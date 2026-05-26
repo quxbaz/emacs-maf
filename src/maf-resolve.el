@@ -12,42 +12,45 @@
 :expr is the selected sub-expression. The chosen entry is the one under point
 when its has a selection, otherwise the top-most entry with an active selection."
   (ignore opts)
-  (let* ((line-idx (calc-locate-cursor-element (point)))
-         (idx (or (and (> line-idx 0)
-                       (calc-top line-idx 'sel)
-                       line-idx)
-                  (cl-loop for i from 1 to (calc-stack-size)
-                           when (calc-top i 'sel)
-                           return i))))
-    `((:target    . selection)
-      (:expr      . ,(calc-top idx 'sel))
-      (:entry-idx . ,idx))))
+  (maf--with-calc-buffer
+    (let* ((line-idx (calc-locate-cursor-element (point)))
+           (idx (or (and (> line-idx 0)
+                         (calc-top line-idx 'sel)
+                         line-idx)
+                    (cl-loop for i from 1 to (calc-stack-size)
+                             when (calc-top i 'sel)
+                             return i))))
+      `((:target    . selection)
+        (:expr      . ,(calc-top idx 'sel))
+        (:entry-idx . ,idx)))))
 
 (defun maf--resolve-target-home (opts)
   "Return the home target's context alist."
-  (let* ((arity (alist-get :arity opts))
-         (unary? (eq arity 'unary))
-         (binary? (eq arity 'binary))
-         (keep calc-keep-args-flag))
-    `((:target . home)
-      (:expr   . ,(calc-top 1 'full))
-      (:arg    . ,(cond (unary? nil)
-                        (binary? (calc-top 2 'full))
-                        (t (error "Unknown arity: %s" arity))))
-      (:pop-n  . ,(if keep 0 (cond (unary? 1)
-                                   (binary? 2)
-                                   (t (error "Unknown arity: %s" arity))))))))
+  (maf--with-calc-buffer
+    (let* ((arity (alist-get :arity opts))
+           (unary? (eq arity 'unary))
+           (binary? (eq arity 'binary))
+           (keep calc-keep-args-flag))
+      `((:target . home)
+        (:expr   . ,(calc-top 1 'full))
+        (:arg    . ,(cond (unary? nil)
+                          (binary? (calc-top 2 'full))
+                          (t (error "Unknown arity: %s" arity))))
+        (:pop-n  . ,(if keep 0 (cond (unary? 1)
+                                     (binary? 2)
+                                     (t (error "Unknown arity: %s" arity)))))))))
 
 (defun maf--resolve-target-subexpr (opts)
   "Return the subexpr target's context alist.
 Point is inside an entry's formula text; :expr is the implicit sub-expression
 under cursor. Commit replaces the sub-expression in-place."
   (ignore opts)
-  (let ((idx (calc-locate-cursor-element (point))))
-    (calc-prepare-selection idx)
-    `((:target    . subexpr)
-      (:expr      . ,(calc-find-selected-part))
-      (:entry-idx . ,idx))))
+  (maf--with-calc-buffer
+    (let ((idx (calc-locate-cursor-element (point))))
+      (calc-prepare-selection idx)
+      `((:target    . subexpr)
+        (:expr      . ,(calc-find-selected-part))
+        (:entry-idx . ,idx)))))
 
 (defun maf--resolve-target-equation (opts)
   "Return the equation target's context alist.
@@ -55,23 +58,25 @@ Stack entry under point is a relation. The body is expected to run once per
 side: commit must iterate with :expr bound to :lhs, then to :rhs.
 TODO: the macro/commit dispatch doesn't yet implement the per-side iteration."
   (ignore opts)
-  (let* ((idx  (calc-locate-cursor-element (point)))
-         (expr (calc-top idx 'full)))
-    `((:target    . equation)
-      (:expr      . ,expr)
-      (:lhs       . ,(nth 1 expr))
-      (:rhs       . ,(nth 2 expr))
-      (:entry-idx . ,idx))))
+  (maf--with-calc-buffer
+    (let* ((idx  (calc-locate-cursor-element (point)))
+           (expr (calc-top idx 'full)))
+      `((:target    . equation)
+        (:expr      . ,expr)
+        (:lhs       . ,(nth 1 expr))
+        (:rhs       . ,(nth 2 expr))
+        (:entry-idx . ,idx)))))
 
 (defun maf--resolve-target-entry (opts)
   "Return the entry target's context alist.
 Point is on a stack entry but not on a sub-expression; :expr is the whole
 formula. Commit replaces the entry in-place."
   (ignore opts)
-  (let ((idx (calc-locate-cursor-element (point))))
-    `((:target    . entry)
-      (:expr      . ,(calc-top idx 'full))
-      (:entry-idx . ,idx))))
+  (maf--with-calc-buffer
+    (let ((idx (calc-locate-cursor-element (point))))
+      `((:target    . entry)
+        (:expr      . ,(calc-top idx 'full))
+        (:entry-idx . ,idx)))))
 
 (defun maf--resolve-context (opts)
   "Inspect point and calc state; return a context descriptor alist.
