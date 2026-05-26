@@ -21,8 +21,7 @@
       (and (> m 0) (calc-top m 'sel) t))))
 
 (defun maf--sel-topmost-m ()
-  "Return the stack position of the top-most entry with an active selection,
-or nil if no entry has one."
+  "Return stack position of the top-most selected entry, or nil if none."
   (maf--with-calc-buffer
     ;; Walk the cons cells once (O(n)) rather than using calc-top which re-indexes
     ;; from the head each iteration (O(n^2)). nthcdr skips the sentinel and any
@@ -36,7 +35,7 @@ or nil if no entry has one."
 (defun maf--sel-effective-m ()
   "Return the stack position of the selection to operate on.
 
-Prefers the selection at the current line, falling back to the top-most
+Prefers the selection at the entry under point, falling back to the top-most
 active selection. Returns nil if no selections are active."
   (maf--with-calc-buffer
     (let ((m (calc-locate-cursor-element (point))))
