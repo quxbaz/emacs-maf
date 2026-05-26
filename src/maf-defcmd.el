@@ -26,8 +26,11 @@
 
 (defun maf--defcmd-validate-opts (opts)
   "Validate OPTS, signaling an error if any are invalid."
-  (unless (alist-get :arity opts)
-    (error "Missing required option :arity")))
+  (let ((arity (alist-get :arity opts)))
+    (unless arity
+      (error "Missing required option :arity"))
+    (unless (memq arity '(unary binary))
+      (error "Invalid :arity %s (expected unary or binary)" arity))))
 
 (defun maf--defcmd-parse-body (forms)
   "Return the body forms from FORMS, skipping a leading docstring and keyword-value pairs."
