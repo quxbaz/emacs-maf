@@ -4,14 +4,14 @@
 ;;
 ;; maf debug functions
 
-(defun maf-debug-setup-test ()
+(defun maf--debug-setup-test ()
   "Prepare the frame for a human test.
 Opens calc in the right window if needed, focuses it, and resets the stack."
-  (maf-debug-open-calc-right)
-  (maf-debug-use-calc-buffer)
+  (maf--debug-open-calc-right)
+  (maf--debug-use-calc-buffer)
   (calc-reset 0))
 
-(defmacro maf-debug-slowly (delay &rest body)
+(defmacro maf--debug-slowly (delay &rest body)
   "Run each form in BODY on a timer, spaced DELAY seconds apart.
 Each form runs in the buffer that was current when this macro was called.
 Form 1 runs at DELAY, form 2 at 2*DELAY, form 3 at 3*DELAY, etc."
@@ -40,8 +40,8 @@ Form 1 runs at DELAY, form 2 at 2*DELAY, form 3 at 3*DELAY, etc."
                                       --maf-win--))
      nil))
 
-(defmacro maf-debug-slowly-each (delay after &rest body)
-  "Like `maf-debug-slowly', but run AFTER immediately after each form in BODY.
+(defmacro maf--debug-slowly-each (delay after &rest body)
+  "Like `maf--debug-slowly', but run AFTER immediately after each form in BODY.
 AFTER runs in the same window/timer context as the form it follows, so it
 can inspect state (e.g. point, calc stack) as left by that form."
   (declare (indent 2))
@@ -61,11 +61,11 @@ can inspect state (e.g. point, calc stack) as left by that form."
                                       --maf-win--))
      nil))
 
-(defun maf-debug-use-calc-buffer ()
+(defun maf--debug-use-calc-buffer ()
   "Select the calc window, moving point there permanently."
   (select-window (get-buffer-window (maf--find-calc-buffer))))
 
-(defun maf-debug-open-calc-right ()
+(defun maf--debug-open-calc-right ()
   "Ensure calc is open in the right window, splitting if needed.
 - One window: splits right, then shows calc in the new window.
 - Right window already has calc: no-op.
