@@ -89,11 +89,11 @@ Possible :target values, in order of priority:
   entry      Whole stack entry; point is at EOL, line-prefix zone, or line mode is forced."
   (maf--with-calc-buffer
     (append (cond
-             ((maf--at-selection-p) (maf--resolve-target-selection opts)) ;; TODO
-             ((maf--at-home-p)      (maf--resolve-target-home opts))
-             ((maf--at-subexpr-p)   (maf--resolve-target-subexpr opts))   ;; TODO
-             ((maf--at-equation-p)  (maf--resolve-target-equation opts))  ;; TODO
-             ((maf--at-entry-p)     (maf--resolve-target-entry opts))     ;; TODO
+             ((maf--any-selection-p) (maf--resolve-target-selection opts)) ;; TODO
+             ((maf--at-home-p)       (maf--resolve-target-home opts))
+             ((maf--at-subexpr-p)    (maf--resolve-target-subexpr opts))   ;; TODO
+             ((maf--at-equation-p)   (maf--resolve-target-equation opts))  ;; TODO
+             ((maf--at-entry-p)      (maf--resolve-target-entry opts))     ;; TODO
              (t (error "Could not resolve target at point")))
             ;; Also include options declared in the defcmd body like :arity, :prefix, etc
             opts
