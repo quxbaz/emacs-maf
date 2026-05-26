@@ -6,13 +6,14 @@
 
 (maf--debug-setup-test)
 
-(maf--debug-slowly 0.3
+(maf--debug-slowly 1
   (calc-push '(+ (* 10 (var x var-x)) 4))
   (progn
     (calc-push '(var c var-c))
     (calc-refresh))
   (goto-char 7)
   (call-interactively 'calc-select-here)
-  (call-interactively 'calc-keep-args)
-  (call-interactively 'maf-square)
+  (progn
+    (call-interactively 'calc-keep-args)
+    (call-interactively 'maf-square))
   (calc-clear-selections))
