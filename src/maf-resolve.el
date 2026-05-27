@@ -25,6 +25,10 @@
 ;;                 entries popped at :push-m before pushing.
 ;;   :post-pop-n   Number of entries popped from the top *after* the push,
 ;;                 to consume extra inputs (e.g. the binary arg on selection).
+;;   :reselect     If non-nil, commit carries the result as the new selection
+;;                 on the pushed entry. Set for targets with an explicit
+;;                 user-set selection (selection); nil for implicit ones
+;;                 (subexpr) where there's no selection to preserve.
 ;;
 ;; Merged in by `maf--resolve-context':
 ;;
@@ -57,7 +61,8 @@ entry containing the selection, which has no coherent commit semantics."
         (:m          . ,m)
         (:push-m     . ,(if keep 1 m))
         (:push-n     . ,(if keep 0 1))
-        (:post-pop-n . ,(if keep 0 (pcase arity ('unary 0) ('binary 1))))))))
+        (:post-pop-n . ,(if keep 0 (pcase arity ('unary 0) ('binary 1))))
+        (:reselect   . t)))))
 
 (defun maf--resolve-target-home (opts)
   "Return the home target's context alist."
@@ -74,14 +79,30 @@ entry containing the selection, which has no coherent commit semantics."
 (defun maf--resolve-target-subexpr (opts)
   "Return the subexpr target's context alist.
 Point is inside an entry's formula text; :expr is the implicit sub-expression
-under cursor. Commit replaces the sub-expression in-place."
-  (ignore opts)
+under cursor.
+
+For binary commands, :arg is the top of the stack. Binary commands require the
+target entry to be below the top (:m > 1); otherwise the arg would be the
+entry containing the sub-expression, which has no coherent commit semantics.
+With keep-args off, commit replaces the sub-expression in-place; with
+keep-args on, commit pushes the spliced result on top, leaving originals
+untouched."
   (maf--with-calc-buffer
-    (let ((m (calc-locate-cursor-element (point))))
+    (let ((arity (alist-get :arity opts))
+          (m (calc-locate-cursor-element (point)))
+          (keep calc-keep-args-flag))
+      ;; If m=1 and arity=binary then there's nowhere to take the arg from - reject.
+      (when (and (eq arity 'binary) (= m 1))
+        (error "Binary commands on subexpr require the target entry below the top"))
       (calc-prepare-selection m)
-      `((:target . subexpr)
-        (:expr   . ,(calc-find-selected-part))
-        (:m      . ,m)))))
+      `((:target     . subexpr)
+        (:expr       . ,(calc-find-selected-part))
+        (:arg        . ,(pcase arity ('unary nil) ('binary (calc-top 1 'full))))
+        (:m          . ,m)
+        (:push-m     . ,(if keep 1 m))
+        (:push-n     . ,(if keep 0 1))
+        (:post-pop-n . ,(if keep 0 (pcase arity ('unary 0) ('binary 1))))
+        (:reselect   . nil)))))
 
 (defun maf--resolve-target-equation (opts)
   "Return the equation target's context alist.
