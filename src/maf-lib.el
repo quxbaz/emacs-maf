@@ -38,9 +38,9 @@ Prefers the current buffer if it is in calc-mode, then looks for
                   (< col (- (match-end 0) (point)))))))))
 
 (defun maf--at-line-margin-p ()
-  "Return t if point is at the start (line-prefix) or end (EOL) of a stack entry line.
-These are the positions where point is on an entry line but outside the
-formula text — the zones the entry target matches."
+  "Return t if point is in the line-prefix zone or at EOL on a stack entry line.
+Marks the positions outside the formula text — used by the entry target in
+the resolve cascade."
   (maf--with-calc-buffer
     (and (> (calc-locate-cursor-element (point)) 0)
          (or (eolp) (maf--at-line-prefix-p)))))
@@ -66,12 +66,5 @@ sub-expression on the line; those positions route to equation/entry targets."
       (and (consp expr)
            (memq (car expr) '(calcFunc-eq calcFunc-neq calcFunc-lt calcFunc-leq calcFunc-gt calcFunc-geq))
            t))))
-
-(defun maf--at-entry-p ()
-  "Return t if point is on a stack entry line.
-This is the catch-all when no more specific target (selection, subexpr,
-equation) matches in the priority cascade."
-  (maf--with-calc-buffer
-    (> (calc-locate-cursor-element (point)) 0)))
 
 (provide 'maf-lib)
