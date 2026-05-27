@@ -105,13 +105,19 @@ formula of that entry.
 
 For binary commands, :arg is the top of the stack. With keep-args off, commit
 replaces the entry in-place; with keep-args on, commit pushes the result on
-top instead, leaving originals untouched."
+top instead, leaving originals untouched.
+
+Ergonomic shift: if point is at the top entry (m=1) and the command is binary,
+the top is treated as :arg and the entry below as the target — point doesn't
+have to be on the operand whose value will be replaced."
   (maf--with-calc-buffer
     (let ((arity (alist-get :arity opts))
           (m (calc-locate-cursor-element (point)))
           (keep calc-keep-args-flag))
+      ;; For binary at the top entry, shift m down: the top becomes the arg
+      ;; and the entry below becomes the target.
       (when (and (eq arity 'binary) (= m 1))
-        (error "Binary commands on entry require the target entry below the top"))
+        (setq m 2))
       `((:target     . entry)
         (:expr       . ,(calc-top m 'full))
         (:arg        . ,(pcase arity ('unary nil) ('binary (calc-top 1 'full))))
