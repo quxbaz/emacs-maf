@@ -69,9 +69,9 @@ top 2 stack values and push VAL onto the stack."
            ;; For binary, consume the arg from the top after the replace.
            (when (> post-pop-n 0) (calc-pop-stack post-pop-n))))
         ('home (calc-pop-push-record-list push-n prefix val push-m))
-        ('subexpr   nil)   ;; TODO
-        ('equation  nil)   ;; TODO
-        ('entry     nil)))))
+        ('subexpr nil) ;; TODO
+        ('equation nil) ;; TODO
+        ('entry (calc-pop-push-record-list push-n prefix val push-m))))))
 
 (defmacro maf-defcmd (name bindings &rest rest)
   (declare (indent 2) (doc-string 3))
