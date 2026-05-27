@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2026-05-26 Tue 22:52 -->
+<!-- 2026-05-26 Tue 22:55 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Walkthrough: sqrt at a sub-expression</title>
@@ -193,6 +193,7 @@
     { background-color: #ffff00; color: #000000; font-weight: bold; }
   .org-svg { }
 </style>
+<link rel="stylesheet" href="style.css" />
 </head>
 <body>
 <div id="content" class="content">
@@ -201,18 +202,18 @@
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents" role="doc-toc">
 <ul>
-<li><a href="#org5606717">1. Starting state</a></li>
-<li><a href="#org145e24c">2. The declaration</a></li>
-<li><a href="#org68cff77">3. Macro expansion</a></li>
-<li><a href="#org3e83781">4. Phase 1: resolve</a></li>
-<li><a href="#orgb496207">5. Phase 2: body</a>
+<li><a href="#orgb19f120">1. Starting state</a></li>
+<li><a href="#org87508cf">2. The declaration</a></li>
+<li><a href="#org18eda19">3. Macro expansion</a></li>
+<li><a href="#org0176080">4. Phase 1: resolve</a></li>
+<li><a href="#org6d94e92">5. Phase 2: body</a>
 <ul>
-<li><a href="#orgd9f4feb">5.1. Where the fix lives</a></li>
+<li><a href="#org1e81fa4">5.1. Where the fix lives</a></li>
 </ul>
 </li>
-<li><a href="#org5c2a40c">6. Phase 3: commit</a></li>
-<li><a href="#org5652a6d">7. The encasing dance, summarized</a></li>
-<li><a href="#orga478cbb">8. Variations at a glance</a></li>
+<li><a href="#orgaca0836">6. Phase 3: commit</a></li>
+<li><a href="#orgf01abe2">7. The encasing dance, summarized</a></li>
+<li><a href="#org789537a">8. Variations at a glance</a></li>
 </ul>
 </div>
 </div>
@@ -225,13 +226,13 @@ re-anchor the mental model.
 <p>
 For the higher-level overview, see <a href="concepts.html">concepts.org</a>.
 </p>
-<div id="outline-container-org5606717" class="outline-2">
-<h2 id="org5606717"><span class="section-number-2">1.</span> Starting state</h2>
+<div id="outline-container-orgb19f120" class="outline-2">
+<h2 id="orgb19f120"><span class="section-number-2">1.</span> Starting state</h2>
 <div class="outline-text-2" id="text-1">
 <p>
 Stack:
 </p>
-<pre class="example" id="orgbe874fd">
+<pre class="example" id="orgfedea03">
 1: a + 16
 </pre>
 
@@ -241,8 +242,8 @@ line-prefix zone). No active calc selection.
 </p>
 </div>
 </div>
-<div id="outline-container-org145e24c" class="outline-2">
-<h2 id="org145e24c"><span class="section-number-2">2.</span> The declaration</h2>
+<div id="outline-container-org87508cf" class="outline-2">
+<h2 id="org87508cf"><span class="section-number-2">2.</span> The declaration</h2>
 <div class="outline-text-2" id="text-2">
 <p>
 The user writes:
@@ -275,8 +276,8 @@ Two options declared:
 </ul>
 </div>
 </div>
-<div id="outline-container-org68cff77" class="outline-2">
-<h2 id="org68cff77"><span class="section-number-2">3.</span> Macro expansion</h2>
+<div id="outline-container-org18eda19" class="outline-2">
+<h2 id="org18eda19"><span class="section-number-2">3.</span> Macro expansion</h2>
 <div class="outline-text-2" id="text-3">
 <p>
 <code>maf-defcmd</code> expands to:
@@ -302,8 +303,8 @@ the body can call <code>commit</code> without passing it explicitly).
 </p>
 </div>
 </div>
-<div id="outline-container-org3e83781" class="outline-2">
-<h2 id="org3e83781"><span class="section-number-2">4.</span> Phase 1: resolve</h2>
+<div id="outline-container-org0176080" class="outline-2">
+<h2 id="org0176080"><span class="section-number-2">4.</span> Phase 1: resolve</h2>
 <div class="outline-text-2" id="text-4">
 <p>
 <code>maf--resolve-context</code> is called with opts <code>((:prefix . "sqrt") (:arity . unary))</code>.
@@ -338,7 +339,7 @@ selection cache can track sub-expressions by <code>eq</code>.
 <p>
 After this call, the stack contains:
 </p>
-<pre class="example" id="orgf22b033">
+<pre class="example" id="org06d5eb4">
 1: (+ (var a var-a) (cplx 16 0))
 </pre>
 
@@ -380,8 +381,8 @@ Note the two-value pair for the same sub-expression:
 </ul>
 </div>
 </div>
-<div id="outline-container-orgb496207" class="outline-2">
-<h2 id="orgb496207"><span class="section-number-2">5.</span> Phase 2: body</h2>
+<div id="outline-container-org6d94e92" class="outline-2">
+<h2 id="org6d94e92"><span class="section-number-2">5.</span> Phase 2: body</h2>
 <div class="outline-text-2" id="text-5">
 <p>
 The body runs with <code>expr = 16</code>, <code>arg = nil</code>, <code>commit = (closure capturing context)</code>:
@@ -402,8 +403,8 @@ the clean integer <code>16</code>, <code>math-sqrt</code> takes the <b>integer b
 So <code>val = 4</code>.
 </p>
 </div>
-<div id="outline-container-orgd9f4feb" class="outline-3">
-<h3 id="orgd9f4feb"><span class="section-number-3">5.1.</span> Where the fix lives</h3>
+<div id="outline-container-org1e81fa4" class="outline-3">
+<h3 id="org1e81fa4"><span class="section-number-3">5.1.</span> Where the fix lives</h3>
 <div class="outline-text-3" id="text-5-1">
 <p>
 This is where the float-vs-integer fix is load-bearing. Resolve gives the
@@ -474,8 +475,8 @@ that happens in <code>maf--resolve-target-subexpr</code> <i>before</i> the body 
 </div>
 </div>
 </div>
-<div id="outline-container-org5c2a40c" class="outline-2">
-<h2 id="org5c2a40c"><span class="section-number-2">6.</span> Phase 3: commit</h2>
+<div id="outline-container-orgaca0836" class="outline-2">
+<h2 id="orgaca0836"><span class="section-number-2">6.</span> Phase 3: commit</h2>
 <div class="outline-text-2" id="text-6">
 <p>
 <code>maf--commit</code> is called with <code>val = 4</code> and the context from Phase 1.
@@ -484,7 +485,7 @@ that happens in <code>maf--resolve-target-subexpr</code> <i>before</i> the body 
 <p>
 It destructures:
 </p>
-<pre class="example" id="org38f96d8">
+<pre class="example" id="org80c4900">
 target      = subexpr
 prefix      = "sqrt"
 push-m      = 1
@@ -520,7 +521,7 @@ Calc displays <code>(cplx N 0)</code> the same as <code>N</code> (cplx-with-zero
 real part). So the final stack reads:
 </p>
 
-<pre class="example" id="org0241576">
+<pre class="example" id="org2d9bc8f">
 1: a + 4
 </pre>
 
@@ -529,8 +530,8 @@ The trail records the operation under "sqrt".
 </p>
 </div>
 </div>
-<div id="outline-container-org5652a6d" class="outline-2">
-<h2 id="org5652a6d"><span class="section-number-2">7.</span> The encasing dance, summarized</h2>
+<div id="outline-container-orgf01abe2" class="outline-2">
+<h2 id="orgf01abe2"><span class="section-number-2">7.</span> The encasing dance, summarized</h2>
 <div class="outline-text-2" id="text-7">
 <p>
 Three places handle the encased cons. Each does a different job — don't
@@ -573,8 +574,8 @@ equivalent.
 </p>
 </div>
 </div>
-<div id="outline-container-orga478cbb" class="outline-2">
-<h2 id="orga478cbb"><span class="section-number-2">8.</span> Variations at a glance</h2>
+<div id="outline-container-org789537a" class="outline-2">
+<h2 id="org789537a"><span class="section-number-2">8.</span> Variations at a glance</h2>
 <div class="outline-text-2" id="text-8">
 <ul class="org-ul">
 <li><b>Selection target</b> (<code>:reselect t</code>) — same as above except <code>sels</code>
@@ -598,7 +599,7 @@ replacing them.</li>
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: David Yeung</p>
-<p class="date">Created: 2026-05-26 Tue 22:52</p>
+<p class="date">Created: 2026-05-26 Tue 22:55</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>

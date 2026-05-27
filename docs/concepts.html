@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2026-05-26 Tue 22:52 -->
+<!-- 2026-05-26 Tue 22:55 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>maf concepts</title>
@@ -193,6 +193,7 @@
     { background-color: #ffff00; color: #000000; font-weight: bold; }
   .org-svg { }
 </style>
+<link rel="stylesheet" href="style.css" />
 </head>
 <body>
 <div id="content" class="content">
@@ -201,16 +202,16 @@
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents" role="doc-toc">
 <ul>
-<li><a href="#orgbc7a9e6">1. The flow</a></li>
-<li><a href="#org2e92283">2. The target system</a></li>
-<li><a href="#org5c735da">3. Encasing</a></li>
-<li><a href="#org6280dc5">4. :expr vs :expr-ref</a></li>
-<li><a href="#orgc497a40">5. Reselect</a></li>
-<li><a href="#org61de8b0">6. Keep-args</a></li>
-<li><a href="#orgd1a6bb6">7. The commit recipe</a></li>
-<li><a href="#org36a13df">8. Binary on selection-like targets</a></li>
-<li><a href="#org535279d">9. Files</a></li>
-<li><a href="#org59dfd10">10. See also</a></li>
+<li><a href="#org24b75fd">1. The flow</a></li>
+<li><a href="#orgff0a279">2. The target system</a></li>
+<li><a href="#org59e2084">3. Encasing</a></li>
+<li><a href="#org3a1c1a2">4. :expr vs :expr-ref</a></li>
+<li><a href="#org9d5634d">5. Reselect</a></li>
+<li><a href="#orga615751">6. Keep-args</a></li>
+<li><a href="#orgc0665f2">7. The commit recipe</a></li>
+<li><a href="#org596a651">8. Binary on selection-like targets</a></li>
+<li><a href="#org02ac47d">9. Files</a></li>
+<li><a href="#org22cbdf9">10. See also</a></li>
 </ul>
 </div>
 </div>
@@ -219,8 +220,8 @@ Architectural overview of the maf codebase. Read this before diving into
 any specific file; cross-reference with <a href="walkthrough.html">walkthrough.org</a> for a concrete
 worked example.
 </p>
-<div id="outline-container-orgbc7a9e6" class="outline-2">
-<h2 id="orgbc7a9e6"><span class="section-number-2">1.</span> The flow</h2>
+<div id="outline-container-org24b75fd" class="outline-2">
+<h2 id="org24b75fd"><span class="section-number-2">1.</span> The flow</h2>
 <div class="outline-text-2" id="text-1">
 <p>
 A maf command runs in four phases:
@@ -238,7 +239,7 @@ bindings, computes a result, calls <code>commit</code>.</li>
 per the context's instructions.</li>
 </ol>
 
-<pre class="example" id="org55001ac">
+<pre class="example" id="orgbf87b9c">
 maf-defcmd declaration                        (load time)
     │
     ▼
@@ -261,8 +262,8 @@ schema documented at the top of <a href="../src/maf-resolve.el">maf-resolve.el</
 </p>
 </div>
 </div>
-<div id="outline-container-org2e92283" class="outline-2">
-<h2 id="org2e92283"><span class="section-number-2">2.</span> The target system</h2>
+<div id="outline-container-orgff0a279" class="outline-2">
+<h2 id="orgff0a279"><span class="section-number-2">2.</span> The target system</h2>
 <div class="outline-text-2" id="text-2">
 <p>
 Resolve dispatches to one of five <i>targets</i> based on where point is and
@@ -330,8 +331,8 @@ produces the target-specific portion of the context alist.
 </p>
 </div>
 </div>
-<div id="outline-container-org5c735da" class="outline-2">
-<h2 id="org5c735da"><span class="section-number-2">3.</span> Encasing</h2>
+<div id="outline-container-org59e2084" class="outline-2">
+<h2 id="org59e2084"><span class="section-number-2">3.</span> Encasing</h2>
 <div class="outline-text-2" id="text-3">
 <p>
 Calc's mechanism for distinguishing duplicate atoms by <code>eq</code>.
@@ -348,7 +349,7 @@ can't tell them apart structurally.
 each naked atom with <code>(cplx atom 0)</code> — a fresh cons cell each time:
 </p>
 
-<pre class="example" id="org13b3b8b">
+<pre class="example" id="org16187c2">
 (+ 1 1)    →    (+ (cplx 1 0) (cplx 1 0))
                 ;; ^^^^^^^^^^  ^^^^^^^^^^
                 ;; cons #A     cons #B   ← now distinguishable by eq
@@ -387,8 +388,8 @@ See <a href="walkthrough.html">walkthrough.org</a> for the encasing dance traced
 </p>
 </div>
 </div>
-<div id="outline-container-org6280dc5" class="outline-2">
-<h2 id="org6280dc5"><span class="section-number-2">4.</span> :expr vs :expr-ref</h2>
+<div id="outline-container-org3a1c1a2" class="outline-2">
+<h2 id="org3a1c1a2"><span class="section-number-2">4.</span> :expr vs :expr-ref</h2>
 <div class="outline-text-2" id="text-4">
 <p>
 The body and commit operate on the same sub-formula but at different
@@ -407,8 +408,8 @@ splice into a parent formula). <code>home</code> and <code>entry</code> don't ha
 </p>
 </div>
 </div>
-<div id="outline-container-orgc497a40" class="outline-2">
-<h2 id="orgc497a40"><span class="section-number-2">5.</span> Reselect</h2>
+<div id="outline-container-org9d5634d" class="outline-2">
+<h2 id="org9d5634d"><span class="section-number-2">5.</span> Reselect</h2>
 <div class="outline-text-2" id="text-5">
 <p>
 When commit pushes the new entry, should the result be re-selected?
@@ -428,8 +429,8 @@ arg to <code>calc-pop-push-record-list</code>.
 </p>
 </div>
 </div>
-<div id="outline-container-org61de8b0" class="outline-2">
-<h2 id="org61de8b0"><span class="section-number-2">6.</span> Keep-args</h2>
+<div id="outline-container-orga615751" class="outline-2">
+<h2 id="orga615751"><span class="section-number-2">6.</span> Keep-args</h2>
 <div class="outline-text-2" id="text-6">
 <p>
 <code>calc-keep-args-flag</code> is calc's mode where operations don't consume
@@ -492,8 +493,8 @@ recipe; commit just executes it.
 </p>
 </div>
 </div>
-<div id="outline-container-orgd1a6bb6" class="outline-2">
-<h2 id="orgd1a6bb6"><span class="section-number-2">7.</span> The commit recipe</h2>
+<div id="outline-container-orgc0665f2" class="outline-2">
+<h2 id="orgc0665f2"><span class="section-number-2">7.</span> The commit recipe</h2>
 <div class="outline-text-2" id="text-7">
 <p>
 Three context keys describe what commit should do:
@@ -513,7 +514,7 @@ This consumes the binary arg in non-keep mode.</li>
 Visualization for binary selection at <code>:m = 2</code> (non-keep):
 </p>
 
-<pre class="example" id="org3fed8f2">
+<pre class="example" id="org1f672e2">
 Before:                              push-m=2, push-n=1, post-pop-n=1
 1: arg                ──┐
 2: selected entry  ──┐  │
@@ -533,8 +534,8 @@ Two operations, one push and one optional post-pop. See <code>maf--commit-push</
 </p>
 </div>
 </div>
-<div id="outline-container-org36a13df" class="outline-2">
-<h2 id="org36a13df"><span class="section-number-2">8.</span> Binary on selection-like targets</h2>
+<div id="outline-container-org596a651" class="outline-2">
+<h2 id="org596a651"><span class="section-number-2">8.</span> Binary on selection-like targets</h2>
 <div class="outline-text-2" id="text-8">
 <p>
 Selection, subexpr, entry: each can support binary commands, but the
@@ -563,8 +564,8 @@ near this entry" (entry — shift is friendlier).
 </p>
 </div>
 </div>
-<div id="outline-container-org535279d" class="outline-2">
-<h2 id="org535279d"><span class="section-number-2">9.</span> Files</h2>
+<div id="outline-container-org02ac47d" class="outline-2">
+<h2 id="org02ac47d"><span class="section-number-2">9.</span> Files</h2>
 <div class="outline-text-2" id="text-9">
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
@@ -629,8 +630,8 @@ Load order in <code>maf.el</code>: <code>lib</code> → <code>sel</code> → <co
 </p>
 </div>
 </div>
-<div id="outline-container-org59dfd10" class="outline-2">
-<h2 id="org59dfd10"><span class="section-number-2">10.</span> See also</h2>
+<div id="outline-container-org22cbdf9" class="outline-2">
+<h2 id="org22cbdf9"><span class="section-number-2">10.</span> See also</h2>
 <div class="outline-text-2" id="text-10">
 <ul class="org-ul">
 <li><a href="walkthrough.html">walkthrough.org</a> — sqrt-at-subexpr traced end-to-end</li>
@@ -642,7 +643,7 @@ Load order in <code>maf.el</code>: <code>lib</code> → <code>sel</code> → <co
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: David Yeung</p>
-<p class="date">Created: 2026-05-26 Tue 22:52</p>
+<p class="date">Created: 2026-05-26 Tue 22:55</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>

@@ -1,4 +1,5 @@
 #+title: Walkthrough: sqrt at a sub-expression
+#+HTML_HEAD: <link rel="stylesheet" href="style.css" />
 
 A single =maf-defcmd= command traced end-to-end. The example exercises the
 trickiest part of the system (atom encasing), so seeing it concretely should
