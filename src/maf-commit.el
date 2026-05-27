@@ -32,14 +32,16 @@ top 2 stack values and push VAL onto the stack."
            (post-pop-n (alist-get :post-pop-n context))
            (m          (alist-get :m context)))
       (pcase target
-        ('selection
+        ((or 'selection 'subexpr)
          (let* ((expr         (alist-get :expr context))
                 (full-formula (calc-top m 'full))
-                (new-formula  (calc-replace-sub-formula full-formula expr val)))
-           (maf--commit-push push-n prefix new-formula push-m val post-pop-n)))
+                (new-formula  (calc-replace-sub-formula full-formula expr val))
+                ;; Carry val as the new selection only if :reselect is set
+                ;; (selection had an explicit user selection; subexpr did not).
+                (sels         (when (alist-get :reselect context) val)))
+           (maf--commit-push push-n prefix new-formula push-m sels post-pop-n)))
         ('home  (maf--commit-push push-n prefix val push-m nil post-pop-n))
         ('entry (maf--commit-push push-n prefix val push-m nil post-pop-n))
-        ('subexpr  nil) ;; TODO
         ('equation nil)))));; TODO
 
 (provide 'maf-commit)
