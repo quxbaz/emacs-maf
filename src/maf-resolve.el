@@ -164,7 +164,7 @@ Possible :target values, in order of priority:
     (append (cond
              ((maf--sel-any-p)        (maf--resolve-target-selection opts))
              ((maf--at-home-p)        (maf--resolve-target-home opts))
-             ((maf--at-subexpr-p)     (maf--resolve-target-subexpr opts))   ;; TODO
+             ((maf--at-subexpr-p)     (maf--resolve-target-subexpr opts))
              ((maf--at-equation-p)    (maf--resolve-target-equation opts))  ;; TODO
              ((maf--at-line-margin-p) (maf--resolve-target-entry opts))
              (t (error "Could not resolve target at point")))
