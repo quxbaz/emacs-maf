@@ -56,9 +56,7 @@ sub-expression on the line; those positions route to equation/entry targets."
     (let* ((idx (calc-locate-cursor-element (point)))
            (expr (and (> idx 0) (calc-top idx 'full))))
       (and (consp expr)
-           (memq (car expr) '(calcFunc-eq calcFunc-neq
-                              calcFunc-lt calcFunc-leq
-                              calcFunc-gt calcFunc-geq))
+           (memq (car expr) '(calcFunc-eq calcFunc-neq calcFunc-lt calcFunc-leq calcFunc-gt calcFunc-geq))
            t))))
 
 (defun maf--at-entry-p ()
