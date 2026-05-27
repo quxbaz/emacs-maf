@@ -1,0 +1,213 @@
+#+title: Walkthrough: sqrt at a sub-expression
+
+A single =maf-defcmd= command traced end-to-end. The example exercises the
+trickiest part of the system (atom encasing), so seeing it concretely should
+re-anchor the mental model.
+
+For the higher-level overview, see [[file:concepts.org][concepts.org]].
+
+* Starting state
+
+Stack:
+#+begin_example
+1: a + 16
+#+end_example
+
+Point is on the =16= inside the entry's formula text (not at EOL, not in the
+line-prefix zone). No active calc selection.
+
+* The declaration
+
+The user writes:
+
+#+begin_src emacs-lisp
+(maf-defcmd maf-sqrt (expr arg commit)
+  "Square-root command."
+  :arity unary
+  :prefix "sqrt"
+  (commit (calcFunc-sqrt expr)))
+#+end_src
+
+Three bindings the body sees:
+- =expr= — the value the command operates on (depends on target)
+- =arg= — second operand for binary commands (nil here, since unary)
+- =commit= — a function the body calls with its result
+
+Two options declared:
+- =:arity= — =unary= or =binary=; required, validated at macroexpand time
+- =:prefix= — calc trail label
+
+* Macro expansion
+
+=maf-defcmd= expands to:
+
+#+begin_src emacs-lisp
+(defun maf-sqrt ()
+  "Square-root command."
+  (interactive)
+  (let* ((context-1234 (maf--resolve-context '((:prefix . "sqrt")
+                                               (:arity . unary))))
+         (expr (alist-get :expr context-1234))
+         (arg  (alist-get :arg  context-1234)))
+    (cl-flet ((commit (val) (maf--commit val context-1234)))
+      (commit (calcFunc-sqrt expr)))))
+#+end_src
+
+The user's body is unchanged. The scaffolding handles context resolution,
+binding extraction, and the =commit= closure (which captures the context so
+the body can call =commit= without passing it explicitly).
+
+* Phase 1: resolve
+
+=maf--resolve-context= is called with opts =((:prefix . "sqrt") (:arity . unary))=.
+
+The cascade in =maf--resolve-context= checks predicates in priority order:
+
+1. =(maf--sel-any-p)= — is there an active calc selection anywhere?
+   No (user didn't =calc-select-here=). Skip.
+2. =(maf--at-home-p)= — is point past the last stack entry?
+   No, point is in the formula text. Skip.
+3. =(maf--at-subexpr-p)= — is point on a sub-expression within an entry?
+   Yes. Match — call =maf--resolve-target-subexpr=.
+
+Inside =maf--resolve-target-subexpr=:
+
+1. =m = (calc-locate-cursor-element (point))= = 1 (point is on the top entry).
+2. The =m=1 + binary= guard doesn't fire (we're unary).
+3. =(calc-prepare-selection 1)= — the load-bearing call. It *mutates* the stack
+   entry, encasing every naked atom as a =(cplx N 0)= cons cell so the
+   selection cache can track sub-expressions by =eq=.
+
+   After this call, the stack contains:
+   #+begin_example
+   1: (+ (var a var-a) (cplx 16 0))
+   #+end_example
+
+   The original integer =16= is gone — replaced by a fresh cons =(cplx 16 0)=.
+
+4. =(calc-find-selected-part)= — walks the prepared composition tree to find
+   the sub-formula under cursor. Returns the =(cplx 16 0)= cons (the exact
+   same cons now in the entry's formula).
+
+The returned context alist:
+
+#+begin_src emacs-lisp
+((:target     . subexpr)
+ (:expr       . 16)                  ;; clean — what the body sees
+ (:expr-ref   . (cplx 16 0))         ;; encased — the eq-ref into the stack
+ (:arg        . nil)                 ;; unary, no second operand
+ (:m          . 1)                   ;; entry's stack position
+ (:push-m     . 1)                   ;; commit pushes at level 1
+ (:push-n     . 1)                   ;; pop 1 before pushing (replace in place)
+ (:post-pop-n . 0)                   ;; no extra pop (unary, no binary arg)
+ (:reselect   . nil)                 ;; no user-set selection to preserve
+ (:prefix     . "sqrt")              ;; merged from opts
+ (:arity      . unary)
+ (:keep       . nil))                ;; calc-keep-args-flag snapshot
+#+end_src
+
+Note the two-value pair for the same sub-expression:
+- =:expr= — clean 16; what the body operates on
+- =:expr-ref= — the encased cons; the eq-ref commit needs for splicing
+
+* Phase 2: body
+
+The body runs with =expr = 16=, =arg = nil=, =commit = (closure capturing context)=:
+
+#+begin_src emacs-lisp
+(commit (calcFunc-sqrt expr))
+#+end_src
+
+=calcFunc-sqrt= is a defalias for =math-sqrt= (calc-math.el:452). Called with
+the clean integer =16=, =math-sqrt= takes the integer branch (line 380):
+=(cl-isqrt 16)= = 4, =(* 4 4)= = 16 → returns the clean integer =4=.
+
+So =val = 4=.
+
+If we'd passed the encased =:expr-ref= to the body instead, =math-sqrt= would
+have taken its complex-number branch (line 412) and produced =(cplx (float 4 0) 0)=
+— a float dressed as a complex. Hence the =:expr= vs =:expr-ref= split.
+
+=commit= is invoked with =val = 4=.
+
+* Phase 3: commit
+
+=maf--commit= is called with =val = 4= and the context from Phase 1.
+
+It destructures:
+#+begin_example
+target      = subexpr
+prefix      = "sqrt"
+push-m      = 1
+push-n      = 1
+post-pop-n  = 0
+m           = 1
+#+end_example
+
+The =(or 'selection 'subexpr)= pcase branch fires:
+
+1. =expr-ref = (cplx 16 0)= — pulled from context.
+2. =full-formula = (calc-top 1 'full)= = =(+ (var a var-a) (cplx 16 0))=.
+3. =val-encased = (calc-encase-atoms val)= = =(cplx 4 0)= — a *new* cons we
+   hold a reference to. We pre-encase so we have a handle on the cell that
+   will end up in =new-formula= (needed for =:reselect= in the selection
+   branch; harmless here).
+4. =new-formula = (calc-replace-sub-formula full-formula expr-ref val-encased)=:
+   walks =full-formula= looking for a cons =eq= to =expr-ref=. Hits =(cplx 16 0)=
+   (literally the same cons, because =calc-prepare-selection= mutated the
+   entry to use that cell and we stashed a reference in =:expr-ref=).
+   Substitutes =val-encased=. Result: =(+ (var a var-a) (cplx 4 0))=.
+5. =sels = nil= — =:reselect= is =nil= for subexpr.
+6. =(maf--commit-push 1 "sqrt" new-formula 1 nil 0)= → calls
+   =(calc-pop-push-record-list 1 "sqrt" new-formula 1 nil)=: pop the old
+   entry at level 1, push the new one. No post-pop (=:post-pop-n= = 0).
+
+Calc displays =(cplx N 0)= the same as =N= (cplx-with-zero-imag is just the
+real part). So the final stack reads:
+
+#+begin_example
+1: a + 4
+#+end_example
+
+The trail records the operation under "sqrt".
+
+* The encasing dance, summarized
+
+Three places handle the encased cons:
+
+1. **resolve** ([[file:../src/maf-resolve.el][maf-resolve.el]])
+   - calls =calc-prepare-selection=, which encases atoms in the stack entry
+   - captures both the clean form (=:expr=, via =math-normalize=) and the
+     encased ref (=:expr-ref=)
+2. **body** (user code)
+   - sees the clean =:expr=, so =calcFunc-*= functions take their
+     integer/rational branches instead of the cplx branch
+3. **commit** ([[file:../src/maf-commit.el][maf-commit.el]])
+   - pre-encases =val= so we hold a reference to the cons that ends up
+     in =new-formula= (useful for =:reselect=)
+   - uses =:expr-ref= (not =:expr=) for =calc-replace-sub-formula= because
+     only the encased cons is =eq= to the cell in the stack entry
+
+This mirrors calc's own pattern: build an AST, normalize args at the
+boundary, splice the encased result back in. See =calc-binary-op=
+(calc.el:2227), =calc-enter-result= (calc.el:1896), and
+=calc-replace-selections= (calc-sel.el:502) for the calc-internal
+equivalent.
+
+* Variations at a glance
+
+- *Selection target* (=:reselect t=) — same as above except =sels=
+  =val-encased=. The new entry's selection slot points at the cons in its
+  own formula → calc's selection display picks it up.
+- *Home target* — no sub-formula splice; commit just pushes =val= at the
+  top. No encasing involvement.
+- *Entry target* — replaces the whole entry at =:push-m= with =val=. No
+  splice. Ergonomic shift: if point is at the top entry and arity is
+  binary, =:m= is shifted to 2 and the top becomes the binary arg.
+- *Binary commands* — =:arg= is populated (=:post-pop-n= consumes it
+  after the push). For selection/subexpr/entry, an explicit guard
+  ensures the target isn't the top entry (no self-reference).
+- *Keep-args mode* — =:push-m= becomes 1 (push on top, leave originals),
+  =:push-n= becomes 0 (no pop), =:post-pop-n= becomes 0 (no arg
+  consumption). Result lands above the original inputs instead of
+  replacing them.
