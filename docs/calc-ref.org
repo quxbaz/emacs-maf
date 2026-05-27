@@ -221,22 +221,6 @@
    (math-expr-contains-vars '(+ 1 2))  ;; => nil
    #+end_src
 
-** (math-primp)
-   =(math-primp A)=
-   [[https://www.gnu.org/software/emacs/manual/html_node/calc/Predicates.html#index-primp][(manual)]]
-
-   Return non-nil if =A= is a primitive (atomic) calc value — one that has no
-   meaningful sub-expressions to recurse into. Primitives are plain integers
-   and the compound types =frac=, =float=, =cplx=, =polar=, =hms=, =date=,
-   =mod=, and =var=. Used as a recursion guard: callers check
-   =(not (math-primp expr))= before descending into sub-expressions.
-
-   #+begin_src emacs-lisp :results silent
-   (math-primp 42)              ;; => t
-   (math-primp '(var x var-x)) ;; => t
-   (math-primp '(+ x 1))       ;; => nil
-   #+end_src
-
 ** (math-expr-subst)
    =(math-expr-subst EXPR OLD NEW)=
    [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-expr_002dsubst][(manual)]]
@@ -259,6 +243,23 @@
    #+begin_src emacs-lisp :results silent
    ;; Swap x and y: sequential subst would give (+ y y), simultaneous gives (+ y x)
    (math-multi-subst '(+ x y) '(x y) '(y x))  ;; => (+ y x)
+   #+end_src
+
+* Predicates
+** (math-primp)
+   =(math-primp A)=
+   [[https://www.gnu.org/software/emacs/manual/html_node/calc/Predicates.html#index-primp][(manual)]]
+
+   Return non-nil if =A= is a primitive (atomic) calc value — one that has no
+   meaningful sub-expressions to recurse into. Primitives are plain integers
+   and the compound types =frac=, =float=, =cplx=, =polar=, =hms=, =date=,
+   =mod=, and =var=. Used as a recursion guard: callers check
+   =(not (math-primp expr))= before descending into sub-expressions.
+
+   #+begin_src emacs-lisp :results silent
+   (math-primp 42)              ;; => t
+   (math-primp '(var x var-x)) ;; => t
+   (math-primp '(+ x 1))       ;; => nil
    #+end_src
 
 * Polynomials
