@@ -115,7 +115,6 @@ top instead, leaving originals untouched."
       `((:target     . entry)
         (:expr       . ,(calc-top m 'full))
         (:arg        . ,(pcase arity ('unary nil) ('binary (calc-top 1 'full))))
-        (:m          . ,m)
         (:push-m     . ,(if keep 1 m))
         (:push-n     . ,(if keep 0 1))
         (:post-pop-n . ,(if keep 0 (pcase arity ('unary 0) ('binary 1))))))))
