@@ -1,0 +1,214 @@
+#+title: maf concepts
+
+Architectural overview of the maf codebase. Read this before diving into
+any specific file; cross-reference with [[file:walkthrough.org][walkthrough.org]] for a concrete
+worked example.
+
+* The flow
+
+A maf command runs in four phases:
+
+1. *Macro expansion (load time)* — =maf-defcmd= parses the declaration and
+   generates a =defun= that wires the other three phases together.
+2. *Resolve (call time)* — given =point= and the calc stack state, produce
+   a /context alist/ describing what the command should operate on and how
+   to commit the result.
+3. *Body (call time)* — the user's code. Receives clean values via
+   bindings, computes a result, calls =commit=.
+4. *Commit (call time)* — applies the body's result to the calc buffer
+   per the context's instructions.
+
+#+begin_example
+maf-defcmd declaration                        (load time)
+    │
+    ▼
+macro expansion → defun
+    │
+    ▼ (call time)
+resolve → context alist ──┐
+    │                     │
+    ▼                     │
+body (sees bindings)      │
+    │                     │
+    ▼  val                ▼
+commit ─── reads context, applies val
+#+end_example
+
+Resolve and commit are peer concerns: resolve reads state into the
+context, commit writes state from the context. They share the context
+schema documented at the top of [[file:../src/maf-resolve.el][maf-resolve.el]].
+
+* The target system
+
+Resolve dispatches to one of five /targets/ based on where point is and
+what calc state is active. In priority order:
+
+| Target    | When it fires                                              | Operates on                         |
+|-----------+------------------------------------------------------------+-------------------------------------|
+| selection | An active calc selection exists anywhere on the stack       | The selected sub-formula            |
+| home      | Point is past the last stack entry (at or below =.=)        | The top stack entry                 |
+| subexpr   | Point is inside an entry's formula text                     | The sub-formula at cursor           |
+| equation  | Point is on a stack entry that is a relation (=, !=, ...)   | LHS and RHS (TODO: per-side iter)   |
+| entry     | Point is at line-prefix or EOL of a stack entry             | The whole formula                   |
+
+The cascade lives in =maf--resolve-context=. The predicates live in
+[[file:../src/maf-lib.el][maf-lib.el]] (=maf--at-*-p=) and [[file:../src/maf-sel.el][maf-sel.el]] (=maf--sel-any-p=).
+
+Each target has a dedicated =maf--resolve-target-X= function that
+produces the target-specific portion of the context alist.
+
+* Encasing
+
+Calc's mechanism for distinguishing duplicate atoms by =eq=.
+
+Consider =1 + 1= = =(+ 1 1)= in calc. The two =1=s are the same integer
+object — both =eq= and =equal=. If the user selects "the first one", you
+can't tell them apart structurally.
+
+=calc-encase-atoms= ([[file:../calc-src/calc-sel.el][calc-sel.el:401]]) walks the formula and replaces
+each naked atom with =(cplx atom 0)= — a fresh cons cell each time:
+
+#+begin_example
+(+ 1 1)    →    (+ (cplx 1 0) (cplx 1 0))
+                ;; ^^^^^^^^^^  ^^^^^^^^^^
+                ;; cons #A     cons #B   ← now distinguishable by eq
+#+end_example
+
+Calc displays =(cplx N 0)= as just =N= (complex with zero imag), so the
+user sees nothing different.
+
+=calc-prepare-selection= calls this on a stack entry and *mutates the
+entry in place* via =setcar=. So once selection-related machinery runs
+on an entry, that entry's atoms are encased until something normalizes.
+
+This matters for us in two places:
+
+1. *The body shouldn't see encased values.* Most =calcFunc-*= functions
+   dispatch on type, and =(cplx ...)= inputs route to complex-number
+   branches that produce floats. (E.g., =calcFunc-sqrt= on =(cplx 16 0)=
+   gives a float instead of the integer 4.) So resolve exposes a /clean/
+   =:expr= via =math-normalize=.
+
+2. *Commit's splice is =eq=-based.* =calc-replace-sub-formula= matches by
+   =eq=, and only the original encased cons matches the cell in the
+   entry's formula. So resolve also exposes =:expr-ref= — the actual
+   cons cell — for commit to use.
+
+See [[file:walkthrough.org][walkthrough.org]] for the encasing dance traced step by step.
+
+* :expr vs :expr-ref
+
+The body and commit operate on the same sub-formula but at different
+points in the data flow:
+
+- =:expr= — clean form, for the body to compute with
+- =:expr-ref= — encased cons, for commit's =eq=-based splice
+
+They're only different for *selection* and *subexpr* (the targets that
+splice into a parent formula). =home= and =entry= don't have =:expr-ref=
+— they operate on whole entries, no sub-formula targeting needed.
+
+* Reselect
+
+When commit pushes the new entry, should the result be re-selected?
+
+- *selection* target: yes (=:reselect t=). User explicitly set a
+  selection; preserve their intent by re-selecting the new sub-formula.
+- *subexpr* target: no (=:reselect nil=). User just had a cursor
+  position; no explicit selection to preserve.
+- *home / entry / equation*: not applicable (no sub-formula selection).
+
+Commit reads =:reselect= and passes =val-encased= (or nil) as the SELS
+arg to =calc-pop-push-record-list=.
+
+* Keep-args
+
+=calc-keep-args-flag= is calc's mode where operations don't consume
+their inputs — the result is pushed /above/ them rather than replacing
+them.
+
+Resolve snapshots the flag as =:keep= and derives commit instructions
+accordingly:
+
+| Target    | Normal mode                                       | Keep-args mode                    |
+|-----------+---------------------------------------------------+-----------------------------------|
+| home      | Pop arity entries, push result at top             | Push result at top, no pop        |
+| selection | Replace selected entry in place                   | Push result on top, leave entry   |
+| subexpr   | Replace entry in place (sub-formula spliced)      | Push spliced result on top        |
+| entry     | Replace entry in place                            | Push result on top                |
+
+In schema terms, =:push-m=, =:push-n=, and =:post-pop-n= encode the
+recipe; commit just executes it.
+
+* The commit recipe
+
+Three context keys describe what commit should do:
+
+- *=:push-m=* — stack level to push at (the M arg to
+  =calc-pop-push-record-list=).
+- *=:push-n=* — entries to pop at =:push-m= before pushing (the N arg).
+  This is the "replace in place" knob — 1 means "pop the old, push the
+  new", 0 means "insert on top of it."
+- *=:post-pop-n=* — entries to pop /from the top/ /after/ the push.
+  This consumes the binary arg in non-keep mode.
+
+Visualization for binary selection at =:m = 2= (non-keep):
+
+#+begin_example
+Before:                              push-m=2, push-n=1, post-pop-n=1
+1: arg                ──┐
+2: selected entry  ──┐  │
+                     │  │
+                     ▼  ▼
+After push at m=2 (pop 1 at level 2, push new):
+1: arg
+2: new (with spliced sub-formula)
+                     │
+                     ▼
+After post-pop 1 from top:
+1: new
+#+end_example
+
+Two operations, one push and one optional post-pop. See =maf--commit-push=.
+
+* Binary on selection-like targets
+
+Selection, subexpr, entry: each can support binary commands, but the
+"second operand" needs to come from somewhere. Convention: the top stack
+entry serves as =:arg=.
+
+This creates a self-reference problem when the target itself is the top:
+
+- *selection / subexpr* — reject. If the selected sub-formula is in the
+  top entry, the arg would be the entry containing the sub-formula.
+  No coherent commit semantic. Resolve errors out.
+- *entry* — /ergonomic shift/. If point is at the line-margin of the top
+  entry and arity is binary, =:m= is shifted from 1 to 2. The top
+  becomes the arg, the entry below becomes the target. User doesn't
+  have to position point on the operand whose value will change.
+
+Choice reflects the difference between "I pointed at this exact
+sub-formula" (selection/subexpr — error keeps the user honest) and "I'm
+near this entry" (entry — shift is friendlier).
+
+* Files
+
+| File                    | Role                                                       |
+|-------------------------+------------------------------------------------------------|
+| [[file:../maf.el][maf.el]]                  | Package entry point, mode, load order                      |
+| [[file:../src/maf-lib.el][src/maf-lib.el]]          | Generic predicates and utilities (find calc buffer, at-*-p) |
+| [[file:../src/maf-sel.el][src/maf-sel.el]]          | Selection-state introspection (any-selection, effective-m)  |
+| [[file:../src/maf-resolve.el][src/maf-resolve.el]]      | Context resolution + target dispatch                       |
+| [[file:../src/maf-commit.el][src/maf-commit.el]]       | Commit recipes (push/pop choreography per target)          |
+| [[file:../src/maf-defcmd.el][src/maf-defcmd.el]]       | The =maf-defcmd= macro + parsing helpers                   |
+| [[file:../src/maf-debug.el][src/maf-debug.el]]        | Debug helpers (slowly-stepped command playback)            |
+| [[file:../human-tests/][human-tests/]]            | Interactive tests (=f4= runs the current one)              |
+
+Load order in =maf.el=: =lib= → =sel= → =debug= → =resolve= → =commit=
+→ =defcmd=. Each layer depends only on earlier ones.
+
+* See also
+
+- [[file:walkthrough.org][walkthrough.org]] — sqrt-at-subexpr traced end-to-end
+- [[file:../src/maf-resolve.el][src/maf-resolve.el]] — context schema reference at top of file
+- [[file:calc-ref.org][calc-ref.org]] — calc API reference
