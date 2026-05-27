@@ -45,9 +45,9 @@ For binary commands, :arg is the top of the stack. Binary commands require the
 selected entry to be below the top (:m > 1); otherwise the arg would be the
 entry containing the selection, which has no coherent commit semantics."
   (maf--with-calc-buffer
-    (let* ((arity (alist-get :arity opts))
-           (m (maf--sel-effective-m))
-           (keep calc-keep-args-flag))
+    (let ((arity (alist-get :arity opts))
+          (m (maf--sel-effective-m))
+          (keep calc-keep-args-flag))
       ;; If m=1 and arity=binary then there's nowhere to take the arg from - reject.
       (when (and (eq arity 'binary) (= m 1))
         (error "Binary commands on selection require the selected entry below the top"))
@@ -100,14 +100,25 @@ TODO: the macro/commit dispatch doesn't yet implement the per-side iteration."
 
 (defun maf--resolve-target-entry (opts)
   "Return the entry target's context alist.
-Point is on a stack entry but not on a sub-expression; :expr is the whole
-formula. Commit replaces the entry in-place."
-  (ignore opts)
+Point is on a stack entry's margin (line-prefix or EOL); :expr is the whole
+formula of that entry.
+
+For binary commands, :arg is the top of the stack. With keep-args off, commit
+replaces the entry in-place; with keep-args on, commit pushes the result on
+top instead, leaving originals untouched."
   (maf--with-calc-buffer
-    (let ((m (calc-locate-cursor-element (point))))
-      `((:target . entry)
-        (:expr   . ,(calc-top m 'full))
-        (:m      . ,m)))))
+    (let ((arity (alist-get :arity opts))
+          (m (calc-locate-cursor-element (point)))
+          (keep calc-keep-args-flag))
+      (when (and (eq arity 'binary) (= m 1))
+        (error "Binary commands on entry require the target entry below the top"))
+      `((:target     . entry)
+        (:expr       . ,(calc-top m 'full))
+        (:arg        . ,(pcase arity ('unary nil) ('binary (calc-top 1 'full))))
+        (:m          . ,m)
+        (:push-m     . ,(if keep 1 m))
+        (:push-n     . ,(if keep 0 1))
+        (:post-pop-n . ,(if keep 0 (pcase arity ('unary 0) ('binary 1))))))))
 
 (defun maf--resolve-context (opts)
   "Inspect point and calc state; return a context descriptor alist.
