@@ -1,4 +1,4 @@
 #+title: Todo
 
 * Todo [0/1]
-** NEXT Set place/point after committing.
+** NEXT Set place/point after committing
