@@ -27,7 +27,7 @@ Prefers the current buffer if it is in calc-mode, then looks for
     (<= (calc-locate-cursor-element (point)) 0)))
 
 (defun maf--at-line-prefix-p ()
-  "Return t if point is in the line-number prefix (e.g. \"1: \") of a stack entry."
+  "Return t if point is in the line-number prefix (e.g. '1: ') of a stack entry."
   (maf--with-calc-buffer
     (and (> (calc-locate-cursor-element (point)) 0)
          (not (eolp))
