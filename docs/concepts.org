@@ -49,7 +49,7 @@ what calc state is active. In priority order:
 | selection | An active calc selection exists anywhere on the stack       | The selected sub-formula            |
 | home      | Point is past the last stack entry (at or below =.=)        | The top stack entry                 |
 | subexpr   | Point is inside an entry's formula text                     | The sub-formula at cursor           |
-| equation  | Point is on a stack entry that is a relation (=, !=, ...)   | LHS and RHS (TODO: per-side iter)   |
+| equation  | Point is on a stack entry that is a relation (=, !=, ...)   | LHS and RHS (TODO: equation per-side iteration) |
 | entry     | Point is at line-prefix or EOL of a stack entry             | The whole formula                   |
 
 The cascade lives in =maf--resolve-context=. The predicates live in
