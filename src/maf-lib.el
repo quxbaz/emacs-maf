@@ -51,8 +51,7 @@ False when point is at EOL or in the line-prefix zone, even if there is a
 sub-expression on the line; those positions route to equation/entry targets."
   (maf--with-calc-buffer
     (and (> (calc-locate-cursor-element (point)) 0)
-         (not (eolp))
-         (not (maf--at-line-prefix-p))
+         (not (maf--at-line-margin-p))
          (save-excursion
            (ignore-errors
              (calc-prepare-selection)
