@@ -119,14 +119,32 @@ The body runs with =expr = 16=, =arg = nil=, =commit = (closure capturing contex
 #+end_src
 
 =calcFunc-sqrt= is a defalias for =math-sqrt= (calc-math.el:452). Called with
-the clean integer =16=, =math-sqrt= takes the integer branch (line 380):
+the clean integer =16=, =math-sqrt= takes the *integer branch* (line 380):
 =(cl-isqrt 16)= = 4, =(* 4 4)= = 16 → returns the clean integer =4=.
 
 So =val = 4=.
 
-If we'd passed the encased =:expr-ref= to the body instead, =math-sqrt= would
-have taken its complex-number branch (line 412) and produced =(cplx (float 4 0) 0)=
-— a float dressed as a complex. Hence the =:expr= vs =:expr-ref= split.
+** Where the fix lives
+
+This is where the float-vs-integer fix is load-bearing. Resolve gives the
+body the *clean* =:expr= (=16=, normalized) instead of the encased
+=(cplx 16 0)=. Compare:
+
+| Path             | Body sees      | math-sqrt branch | Returns                  | Final display |
+|------------------+----------------+------------------+--------------------------+---------------|
+| With fix (now)   | =16=           | integer (l.380)  | =4=                      | =4=           |
+| Without fix (buggy) | =(cplx 16 0)= | cplx (l.412)     | =(cplx (float 4 0) 0)=   | =4.=          |
+
+The cplx branch of =math-sqrt= uses =(float 5 -1)= internally and routes
+through =math-sqrt-float= — the float-ness is baked into the result the
+moment that branch runs.
+
+*There is no float-to-integer conversion in commit* — by the time commit
+receives =val=, it's already a clean integer. The "fix" isn't a step that
+converts; it's resolve handing the body a clean value so calc never
+produces a float in the first place. =math-normalize= on =(cplx N 0)=
+(calc-ext.el:2328) collapses cplx-with-zero-imag back to plain =N=, and
+that happens in =maf--resolve-target-subexpr= /before/ the body runs.
 
 =commit= is invoked with =val = 4=.
 
@@ -173,12 +191,17 @@ The trail records the operation under "sqrt".
 
 * The encasing dance, summarized
 
-Three places handle the encased cons:
+Three places handle the encased cons. Each does a different job — don't
+expect to see a =math-normalize= call in commit, because the cleanup
+already happened in resolve.
 
 1. **resolve** ([[file:../src/maf-resolve.el][maf-resolve.el]])
    - calls =calc-prepare-selection=, which encases atoms in the stack entry
    - captures both the clean form (=:expr=, via =math-normalize=) and the
      encased ref (=:expr-ref=)
+   - *this is where the float-vs-integer fix lives* — by normalizing =:expr=,
+     the body never sees a cplx-wrapped value, so calc never routes its
+     computation through the complex/float branch
 2. **body** (user code)
    - sees the clean =:expr=, so =calcFunc-*= functions take their
      integer/rational branches instead of the cplx branch
@@ -187,6 +210,8 @@ Three places handle the encased cons:
      in =new-formula= (useful for =:reselect=)
    - uses =:expr-ref= (not =:expr=) for =calc-replace-sub-formula= because
      only the encased cons is =eq= to the cell in the stack entry
+   - commit does /not/ normalize — its =val= is already clean, and the
+     encasing it does is for the /output/ side (preserving selection state)
 
 This mirrors calc's own pattern: build an AST, normalize args at the
 boundary, splice the encased result back in. See =calc-binary-op=
