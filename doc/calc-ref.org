@@ -289,6 +289,37 @@
    #+end_src
 
 * Simplification & rewriting
+** (calc-normalize)
+   =(calc-normalize VAL)=
+
+   Normalize =VAL= according to =calc-simplify-mode=. For =nil=, ='none=, and
+   ='num= modes, delegates directly to =math-normalize=; for richer modes
+   (e.g. ='alg=) loads calc-ext and applies =calc-normalize-fancy=, which can
+   perform algebraic simplification on top of structural normalization.
+
+   Among other effects, restores plain integers from the =(cplx n 0)= atoms
+   introduced by =calc-prepare-selection=, so any formula passed back into
+   calc operations is in canonical form.
+
+   #+begin_src emacs-lisp :results silent
+   (calc-normalize '(* 2 3))  ;; => 6 (in default simplification mode)
+   #+end_src
+
+** (math-normalize)
+   =(math-normalize VAL)=
+
+   The core formula normalizer. Canonicalizes =VAL= by applying structural
+   simplifications: constant folding, identity reductions (=(+ a 0)= → =a=,
+   =(* a 1)= → =a=), ordering of commutative operands, and similar cleanups.
+   Independent of =calc-simplify-mode= — always returns the canonical raw form.
+
+   Called by =calc-normalize= and by most internal calc machinery that needs a
+   clean formula before further processing.
+
+   #+begin_src emacs-lisp :results silent
+   (math-normalize '(+ 0 (* 1 x)))  ;; => x
+   #+end_src
+
 ** (math-simplify-extended)
    =(math-simplify-extended A)=
    [[https://www.gnu.org/software/emacs/manual/html_node/calc/Symbolic-Lisp-Functions.html#index-simplify_002dextended][(manual)]]
