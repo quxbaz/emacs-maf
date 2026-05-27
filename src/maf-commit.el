@@ -52,6 +52,6 @@ top 2 stack values and push VAL onto the stack."
            (maf--commit-push push-n prefix new-formula push-m sels post-pop-n)))
         ('home  (maf--commit-push push-n prefix val push-m nil post-pop-n))
         ('entry (maf--commit-push push-n prefix val push-m nil post-pop-n))
-        ('equation nil)))));; TODO
+        ('equation nil))))) ;; TODO: equation per-side iteration
 
 (provide 'maf-commit)
