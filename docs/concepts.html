@@ -1,0 +1,649 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<!-- 2026-05-26 Tue 22:52 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>maf concepts</title>
+<meta name="author" content="David Yeung" />
+<meta name="generator" content="Org Mode" />
+<style type="text/css">
+  #content { max-width: 60em; margin: auto; }
+  .title  { text-align: center;
+             margin-bottom: .2em; }
+  .subtitle { text-align: center;
+              font-size: medium;
+              font-weight: bold;
+              margin-top:0; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { font-family: monospace; color: green; }
+  .priority { font-family: monospace; color: orange; }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .org-right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .org-left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .org-center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #e6e6e6;
+    border-radius: 3px;
+    background-color: #f2f2f2;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: auto;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    top: -8px;
+    right: 12px;
+    padding: 3px;
+    color: #555;
+    background-color: #f2f2f299;
+  }
+  pre.src:hover:before { display: inline; margin-top: 14px;}
+  /* Languages per Org manual */
+  pre.src-asymptote:before { content: 'Asymptote'; }
+  pre.src-awk:before { content: 'Awk'; }
+  pre.src-authinfo::before { content: 'Authinfo'; }
+  pre.src-C:before { content: 'C'; }
+  /* pre.src-C++ doesn't work in CSS */
+  pre.src-clojure:before { content: 'Clojure'; }
+  pre.src-css:before { content: 'CSS'; }
+  pre.src-D:before { content: 'D'; }
+  pre.src-ditaa:before { content: 'ditaa'; }
+  pre.src-dot:before { content: 'Graphviz'; }
+  pre.src-calc:before { content: 'Emacs Calc'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-fortran:before { content: 'Fortran'; }
+  pre.src-gnuplot:before { content: 'gnuplot'; }
+  pre.src-haskell:before { content: 'Haskell'; }
+  pre.src-hledger:before { content: 'hledger'; }
+  pre.src-java:before { content: 'Java'; }
+  pre.src-js:before { content: 'Javascript'; }
+  pre.src-latex:before { content: 'LaTeX'; }
+  pre.src-ledger:before { content: 'Ledger'; }
+  pre.src-lisp:before { content: 'Lisp'; }
+  pre.src-lilypond:before { content: 'Lilypond'; }
+  pre.src-lua:before { content: 'Lua'; }
+  pre.src-matlab:before { content: 'MATLAB'; }
+  pre.src-mscgen:before { content: 'Mscgen'; }
+  pre.src-ocaml:before { content: 'Objective Caml'; }
+  pre.src-octave:before { content: 'Octave'; }
+  pre.src-org:before { content: 'Org mode'; }
+  pre.src-oz:before { content: 'OZ'; }
+  pre.src-plantuml:before { content: 'Plantuml'; }
+  pre.src-processing:before { content: 'Processing.js'; }
+  pre.src-python:before { content: 'Python'; }
+  pre.src-R:before { content: 'R'; }
+  pre.src-ruby:before { content: 'Ruby'; }
+  pre.src-sass:before { content: 'Sass'; }
+  pre.src-scheme:before { content: 'Scheme'; }
+  pre.src-screen:before { content: 'Gnu Screen'; }
+  pre.src-sed:before { content: 'Sed'; }
+  pre.src-sh:before { content: 'shell'; }
+  pre.src-sql:before { content: 'SQL'; }
+  pre.src-sqlite:before { content: 'SQLite'; }
+  /* additional languages in org.el's org-babel-load-languages alist */
+  pre.src-forth:before { content: 'Forth'; }
+  pre.src-io:before { content: 'IO'; }
+  pre.src-J:before { content: 'J'; }
+  pre.src-makefile:before { content: 'Makefile'; }
+  pre.src-maxima:before { content: 'Maxima'; }
+  pre.src-perl:before { content: 'Perl'; }
+  pre.src-picolisp:before { content: 'Pico Lisp'; }
+  pre.src-scala:before { content: 'Scala'; }
+  pre.src-shell:before { content: 'Shell Script'; }
+  pre.src-ebnf2ps:before { content: 'ebfn2ps'; }
+  /* additional language identifiers per "defun org-babel-execute"
+       in ob-*.el */
+  pre.src-cpp:before  { content: 'C++'; }
+  pre.src-abc:before  { content: 'ABC'; }
+  pre.src-coq:before  { content: 'Coq'; }
+  pre.src-groovy:before  { content: 'Groovy'; }
+  /* additional language identifiers from org-babel-shell-names in
+     ob-shell.el: ob-shell is the only babel language using a lambda to put
+     the execution function name together. */
+  pre.src-bash:before  { content: 'bash'; }
+  pre.src-csh:before  { content: 'csh'; }
+  pre.src-ash:before  { content: 'ash'; }
+  pre.src-dash:before  { content: 'dash'; }
+  pre.src-ksh:before  { content: 'ksh'; }
+  pre.src-mksh:before  { content: 'mksh'; }
+  pre.src-posh:before  { content: 'posh'; }
+  /* Additional Emacs modes also supported by the LaTeX listings package */
+  pre.src-ada:before { content: 'Ada'; }
+  pre.src-asm:before { content: 'Assembler'; }
+  pre.src-caml:before { content: 'Caml'; }
+  pre.src-delphi:before { content: 'Delphi'; }
+  pre.src-html:before { content: 'HTML'; }
+  pre.src-idl:before { content: 'IDL'; }
+  pre.src-mercury:before { content: 'Mercury'; }
+  pre.src-metapost:before { content: 'MetaPost'; }
+  pre.src-modula-2:before { content: 'Modula-2'; }
+  pre.src-pascal:before { content: 'Pascal'; }
+  pre.src-ps:before { content: 'PostScript'; }
+  pre.src-prolog:before { content: 'Prolog'; }
+  pre.src-simula:before { content: 'Simula'; }
+  pre.src-tcl:before { content: 'tcl'; }
+  pre.src-tex:before { content: 'TeX'; }
+  pre.src-plain-tex:before { content: 'Plain TeX'; }
+  pre.src-verilog:before { content: 'Verilog'; }
+  pre.src-vhdl:before { content: 'VHDL'; }
+  pre.src-xml:before { content: 'XML'; }
+  pre.src-nxml:before { content: 'XML'; }
+  /* add a generic configuration mode; LaTeX export needs an additional
+     (add-to-list 'org-latex-listings-langs '(conf " ")) in .emacs */
+  pre.src-conf:before { content: 'Configuration File'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.org-right  { text-align: center;  }
+  th.org-left   { text-align: center;   }
+  th.org-center { text-align: center; }
+  td.org-right  { text-align: right;  }
+  td.org-left   { text-align: left;   }
+  td.org-center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara { display: inline; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .equation-container {
+    display: table;
+    text-align: center;
+    width: 100%;
+  }
+  .equation {
+    vertical-align: middle;
+  }
+  .equation-label {
+    display: table-cell;
+    text-align: right;
+    vertical-align: middle;
+  }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  .org-svg { }
+</style>
+</head>
+<body>
+<div id="content" class="content">
+<h1 class="title">maf concepts</h1>
+<div id="table-of-contents" role="doc-toc">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents" role="doc-toc">
+<ul>
+<li><a href="#orgbc7a9e6">1. The flow</a></li>
+<li><a href="#org2e92283">2. The target system</a></li>
+<li><a href="#org5c735da">3. Encasing</a></li>
+<li><a href="#org6280dc5">4. :expr vs :expr-ref</a></li>
+<li><a href="#orgc497a40">5. Reselect</a></li>
+<li><a href="#org61de8b0">6. Keep-args</a></li>
+<li><a href="#orgd1a6bb6">7. The commit recipe</a></li>
+<li><a href="#org36a13df">8. Binary on selection-like targets</a></li>
+<li><a href="#org535279d">9. Files</a></li>
+<li><a href="#org59dfd10">10. See also</a></li>
+</ul>
+</div>
+</div>
+<p>
+Architectural overview of the maf codebase. Read this before diving into
+any specific file; cross-reference with <a href="walkthrough.html">walkthrough.org</a> for a concrete
+worked example.
+</p>
+<div id="outline-container-orgbc7a9e6" class="outline-2">
+<h2 id="orgbc7a9e6"><span class="section-number-2">1.</span> The flow</h2>
+<div class="outline-text-2" id="text-1">
+<p>
+A maf command runs in four phases:
+</p>
+
+<ol class="org-ol">
+<li><b>Macro expansion (load time)</b> — <code>maf-defcmd</code> parses the declaration and
+generates a <code>defun</code> that wires the other three phases together.</li>
+<li><b>Resolve (call time)</b> — given <code>point</code> and the calc stack state, produce
+a <i>context alist</i> describing what the command should operate on and how
+to commit the result.</li>
+<li><b>Body (call time)</b> — the user's code. Receives clean values via
+bindings, computes a result, calls <code>commit</code>.</li>
+<li><b>Commit (call time)</b> — applies the body's result to the calc buffer
+per the context's instructions.</li>
+</ol>
+
+<pre class="example" id="org55001ac">
+maf-defcmd declaration                        (load time)
+    │
+    ▼
+macro expansion → defun
+    │
+    ▼ (call time)
+resolve → context alist ──┐
+    │                     │
+    ▼                     │
+body (sees bindings)      │
+    │                     │
+    ▼  val                ▼
+commit ─── reads context, applies val
+</pre>
+
+<p>
+Resolve and commit are peer concerns: resolve reads state into the
+context, commit writes state from the context. They share the context
+schema documented at the top of <a href="../src/maf-resolve.el">maf-resolve.el</a>.
+</p>
+</div>
+</div>
+<div id="outline-container-org2e92283" class="outline-2">
+<h2 id="org2e92283"><span class="section-number-2">2.</span> The target system</h2>
+<div class="outline-text-2" id="text-2">
+<p>
+Resolve dispatches to one of five <i>targets</i> based on where point is and
+what calc state is active. In priority order:
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Target</th>
+<th scope="col" class="org-left">When it fires</th>
+<th scope="col" class="org-left">Operates on</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">selection</td>
+<td class="org-left">An active calc selection exists anywhere on the stack</td>
+<td class="org-left">The selected sub-formula</td>
+</tr>
+
+<tr>
+<td class="org-left">home</td>
+<td class="org-left">Point is past the last stack entry (at or below <code>.</code>)</td>
+<td class="org-left">The top stack entry</td>
+</tr>
+
+<tr>
+<td class="org-left">subexpr</td>
+<td class="org-left">Point is inside an entry's formula text</td>
+<td class="org-left">The sub-formula at cursor</td>
+</tr>
+
+<tr>
+<td class="org-left">equation</td>
+<td class="org-left">Point is on a stack entry that is a relation (<code>, !</code>, &#x2026;)</td>
+<td class="org-left">LHS and RHS (TODO: per-side iter)</td>
+</tr>
+
+<tr>
+<td class="org-left">entry</td>
+<td class="org-left">Point is at line-prefix or EOL of a stack entry</td>
+<td class="org-left">The whole formula</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+The cascade lives in <code>maf--resolve-context</code>. The predicates live in
+<a href="../src/maf-lib.el">maf-lib.el</a> (<code>maf--at-*-p</code>) and <a href="../src/maf-sel.el">maf-sel.el</a> (<code>maf--sel-any-p</code>).
+</p>
+
+<p>
+Each target has a dedicated <code>maf--resolve-target-X</code> function that
+produces the target-specific portion of the context alist.
+</p>
+</div>
+</div>
+<div id="outline-container-org5c735da" class="outline-2">
+<h2 id="org5c735da"><span class="section-number-2">3.</span> Encasing</h2>
+<div class="outline-text-2" id="text-3">
+<p>
+Calc's mechanism for distinguishing duplicate atoms by <code>eq</code>.
+</p>
+
+<p>
+Consider <code>1 + 1</code> = <code>(+ 1 1)</code> in calc. The two <code>1=s are the same integer
+object — both =eq</code> and <code>equal</code>. If the user selects "the first one", you
+can't tell them apart structurally.
+</p>
+
+<p>
+<code>calc-encase-atoms</code> (<a href="../calc-src/calc-sel.el">calc-sel.el:401</a>) walks the formula and replaces
+each naked atom with <code>(cplx atom 0)</code> — a fresh cons cell each time:
+</p>
+
+<pre class="example" id="org13b3b8b">
+(+ 1 1)    →    (+ (cplx 1 0) (cplx 1 0))
+                ;; ^^^^^^^^^^  ^^^^^^^^^^
+                ;; cons #A     cons #B   ← now distinguishable by eq
+</pre>
+
+<p>
+Calc displays <code>(cplx N 0)</code> as just <code>N</code> (complex with zero imag), so the
+user sees nothing different.
+</p>
+
+<p>
+<code>calc-prepare-selection</code> calls this on a stack entry and <b>mutates the
+entry in place</b> via <code>setcar</code>. So once selection-related machinery runs
+on an entry, that entry's atoms are encased until something normalizes.
+</p>
+
+<p>
+This matters for us in two places:
+</p>
+
+<ol class="org-ol">
+<li><b>The body shouldn't see encased values.</b> Most <code>calcFunc-*</code> functions
+dispatch on type, and <code>(cplx ...)</code> inputs route to complex-number
+branches that produce floats. (E.g., <code>calcFunc-sqrt</code> on <code>(cplx 16 0)</code>
+gives a float instead of the integer 4.) So resolve exposes a <i>clean</i>
+<code>:expr</code> via <code>math-normalize</code>.</li>
+
+<li><b>Commit's splice is <code>eq</code>-based.</b> <code>calc-replace-sub-formula</code> matches by
+<code>eq</code>, and only the original encased cons matches the cell in the
+entry's formula. So resolve also exposes <code>:expr-ref</code> — the actual
+cons cell — for commit to use.</li>
+</ol>
+
+<p>
+See <a href="walkthrough.html">walkthrough.org</a> for the encasing dance traced step by step.
+</p>
+</div>
+</div>
+<div id="outline-container-org6280dc5" class="outline-2">
+<h2 id="org6280dc5"><span class="section-number-2">4.</span> :expr vs :expr-ref</h2>
+<div class="outline-text-2" id="text-4">
+<p>
+The body and commit operate on the same sub-formula but at different
+points in the data flow:
+</p>
+
+<ul class="org-ul">
+<li><code>:expr</code> — clean form, for the body to compute with</li>
+<li><code>:expr-ref</code> — encased cons, for commit's <code>eq</code>-based splice</li>
+</ul>
+
+<p>
+They're only different for <b>selection</b> and <b>subexpr</b> (the targets that
+splice into a parent formula). <code>home</code> and <code>entry</code> don't have <code>:expr-ref</code>
+— they operate on whole entries, no sub-formula targeting needed.
+</p>
+</div>
+</div>
+<div id="outline-container-orgc497a40" class="outline-2">
+<h2 id="orgc497a40"><span class="section-number-2">5.</span> Reselect</h2>
+<div class="outline-text-2" id="text-5">
+<p>
+When commit pushes the new entry, should the result be re-selected?
+</p>
+
+<ul class="org-ul">
+<li><b>selection</b> target: yes (<code>:reselect t</code>). User explicitly set a
+selection; preserve their intent by re-selecting the new sub-formula.</li>
+<li><b>subexpr</b> target: no (<code>:reselect nil</code>). User just had a cursor
+position; no explicit selection to preserve.</li>
+<li><b>home / entry / equation</b>: not applicable (no sub-formula selection).</li>
+</ul>
+
+<p>
+Commit reads <code>:reselect</code> and passes <code>val-encased</code> (or nil) as the SELS
+arg to <code>calc-pop-push-record-list</code>.
+</p>
+</div>
+</div>
+<div id="outline-container-org61de8b0" class="outline-2">
+<h2 id="org61de8b0"><span class="section-number-2">6.</span> Keep-args</h2>
+<div class="outline-text-2" id="text-6">
+<p>
+<code>calc-keep-args-flag</code> is calc's mode where operations don't consume
+their inputs — the result is pushed <i>above</i> them rather than replacing
+them.
+</p>
+
+<p>
+Resolve snapshots the flag as <code>:keep</code> and derives commit instructions
+accordingly:
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Target</th>
+<th scope="col" class="org-left">Normal mode</th>
+<th scope="col" class="org-left">Keep-args mode</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">home</td>
+<td class="org-left">Pop arity entries, push result at top</td>
+<td class="org-left">Push result at top, no pop</td>
+</tr>
+
+<tr>
+<td class="org-left">selection</td>
+<td class="org-left">Replace selected entry in place</td>
+<td class="org-left">Push result on top, leave entry</td>
+</tr>
+
+<tr>
+<td class="org-left">subexpr</td>
+<td class="org-left">Replace entry in place (sub-formula spliced)</td>
+<td class="org-left">Push spliced result on top</td>
+</tr>
+
+<tr>
+<td class="org-left">entry</td>
+<td class="org-left">Replace entry in place</td>
+<td class="org-left">Push result on top</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+In schema terms, <code>:push-m</code>, <code>:push-n</code>, and <code>:post-pop-n</code> encode the
+recipe; commit just executes it.
+</p>
+</div>
+</div>
+<div id="outline-container-orgd1a6bb6" class="outline-2">
+<h2 id="orgd1a6bb6"><span class="section-number-2">7.</span> The commit recipe</h2>
+<div class="outline-text-2" id="text-7">
+<p>
+Three context keys describe what commit should do:
+</p>
+
+<ul class="org-ul">
+<li><b><code>:push-m</code></b> — stack level to push at (the M arg to
+<code>calc-pop-push-record-list</code>).</li>
+<li><b><code>:push-n</code></b> — entries to pop at <code>:push-m</code> before pushing (the N arg).
+This is the "replace in place" knob — 1 means "pop the old, push the
+new", 0 means "insert on top of it."</li>
+<li><b><code>:post-pop-n</code></b> — entries to pop <i>from the top</i> <i>after</i> the push.
+This consumes the binary arg in non-keep mode.</li>
+</ul>
+
+<p>
+Visualization for binary selection at <code>:m = 2</code> (non-keep):
+</p>
+
+<pre class="example" id="org3fed8f2">
+Before:                              push-m=2, push-n=1, post-pop-n=1
+1: arg                ──┐
+2: selected entry  ──┐  │
+                     │  │
+                     ▼  ▼
+After push at m=2 (pop 1 at level 2, push new):
+1: arg
+2: new (with spliced sub-formula)
+                     │
+                     ▼
+After post-pop 1 from top:
+1: new
+</pre>
+
+<p>
+Two operations, one push and one optional post-pop. See <code>maf--commit-push</code>.
+</p>
+</div>
+</div>
+<div id="outline-container-org36a13df" class="outline-2">
+<h2 id="org36a13df"><span class="section-number-2">8.</span> Binary on selection-like targets</h2>
+<div class="outline-text-2" id="text-8">
+<p>
+Selection, subexpr, entry: each can support binary commands, but the
+"second operand" needs to come from somewhere. Convention: the top stack
+entry serves as <code>:arg</code>.
+</p>
+
+<p>
+This creates a self-reference problem when the target itself is the top:
+</p>
+
+<ul class="org-ul">
+<li><b>selection / subexpr</b> — reject. If the selected sub-formula is in the
+top entry, the arg would be the entry containing the sub-formula.
+No coherent commit semantic. Resolve errors out.</li>
+<li><b>entry</b> — <i>ergonomic shift</i>. If point is at the line-margin of the top
+entry and arity is binary, <code>:m</code> is shifted from 1 to 2. The top
+becomes the arg, the entry below becomes the target. User doesn't
+have to position point on the operand whose value will change.</li>
+</ul>
+
+<p>
+Choice reflects the difference between "I pointed at this exact
+sub-formula" (selection/subexpr — error keeps the user honest) and "I'm
+near this entry" (entry — shift is friendlier).
+</p>
+</div>
+</div>
+<div id="outline-container-org535279d" class="outline-2">
+<h2 id="org535279d"><span class="section-number-2">9.</span> Files</h2>
+<div class="outline-text-2" id="text-9">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">File</th>
+<th scope="col" class="org-left">Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left"><a href="../maf.el">maf.el</a></td>
+<td class="org-left">Package entry point, mode, load order</td>
+</tr>
+
+<tr>
+<td class="org-left"><a href="../src/maf-lib.el">src/maf-lib.el</a></td>
+<td class="org-left">Generic predicates and utilities (find calc buffer, at-*-p)</td>
+</tr>
+
+<tr>
+<td class="org-left"><a href="../src/maf-sel.el">src/maf-sel.el</a></td>
+<td class="org-left">Selection-state introspection (any-selection, effective-m)</td>
+</tr>
+
+<tr>
+<td class="org-left"><a href="../src/maf-resolve.el">src/maf-resolve.el</a></td>
+<td class="org-left">Context resolution + target dispatch</td>
+</tr>
+
+<tr>
+<td class="org-left"><a href="../src/maf-commit.el">src/maf-commit.el</a></td>
+<td class="org-left">Commit recipes (push/pop choreography per target)</td>
+</tr>
+
+<tr>
+<td class="org-left"><a href="../src/maf-defcmd.el">src/maf-defcmd.el</a></td>
+<td class="org-left">The <code>maf-defcmd</code> macro + parsing helpers</td>
+</tr>
+
+<tr>
+<td class="org-left"><a href="../src/maf-debug.el">src/maf-debug.el</a></td>
+<td class="org-left">Debug helpers (slowly-stepped command playback)</td>
+</tr>
+
+<tr>
+<td class="org-left"><a href="../human-tests/">human-tests/</a></td>
+<td class="org-left">Interactive tests (<code>f4</code> runs the current one)</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+Load order in <code>maf.el</code>: <code>lib</code> → <code>sel</code> → <code>debug</code> → <code>resolve</code> → <code>commit</code>
+→ <code>defcmd</code>. Each layer depends only on earlier ones.
+</p>
+</div>
+</div>
+<div id="outline-container-org59dfd10" class="outline-2">
+<h2 id="org59dfd10"><span class="section-number-2">10.</span> See also</h2>
+<div class="outline-text-2" id="text-10">
+<ul class="org-ul">
+<li><a href="walkthrough.html">walkthrough.org</a> — sqrt-at-subexpr traced end-to-end</li>
+<li><a href="../src/maf-resolve.el">src/maf-resolve.el</a> — context schema reference at top of file</li>
+<li><a href="calc-ref.html">calc-ref.org</a> — calc API reference</li>
+</ul>
+</div>
+</div>
+</div>
+<div id="postamble" class="status">
+<p class="author">Author: David Yeung</p>
+<p class="date">Created: 2026-05-26 Tue 22:52</p>
+<p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
+</div>
+</body>
+</html>
