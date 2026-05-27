@@ -9,10 +9,11 @@
 (maf--debug-slowly 0.3
   (calc-push '(+ (* 8 (var x var-x)) 4))
   (progn
-    (calc-push 2)
+    (calc-push '(var x var-x))
     (calc-refresh))
-  (goto-char 14)
+  (goto-char 12)
   (call-interactively 'maf-square)
   (progn
-    (unless (string= (math-format-value (calc-top 1 'full)) "16 x + 8")
-      (error "FAIL"))))
+    (unless (string= (math-format-value (calc-top 2 'full)) "(8 x + 4)^2")
+      (error "FAIL"))
+    (message "PASS")))
