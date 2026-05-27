@@ -11,8 +11,10 @@
   (progn
     (calc-push '(var x var-x))
     (calc-refresh))
-  (goto-char 12)
-  (call-interactively 'maf-square)
+  (goto-char 0)
+  (progn
+    (call-interactively 'maf-square)
+    (calc-refresh))
   (progn
     (unless (string= (math-format-value (calc-top 2 'full)) "(8 x + 4)^2")
       (error "FAIL"))
