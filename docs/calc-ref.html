@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2026-05-26 Tue 21:56 -->
+<!-- 2026-05-26 Tue 22:14 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Calc Reference</title>
@@ -201,71 +201,71 @@
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents" role="doc-toc">
 <ul>
-<li><a href="#org2048610">1. calc</a>
+<li><a href="#orgf2a1085">1. calc</a>
 <ul>
-<li><a href="#org71f84c0">1.1. (calc-load-everything)</a></li>
+<li><a href="#org60d33c8">1.1. (calc-load-everything)</a></li>
 </ul>
 </li>
-<li><a href="#orga930d9d">2. Stack</a>
+<li><a href="#org7a62584">2. Stack</a>
 <ul>
-<li><a href="#orga0535a5">2.1. Stack entry format</a></li>
-<li><a href="#org383d33c">2.2. (calc-get-stack-element)</a></li>
-<li><a href="#org42eb71d">2.3. (calc-top)</a></li>
-<li><a href="#orgf799b5d">2.4. (calc-top-n)</a></li>
-<li><a href="#org94d2862">2.5. (calc-top-list)</a></li>
-<li><a href="#org56611fb">2.6. (calc-top-list-n)</a></li>
-<li><a href="#orgfba3136">2.7. (calc-pop-push-record-list)</a></li>
+<li><a href="#orga361eec">2.1. Stack entry format</a></li>
+<li><a href="#orgddef091">2.2. (calc-get-stack-element)</a></li>
+<li><a href="#orgae2d788">2.3. (calc-top)</a></li>
+<li><a href="#orgb841dce">2.4. (calc-top-n)</a></li>
+<li><a href="#orgda94deb">2.5. (calc-top-list)</a></li>
+<li><a href="#org6aa2b74">2.6. (calc-top-list-n)</a></li>
+<li><a href="#org1802ad2">2.7. (calc-pop-push-record-list)</a></li>
 </ul>
 </li>
-<li><a href="#orgc0f7c59">3. Formula</a>
+<li><a href="#org6c1d95a">3. Formula</a>
 <ul>
-<li><a href="#orga6a084a">3.1. (math-common-constant-factor)</a></li>
-<li><a href="#org4a9c2e8">3.2. (calc-encase-atoms)</a></li>
-<li><a href="#orgdbf2656">3.3. (math-expr-contains)</a></li>
-<li><a href="#org215fe46">3.4. (math-expr-contains-count)</a></li>
-<li><a href="#orgeb1bec9">3.5. (math-expr-depends)</a></li>
-<li><a href="#org8a4d292">3.6. (math-expr-contains-vars)</a></li>
-<li><a href="#org806ee3c">3.7. (math-expr-subst)</a></li>
-<li><a href="#org998307e">3.8. (math-multi-subst)</a></li>
+<li><a href="#orga726982">3.1. (math-common-constant-factor)</a></li>
+<li><a href="#org230c26b">3.2. (calc-encase-atoms)</a></li>
+<li><a href="#org882f7a3">3.3. (math-expr-contains)</a></li>
+<li><a href="#orgd3a9362">3.4. (math-expr-contains-count)</a></li>
+<li><a href="#org7e3eb58">3.5. (math-expr-depends)</a></li>
+<li><a href="#orgbc6d76c">3.6. (math-expr-contains-vars)</a></li>
+<li><a href="#org0989dcc">3.7. (math-expr-subst)</a></li>
+<li><a href="#org3d10ed7">3.8. (math-multi-subst)</a></li>
 </ul>
 </li>
-<li><a href="#org8e3c6e1">4. Polynomials</a>
+<li><a href="#org66e8a8b">4. Polynomials</a>
 <ul>
-<li><a href="#orgc4efa74">4.1. (math-polynomial-p)</a></li>
-<li><a href="#orgb0bfbc5">4.2. (math-is-polynomial)</a></li>
-<li><a href="#org9d941b4">4.3. (math-polynomial-base)</a></li>
+<li><a href="#orgf377b74">4.1. (math-polynomial-p)</a></li>
+<li><a href="#orga528cd6">4.2. (math-is-polynomial)</a></li>
+<li><a href="#org2839ee4">4.3. (math-polynomial-base)</a></li>
 </ul>
 </li>
-<li><a href="#orgf7671da">5. Simplification &amp; rewriting</a>
+<li><a href="#org1253f48">5. Simplification &amp; rewriting</a>
 <ul>
-<li><a href="#org20832d3">5.1. (calc-normalize)</a></li>
-<li><a href="#org2f4e19f">5.2. (math-normalize)</a></li>
-<li><a href="#org717f109">5.3. (math-simplify-extended)</a></li>
-<li><a href="#org2cb47d0">5.4. (math-defsimplify)</a></li>
-<li><a href="#orgce5945d">5.5. (math-apply-rewrites)</a></li>
-<li><a href="#orgc1c227a">5.6. (math-match-patterns)</a></li>
+<li><a href="#orge3f1b83">5.1. (calc-normalize)</a></li>
+<li><a href="#org3d420c8">5.2. (math-normalize)</a></li>
+<li><a href="#orge20b7c9">5.3. (math-simplify-extended)</a></li>
+<li><a href="#orgf6971c8">5.4. (math-defsimplify)</a></li>
+<li><a href="#org22a4510">5.5. (math-apply-rewrites)</a></li>
+<li><a href="#orga8eac9c">5.6. (math-match-patterns)</a></li>
 </ul>
 </li>
-<li><a href="#orgcc85bd5">6. Solving</a>
+<li><a href="#org1b60ee9">6. Solving</a>
 <ul>
-<li><a href="#org75d81c8">6.1. (math-solve-for)</a></li>
-<li><a href="#orgc34d6a7">6.2. (math-solve-eqn)</a></li>
-<li><a href="#orgeb2956e">6.3. (math-solve-system)</a></li>
+<li><a href="#orgaaf2b94">6.1. (math-solve-for)</a></li>
+<li><a href="#org8d384bd">6.2. (math-solve-eqn)</a></li>
+<li><a href="#org941aae3">6.3. (math-solve-system)</a></li>
 </ul>
 </li>
-<li><a href="#orge7c3546">7. Selection</a>
+<li><a href="#orgc816030">7. Selection</a>
 <ul>
-<li><a href="#org34a87e5">7.1. (calc-prepare-selection)</a></li>
-<li><a href="#orgfdd603a">7.2. (calc-find-selected-part)</a></li>
-<li><a href="#org06dbd9d">7.3. (calc-find-sub-formula)</a></li>
-<li><a href="#org98054c0">7.4. (calc-locate-cursor-element)</a></li>
+<li><a href="#org806019c">7.1. (calc-prepare-selection)</a></li>
+<li><a href="#orgd221fdb">7.2. (calc-find-selected-part)</a></li>
+<li><a href="#org1f3b5cf">7.3. (calc-find-sub-formula)</a></li>
+<li><a href="#org052525e">7.4. (calc-locate-cursor-element)</a></li>
 </ul>
 </li>
-<li><a href="#org9b6fd7e">8. Display</a>
+<li><a href="#org5bd54ba">8. Display</a>
 <ul>
-<li><a href="#org76c2828">8.1. (math-format-value)</a></li>
-<li><a href="#org103fcf2">8.2. (math-format-stack-value)</a></li>
-<li><a href="#org1faeba9">8.3. (calc-align-stack-window)</a></li>
+<li><a href="#orgabc33b0">8.1. (math-format-value)</a></li>
+<li><a href="#orgbc6cfdd">8.2. (math-format-stack-value)</a></li>
+<li><a href="#orgb5b18e2">8.3. (calc-align-stack-window)</a></li>
 </ul>
 </li>
 </ul>
@@ -304,12 +304,12 @@
     });
   });
 </script>
-<div id="outline-container-org2048610" class="outline-2">
-<h2 id="org2048610"><span class="section-number-2">1.</span> calc</h2>
+<div id="outline-container-orgf2a1085" class="outline-2">
+<h2 id="orgf2a1085"><span class="section-number-2">1.</span> calc</h2>
 <div class="outline-text-2" id="text-1">
 </div>
-<div id="outline-container-org71f84c0" class="outline-3">
-<h3 id="org71f84c0"><span class="section-number-3">1.1.</span> (calc-load-everything)</h3>
+<div id="outline-container-org60d33c8" class="outline-3">
+<h3 id="org60d33c8"><span class="section-number-3">1.1.</span> (calc-load-everything)</h3>
 <div class="outline-text-3" id="text-1-1">
 <p>
 <code>(calc-load-everything)</code>
@@ -327,12 +327,12 @@ before calling them programmatically.
 </div>
 </div>
 </div>
-<div id="outline-container-orga930d9d" class="outline-2">
-<h2 id="orga930d9d"><span class="section-number-2">2.</span> Stack</h2>
+<div id="outline-container-org7a62584" class="outline-2">
+<h2 id="org7a62584"><span class="section-number-2">2.</span> Stack</h2>
 <div class="outline-text-2" id="text-2">
 </div>
-<div id="outline-container-orga0535a5" class="outline-3">
-<h3 id="orga0535a5"><span class="section-number-3">2.1.</span> Stack entry format</h3>
+<div id="outline-container-orga361eec" class="outline-3">
+<h3 id="orga361eec"><span class="section-number-3">2.1.</span> Stack entry format</h3>
 <div class="outline-text-3" id="text-2-1">
 <p>
 Each element of <code>calc-stack</code> is a list <code>(formula lines selection)</code>:
@@ -356,8 +356,8 @@ Stack level 1 is the top.
 </p>
 </div>
 </div>
-<div id="outline-container-org383d33c" class="outline-3">
-<h3 id="org383d33c"><span class="section-number-3">2.2.</span> (calc-get-stack-element)</h3>
+<div id="outline-container-orgddef091" class="outline-3">
+<h3 id="orgddef091"><span class="section-number-3">2.2.</span> (calc-get-stack-element)</h3>
 <div class="outline-text-3" id="text-2-2">
 <p>
 <code>(calc-get-stack-element X &amp;optional SEL-MODE)</code>
@@ -415,8 +415,8 @@ Called internally by <code>calc-top</code> and <code>calc-top-list</code>; rarel
 </p>
 </div>
 </div>
-<div id="outline-container-org42eb71d" class="outline-3">
-<h3 id="org42eb71d"><span class="section-number-3">2.3.</span> (calc-top)</h3>
+<div id="outline-container-orgae2d788" class="outline-3">
+<h3 id="orgae2d788"><span class="section-number-3">2.3.</span> (calc-top)</h3>
 <div class="outline-text-3" id="text-2-3">
 <p>
 <code>(calc-top &amp;optional N SEL-MODE)</code>
@@ -436,8 +436,8 @@ Does not normalize. Use <code>calc-top-n</code> if normalization is wanted.
 </div>
 </div>
 </div>
-<div id="outline-container-orgf799b5d" class="outline-3">
-<h3 id="orgf799b5d"><span class="section-number-3">2.4.</span> (calc-top-n)</h3>
+<div id="outline-container-orgb841dce" class="outline-3">
+<h3 id="orgb841dce"><span class="section-number-3">2.4.</span> (calc-top-n)</h3>
 <div class="outline-text-3" id="text-2-4">
 <p>
 <code>(calc-top-n &amp;optional N SEL-MODE)</code>
@@ -455,8 +455,8 @@ round-trip that <code>calc-normalize</code> may introduce.
 </div>
 </div>
 </div>
-<div id="outline-container-org94d2862" class="outline-3">
-<h3 id="org94d2862"><span class="section-number-3">2.5.</span> (calc-top-list)</h3>
+<div id="outline-container-orgda94deb" class="outline-3">
+<h3 id="orgda94deb"><span class="section-number-3">2.5.</span> (calc-top-list)</h3>
 <div class="outline-text-3" id="text-2-5">
 <p>
 <code>(calc-top-list &amp;optional N M SEL-MODE)</code>
@@ -474,8 +474,8 @@ normalize. <code>SEL-MODE</code> is the same as for <code>calc-top</code>.
 </div>
 </div>
 </div>
-<div id="outline-container-org56611fb" class="outline-3">
-<h3 id="org56611fb"><span class="section-number-3">2.6.</span> (calc-top-list-n)</h3>
+<div id="outline-container-org6aa2b74" class="outline-3">
+<h3 id="org6aa2b74"><span class="section-number-3">2.6.</span> (calc-top-list-n)</h3>
 <div class="outline-text-3" id="text-2-6">
 <p>
 <code>(calc-top-list-n &amp;optional N M SEL-MODE)</code>
@@ -491,8 +491,8 @@ Like <code>calc-top-list</code>, but normalizes every entry.
 </div>
 </div>
 </div>
-<div id="outline-container-orgfba3136" class="outline-3">
-<h3 id="orgfba3136"><span class="section-number-3">2.7.</span> (calc-pop-push-record-list)</h3>
+<div id="outline-container-org1802ad2" class="outline-3">
+<h3 id="org1802ad2"><span class="section-number-3">2.7.</span> (calc-pop-push-record-list)</h3>
 <div class="outline-text-3" id="text-2-7">
 <p>
 <code>(calc-pop-push-record-list N PREFIX VALS &amp;optional M SELS)</code>
@@ -531,12 +531,12 @@ contain <code>N + M - 1</code> entries.
 </div>
 </div>
 </div>
-<div id="outline-container-orgc0f7c59" class="outline-2">
-<h2 id="orgc0f7c59"><span class="section-number-2">3.</span> Formula</h2>
+<div id="outline-container-org6c1d95a" class="outline-2">
+<h2 id="org6c1d95a"><span class="section-number-2">3.</span> Formula</h2>
 <div class="outline-text-2" id="text-3">
 </div>
-<div id="outline-container-orga6a084a" class="outline-3">
-<h3 id="orga6a084a"><span class="section-number-3">3.1.</span> (math-common-constant-factor)</h3>
+<div id="outline-container-orga726982" class="outline-3">
+<h3 id="orga726982"><span class="section-number-3">3.1.</span> (math-common-constant-factor)</h3>
 <div class="outline-text-3" id="text-3-1">
 <p>
 <code>(math-common-constant-factor EXPR)</code>
@@ -554,8 +554,8 @@ Returns the <b>constant</b> factor in <code>EXPR</code>.
 </div>
 </div>
 </div>
-<div id="outline-container-org4a9c2e8" class="outline-3">
-<h3 id="org4a9c2e8"><span class="section-number-3">3.2.</span> (calc-encase-atoms)</h3>
+<div id="outline-container-org230c26b" class="outline-3">
+<h3 id="org230c26b"><span class="section-number-3">3.2.</span> (calc-encase-atoms)</h3>
 <div class="outline-text-3" id="text-3-2">
 <p>
 <code>(calc-encase-atoms X)</code>
@@ -575,8 +575,8 @@ using the <code>(cplx n 0)</code> trick from <code>calc-prepare-selection</code>
 </div>
 </div>
 </div>
-<div id="outline-container-orgdbf2656" class="outline-3">
-<h3 id="orgdbf2656"><span class="section-number-3">3.3.</span> (math-expr-contains)</h3>
+<div id="outline-container-org882f7a3" class="outline-3">
+<h3 id="org882f7a3"><span class="section-number-3">3.3.</span> (math-expr-contains)</h3>
 <div class="outline-text-3" id="text-3-3">
 <p>
 <code>(math-expr-contains EXPR VAR)</code>
@@ -597,8 +597,8 @@ find either.
 </div>
 </div>
 </div>
-<div id="outline-container-org215fe46" class="outline-3">
-<h3 id="org215fe46"><span class="section-number-3">3.4.</span> (math-expr-contains-count)</h3>
+<div id="outline-container-orgd3a9362" class="outline-3">
+<h3 id="orgd3a9362"><span class="section-number-3">3.4.</span> (math-expr-contains-count)</h3>
 <div class="outline-text-3" id="text-3-4">
 <p>
 <code>(math-expr-contains-count EXPR VAR)</code>
@@ -616,8 +616,8 @@ Return the number of occurrences of <code>VAR</code> in <code>EXPR</code>, or ni
 </div>
 </div>
 </div>
-<div id="outline-container-orgeb1bec9" class="outline-3">
-<h3 id="orgeb1bec9"><span class="section-number-3">3.5.</span> (math-expr-depends)</h3>
+<div id="outline-container-org7e3eb58" class="outline-3">
+<h3 id="org7e3eb58"><span class="section-number-3">3.5.</span> (math-expr-depends)</h3>
 <div class="outline-text-3" id="text-3-5">
 <p>
 <code>(math-expr-depends EXPR VAR)</code>
@@ -635,8 +635,8 @@ Return true if <code>EXPR</code> and <code>VAR</code> share any variable.
 </div>
 </div>
 </div>
-<div id="outline-container-org8a4d292" class="outline-3">
-<h3 id="org8a4d292"><span class="section-number-3">3.6.</span> (math-expr-contains-vars)</h3>
+<div id="outline-container-orgbc6d76c" class="outline-3">
+<h3 id="orgbc6d76c"><span class="section-number-3">3.6.</span> (math-expr-contains-vars)</h3>
 <div class="outline-text-3" id="text-3-6">
 <p>
 <code>(math-expr-contains-vars EXPR)</code>
@@ -655,8 +655,8 @@ constants and functions with constant arguments.
 </div>
 </div>
 </div>
-<div id="outline-container-org806ee3c" class="outline-3">
-<h3 id="org806ee3c"><span class="section-number-3">3.7.</span> (math-expr-subst)</h3>
+<div id="outline-container-org0989dcc" class="outline-3">
+<h3 id="org0989dcc"><span class="section-number-3">3.7.</span> (math-expr-subst)</h3>
 <div class="outline-text-3" id="text-3-7">
 <p>
 <code>(math-expr-subst EXPR OLD NEW)</code>
@@ -674,8 +674,8 @@ Handles lambda dummy variables correctly.
 </div>
 </div>
 </div>
-<div id="outline-container-org998307e" class="outline-3">
-<h3 id="org998307e"><span class="section-number-3">3.8.</span> (math-multi-subst)</h3>
+<div id="outline-container-org3d10ed7" class="outline-3">
+<h3 id="org3d10ed7"><span class="section-number-3">3.8.</span> (math-multi-subst)</h3>
 <div class="outline-text-3" id="text-3-8">
 <p>
 <code>(math-multi-subst EXPR OLD NEW)</code>
@@ -696,12 +696,12 @@ list are ignored.
 </div>
 </div>
 </div>
-<div id="outline-container-org8e3c6e1" class="outline-2">
-<h2 id="org8e3c6e1"><span class="section-number-2">4.</span> Polynomials</h2>
+<div id="outline-container-org66e8a8b" class="outline-2">
+<h2 id="org66e8a8b"><span class="section-number-2">4.</span> Polynomials</h2>
 <div class="outline-text-2" id="text-4">
 </div>
-<div id="outline-container-orgc4efa74" class="outline-3">
-<h3 id="orgc4efa74"><span class="section-number-3">4.1.</span> (math-polynomial-p)</h3>
+<div id="outline-container-orgf377b74" class="outline-3">
+<h3 id="orgf377b74"><span class="section-number-3">4.1.</span> (math-polynomial-p)</h3>
 <div class="outline-text-3" id="text-4-1">
 <p>
 <code>(math-polynomial-p EXPR VAR)</code>
@@ -721,8 +721,8 @@ constant expression (no <code>VAR</code>) has degree 0.
 </div>
 </div>
 </div>
-<div id="outline-container-orgb0bfbc5" class="outline-3">
-<h3 id="orgb0bfbc5"><span class="section-number-3">4.2.</span> (math-is-polynomial)</h3>
+<div id="outline-container-orga528cd6" class="outline-3">
+<h3 id="orga528cd6"><span class="section-number-3">4.2.</span> (math-is-polynomial)</h3>
 <div class="outline-text-3" id="text-4-2">
 <p>
 <code>(math-is-polynomial EXPR VAR DEGREE LOOSE)</code>
@@ -747,8 +747,8 @@ as they are not polynomials; never returns nil in loose mode.
 </div>
 </div>
 </div>
-<div id="outline-container-org9d941b4" class="outline-3">
-<h3 id="org9d941b4"><span class="section-number-3">4.3.</span> (math-polynomial-base)</h3>
+<div id="outline-container-org2839ee4" class="outline-3">
+<h3 id="org2839ee4"><span class="section-number-3">4.3.</span> (math-polynomial-base)</h3>
 <div class="outline-text-3" id="text-4-3">
 <p>
 <code>(math-polynomial-base EXPR PRED)</code>
@@ -769,12 +769,12 @@ use it to add extra conditions or collect all suitable subexpressions.
 </div>
 </div>
 </div>
-<div id="outline-container-orgf7671da" class="outline-2">
-<h2 id="orgf7671da"><span class="section-number-2">5.</span> Simplification &amp; rewriting</h2>
+<div id="outline-container-org1253f48" class="outline-2">
+<h2 id="org1253f48"><span class="section-number-2">5.</span> Simplification &amp; rewriting</h2>
 <div class="outline-text-2" id="text-5">
 </div>
-<div id="outline-container-org20832d3" class="outline-3">
-<h3 id="org20832d3"><span class="section-number-3">5.1.</span> (calc-normalize)</h3>
+<div id="outline-container-orge3f1b83" class="outline-3">
+<h3 id="orge3f1b83"><span class="section-number-3">5.1.</span> (calc-normalize)</h3>
 <div class="outline-text-3" id="text-5-1">
 <p>
 <code>(calc-normalize VAL)</code>
@@ -799,8 +799,8 @@ calc operations is in canonical form.
 </div>
 </div>
 </div>
-<div id="outline-container-org2f4e19f" class="outline-3">
-<h3 id="org2f4e19f"><span class="section-number-3">5.2.</span> (math-normalize)</h3>
+<div id="outline-container-org3d420c8" class="outline-3">
+<h3 id="org3d420c8"><span class="section-number-3">5.2.</span> (math-normalize)</h3>
 <div class="outline-text-3" id="text-5-2">
 <p>
 <code>(math-normalize VAL)</code>
@@ -824,8 +824,8 @@ clean formula before further processing.
 </div>
 </div>
 </div>
-<div id="outline-container-org717f109" class="outline-3">
-<h3 id="org717f109"><span class="section-number-3">5.3.</span> (math-simplify-extended)</h3>
+<div id="outline-container-orge20b7c9" class="outline-3">
+<h3 id="orge20b7c9"><span class="section-number-3">5.3.</span> (math-simplify-extended)</h3>
 <div class="outline-text-3" id="text-5-3">
 <p>
 <code>(math-simplify-extended A)</code>
@@ -845,8 +845,8 @@ Implemented by binding <code>math-living-dangerously</code> to <code>t</code> an
 </div>
 </div>
 </div>
-<div id="outline-container-org2cb47d0" class="outline-3">
-<h3 id="org2cb47d0"><span class="section-number-3">5.4.</span> (math-defsimplify)</h3>
+<div id="outline-container-orgf6971c8" class="outline-3">
+<h3 id="orgf6971c8"><span class="section-number-3">5.4.</span> (math-defsimplify)</h3>
 <div class="outline-text-3" id="text-5-4">
 <p>
 <code>(math-defsimplify FUNCS BODY)</code>
@@ -877,8 +877,8 @@ runs, and may be rearranged destructively.
 </div>
 </div>
 </div>
-<div id="outline-container-orgce5945d" class="outline-3">
-<h3 id="orgce5945d"><span class="section-number-3">5.5.</span> (math-apply-rewrites)</h3>
+<div id="outline-container-org22a4510" class="outline-3">
+<h3 id="org22a4510"><span class="section-number-3">5.5.</span> (math-apply-rewrites)</h3>
 <div class="outline-text-3" id="text-5-5">
 <p>
 <code>(math-apply-rewrites EXPR CRULES HEADS)</code>
@@ -901,8 +901,8 @@ its rarest function name).
 </div>
 </div>
 </div>
-<div id="outline-container-orgc1c227a" class="outline-3">
-<h3 id="orgc1c227a"><span class="section-number-3">5.6.</span> (math-match-patterns)</h3>
+<div id="outline-container-orga8eac9c" class="outline-3">
+<h3 id="orga8eac9c"><span class="section-number-3">5.6.</span> (math-match-patterns)</h3>
 <div class="outline-text-3" id="text-5-6">
 <p>
 <code>(math-match-patterns PAT VEC NOT-FLAG)</code>
@@ -924,12 +924,12 @@ set or pattern set variable.
 </div>
 </div>
 </div>
-<div id="outline-container-orgcc85bd5" class="outline-2">
-<h2 id="orgcc85bd5"><span class="section-number-2">6.</span> Solving</h2>
+<div id="outline-container-org1b60ee9" class="outline-2">
+<h2 id="org1b60ee9"><span class="section-number-2">6.</span> Solving</h2>
 <div class="outline-text-2" id="text-6">
 </div>
-<div id="outline-container-org75d81c8" class="outline-3">
-<h3 id="org75d81c8"><span class="section-number-3">6.1.</span> (math-solve-for)</h3>
+<div id="outline-container-orgaaf2b94" class="outline-3">
+<h3 id="orgaaf2b94"><span class="section-number-3">6.1.</span> (math-solve-for)</h3>
 <div class="outline-text-3" id="text-6-1">
 <p>
 <code>(math-solve-for LHS RHS VAR FULL)</code>
@@ -956,8 +956,8 @@ arbitrary sign/integer variables; these return <code>x</code> unchanged in non-f
 </p>
 </div>
 </div>
-<div id="outline-container-orgc34d6a7" class="outline-3">
-<h3 id="orgc34d6a7"><span class="section-number-3">6.2.</span> (math-solve-eqn)</h3>
+<div id="outline-container-org8d384bd" class="outline-3">
+<h3 id="org8d384bd"><span class="section-number-3">6.2.</span> (math-solve-eqn)</h3>
 <div class="outline-text-3" id="text-6-2">
 <p>
 <code>(math-solve-eqn EXPR VAR FULL)</code>
@@ -976,8 +976,8 @@ expression is treated as <code>EXPR</code> = 0. Returns an equation or inequalit
 </div>
 </div>
 </div>
-<div id="outline-container-orgeb2956e" class="outline-3">
-<h3 id="orgeb2956e"><span class="section-number-3">6.3.</span> (math-solve-system)</h3>
+<div id="outline-container-org941aae3" class="outline-3">
+<h3 id="org941aae3"><span class="section-number-3">6.3.</span> (math-solve-system)</h3>
 <div class="outline-text-3" id="text-6-3">
 <p>
 <code>(math-solve-system EXPRS VARS FULL)</code>
@@ -1000,12 +1000,12 @@ vectors.
 </div>
 </div>
 </div>
-<div id="outline-container-orge7c3546" class="outline-2">
-<h2 id="orge7c3546"><span class="section-number-2">7.</span> Selection</h2>
+<div id="outline-container-orgc816030" class="outline-2">
+<h2 id="orgc816030"><span class="section-number-2">7.</span> Selection</h2>
 <div class="outline-text-2" id="text-7">
 </div>
-<div id="outline-container-org34a87e5" class="outline-3">
-<h3 id="org34a87e5"><span class="section-number-3">7.1.</span> (calc-prepare-selection)</h3>
+<div id="outline-container-org806019c" class="outline-3">
+<h3 id="org806019c"><span class="section-number-3">7.1.</span> (calc-prepare-selection)</h3>
 <div class="outline-text-3" id="text-7-1">
 <p>
 <code>(calc-prepare-selection &amp;optional NUM)</code>
@@ -1041,8 +1041,8 @@ sub-formulas are <code>eq</code>. The next time the entry is used in a computati
 </div>
 </div>
 </div>
-<div id="outline-container-orgfdd603a" class="outline-3">
-<h3 id="orgfdd603a"><span class="section-number-3">7.2.</span> (calc-find-selected-part)</h3>
+<div id="outline-container-orgd221fdb" class="outline-3">
+<h3 id="orgd221fdb"><span class="section-number-3">7.2.</span> (calc-find-selected-part)</h3>
 <div class="outline-text-3" id="text-7-2">
 <p>
 <code>(calc-find-selected-part)</code>
@@ -1062,8 +1062,8 @@ is not on any part of the formula.
 </div>
 </div>
 </div>
-<div id="outline-container-org06dbd9d" class="outline-3">
-<h3 id="org06dbd9d"><span class="section-number-3">7.3.</span> (calc-find-sub-formula)</h3>
+<div id="outline-container-org1f3b5cf" class="outline-3">
+<h3 id="org1f3b5cf"><span class="section-number-3">7.3.</span> (calc-find-sub-formula)</h3>
 <div class="outline-text-3" id="text-7-3">
 <p>
 <code>(calc-find-sub-formula EXPR PART)</code>
@@ -1092,8 +1092,8 @@ Does not account for associativity.
 </div>
 </div>
 </div>
-<div id="outline-container-org98054c0" class="outline-3">
-<h3 id="org98054c0"><span class="section-number-3">7.4.</span> (calc-locate-cursor-element)</h3>
+<div id="outline-container-org052525e" class="outline-3">
+<h3 id="org052525e"><span class="section-number-3">7.4.</span> (calc-locate-cursor-element)</h3>
 <div class="outline-text-3" id="text-7-4">
 <p>
 <code>(calc-locate-cursor-element PT)</code>
@@ -1111,12 +1111,12 @@ position <code>PT</code>. The result is suitable for passing to <code>calc-curso
 </div>
 </div>
 </div>
-<div id="outline-container-org9b6fd7e" class="outline-2">
-<h2 id="org9b6fd7e"><span class="section-number-2">8.</span> Display</h2>
+<div id="outline-container-org5bd54ba" class="outline-2">
+<h2 id="org5bd54ba"><span class="section-number-2">8.</span> Display</h2>
 <div class="outline-text-2" id="text-8">
 </div>
-<div id="outline-container-org76c2828" class="outline-3">
-<h3 id="org76c2828"><span class="section-number-3">8.1.</span> (math-format-value)</h3>
+<div id="outline-container-orgabc33b0" class="outline-3">
+<h3 id="orgabc33b0"><span class="section-number-3">8.1.</span> (math-format-value)</h3>
 <div class="outline-text-3" id="text-8-1">
 <p>
 <code>(math-format-value A &amp;optional W)</code>
@@ -1137,8 +1137,8 @@ optionally limits the output width.
 </div>
 </div>
 </div>
-<div id="outline-container-org103fcf2" class="outline-3">
-<h3 id="org103fcf2"><span class="section-number-3">8.2.</span> (math-format-stack-value)</h3>
+<div id="outline-container-orgbc6cfdd" class="outline-3">
+<h3 id="orgbc6cfdd"><span class="section-number-3">8.2.</span> (math-format-stack-value)</h3>
 <div class="outline-text-3" id="text-8-2">
 <p>
 <code>(math-format-stack-value ENTRY)</code>
@@ -1158,8 +1158,8 @@ list <code>(value lines selection)</code>. Handles selection highlighting, left 
 </div>
 </div>
 </div>
-<div id="outline-container-org1faeba9" class="outline-3">
-<h3 id="org1faeba9"><span class="section-number-3">8.3.</span> (calc-align-stack-window)</h3>
+<div id="outline-container-orgb5b18e2" class="outline-3">
+<h3 id="orgb5b18e2"><span class="section-number-3">8.3.</span> (calc-align-stack-window)</h3>
 <div class="outline-text-3" id="text-8-3">
 <p>
 <code>(calc-align-stack-window)</code>
@@ -1181,7 +1181,7 @@ line. If called from outside the Calc buffer, switches to it first.
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: David Yeung</p>
-<p class="date">Created: 2026-05-26 Tue 21:56</p>
+<p class="date">Created: 2026-05-26 Tue 22:14</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
