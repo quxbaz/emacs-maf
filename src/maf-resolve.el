@@ -46,8 +46,8 @@ selected entry to be below the top (:m > 1); otherwise the arg would be the
 entry containing the selection, which has no coherent commit semantics."
   (maf--with-calc-buffer
     (let* ((arity (alist-get :arity opts))
-           (keep calc-keep-args-flag)
-           (m (maf--sel-effective-m)))
+           (m (maf--sel-effective-m))
+           (keep calc-keep-args-flag))
       ;; If m=1 and arity=binary then there's nowhere to take the arg from - reject.
       (when (and (eq arity 'binary) (= m 1))
         (error "Binary commands on selection require the selected entry below the top"))
