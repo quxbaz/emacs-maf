@@ -37,6 +37,14 @@ Prefers the current buffer if it is in calc-mode, then looks for
              (and (looking-at " *[0-9]+: +")
                   (< col (- (match-end 0) (point)))))))))
 
+(defun maf--at-line-margin-p ()
+  "Return t if point is at the start (line-prefix) or end (EOL) of a stack entry line.
+These are the positions where point is on an entry line but outside the
+formula text — the zones the entry target matches."
+  (maf--with-calc-buffer
+    (and (> (calc-locate-cursor-element (point)) 0)
+         (or (eolp) (maf--at-line-prefix-p)))))
+
 (defun maf--at-subexpr-p ()
   "Return t if point is on a sub-expression within an entry's formula text.
 False when point is at EOL or in the line-prefix zone, even if there is a
