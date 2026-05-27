@@ -291,7 +291,7 @@
 * Simplification & rewriting
 ** (calc-normalize)
    =(calc-normalize VAL)=
-   [[https://www.gnu.org/software/emacs/manual/html_node/calc/Stack-Oriented-Functions.html#index-calc_002dnormalize][(manual)]]
+   [[https://www.gnu.org/software/emacs/manual/html_node/calc/Stack-Lisp-Functions.html#index-calc_002dnormalize][(manual)]]
 
    Normalize =VAL= according to =calc-simplify-mode=. For =nil=, ='none=, and
    ='num= modes, delegates directly to =math-normalize=; for richer modes
@@ -308,7 +308,7 @@
 
 ** (math-normalize)
    =(math-normalize VAL)=
-   [[https://www.gnu.org/software/emacs/manual/html_node/calc/Computational-Functions.html#index-normalize][(manual)]]
+   [[https://www.gnu.org/software/emacs/manual/html_node/calc/Computational-Lisp-Functions.html#index-normalize][(manual)]]
 
    The core formula normalizer. Canonicalizes =VAL= by applying structural
    simplifications: constant folding, identity reductions (=(+ a 0)= → =a=,
