@@ -13,7 +13,14 @@
 ;;   :target       Symbol identifying the target: home, selection, subexpr,
 ;;                 equation, or entry.
 ;;   :expr         The expression the command operates on (full formula or
-;;                 selected sub-formula, depending on target).
+;;                 selected sub-formula, depending on target). Normalized — the
+;;                 (cplx N 0) encasing that calc-prepare-selection wraps atoms
+;;                 in is stripped, so the body sees clean values.
+;;   :expr-ref     The same sub-formula as :expr but as the *original encased
+;;                 cons cell* from the stack entry. Used by commit's
+;;                 `calc-replace-sub-formula` for eq-based splicing — only the
+;;                 encased ref matches the cons in the entry. Set only for
+;;                 selection and subexpr.
 ;;   :arg          Second operand for binary commands; nil for unary.
 ;;   :m            Stack position (1 = top) of the target entry. Only set when
 ;;                 the target lives at a specific stack level (e.g. selection).
@@ -49,14 +56,18 @@ For binary commands, :arg is the top of the stack. Binary commands require the
 selected entry to be below the top (:m > 1); otherwise the arg would be the
 entry containing the selection, which has no coherent commit semantics."
   (maf--with-calc-buffer
-    (let ((arity (alist-get :arity opts))
-          (m (maf--sel-effective-m))
-          (keep calc-keep-args-flag))
+    (let* ((arity (alist-get :arity opts))
+           (m (maf--sel-effective-m))
+           (keep calc-keep-args-flag)
+           (encased (maf--sel-effective-expr)))
       ;; If m=1 and arity=binary then there's nowhere to take the arg from - reject.
       (when (and (eq arity 'binary) (= m 1))
         (error "Binary commands on selection require the selected entry below the top"))
       `((:target     . selection)
-        (:expr       . ,(maf--sel-effective-expr))
+        ;; :expr is the clean form for the body; :expr-ref is the encased cons
+        ;; commit needs for eq-based splicing.
+        (:expr       . ,(math-normalize encased))
+        (:expr-ref   . ,encased)
         (:arg        . ,(pcase arity ('unary nil) ('binary (calc-top 1 'full))))
         (:m          . ,m)
         (:push-m     . ,(if keep 1 m))
@@ -88,21 +99,25 @@ With keep-args off, commit replaces the sub-expression in-place; with
 keep-args on, commit pushes the spliced result on top, leaving originals
 untouched."
   (maf--with-calc-buffer
-    (let ((arity (alist-get :arity opts))
-          (m (calc-locate-cursor-element (point)))
-          (keep calc-keep-args-flag))
+    (let* ((arity (alist-get :arity opts))
+           (m (calc-locate-cursor-element (point)))
+           (keep calc-keep-args-flag))
       ;; If m=1 and arity=binary then there's nowhere to take the arg from - reject.
       (when (and (eq arity 'binary) (= m 1))
         (error "Binary commands on subexpr require the target entry below the top"))
       (calc-prepare-selection m)
-      `((:target     . subexpr)
-        (:expr       . ,(calc-find-selected-part))
-        (:arg        . ,(pcase arity ('unary nil) ('binary (calc-top 1 'full))))
-        (:m          . ,m)
-        (:push-m     . ,(if keep 1 m))
-        (:push-n     . ,(if keep 0 1))
-        (:post-pop-n . ,(if keep 0 (pcase arity ('unary 0) ('binary 1))))
-        (:reselect   . nil)))))
+      (let ((encased (calc-find-selected-part)))
+        `((:target     . subexpr)
+          ;; :expr is the clean form for the body; :expr-ref is the encased cons
+          ;; commit needs for eq-based splicing.
+          (:expr       . ,(math-normalize encased))
+          (:expr-ref   . ,encased)
+          (:arg        . ,(pcase arity ('unary nil) ('binary (calc-top 1 'full))))
+          (:m          . ,m)
+          (:push-m     . ,(if keep 1 m))
+          (:push-n     . ,(if keep 0 1))
+          (:post-pop-n . ,(if keep 0 (pcase arity ('unary 0) ('binary 1))))
+          (:reselect   . nil))))))
 
 (defun maf--resolve-target-equation (opts)
   "Return the equation target's context alist.
