@@ -25,6 +25,7 @@
 (require 'maf-sel)
 (require 'maf-debug)
 (require 'maf-resolve)
+(require 'maf-commit)
 (require 'maf-defcmd)
 
 (defgroup maf nil
