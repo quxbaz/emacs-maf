@@ -123,7 +123,8 @@ untouched."
   "Return the equation target's context alist.
 Stack entry under point is a relation. The body is expected to run once per
 side: commit must iterate with :expr bound to :lhs, then to :rhs.
-TODO: the macro/commit dispatch doesn't yet implement the per-side iteration."
+TODO: equation per-side iteration — the macro/commit dispatch doesn't yet
+implement the iterate-per-side flow."
   (ignore opts)
   (maf--with-calc-buffer
     (let* ((m    (calc-locate-cursor-element (point)))
@@ -180,7 +181,7 @@ Possible :target values, in order of priority:
              ((maf--sel-any-p)        (maf--resolve-target-selection opts))
              ((maf--at-home-p)        (maf--resolve-target-home opts))
              ((maf--at-subexpr-p)     (maf--resolve-target-subexpr opts))
-             ((maf--at-equation-p)    (maf--resolve-target-equation opts))  ;; TODO
+             ((maf--at-equation-p)    (maf--resolve-target-equation opts))  ;; TODO: equation per-side iteration
              ((maf--at-line-margin-p) (maf--resolve-target-entry opts))
              (t (error "Could not resolve target at point")))
             ;; Also include options declared in the defcmd body like :arity, :prefix, etc
