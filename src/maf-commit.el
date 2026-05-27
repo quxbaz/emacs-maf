@@ -33,12 +33,22 @@ top 2 stack values and push VAL onto the stack."
            (m          (alist-get :m context)))
       (pcase target
         ((or 'selection 'subexpr)
-         (let* ((expr         (alist-get :expr context))
+         ;; Body received the clean :expr and produced a clean val. Splice
+         ;; val back into the entry by matching the encased :expr-ref against
+         ;; the cons in the stack's formula (only the encased ref is eq).
+         ;;
+         ;; Pre-encase val ourselves so we hold a reference to the cons that
+         ;; ends up in new-formula. calc-replace-sub-formula would encase its
+         ;; replacement internally anyway — doing it up front lets us reuse
+         ;; the same cons as :reselect's sels, so the new entry's selection
+         ;; slot is eq to the sub-formula in its own formula.
+         (let* ((expr-ref     (alist-get :expr-ref context))
                 (full-formula (calc-top m 'full))
-                (new-formula  (calc-replace-sub-formula full-formula expr val))
-                ;; Carry val as the new selection only if :reselect is set
+                (val-encased  (calc-encase-atoms val))
+                (new-formula  (calc-replace-sub-formula full-formula expr-ref val-encased))
+                ;; Carry val-encased as the new selection only if :reselect is set
                 ;; (selection had an explicit user selection; subexpr did not).
-                (sels         (when (alist-get :reselect context) val)))
+                (sels         (when (alist-get :reselect context) val-encased)))
            (maf--commit-push push-n prefix new-formula push-m sels post-pop-n)))
         ('home  (maf--commit-push push-n prefix val push-m nil post-pop-n))
         ('entry (maf--commit-push push-n prefix val push-m nil post-pop-n))
