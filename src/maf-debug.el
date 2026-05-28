@@ -13,11 +13,14 @@ Opens calc in the right window if needed, focuses it, and resets the stack."
   (maf--debug-use-calc-buffer)
   (calc-reset 0))
 
-(defmacro maf--debug-slowly (delay &rest body)
+(defmacro maf--debug-slowly (&rest args)
   "Run each form in BODY on a timer, spaced DELAY seconds apart.
+Optional :delay N at the start sets the interval (default 0.5).
 Each form runs in the buffer that was current when this macro was called.
 Form 1 runs at DELAY, form 2 at 2*DELAY, form 3 at 3*DELAY, etc."
-  (declare (indent 1))
+  (declare (indent 0))
+  (let* ((delay (if (eq (car args) :delay) (cadr args) 0.3))
+         (body  (if (eq (car args) :delay) (cddr args) args)))
   ;; Capture the window, not just the buffer. Point is per-window in Emacs,
   ;; so operations like goto-char and calc-select-here must run with the
   ;; correct window selected or they read/write the wrong point.
@@ -40,7 +43,7 @@ Form 1 runs at DELAY, form 2 at 2*DELAY, form 3 at 3*DELAY, etc."
                                           ,form
                                           (deactivate-mark t)))
                                       --maf-win--))
-     nil))
+     nil)))
 
 (defmacro maf--debug-slowly-each (delay after &rest body)
   "Like `maf--debug-slowly', but run AFTER immediately after each form in BODY.
@@ -88,24 +91,47 @@ can inspect state (e.g. point, calc stack) as left by that form."
 ;; Step-through debugger
 ;; ---------------------------------------------------------------------------
 
-(defvar-local maf--debug-step-fn nil)
+;; All state is stored in buffer-local vars rather than a closure, so
+;; maf--debug-step works at call sites without lexical-binding: t.
+(defvar-local maf--debug-step-win   nil)
+(defvar-local maf--debug-step-steps nil)
+(defvar-local maf--debug-step-forms nil)
+(defvar-local maf--debug-step-idx   0)
+(defvar-local maf--debug-step-total 0)
 
 (defvar maf-debug-step-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd ".") #'maf--debug-step-next)
+    (define-key map (kbd "SPC") #'maf--debug-step-next)
     (define-key map (kbd "q") #'maf--debug-step-quit)
     map))
 
 (define-minor-mode maf-debug-step-mode
-  "Step through debug forms one at a time; '.' advances, 'q' quits."
+  "Step through debug forms one at a time; SPC advances, 'q' quits."
   :lighter " [step]"
-  :keymap maf-debug-step-mode-map)
+  :keymap maf-debug-step-mode-map
+  (if maf-debug-step-mode
+      (push (cons 'maf-debug-step-mode maf-debug-step-mode-map)
+            minor-mode-overriding-map-alist)
+    (setq minor-mode-overriding-map-alist
+          (assq-delete-all 'maf-debug-step-mode minor-mode-overriding-map-alist))))
 
 (defun maf--debug-step-next ()
   (interactive)
-  (if maf--debug-step-fn
-      (funcall maf--debug-step-fn)
-    (maf-debug-step-mode -1)))
+  (setq current-prefix-arg nil)
+  (with-selected-window maf--debug-step-win
+    (deactivate-mark t)
+    (funcall (nth maf--debug-step-idx maf--debug-step-steps))
+    (deactivate-mark t))
+  (cl-incf maf--debug-step-idx)
+  (if (>= maf--debug-step-idx maf--debug-step-total)
+      (progn
+        (maf-debug-step-mode -1)
+        (message "maf--debug-step: done  prev: %S"
+                 (nth (1- maf--debug-step-idx) maf--debug-step-forms)))
+    (message "maf--debug-step: [%d/%d]  prev: %S  next: %S"
+             maf--debug-step-idx maf--debug-step-total
+             (nth (1- maf--debug-step-idx) maf--debug-step-forms)
+             (nth maf--debug-step-idx maf--debug-step-forms))))
 
 (defun maf--debug-step-quit ()
   (interactive)
@@ -117,31 +143,18 @@ can inspect state (e.g. point, calc stack) as left by that form."
 Enables `maf-debug-step-mode' in that buffer: press '.' to advance to the
 next form, 'q' to quit. If already stepping, abandons the current sequence."
   (declare (indent 0))
-  `(let* ((--maf-win-- (selected-window))
-          (--steps--   (list ,@(mapcar (lambda (f) `(lambda () ,f)) body)))
-          (--forms--   (list ,@(mapcar (lambda (f) `',f) body)))
-          (--idx--     0)
-          (--total--   ,(length body)))
+  `(let ((--maf-win-- (selected-window))
+         (--steps--   (list ,@(mapcar (lambda (f) `(lambda () ,f)) body)))
+         (--forms--   (list ,@(mapcar (lambda (f) `',f) body)))
+         (--total--   ,(length body)))
      (with-selected-window --maf-win--
        (when maf-debug-step-mode
          (message "maf--debug-step: abandoning previous sequence"))
-       (setq maf--debug-step-fn
-             (lambda ()
-               (setq current-prefix-arg nil)
-               (with-selected-window --maf-win--
-                 (deactivate-mark t)
-                 (funcall (nth --idx-- --steps--))
-                 (deactivate-mark t))
-               (cl-incf --idx--)
-               (if (>= --idx-- --total--)
-                   (progn
-                     (maf-debug-step-mode -1)
-                     (message "maf--debug-step: done  prev: %S"
-                              (nth (1- --idx--) --forms--)))
-                 (message "maf--debug-step: [%d/%d]  prev: %S  next: %S"
-                          --idx-- --total--
-                          (nth (1- --idx--) --forms--)
-                          (nth --idx-- --forms--)))))
+       (setq maf--debug-step-win   --maf-win--)
+       (setq maf--debug-step-steps --steps--)
+       (setq maf--debug-step-forms --forms--)
+       (setq maf--debug-step-idx   0)
+       (setq maf--debug-step-total --total--)
        (maf-debug-step-mode 1))
      (message "maf--debug-step: [0/%d]  next: %S" --total-- (car --forms--))))
 

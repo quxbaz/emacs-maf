@@ -6,7 +6,7 @@
 
 (maf--debug-setup-test)
 
-(maf--debug-slowly 0.3
+(maf--debug-slowly :delay 0.3
   (calc-push '(+ (* 10 (var x var-x)) 4))
   (progn
     (calc-push '(var c var-c))
