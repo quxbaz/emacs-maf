@@ -91,13 +91,18 @@ can inspect state (e.g. point, calc stack) as left by that form."
 ;; Step-through debugger
 ;; ---------------------------------------------------------------------------
 
-;; All state is stored in buffer-local vars rather than a closure, so
-;; maf--debug-step works at call sites without lexical-binding: t.
-(defvar-local maf--debug-step-win   nil)
-(defvar-local maf--debug-step-steps nil)
-(defvar-local maf--debug-step-forms nil)
-(defvar-local maf--debug-step-idx   0)
-(defvar-local maf--debug-step-total 0)
+;; All state is stored in buffer-local vars (in the calc/run buffer) rather
+;; than a closure, so maf--debug-step works at call sites without
+;; lexical-binding: t. The forms and their captured output are rendered into a
+;; separate display buffer (`maf--debug-step-buffer-name').
+(defvar-local maf--debug-step-win     nil)  ; window the forms run in (calc)
+(defvar-local maf--debug-step-steps   nil)  ; list of thunks, one per form
+(defvar-local maf--debug-step-forms   nil)  ; list of quoted forms (for display)
+(defvar-local maf--debug-step-outputs nil)  ; list of captured output blocks
+(defvar-local maf--debug-step-idx     0)    ; number of forms executed so far
+(defvar-local maf--debug-step-total   0)
+
+(defconst maf--debug-step-buffer-name "*maf-step*")
 
 (defvar maf-debug-step-mode-map
   (let ((map (make-sparse-keymap)))
@@ -106,7 +111,7 @@ can inspect state (e.g. point, calc stack) as left by that form."
     map))
 
 (define-minor-mode maf-debug-step-mode
-  "Step through debug forms one at a time; '.' advances, 'q' quits."
+  "Step through debug forms one at a time; \\=`.' advances, \\=`q' quits."
   :lighter " [step]"
   :keymap maf-debug-step-mode-map
   (if maf-debug-step-mode
@@ -115,47 +120,121 @@ can inspect state (e.g. point, calc stack) as left by that form."
     (setq minor-mode-overriding-map-alist
           (assq-delete-all 'maf-debug-step-mode minor-mode-overriding-map-alist))))
 
+(defun maf--debug-step-comment (text prefix)
+  "Comment-prefix each line of TEXT with PREFIX (e.g. \";; \" or \";;! \")."
+  (mapconcat (lambda (line) (concat prefix line))
+             (split-string (string-trim-right text) "\n")
+             "\n"))
+
+(defun maf--debug-step-display ()
+  "Show the step buffer in a window other than the run window; return it.
+Replaces whatever is in that window (typically the left one, with calc on the
+right). Sets a left margin so the `>' current-step marker has somewhere to go."
+  (let* ((buf (get-buffer-create maf--debug-step-buffer-name))
+         (win (or (get-buffer-window buf)
+                  (seq-find (lambda (w) (not (eq w maf--debug-step-win)))
+                            (window-list))
+                  (split-window maf--debug-step-win nil 'left))))
+    (with-current-buffer buf
+      (unless (derived-mode-p 'emacs-lisp-mode) (emacs-lisp-mode))
+      (setq-local left-margin-width 2))
+    (set-window-buffer win buf)
+    (set-window-margins win 2 0)
+    win))
+
+(defun maf--debug-step-render ()
+  "Re-render all forms and their captured output into the step buffer.
+The last-executed form (index `maf--debug-step-idx' - 1) gets a `>' marker in
+the left margin."
+  (let ((buf     (get-buffer-create maf--debug-step-buffer-name))
+        (forms   maf--debug-step-forms)
+        (outputs maf--debug-step-outputs)
+        (marked  (1- maf--debug-step-idx)))
+    (with-current-buffer buf
+      (let ((inhibit-read-only t)
+            (mark-pos nil))
+        (erase-buffer)
+        (remove-overlays)
+        (cl-loop for form in forms
+                 for i from 0
+                 do (when (= i marked) (setq mark-pos (point)))
+                    (insert (pp-to-string form))
+                    (let ((out (nth i outputs)))
+                      (when (and out (> (length out) 0))
+                        (insert out)))
+                    (insert "\n"))
+        (setq buffer-read-only t)
+        (when mark-pos
+          (let ((ov (make-overlay mark-pos mark-pos)))
+            (overlay-put ov 'before-string
+                         (propertize " " 'display
+                                     `((margin left-margin)
+                                       ,(propertize ">" 'face 'font-lock-warning-face)))))
+          (let ((w (get-buffer-window buf)))
+            (when w (set-window-point w mark-pos))))))))
+
 (defun maf--debug-step-next ()
   (interactive)
   (setq current-prefix-arg nil)
-  (with-selected-window maf--debug-step-win
-    (deactivate-mark t)
-    (funcall (nth maf--debug-step-idx maf--debug-step-steps))
-    (deactivate-mark t))
-  (cl-incf maf--debug-step-idx)
-  (if (>= maf--debug-step-idx maf--debug-step-total)
-      (progn
-        (maf-debug-step-mode -1)
-        (message "maf--debug-step: done  prev: %S"
-                 (nth (1- maf--debug-step-idx) maf--debug-step-forms)))
-    (message "maf--debug-step: [%d/%d]  prev: %S  next: %S"
-             maf--debug-step-idx maf--debug-step-total
-             (nth (1- maf--debug-step-idx) maf--debug-step-forms)
-             (nth maf--debug-step-idx maf--debug-step-forms))))
+  (let* ((i        maf--debug-step-idx)
+         (msg-buf  (messages-buffer))
+         (msg-mark (with-current-buffer msg-buf (copy-marker (point-max))))
+         (err nil))
+    ;; Run the form in the calc window. inhibit-message keeps it out of the
+    ;; echo area but still logs to *Messages*, which we diff below. Errors are
+    ;; folded into the captured output rather than halting the session.
+    (with-selected-window maf--debug-step-win
+      (deactivate-mark t)
+      (condition-case e
+          (let ((inhibit-message t))
+            (funcall (nth i maf--debug-step-steps)))
+        (error (setq err e)))
+      (deactivate-mark t))
+    ;; Capture the *Messages* delta plus any error, comment-prefixed, and
+    ;; append it under this form (the transcript builds up across steps).
+    (let* ((delta (with-current-buffer msg-buf
+                    (buffer-substring-no-properties msg-mark (point-max))))
+           (block (concat
+                   (when (> (length (string-trim delta)) 0)
+                     (concat (maf--debug-step-comment delta ";; ") "\n"))
+                   (when err
+                     (concat (maf--debug-step-comment
+                              (format "error: %s" (error-message-string err))
+                              ";;! ")
+                             "\n")))))
+      (setf (nth i maf--debug-step-outputs)
+            (concat (or (nth i maf--debug-step-outputs) "") block)))
+    (cl-incf maf--debug-step-idx)
+    (maf--debug-step-render)
+    (when (>= maf--debug-step-idx maf--debug-step-total)
+      (maf-debug-step-mode -1))))
 
 (defun maf--debug-step-quit ()
   (interactive)
-  (maf-debug-step-mode -1)
-  (message "maf--debug-step: quit"))
+  (maf-debug-step-mode -1))
 
 (defmacro maf--debug-step (&rest body)
-  "Run each form in BODY step by step in the current window.
-Enables `maf-debug-step-mode' in that buffer: press '.' to step,
-next form, 'q' to quit. If already stepping, abandons the current sequence."
+  "Run each form in BODY step by step, capturing output into a step buffer.
+Forms run in the window current when this macro is called (typically calc).
+Renders the forms into `maf--debug-step-buffer-name' in another window, then
+enables `maf-debug-step-mode': press `.' to run the next form, `q' to quit.
+Each form's *Messages* output (and any error) is shown beneath it, building a
+transcript. If already stepping, this abandons the current sequence."
   (declare (indent 0))
   `(let ((--maf-win-- (selected-window))
          (--steps--   (list ,@(mapcar (lambda (f) `(lambda () ,f)) body)))
          (--forms--   (list ,@(mapcar (lambda (f) `',f) body)))
          (--total--   ,(length body)))
      (with-selected-window --maf-win--
-       (when maf-debug-step-mode
-         (message "maf--debug-step: abandoning previous sequence"))
-       (setq maf--debug-step-win   --maf-win--)
-       (setq maf--debug-step-steps --steps--)
-       (setq maf--debug-step-forms --forms--)
-       (setq maf--debug-step-idx   0)
-       (setq maf--debug-step-total --total--)
+       (setq maf--debug-step-win     --maf-win--)
+       (setq maf--debug-step-steps   --steps--)
+       (setq maf--debug-step-forms   --forms--)
+       (setq maf--debug-step-outputs (make-list --total-- nil))
+       (setq maf--debug-step-idx     0)
+       (setq maf--debug-step-total   --total--)
+       (maf--debug-step-display)
+       (maf--debug-step-render)
        (maf-debug-step-mode 1))
-     (message "maf--debug-step: [0/%d]  next: %S" --total-- (car --forms--))))
+     nil))
 
 (provide 'maf-debug)
