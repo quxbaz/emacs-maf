@@ -19,11 +19,14 @@
 
 ;;; Code:
 
-(add-to-list 'load-path (expand-file-name "src" (file-name-directory (or load-file-name buffer-file-name))))
+(let ((dir (file-name-directory (or load-file-name buffer-file-name))))
+  (add-to-list 'load-path (expand-file-name "src" dir))
+  (add-to-list 'load-path (expand-file-name "debug" dir)))
 
 (require 'maf-lib)
 (require 'maf-sel)
 (require 'maf-debug)
+(require 'maf-step)
 (require 'maf-resolve)
 (require 'maf-commit)
 (require 'maf-defcmd)
