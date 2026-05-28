@@ -81,8 +81,10 @@ entry containing the selection, which has no coherent commit semantics."
     (let* ((arity (alist-get :arity opts))
            (keep calc-keep-args-flag))
       `((:target     . home)
-        (:expr       . ,(calc-top 1 'full))
-        (:arg        . ,(pcase arity ('unary nil) ('binary (math-normalize (calc-top 2 'full)))))
+        ;; For binary, the lower entry is :expr and the top is :arg, so e.g.
+        ;; 3 over 2 subtracts to 3 - 2 (not 2 - 3).
+        (:expr       . ,(pcase arity ('unary (calc-top 1 'full)) ('binary (calc-top 2 'full))))
+        (:arg        . ,(pcase arity ('unary nil) ('binary (math-normalize (calc-top 1 'full)))))
         (:push-m     . 1)
         (:push-n     . ,(if keep 0 (pcase arity ('unary 1) ('binary 2))))
         (:post-pop-n . 0)))))
