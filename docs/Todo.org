@@ -1,4 +1,9 @@
 #+title: Todo
 
-* Todo [0/1]
+* Todo [0/2]
 ** NEXT Set place/point after committing
+** NEXT Implement options
+   - [ ] simplification
+   - [ ] support-mapping?
+   - [ ] force-line?
+   - [ ] use-calc-wrapper?
