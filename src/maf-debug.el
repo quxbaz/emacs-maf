@@ -104,6 +104,14 @@ can inspect state (e.g. point, calc stack) as left by that form."
 
 (defconst maf--debug-step-buffer-name "*maf-step*")
 
+;; Use the standard overlay-arrow mechanism (as edebug/gud do) to mark the
+;; current step: a fringe bitmap on graphical frames (no extra gutter column),
+;; or the arrow string at line-start on a terminal.
+(defvar maf--debug-step-arrow (make-marker)
+  "Overlay-arrow marker for the last-executed step in the step buffer.")
+(add-to-list 'overlay-arrow-variable-list 'maf--debug-step-arrow)
+(put 'maf--debug-step-arrow 'overlay-arrow-string ">")
+
 (defvar maf-debug-step-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd ".") #'maf--debug-step-next)
@@ -136,16 +144,14 @@ right). Sets a left margin so the `>' current-step marker has somewhere to go."
                             (window-list))
                   (split-window maf--debug-step-win nil 'left))))
     (with-current-buffer buf
-      (unless (derived-mode-p 'emacs-lisp-mode) (emacs-lisp-mode))
-      (setq-local left-margin-width 2))
+      (unless (derived-mode-p 'emacs-lisp-mode) (emacs-lisp-mode)))
     (set-window-buffer win buf)
-    (set-window-margins win 2 0)
     win))
 
 (defun maf--debug-step-render ()
   "Re-render all forms and their captured output into the step buffer.
-The last-executed form (index `maf--debug-step-idx' - 1) gets a `>' marker in
-the left margin."
+The last-executed form (index `maf--debug-step-idx' - 1) gets the overlay-arrow
+marker (fringe arrow on a GUI, `>' at line-start on a terminal)."
   (let ((buf     (get-buffer-create maf--debug-step-buffer-name))
         (forms   maf--debug-step-forms)
         (outputs maf--debug-step-outputs)
@@ -154,7 +160,6 @@ the left margin."
       (let ((inhibit-read-only t)
             (mark-pos nil))
         (erase-buffer)
-        (remove-overlays)
         (cl-loop for form in forms
                  for i from 0
                  do (when (= i marked) (setq mark-pos (point)))
@@ -164,14 +169,12 @@ the left margin."
                         (insert out)))
                     (insert "\n"))
         (setq buffer-read-only t)
-        (when mark-pos
-          (let ((ov (make-overlay mark-pos mark-pos)))
-            (overlay-put ov 'before-string
-                         (propertize " " 'display
-                                     `((margin left-margin)
-                                       ,(propertize ">" 'face 'font-lock-warning-face)))))
-          (let ((w (get-buffer-window buf)))
-            (when w (set-window-point w mark-pos))))))))
+        (if mark-pos
+            (progn
+              (set-marker maf--debug-step-arrow mark-pos buf)
+              (let ((w (get-buffer-window buf)))
+                (when w (set-window-point w mark-pos))))
+          (set-marker maf--debug-step-arrow nil))))))
 
 (defun maf--debug-step-next ()
   (interactive)
