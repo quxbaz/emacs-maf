@@ -18,7 +18,7 @@ Opens calc in the right window if needed, focuses it, and resets the stack."
 Optional :delay N at the start sets the interval (default 0.5).
 Each form runs in the buffer that was current when this macro was called.
 Form 1 runs at DELAY, form 2 at 2*DELAY, form 3 at 3*DELAY, etc."
-  (declare (indent 0))
+  (declare (indent defun))
   (let* ((delay (if (eq (car args) :delay) (cadr args) 0.3))
          (body  (if (eq (car args) :delay) (cddr args) args)))
   ;; Capture the window, not just the buffer. Point is per-window in Emacs,
