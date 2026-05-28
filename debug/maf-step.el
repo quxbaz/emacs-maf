@@ -143,7 +143,7 @@ marker (fringe arrow on a GUI, `>' at line-start on a terminal)."
                                 ";;! ")
                                "\n")
                      (concat (maf--debug-step-comment
-                              (format "OUTPUT: %S" result) ";; ")
+                              (format "=> %S" result) ";; ")
                              "\n"))
                    (when (> (length (string-trim delta)) 0)
                      (concat (maf--debug-step-comment delta ";; ") "\n")))))
