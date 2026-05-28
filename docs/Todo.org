@@ -7,3 +7,5 @@
    - [ ] support-mapping?
    - [ ] force-line?
    - [ ] use-calc-wrapper?
+   - [ ] defcmd may sometimes need the full entry and also may need to write to
+     the full entry, not just its expr. How to handle this elegantly?
