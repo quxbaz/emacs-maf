@@ -101,12 +101,12 @@ can inspect state (e.g. point, calc stack) as left by that form."
 
 (defvar maf-debug-step-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "SPC") #'maf--debug-step-next)
+    (define-key map (kbd ".") #'maf--debug-step-next)
     (define-key map (kbd "q") #'maf--debug-step-quit)
     map))
 
 (define-minor-mode maf-debug-step-mode
-  "Step through debug forms one at a time; SPC advances, 'q' quits."
+  "Step through debug forms one at a time; '.' advances, 'q' quits."
   :lighter " [step]"
   :keymap maf-debug-step-mode-map
   (if maf-debug-step-mode
@@ -140,7 +140,7 @@ can inspect state (e.g. point, calc stack) as left by that form."
 
 (defmacro maf--debug-step (&rest body)
   "Run each form in BODY step by step in the current window.
-Enables `maf-debug-step-mode' in that buffer: press '.' to advance to the
+Enables `maf-debug-step-mode' in that buffer: press '.' to step,
 next form, 'q' to quit. If already stepping, abandons the current sequence."
   (declare (indent 0))
   `(let ((--maf-win-- (selected-window))
