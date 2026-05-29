@@ -111,7 +111,7 @@ rather than calling the command function:
 ```
 
 This goes through the active keymaps (here `maf-step-mode`'s `SPC` →
-`maf--debug-step-next`), so it catches binding/precedence bugs that a direct
+`maf-step-next`), so it catches binding/precedence bugs that a direct
 `(funcall ...)` would miss.
 
 ## Pitfall 3 — stale loaded code
@@ -127,8 +127,8 @@ reload after editing:
 When in doubt, confirm the loaded definition rather than trusting the file:
 
 ```elisp
-(macroexpand '(maf--debug-step (calc-push 2)))         ; see real expansion
-(symbol-function 'maf--debug-step-next)                ; see real defun body
+(macroexpand '(maf-step (calc-push 2)))         ; see real expansion
+(symbol-function 'maf-step-next)                ; see real defun body
 ```
 
 ## Pitfall 4 — `save-selected-window` during `eval-buffer`
@@ -136,10 +136,11 @@ When in doubt, confirm the loaded definition rather than trusting the file:
 `eval-buffer` wraps each top-level form in `save-selected-window`. So a
 `(select-window ...)` inside one form is **reverted** before the next form runs,
 and `(current-buffer)` afterward reflects the window that was selected *before*
-the eval — not where you switched to. This is exactly the bug that made
-`maf--debug-step` capture the wrong target buffer (see `../debug/maf-step.el`
-and `maf--debug-setup-test`): don't rely on transient selection persisting
-across forms; designate state explicitly.
+the eval — not where you switched to. This once made `maf-step` capture the
+wrong target buffer via `(current-buffer)` (see `../debug/maf-step.el`); the
+lesson, now baked in: don't rely on transient selection/current-buffer
+persisting across forms — designate state explicitly (`maf-step` creates the
+calc buffer itself and stores it).
 
 ## Verification loop (recommended)
 

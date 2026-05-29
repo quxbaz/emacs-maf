@@ -4,9 +4,7 @@
   :prefix "mult"
   (commit (calcFunc-mul expr arg)))
 
-(maf--debug-setup-test)
-
-(maf--debug-step
+(maf-step
   (calc-push '(+ (* 8 (var x var-x)) 4))
   (calc-push 2)
   (goto-char 0)

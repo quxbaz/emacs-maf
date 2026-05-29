@@ -4,9 +4,7 @@
   :prefix "sqr"
   (commit (calcFunc-mul expr expr)))
 
-(maf--debug-setup-test)
-
-(maf--debug-step
+(maf-step
   (calc-push '(+ (* 10 (var x var-x)) 4))
   (calc-push '(var c var-c))
   (goto-char 7)

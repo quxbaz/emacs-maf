@@ -4,9 +4,7 @@
   :prefix "sqr"
   (commit (calcFunc-mul expr expr)))
 
-(maf--debug-setup-test)
-
-(maf--debug-step
+(maf-step
   (calc-push 4)
   (call-interactively 'maf-square)
   (cl-assert (= (calc-stack-size) 1))
