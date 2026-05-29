@@ -1,4 +1,4 @@
-# human-tests
+# manual-tests
 
 Scripts for manually observing maf behavior in a live Emacs session.
 These are not part of any automated test suite and are not meant to be run headlessly.

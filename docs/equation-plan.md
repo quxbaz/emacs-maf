@@ -218,7 +218,7 @@ besides selection/subexpr that has it).
 
 ## Test plan
 
-Add human-tests:
+Add manual-tests:
 
 1. `human-test-square-at-equation.el` — entry like `x = 5`, unary square,
    expected `x^2 = 25`.

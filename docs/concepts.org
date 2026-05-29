@@ -203,7 +203,7 @@ near this entry" (entry — shift is friendlier).
 | [[file:../src/maf-commit.el][src/maf-commit.el]]       | Commit recipes (push/pop choreography per target)          |
 | [[file:../src/maf-defcmd.el][src/maf-defcmd.el]]       | The =maf-defcmd= macro + parsing helpers                   |
 | [[file:../src/maf-debug.el][src/maf-debug.el]]        | Debug helpers (slowly-stepped command playback)            |
-| [[file:../human-tests/][human-tests/]]            | Interactive tests (=f4= runs the current one)              |
+| [[file:../manual-tests/][manual-tests/]]          | Interactive tests (=f4= runs the current one)              |
 
 Load order in =maf.el=: =lib= → =sel= → =debug= → =resolve= → =commit=
 → =defcmd=. Each layer depends only on earlier ones.
