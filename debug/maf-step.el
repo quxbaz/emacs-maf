@@ -76,7 +76,14 @@ right)."
                             (window-list))
                   (split-window maf--debug-step-win nil 'left))))
     (with-current-buffer buf
-      (unless (derived-mode-p 'emacs-lisp-mode) (emacs-lisp-mode)))
+      (unless (derived-mode-p 'emacs-lisp-mode) (emacs-lisp-mode))
+      ;; Bind q to quit even after stepping ends (when the step-mode override
+      ;; map is no longer active). A buffer-local child map keeps this off the
+      ;; shared emacs-lisp-mode-map.
+      (use-local-map (let ((m (make-sparse-keymap)))
+                       (set-keymap-parent m emacs-lisp-mode-map)
+                       (define-key m (kbd "q") #'maf--debug-step-quit)
+                       m)))
     (set-window-buffer win buf)
     win))
 
@@ -158,8 +165,16 @@ marker (fringe arrow on a GUI, `>' at line-start on a terminal)."
       (maf--debug-step-set-mode nil))))
 
 (defun maf--debug-step-quit ()
+  "Stop stepping, bury the step buffer, and return to the original buffer.
+`quit-window' restores the buffer the step window replaced; selecting that
+window returns point there even when q was pressed from the calc window."
   (interactive)
-  (maf--debug-step-set-mode nil))
+  (maf--debug-step-set-mode nil)
+  (let ((win (get-buffer-window maf--debug-step-buffer-name)))
+    (when win
+      (quit-window nil win)
+      (when (window-live-p win)
+        (select-window win)))))
 
 (defmacro maf--debug-step (&rest body)
   "Run each form in BODY step by step, capturing output into a step buffer.
