@@ -13,7 +13,8 @@
 ;; *maf-step* buffer (`maf-step-mode') is the cockpit: all bindings live there,
 ;; and forms execute in the target window before control returns. Forms and
 ;; their captured output render into `maf--debug-step-buffer-name'.
-(defvar maf--debug-step-win     nil)  ; window the forms run in (the target, e.g. calc)
+(defvar maf--debug-step-buffer  nil)  ; the target buffer forms run in (e.g. *Calculator*)
+(defvar maf--debug-step-win     nil)  ; window that buffer was in when stepping started
 (defvar maf--debug-step-steps   nil)  ; list of thunks, one per form
 (defvar maf--debug-step-forms   nil)  ; list of quoted forms (for display)
 (defvar maf--debug-step-outputs nil)  ; list of captured output blocks
@@ -116,16 +117,24 @@ marker (fringe arrow on a GUI, `>' at line-start on a terminal)."
          (msg-mark (with-current-buffer msg-buf (copy-marker (point-max))))
          (result nil)
          (err nil))
-    ;; Run the form in the calc window. inhibit-message keeps it out of the
+    ;; Run the form in the *target buffer*, resolving its current window fresh
+    ;; (selecting a window only makes its buffer current, so tracking by window
+    ;; would run forms in whatever that window now shows — e.g. *maf-step*). If
+    ;; the target is visible, select its window so point ops affect the display;
+    ;; otherwise just make it current. inhibit-message keeps output out of the
     ;; echo area but still logs to *Messages*, which we diff below. Errors are
     ;; folded into the captured output rather than halting the session.
-    (with-selected-window maf--debug-step-win
-      (deactivate-mark t)
-      (condition-case e
-          (let ((inhibit-message t))
-            (setq result (funcall (nth i maf--debug-step-steps))))
-        (error (setq err e)))
-      (deactivate-mark t))
+    (cl-flet ((run ()
+                (deactivate-mark t)
+                (condition-case e
+                    (let ((inhibit-message t))
+                      (setq result (funcall (nth i maf--debug-step-steps))))
+                  (error (setq err e)))
+                (deactivate-mark t)))
+      (let ((win (get-buffer-window maf--debug-step-buffer)))
+        (if (window-live-p win)
+            (with-selected-window win (run))
+          (with-current-buffer maf--debug-step-buffer (run)))))
     (when err (setq maf--debug-step-errored t))
     ;; Build this form's output block: the return value (or error) directly
     ;; under the form, then the *Messages* delta beneath that. Append it so the
@@ -174,6 +183,13 @@ transcript. If already stepping, this abandons the current sequence."
   ;; at runtime to whatever `maf--debug-setup-test' recorded beforehand.
   (let ((title (or load-file-name buffer-file-name)))
   `(progn
+     ;; Prefer a target designated by `maf--debug-setup-test' (the calc buffer).
+     ;; Fall back to the current buffer only if none was set, because under
+     ;; eval-buffer (current-buffer) here is unreliable: each top-level form
+     ;; runs in `save-selected-window', so setup's `select-window' is already
+     ;; reverted by the time this runs.
+     (unless (buffer-live-p maf--debug-step-buffer)
+       (setq maf--debug-step-buffer (current-buffer)))
      (setq maf--debug-step-win     (selected-window))
      (setq maf--debug-step-steps   (list ,@(mapcar (lambda (f) `(lambda () ,f)) body)))
      (setq maf--debug-step-forms   (list ,@(mapcar (lambda (f) `',f) body)))

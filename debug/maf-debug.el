@@ -6,7 +6,8 @@
 
 (require 'cl-lib)
 
-(defvar maf--debug-step-title)  ; defined in maf-step.el; set here before switching to calc
+(defvar maf--debug-step-title)   ; defined in maf-step.el; set here before switching to calc
+(defvar maf--debug-step-buffer)  ; defined in maf-step.el; designated here as the step target
 
 (defun maf--debug-setup-test ()
   "Prepare the frame for a human test.
@@ -17,6 +18,11 @@ Opens calc in the right window if needed, focuses it, and resets the stack."
   (setq maf--debug-step-title (or load-file-name buffer-file-name (buffer-name)))
   (maf--debug-open-calc-right)
   (maf--debug-use-calc-buffer)
+  ;; Designate calc as the step target explicitly. `maf--debug-step' can't rely
+  ;; on (current-buffer) at its own runtime: under eval-buffer each form runs
+  ;; inside `save-selected-window', so the `select-window' above is reverted
+  ;; before the macro body runs, leaving the wrong buffer current.
+  (setq maf--debug-step-buffer (maf--find-calc-buffer))
   (calc-reset 0))
 
 (defmacro maf--debug-slowly (&rest args)
