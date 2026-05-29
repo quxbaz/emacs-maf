@@ -24,6 +24,11 @@
 ;;   :arg          Second operand for binary commands; nil for unary.
 ;;   :m            Stack position (1 = top) of the target entry. Only set when
 ;;                 the target lives at a specific stack level (e.g. selection).
+;;   :rel-op       Relation operator symbol (calcFunc-eq/neq/lt/...). Equation
+;;                 target only — the macro uses it to reassemble the relation
+;;                 after running the body once per side.
+;;   :lhs, :rhs    The two sides of the relation. Equation target only — the
+;;                 macro binds :expr to each in turn for the per-side body runs.
 ;;
 ;; Commit instructions (consumed by `maf--defcmd-commit'):
 ;;
@@ -123,19 +128,31 @@ untouched."
 
 (defun maf--resolve-target-equation (opts)
   "Return the equation target's context alist.
-Stack entry under point is a relation. The body is expected to run once per
-side: commit must iterate with :expr bound to :lhs, then to :rhs.
-TODO: equation per-side iteration — the macro/commit dispatch doesn't yet
-implement the iterate-per-side flow."
-  (ignore opts)
+The stack entry under point is a relation. The body runs once per side (the
+macro binds :expr to :lhs, then to :rhs), and the per-side results are
+reassembled into a new relation under :rel-op.
+
+For binary commands, :arg is the top of the stack, shared across both sides.
+Binary commands require the relation below the top (:m > 1); otherwise the arg
+would be the relation itself. Unlike entry, equation cannot shift the target
+down — the target must remain a relation — so it errors instead."
   (maf--with-calc-buffer
-    (let* ((m    (calc-locate-cursor-element (point)))
-           (expr (calc-top m 'full)))
-      `((:target . equation)
-        (:expr   . ,expr)
-        (:lhs    . ,(nth 1 expr))
-        (:rhs    . ,(nth 2 expr))
-        (:m      . ,m)))))
+    (let* ((arity (alist-get :arity opts))
+           (m     (calc-locate-cursor-element (point)))
+           (keep  calc-keep-args-flag)
+           (expr  (calc-top m 'full)))
+      (when (and (eq arity 'binary) (= m 1))
+        (error "Binary commands on equation require the relation below the top"))
+      `((:target     . equation)
+        (:expr       . ,expr)
+        (:rel-op     . ,(car expr))
+        (:lhs        . ,(math-normalize (nth 1 expr)))
+        (:rhs        . ,(math-normalize (nth 2 expr)))
+        (:arg        . ,(pcase arity ('unary nil) ('binary (math-normalize (calc-top 1 'full)))))
+        (:m          . ,m)
+        (:push-m     . ,(if keep 1 m))
+        (:push-n     . ,(if keep 0 1))
+        (:post-pop-n . ,(if keep 0 (pcase arity ('unary 0) ('binary 1))))))))
 
 (defun maf--resolve-target-entry (opts)
   "Return the entry target's context alist.
@@ -183,7 +200,7 @@ Possible :target values, in order of priority:
              ((maf--sel-any-p)        (maf--resolve-target-selection opts))
              ((maf--at-home-p)        (maf--resolve-target-home opts))
              ((maf--at-subexpr-p)     (maf--resolve-target-subexpr opts))
-             ((maf--at-equation-p)    (maf--resolve-target-equation opts))  ;; TODO: equation per-side iteration
+             ((maf--at-equation-p)    (maf--resolve-target-equation opts))
              ((maf--at-line-margin-p) (maf--resolve-target-entry opts))
              (t (error "Could not resolve target at point")))
             ;; Also include options declared in the defcmd body like :arity, :prefix, etc
