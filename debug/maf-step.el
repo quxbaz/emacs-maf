@@ -99,6 +99,15 @@ Reuses the already-captured `maf--step-steps' / `maf--step-forms' /
              (split-string (string-trim-right text) "\n")
              "\n"))
 
+(defun maf--step-bar (idx total)
+  "Return a TOTAL-cell progress bar: IDX filled cells then the rest pending.
+The fill boundary marks the next-to-run position (idx 0 = all pending, idx =
+TOTAL = all filled)."
+  (if (<= total 0)
+      ""
+    (concat (make-string idx ?#)               ; filled (done)
+            (make-string (- total idx) ?-))))   ; pending
+
 (defun maf--step-render ()
   "Re-render the title, status header, forms, and captured output.
 The overlay-arrow marks the next form to run (edebug/gud style): before the
@@ -117,8 +126,9 @@ rests at the end."
                                  (file-name-absolute-p maf--step-title))
                             (file-name-nondirectory maf--step-title)
                           maf--step-title)))
-        (insert (format ";; [%d/%d]%s%s\n\n"
+        (insert (format ";; [%d/%d] %s%s%s\n\n"
                         maf--step-idx maf--step-total
+                        (maf--step-bar maf--step-idx maf--step-total)
                         (if (>= maf--step-idx maf--step-total) " DONE" "")
                         (if maf--step-errored " ERROR" "")))
         (cl-loop for form in forms
