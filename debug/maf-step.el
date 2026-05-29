@@ -101,6 +101,16 @@ Reuses the already-captured `maf--step-steps' / `maf--step-forms' /
              (split-string (string-trim-right text) "\n")
              "\n"))
 
+(defun maf--step-flags ()
+  "Return the calc flag states (option/hyperbolic/keep-args) read from the
+step's calc buffer as a string, or nil if that buffer is not live."
+  (when (buffer-live-p maf--step-buffer)
+    (with-current-buffer maf--step-buffer
+      (format "flags: [option=%s] [hyper=%s] [keep=%s]"
+              (if calc-option-flag "ON" "OFF")
+              (if calc-hyperbolic-flag "ON" "OFF")
+              (if calc-keep-args-flag "ON" "OFF")))))
+
 (defun maf--step-bar (idx total)
   "Return a TOTAL-cell progress bar: IDX filled cells then the rest pending.
 The fill boundary marks the next-to-run position (idx 0 = all pending, idx =
@@ -128,11 +138,14 @@ rests at the end."
                                  (file-name-absolute-p maf--step-title))
                             (file-name-nondirectory maf--step-title)
                           maf--step-title)))
-        (insert (format ";; [%d/%d] %s%s%s\n\n"
+        (insert (format ";; [%d/%d] %s%s%s\n"
                         maf--step-idx maf--step-total
                         (maf--step-bar maf--step-idx maf--step-total)
                         (if (>= maf--step-idx maf--step-total) " DONE" "")
                         (if maf--step-errored " ERROR" "")))
+        (let ((flags (maf--step-flags)))
+          (when flags (insert (format ";; %s\n" flags))))
+        (insert "\n")
         (cl-loop for form in forms
                  for i from 0
                  do (when (= i marked) (setq mark-pos (point)))
