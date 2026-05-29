@@ -158,15 +158,28 @@ marker (fringe arrow on a GUI, `>' at line-start on a terminal)."
     (maf--debug-step-render)))
 
 (defun maf--debug-step-quit ()
-  "Bury the step buffer and return to the original buffer.
-`quit-window' restores the buffer the step window replaced, and selecting
-that window returns point there."
+  "Quit the step buffer and return to the source that invoked it.
+Always shows the source (the file/buffer recorded in `maf--debug-step-title')
+in the step window and selects it — unlike `quit-window', which would restore
+whatever that window happened to display before (e.g. *Messages*)."
   (interactive)
-  (let ((win (get-buffer-window maf--debug-step-buffer-name)))
+  (let ((win (get-buffer-window maf--debug-step-buffer-name))
+        (src (cond
+              ((not (stringp maf--debug-step-title)) nil)
+              ((find-buffer-visiting maf--debug-step-title))
+              ((get-buffer maf--debug-step-title))
+              ((file-exists-p maf--debug-step-title)
+               (find-file-noselect maf--debug-step-title)))))
+    (when (get-buffer maf--debug-step-buffer-name)
+      (bury-buffer (get-buffer maf--debug-step-buffer-name)))
     (when win
-      (quit-window nil win)
-      (when (window-live-p win)
-        (select-window win)))))
+      (cond
+       ((buffer-live-p src)
+        (set-window-buffer win src)
+        (select-window win))
+       (t
+        (quit-window nil win)
+        (when (window-live-p win) (select-window win)))))))
 
 (defmacro maf--debug-step (&rest body)
   "Run each form in BODY step by step, capturing output into a step buffer.
