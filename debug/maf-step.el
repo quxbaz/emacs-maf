@@ -20,6 +20,7 @@
 (defvar maf--debug-step-idx     0)    ; number of forms executed so far
 (defvar maf--debug-step-total   0)
 (defvar maf--debug-step-title   nil)  ; source file or buffer, shown as a title
+(defvar maf--debug-step-errored nil)  ; sticky: t once any step has signaled an error
 
 (defconst maf--debug-step-buffer-name "*maf-step*")
 
@@ -76,11 +77,15 @@ marker (fringe arrow on a GUI, `>' at line-start on a terminal)."
       (let ((inhibit-read-only t)
             (mark-pos nil))
         (erase-buffer)
-        (insert (format ";; maf-step: %s\n\n"
+        (insert (format ";; maf-step: %s\n"
                         (if (and maf--debug-step-title
                                  (file-name-absolute-p maf--debug-step-title))
                             (file-name-nondirectory maf--debug-step-title)
                           maf--debug-step-title)))
+        (insert (format ";; [%d/%d]%s%s\n\n"
+                        maf--debug-step-idx maf--debug-step-total
+                        (if (>= maf--debug-step-idx maf--debug-step-total) " DONE" "")
+                        (if maf--debug-step-errored " ERROR" "")))
         (cl-loop for form in forms
                  for i from 0
                  do (when (= i marked) (setq mark-pos (point)))
@@ -121,6 +126,7 @@ marker (fringe arrow on a GUI, `>' at line-start on a terminal)."
             (setq result (funcall (nth i maf--debug-step-steps))))
         (error (setq err e)))
       (deactivate-mark t))
+    (when err (setq maf--debug-step-errored t))
     ;; Build this form's output block: the return value (or error) directly
     ;; under the form, then the *Messages* delta beneath that. Append it so the
     ;; transcript builds up across steps.
@@ -174,6 +180,7 @@ transcript. If already stepping, this abandons the current sequence."
      (setq maf--debug-step-outputs (make-list ,(length body) nil))
      (setq maf--debug-step-idx     0)
      (setq maf--debug-step-total   ,(length body))
+     (setq maf--debug-step-errored nil)
      (setq maf--debug-step-title   (or ,title maf--debug-step-title))
      ;; Select the step window so its `maf-step-mode' keymap drives the session.
      (let ((win (maf--debug-step-display)))
