@@ -92,10 +92,10 @@ marker (fringe arrow on a GUI, `>' at line-start on a terminal)."
       (let ((inhibit-read-only t)
             (mark-pos nil))
         (erase-buffer)
-        (insert (format ";;maf-step: %s\n\n"
+        (insert (format ";; maf-step: %s\n\n"
                         (if (and maf--debug-step-title
                                  (file-name-absolute-p maf--debug-step-title))
-                            (abbreviate-file-name maf--debug-step-title)
+                            (file-name-nondirectory maf--debug-step-title)
                           maf--debug-step-title)))
         (cl-loop for form in forms
                  for i from 0
@@ -170,6 +170,11 @@ Each form's return value, *Messages* output, and any error are shown beneath
 it, building a transcript. If already stepping, this abandons the current
 sequence."
   (declare (indent 0))
+  ;; Resolve the source at expansion time. `load-file-name' works when the file
+  ;; is loaded (e.g. f4). Under eval-buffer it is nil and the current buffer is
+  ;; already *Calculator* (setup switched to it before we expand), so fall back
+  ;; at runtime to whatever `maf--debug-setup-test' recorded beforehand.
+  (let ((title (or load-file-name buffer-file-name)))
   `(progn
      (setq maf--debug-step-win     (selected-window))
      (setq maf--debug-step-steps   (list ,@(mapcar (lambda (f) `(lambda () ,f)) body)))
@@ -177,11 +182,10 @@ sequence."
      (setq maf--debug-step-outputs (make-list ,(length body) nil))
      (setq maf--debug-step-idx     0)
      (setq maf--debug-step-total   ,(length body))
-     ;; Title: the file being loaded, else the originating buffer.
-     (setq maf--debug-step-title   (or load-file-name buffer-file-name (buffer-name)))
+     (setq maf--debug-step-title   (or ,title maf--debug-step-title))
      (maf--debug-step-display)
      (maf--debug-step-render)
      (maf--debug-step-set-mode t)
-     nil))
+     nil)))
 
 (provide 'maf-step)

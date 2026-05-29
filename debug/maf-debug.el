@@ -6,9 +6,15 @@
 
 (require 'cl-lib)
 
+(defvar maf--debug-step-title)  ; defined in maf-step.el; set here before switching to calc
+
 (defun maf--debug-setup-test ()
   "Prepare the frame for a human test.
 Opens calc in the right window if needed, focuses it, and resets the stack."
+  ;; Record the source before switching to calc, so the step buffer's title is
+  ;; the test file/buffer rather than *Calculator*. Under eval-buffer this is
+  ;; the only point where the source buffer is still current.
+  (setq maf--debug-step-title (or load-file-name buffer-file-name (buffer-name)))
   (maf--debug-open-calc-right)
   (maf--debug-use-calc-buffer)
   (calc-reset 0))
