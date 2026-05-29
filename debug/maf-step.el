@@ -98,12 +98,13 @@ Reuses the already-captured `maf--step-steps' / `maf--step-forms' /
 
 (defun maf--step-render ()
   "Re-render the title, status header, forms, and captured output.
-The last-executed form gets the overlay-arrow marker; before any step has run,
-point sits at the top."
+The overlay-arrow marks the next form to run (edebug/gud style): before the
+first step it sits on form 0; once every form has run it is cleared and point
+rests at the end."
   (let ((buf     (get-buffer-create maf--step-buffer-name))
         (forms   maf--step-forms)
         (outputs maf--step-outputs)
-        (marked  (1- maf--step-idx)))
+        (marked  maf--step-idx))
     (with-current-buffer buf
       (let ((inhibit-read-only t)
             (mark-pos nil))
@@ -129,7 +130,9 @@ point sits at the top."
         (skip-chars-backward "\n")
         (delete-region (point) (point-max))
         (setq buffer-read-only t)
-        (let ((pos (or mark-pos (point-min)))
+        ;; Arrow/point on the next form to run; once done (no next form),
+        ;; clear the arrow and rest at the end.
+        (let ((pos (or mark-pos (point-max)))
               (w   (get-buffer-window buf)))
           (set-marker maf--step-arrow mark-pos buf)  ; nil clears the arrow
           (goto-char pos)
