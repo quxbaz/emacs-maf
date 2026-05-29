@@ -105,6 +105,9 @@ marker (fringe arrow on a GUI, `>' at line-start on a terminal)."
                       (when (and out (> (length out) 0))
                         (insert out)))
                     (insert "\n"))
+        ;; Drop the trailing blank line left by the last form's separator.
+        (skip-chars-backward "\n")
+        (delete-region (point) (point-max))
         (setq buffer-read-only t)
         (if mark-pos
             (progn
