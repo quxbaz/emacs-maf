@@ -33,18 +33,20 @@
 (defvar maf-step-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "l")   #'maf-step-next)
+    (define-key map (kbd "j")   #'maf-step-next)
     (define-key map (kbd "SPC") #'maf-step-next)
     (define-key map (kbd "h")   #'maf-step-prev)
+    (define-key map (kbd "k")   #'maf-step-prev)
     (define-key map (kbd "r")   #'maf-step-restart)
     (define-key map (kbd "q")   #'maf-step-quit)
     map))
 
 (define-derived-mode maf-step-mode emacs-lisp-mode "maf-step"
   "Major mode for the maf step-through transcript buffer.
-The buffer is the session cockpit: \\=`l' (or SPC) runs the next form in the calc
-buffer (returning here afterward), \\=`h' rewinds one step, \\=`r' restarts with a
-fresh calc, and \\=`q' quits. Derived from `emacs-lisp-mode' so the rendered forms
-are fontified."
+The buffer is the session cockpit: \\=`l'/\\=`j' (or SPC) run the next form in the
+calc buffer (returning here afterward), \\=`h'/\\=`k' rewind one step, \\=`r' restarts
+with a fresh calc, and \\=`q' quits. Derived from `emacs-lisp-mode' so the
+rendered forms are fontified."
   (setq buffer-read-only t))
 
 ;; ---------------------------------------------------------------------------
