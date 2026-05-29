@@ -1,0 +1,153 @@
+#+title: Piloting Emacs (for an AI assistant)
+#+HTML_HEAD: <link rel="stylesheet" href="style.css" />
+
+How to drive the user's live Emacs from a shell tool (=emacsclient=): send
+keypresses, inspect state, and *visibly* verify changes. Written for a future
+AI assistant working in this repo. Batch (=emacs -Q --batch=) cannot reproduce
+window/buffer-context bugs that only appear interactively, so piloting the live
+server is often the only way to confirm a fix.
+
+* TL;DR
+
+1. Find the server, but know it is probably the headless =emacs --daemon= whose
+   only frame is invisible. Verify with =(window-system)= / =(framep
+   (selected-frame))=.
+2. If you need the *user* to see what you do, create a GUI frame on the daemon:
+   =DISPLAY=:0.0 emacsclient -c -n= (non-blocking), then operate on that frame.
+3. =emacsclient --eval= runs in the =  *server*= buffer, not the user's buffer.
+   Wrap actions in =(with-selected-frame g (with-selected-window w ...))=.
+4. Reload edited =.el= before re-testing — re-running a test does *not* pick up
+   your edits on disk.
+
+* Basic eval
+
+#+begin_src sh
+emacsclient --eval '(buffer-name (current-buffer))'
+#+end_src
+
+Inspect windows:
+
+#+begin_src emacs-lisp
+(mapcar (lambda (w) (buffer-name (window-buffer w))) (window-list))
+#+end_src
+
+* Pitfall 1 — the server may be headless (you see nothing)
+
+=emacsclient= connects to the daemon whose socket lives at
+=/run/user/UID/emacs/server=. That daemon is frequently *headless*: its only
+frame is the bootstrap =initial_terminal=, which renders nowhere.
+
+#+begin_src emacs-lisp
+;; Tell-tale signs of a headless daemon frame:
+(window-system)                  ; => nil
+(framep (selected-frame))        ; => t   (a tty/termcap frame, not 'x / 'pgtk)
+(x-display-list)                 ; => nil
+#+end_src
+
+Everything you do still *works* (state is real), but it happens off-screen. The
+user's on-screen Emacs is usually a *separate process* (e.g. on a tty) with *no
+server socket*, so you cannot reach it directly. Check =ps aux | grep emacs= and
+the socket dir to confirm what is what.
+
+* Fix — create a GUI frame the user can watch
+
+Make the daemon pop a graphical frame on the user's display (ask the user first
+— a window appears on their screen):
+
+#+begin_src sh
+DISPLAY=:0.0 emacsclient -c -n      # -c new frame, -n non-blocking (returns now)
+#+end_src
+
+Then find and drive that graphical frame specifically (the daemon still also has
+the invisible =F1=):
+
+#+begin_src emacs-lisp
+(let ((gframe (seq-find (lambda (f) (eq (framep f) 'x)) (frame-list))))
+  (select-frame-set-input-focus gframe)   ; raise + focus
+  (with-selected-frame gframe
+    ;; ... find-file, delete-other-windows, etc. happen on the visible frame
+    ))
+#+end_src
+
+Confirm it is real and visible:
+
+#+begin_src emacs-lisp
+(mapcar (lambda (f) (list (frame-parameter f 'name)
+                          (framep f)
+                          (frame-visible-p f)
+                          (frame-parameter f 'display)))
+        (frame-list))
+;; want an entry with type 'x, visible t, display ":0.0"
+#+end_src
+
+* Pitfall 2 — =--eval= runs in the =  *server*= buffer
+
+=emacsclient --eval= does *not* run in the user's selected buffer; its
+=(current-buffer)= is the internal =  *server*= buffer. Consequences:
+
+- A bare =(eval-buffer)= evaluates the server buffer, not the file you opened.
+- =(current-buffer)= / =(selected-window)= are not what the user is looking at.
+
+Act "as if from a window/frame" by wrapping explicitly:
+
+#+begin_src emacs-lisp
+(with-selected-window (get-buffer-window "step-test-mult-at-equation.el")
+  (eval-buffer))
+#+end_src
+
+Each =--eval= is a fresh call, so buffer/selection state does *not* persist
+between separate =emacsclient= invocations. If a sequence depends on context,
+put it all in one =--eval=, or re-establish context (=with-selected-frame= /
+=with-selected-window=) every time.
+
+* Sending real keypresses
+
+To exercise a buffer's keymap exactly as the user would, dispatch through it
+rather than calling the command function:
+
+#+begin_src emacs-lisp
+(with-selected-frame gframe
+  (with-selected-window (get-buffer-window "*maf-step*")
+    (execute-kbd-macro (kbd "SPC"))))     ; or "SPC SPC SPC"
+#+end_src
+
+This goes through the active keymaps (here =maf-step-mode='s =SPC= →
+=maf--debug-step-next=), so it catches binding/precedence bugs that a direct
+=(funcall ...)= would miss.
+
+* Pitfall 3 — stale loaded code
+
+Editing a =.el= file on disk does *not* change the running Emacs. Re-running a
+test re-/expands/ macros against the *currently loaded* definitions. Always
+reload after editing:
+
+#+begin_src emacs-lisp
+(load-file "/home/david/lab/emacs-maf/debug/maf-step.el")
+#+end_src
+
+When in doubt, confirm the loaded definition rather than trusting the file:
+
+#+begin_src emacs-lisp
+(macroexpand '(maf--debug-step (calc-push 2)))         ; see real expansion
+(symbol-function 'maf--debug-step-next)                ; see real defun body
+#+end_src
+
+* Pitfall 4 — =save-selected-window= during =eval-buffer=
+
+=eval-buffer= wraps each top-level form in =save-selected-window=. So a
+=(select-window ...)= inside one form is *reverted* before the next form runs,
+and =(current-buffer)= afterward reflects the window that was selected /before/
+the eval — not where you switched to. This is exactly the bug that made
+=maf--debug-step= capture the wrong target buffer (see [[file:../debug/maf-step.el][maf-step.el]] and
+=maf--debug-setup-test=): don't rely on transient selection persisting across
+forms; designate state explicitly.
+
+* Verification loop (recommended)
+
+1. Edit the =.el=.
+2. =(load-file ...)= it into the running Emacs.
+3. Re-run the scenario via the visible GUI frame, wrapping in
+   =with-selected-frame= / =with-selected-window=.
+4. Dispatch real keypresses with =execute-kbd-macro=.
+5. Read back state/buffer text via =--eval= and confirm.
+6. Only then commit.
