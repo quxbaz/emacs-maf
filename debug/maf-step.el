@@ -32,16 +32,19 @@
 
 (defvar maf-step-mode-map
   (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "l")   #'maf-step-next)
     (define-key map (kbd "SPC") #'maf-step-next)
-    (define-key map (kbd "r") #'maf-step-restart)
-    (define-key map (kbd "q") #'maf-step-quit)
+    (define-key map (kbd "h")   #'maf-step-prev)
+    (define-key map (kbd "r")   #'maf-step-restart)
+    (define-key map (kbd "q")   #'maf-step-quit)
     map))
 
 (define-derived-mode maf-step-mode emacs-lisp-mode "maf-step"
   "Major mode for the maf step-through transcript buffer.
-The buffer is the session cockpit: SPC runs the next form (in the calc buffer,
-returning here afterward), \\=`r' restarts with a fresh calc, and \\=`q' quits.
-Derived from `emacs-lisp-mode' so the rendered forms are fontified."
+The buffer is the session cockpit: \\=`l' (or SPC) runs the next form in the calc
+buffer (returning here afterward), \\=`h' rewinds one step, \\=`r' restarts with a
+fresh calc, and \\=`q' quits. Derived from `emacs-lisp-mode' so the rendered forms
+are fontified."
   (setq buffer-read-only t))
 
 ;; ---------------------------------------------------------------------------
@@ -142,21 +145,20 @@ rests at the end."
 ;; Commands
 ;; ---------------------------------------------------------------------------
 
-(defun maf-step-next ()
-  "Run the next form in the calc buffer and render its output here."
-  (interactive)
-  (when (>= maf--step-idx maf--step-total)
-    (user-error "maf-step: no more forms"))
+(defun maf--step-run (i capture)
+  "Run thunk I in the calc buffer; return non-nil if it signaled an error.
+Selects the calc window when visible so point ops affect the display, else just
+makes the buffer current. inhibit-message keeps output out of the echo area but
+still logs to *Messages*, which we diff. When CAPTURE is non-nil, append this
+form's output block (return value or error, then the *Messages* delta) to
+`maf--step-outputs'; otherwise run silently (used by replay on rewind). Errors
+are folded into the captured output rather than halting, and always set the
+sticky `maf--step-errored' flag."
   (setq current-prefix-arg nil)
-  (let* ((i        maf--step-idx)
-         (msg-buf  (messages-buffer))
+  (let* ((msg-buf  (messages-buffer))
          (msg-mark (with-current-buffer msg-buf (copy-marker (point-max))))
          (result nil)
          (err nil))
-    ;; Run in the calc buffer (`maf--step-buffer'), selecting its window when
-    ;; visible so point ops affect the display. inhibit-message keeps output
-    ;; out of the echo area but still logs to *Messages*, which we diff below.
-    ;; Errors are folded into the captured output rather than halting.
     (cl-flet ((run ()
                 (deactivate-mark t)
                 (condition-case e
@@ -169,23 +171,59 @@ rests at the end."
             (with-selected-window win (run))
           (with-current-buffer maf--step-buffer (run)))))
     (when err (setq maf--step-errored t))
-    ;; Output block: the return value (or error) directly under the form, then
-    ;; the *Messages* delta beneath. Append so the transcript builds up.
-    (let* ((delta (with-current-buffer msg-buf
-                    (buffer-substring-no-properties msg-mark (point-max))))
-           (block (concat
-                   (if err
-                       (concat (maf--step-comment
-                                (format "error: %s" (error-message-string err))
-                                ";;! ")
-                               "\n")
-                     (concat (maf--step-comment (format "=> %S" result) ";; ")
-                             "\n"))
-                   (when (> (length (string-trim delta)) 0)
-                     (concat (maf--step-comment delta ";; ") "\n")))))
-      (setf (nth i maf--step-outputs)
-            (concat (or (nth i maf--step-outputs) "") block)))
-    (cl-incf maf--step-idx)
+    (when capture
+      (let* ((delta (with-current-buffer msg-buf
+                      (buffer-substring-no-properties msg-mark (point-max))))
+             (block (concat
+                     (if err
+                         (concat (maf--step-comment
+                                  (format "error: %s" (error-message-string err))
+                                  ";;! ")
+                                 "\n")
+                       (concat (maf--step-comment (format "=> %S" result) ";; ")
+                               "\n"))
+                     (when (> (length (string-trim delta)) 0)
+                       (concat (maf--step-comment delta ";; ") "\n")))))
+        (setf (nth i maf--step-outputs)
+              (concat (or (nth i maf--step-outputs) "") block))))
+    err))
+
+(defun maf--step-clean-calc ()
+  "Reset the existing calc buffer to a clean state in place (no kill/relayout).
+`calc-reset' with arg 0 clears the stack, undo/redo, and restores default modes."
+  (let ((win (get-buffer-window maf--step-buffer)))
+    (if (window-live-p win)
+        (with-selected-window win (calc-reset 0))
+      (with-current-buffer maf--step-buffer (calc-reset 0)))))
+
+(defun maf-step-next ()
+  "Run the next form in the calc buffer and render its output here."
+  (interactive)
+  (when (>= maf--step-idx maf--step-total)
+    (user-error "maf-step: no more forms"))
+  (maf--step-run maf--step-idx t)
+  (cl-incf maf--step-idx)
+  (maf--step-render))
+
+(defun maf-step-prev ()
+  "Rewind one step by replaying from a clean calc.
+Resets calc and silently re-runs forms 0..k-1 (k = idx-1), which reproduces the
+exact state at step k — stack, flags, selections, and point — since they were
+all produced by those forms. Outputs for steps >= k are dropped; earlier
+outputs (captured on the way forward) are kept."
+  (interactive)
+  (when (<= maf--step-idx 0)
+    (user-error "maf-step: already at the start"))
+  (let ((k (1- maf--step-idx)))
+    (maf--step-clean-calc)
+    (setq maf--step-errored nil)
+    (cl-loop for i from k below maf--step-total
+             do (setf (nth i maf--step-outputs) nil))
+    ;; Silent replay restores calc state (and recomputes the errored flag).
+    ;; Bind message-log-max so replayed messages don't pollute *Messages*.
+    (let ((message-log-max nil))
+      (cl-loop for i from 0 below k do (maf--step-run i nil)))
+    (setq maf--step-idx k)
     (maf--step-render)))
 
 (defun maf-step-restart ()
@@ -226,9 +264,10 @@ that window happened to display before (e.g. *Messages*)."
 (defmacro maf-step (&rest body)
   "Run each form in BODY step by step against a fresh calc buffer.
 Kills any existing calc buffers and creates a clean *Calculator*, lays out the
-cockpit (`*maf-step*' left, calc right), and enters `maf-step-mode': SPC runs
-the next form in calc (returning here), `r' restarts, `q' quits. Each form's
-return value, *Messages* output, and any error render beneath it."
+cockpit (`*maf-step*' left, calc right), and enters `maf-step-mode': `l'/SPC run
+the next form in calc (returning here), `h' rewinds one step, `r' restarts, `q'
+quits. Each form's return value, *Messages* output, and any error render beneath
+it."
   (declare (indent 0))
   ;; Resolve the source label at expansion time (the current buffer is still
   ;; the source then). `load-file-name' covers `load'; `buffer-file-name'
