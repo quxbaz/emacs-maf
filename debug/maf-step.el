@@ -9,11 +9,11 @@
 (require 'cl-lib)
 
 ;; State is global (only one step session runs at a time) rather than closed
-;; over, so maf--debug-step works at call sites without lexical-binding: t, and
-;; so the minor mode can be enabled in both the run buffer and the step buffer
-;; with shared state. The forms and their captured output are rendered into a
-;; separate display buffer (`maf--debug-step-buffer-name').
-(defvar maf--debug-step-win     nil)  ; window the forms run in (calc)
+;; over, so maf--debug-step works at call sites without lexical-binding: t. The
+;; *maf-step* buffer (`maf-step-mode') is the cockpit: all bindings live there,
+;; and forms execute in the target window before control returns. Forms and
+;; their captured output render into `maf--debug-step-buffer-name'.
+(defvar maf--debug-step-win     nil)  ; window the forms run in (the target, e.g. calc)
 (defvar maf--debug-step-steps   nil)  ; list of thunks, one per form
 (defvar maf--debug-step-forms   nil)  ; list of quoted forms (for display)
 (defvar maf--debug-step-outputs nil)  ; list of captured output blocks
@@ -31,34 +31,18 @@
 (add-to-list 'overlay-arrow-variable-list 'maf--debug-step-arrow)
 (put 'maf--debug-step-arrow 'overlay-arrow-string ">")
 
-(defvar maf-debug-step-mode-map
+(defvar maf-step-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd ".") #'maf--debug-step-next)
+    (define-key map (kbd "SPC") #'maf--debug-step-next)
     (define-key map (kbd "q") #'maf--debug-step-quit)
     map))
 
-(define-minor-mode maf-debug-step-mode
-  "Step through debug forms one at a time; \\=`.' advances, \\=`q' quits.
-Enabled in both the run buffer (calc) and the step buffer so the keys work
-from either; `minor-mode-overriding-map-alist' makes them beat other minor
-modes (e.g. calc's own SPC/. bindings)."
-  :lighter " [step]"
-  :keymap maf-debug-step-mode-map
-  (setq minor-mode-overriding-map-alist
-        (assq-delete-all 'maf-debug-step-mode minor-mode-overriding-map-alist))
-  (when maf-debug-step-mode
-    (push (cons 'maf-debug-step-mode maf-debug-step-mode-map)
-          minor-mode-overriding-map-alist)))
-
-(defun maf--debug-step-set-mode (on)
-  "Enable (ON non-nil) or disable `maf-debug-step-mode' in both the run buffer
-and the step buffer, so `.'/`q' work from either."
-  (dolist (buf (list (and (window-live-p maf--debug-step-win)
-                          (window-buffer maf--debug-step-win))
-                     (get-buffer maf--debug-step-buffer-name)))
-    (when (buffer-live-p buf)
-      (with-current-buffer buf
-        (maf-debug-step-mode (if on 1 -1))))))
+(define-derived-mode maf-step-mode emacs-lisp-mode "maf-step"
+  "Major mode for the maf step-through transcript buffer.
+The buffer is the session cockpit: SPC runs the next form (in the target
+buffer, returning here afterward) and \\=`q' quits. Derived from
+`emacs-lisp-mode' so the rendered forms are fontified."
+  (setq buffer-read-only t))
 
 (defun maf--debug-step-comment (text prefix)
   "Comment-prefix each line of TEXT with PREFIX (e.g. \";; \" or \";;! \")."
@@ -76,14 +60,7 @@ right)."
                             (window-list))
                   (split-window maf--debug-step-win nil 'left))))
     (with-current-buffer buf
-      (unless (derived-mode-p 'emacs-lisp-mode) (emacs-lisp-mode))
-      ;; Bind q to quit even after stepping ends (when the step-mode override
-      ;; map is no longer active). A buffer-local child map keeps this off the
-      ;; shared emacs-lisp-mode-map.
-      (use-local-map (let ((m (make-sparse-keymap)))
-                       (set-keymap-parent m emacs-lisp-mode-map)
-                       (define-key m (kbd "q") #'maf--debug-step-quit)
-                       m)))
+      (unless (derived-mode-p 'maf-step-mode) (maf-step-mode)))
     (set-window-buffer win buf)
     win))
 
@@ -116,15 +93,18 @@ marker (fringe arrow on a GUI, `>' at line-start on a terminal)."
         (skip-chars-backward "\n")
         (delete-region (point) (point-max))
         (setq buffer-read-only t)
-        (if mark-pos
-            (progn
-              (set-marker maf--debug-step-arrow mark-pos buf)
-              (let ((w (get-buffer-window buf)))
-                (when w (set-window-point w mark-pos))))
-          (set-marker maf--debug-step-arrow nil))))))
+        ;; Place point on the last-executed form, or at the top before any
+        ;; step has run (rather than leaving it at EOF after rendering).
+        (let ((pos (or mark-pos (point-min)))
+              (w   (get-buffer-window buf)))
+          (set-marker maf--debug-step-arrow mark-pos buf)  ; nil clears the arrow
+          (goto-char pos)
+          (when w (set-window-point w pos)))))))
 
 (defun maf--debug-step-next ()
   (interactive)
+  (when (>= maf--debug-step-idx maf--debug-step-total)
+    (user-error "maf-step: no more forms"))
   (setq current-prefix-arg nil)
   (let* ((i        maf--debug-step-idx)
          (msg-buf  (messages-buffer))
@@ -160,16 +140,13 @@ marker (fringe arrow on a GUI, `>' at line-start on a terminal)."
       (setf (nth i maf--debug-step-outputs)
             (concat (or (nth i maf--debug-step-outputs) "") block)))
     (cl-incf maf--debug-step-idx)
-    (maf--debug-step-render)
-    (when (>= maf--debug-step-idx maf--debug-step-total)
-      (maf--debug-step-set-mode nil))))
+    (maf--debug-step-render)))
 
 (defun maf--debug-step-quit ()
-  "Stop stepping, bury the step buffer, and return to the original buffer.
-`quit-window' restores the buffer the step window replaced; selecting that
-window returns point there even when q was pressed from the calc window."
+  "Bury the step buffer and return to the original buffer.
+`quit-window' restores the buffer the step window replaced, and selecting
+that window returns point there."
   (interactive)
-  (maf--debug-step-set-mode nil)
   (let ((win (get-buffer-window maf--debug-step-buffer-name)))
     (when win
       (quit-window nil win)
@@ -178,12 +155,12 @@ window returns point there even when q was pressed from the calc window."
 
 (defmacro maf--debug-step (&rest body)
   "Run each form in BODY step by step, capturing output into a step buffer.
-Forms run in the window current when this macro is called (typically calc).
-Renders the forms into `maf--debug-step-buffer-name' in another window, then
-enables `maf-debug-step-mode': press `.' to run the next form, `q' to quit.
-Each form's return value, *Messages* output, and any error are shown beneath
-it, building a transcript. If already stepping, this abandons the current
-sequence."
+Forms run in the window current when this macro is called (the target,
+typically calc). Renders the forms into `maf--debug-step-buffer-name' in
+another window and selects it (`maf-step-mode'): press SPC to run the next
+form in the target buffer (returning here afterward), `q' to quit. Each form's
+return value, *Messages* output, and any error are shown beneath it, building a
+transcript. If already stepping, this abandons the current sequence."
   (declare (indent 0))
   ;; Resolve the source at expansion time. `load-file-name' works when the file
   ;; is loaded (e.g. f4). Under eval-buffer it is nil and the current buffer is
@@ -198,9 +175,10 @@ sequence."
      (setq maf--debug-step-idx     0)
      (setq maf--debug-step-total   ,(length body))
      (setq maf--debug-step-title   (or ,title maf--debug-step-title))
-     (maf--debug-step-display)
-     (maf--debug-step-render)
-     (maf--debug-step-set-mode t)
+     ;; Select the step window so its `maf-step-mode' keymap drives the session.
+     (let ((win (maf--debug-step-display)))
+       (maf--debug-step-render)
+       (select-window win))
      nil)))
 
 (provide 'maf-step)
