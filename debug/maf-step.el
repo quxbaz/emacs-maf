@@ -64,9 +64,12 @@ rendered forms are fontified."
           (kill-buffer b))))))
 
 (defun maf--step-fresh-calc ()
-  "Kill all calc buffers and create a fresh *Calculator*; return that buffer."
+  "Kill all calc buffers and create a fresh *Calculator*; return that buffer.
+Binds `calc-display-trail' to nil so `calc' does not pop a *Calc Trail* window,
+keeping the cockpit a clean two-window layout."
   (maf--step-kill-calc)
-  (save-window-excursion (calc))
+  (let ((calc-display-trail nil))
+    (save-window-excursion (calc)))
   (get-buffer "*Calculator*"))
 
 (defun maf--step-setup-windows ()
@@ -106,10 +109,10 @@ Reuses the already-captured `maf--step-steps' / `maf--step-forms' /
 step's calc buffer as a string, or nil if that buffer is not live."
   (when (buffer-live-p maf--step-buffer)
     (with-current-buffer maf--step-buffer
-      (format "flags: [option=%s] [hyper=%s] [keep=%s]"
-              (if calc-option-flag "ON" "OFF")
-              (if calc-hyperbolic-flag "ON" "OFF")
-              (if calc-keep-args-flag "ON" "OFF")))))
+      (format "flags: [option=%d] [hyper=%d] [keep=%d]"
+              (if calc-option-flag 1 0)
+              (if calc-hyperbolic-flag 1 0)
+              (if calc-keep-args-flag 1 0)))))
 
 (defun maf--step-bar (idx total)
   "Return a TOTAL-cell progress bar: IDX filled cells then the rest pending.
@@ -215,11 +218,16 @@ sticky `maf--step-errored' flag."
 
 (defun maf--step-clean-calc ()
   "Reset the existing calc buffer to a clean state in place (no kill/relayout).
-`calc-reset' with arg 0 clears the stack, undo/redo, and restores default modes."
+`calc-reset' with arg 0 clears the stack, undo/redo, and restores default modes;
+killing the trail buffer afterward (calc recreates it empty on the next record)
+leaves the trail clean too, so rewinding to step k matches the forward state."
   (let ((win (get-buffer-window maf--step-buffer)))
     (if (window-live-p win)
         (with-selected-window win (calc-reset 0))
-      (with-current-buffer maf--step-buffer (calc-reset 0)))))
+      (with-current-buffer maf--step-buffer (calc-reset 0))))
+  (when (get-buffer "*Calc Trail*")
+    (let ((kill-buffer-query-functions nil))
+      (kill-buffer "*Calc Trail*"))))
 
 (defun maf-step-next ()
   "Run the next form in the calc buffer and render its output here."
