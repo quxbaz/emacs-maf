@@ -50,15 +50,32 @@
   (declare (indent 2) (doc-string 3))
   (pcase-let* ((`(,docstring ,opts ,body) (maf--defcmd-parse-rest rest))
                (`(,expr ,arg ,commit) bindings)
-               (context (gensym "context-")))
+               (context (gensym "context-"))
+               (lhs (gensym "lhs-"))
+               (rhs (gensym "rhs-")))
     (maf--defcmd-validate-opts opts)
     `(defun ,name ()
        ,@(when docstring (list docstring))
        (interactive)
        (let* ((,context (maf--resolve-context ',opts))
-              (,expr (alist-get :expr ,context))
               (,arg (alist-get :arg ,context)))
-         (cl-flet ((,commit (val) (maf--commit val ,context)))
-           ,@body)))))
+         (if (eq (alist-get :target ,context) 'equation)
+             ;; Equation target: run the body once per side (expr bound to the
+             ;; LHS, then the RHS), capturing each side's committed result.
+             ;; Then reassemble into a new relation and commit once. arg is
+             ;; bound once above, so both sides share it.
+             (let (,lhs ,rhs)
+               (let ((,expr (alist-get :lhs ,context)))
+                 (cl-flet ((,commit (val) (setq ,lhs val)))
+                   ,@body))
+               (let ((,expr (alist-get :rhs ,context)))
+                 (cl-flet ((,commit (val) (setq ,rhs val)))
+                   ,@body))
+               (maf--commit (list (alist-get :rel-op ,context) ,lhs ,rhs)
+                            ,context))
+           ;; All other targets: body runs once with :expr.
+           (let ((,expr (alist-get :expr ,context)))
+             (cl-flet ((,commit (val) (maf--commit val ,context)))
+               ,@body)))))))
 
 (provide 'maf-defcmd)
