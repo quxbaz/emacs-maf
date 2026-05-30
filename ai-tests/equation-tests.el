@@ -1,7 +1,7 @@
 ;; -*- lexical-binding: t; -*-
 ;;
 ;; Batch-runnable verification of the equation target (per-side iteration).
-;; Unlike manual-tests/, this needs no interactive frame — it drives calc
+;; Unlike step-tests/, this needs no interactive frame — it drives calc
 ;; directly and asserts on results. Run with:
 ;;
 ;;   emacs --batch -Q -l ai-tests/equation-tests.el
