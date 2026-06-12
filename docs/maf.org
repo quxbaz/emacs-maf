@@ -41,7 +41,7 @@
   3) Develop maf-test
   4) Read calc manual
 
-* Todo [0/33]
+* Todo [0/34]
   - [ ] Add function to get calc buffer
   - [ ] If on home line, stick point to the "."
   - [ ] Replace noun with digit entry if point is on sub-formula
@@ -82,6 +82,7 @@
     1:  y = 2 (x| + 3)^2 - 12
     ->  y = 2 (x + 3)|^2 - 12
   - [ ] Go through my/calc/* features one-by-one and add them in.
+  - [ ] Distribute and merge should operate contextually.
 
 * Process
   - [ ] Loop through calcFunc to find calc commands and autogenerate contextual
