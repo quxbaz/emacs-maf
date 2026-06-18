@@ -9,6 +9,7 @@
 ;; dependency on external setup.
 
 (require 'cl-lib)
+(require 'calc)  ; so `calc-display-trail' is a declared special before we let-bind it
 
 ;; State is global (only one step session runs at a time) rather than closed
 ;; over, so `maf-step' works at call sites without lexical-binding: t.
