@@ -2,8 +2,8 @@
 
 * Todo [0/3]
 ** NEXT Find out what causes point to move after a command.
-** NEXT Set place/point after committing
-** NEXT Implement options
+** TODO Set place/point after committing
+** TODO Implement options
    - [ ] simplification
    - [ ] support-mapping
    - [ ] force-line
