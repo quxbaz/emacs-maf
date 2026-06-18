@@ -3,9 +3,9 @@
 * Todo [0/2]
 ** NEXT Set place/point after committing
 ** NEXT Implement options
+   - [ ] use-calc-wrapper
    - [ ] simplification
-   - [ ] support-mapping?
-   - [ ] force-line?
-   - [ ] use-calc-wrapper?
+   - [ ] support-mapping
+   - [ ] force-line
    - [ ] defcmd may sometimes need the full entry and may also need to write to
      the full entry, not just its expr. How to handle this elegantly?
