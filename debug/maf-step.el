@@ -33,21 +33,19 @@
 
 (defvar maf-step-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "l")   #'maf-step-next)
     (define-key map (kbd "j")   #'maf-step-next)
     (define-key map (kbd "SPC") #'maf-step-next)
     (define-key map (kbd "k")   #'maf-step-prev)
     (define-key map (kbd "r")   #'maf-step-restart)
-    (define-key map (kbd "h")   #'maf-step-help)
     (define-key map (kbd "?")   #'maf-step-help)
     (define-key map (kbd "q")   #'maf-step-quit)
     map))
 
 (define-derived-mode maf-step-mode emacs-lisp-mode "maf-step"
   "Major mode for the maf step-through transcript buffer.
-The buffer is the session cockpit: \\=`l'/\\=`j' (or SPC) run the next form in the
+The buffer is the session cockpit: \\=`j' (or SPC) runs the next form in the
 calc buffer (returning here afterward), \\=`k' rewinds one step, \\=`r' restarts
-with a fresh calc, \\=`h'/\\=`?' show the key bindings, and \\=`q' quits. Derived from
+with a fresh calc, \\=`?' shows the key bindings, and \\=`q' quits. Derived from
 `emacs-lisp-mode' so the rendered forms are fontified."
   (setq buffer-read-only t))
 
@@ -275,11 +273,11 @@ source file still existing or being unedited."
     (with-help-window (help-buffer)
       (princ "maf-step key bindings\n")
       (princ "=====================\n\n")
-      (princ "  l / j / SPC   run the next form\n")
-      (princ "  k             rewind one step\n")
-      (princ "  r             restart with a fresh calc\n")
-      (princ "  h / ?         show this help\n")
-      (princ "  q             quit\n"))))
+      (princ "  j / SPC   run the next form\n")
+      (princ "  k         rewind one step\n")
+      (princ "  r         restart with a fresh calc\n")
+      (princ "  ?         show this help\n")
+      (princ "  q         quit\n"))))
 
 (defun maf-step-quit ()
   "Quit the step buffer and return to the source that invoked it.
@@ -312,9 +310,9 @@ that window happened to display before (e.g. *Messages*)."
 (defmacro maf-step (&rest body)
   "Run each form in BODY step by step against a fresh calc buffer.
 Kills any existing calc buffers and creates a clean *Calculator*, lays out the
-cockpit (`*maf-step*' left, calc right), and enters `maf-step-mode': `l'/SPC run
+cockpit (`*maf-step*' left, calc right), and enters `maf-step-mode': `j'/SPC run
 the next form in calc (returning here), `k' rewinds one step, `r' restarts,
-`h'/`?' show the key bindings, `q' quits. Each form's return value, *Messages*
+`?' shows the key bindings, `q' quits. Each form's return value, *Messages*
 output, and any error render beneath it."
   (declare (indent 0))
   ;; Resolve the source label at expansion time (the current buffer is still
