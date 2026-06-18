@@ -1,6 +1,7 @@
 #+title: Todo
 
-* Todo [0/2]
+* Todo [0/3]
+** NEXT Find out what causes point to move after a command.
 ** NEXT Set place/point after committing
 ** NEXT Implement options
    - [ ] simplification
