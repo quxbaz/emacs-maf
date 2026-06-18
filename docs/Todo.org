@@ -3,7 +3,6 @@
 * Todo [0/2]
 ** NEXT Set place/point after committing
 ** NEXT Implement options
-   - [ ] use-calc-wrapper
    - [ ] simplification
    - [ ] support-mapping
    - [ ] force-line
