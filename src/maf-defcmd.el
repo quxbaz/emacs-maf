@@ -47,6 +47,36 @@
     `(,docstring ,opts ,body)))
 
 (defmacro maf-defcmd (name bindings &rest rest)
+  "Define NAME as an interactive contextual calc command.
+
+BINDINGS is a three-symbol list (EXPR ARG COMMIT) naming the locals the
+body sees:
+
+  EXPR    The operand the command acts on, resolved from context — the
+          formula at home/entry, the selected sub-expression, the one
+          under point, etc.  For an equation target the body runs once
+          per side, with EXPR bound to the LHS and then the RHS.
+  ARG     The second operand for `binary' commands (taken from the calc
+          stack top); nil for `unary' commands.
+  COMMIT  A local function; call it with the result to write it back to
+          the resolved location.  Call it once per body run (once per
+          side, for an equation target).
+
+REST is an optional docstring, then zero or more keyword-value option
+pairs (OPTS), then the body forms — in that order.
+
+OPTS configure context resolution and commit:
+
+  :arity  Required.  `unary' or `binary'.  Selects whether ARG is taken
+          from the stack and drives how each target resolves EXPR/ARG.
+  :prefix String label recorded in the calc trail for the operation.
+
+Any other keyword in OPTS is merged verbatim into the resolved context
+alist, so resolve/commit extensions can read it.
+
+At call time the command resolves point and the calc stack into a
+context (home, entry, selection, subexpr, or equation), binds EXPR and
+ARG, runs the body, and commits its result to the right stack location."
   (declare (indent 2) (doc-string 3))
   (pcase-let* ((`(,docstring ,opts ,body) (maf--defcmd-parse-rest rest))
                (`(,expr ,arg ,commit) bindings)
