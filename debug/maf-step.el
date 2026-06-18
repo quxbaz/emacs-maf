@@ -36,18 +36,19 @@
     (define-key map (kbd "l")   #'maf-step-next)
     (define-key map (kbd "j")   #'maf-step-next)
     (define-key map (kbd "SPC") #'maf-step-next)
-    (define-key map (kbd "h")   #'maf-step-prev)
     (define-key map (kbd "k")   #'maf-step-prev)
     (define-key map (kbd "r")   #'maf-step-restart)
+    (define-key map (kbd "h")   #'maf-step-help)
+    (define-key map (kbd "?")   #'maf-step-help)
     (define-key map (kbd "q")   #'maf-step-quit)
     map))
 
 (define-derived-mode maf-step-mode emacs-lisp-mode "maf-step"
   "Major mode for the maf step-through transcript buffer.
 The buffer is the session cockpit: \\=`l'/\\=`j' (or SPC) run the next form in the
-calc buffer (returning here afterward), \\=`h'/\\=`k' rewind one step, \\=`r' restarts
-with a fresh calc, and \\=`q' quits. Derived from `emacs-lisp-mode' so the
-rendered forms are fontified."
+calc buffer (returning here afterward), \\=`k' rewinds one step, \\=`r' restarts
+with a fresh calc, \\=`h'/\\=`?' show the key bindings, and \\=`q' quits. Derived from
+`emacs-lisp-mode' so the rendered forms are fontified."
   (setq buffer-read-only t))
 
 ;; ---------------------------------------------------------------------------
@@ -267,6 +268,19 @@ source file still existing or being unedited."
   (interactive)
   (maf--step-begin))
 
+(defun maf-step-help ()
+  "Pop up a help window listing the maf-step key bindings."
+  (interactive)
+  (let ((help-window-select t))
+    (with-help-window (help-buffer)
+      (princ "maf-step key bindings\n")
+      (princ "=====================\n\n")
+      (princ "  l / j / SPC   run the next form\n")
+      (princ "  k             rewind one step\n")
+      (princ "  r             restart with a fresh calc\n")
+      (princ "  h / ?         show this help\n")
+      (princ "  q             quit\n"))))
+
 (defun maf-step-quit ()
   "Quit the step buffer and return to the source that invoked it.
 Always shows the source (the file/buffer recorded in `maf--step-title') in the
@@ -299,9 +313,9 @@ that window happened to display before (e.g. *Messages*)."
   "Run each form in BODY step by step against a fresh calc buffer.
 Kills any existing calc buffers and creates a clean *Calculator*, lays out the
 cockpit (`*maf-step*' left, calc right), and enters `maf-step-mode': `l'/SPC run
-the next form in calc (returning here), `h' rewinds one step, `r' restarts, `q'
-quits. Each form's return value, *Messages* output, and any error render beneath
-it."
+the next form in calc (returning here), `k' rewinds one step, `r' restarts,
+`h'/`?' show the key bindings, `q' quits. Each form's return value, *Messages*
+output, and any error render beneath it."
   (declare (indent 0))
   ;; Resolve the source label at expansion time (the current buffer is still
   ;; the source then). `load-file-name' covers `load'; `buffer-file-name'
