@@ -90,7 +90,7 @@ Confirm it is real and visible:
 Act "as if from a window/frame" by wrapping explicitly:
 
 ```elisp
-(with-selected-window (get-buffer-window "step-test-mult-at-equation.el")
+(with-selected-window (get-buffer-window "mult-at-equation.el")
   (eval-buffer))
 ```
 
