@@ -160,12 +160,15 @@ rests at the end."
         (cl-loop for form in forms
                  for i from 0
                  do (when (= i marked) (setq mark-pos (point)))
-                    (insert (pp-to-string form))
+                    ;; Strip pp's trailing newline so the captured output can
+                    ;; sit inline on the form's last line. One newline per form
+                    ;; — no blank separator between them.
+                    (insert (string-trim-right (pp-to-string form)))
                     (let ((out (nth i outputs)))
                       (when (and out (> (length out) 0))
-                        (insert out)))
+                        (insert "  " (string-trim-right out))))
                     (insert "\n"))
-        ;; Drop the trailing blank line left by the last form's separator.
+        ;; Drop any trailing newline left by the last form.
         (skip-chars-backward "\n")
         (delete-region (point) (point-max))
         (setq buffer-read-only t)
