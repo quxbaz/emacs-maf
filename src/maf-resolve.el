@@ -32,10 +32,10 @@
 ;;
 ;; Commit instructions (consumed by `maf--defcmd-commit'):
 ;;
-;;   :push-m       Stack level where the result is pushed.
-;;   :push-n       N argument to `calc-pop-push-record-list' — number of
-;;                 entries popped at :push-m before pushing.
-;;   :post-pop-n   Number of entries popped from the top *after* the push,
+;;   :commit-m     Stack level where the result is pushed.
+;;   :commit-n     N argument to `calc-pop-push-record-list' — number of
+;;                 entries popped at :commit-m before pushing.
+;;   :post-pop     Number of entries popped from the top *after* the push,
 ;;                 to consume extra inputs (e.g. the binary arg on selection).
 ;;   :reselect     If non-nil, commit carries the result as the new selection
 ;;                 on the pushed entry. Set for targets with an explicit
@@ -75,9 +75,9 @@ entry containing the selection, which has no coherent commit semantics."
         (:expr-ref   . ,encased)
         (:arg        . ,(pcase arity ('unary nil) ('binary (math-normalize (calc-top 1 'full)))))
         (:m          . ,m)
-        (:push-m     . ,(if keep 1 m))
-        (:push-n     . ,(if keep 0 1))
-        (:post-pop-n . ,(if keep 0 (pcase arity ('unary 0) ('binary 1))))
+        (:commit-m   . ,(if keep 1 m))
+        (:commit-n   . ,(if keep 0 1))
+        (:post-pop   . ,(if keep 0 (pcase arity ('unary 0) ('binary 1))))
         (:reselect   . t)))))
 
 (defun maf--resolve-target-home (opts)
@@ -90,9 +90,9 @@ entry containing the selection, which has no coherent commit semantics."
         ;; 3 over 2 subtracts to 3 - 2 (not 2 - 3).
         (:expr       . ,(pcase arity ('unary (calc-top 1 'full)) ('binary (calc-top 2 'full))))
         (:arg        . ,(pcase arity ('unary nil) ('binary (math-normalize (calc-top 1 'full)))))
-        (:push-m     . 1)
-        (:push-n     . ,(if keep 0 (pcase arity ('unary 1) ('binary 2))))
-        (:post-pop-n . 0)))))
+        (:commit-m   . 1)
+        (:commit-n   . ,(if keep 0 (pcase arity ('unary 1) ('binary 2))))
+        (:post-pop   . 0)))))
 
 (defun maf--resolve-target-subexpr (opts)
   "Return the subexpr target's context alist.
@@ -121,9 +121,9 @@ untouched."
           (:expr-ref   . ,encased)
           (:arg        . ,(pcase arity ('unary nil) ('binary (math-normalize (calc-top 1 'full)))))
           (:m          . ,m)
-          (:push-m     . ,(if keep 1 m))
-          (:push-n     . ,(if keep 0 1))
-          (:post-pop-n . ,(if keep 0 (pcase arity ('unary 0) ('binary 1))))
+          (:commit-m   . ,(if keep 1 m))
+          (:commit-n   . ,(if keep 0 1))
+          (:post-pop   . ,(if keep 0 (pcase arity ('unary 0) ('binary 1))))
           (:reselect   . nil))))))
 
 (defun maf--resolve-target-equation (opts)
@@ -150,9 +150,9 @@ down — the target must remain a relation — so it errors instead."
         (:rhs        . ,(math-normalize (nth 2 expr)))
         (:arg        . ,(pcase arity ('unary nil) ('binary (math-normalize (calc-top 1 'full)))))
         (:m          . ,m)
-        (:push-m     . ,(if keep 1 m))
-        (:push-n     . ,(if keep 0 1))
-        (:post-pop-n . ,(if keep 0 (pcase arity ('unary 0) ('binary 1))))))))
+        (:commit-m   . ,(if keep 1 m))
+        (:commit-n   . ,(if keep 0 1))
+        (:post-pop   . ,(if keep 0 (pcase arity ('unary 0) ('binary 1))))))))
 
 (defun maf--resolve-target-entry (opts)
   "Return the entry target's context alist.
@@ -177,9 +177,9 @@ have to be on the operand whose value will be replaced."
       `((:target     . entry)
         (:expr       . ,(calc-top m 'full))
         (:arg        . ,(pcase arity ('unary nil) ('binary (math-normalize (calc-top 1 'full)))))
-        (:push-m     . ,(if keep 1 m))
-        (:push-n     . ,(if keep 0 1))
-        (:post-pop-n . ,(if keep 0 (pcase arity ('unary 0) ('binary 1))))))))
+        (:commit-m   . ,(if keep 1 m))
+        (:commit-n   . ,(if keep 0 1))
+        (:post-pop   . ,(if keep 0 (pcase arity ('unary 0) ('binary 1))))))))
 
 (defun maf--resolve-context (opts)
   "Inspect point and calc state; return a context descriptor alist.

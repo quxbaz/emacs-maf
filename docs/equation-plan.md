@@ -23,7 +23,7 @@ in `~/.emacs.d/my/calc/lib.el` (search for "Branch 5: equation").
    between calls.
 2. **Binary commands share one `:arg` across both sides.** For `x = 5` + arg `3`
    + binary `+`, the result is `x+3 = 5+3`. The arg is consumed *once total*
-   (a single `:post-pop-n`), not once per side. Mirrors reference's
+   (a single `:post-pop`), not once per side. Mirrors reference's
    `pop-forms` firing outside the per-side loop.
 3. **`m=1 + binary` errors.** The relation is at the top; arg would come from
    `calc-top 1` which is the relation itself. No coherent semantics. Reject
@@ -98,8 +98,8 @@ Currently:
         (:m      . ,m)))))
 ```
 
-Needs to grow into the same shape as other targets: `:arg`, `:push-m`,
-`:push-n`, `:post-pop-n`, plus the `m=1+binary` error.
+Needs to grow into the same shape as other targets: `:arg`, `:commit-m`,
+`:commit-n`, `:post-pop`, plus the `m=1+binary` error.
 
 Target shape:
 
@@ -120,9 +120,9 @@ Target shape:
         (:rhs        . ,(nth 2 expr))
         (:arg        . ,(pcase arity ('unary nil) ('binary (calc-top 1 'full))))
         (:m          . ,m)
-        (:push-m     . ,(if keep 1 m))
-        (:push-n     . ,(if keep 0 1))
-        (:post-pop-n . ,(if keep 0 (pcase arity ('unary 0) ('binary 1))))))))
+        (:commit-m   . ,(if keep 1 m))
+        (:commit-n   . ,(if keep 0 1))
+        (:post-pop   . ,(if keep 0 (pcase arity ('unary 0) ('binary 1))))))))
 ```
 
 Notes:
@@ -193,12 +193,12 @@ Things to think about during implementation:
 ## Commit changes — `maf--commit`
 
 Add an equation branch. It receives the already-assembled relation as
-`val` and behaves like the entry target's commit (push at `:push-m`, post-pop
+`val` and behaves like the entry target's commit (push at `:commit-m`, post-pop
 for binary):
 
 ```elisp
 ('equation
- (maf--commit-push push-n prefix val push-m nil post-pop-n))
+ (maf--commit-push commit-n prefix val commit-m nil post-pop))
 ```
 
 That's it. The reassembly happens in the macro; commit just pushes the

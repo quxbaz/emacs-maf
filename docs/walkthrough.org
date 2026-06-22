@@ -98,9 +98,9 @@ The returned context alist:
  (:expr-ref   . (cplx 16 0))         ;; encased — the eq-ref into the stack
  (:arg        . nil)                 ;; unary, no second operand
  (:m          . 1)                   ;; entry's stack position
- (:push-m     . 1)                   ;; commit pushes at level 1
- (:push-n     . 1)                   ;; pop 1 before pushing (replace in place)
- (:post-pop-n . 0)                   ;; no extra pop (unary, no binary arg)
+ (:commit-m   . 1)                   ;; commit pushes at level 1
+ (:commit-n   . 1)                   ;; pop 1 before pushing (replace in place)
+ (:post-pop   . 0)                   ;; no extra pop (unary, no binary arg)
  (:reselect   . nil)                 ;; no user-set selection to preserve
  (:prefix     . "sqrt")              ;; merged from opts
  (:arity      . unary)
@@ -157,9 +157,9 @@ It destructures:
 #+begin_example
 target      = subexpr
 prefix      = "sqrt"
-push-m      = 1
-push-n      = 1
-post-pop-n  = 0
+commit-m    = 1
+commit-n    = 1
+post-pop    = 0
 m           = 1
 #+end_example
 
@@ -179,7 +179,7 @@ The =(or 'selection 'subexpr)= pcase branch fires:
 5. =sels = nil= — =:reselect= is =nil= for subexpr.
 6. =(maf--commit-push 1 "sqrt" new-formula 1 nil 0)= → calls
    =(calc-pop-push-record-list 1 "sqrt" new-formula 1 nil)=: pop the old
-   entry at level 1, push the new one. No post-pop (=:post-pop-n= = 0).
+   entry at level 1, push the new one. No post-pop (=:post-pop= = 0).
 
 Calc displays =(cplx N 0)= the same as =N= (cplx-with-zero-imag is just the
 real part). So the final stack reads:
@@ -227,13 +227,13 @@ equivalent.
   own formula → calc's selection display picks it up.
 - *Home target* — no sub-formula splice; commit just pushes =val= at the
   top. No encasing involvement.
-- *Entry target* — replaces the whole entry at =:push-m= with =val=. No
+- *Entry target* — replaces the whole entry at =:commit-m= with =val=. No
   splice. Ergonomic shift: if point is at the top entry and arity is
   binary, =:m= is shifted to 2 and the top becomes the binary arg.
-- *Binary commands* — =:arg= is populated (=:post-pop-n= consumes it
+- *Binary commands* — =:arg= is populated (=:post-pop= consumes it
   after the push). For selection/subexpr/entry, an explicit guard
   ensures the target isn't the top entry (no self-reference).
-- *Keep-args mode* — =:push-m= becomes 1 (push on top, leave originals),
-  =:push-n= becomes 0 (no pop), =:post-pop-n= becomes 0 (no arg
+- *Keep-args mode* — =:commit-m= becomes 1 (push on top, leave originals),
+  =:commit-n= becomes 0 (no pop), =:post-pop= becomes 0 (no arg
   consumption). Result lands above the original inputs instead of
   replacing them.

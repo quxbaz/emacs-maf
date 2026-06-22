@@ -358,9 +358,9 @@ The returned context alist:
  (:rhs        . 5)                             ;; normalized right side
  (:arg        . nil)                           ;; unary, no second operand
  (:m          . 1)                             ;; relation's stack position
- (:push-m     . 1)                             ;; commit pushes at level 1
- (:push-n     . 1)                             ;; pop 1 before pushing (replace)
- (:post-pop-n . 0)                             ;; no arg to consume (unary)
+ (:commit-m   . 1)                             ;; commit pushes at level 1
+ (:commit-n   . 1)                             ;; pop 1 before pushing (replace)
+ (:post-pop   . 0)                             ;; no arg to consume (unary)
  (:prefix     . "sqr")                         ;; merged from opts
  (:arity      . unary)
  (:keep       . nil))                          ;; calc-keep-args-flag snapshot
@@ -441,9 +441,9 @@ The macro reassembles a fresh relation and calls <code>maf--commit</code> once:
 <pre class="example" id="org6fc0e51">
 target      = equation
 prefix      = "sqr"
-push-m      = 1
-push-n      = 1
-post-pop-n  = 0
+commit-m    = 1
+commit-n    = 1
+post-pop    = 0
 </pre>
 
 <p>
@@ -452,7 +452,7 @@ complete relation, so there is nothing to splice:
 </p>
 
 <div class="org-src-container">
-<pre class="src src-emacs-lisp">('equation (maf--commit-push push-n prefix val push-m nil post-pop-n))
+<pre class="src src-emacs-lisp">('equation (maf--commit-push commit-n prefix val commit-m nil post-pop))
 </pre>
 </div>
 
@@ -483,7 +483,7 @@ Three places cooperate, and the division of labor is the whole point:
 <ul class="org-ul">
 <li>recognizes the entry is a relation and splits it into <code>:rel-op</code>, <code>:lhs</code>,
 <code>:rhs</code> (each normalized)</li>
-<li>derives the same commit recipe (<code>:push-m</code> / <code>:push-n</code> / <code>:post-pop-n</code>)
+<li>derives the same commit recipe (<code>:commit-m</code> / <code>:commit-n</code> / <code>:post-pop</code>)
 any whole-entry target would use</li>
 </ul></li>
 <li><b><b>macro</b></b> (<a href="../src/maf-defcmd.el">maf-defcmd.el</a>)
@@ -510,7 +510,7 @@ for free, because the per-side iteration lives entirely in the scaffolding.
 <div class="outline-text-2" id="text-8">
 <ul class="org-ul">
 <li><b>Binary commands</b> — <code>:arg</code> is the top stack entry, <b>shared</b> across both
-sides and consumed once (<code>:post-pop-n</code> = 1). So multiplying <code>x = 5</code> by <code>2</code>
+sides and consumed once (<code>:post-pop</code> = 1). So multiplying <code>x = 5</code> by <code>2</code>
 gives <code>2 x = 10</code>, not <code>2 x = 5</code> or a double-consumed stack. Because the arg
 is the top, binary commands <b>require the relation to sit below the top</b>
 (<code>:m</code> &gt; 1); resolve errors otherwise (see next).</li>
@@ -518,7 +518,7 @@ is the top, binary commands <b>require the relation to sit below the top</b>
 be the relation itself. Unlike the <code>entry</code> target, equation does <b>not</b>
 perform the ergonomic <code>m</code> 1→2 shift: the target must remain a relation, so
 resolve raises an error instead of silently retargeting.</li>
-<li><b>Keep-args mode</b> — <code>:push-m</code> = 1, <code>:push-n</code> = 0, <code>:post-pop-n</code> = 0. The new
+<li><b>Keep-args mode</b> — <code>:commit-m</code> = 1, <code>:commit-n</code> = 0, <code>:post-pop</code> = 0. The new
 relation lands on top, the original equation is left untouched below it.</li>
 <li><b>Why no <code>:expr-ref</code> or encasing</b> — the equation target rebuilds the entire
 entry from <code>:rel-op</code> + two clean sides. There's no sub-formula to locate by

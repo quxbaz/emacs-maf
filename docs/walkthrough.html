@@ -362,9 +362,9 @@ The returned context alist:
  (:expr-ref   . (cplx 16 0))         ;; encased — the eq-ref into the stack
  (:arg        . nil)                 ;; unary, no second operand
  (:m          . 1)                   ;; entry's stack position
- (:push-m     . 1)                   ;; commit pushes at level 1
- (:push-n     . 1)                   ;; pop 1 before pushing (replace in place)
- (:post-pop-n . 0)                   ;; no extra pop (unary, no binary arg)
+ (:commit-m   . 1)                   ;; commit pushes at level 1
+ (:commit-n   . 1)                   ;; pop 1 before pushing (replace in place)
+ (:post-pop   . 0)                   ;; no extra pop (unary, no binary arg)
  (:reselect   . nil)                 ;; no user-set selection to preserve
  (:prefix     . "sqrt")              ;; merged from opts
  (:arity      . unary)
@@ -488,9 +488,9 @@ It destructures:
 <pre class="example" id="org80c4900">
 target      = subexpr
 prefix      = "sqrt"
-push-m      = 1
-push-n      = 1
-post-pop-n  = 0
+commit-m    = 1
+commit-n    = 1
+post-pop    = 0
 m           = 1
 </pre>
 
@@ -513,7 +513,7 @@ Substitutes <code>val-encased</code>. Result: <code>(+ (var a var-a) (cplx 4 0))
 <li><code>sels = nil</code> — <code>:reselect</code> is <code>nil</code> for subexpr.</li>
 <li><code>(maf--commit-push 1 "sqrt" new-formula 1 nil 0)</code> → calls
 <code>(calc-pop-push-record-list 1 "sqrt" new-formula 1 nil)</code>: pop the old
-entry at level 1, push the new one. No post-pop (<code>:post-pop-n</code> = 0).</li>
+entry at level 1, push the new one. No post-pop (<code>:post-pop</code> = 0).</li>
 </ol>
 
 <p>
@@ -583,14 +583,14 @@ equivalent.
 own formula → calc's selection display picks it up.</li>
 <li><b>Home target</b> — no sub-formula splice; commit just pushes <code>val</code> at the
 top. No encasing involvement.</li>
-<li><b>Entry target</b> — replaces the whole entry at <code>:push-m</code> with <code>val</code>. No
+<li><b>Entry target</b> — replaces the whole entry at <code>:commit-m</code> with <code>val</code>. No
 splice. Ergonomic shift: if point is at the top entry and arity is
 binary, <code>:m</code> is shifted to 2 and the top becomes the binary arg.</li>
-<li><b>Binary commands</b> — <code>:arg</code> is populated (<code>:post-pop-n</code> consumes it
+<li><b>Binary commands</b> — <code>:arg</code> is populated (<code>:post-pop</code> consumes it
 after the push). For selection/subexpr/entry, an explicit guard
 ensures the target isn't the top entry (no self-reference).</li>
-<li><b>Keep-args mode</b> — <code>:push-m</code> becomes 1 (push on top, leave originals),
-<code>:push-n</code> becomes 0 (no pop), <code>:post-pop-n</code> becomes 0 (no arg
+<li><b>Keep-args mode</b> — <code>:commit-m</code> becomes 1 (push on top, leave originals),
+<code>:commit-n</code> becomes 0 (no pop), <code>:post-pop</code> becomes 0 (no arg
 consumption). Result lands above the original inputs instead of
 replacing them.</li>
 </ul>

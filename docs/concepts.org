@@ -138,25 +138,25 @@ accordingly:
 | subexpr   | Replace entry in place (sub-formula spliced)      | Push spliced result on top        |
 | entry     | Replace entry in place                            | Push result on top                |
 
-In schema terms, =:push-m=, =:push-n=, and =:post-pop-n= encode the
+In schema terms, =:commit-m=, =:commit-n=, and =:post-pop= encode the
 recipe; commit just executes it.
 
 * The commit recipe
 
 Three context keys describe what commit should do:
 
-- *=:push-m=* — stack level to push at (the M arg to
+- *=:commit-m=* — stack level to push at (the M arg to
   =calc-pop-push-record-list=).
-- *=:push-n=* — entries to pop at =:push-m= before pushing (the N arg).
+- *=:commit-n=* — entries to pop at =:commit-m= before pushing (the N arg).
   This is the "replace in place" knob — 1 means "pop the old, push the
   new", 0 means "insert on top of it."
-- *=:post-pop-n=* — entries to pop /from the top/ /after/ the push.
+- *=:post-pop=* — entries to pop /from the top/ /after/ the push.
   This consumes the binary arg in non-keep mode.
 
 Visualization for binary selection at =:m = 2= (non-keep):
 
 #+begin_example
-Before:                              push-m=2, push-n=1, post-pop-n=1
+Before:                              commit-m=2, commit-n=1, post-pop=1
 1: arg                ──┐
 2: selected entry  ──┐  │
                      │  │

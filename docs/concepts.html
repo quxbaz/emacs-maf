@@ -488,7 +488,7 @@ accordingly:
 </table>
 
 <p>
-In schema terms, <code>:push-m</code>, <code>:push-n</code>, and <code>:post-pop-n</code> encode the
+In schema terms, <code>:commit-m</code>, <code>:commit-n</code>, and <code>:post-pop</code> encode the
 recipe; commit just executes it.
 </p>
 </div>
@@ -501,12 +501,12 @@ Three context keys describe what commit should do:
 </p>
 
 <ul class="org-ul">
-<li><b><code>:push-m</code></b> — stack level to push at (the M arg to
+<li><b><code>:commit-m</code></b> — stack level to push at (the M arg to
 <code>calc-pop-push-record-list</code>).</li>
-<li><b><code>:push-n</code></b> — entries to pop at <code>:push-m</code> before pushing (the N arg).
+<li><b><code>:commit-n</code></b> — entries to pop at <code>:commit-m</code> before pushing (the N arg).
 This is the "replace in place" knob — 1 means "pop the old, push the
 new", 0 means "insert on top of it."</li>
-<li><b><code>:post-pop-n</code></b> — entries to pop <i>from the top</i> <i>after</i> the push.
+<li><b><code>:post-pop</code></b> — entries to pop <i>from the top</i> <i>after</i> the push.
 This consumes the binary arg in non-keep mode.</li>
 </ul>
 
@@ -515,7 +515,7 @@ Visualization for binary selection at <code>:m = 2</code> (non-keep):
 </p>
 
 <pre class="example" id="org1f672e2">
-Before:                              push-m=2, push-n=1, post-pop-n=1
+Before:                              commit-m=2, commit-n=1, post-pop=1
 1: arg                ──┐
 2: selected entry  ──┐  │
                      │  │

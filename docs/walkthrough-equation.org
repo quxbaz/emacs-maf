@@ -108,9 +108,9 @@ The returned context alist:
  (:rhs        . 5)                             ;; normalized right side
  (:arg        . nil)                           ;; unary, no second operand
  (:m          . 1)                             ;; relation's stack position
- (:push-m     . 1)                             ;; commit pushes at level 1
- (:push-n     . 1)                             ;; pop 1 before pushing (replace)
- (:post-pop-n . 0)                             ;; no arg to consume (unary)
+ (:commit-m   . 1)                             ;; commit pushes at level 1
+ (:commit-n   . 1)                             ;; pop 1 before pushing (replace)
+ (:post-pop   . 0)                             ;; no arg to consume (unary)
  (:prefix     . "sqr")                         ;; merged from opts
  (:arity      . unary)
  (:keep       . nil))                          ;; calc-keep-args-flag snapshot
@@ -161,16 +161,16 @@ The macro reassembles a fresh relation and calls =maf--commit= once:
 #+begin_example
 target      = equation
 prefix      = "sqr"
-push-m      = 1
-push-n      = 1
-post-pop-n  = 0
+commit-m    = 1
+commit-n    = 1
+post-pop    = 0
 #+end_example
 
 The =equation= pcase branch is the simplest of all — =val= is already a
 complete relation, so there is nothing to splice:
 
 #+begin_src emacs-lisp
-('equation (maf--commit-push push-n prefix val push-m nil post-pop-n))
+('equation (maf--commit-push commit-n prefix val commit-m nil post-pop))
 #+end_src
 
 =(maf--commit-push 1 "sqr" <relation> 1 nil 0)= pops the old relation at
@@ -190,7 +190,7 @@ Three places cooperate, and the division of labor is the whole point:
 1. **resolve** ([[file:../src/maf-resolve.el][maf-resolve.el]])
    - recognizes the entry is a relation and splits it into =:rel-op=, =:lhs=,
      =:rhs= (each normalized)
-   - derives the same commit recipe (=:push-m= / =:push-n= / =:post-pop-n=)
+   - derives the same commit recipe (=:commit-m= / =:commit-n= / =:post-pop=)
      any whole-entry target would use
 2. **macro** ([[file:../src/maf-defcmd.el][maf-defcmd.el]])
    - runs the body once per side, rebinding =commit= to a capture variable
@@ -206,7 +206,7 @@ for free, because the per-side iteration lives entirely in the scaffolding.
 * Variations at a glance
 
 - *Binary commands* — =:arg= is the top stack entry, *shared* across both
-  sides and consumed once (=:post-pop-n= = 1). So multiplying =x = 5= by =2=
+  sides and consumed once (=:post-pop= = 1). So multiplying =x = 5= by =2=
   gives =2 x = 10=, not =2 x = 5= or a double-consumed stack. Because the arg
   is the top, binary commands *require the relation to sit below the top*
   (=:m= > 1); resolve errors otherwise (see next).
@@ -214,7 +214,7 @@ for free, because the per-side iteration lives entirely in the scaffolding.
   be the relation itself. Unlike the =entry= target, equation does *not*
   perform the ergonomic =m= 1→2 shift: the target must remain a relation, so
   resolve raises an error instead of silently retargeting.
-- *Keep-args mode* — =:push-m= = 1, =:push-n= = 0, =:post-pop-n= = 0. The new
+- *Keep-args mode* — =:commit-m= = 1, =:commit-n= = 0, =:post-pop= = 0. The new
   relation lands on top, the original equation is left untouched below it.
 - *Why no =:expr-ref= or encasing* — the equation target rebuilds the entire
   entry from =:rel-op= + two clean sides. There's no sub-formula to locate by
