@@ -1,7 +1,7 @@
 #+title: Todo
 
 * Todo [0/2]
-** TODO Set place/point after committing
+** TODO Set place/point after (maf--commit)
 ** TODO Implement options
    - [ ] simplification
    - [ ] support-mapping
