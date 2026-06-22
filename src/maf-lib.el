@@ -66,4 +66,19 @@ sub-expression on the line; those positions route to equation/entry targets."
            (memq (car expr) '(calcFunc-eq calcFunc-neq calcFunc-lt calcFunc-leq calcFunc-gt calcFunc-geq))
            t))))
 
+(defun maf-push (expr)
+  "Parse algebraic EXPR and push it onto the calc stack.
+A convenience over pushing a raw calc s-expression: instead of
+\(calc-push \\='(+ (* 8 (var x var-x)) 4)) write (maf-push \"8 x + 4\").
+
+EXPR is normally an algebraic string, parsed with `math-read-expr' in the
+current language mode. A number or an already-parsed calc formula is pushed
+as-is. Signals an error if the string does not parse."
+  (interactive "sPush formula: ")
+  (maf--with-calc-buffer
+    (let ((val (if (stringp expr) (math-read-expr expr) expr)))
+      (when (and (consp val) (eq (car val) 'error))
+        (error "maf-push: cannot parse %S: %s" expr (nth 2 val)))
+      (calc-push val))))
+
 (provide 'maf-lib)

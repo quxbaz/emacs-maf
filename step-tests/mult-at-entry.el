@@ -5,7 +5,7 @@
   (commit (calcFunc-mul expr arg)))
 
 (maf-step
-  (calc-push '(+ (* 8 (var x var-x)) 4))
+  (maf-push "8 x + 4")
   (calc-push 2)
   (goto-char 0)
   (call-interactively 'maf-mult)
