@@ -47,6 +47,14 @@ The buffer is the session cockpit: \\=`j' (or SPC) runs the next form in the
 calc buffer (returning here afterward), \\=`k' rewinds one step, \\=`r' restarts
 with a fresh calc, \\=`?' shows the key bindings, and \\=`q' quits. Derived from
 `emacs-lisp-mode' so the rendered forms are fontified."
+  ;; Highlight the DONE/ERROR status markers. These live in the `;;' header
+  ;; line, so the keywords must override the comment fontification (the
+  ;; trailing t) to win over `font-lock-comment-face'.
+  (font-lock-add-keywords
+   nil
+   '(("\\_<DONE\\_>"  0 '(:foreground "green3" :weight bold) t)
+     ("\\_<ERROR\\_>" 0 '(:foreground "red"    :weight bold) t))
+   'append)
   (setq buffer-read-only t))
 
 ;; ---------------------------------------------------------------------------
