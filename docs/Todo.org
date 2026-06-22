@@ -1,7 +1,6 @@
 #+title: Todo
 
-* Todo [0/3]
-** NEXT Find out what causes point to move after a command.
+* Todo [0/2]
 ** Use defmath form
    (maf-defcmd maf-mult (expr arg commit)
    "Multiplication command."
