@@ -1,13 +1,6 @@
 #+title: Todo
 
 * Todo [0/2]
-** Use defmath form
-   (maf-defcmd maf-mult (expr arg commit)
-   "Multiplication command."
-   :arity binary
-   :prefix "mult"
-   (commit (calcFunc-mul expr arg)))
-   => (commit (* expr arg)))  ;; make this work
 ** TODO Set place/point after committing
 ** TODO Implement options
    - [ ] simplification
