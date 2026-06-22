@@ -450,6 +450,42 @@
    ;; => (vec (calcFunc-eq x 2) (calcFunc-eq y 1))
    #+end_src
 
+* Position
+** (calc-align-stack-window)
+   =(calc-align-stack-window)=
+
+   Scroll the Calc stack window so the home line (.) is visible near the
+   bottom. Positions the window start accordingly and moves point to the home
+   line. If called from outside the Calc buffer, switches to it first.
+
+   #+begin_src emacs-lisp :results silent
+   (calc-align-stack-window)
+   #+end_src
+
+** (calc-locate-cursor-element)
+   =(calc-locate-cursor-element PT)=
+
+   Return the stack index of the entry whose display region contains buffer
+   position =PT=. The result is suitable for passing to =calc-cursor-stack-index=.
+
+   #+begin_src emacs-lisp :results silent
+   (calc-locate-cursor-element (point))  ;; => stack index at cursor position
+   #+end_src
+
+** (calc-cursor-stack-index)
+   =(calc-cursor-stack-index &optional INDEX)=
+
+   Move point to the start of the line of the entry at stack level =INDEX=
+   (default 1 = top). The inverse of =calc-locate-cursor-element=: that maps a
+   buffer position to a stack index, this maps a stack index to a buffer
+   position. Jumps to =point-max= and moves up by =calc-substack-height=, so it
+   accounts for multi-line entries.
+
+   #+begin_src emacs-lisp :results silent
+   (calc-cursor-stack-index 1)  ;; point to the top entry
+   (calc-cursor-stack-index 2)  ;; point to the second-from-top entry
+   #+end_src
+
 * Selection
 ** (calc-prepare-selection)
    =(calc-prepare-selection &optional NUM)=
@@ -507,16 +543,6 @@
      (calc-find-sub-formula expr sub))    ;; => 2
    #+end_src
 
-** (calc-locate-cursor-element)
-   =(calc-locate-cursor-element PT)=
-
-   Return the stack index of the entry whose display region contains buffer
-   position =PT=. The result is suitable for passing to =calc-cursor-stack-index=.
-
-   #+begin_src emacs-lisp :results silent
-   (calc-locate-cursor-element (point))  ;; => stack index at cursor position
-   #+end_src
-
 * Display
 ** (math-format-value)
    =(math-format-value A &optional W)=
@@ -543,15 +569,4 @@
    #+begin_src emacs-lisp :results silent
    ;; ENTRY format: (value display-lines selection)
    (math-format-stack-value (list '(+ x 1) nil nil))
-   #+end_src
-
-** (calc-align-stack-window)
-   =(calc-align-stack-window)=
-
-   Scroll the Calc stack window so the home line (.) is visible near the
-   bottom. Positions the window start accordingly and moves point to the home
-   line. If called from outside the Calc buffer, switches to it first.
-
-   #+begin_src emacs-lisp :results silent
-   (calc-align-stack-window)
    #+end_src
