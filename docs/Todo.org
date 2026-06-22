@@ -2,6 +2,13 @@
 
 * Todo [0/3]
 ** NEXT Find out what causes point to move after a command.
+** Use defmath form
+   (maf-defcmd maf-mult (expr arg commit)
+   "Multiplication command."
+   :arity binary
+   :prefix "mult"
+   (commit (calcFunc-mul expr arg)))
+   => (commit (* expr arg)))  ;; make this work
 ** TODO Set place/point after committing
 ** TODO Implement options
    - [ ] simplification
