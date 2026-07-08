@@ -1,6 +1,9 @@
 #+title: Todo
 
-* Todo [0/2]
+* Now [0/1]
+** TODO Loop through calcFunc to find calc commands and autogenerate contextual commands.
+
+* Later [0/2]
 ** TODO Set place/point after (maf--commit)
    - If possible, when (eq :target 'subexpr), stick point to the same symbol
      prior to the operation.
