@@ -2,6 +2,8 @@
 
 * Todo [0/2]
 ** TODO Set place/point after (maf--commit)
+   - If possible, when (eq :target 'subexpr), stick point to the same symbol
+     prior to the operation.
 ** TODO Implement options
    - [ ] simplification
    - [ ] support-mapping
