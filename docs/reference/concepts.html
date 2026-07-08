@@ -258,7 +258,7 @@ commit ─── reads context, applies val
 <p>
 Resolve and commit are peer concerns: resolve reads state into the
 context, commit writes state from the context. They share the context
-schema documented at the top of <a href="../../src/maf-resolve.el">maf-resolve.el</a>.
+schema documented at the top of <a href="../../src/maf-core-resolve.el">maf-core-resolve.el</a>.
 </p>
 </div>
 </div>
@@ -322,7 +322,7 @@ what calc state is active. In priority order:
 
 <p>
 The cascade lives in <code>maf--resolve-context</code>. The predicates live in
-<a href="../../src/maf-lib.el">maf-lib.el</a> (<code>maf--at-*-p</code>) and <a href="../../src/maf-sel.el">maf-sel.el</a> (<code>maf--sel-any-p</code>).
+<a href="../../src/maf-core-lib.el">maf-core-lib.el</a> (<code>maf--at-*-p</code>) and <a href="../../src/maf-core-sel.el">maf-core-sel.el</a> (<code>maf--sel-any-p</code>).
 </p>
 
 <p>
@@ -588,27 +588,27 @@ near this entry" (entry — shift is friendlier).
 </tr>
 
 <tr>
-<td class="org-left"><a href="../../src/maf-lib.el">src/maf-lib.el</a></td>
+<td class="org-left"><a href="../../src/maf-core-lib.el">src/maf-core-lib.el</a></td>
 <td class="org-left">Generic predicates and utilities (find calc buffer, at-*-p)</td>
 </tr>
 
 <tr>
-<td class="org-left"><a href="../../src/maf-sel.el">src/maf-sel.el</a></td>
+<td class="org-left"><a href="../../src/maf-core-sel.el">src/maf-core-sel.el</a></td>
 <td class="org-left">Selection-state introspection (any-selection, effective-m)</td>
 </tr>
 
 <tr>
-<td class="org-left"><a href="../../src/maf-resolve.el">src/maf-resolve.el</a></td>
+<td class="org-left"><a href="../../src/maf-core-resolve.el">src/maf-core-resolve.el</a></td>
 <td class="org-left">Context resolution + target dispatch</td>
 </tr>
 
 <tr>
-<td class="org-left"><a href="../../src/maf-commit.el">src/maf-commit.el</a></td>
+<td class="org-left"><a href="../../src/maf-core-commit.el">src/maf-core-commit.el</a></td>
 <td class="org-left">Commit recipes (push/pop choreography per target)</td>
 </tr>
 
 <tr>
-<td class="org-left"><a href="../../src/maf-defcmd.el">src/maf-defcmd.el</a></td>
+<td class="org-left"><a href="../../src/maf-core-defcmd.el">src/maf-core-defcmd.el</a></td>
 <td class="org-left">The <code>maf-defcmd</code> macro + parsing helpers</td>
 </tr>
 
@@ -635,7 +635,7 @@ Load order in <code>maf.el</code>: <code>lib</code> → <code>sel</code> → <co
 <div class="outline-text-2" id="text-10">
 <ul class="org-ul">
 <li><a href="walkthrough.html">walkthrough.org</a> — sqrt-at-subexpr traced end-to-end</li>
-<li><a href="../../src/maf-resolve.el">src/maf-resolve.el</a> — context schema reference at top of file</li>
+<li><a href="../../src/maf-core-resolve.el">src/maf-core-resolve.el</a> — context schema reference at top of file</li>
 <li><a href="calc-ref.html">calc-ref.org</a> — calc API reference</li>
 </ul>
 </div>

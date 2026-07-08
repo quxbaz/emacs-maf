@@ -479,20 +479,20 @@ Three places cooperate, and the division of labor is the whole point:
 </p>
 
 <ol class="org-ol">
-<li><b><b>resolve</b></b> (<a href="../../src/maf-resolve.el">maf-resolve.el</a>)
+<li><b><b>resolve</b></b> (<a href="../../src/maf-core-resolve.el">maf-core-resolve.el</a>)
 <ul class="org-ul">
 <li>recognizes the entry is a relation and splits it into <code>:rel-op</code>, <code>:lhs</code>,
 <code>:rhs</code> (each normalized)</li>
 <li>derives the same commit recipe (<code>:commit-m</code> / <code>:commit-n</code> / <code>:post-pop</code>)
 any whole-entry target would use</li>
 </ul></li>
-<li><b><b>macro</b></b> (<a href="../../src/maf-defcmd.el">maf-defcmd.el</a>)
+<li><b><b>macro</b></b> (<a href="../../src/maf-core-defcmd.el">maf-core-defcmd.el</a>)
 <ul class="org-ul">
 <li>runs the body once per side, rebinding <code>commit</code> to a capture variable
 so the body's "commit" is intercepted rather than applied</li>
 <li>reassembles <code>(rel-op lhs rhs)</code> and calls <code>maf--commit</code> a single time</li>
 </ul></li>
-<li><b><b>commit</b></b> (<a href="../../src/maf-commit.el">maf-commit.el</a>)
+<li><b><b>commit</b></b> (<a href="../../src/maf-core-commit.el">maf-core-commit.el</a>)
 <ul class="org-ul">
 <li>treats the reassembled relation as an opaque whole-entry value and
 pushes it — no splice, no encasing</li>

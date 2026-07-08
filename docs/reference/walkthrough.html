@@ -540,7 +540,7 @@ already happened in resolve.
 </p>
 
 <ol class="org-ol">
-<li><b><b>resolve</b></b> (<a href="../../src/maf-resolve.el">maf-resolve.el</a>)
+<li><b><b>resolve</b></b> (<a href="../../src/maf-core-resolve.el">maf-core-resolve.el</a>)
 <ul class="org-ul">
 <li>calls <code>calc-prepare-selection</code>, which encases atoms in the stack entry</li>
 <li>captures both the clean form (<code>:expr</code>, via <code>math-normalize</code>) and the
@@ -554,7 +554,7 @@ computation through the complex/float branch</li>
 <li>sees the clean <code>:expr</code>, so <code>calcFunc-*</code> functions take their
 integer/rational branches instead of the cplx branch</li>
 </ul></li>
-<li><b><b>commit</b></b> (<a href="../../src/maf-commit.el">maf-commit.el</a>)
+<li><b><b>commit</b></b> (<a href="../../src/maf-core-commit.el">maf-core-commit.el</a>)
 <ul class="org-ul">
 <li>pre-encases <code>val</code> so we hold a reference to the cons that ends up
 in <code>new-formula</code> (useful for <code>:reselect</code>)</li>

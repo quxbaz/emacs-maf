@@ -187,16 +187,16 @@ The trail records the operation under "sqr".
 
 Three places cooperate, and the division of labor is the whole point:
 
-1. **resolve** ([[file:../../src/maf-resolve.el][maf-resolve.el]])
+1. **resolve** ([[file:../../src/maf-core-resolve.el][maf-core-resolve.el]])
    - recognizes the entry is a relation and splits it into =:rel-op=, =:lhs=,
      =:rhs= (each normalized)
    - derives the same commit recipe (=:commit-m= / =:commit-n= / =:post-pop=)
      any whole-entry target would use
-2. **macro** ([[file:../../src/maf-defcmd.el][maf-defcmd.el]])
+2. **macro** ([[file:../../src/maf-core-defcmd.el][maf-core-defcmd.el]])
    - runs the body once per side, rebinding =commit= to a capture variable
      so the body's "commit" is intercepted rather than applied
    - reassembles =(rel-op lhs rhs)= and calls =maf--commit= a single time
-3. **commit** ([[file:../../src/maf-commit.el][maf-commit.el]])
+3. **commit** ([[file:../../src/maf-core-commit.el][maf-core-commit.el]])
    - treats the reassembled relation as an opaque whole-entry value and
      pushes it — no splice, no encasing
 

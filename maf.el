@@ -23,12 +23,12 @@
   (add-to-list 'load-path (expand-file-name "src" dir))
   (add-to-list 'load-path (expand-file-name "debug" dir)))
 
-(require 'maf-lib)
-(require 'maf-sel)
+(require 'maf-core-lib)
+(require 'maf-core-sel)
 (require 'maf-step)
-(require 'maf-resolve)
-(require 'maf-commit)
-(require 'maf-defcmd)
+(require 'maf-core-resolve)
+(require 'maf-core-commit)
+(require 'maf-core-defcmd)
 
 (defgroup maf nil
   "Math-Algebra-Formulas: an alternative UX for Emacs Calc."

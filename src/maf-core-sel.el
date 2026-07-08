@@ -1,10 +1,10 @@
 ;; -*- lexical-binding: t; -*-
 ;;
-;; maf-sel.el
+;; maf-core-sel.el
 ;;
 ;; maf selection functions
 
-(require 'maf-lib)
+(require 'maf-core-lib)
 
 (defun maf--sel-any-p ()
   "Return t if any stack entry has an active selection."
@@ -49,4 +49,4 @@ active selection. Returns nil if no selections are active."
     (let ((m (maf--sel-effective-m)))
       (and m (calc-top m 'sel)))))
 
-(provide 'maf-sel)
+(provide 'maf-core-sel)

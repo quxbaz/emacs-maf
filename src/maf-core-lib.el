@@ -1,6 +1,6 @@
 ;; -*- lexical-binding: t; -*-
 ;;
-;; maf-lib.el
+;; maf-core-lib.el
 ;;
 ;; maf library functions
 
@@ -81,4 +81,4 @@ as-is. Signals an error if the string does not parse."
         (error "maf-push: cannot parse %S: %s" expr (nth 2 val)))
       (calc-push val))))
 
-(provide 'maf-lib)
+(provide 'maf-core-lib)
