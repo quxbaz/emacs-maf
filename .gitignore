@@ -1,3 +1,4 @@
 /.claude/*.lock
 /calc-src/
+/gnu-emacs-calc-manual/
 /docs/gnu-emacs-calc-manual/
