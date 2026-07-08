@@ -3,8 +3,8 @@
 The last remaining target. Big enough that it's worth picking up cold from this
 plan rather than re-deriving from conversation.
 
-For context, see [concepts.org](concepts.org) (target system overview) and
-[walkthrough.org](walkthrough.org) (a concrete command end-to-end).
+For context, see [concepts.org](../reference/concepts.org) (target system overview) and
+[walkthrough.org](../reference/walkthrough.org) (a concrete command end-to-end).
 
 ## Goal
 
@@ -234,8 +234,8 @@ Run them via `M-x load-file` or the existing `f4` test loader.
 
 ## Order of operations (for the future-me actually doing this)
 
-1. Read this plan + skim [concepts.org](concepts.org) +
-   [walkthrough.org](walkthrough.org) to reload the model.
+1. Read this plan + skim [concepts.org](../reference/concepts.org) +
+   [walkthrough.org](../reference/walkthrough.org) to reload the model.
 2. Open the reference: `~/.emacs.d/my/calc/lib.el` "Branch 5: equation"
    — that's the prior art. Don't re-derive from scratch.
 3. Implement in this order:
