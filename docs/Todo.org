@@ -1,7 +1,18 @@
 #+title: Todo
 
 * Now [0/1]
-** TODO Loop through calcFunc to find calc commands and autogenerate contextual commands.
+** TODO Loop through calcFunc to find calc commands and auto-generate contextual maf-* commands.
+   - So calc-plus would be made available as mafcmd-plus, except that
+     mafcmd-plus would operate contextually - consistent with the overall maf
+     system.
+   - The point of this is so that we would avoid having to manually wrap all
+     calc[Func] functions, and if we were to update calc and if it were to
+     incorporate new commands, those commands would automatically be made
+     available as contextually-aware maf commands.
+   - Is the calcFunc-* namespace the correct place to search or will we dredge
+     up commands which aren't necessarily meant to be executed in user-space.
+     We're only trying to wrap commands which would be invoked manually by the
+     user in the context of a calc session.
 
 * Later [0/2]
 ** TODO Set place/point after (maf--commit)
