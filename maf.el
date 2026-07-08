@@ -35,6 +35,29 @@
   :group 'calc
   :prefix "maf-")
 
+;;;###autoload
+(defun maf-calc ()
+  "Start calc with dwim window behavior.
+From a special buffer or single-window frame, opens calc full-screen.
+From a single window, splits right first.
+Otherwise delegates to calc interactively."
+  (interactive)
+  (cond ((or (string-match-p "^[*]" (buffer-name))
+             (memq major-mode '(dired-mode magit-status-mode)))
+         (calc nil t t))
+        ((= (count-windows) 1)
+         (split-window-right)
+         (other-window 1)
+         (calc nil t t))
+        (t
+         (call-interactively #'calc))))
+
+;;;###autoload
+(defun maf-calc-direct ()
+  "Open calc directly without window management."
+  (interactive)
+  (calc nil t t))
+
 (defvar maf-mode-map (make-sparse-keymap)
   "Keymap for `maf-mode'.")
 
