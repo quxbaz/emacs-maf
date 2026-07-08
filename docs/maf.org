@@ -87,10 +87,6 @@
   - [ ] Move all options to unified configuration view.
     - Free up option prefix bindings (eg, m).
 
-* Process
-  - [ ] Loop through calcFunc to find calc commands and autogenerate contextual
-    commands.
-
 * Main features
   - Make edit-mode obsolete. Implement free-edit-mode, like editing a dired buffer.
   - Submodules: graphing submodule, vim bindings submodule, etc. Toggle on to
