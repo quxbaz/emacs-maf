@@ -1,12 +1,12 @@
 ;; -*- lexical-binding: t; -*-
 ;;
-;; maf-core-commit.el
+;; maf-commit.el
 ;;
 ;; Apply a computed value to the calc buffer according to a resolved context.
 ;; The peer of maf-resolve: resolve reads point/state into a context alist;
 ;; commit consumes that alist and performs the appropriate calc operations.
 
-(require 'maf-core-lib)
+(require 'maf-lib)
 
 (defun maf--commit-push (commit-n prefix val commit-m sels post-pop)
   "Push VAL at COMMIT-M (popping COMMIT-N entries there first), then optionally
@@ -55,4 +55,4 @@ top 2 stack values and push VAL onto the stack."
         ;; val is the relation already reassembled by the macro from both sides.
         ('equation (maf--commit-push commit-n prefix val commit-m nil post-pop))))))
 
-(provide 'maf-core-commit)
+(provide 'maf-commit)

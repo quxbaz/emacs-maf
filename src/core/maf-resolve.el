@@ -1,6 +1,6 @@
 ;; -*- lexical-binding: t; -*-
 ;;
-;; maf-core-resolve.el
+;; maf-resolve.el
 ;;
 ;; Resolve point and calc state into a target-specific context descriptor.
 ;;
@@ -49,8 +49,8 @@
 ;;   :keep         Snapshot of `calc-keep-args-flag' at resolve time.
 ;;   ...any other keyword option passed to `maf-defcmd'.
 
-(require 'maf-core-lib)
-(require 'maf-core-sel)
+(require 'maf-lib)
+(require 'maf-sel)
 
 (defun maf--resolve-target-selection (opts)
   "Return the selection target's context alist.
@@ -208,4 +208,4 @@ Possible :target values, in order of priority:
             ;; Include some useful properties as well like calc flag states
             `((:keep . ,calc-keep-args-flag)))))
 
-(provide 'maf-core-resolve)
+(provide 'maf-resolve)

@@ -37,7 +37,7 @@ commit ─── reads context, applies val
 
 Resolve and commit are peer concerns: resolve reads state into the
 context, commit writes state from the context. They share the context
-schema documented at the top of [[file:../../src/maf-core-resolve.el][maf-core-resolve.el]].
+schema documented at the top of [[file:../../src/core/maf-resolve.el][maf-resolve.el]].
 
 * The target system
 
@@ -53,7 +53,7 @@ what calc state is active. In priority order:
 | entry     | Point is at line-prefix or EOL of a stack entry             | The whole formula                   |
 
 The cascade lives in =maf--resolve-context=. The predicates live in
-[[file:../../src/maf-core-lib.el][maf-core-lib.el]] (=maf--at-*-p=) and [[file:../../src/maf-core-sel.el][maf-core-sel.el]] (=maf--sel-any-p=).
+[[file:../../src/core/maf-lib.el][maf-lib.el]] (=maf--at-*-p=) and [[file:../../src/core/maf-sel.el][maf-sel.el]] (=maf--sel-any-p=).
 
 Each target has a dedicated =maf--resolve-target-X= function that
 produces the target-specific portion of the context alist.
@@ -197,11 +197,11 @@ near this entry" (entry — shift is friendlier).
 | File                    | Role                                                       |
 |-------------------------+------------------------------------------------------------|
 | [[file:../../maf.el][maf.el]]                  | Package entry point, mode, load order                      |
-| [[file:../../src/maf-core-lib.el][src/maf-core-lib.el]]          | Generic predicates and utilities (find calc buffer, at-*-p) |
-| [[file:../../src/maf-core-sel.el][src/maf-core-sel.el]]          | Selection-state introspection (any-selection, effective-m)  |
-| [[file:../../src/maf-core-resolve.el][src/maf-core-resolve.el]]      | Context resolution + target dispatch                       |
-| [[file:../../src/maf-core-commit.el][src/maf-core-commit.el]]       | Commit recipes (push/pop choreography per target)          |
-| [[file:../../src/maf-core-defcmd.el][src/maf-core-defcmd.el]]       | The =maf-defcmd= macro + parsing helpers                   |
+| [[file:../../src/core/maf-lib.el][src/core/maf-lib.el]]          | Generic predicates and utilities (find calc buffer, at-*-p) |
+| [[file:../../src/core/maf-sel.el][src/core/maf-sel.el]]          | Selection-state introspection (any-selection, effective-m)  |
+| [[file:../../src/core/maf-resolve.el][src/core/maf-resolve.el]]      | Context resolution + target dispatch                       |
+| [[file:../../src/core/maf-commit.el][src/core/maf-commit.el]]       | Commit recipes (push/pop choreography per target)          |
+| [[file:../../src/core/maf-defcmd.el][src/core/maf-defcmd.el]]       | The =maf-defcmd= macro + parsing helpers                   |
 | [[file:../../debug/maf-step.el][debug/maf-step.el]]        | Debug helpers (slowly-stepped command playback)            |
 | [[file:../../step-tests/][step-tests/]]              | Interactive step tests (=f4= runs the current one)         |
 
@@ -211,5 +211,5 @@ Load order in =maf.el=: =lib= → =sel= → =debug= → =resolve= → =commit=
 * See also
 
 - [[file:walkthrough.org][walkthrough.org]] — sqrt-at-subexpr traced end-to-end
-- [[file:../../src/maf-core-resolve.el][src/maf-core-resolve.el]] — context schema reference at top of file
+- [[file:../../src/core/maf-resolve.el][src/core/maf-resolve.el]] — context schema reference at top of file
 - [[file:calc-ref.org][calc-ref.org]] — calc API reference

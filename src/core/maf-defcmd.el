@@ -1,15 +1,15 @@
 ;; -*- lexical-binding: t; -*-
 ;;
-;; maf-core-defcmd.el
+;; maf-defcmd.el
 ;;
 ;; Defines the `maf-defcmd' macro for declaring contextual calc commands.
 ;; A defcmd inspects point and the calc stack at call time, resolves a context
 ;; (home, entry, selection, etc.), and commits its result to the right location.
 
 (require 'calc)  ; the macro expands to `calc-wrapper', defined in calc
-(require 'maf-core-lib)
-(require 'maf-core-resolve)
-(require 'maf-core-commit)
+(require 'maf-lib)
+(require 'maf-resolve)
+(require 'maf-commit)
 
 (defun maf--defcmd-parse-docstring (forms)
   "Return the docstring from FORMS if the first element is a string, else nil."
@@ -112,4 +112,4 @@ ARG, runs the body, and commits its result to the right stack location."
               (cl-flet ((,commit (val) (maf--commit val ,context)))
                 ,@body))))))))
 
-(provide 'maf-core-defcmd)
+(provide 'maf-defcmd)

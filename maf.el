@@ -20,15 +20,15 @@
 ;;; Code:
 
 (let ((dir (file-name-directory (or load-file-name buffer-file-name))))
-  (add-to-list 'load-path (expand-file-name "src" dir))
+  (add-to-list 'load-path (expand-file-name "src/core" dir))
   (add-to-list 'load-path (expand-file-name "debug" dir)))
 
-(require 'maf-core-lib)
-(require 'maf-core-sel)
+(require 'maf-lib)
+(require 'maf-sel)
 (require 'maf-step)
-(require 'maf-core-resolve)
-(require 'maf-core-commit)
-(require 'maf-core-defcmd)
+(require 'maf-resolve)
+(require 'maf-commit)
+(require 'maf-defcmd)
 
 (defgroup maf nil
   "Math-Algebra-Formulas: an alternative UX for Emacs Calc."

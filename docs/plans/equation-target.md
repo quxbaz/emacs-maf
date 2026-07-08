@@ -206,7 +206,7 @@ result. The TODO marker can come off this branch.
 
 ## Schema doc updates
 
-In `maf-core-resolve.el`'s top-of-file schema doc, add:
+In `maf-resolve.el`'s top-of-file schema doc, add:
 
 - `:rel-op` — Relation operator symbol for the equation target.
   Used by the macro to reassemble after per-side iteration.
@@ -240,7 +240,7 @@ Run them via `M-x load-file` or the existing `f4` test loader.
    — that's the prior art. Don't re-derive from scratch.
 3. Implement in this order:
    1. `maf--resolve-target-equation` — fill out the schema fields.
-   2. Schema doc update at the top of `maf-core-resolve.el`.
+   2. Schema doc update at the top of `maf-resolve.el`.
    3. `maf-defcmd` macro — add the equation branch in the expansion.
       Use gensyms for the per-side locals.
    4. `maf--commit`'s equation branch — push the reassembled val.

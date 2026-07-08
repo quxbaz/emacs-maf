@@ -196,7 +196,7 @@ Three places handle the encased cons. Each does a different job — don't
 expect to see a =math-normalize= call in commit, because the cleanup
 already happened in resolve.
 
-1. **resolve** ([[file:../../src/maf-core-resolve.el][maf-core-resolve.el]])
+1. **resolve** ([[file:../../src/core/maf-resolve.el][maf-resolve.el]])
    - calls =calc-prepare-selection=, which encases atoms in the stack entry
    - captures both the clean form (=:expr=, via =math-normalize=) and the
      encased ref (=:expr-ref=)
@@ -206,7 +206,7 @@ already happened in resolve.
 2. **body** (user code)
    - sees the clean =:expr=, so =calcFunc-*= functions take their
      integer/rational branches instead of the cplx branch
-3. **commit** ([[file:../../src/maf-core-commit.el][maf-core-commit.el]])
+3. **commit** ([[file:../../src/core/maf-commit.el][maf-commit.el]])
    - pre-encases =val= so we hold a reference to the cons that ends up
      in =new-formula= (useful for =:reselect=)
    - uses =:expr-ref= (not =:expr=) for =calc-replace-sub-formula= because
