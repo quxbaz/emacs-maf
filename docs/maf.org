@@ -91,9 +91,6 @@
   - [ ] Loop through calcFunc to find calc commands and autogenerate contextual
     commands.
 
-* Notes
-  - Try to use (defmath) macro if possible.
-
 * Main features
   - Make edit-mode obsolete. Implement free-edit-mode, like editing a dired buffer.
   - Submodules: graphing submodule, vim bindings submodule, etc. Toggle on to
