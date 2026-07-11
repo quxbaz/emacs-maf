@@ -98,10 +98,6 @@
    This should invert both sides of an equation. Normally the binding would use
    '&' instead of 'o', but 'o' is more convenient and I have that bound to
    'calc-inv' The issue is that the 'a m' sequence expects standard keybindings.
-** Flatten conditions
-   : Not worth it. Makes the code more complicated actually.
-   (my/calc-replace-expr-dwim)
-   Flatten the conditions for clarity without duplicating code.
 
 * Highlighting
   - in selection mode, highlight the selection
