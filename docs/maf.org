@@ -1,45 +1,12 @@
 #+title: maf
 
-* Guides and Conventions
-  A command should take an explicit number of arguments - never implicit.
-
-  For example, (my/calc-factor-by) by default works on the top 2 stack items.
-  But for convenience, we may want it to to automatically take the GCD of the
-  top stack item if no second argument is given.
-
-  However, this would be a mistake. In order for (my/calc-factor-by) to work in
-  context properly, it *cannot* accept an implicit number of arguments.
-
-  Take an example where the point is over a subexpression at stack level m=3.
-  The user invokes (my/calc-factor-by) to factor the subexpression. Should the
-  subexpression factor by its GCD or by the stack (m=1) item? Both cases are
-  valid and useful, but the choice cannot be disambiguated.
-
-  The correct behavior is for the command to either *always* take 2 arguments
-  (the target expression and the factor) or *always* take a single argument (the
-  target expression - the GCD is automatically selected as the factor).
-
-  If the first behavior is chosen, the `H` flag can be used to *explicitly*
-  enable the second behavior. This is the preferred way.
-
 * Docs
   [[https://www.gnu.org/software/emacs/manual/html_mono/calc.html#Lisp-Definitions][lisp definitions]]
   [[https://www.gnu.org/software/emacs/manual/html_mono/calc.html#Stack-Access][stack access]]
   [[https://www.gnu.org/software/emacs/manual/html_mono/calc.html#Symbolic-Lisp-Functions][symbolic lisp functions]]
 
-* Plan
-  I want to move all of the calc customizations in @my/calc/ into a new package
-  called "maf". How should we go about this? I want to make as few changes as
-  possible. Just relocate. Some other things:
-  - Also create a minor-mode package.
-  - This package should be its own git project (how to handle this?)
-
-* Steps
-  1) Organize .org file
-  2) Write macro first then develop maf-test based on the various option
-     combinations and input types (expression, line, equation, etc)
-  3) Develop maf-test
-  4) Read calc manual
+* Plan (macro)
+  1) [ ] Move all of relevant my/calc config into project.
 
 * Todo [0/36]
   - [ ] Add function to get calc buffer
