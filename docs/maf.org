@@ -12,6 +12,9 @@
   - Vim bindings (noun, verb, char)
   - Persistent sub-formula highlighting
   - Debug modes
+  - Make edit-mode obsolete. Implement free-edit-mode, like editing a dired buffer.
+  - Submodules: graphing submodule, vim bindings submodule, etc. Toggle on to
+    enable a section of features.
 
 * Todo [0/36]
   - [ ] Add function to get calc buffer
@@ -58,11 +61,6 @@
   - [ ] Always show entry at point in "big" mode, somewhere.
   - [ ] Move all options to unified configuration view.
     - Free up option prefix bindings (eg, m).
-
-* Main features
-  - Make edit-mode obsolete. Implement free-edit-mode, like editing a dired buffer.
-  - Submodules: graphing submodule, vim bindings submodule, etc. Toggle on to
-    enable a section of features.
 
 * Bugs
   - (my/calc-factor-by-gcd) not working
