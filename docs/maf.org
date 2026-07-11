@@ -8,6 +8,11 @@
 * Plan (macro)
   1) [ ] Move all of relevant my/calc config into project.
 
+* Major features
+  - Vim bindings (noun, verb, char)
+  - Persistent sub-formula highlighting
+  - Debug modes
+
 * Todo [0/36]
   - [ ] Add function to get calc buffer
   - [ ] If on home line, stick point to the "."
@@ -98,15 +103,6 @@
    This should invert both sides of an equation. Normally the binding would use
    '&' instead of 'o', but 'o' is more convenient and I have that bound to
    'calc-inv' The issue is that the 'a m' sequence expects standard keybindings.
-
-* Highlighting
-  - in selection mode, highlight the selection
-  - highlight both sides of equation separately with different colors
-
-* Major features
-  Vim bindings (noun, verb, char)
-  Persistent sub-formula highlighting
-  Debug modes
 
 * Package
   Binding for "home"
