@@ -1,5 +1,4 @@
 /.claude/*.lock
-/calc-src/
-/gnu-emacs-calc-manual/
+/calc-ref/
 /docs/gnu-emacs-calc-manual/
 /project-init.el
