@@ -3,7 +3,7 @@
 ;; stack.el
 ;;
 ;; Hand-written contextual stack commands: composites with no single
-;; calcFunc equivalent, ported from the author's my/calc/stack.el.
+;; calcFunc equivalent.
 
 (require 'maf-defcmd)
 
