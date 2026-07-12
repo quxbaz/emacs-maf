@@ -1,7 +1,12 @@
 #+title: Todo
 
-* Now [0/0]
-  --
+* Now [0/1]
+  - [ ] Work on position after commit for each context target type.
+    Case 1:
+    3:  sin(y) = k|
+    n (mafcmd-neg)
+    => This should keep point at the end of the targeted entry, but instead
+       point moves to home position.
 
 * Later [0/2]
 ** TODO Set place/point after (maf--commit)
