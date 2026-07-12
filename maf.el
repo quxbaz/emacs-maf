@@ -39,6 +39,10 @@
   :group 'calc
   :prefix "maf-")
 
+;; Core UX: highlight the sub-formula under point in every calc buffer.
+;; Toggle it per buffer with M-x maf-hl-mode.
+(add-hook 'calc-mode-hook #'maf-hl-mode)
+
 ;;;###autoload
 (defun maf-calc ()
   "Start calc with dwim window behavior.
