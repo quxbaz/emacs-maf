@@ -82,6 +82,27 @@ sub-expression on the line; those positions route to equation/entry targets."
       (and (> idx 0)
            (maf--relation-p (calc-top idx 'full))))))
 
+(defmacro maf--preserve-point (&rest forms)
+  "Evaluate FORMS, then restore point's line, position, and BOL/EOL affinity.
+Calc commands that rewrite the stack buffer leave point at home; this
+keeps the cursor where the user had it. Point returns to its previous
+buffer position, corrected back to the original line when the rewrite
+shifted it. If point was at EOL or in the line-number prefix, that
+affinity is restored on the line rather than the exact position."
+  (declare (indent 0))
+  `(let ((saved-point (point))
+         (saved-line (line-number-at-pos))
+         (saved-affinity (cond ((eolp) 'eol)
+                               ((maf--at-line-prefix-p) 'bol))))
+     (prog1 (progn ,@forms)
+       (goto-char saved-point)
+       (when (/= (line-number-at-pos) saved-line)
+         (goto-char (point-min))
+         (forward-line (1- saved-line)))
+       (pcase saved-affinity
+         ('eol (end-of-line))
+         ('bol (beginning-of-line))))))
+
 (defun maf-push (expr)
   "Parse algebraic EXPR and push it onto the calc stack.
 A convenience over pushing a raw calc s-expression: instead of

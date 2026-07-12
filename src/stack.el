@@ -20,6 +20,8 @@
 (declare-function calcFunc-nrat "calc-poly")
 (declare-function calcFunc-expand "calc-poly")
 (declare-function math-simplify "calc-alg")
+(declare-function calc-undo "calc-undo")
+(declare-function calc-redo "calc-undo")
 
 (maf-defcmd mafcmd-factor-by (expr arg commit)
   "Factor the resolved expression by the top-of-stack argument.
@@ -42,5 +44,18 @@ stack level 2 by level 1."
               (calcFunc-mul arg quotient)))))
 
 (define-key maf-mode-map (kbd "l f") #'mafcmd-factor-by)
+
+(defun maf-undo (n)
+  "Like `calc-undo', but keep point in place instead of jumping home."
+  (interactive "p")
+  (maf--preserve-point (calc-undo n)))
+
+(defun maf-redo (n)
+  "Like `calc-redo', but keep point in place instead of jumping home."
+  (interactive "p")
+  (maf--preserve-point (calc-redo n)))
+
+(define-key maf-mode-map (kbd "U") #'maf-undo)
+(define-key maf-mode-map (kbd "D") #'maf-redo)
 
 (provide 'maf-stack)
