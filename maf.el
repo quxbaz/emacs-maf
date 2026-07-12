@@ -28,6 +28,7 @@
 (require 'maf-sel)
 (require 'maf-hl)
 (require 'maf-step)
+(require 'maf-hl-verify)
 (require 'maf-resolve)
 (require 'maf-commit)
 (require 'maf-defcmd)
