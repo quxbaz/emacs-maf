@@ -8,12 +8,12 @@
 * Plan (macro)
   1) [ ] Move all of relevant my/calc config into project.
 
-* Major features
-  - Vim bindings (noun, verb, char)
-  - Persistent sub-formula highlighting
-  - Debug modes
-  - Make edit-mode obsolete. Implement free-edit-mode, like editing a dired buffer.
-  - Submodules: graphing submodule, vim bindings submodule, etc. Toggle on to
+* Major features [1/5]
+  - [ ] Vim bindings (noun, verb, char)
+  - [X] Persistent sub-formula highlighting
+  - [ ] Debug modes
+  - [ ] Make edit-mode obsolete. Implement free-edit-mode, like editing a dired buffer.
+  - [ ] Submodules: graphing submodule, vim bindings submodule, etc. Toggle on to
     enable a section of features.
 
 * Todo [0/36]
