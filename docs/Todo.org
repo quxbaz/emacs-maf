@@ -2,7 +2,15 @@
 
 * Now [0/1]
 ** NEXT Work on setting point/position after commit for each context target type.
-   EXAMPLE
+   CASE: target=entry point=home
+   => point should stay at home
+   CASE: target=subexpr point=subexpr
+   => point stays at targeted subexpr
+   CASE: target=entry point=line-prefix or EOL of stack entry
+   => point stays at either line-prefix or EOL
+   CASE: target=equation point=home
+   => point should stay at home
+   CASE: target=equation point=entry
    3:  sin(y) = k|
    n (mafcmd-neg)
    => This should keep point at the end of the targeted entry, but instead
