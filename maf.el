@@ -34,6 +34,7 @@
 (require 'maf-defcmd)
 (require 'maf-cmds)
 (require 'maf-stack "stack")
+(require 'maf-bindings "bindings")
 
 (defgroup maf nil
   "Math-Algebra-Formulas: an alternative UX for Emacs Calc."

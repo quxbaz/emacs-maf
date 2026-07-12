@@ -7,12 +7,6 @@
 
 (require 'maf-defcmd)
 
-;; Also defvar'd in maf.el and maf-cmds.el; whichever file loads first
-;; creates the map, the rest are no-ops. Declared here so this file can
-;; install its bindings below.
-(defvar maf-mode-map (make-sparse-keymap)
-  "Keymap for `maf-mode'.")
-
 ;; These live in lazily-loaded calc modules; calc-ext's autoload registry
 ;; resolves them at runtime, but the byte compiler needs declarations.
 (declare-function calcFunc-mul "calc-arith")
@@ -43,8 +37,6 @@ stack level 2 by level 1."
     (commit (let ((calc-simplify-mode 'none))
               (calcFunc-mul arg quotient)))))
 
-(define-key maf-mode-map (kbd "l f") #'mafcmd-factor-by)
-
 (defun maf-undo (n)
   "Like `calc-undo', but keep point in place instead of jumping home."
   (interactive "p")
@@ -54,8 +46,5 @@ stack level 2 by level 1."
   "Like `calc-redo', but keep point in place instead of jumping home."
   (interactive "p")
   (maf--preserve-point (calc-redo n)))
-
-(define-key maf-mode-map (kbd "U") #'maf-undo)
-(define-key maf-mode-map (kbd "D") #'maf-redo)
 
 (provide 'maf-stack)
