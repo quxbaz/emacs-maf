@@ -11,6 +11,8 @@
 (require 'cl-lib)
 (require 'calc)  ; so `calc-display-trail' is a declared special before we let-bind it
 
+(declare-function calc-reset "calc-ext")  ; autoloaded from calc-ext at runtime
+
 ;; State is global (only one step session runs at a time) rather than closed
 ;; over, so `maf-step' works at call sites without lexical-binding: t.
 (defvar maf--step-buffer  nil)  ; the calc buffer forms run in (created fresh per session)
@@ -78,7 +80,13 @@ keeping the cockpit a clean two-window layout."
   (maf--step-kill-calc)
   (let ((calc-display-trail nil))
     (save-window-excursion (calc)))
-  (get-buffer "*Calculator*"))
+  (with-current-buffer "*Calculator*"
+    ;; The stack can survive the kill (calc global state, or a config that
+    ;; saves/restores it); a fresh session must start empty or tests that
+    ;; assert absolute stack sizes see the previous session's leftovers.
+    (when (> (calc-stack-size) 0)
+      (calc-pop (calc-stack-size)))
+    (current-buffer)))
 
 (defun maf--step-setup-windows ()
   "Lay out the cockpit in the current frame: `*maf-step*' left, calc right.
