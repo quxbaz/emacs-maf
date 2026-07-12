@@ -15,6 +15,8 @@
    n (mafcmd-neg)
    => This should keep point at the end of the targeted entry, but instead
       point moves to home position.
+
+   - Should the point/position info be stored inside context object?
 ** TODO Update concepts to explain context structure.
 
 * Later [0/2]
