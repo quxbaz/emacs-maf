@@ -33,6 +33,7 @@
 (require 'maf-commit)
 (require 'maf-defcmd)
 (require 'maf-cmds)
+(require 'maf-stack "stack")
 
 (defgroup maf nil
   "Math-Algebra-Formulas: an alternative UX for Emacs Calc."
