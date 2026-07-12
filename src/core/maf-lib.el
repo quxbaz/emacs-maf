@@ -4,6 +4,17 @@
 ;;
 ;; maf library functions
 
+(require 'calc)
+
+;; Defined in lazily-loaded calc modules; calc-ext's autoload registry
+;; resolves them at runtime, but the byte compiler needs declarations.
+(declare-function calc-push "calc-ext")
+(declare-function calc-top "calc-ext")
+(declare-function calc-locate-cursor-element "calc-yank")
+(declare-function calc-prepare-selection "calc-sel")
+(declare-function calc-find-selected-part "calc-sel")
+(declare-function math-read-expr "calc-aent")
+
 (defun maf--find-calc-buffer ()
   "Find the calc buffer.
 Prefers the current buffer if it is in calc-mode, then looks for

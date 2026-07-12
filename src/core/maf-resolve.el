@@ -52,6 +52,13 @@
 (require 'maf-lib)
 (require 'maf-sel)
 
+;; Defined in lazily-loaded calc modules; calc-ext's autoload registry
+;; resolves them at runtime, but the byte compiler needs declarations.
+(declare-function calc-top "calc-ext")
+(declare-function calc-locate-cursor-element "calc-yank")
+(declare-function calc-prepare-selection "calc-sel")
+(declare-function calc-find-selected-part "calc-sel")
+
 (defun maf--resolve-target-selection (opts)
   "Return the selection target's context alist.
 :expr is the selected sub-expression. The chosen entry is the one under point

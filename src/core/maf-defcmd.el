@@ -72,12 +72,12 @@ body sees:
 
   EXPR    The operand the command acts on, resolved from context — the
           formula at home/entry, the selected sub-expression, the one
-          under point, etc.  For an equation target the body runs once
+          under point, etc. For an equation target the body runs once
           per side, with EXPR bound to the LHS and then the RHS.
   ARG     The second operand for `binary' commands (taken from the calc
           stack top); nil for `unary' commands.
   COMMIT  A local function; call it with the result to write it back to
-          the resolved location.  Call it once per body run (once per
+          the resolved location. Call it once per body run (once per
           side, for an equation target).
 
 REST is an optional docstring, then zero or more keyword-value option
@@ -85,13 +85,13 @@ pairs (OPTS), then the body forms — in that order.
 
 OPTS configure context resolution and commit:
 
-  :arity  Required.  `unary' or `binary'.  Selects whether ARG is taken
+  :arity  Required. `unary' or `binary'. Selects whether ARG is taken
           from the stack and drives how each target resolves EXPR/ARG.
   :prefix String label recorded in the calc trail for the operation.
 
   :inverse             Command (symbol) to run instead when calc's
   :hyperbolic          Inverse flag is set (the I prefix), the
-  :inverse-hyperbolic  Hyperbolic flag (H), or both.  The flags are
+  :inverse-hyperbolic  Hyperbolic flag (H), or both. The flags are
           consumed before the variant runs, so variants may themselves
           declare variants (cross-links like ln <-> exp do not loop).
           When a flag is set but the matching variant is absent, the
