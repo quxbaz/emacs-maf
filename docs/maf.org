@@ -21,8 +21,6 @@
   - [ ] If on home line, stick point to the "."
   - [ ] Replace noun with digit entry if point is on sub-formula
   - [ ] Remove keep-point flag in macro
-  - [ ] Add plus and minus calc functions
-  - [ ] Add sin/cos/tan and inverse functions.
   - [ ] Also "stick" point to beginning or end of entry's expression. and also over =, !=, <=/=>
   - [ ] When point is over equation symbol, operate on both sides (unless map is -1).
   - [ ] k k (my/calc-evaluate N) should work on fractions and division.
