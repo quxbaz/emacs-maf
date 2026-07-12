@@ -1,27 +1,7 @@
 #+title: Todo
 
-* Now [1/1]
-** DONE Loop through calcFunc to find calc commands and auto-generate contextual maf-* commands.
-   - Resolution: went table-driven instead of namespace discovery. calc's own
-     key->function operator tables (calc-*-oper-keys in calc-map.el, the data
-     behind V M) are a curated list of user-invocable calcFuncs with arities;
-     src/core/maf-cmds.el checks in the unary/binary subset (233 rows) and a
-     maf-defcmds macro that expands each row into a mafcmd-* defcmd applying
-     the calcFunc via math-normalize. The table is editable data — rename,
-     drop, or add rows freely. This answers the namespace question: raw
-     calcFunc-* scraping would work (special forms like calcFunc-select aren't
-     fboundp), but the oper-keys tables are already the user-space subset.
-   - So calc-plus would be made available as mafcmd-plus, except that
-     mafcmd-plus would operate contextually - consistent with the overall maf
-     system.
-   - The point of this is so that we would avoid having to manually wrap all
-     calc[Func] functions, and if we were to update calc and if it were to
-     incorporate new commands, those commands would automatically be made
-     available as contextually-aware maf commands.
-   - Is the calcFunc-* namespace the correct place to search or will we dredge
-     up commands which aren't necessarily meant to be executed in user-space.
-     We're only trying to wrap commands which would be invoked manually by the
-     user in the context of a calc session.
+* Now [0/0]
+  --
 
 * Later [0/2]
 ** TODO Set place/point after (maf--commit)
