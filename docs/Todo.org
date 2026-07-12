@@ -1,6 +1,6 @@
 #+title: Todo
 
-* Now [0/1]
+* Now [0/2]
 ** NEXT Work on setting point/position after commit for each context target type.
    CASE: target=entry point=home
    => point should stay at home
@@ -15,6 +15,7 @@
    n (mafcmd-neg)
    => This should keep point at the end of the targeted entry, but instead
       point moves to home position.
+** TODO Update concepts to explain context structure.
 
 * Later [0/2]
 ** TODO Set place/point after (maf--commit)
