@@ -181,6 +181,28 @@ have to be on the operand whose value will be replaced."
         (:commit-n   . ,(if keep 0 1))
         (:post-pop   . ,(if keep 0 (pcase arity ('unary 0) ('binary 1))))))))
 
+(defun maf--resolve-map-relation (context opts)
+  "Convert CONTEXT to an equation target when its subject is a relation.
+Applies to home, entry, and subexpr targets: whenever the resolved :expr
+is itself a relation, the body should run once per side, exactly as it
+does when point sits on a relation entry's margin. Commands whose body
+consumes the relation whole (solve, mapeq, the relation builders) opt out
+with :map -1 in OPTS.
+
+The equation keys are prepended, shadowing :target while keeping the base
+target's commit fields — the rebuilt relation replaces whatever the base
+target would have replaced."
+  (let ((expr (alist-get :expr context)))
+    (if (or (eql (alist-get :map opts) -1)
+            (not (memq (alist-get :target context) '(home entry subexpr)))
+            (not (maf--relation-p expr)))
+        context
+      (append `((:target . equation)
+                (:rel-op . ,(car expr))
+                (:lhs    . ,(math-normalize (nth 1 expr)))
+                (:rhs    . ,(math-normalize (nth 2 expr))))
+              context))))
+
 (defun maf--resolve-context (opts)
   "Inspect point and calc state; return a context descriptor alist.
 
@@ -194,15 +216,25 @@ Possible :target values, in order of priority:
   home       Point is at or below the . line.
   subexpr    Implicit selection. Point is inside an entry.
   equation   Entry is a relation (=, !=, <, <=, >, >=); body runs once per side.
-  entry      Whole stack entry; point is at EOL, line-prefix zone, or line mode is forced."
+  entry      Whole stack entry; point is at EOL or in the line-prefix zone.
+
+Whenever the resolved subject (:expr) is itself a relation — the entry at
+the margin, the entry at home, the shifted entry target, or the relation
+node under point — the context is converted to the equation target so the
+body runs once per side. Commands opt out with :map -1 in OPTS, keeping
+the whole relation as :expr."
   (maf--with-calc-buffer
-    (append (cond
-             ((maf--sel-any-p)        (maf--resolve-target-selection opts))
-             ((maf--at-home-p)        (maf--resolve-target-home opts))
-             ((maf--at-subexpr-p)     (maf--resolve-target-subexpr opts))
-             ((maf--at-equation-p)    (maf--resolve-target-equation opts))
-             ((maf--at-line-margin-p) (maf--resolve-target-entry opts))
-             (t (error "Could not resolve target at point")))
+    (append (maf--resolve-map-relation
+             (cond
+              ((maf--sel-any-p)        (maf--resolve-target-selection opts))
+              ((maf--at-home-p)        (maf--resolve-target-home opts))
+              ((maf--at-subexpr-p)     (maf--resolve-target-subexpr opts))
+              ((and (maf--at-equation-p)
+                    (not (eql (alist-get :map opts) -1)))
+                                       (maf--resolve-target-equation opts))
+              ((maf--at-line-margin-p) (maf--resolve-target-entry opts))
+              (t (error "Could not resolve target at point")))
+             opts)
             ;; Also include options declared in the defcmd body like :arity, :prefix, etc
             opts
             ;; Include some useful properties as well like calc flag states

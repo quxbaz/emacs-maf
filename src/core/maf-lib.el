@@ -57,14 +57,19 @@ sub-expression on the line; those positions route to equation/entry targets."
              (calc-prepare-selection)
              (and (calc-find-selected-part) t))))))
 
+(defun maf--relation-p (expr)
+  "Return t if EXPR is a relation (=, !=, <, <=, >, >=)."
+  (and (consp expr)
+       (memq (car expr) '(calcFunc-eq calcFunc-neq calcFunc-lt
+                          calcFunc-leq calcFunc-gt calcFunc-geq))
+       t))
+
 (defun maf--at-equation-p ()
   "Return t if the stack entry under point is a relation (=, !=, <, <=, >, >=)."
   (maf--with-calc-buffer
-    (let* ((idx (calc-locate-cursor-element (point)))
-           (expr (and (> idx 0) (calc-top idx 'full))))
-      (and (consp expr)
-           (memq (car expr) '(calcFunc-eq calcFunc-neq calcFunc-lt calcFunc-leq calcFunc-gt calcFunc-geq))
-           t))))
+    (let ((idx (calc-locate-cursor-element (point))))
+      (and (> idx 0)
+           (maf--relation-p (calc-top idx 'full))))))
 
 (defun maf-push (expr)
   "Parse algebraic EXPR and push it onto the calc stack.

@@ -97,6 +97,11 @@ OPTS configure context resolution and commit:
           When a flag is set but the matching variant is absent, the
           command signals `user-error' and still consumes the flags.
 
+  :map    When -1, opt out of per-side equation mapping: a subject that
+          is a relation stays whole in EXPR instead of the body running
+          once per side. For commands that consume or produce relations
+          (solve, mapeq, the relation builders).
+
 Any other keyword in OPTS is merged verbatim into the resolved context
 alist, so resolve/commit extensions can read it.
 
