@@ -26,6 +26,7 @@
 
 (require 'maf-lib)
 (require 'maf-sel)
+(require 'maf-hl)
 (require 'maf-step)
 (require 'maf-resolve)
 (require 'maf-commit)
