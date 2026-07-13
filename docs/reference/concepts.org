@@ -71,36 +71,65 @@ shadow later ones:
 1. *Target keys* — from the matched =maf--resolve-target-X= function,
    possibly converted by relation mapping (below).
 2. *Declaration options* — the defcmd's OPTS merged in verbatim. Known
-   keys are =:arity=, =:prefix=, =:map=, and the I/H variant links; any
-   other keyword passes through untouched, so resolve/commit extensions
-   can define their own.
-3. *Ambient state* — snapshots taken at resolve time: =:keep=
-   (=calc-keep-args-flag=) and =:point= (point's placement, captured
-   before the rewrite destroys it).
+   keys are =:arity= (the symbol =unary= or =binary=), =:prefix= (the
+   trail label string), =:map= (=-1= opts out of relation mapping),
+   and the I/H variant links (command symbols); any other keyword
+   passes through untouched, so resolve/commit extensions can define
+   their own.
+3. *Ambient state* — snapshots taken at resolve time: =:keep= (the
+   =calc-keep-args-flag= boolean) and =:point= (an alist of point's
+   placement, captured before the rewrite destroys it — see
+   [[*Point restoration][Point restoration]] for its keys).
+
+For example, a binary mult command (=:prefix "mult"=) invoked with
+point on the =x= of =2: 6 x + 12=, with =5= at the top of the stack,
+resolves to:
+
+#+begin_example
+((:target    . subexpr)                ; target keys
+ (:expr      . (var x var-x))
+ (:expr-ref  . (var x var-x))          ; the encased cons from the entry
+ (:arg       . 5)
+ (:m         . 2)
+ (:commit-m  . 2)
+ (:commit-n  . 1)
+ (:post-pop  . 1)
+ (:reselect  . nil)
+ (:arity     . binary)                 ; declaration options
+ (:prefix    . "mult")
+ (:keep      . nil)                    ; ambient state
+ (:point     . ((:pos . 7) (:line . 1) (:affinity . nil))))
+#+end_example
 
 Two consumers read it. The macro-generated command wires the body:
 
-- =:target= — which target matched. Selects the execution shape
-  (single body run vs once per side); commit also dispatches on it to
-  pick the splice path.
-- =:expr= — the clean operand, bound as the body's EXPR.
-- =:arg= — the second operand for binary commands, bound as ARG; nil
-  for unary.
-- =:rel-op=, =:lhs=, =:rhs= — equation target only. The body runs once
-  with EXPR bound to =:lhs=, once to =:rhs=, and the two results are
+- =:target= — a symbol: =home=, =selection=, =subexpr=, =equation=, or
+  =entry=. Selects the execution shape (single body run vs once per
+  side); commit also dispatches on it to pick the splice path.
+- =:expr= — the clean operand, a normalized calc formula, bound as the
+  body's EXPR.
+- =:arg= — the second operand for binary commands, a normalized calc
+  formula, bound as ARG; nil for unary.
+- =:rel-op=, =:lhs=, =:rhs= — equation target only. =:rel-op= is the
+  relation's head symbol (=calcFunc-eq=, =calcFunc-neq=, =calcFunc-lt=,
+  =calcFunc-leq=, =calcFunc-gt=, or =calcFunc-geq=); =:lhs= and =:rhs=
+  are the two sides as normalized formulas. The body runs once with
+  EXPR bound to =:lhs=, once to =:rhs=, and the two results are
   reassembled under =:rel-op= before a single commit.
 
 =maf--commit= applies the result:
 
-- =:commit-m=, =:commit-n=, =:post-pop= — the push/pop recipe (see
+- =:commit-m=, =:commit-n=, =:post-pop= — integers encoding the
+  push/pop recipe: the stack level to push at, the entries popped
+  there first, and the entries popped from the top afterward (see
   [[*The commit recipe][The commit recipe]]).
-- =:m= — stack level of the target entry; where commit fetches the
-  full formula for splicing.
-- =:expr-ref= — encased cons for the eq-based splice. Selection and
-  subexpr only (see [[*Encasing][Encasing]]).
-- =:reselect= — whether the committed result becomes the new
+- =:m= — integer stack level (1 = top) of the target entry; where
+  commit fetches the full formula for splicing.
+- =:expr-ref= — the encased cons cell for the eq-based splice.
+  Selection and subexpr only (see [[*Encasing][Encasing]]).
+- =:reselect= — boolean: whether the committed result becomes the new
   selection.
-- =:prefix= — trail label recorded with the operation.
+- =:prefix= — string: trail label recorded with the operation.
 
 The commit instructions are computed /at resolve time/, not by commit:
 each target function knows how its own result should land (including
@@ -119,18 +148,21 @@ as the generated command's last act — restore has to run once
 =calc-wrapper= returns, because anything done inside the wrapper is
 clobbered by the epilogue.
 
-The snapshot (=maf--point-snapshot=) records three things: the buffer
-position, the line number, and a semantic /affinity/ — =home= when
-point was at or below the =.= line, =eol= at end of line, =bol= in the
-line-number prefix.
+The snapshot (=maf--point-snapshot=) is itself an alist of three keys:
+
+- =:pos= — integer: point's buffer position.
+- =:line= — integer: the line number at point.
+- =:affinity= — a symbol classifying the position semantically: =home=
+  when point was at or below the =.= line, =eol= at end of line, =bol=
+  in the line-number prefix, or nil inside an entry's formula text.
 
 =maf--point-restore= applies it:
 
-- A =home= snapshot restores nothing; calc's default placement already
+- =home= affinity restores nothing; calc's default placement already
   matches.
-- Otherwise point returns to the saved position, corrected back to the
-  saved line if the rewrite shifted it, and =eol=/=bol= affinity is
-  re-applied on the line rather than the exact column.
+- Otherwise point returns to =:pos=, corrected back to =:line= if the
+  rewrite shifted it, and =eol=/=bol= affinity is re-applied on the
+  line rather than the exact position.
 
 Line-based restore is correct for every target because of a commit
 invariant: commits only pop entries at the target's level and below it
