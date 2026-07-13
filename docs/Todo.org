@@ -17,7 +17,7 @@
       point moves to home position.
 
    - Should the point/position info be stored inside context object?
-** NEXT Move core/ files to top-level directory (emacs-maf/core/)
+** NEXT Move core/ directory to top-level directory (emacs-maf/core/)
 
 * Later [0/2]
 ** TODO Set place/point after (maf--commit)
