@@ -16,7 +16,7 @@
   - [ ] Submodules: graphing submodule, vim bindings submodule, etc. Toggle on to
     enable a section of features.
 
-* Todo [0/36]
+* Todo [0/35]
   - [ ] Add function to get calc buffer
   - [ ] If on home line, stick point to the "."
   - [ ] Replace noun with digit entry if point is on sub-formula
@@ -59,6 +59,8 @@
   - [ ] Always show entry at point in "big" mode, somewhere.
   - [ ] Move all options to unified configuration view.
     - Free up option prefix bindings (eg, m).
+  - [ ] Feature: In stack mode, bind M-[n/p] to recall previous/next bare
+    (starting from empty) edit-mode entries.
 
 * Bugs
   - (my/calc-factor-by-gcd) not working
