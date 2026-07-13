@@ -58,6 +58,74 @@ The cascade lives in =maf--resolve-context=. The predicates live in
 Each target has a dedicated =maf--resolve-target-X= function that
 produces the target-specific portion of the context alist.
 
+The equation target also fires by /conversion/: when home, entry, or
+subexpr resolves an =:expr= that is itself a relation, the context is
+rewritten to equation after the fact (see [[*Relation mapping][Relation mapping]]).
+
+* The context alist
+
+Everything resolve learns is carried in one flat alist — the /context/
+— which the later phases read but never mutate. =maf--resolve-context=
+assembles it from three layers, appended in order, so earlier keys
+shadow later ones:
+
+1. *Target keys* — from the matched =maf--resolve-target-X= function,
+   possibly converted by relation mapping (below).
+2. *Declaration options* — the defcmd's OPTS merged in verbatim. Known
+   keys are =:arity=, =:prefix=, =:map=, and the I/H variant links; any
+   other keyword passes through untouched, so resolve/commit extensions
+   can define their own.
+3. *Ambient state* — calc mode flags snapshotted at resolve time
+   (currently just =:keep=).
+
+Two consumers read it. The macro-generated command wires the body:
+
+- =:target= — which target matched. Selects the execution shape
+  (single body run vs once per side); commit also dispatches on it to
+  pick the splice path.
+- =:expr= — the clean operand, bound as the body's EXPR.
+- =:arg= — the second operand for binary commands, bound as ARG; nil
+  for unary.
+- =:rel-op=, =:lhs=, =:rhs= — equation target only. The body runs once
+  with EXPR bound to =:lhs=, once to =:rhs=, and the two results are
+  reassembled under =:rel-op= before a single commit.
+
+=maf--commit= applies the result:
+
+- =:commit-m=, =:commit-n=, =:post-pop= — the push/pop recipe (see
+  [[*The commit recipe][The commit recipe]]).
+- =:m= — stack level of the target entry; where commit fetches the
+  full formula for splicing.
+- =:expr-ref= — encased cons for the eq-based splice. Selection and
+  subexpr only (see [[*Encasing][Encasing]]).
+- =:reselect= — whether the committed result becomes the new
+  selection.
+- =:prefix= — trail label recorded with the operation.
+
+The commit instructions are computed /at resolve time/, not by commit:
+each target function knows how its own result should land (including
+the keep-args variants), and commit just executes the recipe. That
+split is what keeps commit target-agnostic apart from the splicing
+special case.
+
+The authoritative key-by-key schema lives at the top of
+[[file:../../src/core/maf-resolve.el][maf-resolve.el]].
+
+** Relation mapping
+
+A relation can become the subject without point sitting on a relation
+entry: the top entry at home, an entry target at the margin, or the
+relation node itself under point as a subexpr. =maf--resolve-map-relation=
+inspects every home, entry, and subexpr context after resolution; when
+its =:expr= is a relation, it prepends the equation keys — =:target=,
+=:rel-op=, =:lhs=, =:rhs= — onto the context. The base target's commit
+fields remain (only =:target= is shadowed), so the rebuilt relation
+replaces exactly what the base target would have replaced.
+
+Commands whose body consumes or produces relations whole (solve,
+mapeq, the relation builders) opt out with =:map -1=, which also
+disables the direct equation branch of the cascade.
+
 * Encasing
 
 Calc's mechanism for distinguishing duplicate atoms by =eq=.

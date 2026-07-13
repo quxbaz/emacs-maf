@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2026-05-26 Tue 22:55 -->
+<!-- 2026-07-13 Mon 16:34 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>maf concepts</title>
@@ -202,16 +202,21 @@
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents" role="doc-toc">
 <ul>
-<li><a href="#org24b75fd">1. The flow</a></li>
-<li><a href="#orgff0a279">2. The target system</a></li>
-<li><a href="#org59e2084">3. Encasing</a></li>
-<li><a href="#org3a1c1a2">4. :expr vs :expr-ref</a></li>
-<li><a href="#org9d5634d">5. Reselect</a></li>
-<li><a href="#orga615751">6. Keep-args</a></li>
-<li><a href="#orgc0665f2">7. The commit recipe</a></li>
-<li><a href="#org596a651">8. Binary on selection-like targets</a></li>
-<li><a href="#org02ac47d">9. Files</a></li>
-<li><a href="#org22cbdf9">10. See also</a></li>
+<li><a href="#org4130b3a">1. The flow</a></li>
+<li><a href="#org679afaf">2. The target system</a></li>
+<li><a href="#orgd890cd7">3. The context alist</a>
+<ul>
+<li><a href="#org6706bbc">3.1. Relation mapping</a></li>
+</ul>
+</li>
+<li><a href="#org5835e1f">4. Encasing</a></li>
+<li><a href="#org46c52e9">5. :expr vs :expr-ref</a></li>
+<li><a href="#org473b5fc">6. Reselect</a></li>
+<li><a href="#org5cf0673">7. Keep-args</a></li>
+<li><a href="#org07e7704">8. The commit recipe</a></li>
+<li><a href="#org8af1d8a">9. Binary on selection-like targets</a></li>
+<li><a href="#org5cd6db5">10. Files</a></li>
+<li><a href="#orgedbaef1">11. See also</a></li>
 </ul>
 </div>
 </div>
@@ -220,8 +225,8 @@ Architectural overview of the maf codebase. Read this before diving into
 any specific file; cross-reference with <a href="walkthrough.html">walkthrough.org</a> for a concrete
 worked example.
 </p>
-<div id="outline-container-org24b75fd" class="outline-2">
-<h2 id="org24b75fd"><span class="section-number-2">1.</span> The flow</h2>
+<div id="outline-container-org4130b3a" class="outline-2">
+<h2 id="org4130b3a"><span class="section-number-2">1.</span> The flow</h2>
 <div class="outline-text-2" id="text-1">
 <p>
 A maf command runs in four phases:
@@ -239,7 +244,7 @@ bindings, computes a result, calls <code>commit</code>.</li>
 per the context's instructions.</li>
 </ol>
 
-<pre class="example" id="orgbf87b9c">
+<pre class="example" id="orgb2b3dff">
 maf-defcmd declaration                        (load time)
     │
     ▼
@@ -262,8 +267,8 @@ schema documented at the top of <a href="../../src/core/maf-resolve.el">maf-reso
 </p>
 </div>
 </div>
-<div id="outline-container-orgff0a279" class="outline-2">
-<h2 id="orgff0a279"><span class="section-number-2">2.</span> The target system</h2>
+<div id="outline-container-org679afaf" class="outline-2">
+<h2 id="org679afaf"><span class="section-number-2">2.</span> The target system</h2>
 <div class="outline-text-2" id="text-2">
 <p>
 Resolve dispatches to one of five <i>targets</i> based on where point is and
@@ -309,7 +314,7 @@ what calc state is active. In priority order:
 <tr>
 <td class="org-left">equation</td>
 <td class="org-left">Point is on a stack entry that is a relation (<code>, !</code>, &#x2026;)</td>
-<td class="org-left">LHS and RHS (TODO: per-side iter)</td>
+<td class="org-left">LHS and RHS (body runs once per side)</td>
 </tr>
 
 <tr>
@@ -329,11 +334,105 @@ The cascade lives in <code>maf--resolve-context</code>. The predicates live in
 Each target has a dedicated <code>maf--resolve-target-X</code> function that
 produces the target-specific portion of the context alist.
 </p>
+
+<p>
+The equation target also fires by <i>conversion</i>: when home, entry, or
+subexpr resolves an <code>:expr</code> that is itself a relation, the context is
+rewritten to equation after the fact (see <a href="#org6706bbc">Relation mapping</a>).
+</p>
 </div>
 </div>
-<div id="outline-container-org59e2084" class="outline-2">
-<h2 id="org59e2084"><span class="section-number-2">3.</span> Encasing</h2>
+<div id="outline-container-orgd890cd7" class="outline-2">
+<h2 id="orgd890cd7"><span class="section-number-2">3.</span> The context alist</h2>
 <div class="outline-text-2" id="text-3">
+<p>
+Everything resolve learns is carried in one flat alist — the <i>context</i>
+— which the later phases read but never mutate. <code>maf--resolve-context</code>
+assembles it from three layers, appended in order, so earlier keys
+shadow later ones:
+</p>
+
+<ol class="org-ol">
+<li><b>Target keys</b> — from the matched <code>maf--resolve-target-X</code> function,
+possibly converted by relation mapping (below).</li>
+<li><b>Declaration options</b> — the defcmd's OPTS merged in verbatim. Known
+keys are <code>:arity</code>, <code>:prefix</code>, <code>:map</code>, and the I/H variant links; any
+other keyword passes through untouched, so resolve/commit extensions
+can define their own.</li>
+<li><b>Ambient state</b> — calc mode flags snapshotted at resolve time
+(currently just <code>:keep</code>).</li>
+</ol>
+
+<p>
+Two consumers read it. The macro-generated command wires the body:
+</p>
+
+<ul class="org-ul">
+<li><code>:target</code> — which target matched. Selects the execution shape
+(single body run vs once per side); commit also dispatches on it to
+pick the splice path.</li>
+<li><code>:expr</code> — the clean operand, bound as the body's EXPR.</li>
+<li><code>:arg</code> — the second operand for binary commands, bound as ARG; nil
+for unary.</li>
+<li><code>:rel-op</code>, <code>:lhs</code>, <code>:rhs</code> — equation target only. The body runs once
+with EXPR bound to <code>:lhs</code>, once to <code>:rhs</code>, and the two results are
+reassembled under <code>:rel-op</code> before a single commit.</li>
+</ul>
+
+<p>
+<code>maf--commit</code> applies the result:
+</p>
+
+<ul class="org-ul">
+<li><code>:commit-m</code>, <code>:commit-n</code>, <code>:post-pop</code> — the push/pop recipe (see
+<a href="#org07e7704">The commit recipe</a>).</li>
+<li><code>:m</code> — stack level of the target entry; where commit fetches the
+full formula for splicing.</li>
+<li><code>:expr-ref</code> — encased cons for the eq-based splice. Selection and
+subexpr only (see <a href="#org5835e1f">Encasing</a>).</li>
+<li><code>:reselect</code> — whether the committed result becomes the new
+selection.</li>
+<li><code>:prefix</code> — trail label recorded with the operation.</li>
+</ul>
+
+<p>
+The commit instructions are computed <i>at resolve time</i>, not by commit:
+each target function knows how its own result should land (including
+the keep-args variants), and commit just executes the recipe. That
+split is what keeps commit target-agnostic apart from the splicing
+special case.
+</p>
+
+<p>
+The authoritative key-by-key schema lives at the top of
+<a href="../../src/core/maf-resolve.el">maf-resolve.el</a>.
+</p>
+</div>
+<div id="outline-container-org6706bbc" class="outline-3">
+<h3 id="org6706bbc"><span class="section-number-3">3.1.</span> Relation mapping</h3>
+<div class="outline-text-3" id="text-3-1">
+<p>
+A relation can become the subject without point sitting on a relation
+entry: the top entry at home, an entry target at the margin, or the
+relation node itself under point as a subexpr. <code>maf--resolve-map-relation</code>
+inspects every home, entry, and subexpr context after resolution; when
+its <code>:expr</code> is a relation, it prepends the equation keys — <code>:target</code>,
+<code>:rel-op</code>, <code>:lhs</code>, <code>:rhs</code> — onto the context. The base target's commit
+fields remain (only <code>:target</code> is shadowed), so the rebuilt relation
+replaces exactly what the base target would have replaced.
+</p>
+
+<p>
+Commands whose body consumes or produces relations whole (solve,
+mapeq, the relation builders) opt out with <code>:map -1</code>, which also
+disables the direct equation branch of the cascade.
+</p>
+</div>
+</div>
+</div>
+<div id="outline-container-org5835e1f" class="outline-2">
+<h2 id="org5835e1f"><span class="section-number-2">4.</span> Encasing</h2>
+<div class="outline-text-2" id="text-4">
 <p>
 Calc's mechanism for distinguishing duplicate atoms by <code>eq</code>.
 </p>
@@ -349,7 +448,7 @@ can't tell them apart structurally.
 each naked atom with <code>(cplx atom 0)</code> — a fresh cons cell each time:
 </p>
 
-<pre class="example" id="org16187c2">
+<pre class="example" id="orgd71c3a9">
 (+ 1 1)    →    (+ (cplx 1 0) (cplx 1 0))
                 ;; ^^^^^^^^^^  ^^^^^^^^^^
                 ;; cons #A     cons #B   ← now distinguishable by eq
@@ -388,9 +487,9 @@ See <a href="walkthrough.html">walkthrough.org</a> for the encasing dance traced
 </p>
 </div>
 </div>
-<div id="outline-container-org3a1c1a2" class="outline-2">
-<h2 id="org3a1c1a2"><span class="section-number-2">4.</span> :expr vs :expr-ref</h2>
-<div class="outline-text-2" id="text-4">
+<div id="outline-container-org46c52e9" class="outline-2">
+<h2 id="org46c52e9"><span class="section-number-2">5.</span> :expr vs :expr-ref</h2>
+<div class="outline-text-2" id="text-5">
 <p>
 The body and commit operate on the same sub-formula but at different
 points in the data flow:
@@ -408,9 +507,9 @@ splice into a parent formula). <code>home</code> and <code>entry</code> don't ha
 </p>
 </div>
 </div>
-<div id="outline-container-org9d5634d" class="outline-2">
-<h2 id="org9d5634d"><span class="section-number-2">5.</span> Reselect</h2>
-<div class="outline-text-2" id="text-5">
+<div id="outline-container-org473b5fc" class="outline-2">
+<h2 id="org473b5fc"><span class="section-number-2">6.</span> Reselect</h2>
+<div class="outline-text-2" id="text-6">
 <p>
 When commit pushes the new entry, should the result be re-selected?
 </p>
@@ -429,9 +528,9 @@ arg to <code>calc-pop-push-record-list</code>.
 </p>
 </div>
 </div>
-<div id="outline-container-orga615751" class="outline-2">
-<h2 id="orga615751"><span class="section-number-2">6.</span> Keep-args</h2>
-<div class="outline-text-2" id="text-6">
+<div id="outline-container-org5cf0673" class="outline-2">
+<h2 id="org5cf0673"><span class="section-number-2">7.</span> Keep-args</h2>
+<div class="outline-text-2" id="text-7">
 <p>
 <code>calc-keep-args-flag</code> is calc's mode where operations don't consume
 their inputs — the result is pushed <i>above</i> them rather than replacing
@@ -493,9 +592,9 @@ recipe; commit just executes it.
 </p>
 </div>
 </div>
-<div id="outline-container-orgc0665f2" class="outline-2">
-<h2 id="orgc0665f2"><span class="section-number-2">7.</span> The commit recipe</h2>
-<div class="outline-text-2" id="text-7">
+<div id="outline-container-org07e7704" class="outline-2">
+<h2 id="org07e7704"><span class="section-number-2">8.</span> The commit recipe</h2>
+<div class="outline-text-2" id="text-8">
 <p>
 Three context keys describe what commit should do:
 </p>
@@ -514,7 +613,7 @@ This consumes the binary arg in non-keep mode.</li>
 Visualization for binary selection at <code>:m = 2</code> (non-keep):
 </p>
 
-<pre class="example" id="org1f672e2">
+<pre class="example" id="org3568704">
 Before:                              commit-m=2, commit-n=1, post-pop=1
 1: arg                ──┐
 2: selected entry  ──┐  │
@@ -534,9 +633,9 @@ Two operations, one push and one optional post-pop. See <code>maf--commit-push</
 </p>
 </div>
 </div>
-<div id="outline-container-org596a651" class="outline-2">
-<h2 id="org596a651"><span class="section-number-2">8.</span> Binary on selection-like targets</h2>
-<div class="outline-text-2" id="text-8">
+<div id="outline-container-org8af1d8a" class="outline-2">
+<h2 id="org8af1d8a"><span class="section-number-2">9.</span> Binary on selection-like targets</h2>
+<div class="outline-text-2" id="text-9">
 <p>
 Selection, subexpr, entry: each can support binary commands, but the
 "second operand" needs to come from somewhere. Convention: the top stack
@@ -564,9 +663,9 @@ near this entry" (entry — shift is friendlier).
 </p>
 </div>
 </div>
-<div id="outline-container-org02ac47d" class="outline-2">
-<h2 id="org02ac47d"><span class="section-number-2">9.</span> Files</h2>
-<div class="outline-text-2" id="text-9">
+<div id="outline-container-org5cd6db5" class="outline-2">
+<h2 id="org5cd6db5"><span class="section-number-2">10.</span> Files</h2>
+<div class="outline-text-2" id="text-10">
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
 
@@ -619,7 +718,7 @@ near this entry" (entry — shift is friendlier).
 
 <tr>
 <td class="org-left"><a href="../../step-tests/">step-tests/</a></td>
-<td class="org-left">Interactive tests (<code>f4</code> runs the current one)</td>
+<td class="org-left">Interactive step tests (<code>f4</code> runs the current one)</td>
 </tr>
 </tbody>
 </table>
@@ -630,9 +729,9 @@ Load order in <code>maf.el</code>: <code>lib</code> → <code>sel</code> → <co
 </p>
 </div>
 </div>
-<div id="outline-container-org22cbdf9" class="outline-2">
-<h2 id="org22cbdf9"><span class="section-number-2">10.</span> See also</h2>
-<div class="outline-text-2" id="text-10">
+<div id="outline-container-orgedbaef1" class="outline-2">
+<h2 id="orgedbaef1"><span class="section-number-2">11.</span> See also</h2>
+<div class="outline-text-2" id="text-11">
 <ul class="org-ul">
 <li><a href="walkthrough.html">walkthrough.org</a> — sqrt-at-subexpr traced end-to-end</li>
 <li><a href="../../src/core/maf-resolve.el">src/core/maf-resolve.el</a> — context schema reference at top of file</li>
@@ -643,7 +742,7 @@ Load order in <code>maf.el</code>: <code>lib</code> → <code>sel</code> → <co
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: David Yeung</p>
-<p class="date">Created: 2026-05-26 Tue 22:55</p>
+<p class="date">Created: 2026-07-13 Mon 16:34</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>

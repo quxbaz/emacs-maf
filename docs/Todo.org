@@ -1,6 +1,6 @@
 #+title: Todo
 
-* Now [0/2]
+* Now [1/2]
 ** NEXT Work on setting point/position after commit for each context target type.
    CASE: target=entry point=home
    => point should stay at home
@@ -17,7 +17,7 @@
       point moves to home position.
 
    - Should the point/position info be stored inside context object?
-** TODO Update concepts to explain context structure.
+** DONE Update concepts to explain context structure.
 
 * Later [0/2]
 ** TODO Set place/point after (maf--commit)
