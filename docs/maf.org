@@ -19,8 +19,6 @@
 * Todo
   - [ ] Add function to get calc buffer
   - [ ] Replace noun with digit entry if point is on sub-formula
-  - [ ] Remove keep-point flag in macro
-  - [ ] Also "stick" point to beginning or end of entry's expression. and also over =, !=, <=/=>
   - [ ] When point is over equation symbol, operate on both sides (unless map is -1).
   - [ ] k k (my/calc-evaluate N) should work on fractions and division.
   - [ ] g i (my/calc-graph-quick-with-range) interval form a:b should work with spaces 'a b'
