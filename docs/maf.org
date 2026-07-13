@@ -32,7 +32,6 @@
     They have nowhere to take args from.
   - [ ] If command is line-target, then m=2 is the subject and m=1 is the arg,
     same as if point were at home.
-  - [ ] Add command to isolate current sub-formula on current side of equation.
   - [ ] l F (my/calc-factor-by-gcd) should prefer negative value in factor.
   - [ ] Full formula buffer should have "recents" section.
   - [ ] Saved formulas should support "notes" that display in full formula buffer.
