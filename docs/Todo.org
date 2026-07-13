@@ -1,6 +1,6 @@
 #+title: Todo
 
-* Now [0/1]
+* Now [0/2]
 ** NEXT Work on setting point/position after commit for each context target type.
    CASE: target=entry point=home
    => point should stay at home
@@ -17,6 +17,7 @@
       point moves to home position.
 
    - Should the point/position info be stored inside context object?
+** NEXT Move core/ files to top-level directory (emacs-maf/core/)
 
 * Later [0/2]
 ** TODO Set place/point after (maf--commit)
