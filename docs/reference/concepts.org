@@ -2,8 +2,7 @@
 #+HTML_HEAD: <link rel="stylesheet" href="style.css" />
 
 Architectural overview of the maf codebase. Read this before diving into
-any specific file; cross-reference with [[file:walkthrough.org][walkthrough.org]] for a concrete
-worked example.
+any specific file.
 
 * The flow
 
@@ -142,7 +141,7 @@ Consider =1 + 1= = =(+ 1 1)= in calc. The two =1=s are the same integer
 object — both =eq= and =equal=. If the user selects "the first one", you
 can't tell them apart structurally.
 
-=calc-encase-atoms= ([[file:../../calc-src/calc-sel.el][calc-sel.el:401]]) walks the formula and replaces
+=calc-encase-atoms= (in calc's =calc-sel.el=) walks the formula and replaces
 each naked atom with =(cplx atom 0)= — a fresh cons cell each time:
 
 #+begin_example
@@ -170,8 +169,6 @@ This matters for us in two places:
    =eq=, and only the original encased cons matches the cell in the
    entry's formula. So resolve also exposes =:expr-ref= — the actual
    cons cell — for commit to use.
-
-See [[file:walkthrough.org][walkthrough.org]] for the encasing dance traced step by step.
 
 * :expr vs :expr-ref
 
@@ -268,24 +265,42 @@ Choice reflects the difference between "I pointed at this exact
 sub-formula" (selection/subexpr — error keeps the user honest) and "I'm
 near this entry" (entry — shift is friendlier).
 
+* Inverse / Hyperbolic variants
+
+Calc's I and H prefix flags reroute a defcmd to a declared variant
+command (the =:inverse=, =:hyperbolic=, and =:inverse-hyperbolic=
+options — e.g. I on =mafcmd-ln= runs =mafcmd-exp=). Dispatch happens
+before any context is resolved, and the flags are consumed first, so a
+variant that itself declares variants does not dispatch again — that is
+what keeps cross-linked pairs like ln ↔ exp from looping. A set flag
+with no matching variant signals =user-error= and still consumes the
+flags, so the next command starts clean.
+
 * Files
 
-| File                    | Role                                                       |
-|-------------------------+------------------------------------------------------------|
-| [[file:../../maf.el][maf.el]]                  | Package entry point, mode, load order                      |
-| [[file:../../src/core/maf-lib.el][src/core/maf-lib.el]]          | Generic predicates and utilities (find calc buffer, at-*-p) |
-| [[file:../../src/core/maf-sel.el][src/core/maf-sel.el]]          | Selection-state introspection (any-selection, effective-m)  |
-| [[file:../../src/core/maf-resolve.el][src/core/maf-resolve.el]]      | Context resolution + target dispatch                       |
-| [[file:../../src/core/maf-commit.el][src/core/maf-commit.el]]       | Commit recipes (push/pop choreography per target)          |
-| [[file:../../src/core/maf-defcmd.el][src/core/maf-defcmd.el]]       | The =maf-defcmd= macro + parsing helpers                   |
-| [[file:../../debug/maf-step.el][debug/maf-step.el]]        | Debug helpers (slowly-stepped command playback)            |
-| [[file:../../step-tests/][step-tests/]]              | Interactive step tests (=f4= runs the current one)         |
+| File                    | Role                                                        |
+|-------------------------+-------------------------------------------------------------|
+| [[file:../../maf.el][maf.el]]                  | Package entry point, =maf-mode=, load order                 |
+| [[file:../../src/core/maf-lib.el][src/core/maf-lib.el]]     | Generic predicates and utilities (find calc buffer, at-*-p, point snapshot/restore) |
+| [[file:../../src/core/maf-sel.el][src/core/maf-sel.el]]     | Selection-state introspection (any-selection, effective-m)  |
+| [[file:../../src/core/maf-resolve.el][src/core/maf-resolve.el]] | Context resolution + target dispatch                        |
+| [[file:../../src/core/maf-commit.el][src/core/maf-commit.el]]  | Commit recipes (push/pop choreography per target)           |
+| [[file:../../src/core/maf-defcmd.el][src/core/maf-defcmd.el]]  | The =maf-defcmd= macro + parsing helpers + I/H dispatch     |
+| [[file:../../src/maf-cmds.el][src/maf-cmds.el]]         | The mafcmd table: calcFunc-backed commands, keys, variant links |
+| [[file:../../src/stack.el][src/stack.el]]            | Hand-written contextual stack commands (factor-by, undo/redo) |
+| [[file:../../src/bindings.el][src/bindings.el]]         | Default key bindings made outside the mafcmd table          |
+| [[file:../../src/maf-hl.el][src/maf-hl.el]]           | =maf-hl-mode=: highlight the sub-formula under point        |
+| [[file:../../debug/maf-step.el][debug/maf-step.el]]       | Step-through harness (cockpit) that drives the tests        |
+| [[file:../../debug/maf-hl-verify.el][debug/maf-hl-verify.el]]  | Programmatic highlight verification (overlay state + render) |
+| [[file:../../debug/maf-hl-sweep.el][debug/maf-hl-sweep.el]]   | Highlight sweep across many expression shapes               |
+| [[file:../../debug/maf-dev-init.el][debug/maf-dev-init.el]]   | Init file for the dedicated =maf-dev= instance              |
+| [[file:../../tests/][tests/]]                  | Step tests; a file passes when no step errors               |
 
-Load order in =maf.el=: =lib= → =sel= → =debug= → =resolve= → =commit=
-→ =defcmd=. Each layer depends only on earlier ones.
+Load order in =maf.el=: =lib= → =sel= → =hl= → =step= → =hl-verify= →
+=resolve= → =commit= → =defcmd= → =cmds= → =stack= → =bindings=. Each
+layer depends only on earlier ones.
 
 * See also
 
-- [[file:walkthrough.org][walkthrough.org]] — sqrt-at-subexpr traced end-to-end
 - [[file:../../src/core/maf-resolve.el][src/core/maf-resolve.el]] — context schema reference at top of file
 - [[file:calc-ref.org][calc-ref.org]] — calc API reference
