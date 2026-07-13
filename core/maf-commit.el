@@ -8,6 +8,12 @@
 
 (require 'maf-lib)
 
+;; Defined in lazily-loaded calc modules; calc-ext's autoload registry
+;; resolves them at runtime, but the byte compiler needs declarations.
+(declare-function calc-top "calc-ext")
+(declare-function calc-encase-atoms "calc-sel")
+(declare-function calc-replace-sub-formula "calc-sel")
+
 (defun maf--commit-push (commit-n prefix val commit-m sels post-pop)
   "Push VAL at COMMIT-M (popping COMMIT-N entries there first), then optionally
 pop POST-POP entries from the top of the stack (consuming any remaining

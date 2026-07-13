@@ -6,6 +6,11 @@
 
 (require 'maf-lib)
 
+;; Defined in lazily-loaded calc modules; calc-ext's autoload registry
+;; resolves them at runtime, but the byte compiler needs declarations.
+(declare-function calc-top "calc-ext")
+(declare-function calc-locate-cursor-element "calc-yank")
+
 (defun maf--sel-any-p ()
   "Return t if any stack entry has an active selection."
   (maf--with-calc-buffer
