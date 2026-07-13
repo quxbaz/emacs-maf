@@ -16,7 +16,7 @@
   - [ ] Submodules: graphing submodule, vim bindings submodule, etc. Toggle on to
     enable a section of features.
 
-* Todo [0/35]
+* Todo [0/36]
   - [ ] Add function to get calc buffer
   - [ ] If on home line, stick point to the "."
   - [ ] Replace noun with digit entry if point is on sub-formula
@@ -63,6 +63,8 @@
     (starting from empty) edit-mode entries. The purpose of this is to avoid the
     pattern of having to duplicate or store an entry that you might want to
     reuse or recall in case you screw up a calculation.
+  - [ ] Rebind +, -, negate, negative commands. Since these are used very
+    frequently, make them easily accessible.
 
 * Bugs
   - (my/calc-factor-by-gcd) not working
