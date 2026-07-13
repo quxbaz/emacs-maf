@@ -8,7 +8,7 @@
 * Plan (macro)
   1) [ ] Move all of relevant my/calc config into project.
 
-* Major features [1/5]
+* Major features
   - [ ] Vim bindings (noun, verb, char)
   - [X] Persistent sub-formula highlighting
   - [ ] Debug modes
@@ -16,9 +16,8 @@
   - [ ] Submodules: graphing submodule, vim bindings submodule, etc. Toggle on to
     enable a section of features.
 
-* Todo [0/36]
+* Todo
   - [ ] Add function to get calc buffer
-  - [ ] If on home line, stick point to the "."
   - [ ] Replace noun with digit entry if point is on sub-formula
   - [ ] Remove keep-point flag in macro
   - [ ] Also "stick" point to beginning or end of entry's expression. and also over =, !=, <=/=>
