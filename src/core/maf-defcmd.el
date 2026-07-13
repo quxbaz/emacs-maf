@@ -120,30 +120,36 @@ ARG, runs the body, and commits its result to the right stack location."
                (main
                 ;; `calc-wrapper' makes the whole command a single undoable
                 ;; unit and runs calc's command epilogue (trail, stack
-                ;; refresh/renumber, point).
-                `(calc-wrapper
-                  (let* ((,context (maf--resolve-context ',opts))
-                         (,arg (alist-get :arg ,context)))
-                    (if (eq (alist-get :target ,context) 'equation)
-                        ;; Equation target: run the body once per side (expr
-                        ;; bound to the LHS, then the RHS), capturing each
-                        ;; side's committed result. Then reassemble into a new
-                        ;; relation and commit once. arg is bound once above,
-                        ;; so both sides share it.
-                        (let (,lhs ,rhs)
-                          (let ((,expr (alist-get :lhs ,context)))
-                            (cl-flet ((,commit (val) (setq ,lhs val)))
-                              ,@body))
-                          (let ((,expr (alist-get :rhs ,context)))
-                            (cl-flet ((,commit (val) (setq ,rhs val)))
-                              ,@body))
-                          (maf--commit (list (alist-get :rel-op ,context)
-                                             ,lhs ,rhs)
-                                       ,context))
-                      ;; All other targets: body runs once with :expr.
-                      (let ((,expr (alist-get :expr ,context)))
-                        (cl-flet ((,commit (val) (maf--commit val ,context)))
-                          ,@body)))))))
+                ;; refresh/renumber, point). The context is hoisted out so
+                ;; point can be restored after the epilogue — anything done
+                ;; inside the wrapper would be clobbered by it.
+                `(let (,context)
+                   (calc-wrapper
+                    (setq ,context (maf--resolve-context ',opts))
+                    (let ((,arg (alist-get :arg ,context)))
+                      (if (eq (alist-get :target ,context) 'equation)
+                          ;; Equation target: run the body once per side (expr
+                          ;; bound to the LHS, then the RHS), capturing each
+                          ;; side's committed result. Then reassemble into a new
+                          ;; relation and commit once. arg is bound once above,
+                          ;; so both sides share it.
+                          (let (,lhs ,rhs)
+                            (let ((,expr (alist-get :lhs ,context)))
+                              (cl-flet ((,commit (val) (setq ,lhs val)))
+                                ,@body))
+                            (let ((,expr (alist-get :rhs ,context)))
+                              (cl-flet ((,commit (val) (setq ,rhs val)))
+                                ,@body))
+                            (maf--commit (list (alist-get :rel-op ,context)
+                                               ,lhs ,rhs)
+                                         ,context))
+                        ;; All other targets: body runs once with :expr.
+                        (let ((,expr (alist-get :expr ,context)))
+                          (cl-flet ((,commit (val) (maf--commit val ,context)))
+                            ,@body)))))
+                   ;; The epilogue parks point at home; put it back where
+                   ;; resolve found it.
+                   (maf--point-restore (alist-get :point ,context)))))
     (maf--defcmd-validate-opts opts)
     `(defun ,name ()
        ,@(when docstring (list docstring))

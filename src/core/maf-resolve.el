@@ -47,6 +47,9 @@
 ;;   :arity        From OPTS: unary or binary.
 ;;   :prefix       From OPTS: calc trail label.
 ;;   :keep         Snapshot of `calc-keep-args-flag' at resolve time.
+;;   :point        Snapshot of point's placement at resolve time (see
+;;                 `maf--point-snapshot'). The generated command restores
+;;                 point from it after the calc epilogue runs.
 ;;   ...any other keyword option passed to `maf-defcmd'.
 
 (require 'maf-lib)
@@ -216,7 +219,7 @@ target would have replaced."
 The returned alist contains:
   - target-specific keys (:target, :expr, :arg) for the matched target
   - all entries from OPTS (e.g. :arity, :prefix), merged in
-  - ambient calc state (:keep)
+  - ambient state snapshots (:keep, :point)
 
 Possible :target values, in order of priority:
   selection  Active calc selection; expr is the selected sub-expression.
@@ -231,20 +234,24 @@ node under point — the context is converted to the equation target so the
 body runs once per side. Commands opt out with :map -1 in OPTS, keeping
 the whole relation as :expr."
   (maf--with-calc-buffer
-    (append (maf--resolve-map-relation
-             (cond
-              ((maf--sel-any-p)        (maf--resolve-target-selection opts))
-              ((maf--at-home-p)        (maf--resolve-target-home opts))
-              ((maf--at-subexpr-p)     (maf--resolve-target-subexpr opts))
-              ((and (maf--at-equation-p)
-                    (not (eql (alist-get :map opts) -1)))
-                                       (maf--resolve-target-equation opts))
-              ((maf--at-line-margin-p) (maf--resolve-target-entry opts))
-              (t (error "Could not resolve target at point")))
-             opts)
-            ;; Also include options declared in the defcmd body like :arity, :prefix, etc
-            opts
-            ;; Include some useful properties as well like calc flag states
-            `((:keep . ,calc-keep-args-flag)))))
+    ;; Snapshot point before target resolution: the target functions probe
+    ;; calc state and must not perturb what restore later reproduces.
+    (let ((point-snapshot (maf--point-snapshot)))
+      (append (maf--resolve-map-relation
+               (cond
+                ((maf--sel-any-p)        (maf--resolve-target-selection opts))
+                ((maf--at-home-p)        (maf--resolve-target-home opts))
+                ((maf--at-subexpr-p)     (maf--resolve-target-subexpr opts))
+                ((and (maf--at-equation-p)
+                      (not (eql (alist-get :map opts) -1)))
+                                         (maf--resolve-target-equation opts))
+                ((maf--at-line-margin-p) (maf--resolve-target-entry opts))
+                (t (error "Could not resolve target at point")))
+               opts)
+              ;; Also include options declared in the defcmd body like :arity, :prefix, etc
+              opts
+              ;; Include some useful properties as well like calc flag states
+              `((:keep . ,calc-keep-args-flag)
+                (:point . ,point-snapshot))))))
 
 (provide 'maf-resolve)

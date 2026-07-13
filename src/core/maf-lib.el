@@ -82,26 +82,46 @@ sub-expression on the line; those positions route to equation/entry targets."
       (and (> idx 0)
            (maf--relation-p (calc-top idx 'full))))))
 
+(defun maf--point-snapshot ()
+  "Capture point's placement in the current calc buffer as an alist.
+Records the buffer position (:pos), line (:line), and semantic affinity
+\(:affinity): `home' when point is at or below the . line, `eol' at end
+of line, `bol' in the line-number prefix, else nil. Consumed by
+`maf--point-restore'."
+  `((:pos      . ,(point))
+    (:line     . ,(line-number-at-pos))
+    (:affinity . ,(cond ((maf--at-home-p) 'home)
+                        ((eolp) 'eol)
+                        ((maf--at-line-prefix-p) 'bol)))))
+
+(defun maf--point-restore (snapshot)
+  "Restore point from SNAPSHOT (see `maf--point-snapshot').
+Calc commands that rewrite the stack buffer park point at home; this
+puts it back where the user had it. A `home' snapshot is a no-op —
+calc's default placement already matches. Otherwise point returns to
+its previous buffer position, corrected back to the original line when
+the rewrite shifted it, and EOL/BOL affinity is re-applied on the line
+rather than the exact position."
+  (let ((affinity (alist-get :affinity snapshot)))
+    (unless (eq affinity 'home)
+      (goto-char (alist-get :pos snapshot))
+      (let ((line (alist-get :line snapshot)))
+        (when (/= (line-number-at-pos) line)
+          (goto-char (point-min))
+          (forward-line (1- line))))
+      (pcase affinity
+        ('eol (end-of-line))
+        ('bol (beginning-of-line))))))
+
 (defmacro maf--preserve-point (&rest forms)
-  "Evaluate FORMS, then restore point's line, position, and BOL/EOL affinity.
-Calc commands that rewrite the stack buffer leave point at home; this
-keeps the cursor where the user had it. Point returns to its previous
-buffer position, corrected back to the original line when the rewrite
-shifted it. If point was at EOL or in the line-number prefix, that
-affinity is restored on the line rather than the exact position."
+  "Evaluate FORMS, then restore point's line, position, and affinity.
+Snapshots point placement before FORMS run (`maf--point-snapshot') and
+restores it after (`maf--point-restore')."
   (declare (indent 0))
-  `(let ((saved-point (point))
-         (saved-line (line-number-at-pos))
-         (saved-affinity (cond ((eolp) 'eol)
-                               ((maf--at-line-prefix-p) 'bol))))
-     (prog1 (progn ,@forms)
-       (goto-char saved-point)
-       (when (/= (line-number-at-pos) saved-line)
-         (goto-char (point-min))
-         (forward-line (1- saved-line)))
-       (pcase saved-affinity
-         ('eol (end-of-line))
-         ('bol (beginning-of-line))))))
+  (let ((snapshot (gensym "snapshot-")))
+    `(let ((,snapshot (maf--point-snapshot)))
+       (prog1 (progn ,@forms)
+         (maf--point-restore ,snapshot)))))
 
 (defun maf-push (expr)
   "Parse algebraic EXPR and push it onto the calc stack.
