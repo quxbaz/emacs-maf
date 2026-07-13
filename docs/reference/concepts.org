@@ -102,13 +102,6 @@ Two consumers read it. The macro-generated command wires the body:
   selection.
 - =:prefix= — trail label recorded with the operation.
 
-One key is consumed after commit: calc's command epilogue parks point
-at home, so the generated command's last act is to restore point from
-the =:point= snapshot (=maf--point-restore=) — point stays at home, on
-the targeted sub-formula, or at the entry's margin, wherever the
-command was invoked from. A home snapshot restores nothing; calc's
-default placement already matches.
-
 The commit instructions are computed /at resolve time/, not by commit:
 each target function knows how its own result should land (including
 the keep-args variants), and commit just executes the recipe. That
@@ -117,6 +110,34 @@ special case.
 
 The authoritative key-by-key schema lives at the top of
 [[file:../../src/core/maf-resolve.el][maf-resolve.el]].
+
+** Point restoration
+
+Calc's command epilogue parks point at home after every command. The
+=:point= snapshot is what undoes that: it is consumed /after/ commit,
+as the generated command's last act — restore has to run once
+=calc-wrapper= returns, because anything done inside the wrapper is
+clobbered by the epilogue.
+
+The snapshot (=maf--point-snapshot=) records three things: the buffer
+position, the line number, and a semantic /affinity/ — =home= when
+point was at or below the =.= line, =eol= at end of line, =bol= in the
+line-number prefix.
+
+=maf--point-restore= applies it:
+
+- A =home= snapshot restores nothing; calc's default placement already
+  matches.
+- Otherwise point returns to the saved position, corrected back to the
+  saved line if the rewrite shifted it, and =eol=/=bol= affinity is
+  re-applied on the line rather than the exact column.
+
+Line-based restore is correct for every target because of a commit
+invariant: commits only pop entries at the target's level and below it
+in the buffer (=:post-pop= consumes the stack top, which is displayed
+/below/ the target), so the target entry's line never moves. Refining
+subexpr restore to stick to the same symbol when the formula reshapes
+around it is deliberately deferred.
 
 ** Relation mapping
 
