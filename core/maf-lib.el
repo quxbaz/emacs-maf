@@ -17,19 +17,25 @@
 
 (defun maf--find-calc-buffer ()
   "Find the calc buffer.
-Prefers the current buffer if it is in calc-mode, then looks for
-*Calculator* by name, then falls back to any live buffer in calc-mode."
+Prefers the current buffer if it is in calc-mode, then the buffer named
+*Calculator* provided it really is in calc-mode, then falls back to any
+live buffer in calc-mode (catching a renamed calc buffer)."
   (cond
    ((derived-mode-p 'calc-mode) (current-buffer))
-   ((get-buffer "*Calculator*"))
+   ((let ((buf (get-buffer "*Calculator*")))
+      (and buf
+           (with-current-buffer buf (derived-mode-p 'calc-mode))
+           buf)))
    (t (cl-find-if (lambda (buf)
                     (with-current-buffer buf (derived-mode-p 'calc-mode)))
                   (buffer-list)))))
 
 (defmacro maf--with-calc-buffer (&rest body)
-  "Evaluate BODY in the calc buffer."
+  "Evaluate BODY in the calc buffer.
+Signals an error if no calc buffer exists."
   (declare (indent 0))
-  `(with-current-buffer (maf--find-calc-buffer)
+  `(with-current-buffer (or (maf--find-calc-buffer)
+                            (error "No calc buffer found"))
      ,@body))
 
 (defun maf--at-home-p ()
