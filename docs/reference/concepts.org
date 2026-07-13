@@ -75,8 +75,9 @@ shadow later ones:
    keys are =:arity=, =:prefix=, =:map=, and the I/H variant links; any
    other keyword passes through untouched, so resolve/commit extensions
    can define their own.
-3. *Ambient state* — calc mode flags snapshotted at resolve time
-   (currently just =:keep=).
+3. *Ambient state* — snapshots taken at resolve time: =:keep=
+   (=calc-keep-args-flag=) and =:point= (point's placement, captured
+   before the rewrite destroys it).
 
 Two consumers read it. The macro-generated command wires the body:
 
@@ -101,6 +102,13 @@ Two consumers read it. The macro-generated command wires the body:
 - =:reselect= — whether the committed result becomes the new
   selection.
 - =:prefix= — trail label recorded with the operation.
+
+One key is consumed after commit: calc's command epilogue parks point
+at home, so the generated command's last act is to restore point from
+the =:point= snapshot (=maf--point-restore=) — point stays at home, on
+the targeted sub-formula, or at the entry's margin, wherever the
+command was invoked from. A home snapshot restores nothing; calc's
+default placement already matches.
 
 The commit instructions are computed /at resolve time/, not by commit:
 each target function knows how its own result should land (including
