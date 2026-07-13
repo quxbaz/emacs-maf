@@ -1,8 +1,7 @@
 #+title: Todo
 
 * Now
-  - [ ] When (eq :target equation), can you highlight the left and right side
-    separately using different colors? (This affects maf-hl-mode)
+  --
 
 * Later [0/2]
 ** TODO Set place/point after (maf--commit)
