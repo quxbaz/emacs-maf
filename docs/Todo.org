@@ -1,7 +1,7 @@
 #+title: Todo
 
 * Now [0/2]
-** NEXT Work on setting point/position after commit for each context target type.
+** IN-PROGRESS Work on setting point/position after commit for each context target type.
    CASE: target=entry point=home
    => point should stay at home
    CASE: target=subexpr point=subexpr
