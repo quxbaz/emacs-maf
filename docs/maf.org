@@ -23,9 +23,6 @@
   - [ ] (calc-fraction ARG) and calc-float should work contextually.
   - [ ] (my/calc-factor-by-gcd) should factor out negative numbers (leave the
     leading term in the binomial positive).
-  - [ ] Make (my/calc-sel-negate) contextual.
-  - [ ] Should have a form to collect the numerator.
-    3:2 sqrt(2) -> 3 sqrt(2) / 2
   - [ ] S-up/down should toggle +/-, ln/e, */, log/^, etc.
   - [ ] Take: y = 1:2 - (5 x - 5 k)^-2 / 2 and represent the negative power as a reciprocal.
   - [ ] (my/calc-quick-variable) should be contextual.
