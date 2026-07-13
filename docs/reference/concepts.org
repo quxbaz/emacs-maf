@@ -36,7 +36,7 @@ commit ─── reads context, applies val
 
 Resolve and commit are peer concerns: resolve reads state into the
 context, commit writes state from the context. They share the context
-schema documented at the top of [[file:../../src/core/maf-resolve.el][maf-resolve.el]].
+schema documented at the top of [[file:../../core/maf-resolve.el][maf-resolve.el]].
 
 * The target system
 
@@ -52,7 +52,7 @@ what calc state is active. In priority order:
 | entry     | Point is at line-prefix or EOL of a stack entry             | The whole formula                   |
 
 The cascade lives in =maf--resolve-context=. The predicates live in
-[[file:../../src/core/maf-lib.el][maf-lib.el]] (=maf--at-*-p=) and [[file:../../src/core/maf-sel.el][maf-sel.el]] (=maf--sel-any-p=).
+[[file:../../core/maf-lib.el][maf-lib.el]] (=maf--at-*-p=) and [[file:../../core/maf-sel.el][maf-sel.el]] (=maf--sel-any-p=).
 
 Each target has a dedicated =maf--resolve-target-X= function that
 produces the target-specific portion of the context alist.
@@ -109,7 +109,7 @@ split is what keeps commit target-agnostic apart from the splicing
 special case.
 
 The authoritative key-by-key schema lives at the top of
-[[file:../../src/core/maf-resolve.el][maf-resolve.el]].
+[[file:../../core/maf-resolve.el][maf-resolve.el]].
 
 ** Point restoration
 
@@ -302,11 +302,11 @@ flags, so the next command starts clean.
 | File                    | Role                                                        |
 |-------------------------+-------------------------------------------------------------|
 | [[file:../../maf.el][maf.el]]                  | Package entry point, =maf-mode=, load order                 |
-| [[file:../../src/core/maf-lib.el][src/core/maf-lib.el]]     | Generic predicates and utilities (find calc buffer, at-*-p, point snapshot/restore) |
-| [[file:../../src/core/maf-sel.el][src/core/maf-sel.el]]     | Selection-state introspection (any-selection, effective-m)  |
-| [[file:../../src/core/maf-resolve.el][src/core/maf-resolve.el]] | Context resolution + target dispatch                        |
-| [[file:../../src/core/maf-commit.el][src/core/maf-commit.el]]  | Commit recipes (push/pop choreography per target)           |
-| [[file:../../src/core/maf-defcmd.el][src/core/maf-defcmd.el]]  | The =maf-defcmd= macro + parsing helpers + I/H dispatch     |
+| [[file:../../core/maf-lib.el][core/maf-lib.el]]     | Generic predicates and utilities (find calc buffer, at-*-p, point snapshot/restore) |
+| [[file:../../core/maf-sel.el][core/maf-sel.el]]     | Selection-state introspection (any-selection, effective-m)  |
+| [[file:../../core/maf-resolve.el][core/maf-resolve.el]] | Context resolution + target dispatch                        |
+| [[file:../../core/maf-commit.el][core/maf-commit.el]]  | Commit recipes (push/pop choreography per target)           |
+| [[file:../../core/maf-defcmd.el][core/maf-defcmd.el]]  | The =maf-defcmd= macro + parsing helpers + I/H dispatch     |
 | [[file:../../src/maf-cmds.el][src/maf-cmds.el]]         | The mafcmd table: calcFunc-backed commands, keys, variant links |
 | [[file:../../src/stack.el][src/stack.el]]            | Hand-written contextual stack commands (factor-by, undo/redo) |
 | [[file:../../src/bindings.el][src/bindings.el]]         | Default key bindings made outside the mafcmd table          |
@@ -323,5 +323,5 @@ layer depends only on earlier ones.
 
 * See also
 
-- [[file:../../src/core/maf-resolve.el][src/core/maf-resolve.el]] — context schema reference at top of file
+- [[file:../../core/maf-resolve.el][core/maf-resolve.el]] — context schema reference at top of file
 - [[file:calc-ref.org][calc-ref.org]] — calc API reference

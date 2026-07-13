@@ -1,7 +1,7 @@
 #+title: Todo
 
-* Now [0/1]
-** NEXT Move core/ directory to top-level directory (emacs-maf/core/)
+* Now [1/1]
+** DONE Move core/ directory to top-level directory (emacs-maf/core/)
 
 * Later [0/2]
 ** TODO Set place/point after (maf--commit)

@@ -21,7 +21,7 @@
 
 (let ((dir (file-name-directory (or load-file-name buffer-file-name))))
   (add-to-list 'load-path (expand-file-name "src" dir))
-  (add-to-list 'load-path (expand-file-name "src/core" dir))
+  (add-to-list 'load-path (expand-file-name "core" dir))
   (add-to-list 'load-path (expand-file-name "debug" dir)))
 
 (require 'maf-lib)
