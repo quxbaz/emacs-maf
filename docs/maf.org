@@ -114,3 +114,7 @@
   Use transient mode for prefix commands
   Swap _ and -
   Show all formulas buffer
+
+
+* Cleanup
+  - [ ] Delete my/calc
