@@ -1,4 +1,3 @@
 /.claude/*.lock
 /calc-ref/
 /docs/gnu-emacs-calc-manual/
-/project-init.el
