@@ -1,7 +1,6 @@
 #+title: Todo
 
 * Now
-  --
 
 * Later [0/2]
 ** TODO Set place/point after (maf--commit)
