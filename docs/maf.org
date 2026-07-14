@@ -16,7 +16,7 @@
   - [ ] Submodules: graphing submodule, vim bindings submodule, etc. Toggle on to
     enable a section of features.
 
-* Todo
+* IN-PROGRESS Todo
   - [ ] Replace noun with digit entry if point is on sub-formula
   - [ ] k k (my/calc-evaluate N) should work on fractions and division.
   - [ ] g i (my/calc-graph-quick-with-range) interval form a:b should work with spaces 'a b'
@@ -30,8 +30,6 @@
   - [ ] (my/calc-log-exp-rules) on line should transform entire line.
   - [ ] Binary arity functions should noop on targeting sub-formula at stack=1.
     They have nowhere to take args from.
-  - [ ] If command is line-target, then m=2 is the subject and m=1 is the arg,
-    same as if point were at home.
   - [ ] Full formula buffer should have "recents" section.
   - [ ] Saved formulas should support "notes" that display in full formula buffer.
   - [ ] TAB command to swap lines should work contextually.
