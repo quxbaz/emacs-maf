@@ -13,9 +13,11 @@
 ;;   :target       Symbol identifying the target: home, selection, subexpr,
 ;;                 equation, or entry.
 ;;   :expr         The expression the command operates on (full formula or
-;;                 selected sub-formula, depending on target). Normalized — the
+;;                 selected sub-formula, depending on target). Clean — the
 ;;                 (cplx N 0) encasing that calc-prepare-selection wraps atoms
-;;                 in is stripped, so the body sees clean values.
+;;                 in is stripped, so the body sees clean values. Selection
+;;                 and subexpr normalize; the whole-entry targets only strip
+;;                 (`maf--strip-encasing'), never re-simplifying the entry.
 ;;   :expr-ref     The same sub-formula as :expr but as the *original encased
 ;;                 cons cell* from the stack entry. Used by commit's
 ;;                 `calc-replace-sub-formula` for eq-based splicing — only the
@@ -97,8 +99,14 @@ entry containing the selection, which has no coherent commit semantics."
            (keep calc-keep-args-flag))
       `((:target     . home)
         ;; For binary, the lower entry is :expr and the top is :arg, so e.g.
-        ;; 3 over 2 subtracts to 3 - 2 (not 2 - 3).
-        (:expr       . ,(pcase arity ('unary (calc-top 1 'full)) ('binary (calc-top 2 'full))))
+        ;; 3 over 2 subtracts to 3 - 2 (not 2 - 3). Encasing stripped:
+        ;; selection machinery (maf-hl included) encases entry atoms in
+        ;; place, and the body must see clean values — but the entry is
+        ;; not re-normalized, which could re-simplify it.
+        (:expr       . ,(maf--strip-encasing
+                         (pcase arity
+                           ('unary (calc-top 1 'full))
+                           ('binary (calc-top 2 'full)))))
         (:arg        . ,(pcase arity ('unary nil) ('binary (math-normalize (calc-top 1 'full)))))
         (:commit-m   . 1)
         (:commit-n   . ,(if keep 0 (pcase arity ('unary 1) ('binary 2))))
@@ -150,14 +158,17 @@ down — the target must remain a relation — so it errors instead."
     (let* ((arity (alist-get :arity opts))
            (m     (calc-locate-cursor-element (point)))
            (keep  calc-keep-args-flag)
-           (expr  (calc-top m 'full)))
+           ;; Encasing stripped: selection machinery (maf-hl included)
+           ;; encases entry atoms in place, and the body must see clean
+           ;; values — but not re-normalized, which could re-simplify.
+           (expr  (maf--strip-encasing (calc-top m 'full))))
       (when (and (eq arity 'binary) (= m 1))
         (error "Binary commands on equation require the relation below the top"))
       `((:target     . equation)
         (:expr       . ,expr)
         (:rel-op     . ,(car expr))
-        (:lhs        . ,(math-normalize (nth 1 expr)))
-        (:rhs        . ,(math-normalize (nth 2 expr)))
+        (:lhs        . ,(nth 1 expr))
+        (:rhs        . ,(nth 2 expr))
         (:arg        . ,(pcase arity ('unary nil) ('binary (math-normalize (calc-top 1 'full)))))
         (:m          . ,m)
         (:commit-m   . ,(if keep 1 m))
@@ -185,7 +196,10 @@ have to be on the operand whose value will be replaced."
       (when (and (eq arity 'binary) (= m 1))
         (setq m 2))
       `((:target     . entry)
-        (:expr       . ,(calc-top m 'full))
+        ;; Encasing stripped: selection machinery (maf-hl included)
+        ;; encases entry atoms in place, and the body must see clean
+        ;; values — but not re-normalized, which could re-simplify.
+        (:expr       . ,(maf--strip-encasing (calc-top m 'full)))
         (:arg        . ,(pcase arity ('unary nil) ('binary (math-normalize (calc-top 1 'full)))))
         (:commit-m   . ,(if keep 1 m))
         (:commit-n   . ,(if keep 0 1))
@@ -209,8 +223,10 @@ target would have replaced."
         context
       (append `((:target . equation)
                 (:rel-op . ,(car expr))
-                (:lhs    . ,(math-normalize (nth 1 expr)))
-                (:rhs    . ,(math-normalize (nth 2 expr))))
+                ;; :expr is already clean; keep the sides as they are
+                ;; rather than re-normalizing them.
+                (:lhs    . ,(nth 1 expr))
+                (:rhs    . ,(nth 2 expr)))
               context))))
 
 (defun maf--resolve-context (opts)

@@ -74,6 +74,18 @@ sub-expression on the line; those positions route to equation/entry targets."
              (calc-prepare-selection)
              (and (calc-find-selected-part) t))))))
 
+(defun maf--strip-encasing (expr)
+  "Strip the (cplx N 0) wrappers that `calc-encase-atoms' leaves in EXPR.
+Selection machinery (maf-hl included) encases entry atoms in place; this
+undoes it structurally, without re-normalizing the formula — unlike
+`math-normalize', it cannot reorder or re-simplify anything."
+  (cond
+   ((and (eq (car-safe expr) 'cplx) (equal (nth 2 expr) 0))
+    (maf--strip-encasing (nth 1 expr)))
+   ((consp expr)
+    (cons (car expr) (mapcar #'maf--strip-encasing (cdr expr))))
+   (t expr)))
+
 (defun maf--sum-terms (expr)
   "Return a flat list of the additive terms in EXPR.
 Flattens +, -, and unary negation, negating terms under the latter two,
