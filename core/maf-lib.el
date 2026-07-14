@@ -86,19 +86,6 @@ undoes it structurally, without re-normalizing the formula — unlike
     (cons (car expr) (mapcar #'maf--strip-encasing (cdr expr))))
    (t expr)))
 
-(defun maf--sum-terms (expr)
-  "Return a flat list of the additive terms in EXPR.
-Flattens +, -, and unary negation, negating terms under the latter two,
-so the returned terms sum back to EXPR: 6 x - 12 gives (6 x, -12) and
--(a + b) gives (-a, -b)."
-  (pcase (car-safe expr)
-    ('+ (append (maf--sum-terms (nth 1 expr))
-                (maf--sum-terms (nth 2 expr))))
-    ('- (append (maf--sum-terms (nth 1 expr))
-                (mapcar #'math-neg (maf--sum-terms (nth 2 expr)))))
-    ('neg (mapcar #'math-neg (maf--sum-terms (nth 1 expr))))
-    (_ (list expr))))
-
 (defun maf--relation-p (expr)
   "Return t if EXPR is a relation (=, !=, <, <=, >, >=)."
   (and (consp expr)

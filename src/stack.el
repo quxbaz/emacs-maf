@@ -6,6 +6,7 @@
 ;; calcFunc equivalent.
 
 (require 'maf-defcmd)
+(require 'maf-math "math")
 
 ;; These live in lazily-loaded calc modules; calc-ext's autoload registry
 ;; resolves them at runtime, but the byte compiler needs declarations.
@@ -16,7 +17,6 @@
 (declare-function math-simplify "calc-alg")
 (declare-function calc-undo "calc-undo")
 (declare-function calc-redo "calc-undo")
-(declare-function calcFunc-pgcd "calc-poly")
 (declare-function math-looks-negp "calc-misc")
 
 (maf-defcmd mafcmd-factor-by (expr arg commit)
@@ -38,20 +38,6 @@ stack level 2 by level 1."
     ;; factored form survives without calc-normalize distributing it.
     (commit (let ((calc-simplify-mode 'none))
               (calcFunc-mul arg quotient)))))
-
-(defun maf--terms-gcd (terms)
-  "Return the GCD of TERMS via `calcFunc-pgcd', iterated to a fixpoint.
-A single reduce can overshoot when both arguments carry variables the
-other lacks — calc's pgcd(10 x y, 15 x z) yields 10 x, not 5 x — but
-against the bare candidate it computes correctly (pgcd(10 x, 15 x z)
-is 5 x), so folding the candidate back in and re-reducing converges on
-the true common factor."
-  (let ((f (cl-reduce #'calcFunc-pgcd terms)))
-    (cl-loop repeat 8
-             for g = (cl-reduce #'calcFunc-pgcd terms :initial-value f)
-             until (equal g f)
-             do (setq f g))
-    f))
 
 (maf-defcmd mafcmd-factor-gcd (expr _arg commit)
   "Factor the resolved expression by the GCD of its additive terms.

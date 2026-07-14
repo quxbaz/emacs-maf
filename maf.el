@@ -33,6 +33,7 @@
 (require 'maf-commit)
 (require 'maf-defcmd)
 (require 'maf-cmds)
+(require 'maf-math "math")
 (require 'maf-stack "stack")
 (require 'maf-bindings "bindings")
 
