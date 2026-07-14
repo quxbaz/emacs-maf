@@ -14,6 +14,7 @@
   "Keymap for `maf-mode'.")
 
 (define-key maf-mode-map (kbd "l f") #'mafcmd-factor-by)
+(define-key maf-mode-map (kbd "l F") #'mafcmd-factor-gcd)
 (define-key maf-mode-map (kbd "U") #'maf-undo)
 (define-key maf-mode-map (kbd "D") #'maf-redo)
 
