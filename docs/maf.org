@@ -18,6 +18,9 @@
 
 * IN-PROGRESS Todo
   - [ ] Test commute with various relational operators = < > != (any others?)
+    - After commute, does it maintain the relationship?
+    - It should not simplify or alter lhs or rhs in any way, only swapping their
+      positions and the direction of the operator (if applicable).
   - [ ] Replace noun with digit entry if point is on sub-formula
   - [ ] k k (my/calc-evaluate N) should work on fractions and division.
   - [ ] g i (my/calc-graph-quick-with-range) interval form a:b should work with spaces 'a b'
