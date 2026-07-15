@@ -1,0 +1,58 @@
+---
+name: drive
+description: Test a change or feature in a live Emacs, preferring contexts close to human operation — real keypresses through the keymaps, the right window/frame, visible output. Use when testing or demonstrating a change interactively, reproducing an interactive bug, or confirming a fix batch mode can't reproduce.
+---
+
+# Driving a live Emacs
+
+Prefer operating the way the user would: real keypresses through the
+active keymaps, in the window the user would be in, judged by what
+appears on screen. This is a preference, not a requirement — call
+functions directly when that's necessary or just useful, and don't let
+fidelity concerns block the actual task. Inspection and evaluation are
+always direct calls.
+
+Full techniques and pitfalls: `docs/memory/piloting-emacs.md` — read it
+before nontrivial piloting. For maf work, always target the `maf-dev`
+socket (`emacsclient -s maf-dev ...`), never the default `server`
+socket. See the `start` skill for instance management.
+
+## Core rules
+
+1. To exercise keymaps as the user would, prefer real keypresses over
+   calling command functions — they catch binding/precedence bugs a
+   direct call would miss:
+
+   ```elisp
+   (with-selected-window (get-buffer-window "*Calculator*")
+     (execute-kbd-macro (kbd "SPC")))
+   ```
+
+   Use `unread-command-events` when a full command-loop round trip is
+   needed.
+
+2. `--eval` runs in the internal `*server*` buffer, not the user's
+   buffer. Wrap actions explicitly:
+
+   ```elisp
+   (with-selected-window (get-buffer-window "*Calculator*") ...)
+   ```
+
+   If the target buffer isn't in any window, display it first as a user
+   would (`calc`, `pop-to-buffer`) rather than operating on it
+   invisibly.
+
+3. Each `--eval` is a fresh call — buffer/selection state does not
+   persist between invocations. Put dependent sequences in one `--eval`
+   or re-establish context each time.
+
+4. Reload edited `.el` files before re-testing (see the `start`
+   skill). When in doubt, inspect the loaded definition, not the file:
+   `(symbol-function 'maf-step-next)`, `(macroexpand '(...))`.
+
+## Verification loop
+
+Edit → `load-file` into the instance → drive real keypresses in the
+right window → read the result back with `--eval` → only then conclude.
+Check what the user would see — buffer text, overlays/highlights, point
+position — not just internal state like `(calc-top 1)`.
