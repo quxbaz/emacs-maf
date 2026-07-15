@@ -56,3 +56,52 @@ Edit → `load-file` into the instance → drive real keypresses in the
 right window → read the result back with `--eval` → only then conclude.
 Check what the user would see — buffer text, overlays/highlights, point
 position — not just internal state like `(calc-top 1)`.
+
+## Examples
+
+Each example is a `/drive` prompt followed by the action it should
+produce.
+
+### [EXAMPLE 1] /drive open calc and do some arithmetic
+
+```sh
+# keys through the keymaps (rule 1), one --eval (rule 3),
+# frame/window established explicitly (rule 2)
+emacsclient -s maf-dev --eval '(let ((gframe (seq-find (lambda (f) (frame-parameter f (quote window-system))) (frame-list))))
+  (with-selected-frame gframe
+    (calc)  ; ensure *Calculator* has a window
+    (with-selected-window (get-buffer-window "*Calculator*")
+      (execute-kbd-macro (kbd "1 2 RET 3 4 + 2 *")))
+    (with-current-buffer "*Calculator*"
+      (buffer-substring-no-properties (point-min) (point-max)))))'
+```
+
+```
+"1:  92\n    .\n"     ; (12 + 34) * 2 visible at stack level 1
+```
+
+### [EXAMPLE 2] /drive what's on the calc stack?
+
+```sh
+# pure inspection — direct calls, no keypresses
+emacsclient -s maf-dev --eval '(with-current-buffer "*Calculator*"
+  (list (calc-stack-size) (calc-top 1 (quote full))))'
+```
+
+### [EXAMPLE 3] /drive remove stale buffers
+
+```sh
+# maintenance — direct calls; find buffers visiting deleted files,
+# then kill them
+emacsclient -s maf-dev --eval '(delq nil (mapcar (lambda (b)
+    (let ((f (buffer-file-name b)))
+      (and f (not (file-exists-p f)) (buffer-name b))))
+  (buffer-list)))'
+```
+
+### [EXAMPLE 4] /drive is the latest maf-mult loaded?
+
+```sh
+# inspect the loaded definition, not the file (rule 4)
+emacsclient -s maf-dev --eval '(symbol-function (quote maf-mult))'
+```
