@@ -84,6 +84,32 @@ factors the top entry."
         (commit (let ((calc-simplify-mode 'none))
                   (calcFunc-mul factor quotient)))))))
 
+(maf-defcmd mafcmd-commute (expr _arg commit)
+  "Swap the first two operands of the resolved expression.
+a + b gives b + a. The swap is structural and nothing is simplified, so
+it also flips non-commutative operators (a - b gives b - a) and works
+on any function call (log(x, b) gives log(b, x)); operands past the
+second stay in place. With nothing to swap — an atom, a unary call, an
+interval — the expression is committed unchanged.
+
+Contextual like every mafcmd: with point on a sub-formula it swaps just
+that sub-formula's operands; on an equation it swaps the two sides, so
+x = y gives y = x; at home it operates on the top entry."
+  :arity unary
+  :prefix "comm"
+  :map -1
+  ;; Math-primp screens out atoms and primitive composites (frac, var,
+  ;; ...) whose slots aren't operands; intv slips through it but its
+  ;; first slot is the endpoint mask, so exclude it too. The swapped
+  ;; list is built literally — no normalize — so committing it never
+  ;; evaluates: 2 (3 + x) commutes to (3 + x) 2 without distributing.
+  (commit (if (and (not (Math-primp expr))
+                   (not (eq (car expr) 'intv))
+                   (>= (length expr) 3))
+              (append (list (car expr) (nth 2 expr) (nth 1 expr))
+                      (nthcdr 3 expr))
+            expr)))
+
 (defun maf-undo (n)
   "Like `calc-undo', but keep point in place instead of jumping home."
   (interactive "p")
