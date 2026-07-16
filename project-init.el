@@ -12,6 +12,7 @@
     "(a + b) (2 c - d)"      ; nested expressions
     "2 x - 3 < 7"            ; inequality
     "f(x) = x^2 + 1"         ; function
+    "sin(2 x + 1)"           ; trig
     "[a, b, c]"              ; vector
     "[1 .. 3]"               ; interval
     "6 x + 12"               ; expression
