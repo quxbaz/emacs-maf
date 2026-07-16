@@ -203,6 +203,53 @@ gives x a + 2."
         (let ((maf--quick-variable var))
           (mafcmd--quick-variable-mul))))))
 
+(defvar maf-toggle-op-pairs
+  '((+ . -)
+    (* . /)
+    (calcFunc-ln . calcFunc-exp)
+    (calcFunc-log . ^)
+    (calcFunc-lt . calcFunc-gt)
+    (calcFunc-leq . calcFunc-geq)
+    (calcFunc-eq . calcFunc-neq)
+    ;; Trig pairs with its inverse, like ln/exp. Upstream has no
+    ;; arcsec/arccsc/arccot, so sec/csc/cot stay unpaired.
+    (calcFunc-sin . calcFunc-arcsin)
+    (calcFunc-cos . calcFunc-arccos)
+    (calcFunc-tan . calcFunc-arctan)
+    (calcFunc-sinh . calcFunc-arcsinh)
+    (calcFunc-cosh . calcFunc-arccosh)
+    (calcFunc-tanh . calcFunc-arctanh))
+  "Operator pairs toggled by `mafcmd-toggle-op'.
+Each pair toggles in both directions. Operands stay in place; only the
+operator changes, so log(a, b) toggles to a^b and back, and a < b flips
+to a > b without touching either side.")
+
+(maf-defcmd mafcmd-toggle-op (expr _arg commit)
+  "Toggle the top operator of the resolved expression to its counterpart.
+Pairs come from `maf-toggle-op-pairs': a + b gives a - b, a * b gives
+a / b, ln(x) gives exp(x), log(a, b) gives a^b — and each back again.
+Relations flip the same way with both sides untouched: a < b gives
+a > b, x = y gives x != y. The swap is structural: operands stay in
+place and nothing is simplified. With no toggle for the operator — an
+atom, an unpaired operator, a log(x) with no explicit base — the
+expression is committed unchanged.
+
+Contextual like every mafcmd: with point on a sub-formula it toggles
+that sub-formula's operator; at home it operates on the top entry. A
+relation is toggled whole rather than mapped per side — put point on
+an operator inside a side to toggle there."
+  :arity unary
+  :prefix "togl"
+  :map -1
+  (let* ((op (car-safe expr))
+         (to (or (cdr (assq op maf-toggle-op-pairs))
+                 (car (rassq op maf-toggle-op-pairs)))))
+    ;; A 1-arg log has no ^ counterpart (nothing to use as the base);
+    ;; leave it alone rather than build a malformed (^ x).
+    (commit (if (and to (not (and (eq op 'calcFunc-log) (= (length expr) 2))))
+                (cons to (cdr expr))
+              expr))))
+
 (defun maf-undo (n)
   "Like `calc-undo', but keep point in place instead of jumping home."
   (interactive "p")

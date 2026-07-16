@@ -18,6 +18,10 @@
 (define-key maf-mode-map (kbd "l l") #'mafcmd-float)
 (define-key maf-mode-map (kbd "l c") #'mafcmd-frac)
 (define-key maf-mode-map (kbd "O") #'mafcmd-commute)
+;; A toggle between pair members is its own inverse, so both directions
+;; run the same command.
+(define-key maf-mode-map (kbd "S-<up>") #'mafcmd-toggle-op)
+(define-key maf-mode-map (kbd "S-<down>") #'mafcmd-toggle-op)
 (define-key maf-mode-map (kbd ",") #'maf-quick-variable)
 (define-key maf-mode-map (kbd "U") #'maf-undo)
 (define-key maf-mode-map (kbd "D") #'maf-redo)
