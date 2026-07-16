@@ -92,9 +92,13 @@ on any function call (log(x, b) gives log(b, x)); operands past the
 second stay in place. With nothing to swap — an atom, a unary call, an
 interval — the expression is committed unchanged.
 
+A binary relation keeps its meaning: the sides swap and the operator's
+direction reverses with them, so x = y gives y = x and x < y gives
+y > x, never y < x.
+
 Contextual like every mafcmd: with point on a sub-formula it swaps just
-that sub-formula's operands; on an equation it swaps the two sides, so
-x = y gives y = x; at home it operates on the top entry."
+that sub-formula's operands; on an equation it swaps the two sides; at
+home it operates on the top entry."
   :arity unary
   :prefix "comm"
   :map -1
@@ -103,12 +107,20 @@ x = y gives y = x; at home it operates on the top entry."
   ;; first slot is the endpoint mask, so exclude it too. The swapped
   ;; list is built literally — no normalize — so committing it never
   ;; evaluates: 2 (3 + x) commutes to (3 + x) 2 without distributing.
-  (commit (if (and (not (Math-primp expr))
-                   (not (eq (car expr) 'intv))
-                   (>= (length expr) 3))
-              (append (list (car expr) (nth 2 expr) (nth 1 expr))
-                      (nthcdr 3 expr))
-            expr)))
+  (commit (cond
+           ;; Binary relation: reverse the operator along with the swap
+           ;; so the relationship is preserved. Chained relations (a <
+           ;; b < c) fall through to the generic swap — no single
+           ;; operator flip keeps a chain's meaning.
+           ((and (maf--relation-p expr) (= (length expr) 3))
+            (list (maf--flip-relation-op (car expr))
+                  (nth 2 expr) (nth 1 expr)))
+           ((and (not (Math-primp expr))
+                 (not (eq (car expr) 'intv))
+                 (>= (length expr) 3))
+            (append (list (car expr) (nth 2 expr) (nth 1 expr))
+                    (nthcdr 3 expr)))
+           (t expr))))
 
 (defun maf-undo (n)
   "Like `calc-undo', but keep point in place instead of jumping home."

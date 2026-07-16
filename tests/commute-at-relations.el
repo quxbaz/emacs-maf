@@ -1,0 +1,66 @@
+(maf-step
+  ;; Symmetric operators: sides swap, operator unchanged.
+  (maf-push "x = y")
+  (progn (goto-char (point-min)) (end-of-line))
+  (call-interactively 'mafcmd-commute)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "y = x"))
+  (calc-pop 1)
+  (maf-push "x != y")
+  (progn (goto-char (point-min)) (end-of-line))
+  (call-interactively 'mafcmd-commute)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "y != x"))
+  (calc-pop 1)
+
+  ;; Directional operators: the direction reverses with the swap, so
+  ;; the relationship is preserved — x < y gives y > x, never y < x.
+  (maf-push "x < y")
+  (progn (goto-char (point-min)) (end-of-line))
+  (call-interactively 'mafcmd-commute)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "y > x"))
+  (calc-pop 1)
+  (maf-push "x > y")
+  (progn (goto-char (point-min)) (end-of-line))
+  (call-interactively 'mafcmd-commute)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "y < x"))
+  (calc-pop 1)
+  (maf-push "x <= y")
+  (progn (goto-char (point-min)) (end-of-line))
+  (call-interactively 'mafcmd-commute)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "y >= x"))
+  (calc-pop 1)
+  (maf-push "x >= y")
+  (progn (goto-char (point-min)) (end-of-line))
+  (call-interactively 'mafcmd-commute)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "y <= x"))
+  (calc-pop 1)
+
+  ;; Commuting twice round-trips to the original relation.
+  (maf-push "x < y")
+  (progn (goto-char (point-min)) (end-of-line))
+  (call-interactively 'mafcmd-commute)
+  (call-interactively 'mafcmd-commute)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "x < y"))
+  (calc-pop 1)
+
+  ;; Contextual: at home, and as a subexpr with point on the operator.
+  (maf-push "a <= b + 1")
+  (goto-char (point-max))
+  (call-interactively 'mafcmd-commute)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "b + 1 >= a"))
+  (calc-pop 1)
+  (maf-push "2 x + 4 < 6 y")
+  (progn (goto-char (point-min)) (search-forward "<") (backward-char 1))
+  (call-interactively 'mafcmd-commute)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "6 y > 2 x + 4"))
+  (calc-pop 1)
+
+  ;; The sides must come through untouched: an unsimplified lhs pushed
+  ;; under 'none survives the commute structurally, not re-normalized.
+  (let ((calc-simplify-mode 'none))
+    (calc-push '(calcFunc-lt (+ (+ (var x var-x) 1) 1) (var y var-y))))
+  (progn (goto-char (point-min)) (end-of-line))
+  (call-interactively 'mafcmd-commute)
+  (cl-assert (equal (calc-top 1 'full)
+                    '(calcFunc-gt (var y var-y)
+                                  (+ (+ (var x var-x) 1) 1))))
+  (calc-pop 1))

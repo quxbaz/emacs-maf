@@ -39,4 +39,13 @@ the true common factor."
              do (setq f g))
     f))
 
+(defun maf--flip-relation-op (op)
+  "Return relation OP with its direction reversed: lt <-> gt, leq <-> geq.
+Symmetric operators (eq, neq) return unchanged."
+  (or (cdr (assq op '((calcFunc-lt  . calcFunc-gt)
+                      (calcFunc-gt  . calcFunc-lt)
+                      (calcFunc-leq . calcFunc-geq)
+                      (calcFunc-geq . calcFunc-leq))))
+      op))
+
 (provide 'maf-math)
