@@ -38,9 +38,10 @@
                       "6. x + 2.66666666667"))
   (calc-pop 1)
 
-  ;; And back: pfrac converts a float to an exact fraction.
+  ;; And back: the I flag routes to mafcmd-frac.
   (maf-push "0.75")
   (goto-char (point-max))
-  (call-interactively 'mafcmd-pfrac)
+  (call-interactively 'calc-inverse)
+  (call-interactively 'mafcmd-float)
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "3:4"))
   (calc-pop 1))

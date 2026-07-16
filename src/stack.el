@@ -130,7 +130,7 @@ home it operates on the top entry."
 6 x + 8:3 gives 6 x + 2.67 with the 6 untouched, and a whole number is
 a noop — unlike calc's pervasive float, which converts every number.
 With the Hyperbolic flag, `mafcmd-pfloat' gives that pervasive
-behavior (6. x + 2.67).
+behavior (6. x + 2.67); the Inverse flag routes to `mafcmd-frac'.
 
 Contextual like every mafcmd: with point on a sub-formula it floats
 just that sub-formula; on an equation it floats each side; at home it
@@ -138,7 +138,29 @@ operates on the top entry."
   :arity unary
   :prefix "flt"
   :hyperbolic mafcmd-pfloat
+  :inverse mafcmd-frac
   (commit (maf--float-fracs expr)))
+
+(maf-defcmd mafcmd-frac (expr _arg commit)
+  "Convert the resolved expression's floats to fractions.
+0.75 x + 2 gives 3:4 x + 2; exact numbers are untouched, and a whole
+number is a noop. A numeric prefix argument gives the tolerance, as in
+calc's pfrac: a positive integer N makes each fraction correct to N
+significant figures (C-u 3 on 3.14159 gives 22:7), a float gives an
+absolute tolerance, and no argument converts exactly within the
+current precision. The take-tolerance-from-stack form of a zero
+prefix argument is not supported; 0 converts exactly too.
+
+Contextual like every mafcmd: with point on a sub-formula it converts
+just that sub-formula; on an equation it converts each side; at home
+it operates on the top entry. The Inverse flag routes back to
+`mafcmd-float'."
+  :arity unary
+  :prefix "frac"
+  :inverse mafcmd-float
+  (commit (math-normalize
+           (list 'calcFunc-pfrac expr
+                 (prefix-numeric-value (or current-prefix-arg 0))))))
 
 (defvar maf--quick-variable nil
   "Variable read by `maf-quick-variable', for the contextual body.")

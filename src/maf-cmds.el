@@ -203,16 +203,14 @@ are set, making the I and H prefixes route to the variant contextually.
   (relch binary calcFunc-relch "b %")
   (irrb unary calcFunc-irrb)
   (npvb binary calcFunc-npvb)
-  ;; conversions (calc-c-oper-keys). Like calc-fraction, the plain key
-  ;; applies the symbolic-safe pfrac; the H flag forces the exact frac.
-  ;; Floating lives in stack.el: mafcmd-float (l l) floats fractions
-  ;; only, and routes H to the pervasive pfloat row below.
+  ;; conversions (calc-c-oper-keys). Float/fraction conversion lives in
+  ;; stack.el: mafcmd-float (l l) floats fractions only and routes H to
+  ;; the pervasive pfloat row below; mafcmd-frac (c F) converts floats
+  ;; to fractions with a tolerance prefix arg. The two are I-linked.
   (deg unary calcFunc-deg "c d")
   (rad unary calcFunc-rad "c r")
   (hms unary calcFunc-hms "c h")
-  (pfrac unary calcFunc-pfrac "c F" :hyp frac)
   (pfloat unary calcFunc-pfloat)
-  (frac unary calcFunc-frac)
   ;; scientific functions (calc-f-oper-keys)
   (beta binary calcFunc-beta "f b")
   (erf unary calcFunc-erf "f e" :inv erfc)
