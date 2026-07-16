@@ -39,6 +39,16 @@ the true common factor."
              do (setq f g))
     f))
 
+(defun maf--float-fracs (expr)
+  "Float the fractions in EXPR, leaving integers exact.
+Unlike `calcFunc-pfloat', which pervasively floats every number
+\(6 x + 8:3 becomes 6. x + 2.67), only the non-integer exact numbers
+convert: 6 x + 8:3 becomes 6 x + 2.67."
+  (cond
+   ((eq (car-safe expr) 'frac) (math-float expr))
+   ((consp expr) (cons (car expr) (mapcar #'maf--float-fracs (cdr expr))))
+   (t expr)))
+
 (defun maf--flip-relation-op (op)
   "Return relation OP with its direction reversed: lt <-> gt, leq <-> geq.
 Symmetric operators (eq, neq) return unchanged."

@@ -15,6 +15,7 @@
 
 (define-key maf-mode-map (kbd "l f") #'mafcmd-factor-by)
 (define-key maf-mode-map (kbd "l F") #'mafcmd-factor-gcd)
+(define-key maf-mode-map (kbd "l l") #'mafcmd-float)
 (define-key maf-mode-map (kbd "O") #'mafcmd-commute)
 (define-key maf-mode-map (kbd ",") #'maf-quick-variable)
 (define-key maf-mode-map (kbd "U") #'maf-undo)

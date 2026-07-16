@@ -19,6 +19,8 @@
 (declare-function calc-redo "calc-undo")
 (declare-function math-looks-negp "calc-misc")
 (declare-function calc-push "calc-ext")
+;; Defined by the mafcmd table; maf-cmds loads before this file.
+(declare-function mafcmd-pfloat "maf-cmds")
 
 (maf-defcmd mafcmd-factor-by (expr arg commit)
   "Factor the resolved expression by the top-of-stack argument.
@@ -122,6 +124,21 @@ home it operates on the top entry."
             (append (list (car expr) (nth 2 expr) (nth 1 expr))
                     (nthcdr 3 expr)))
            (t expr))))
+
+(maf-defcmd mafcmd-float (expr _arg commit)
+  "Float the resolved expression's fractions, leaving integers exact.
+6 x + 8:3 gives 6 x + 2.67 with the 6 untouched, and a whole number is
+a noop — unlike calc's pervasive float, which converts every number.
+With the Hyperbolic flag, `mafcmd-pfloat' gives that pervasive
+behavior (6. x + 2.67).
+
+Contextual like every mafcmd: with point on a sub-formula it floats
+just that sub-formula; on an equation it floats each side; at home it
+operates on the top entry."
+  :arity unary
+  :prefix "flt"
+  :hyperbolic mafcmd-pfloat
+  (commit (maf--float-fracs expr)))
 
 (defvar maf--quick-variable nil
   "Variable read by `maf-quick-variable', for the contextual body.")
