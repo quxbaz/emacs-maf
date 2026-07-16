@@ -44,7 +44,6 @@
   - [ ] Port my/calc/* features one-by-one.
 
 * Bugs
-  - (my/calc-factor-by-gcd) not working
   - Some commands like * and / don't work in "prefix" area on home line.
     # Found the issue: when you enter 3 * or some other operation, we prevent
     # point from moving so make it easier to operate on lines. However this
@@ -68,8 +67,6 @@
   - (my/calc-commute) doesn't work properly. It doesn't keep the equation
     balanced.
   - Equal command doesn't work with point on line 1, but works on home.
-** BUG: (my/calc-factor-by-gcd) on `x y - 2 x` isn't working.
-   BUG: 3 y - 24
 ** BUG (my/calc-backward-noun) and (my/calc-forward-noun) should ignore line prefix.
 
 * Issues
