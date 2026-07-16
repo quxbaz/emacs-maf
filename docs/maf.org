@@ -19,25 +19,26 @@
 * IN-PROGRESS Todo
   - [ ] Write command bound to S-up/down that toggles operators: + and -, ln and e, * and /, log and ^, etc.
   - [ ] Replace noun with digit entry if point is on sub-formula
-  - [ ] k k (my/calc-evaluate N) should work on fractions and division.
-  - [ ] g i (my/calc-graph-quick-with-range) interval form a:b should work with spaces 'a b'
-  - [ ] Full formula buffer should have "recents" section.
-  - [ ] Saved formulas should support "notes" that display in full formula buffer.
   - [ ] TAB command to swap lines should work contextually.
   - [ ] a a (calc-apart) should work contextually.
-  - [ ] Add command to move to parent expression.
-    1:  y = 2 (x| + 3)^2 - 12
-    ->  y = 2 (x + 3)|^2 - 12
-  - [ ] Distribute and merge should operate contextually.
-  - [ ] Always show entry at point in "big" mode, somewhere.
-  - [ ] Move all options to unified configuration view.
-    - Free up option prefix bindings (eg, m).
-  - [ ] Feature: In stack mode, bind M-[n/p] to recall previous/next bare
-    (starting from empty) edit-mode entries. The purpose of this is to avoid the
-    pattern of having to duplicate or store an entry that you might want to
-    reuse or recall in case you screw up a calculation.
-  - [ ] Rebind +, -, negate, negative commands. Since these are used very
-    frequently, make them easily accessible.
+** Later
+   - [ ] k k (my/calc-evaluate N) should work on fractions and division.
+   - [ ] g i (my/calc-graph-quick-with-range) interval form a:b should work with spaces 'a b'
+   - [ ] Full formula buffer should have "recents" section.
+   - [ ] Saved formulas should support "notes" that display in full formula buffer.
+   - [ ] Add command to move to parent expression.
+     1:  y = 2 (x| + 3)^2 - 12
+     ->  y = 2 (x + 3)|^2 - 12
+   - [ ] Distribute and merge should operate contextually.
+   - [ ] Always show entry at point in "big" mode, somewhere.
+   - [ ] Move all options to unified configuration view.
+     - Free up option prefix bindings (eg, m).
+   - [ ] Rebind +, -, negate, negative commands. Since these are used very
+     frequently, make them easily accessible.
+   - [ ] Feature: In stack mode, bind M-[n/p] to recall previous/next bare
+     (starting from empty) edit-mode entries. The purpose of this is to avoid the
+     pattern of having to duplicate or store an entry that you might want to
+     reuse or recall in case you screw up a calculation.
 
 * Port
   - [ ] Port my/calc/* features one-by-one.
