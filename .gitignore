@@ -1,3 +1,3 @@
 /.claude/*.lock
-/calc-ref/manual/
-/calc-ref/src/
+/calc-ref/calc-manual/
+/calc-ref/calc-src/
