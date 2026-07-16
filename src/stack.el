@@ -18,6 +18,7 @@
 (declare-function calc-undo "calc-undo")
 (declare-function calc-redo "calc-undo")
 (declare-function math-looks-negp "calc-misc")
+(declare-function calc-push "calc-ext")
 
 (maf-defcmd mafcmd-factor-by (expr arg commit)
   "Factor the resolved expression by the top-of-stack argument.
@@ -121,6 +122,36 @@ home it operates on the top entry."
             (append (list (car expr) (nth 2 expr) (nth 1 expr))
                     (nthcdr 3 expr)))
            (t expr))))
+
+(defvar maf--quick-variable nil
+  "Variable read by `maf-quick-variable', for the contextual body.")
+
+(maf-defcmd mafcmd--quick-variable-mul (expr _arg commit)
+  "Multiply the resolved expression by `maf--quick-variable'.
+Internal: `maf-quick-variable' reads the variable, binds it, and
+dispatches here when point is on an expression."
+  :arity unary
+  :prefix "qvar"
+  (commit (calcFunc-mul maf--quick-variable expr)))
+
+(defun maf-quick-variable ()
+  "Read a letter and apply it as a variable, contextually.
+At home with no selection active, push the variable as a new stack
+entry. Anywhere else, multiply the resolved expression by it — the
+selection, the sub-formula at point, each side of an equation, or the
+whole entry from its margin: with point on the a of a + 2, entering x
+gives x a + 2."
+  (interactive)
+  (let ((char (read-char-from-minibuffer "Variable: ")))
+    (unless (or (<= ?a char ?z) (<= ?A char ?Z))
+      (user-error "Invalid variable '%c'; must be a letter" char))
+    (let ((var (list 'var
+                     (intern (char-to-string char))
+                     (intern (concat "var-" (char-to-string char))))))
+      (if (and (maf--at-home-p) (not (maf--sel-any-p)))
+          (calc-wrapper (calc-push var))
+        (let ((maf--quick-variable var))
+          (mafcmd--quick-variable-mul))))))
 
 (defun maf-undo (n)
   "Like `calc-undo', but keep point in place instead of jumping home."
