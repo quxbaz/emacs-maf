@@ -17,6 +17,16 @@
     enable a section of features.
 
 * IN-PROGRESS Todo
+  - [ ] Create simple default entries covering variety of potential expressions.
+    These will be used for quick tests. add the entries in project-init.el
+    - fractions
+    - floats
+    - variables
+    - expressions
+    - nested expressions
+    - equations
+    - inequalities
+    - functions, eg, f(x) = ...
   - [ ] Replace noun with digit entry if point is on sub-formula
   - [ ] k k (my/calc-evaluate N) should work on fractions and division.
   - [ ] g i (my/calc-graph-quick-with-range) interval form a:b should work with spaces 'a b'
