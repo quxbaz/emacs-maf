@@ -21,9 +21,6 @@
   - [ ] k k (my/calc-evaluate N) should work on fractions and division.
   - [ ] g i (my/calc-graph-quick-with-range) interval form a:b should work with spaces 'a b'
   - [ ] Write command bound to S-up/down that toggles operators: + and -, ln and e, * and /, log and ^, etc.
-  - [ ] (my/calc-log-exp-rules) on line should transform entire line.
-  - [ ] Binary arity functions should noop on targeting sub-formula at stack=1.
-    They have nowhere to take args from.
   - [ ] Full formula buffer should have "recents" section.
   - [ ] Saved formulas should support "notes" that display in full formula buffer.
   - [ ] TAB command to swap lines should work contextually.
