@@ -208,7 +208,10 @@ are set, making the I and H prefixes route to the variant contextually.
   (rad unary calcFunc-rad "c r")
   (hms unary calcFunc-hms "c h")
   (float unary calcFunc-float "c f")
-  (frac unary calcFunc-frac "c F")
+  ;; Like calc-fraction, the plain key applies the symbolic-safe pfrac;
+  ;; the H flag forces the exact frac.
+  (pfrac unary calcFunc-pfrac "c F" :hyp frac)
+  (frac unary calcFunc-frac)
   ;; scientific functions (calc-f-oper-keys)
   (beta binary calcFunc-beta "f b")
   (erf unary calcFunc-erf "f e" :inv erfc)
