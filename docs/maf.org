@@ -17,19 +17,6 @@
     enable a section of features.
 
 * IN-PROGRESS Todo
-  - [ ] Create simple default calc entries covering a variety of potential
-    expressions to test against in a sandbox context. This will save us the mild
-    hassle of hvaing to create quick test entries for casual testing. set it up
-    in project-init.el. cover at least the following entires and add anything
-    else that ight be missing.
-    - fractions
-    - floats
-    - variables
-    - expressions
-    - nested expressions
-    - equations
-    - inequalities
-    - functions, eg, f(x) = ...
   - [ ] Replace noun with digit entry if point is on sub-formula
   - [ ] k k (my/calc-evaluate N) should work on fractions and division.
   - [ ] g i (my/calc-graph-quick-with-range) interval form a:b should work with spaces 'a b'
