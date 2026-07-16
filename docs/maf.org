@@ -17,36 +17,36 @@
     enable a section of features.
 
 * IN-PROGRESS Todo
-  - [ ] Replace noun with digit entry if point is on sub-formula
-  - [ ] k k (my/calc-evaluate N) should work on fractions and division.
-  - [ ] g i (my/calc-graph-quick-with-range) interval form a:b should work with spaces 'a b'
-  - [-] (calc-fraction ARG) and calc-float should work contextually.
-  - [ ] (my/calc-factor-by-gcd) should factor out negative numbers (leave the
-    leading term in the binomial positive).
-  - [ ] Write command bound to S-up/down that toggles operators: + and -, ln and e, * and /, log and ^, etc.
-  - [ ] (my/calc-quick-variable) should be a contextual command. If applied to
-    an expression, multiply the expression by the given variable.
-  - [ ] (my/calc-log-exp-rules) on line should transform entire line.
-  - [ ] Binary arity functions should noop on targeting sub-formula at stack=1.
-    They have nowhere to take args from.
-  - [ ] Full formula buffer should have "recents" section.
-  - [ ] Saved formulas should support "notes" that display in full formula buffer.
-  - [ ] TAB command to swap lines should work contextually.
-  - [ ] a a (calc-apart) should work contextually.
-  - [ ] Add command to move to parent expression.
-    1:  y = 2 (x| + 3)^2 - 12
-    ->  y = 2 (x + 3)|^2 - 12
-  - [ ] Go through my/calc/* features one-by-one and add them in.
-  - [ ] Distribute and merge should operate contextually.
-  - [ ] Always show entry at point in "big" mode, somewhere.
-  - [ ] Move all options to unified configuration view.
-    - Free up option prefix bindings (eg, m).
-  - [ ] Feature: In stack mode, bind M-[n/p] to recall previous/next bare
-    (starting from empty) edit-mode entries. The purpose of this is to avoid the
-    pattern of having to duplicate or store an entry that you might want to
-    reuse or recall in case you screw up a calculation.
-  - [ ] Rebind +, -, negate, negative commands. Since these are used very
-    frequently, make them easily accessible.
+  1) [-] (calc-fraction ARG) and calc-float should work contextually.
+  2) [ ] Replace noun with digit entry if point is on sub-formula
+  3) [ ] k k (my/calc-evaluate N) should work on fractions and division.
+  4) [ ] g i (my/calc-graph-quick-with-range) interval form a:b should work with spaces 'a b'
+  5) [ ] (my/calc-factor-by-gcd) should factor out negative numbers (leave the
+     leading term in the binomial positive).
+  6) [ ] Write command bound to S-up/down that toggles operators: + and -, ln and e, * and /, log and ^, etc.
+  7) [ ] (my/calc-quick-variable) should be a contextual command. If applied to
+     an expression, multiply the expression by the given variable.
+  8) [ ] (my/calc-log-exp-rules) on line should transform entire line.
+  9) [ ] Binary arity functions should noop on targeting sub-formula at stack=1.
+     They have nowhere to take args from.
+  10) [ ] Full formula buffer should have "recents" section.
+  11) [ ] Saved formulas should support "notes" that display in full formula buffer.
+  12) [ ] TAB command to swap lines should work contextually.
+  13) [ ] a a (calc-apart) should work contextually.
+  14) [ ] Add command to move to parent expression.
+      1:  y = 2 (x| + 3)^2 - 12
+      ->  y = 2 (x + 3)|^2 - 12
+  15) [ ] Go through my/calc/* features one-by-one and add them in.
+  16) [ ] Distribute and merge should operate contextually.
+  17) [ ] Always show entry at point in "big" mode, somewhere.
+  18) [ ] Move all options to unified configuration view.
+      - Free up option prefix bindings (eg, m).
+  19) [ ] Feature: In stack mode, bind M-[n/p] to recall previous/next bare
+      (starting from empty) edit-mode entries. The purpose of this is to avoid the
+      pattern of having to duplicate or store an entry that you might want to
+      reuse or recall in case you screw up a calculation.
+  20) [ ] Rebind +, -, negate, negative commands. Since these are used very
+      frequently, make them easily accessible.
 
 * Bugs
   - (my/calc-factor-by-gcd) not working
