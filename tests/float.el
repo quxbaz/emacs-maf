@@ -29,7 +29,7 @@
                       "0.25 x = 0.375 y + 2"))
   (calc-pop 1)
 
-  ;; H flag routes to the pervasive pfloat, which floats everything.
+  ;; H flag routes to mafcmd-float-all, which floats everything.
   (maf-push "6 x + 8:3")
   (goto-char (point-max))
   (call-interactively 'calc-hyperbolic)
