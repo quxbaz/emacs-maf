@@ -1,6 +1,6 @@
 ---
 name: test
-description: Write and/or run a maf step test — the project's test convention using maf-defcmd plus a maf-step block, stepped through interactively in the maf-dev instance. Use when adding tests for a maf command, verifying a change, or asked to write tests. A newly written test is always run immediately; bare /test reruns the last test.
+description: Write and/or run a maf step test — the project's test convention using maf-defcmd plus a maf-step block, stepped through interactively in the duo instance. Use when adding tests for a maf command, verifying a change, or asked to write tests. A newly written test is always run immediately; bare /test reruns the last test.
 ---
 
 # Step tests
@@ -37,11 +37,12 @@ existing examples: `tests/*.el` (e.g. `tests/mult-at-home.el`).
 
 ## Running a test as the AI
 
-Load the file into the maf-dev instance and check the cockpit runs
-clean (`maf-step` machinery is in `debug/maf-step.el`):
+Load the file into this session's dev instance (socket name chosen at
+`start`, default `duo` — examples below use it) and check the
+cockpit runs clean (`maf-step` machinery is in `debug/maf-step.el`):
 
 ```sh
-emacsclient -s maf-dev --eval '(load-file "agent-sandbox/foo.el")'
+emacsclient -s duo --eval '(load-file "agent-sandbox/foo.el")'
 ```
 
 Then step through it with real keypresses in the `*maf-step*` window
@@ -92,9 +93,9 @@ for `maf-add` committing `calcFunc-add`, then a `maf-step` block
 pushing 3 and 4 and asserting the top is 7), then load and step it:
 
 ```sh
-emacsclient -s maf-dev --eval '(load-file "agent-sandbox/add-at-home.el")'
+emacsclient -s duo --eval '(load-file "agent-sandbox/add-at-home.el")'
 # one SPC per form, then read the cockpit back
-emacsclient -s maf-dev --eval '(with-selected-window (get-buffer-window "*maf-step*" t)
+emacsclient -s duo --eval '(with-selected-window (get-buffer-window "*maf-step*" t)
   (execute-kbd-macro (kbd "SPC SPC SPC SPC SPC"))
   (buffer-substring-no-properties (point-min) (point-max)))'
 ```
@@ -113,7 +114,7 @@ emacsclient -s maf-dev --eval '(with-selected-window (get-buffer-window "*maf-st
 Same flow against the user's existing test:
 
 ```sh
-emacsclient -s maf-dev --eval '(load-file "tests/mult-at-home.el")'
+emacsclient -s duo --eval '(load-file "tests/mult-at-home.el")'
 ```
 
 Step with `SPC` as above; report pass/fail from the header and quote
@@ -124,7 +125,7 @@ any `;;!` failure lines.
 No prompt — rerun the last test:
 
 ```sh
-emacsclient -s maf-dev --eval '(with-selected-window (get-buffer-window "*maf-step*" t)
+emacsclient -s duo --eval '(with-selected-window (get-buffer-window "*maf-step*" t)
   (execute-kbd-macro (kbd "r SPC SPC SPC SPC SPC"))
   (buffer-substring-no-properties (point-min) (point-max)))'
 ```

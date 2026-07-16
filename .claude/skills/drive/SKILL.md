@@ -13,9 +13,10 @@ fidelity concerns block the actual task. Inspection and evaluation are
 always direct calls.
 
 Full techniques and pitfalls: `docs/memory/piloting-emacs.md` — read it
-before nontrivial piloting. For maf work, always target the `maf-dev`
-socket (`emacsclient -s maf-dev ...`), never the default `server`
-socket. See the `start` skill for instance management.
+before nontrivial piloting. For maf work, always target this session's
+dev-instance socket (`emacsclient -s <name> ...`; the name is chosen at
+`start`, default `duo` — examples below use it), never the default
+`server` socket. See the `start` skill for instance management.
 
 ## Core rules
 
@@ -67,7 +68,7 @@ produce.
 ```sh
 # keys through the keymaps (rule 1), one --eval (rule 3),
 # frame/window established explicitly (rule 2)
-emacsclient -s maf-dev --eval '(let ((gframe (seq-find (lambda (f) (frame-parameter f (quote window-system))) (frame-list))))
+emacsclient -s duo --eval '(let ((gframe (seq-find (lambda (f) (frame-parameter f (quote window-system))) (frame-list))))
   (with-selected-frame gframe
     (calc)  ; ensure *Calculator* has a window
     (with-selected-window (get-buffer-window "*Calculator*")
@@ -84,7 +85,7 @@ emacsclient -s maf-dev --eval '(let ((gframe (seq-find (lambda (f) (frame-parame
 
 ```sh
 # pure inspection — direct calls, no keypresses
-emacsclient -s maf-dev --eval '(with-current-buffer "*Calculator*"
+emacsclient -s duo --eval '(with-current-buffer "*Calculator*"
   (list (calc-stack-size) (calc-top 1 (quote full))))'
 ```
 
@@ -93,7 +94,7 @@ emacsclient -s maf-dev --eval '(with-current-buffer "*Calculator*"
 ```sh
 # maintenance — direct calls; find buffers visiting deleted files,
 # then kill them
-emacsclient -s maf-dev --eval '(delq nil (mapcar (lambda (b)
+emacsclient -s duo --eval '(delq nil (mapcar (lambda (b)
     (let ((f (buffer-file-name b)))
       (and f (not (file-exists-p f)) (buffer-name b))))
   (buffer-list)))'
@@ -103,5 +104,5 @@ emacsclient -s maf-dev --eval '(delq nil (mapcar (lambda (b)
 
 ```sh
 # inspect the loaded definition, not the file (rule 4)
-emacsclient -s maf-dev --eval '(symbol-function (quote maf-mult))'
+emacsclient -s duo --eval '(symbol-function (quote maf-mult))'
 ```
