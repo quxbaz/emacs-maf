@@ -58,14 +58,6 @@
     instead of home.
 
     Why is point behaving differently in column 1 vs column 2?
-  - (my/calc-factor-by-gcd) only works properly on the home line or a duplicated
-    value on the home line. It's choosing a different factor on (cplx)-style numbers.
-  - (my/calc-commute) doesn't flip the inequality.
-    x > 1
-    (my/calc-commute)
-    1 > x
-  - (my/calc-commute) doesn't work properly. It doesn't keep the equation
-    balanced.
   - Equal command doesn't work with point on line 1, but works on home.
 ** BUG (my/calc-backward-noun) and (my/calc-forward-noun) should ignore line prefix.
 
