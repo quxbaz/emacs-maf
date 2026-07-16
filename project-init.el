@@ -5,6 +5,28 @@
 ;; Session setup for the maf project: open the working set of files in
 ;; background buffers and load the package.
 
+(defconst maf-seed-entries
+  '("3:4"                    ; fraction
+    "2.5"                    ; float
+    "x"                      ; variable
+    "6 x + 12"               ; expression
+    "(a + b) (2 c - d)"      ; nested expressions
+    "6 x + 12 = 18 y + 6"    ; equation
+    "2 x - 3 < 7"            ; inequality
+    "f(x) = x^2 + 1"         ; function
+    "[a, b, c]"              ; vector
+    "[1 .. 3]")              ; interval
+  "Algebraic entries pushed onto a fresh calc stack for casual testing.
+One entry per common expression shape.")
+
+(defun maf-seed-calc ()
+  "Push `maf-seed-entries' onto the calc stack."
+  (interactive)
+  ;; calc-wrapper's epilogue renumbers and refreshes the stack display;
+  ;; raw pushes would leave every entry rendered as level 1.
+  (calc-wrapper
+   (mapc #'maf-push maf-seed-entries)))
+
 (let ((root (file-name-directory (or load-file-name buffer-file-name))))
   ;; Open docs and sources without selecting them.
   (dolist (file (append
@@ -22,4 +44,6 @@
   ;; Show calc in the other window, keeping the current window selected.
   (save-window-excursion (maf-calc-direct))
   (save-selected-window
-    (switch-to-buffer-other-window "*Calculator*")))
+    (switch-to-buffer-other-window "*Calculator*"))
+  ;; Seed the stack so casual testing doesn't start from scratch.
+  (maf-seed-calc))
