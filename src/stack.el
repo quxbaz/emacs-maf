@@ -250,14 +250,40 @@ an operator inside a side to toggle there."
                 (cons to (cdr expr))
               expr))))
 
+(defvar maf-undo--chain-point nil
+  "Point snapshot saved by the last `maf-undo'/`maf-redo' in a chain.
+Holds where point stood just before that command changed the buffer —
+i.e. its position in the state the next chained undo/redo returns to.")
+
+(defun maf--undo-redo (fn n)
+  "Run undo/redo FN with N, managing point across undo/redo chains.
+In an uninterrupted run of `maf-undo'/`maf-redo' commands, each command
+restores the point snapshot its predecessor saved: that snapshot was
+taken in the very state this command returns to, so toggling undo/redo
+bounces point along with the stack. Any other command in between breaks
+the chain — the user has repositioned point deliberately — and point is
+simply kept in place as `maf--preserve-point' does."
+  (let ((snapshot (maf--point-snapshot))
+        (chained (and (memq last-command '(maf-undo maf-redo))
+                      maf-undo--chain-point)))
+    (if chained
+        (progn (funcall fn n)
+               (maf--point-restore maf-undo--chain-point))
+      (maf--preserve-point (funcall fn n)))
+    (setq maf-undo--chain-point snapshot)))
+
 (defun maf-undo (n)
-  "Like `calc-undo', but keep point in place instead of jumping home."
+  "Like `calc-undo', but keep point in place instead of jumping home.
+In an undo/redo chain, restore point to where it was in the state being
+returned to (see `maf--undo-redo')."
   (interactive "p")
-  (maf--preserve-point (calc-undo n)))
+  (maf--undo-redo #'calc-undo n))
 
 (defun maf-redo (n)
-  "Like `calc-redo', but keep point in place instead of jumping home."
+  "Like `calc-redo', but keep point in place instead of jumping home.
+In an undo/redo chain, restore point to where it was in the state being
+returned to (see `maf--undo-redo')."
   (interactive "p")
-  (maf--preserve-point (calc-redo n)))
+  (maf--undo-redo #'calc-redo n))
 
 (provide 'maf-stack)
