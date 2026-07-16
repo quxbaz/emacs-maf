@@ -36,7 +36,7 @@ its keybinding in `~/.emacs.d/my/calc/bindings.el`.
 
 ## Verify
 
-After porting: load the file into duo (see the `start` skill),
+After porting: load the file into land (see the `start` skill),
 write and run a step test in `agent-sandbox/` covering the feature's
 distinct input shapes (see the `test` skill), and exercise any new
 binding with real keypresses (see the `drive` skill).
