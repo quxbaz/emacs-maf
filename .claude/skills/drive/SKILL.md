@@ -15,8 +15,8 @@ always direct calls.
 Full techniques and pitfalls: `docs/memory/piloting-emacs.md` — read it
 before nontrivial piloting. For maf work, always target this session's
 dev-instance socket (`emacsclient -s <name> ...`; the name is chosen at
-`start`, default `#emacs` — examples below use it), never the default
-`server` socket. See the `start` skill for instance management.
+`emacs`, default `#emacs` — examples below use it), never the default
+`server` socket. See the `emacs` skill for instance management.
 
 ## Core rules
 
@@ -47,7 +47,7 @@ dev-instance socket (`emacsclient -s <name> ...`; the name is chosen at
    persist between invocations. Put dependent sequences in one `--eval`
    or re-establish context each time.
 
-4. Reload edited `.el` files before re-testing (see the `start`
+4. Reload edited `.el` files before re-testing (see the `emacs`
    skill). When in doubt, inspect the loaded definition, not the file:
    `(symbol-function 'maf-step-next)`, `(macroexpand '(...))`.
 

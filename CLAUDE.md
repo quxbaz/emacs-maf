@@ -8,7 +8,7 @@ and commit results back to the right place.
 
 Development and testing happen in a dedicated live Emacs instance with a
 private server, operated jointly with the user. The server name is
-per-session (the `start` skill's argument; default `#emacs`), so
+per-session (the `emacs` skill's argument; default `#emacs`), so
 multiple sessions — e.g. in separate worktrees — can each run their own
 instance. As your first action, ensure this session's instance is
 running:

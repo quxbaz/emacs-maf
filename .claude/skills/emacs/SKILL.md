@@ -1,6 +1,6 @@
 ---
-name: start
-description: Manage a dedicated maf dev Emacs instance — check it's running, launch it, load edited .el files into it, reset calc state, or restart it. Accepts an optional server name (`/start maf-refactor`) so multiple sessions/worktrees can each run their own instance; default is `#emacs`. Use at session start, after editing any .el file, or when the instance is stale, wedged, or needs a clean restart.
+name: emacs
+description: Manage a dedicated maf dev Emacs instance — check it's running, launch it, load edited .el files into it, reset calc state, or restart it. Accepts an optional server name (`/emacs maf-refactor`) so multiple sessions/worktrees can each run their own instance; default is `#emacs`. Use at session start, after editing any .el file, or when the instance is stale, wedged, or needs a clean restart.
 ---
 
 # Start a maf coding session
@@ -13,7 +13,7 @@ insufficient.
 ## Server name
 
 This skill takes an optional argument: the server name for this
-session's instance (e.g. `/start maf-refactor`). If no name is given,
+session's instance (e.g. `/emacs maf-refactor`). If no name is given,
 use `#emacs`. The chosen name — call it `<name>` below — identifies
 both the server socket and the frame title (quote it in shell commands:
 `-s '#emacs'` — an unquoted `#` starts a comment), and **every** `emacsclient`
@@ -57,8 +57,8 @@ worktrees, each run their own instance side by side.
 - **All testing happens in this session's instance.** Never test in the
   user's main session (the default `server` socket), and never touch
   another session's instance. Driving and inspecting the instance is
-  covered by the `pilot` skill; the test convention by the
-  `step-test` skill.
+  covered by the `drive` skill; the test convention by the
+  `test` skill.
 
 - **Reset calc state between tests with `calc-pop`.** The stack
   survives `kill-buffer` of `*Calculator*` (calc keeps it in global

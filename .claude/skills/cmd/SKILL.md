@@ -7,7 +7,7 @@ description: Write a new maf command end to end — definition, binding, verific
 
 Take the requested behavior and carry it through every step below; a
 command isn't done when the defun exists. Related skills: `ref` for
-upstream Calc facts, `start` for the dev instance, `drive` for
+upstream Calc facts, `emacs` for the dev instance, `drive` for
 keypress-level checks, `test` for the step-test convention, `port`
 when the source is a `my/calc-*` feature.
 
@@ -71,7 +71,7 @@ Decisions to make deliberately, not by default:
 ## 5. Load and verify live
 
 - Load the edited files into this session's dev instance immediately
-  (`start` skill). If `maf-defcmd` itself changed, also reload
+  (`emacs` skill). If `maf-defcmd` itself changed, also reload
   `maf-cmds.el` and `stack.el` so commands re-expand.
 - Exercise it in the instance across the contexts it claims: home,
   subexpr under point, entry margin, equation (per side), selection,

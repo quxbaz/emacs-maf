@@ -38,7 +38,7 @@ existing examples: `tests/*.el` (e.g. `tests/mult-at-home.el`).
 ## Running a test as the AI
 
 Load the file into this session's dev instance (socket name chosen at
-`start`, default `#emacs` — examples below use it) and check the
+`emacs`, default `#emacs` — examples below use it) and check the
 cockpit runs clean (`maf-step` machinery is in `debug/maf-step.el`):
 
 ```sh

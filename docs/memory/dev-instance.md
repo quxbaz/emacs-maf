@@ -7,7 +7,7 @@ frame; the assistant drives and inspects it over `emacsclient -s <name>`.
 Written for a future AI assistant working in this repo; general piloting
 techniques are in [piloting-emacs.md](piloting-emacs.md).
 
-The server name is chosen at session start (the `start` skill's
+The server name is chosen at session start (the `emacs` skill's
 argument) and defaults to `duo`. Distinct names let multiple
 sessions — e.g. in separate worktrees — each run their own instance side
 by side. Examples below use `duo`; substitute the session's name.
