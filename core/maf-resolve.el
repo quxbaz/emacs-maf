@@ -15,9 +15,9 @@
 ;;   :expr         The expression the command operates on (full formula or
 ;;                 selected sub-formula, depending on target). Clean — the
 ;;                 (cplx N 0) encasing that calc-prepare-selection wraps atoms
-;;                 in is stripped, so the body sees clean values. Selection
-;;                 and subexpr normalize; the whole-entry targets only strip
-;;                 (`maf--strip-encasing'), never re-simplifying the entry.
+;;                 in is stripped (`maf--strip-encasing') so the body sees
+;;                 clean values, but never re-normalized, which could
+;;                 re-simplify the user's formula.
 ;;   :expr-ref     The same sub-formula as :expr but as the *original encased
 ;;                 cons cell* from the stack entry. Used by commit's
 ;;                 `calc-replace-sub-formula` for eq-based splicing — only the
@@ -81,9 +81,11 @@ entry containing the selection, which has no coherent commit semantics."
       (when (and (eq arity 'binary) (= m 1))
         (error "Binary commands on selection require the selected entry below the top"))
       `((:target     . selection)
-        ;; :expr is the clean form for the body; :expr-ref is the encased cons
-        ;; commit needs for eq-based splicing.
-        (:expr       . ,(math-normalize encased))
+        ;; :expr is the clean form for the body — encasing stripped, but
+        ;; not re-normalized, which could re-simplify what the user
+        ;; selected. :expr-ref is the encased cons commit needs for
+        ;; eq-based splicing.
+        (:expr       . ,(maf--strip-encasing encased))
         (:expr-ref   . ,encased)
         (:arg        . ,(pcase arity ('unary nil) ('binary (math-normalize (calc-top 1 'full)))))
         (:m          . ,m)
@@ -133,9 +135,11 @@ untouched."
       (calc-prepare-selection m)
       (let ((encased (calc-find-selected-part)))
         `((:target     . subexpr)
-          ;; :expr is the clean form for the body; :expr-ref is the encased cons
-          ;; commit needs for eq-based splicing.
-          (:expr       . ,(math-normalize encased))
+          ;; :expr is the clean form for the body — encasing stripped, but
+          ;; not re-normalized, which could re-simplify the sub-formula
+          ;; under point. :expr-ref is the encased cons commit needs for
+          ;; eq-based splicing.
+          (:expr       . ,(maf--strip-encasing encased))
           (:expr-ref   . ,encased)
           (:arg        . ,(pcase arity ('unary nil) ('binary (math-normalize (calc-top 1 'full)))))
           (:m          . ,m)
