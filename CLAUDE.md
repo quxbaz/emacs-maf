@@ -8,20 +8,20 @@ and commit results back to the right place.
 
 Development and testing happen in a dedicated live Emacs instance with a
 private server, operated jointly with the user. The server name is
-per-session (the `start` skill's argument; default `land`), so
+per-session (the `start` skill's argument; default `#emacs`), so
 multiple sessions — e.g. in separate worktrees — can each run their own
 instance. As your first action, ensure this session's instance is
 running:
 
 ```sh
-emacsclient -s land --eval t   # error => not running
+emacsclient -s '#emacs' --eval t   # error => not running
 ```
 
 If it is not, launch it from the repo root:
 
 ```sh
-MAF_SERVER_NAME=land \
-  nohup emacs -title land -l debug/maf-dev-init.el >/dev/null 2>&1 &
+MAF_SERVER_NAME='#emacs' \
+  nohup emacs -title '#emacs' -l debug/maf-dev-init.el >/dev/null 2>&1 &
 ```
 
 Full workflow, properties, and pitfalls: `docs/memory/dev-instance.md`.
