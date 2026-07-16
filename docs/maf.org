@@ -17,7 +17,6 @@
     enable a section of features.
 
 * IN-PROGRESS Todo
-  - [-] (calc-fraction ARG) and calc-float should work contextually.
   - [ ] Replace noun with digit entry if point is on sub-formula
   - [ ] k k (my/calc-evaluate N) should work on fractions and division.
   - [ ] g i (my/calc-graph-quick-with-range) interval form a:b should work with spaces 'a b'
