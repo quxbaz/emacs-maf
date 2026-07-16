@@ -24,6 +24,7 @@
   (add-to-list 'load-path (expand-file-name "core" dir))
   (add-to-list 'load-path (expand-file-name "debug" dir)))
 
+(require 'maf-comp)
 (require 'maf-lib)
 (require 'maf-sel)
 (require 'maf-hl)

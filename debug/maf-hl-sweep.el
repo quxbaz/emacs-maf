@@ -46,8 +46,8 @@
 (defvar math-comp-sel-tag)
 (defvar calc-selection-cache-comp)
 (defvar calc-selection-cache-offset)
-(defvar maf-hl--flat-start)
-(defvar maf-hl--flat-end)
+(defvar maf--comp-flat-start)
+(defvar maf--comp-flat-end)
 
 (defvar maf-hl-sweep-exprs
   '("2 (3 x + 4)"
@@ -108,9 +108,9 @@ resolution at positions after them."
   (let ((math-comp-pos 0)
         (math-comp-sel-cpos -1)
         (math-comp-sel-tag nil)
-        (maf-hl--flat-start nil)
-        (maf-hl--flat-end nil))
-    (maf-hl--flat-term calc-selection-cache-comp)
+        (maf--comp-flat-start nil)
+        (maf--comp-flat-end nil))
+    (maf--comp-flat-term calc-selection-cache-comp)
     math-comp-pos))
 
 (defun maf-hl-sweep-entry (m)

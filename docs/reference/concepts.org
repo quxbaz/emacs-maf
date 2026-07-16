@@ -334,6 +334,7 @@ flags, so the next command starts clean.
 | File                    | Role                                                        |
 |-------------------------+-------------------------------------------------------------|
 | [[file:../../maf.el][maf.el]]                  | Package entry point, =maf-mode=, load order                 |
+| [[file:../../core/maf-comp.el][core/maf-comp.el]]    | Flat-rendering coordinates: map formula nodes and point to entry text |
 | [[file:../../core/maf-lib.el][core/maf-lib.el]]     | Generic predicates and utilities (find calc buffer, at-*-p, point snapshot/restore) |
 | [[file:../../core/maf-sel.el][core/maf-sel.el]]     | Selection-state introspection (any-selection, effective-m)  |
 | [[file:../../core/maf-resolve.el][core/maf-resolve.el]] | Context resolution + target dispatch                        |
@@ -350,9 +351,9 @@ flags, so the next command starts clean.
 | [[file:../../debug/maf-dev-init.el][debug/maf-dev-init.el]]   | Init file for the dedicated =maf-dev= instance              |
 | [[file:../../tests/][tests/]]                  | Step tests; a file passes when no step errors               |
 
-Load order in =maf.el=: =lib= → =sel= → =hl= → =step= → =hl-verify= →
-=resolve= → =commit= → =defcmd= → =cmds= → =math= → =stack= →
-=bindings=. Each layer depends only on earlier ones.
+Load order in =maf.el=: =comp= → =lib= → =sel= → =hl= → =step= →
+=hl-verify= → =resolve= → =commit= → =defcmd= → =cmds= → =math= →
+=stack= → =bindings=. Each layer depends only on earlier ones.
 
 * See also
 
