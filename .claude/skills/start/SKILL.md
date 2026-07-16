@@ -1,6 +1,6 @@
 ---
 name: start
-description: Manage a dedicated maf dev Emacs instance — check it's running, launch it, load edited .el files into it, reset calc state, or restart it. Accepts an optional server name (`/start maf-refactor`) so multiple sessions/worktrees can each run their own instance; default is `land`. Use at session start, after editing any .el file, or when the instance is stale, wedged, or needs a clean restart.
+description: Manage a dedicated maf dev Emacs instance — check it's running, launch it, load edited .el files into it, reset calc state, or restart it. Accepts an optional server name (`/start maf-refactor`) so multiple sessions/worktrees can each run their own instance; default is `#emacs`. Use at session start, after editing any .el file, or when the instance is stale, wedged, or needs a clean restart.
 ---
 
 # Start a maf coding session
@@ -14,10 +14,11 @@ insufficient.
 
 This skill takes an optional argument: the server name for this
 session's instance (e.g. `/start maf-refactor`). If no name is given,
-use `land`. The chosen name — call it `<name>` below — identifies
-both the server socket and the frame title, and **every** `emacsclient`
+use `#emacs`. The chosen name — call it `<name>` below — identifies
+both the server socket and the frame title (quote it in shell commands:
+`-s '#emacs'` — an unquoted `#` starts a comment), and **every** `emacsclient`
 call for the rest of the session (including those in the `drive`,
-`test`, and `port` skills, whose examples show `land`) must use
+`test`, and `port` skills, whose examples show `#emacs`) must use
 `-s <name>`. Distinct names let multiple sessions, e.g. in separate
 worktrees, each run their own instance side by side.
 
