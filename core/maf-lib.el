@@ -13,6 +13,8 @@
 (declare-function calc-locate-cursor-element "calc-yank")
 (declare-function calc-prepare-selection "calc-sel")
 (declare-function calc-find-selected-part "calc-sel")
+;; maf-comp requires maf-lib; declared to avoid the circular require.
+(declare-function maf--comp-node-anchor-pos "maf-comp")
 (declare-function math-read-expr "calc-aent")
 
 (defun maf--find-calc-buffer ()
