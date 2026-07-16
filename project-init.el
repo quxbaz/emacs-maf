@@ -9,13 +9,14 @@
   '("3:4"                    ; fraction
     "2.5"                    ; float
     "x"                      ; variable
-    "6 x + 12"               ; expression
     "(a + b) (2 c - d)"      ; nested expressions
-    "6 x + 12 = 18 y + 6"    ; equation
     "2 x - 3 < 7"            ; inequality
     "f(x) = x^2 + 1"         ; function
     "[a, b, c]"              ; vector
-    "[1 .. 3]")              ; interval
+    "[1 .. 3]"
+    "6 x + 12"               ; expression
+    "6 x + 12 = 18 y + 6"    ; equation
+    )              ; interval
   "Algebraic entries pushed onto a fresh calc stack for casual testing.
 One entry per common expression shape.")
 
