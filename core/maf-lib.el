@@ -164,6 +164,37 @@ restores it after (`maf--point-restore')."
        (prog1 (progn ,@forms)
          (maf--point-restore ,snapshot)))))
 
+(defvar maf--digit-entry-handoff nil
+  "Non-nil when the last digit entry was terminated by a command key.
+Set by the `calcDigit-nondigit' advice in src/minibuffer.el on every
+completed digit entry — t for a command-key termination (1 +), nil for
+a deliberate RET/SPC push — so it always reflects the most recent
+entry. Consumed by `maf--undo-amalgamate-digit-entry'.")
+
+(defun maf--undo-amalgamate-digit-entry ()
+  "Merge a digit-entry arg push into the command's undo group.
+Called after a binary command's `calc-wrapper' completes. When the
+command's arg was pushed by a digit entry that dispatched the command
+directly (1 + on an entry — `maf--digit-entry-handoff' is set and the
+push's `calcDigit-start' is still `last-command'), the push and the
+command are one gesture: fold the push's undo group into the command's
+so a single undo reverts both, instead of stranding the arg back on
+the stack. Deliberate pushes (1 RET, then + later) keep their own
+group.
+
+`last-command' is whichever calcDigit-* command last ran in the entry
+minibuffer (the first digit is calcDigit-start, later ones
+calcDigit-key); any of them means the entry directly preceded this
+command."
+  (when (and maf--digit-entry-handoff
+             (memq last-command '(calcDigit-start calcDigit-key
+                                  calcDigit-nondigit))
+             (cdr calc-undo-list))
+    (setq calc-undo-list (cons (append (car calc-undo-list)
+                                       (cadr calc-undo-list))
+                               (cddr calc-undo-list))))
+  (setq maf--digit-entry-handoff nil))
+
 (defun maf-push (expr)
   "Parse algebraic EXPR and push it onto the calc stack.
 A convenience over pushing a raw calc s-expression: instead of

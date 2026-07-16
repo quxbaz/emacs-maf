@@ -1,4 +1,8 @@
-# Digit entry destroys point context (and the no-align fix)
+# Digit entry: point context and undo granularity
+
+Two symptoms of the same seam — a minibuffer digit entry completed by
+a command key is one gesture to the user, but calc treats the push and
+the command as unrelated events.
 
 Discovered 2026-07-16 via a `1 +` kbd macro run with point at the EOL of
 a stack entry: the add targeted the top of the stack instead of the
@@ -41,6 +45,27 @@ Ported from the user's pre-maf config (`~/.emacs.d/my/calc/`
 minibuffer.el), which carried the same advice unconditionally; the
 maf-mode gate is new.
 
+## Undo granularity: the hanging arg (2026-07-16)
+
+The push is also its own undo unit, so `1 + U` on an entry reverted
+the add but left the `1` stranded on the stack. Fix: the
+`calcDigit-nondigit' advice records how the entry completed in
+`maf--digit-entry-handoff` (t for a command key, nil for RET/SPC —
+self-clearing on every entry), and every *binary* defcmd calls
+`maf--undo-amalgamate-digit-entry` (core/maf-lib.el) after its
+`calc-wrapper`: when the handoff flag is set and `last-command` is
+still one of the calcDigit-* entry commands, the push's undo group is
+folded into the command's on `calc-undo-list`. One `U` then reverts
+the whole gesture, and one `D` replays it — merged groups survive
+undo/redo cycles because calc moves groups wholesale.
+
+Deliberate pushes keep their own unit: `1 RET` clears the flag, so a
+later `+` undoes classically (operands restored to the stack).
+
+Beware: `last-command` after a digit entry is `calcDigit-key` (or
+`calcDigit-start` for a single-digit entry) — not the key that
+terminated the entry.
+
 ## Testing
 
 Not covered by a step test: the behavior lives in the minibuffer
@@ -52,3 +77,8 @@ changed in place, the stack size is back to its starting value, and
 point is still on the entry's line. Also check the exemptions: `5 RET`
 from an entry line and any digit entry at home must both leave point at
 home.
+
+For the undo amalgamation: `1 + U` at an entry must leave the stack
+size unchanged with no stranded `1`, a following `D` must replay the
+whole gesture, and `7 RET 1 RET + U` must still restore both operands
+(separate units).

@@ -151,6 +151,11 @@ ARG, runs the body, and commits its result to the right stack location."
                           (cl-flet ((,commit (val)
                                       (setq ,landed (maf--commit val ,context))))
                             ,@body)))))
+                   ;; An arg the user typed as part of this gesture (1 +)
+                   ;; folds into this command's undo group, so one undo
+                   ;; reverts both instead of stranding the arg.
+                   ,@(when (eq (alist-get :arity opts) 'binary)
+                       '((maf--undo-amalgamate-digit-entry)))
                    ;; The epilogue parks point at home; put it back where
                    ;; resolve found it — re-anchored on the committed node's
                    ;; glyphs when point was on one (see `maf--point-restore').

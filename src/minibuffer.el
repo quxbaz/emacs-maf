@@ -21,10 +21,15 @@ was, and the entry's row survives the push (only its level number
 changes), so the command that follows targets the position the user
 was on. Point still goes home when it already was there, when RET or
 SPC completes the entry, or when `maf-mode' is off in the calc buffer."
-  (when (and (maf--with-calc-buffer maf-mode)
-             (not (maf--at-home-p))
-             (not (memq last-command-event '(?\r ?\s))))
-    (calc-set-command-flag 'no-align)))
+  (let ((command-key (not (memq last-command-event '(?\r ?\s)))))
+    ;; Record how this entry completed on every run (self-clearing):
+    ;; a command-key termination marks the entry's push and the command
+    ;; it dispatches as one gesture for undo amalgamation.
+    (setq maf--digit-entry-handoff command-key)
+    (when (and (maf--with-calc-buffer maf-mode)
+               (not (maf--at-home-p))
+               command-key)
+      (calc-set-command-flag 'no-align))))
 
 (advice-add 'calcDigit-nondigit :before #'maf--digit-entry-keep-point)
 
