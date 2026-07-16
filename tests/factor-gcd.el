@@ -55,11 +55,13 @@
                       "6 (x + 2) = 6 (3 y + 1)"))
   (calc-pop (calc-stack-size))
 
-  ;; Subexpr: only the sub-formula under point factors; point stays put.
+  ;; Subexpr: only the sub-formula under point factors. Point was on
+  ;; the sum's operator, so it anchors to the operator of the node that
+  ;; replaced it — the factored product's juxtaposition space.
   (maf-push "5 (6 x - 12)")
   (calc-push 9)
   (progn (goto-char (point-min)) (search-forward "x -") (backward-char 1))
   (call-interactively 'mafcmd-factor-gcd)
   (cl-assert (string= (math-format-value (calc-top 2 'full)) "5 6 (x - 2)"))
-  (cl-assert (eq (char-after) ?-))
+  (cl-assert (looking-at-p " (x - 2)"))
   (cl-assert (= (calc-stack-size) 2)))

@@ -112,24 +112,45 @@ of line, `bol' in the line-number prefix, else nil. Consumed by
                         ((eolp) 'eol)
                         ((maf--at-line-prefix-p) 'bol)))))
 
-(defun maf--point-restore (snapshot)
+(defun maf--point-restore-anchor (index landed)
+  "Put point on the INDEX-th structural glyph of the committed node.
+LANDED is `maf--commit's return alist (:node, :m). Return the new
+position, or nil when the node's entry or its glyphs can't be located
+\(entry consumed, non-flat rendering) — the caller then falls back to
+the positional restore."
+  (ignore-errors
+    (let ((node (alist-get :node landed))
+          (m    (alist-get :m landed)))
+      (when (and node (integerp m) (>= m 1))
+        (calc-prepare-selection m)
+        (when-let ((pos (maf--comp-node-anchor-pos node index)))
+          (goto-char pos))))))
+
+(defun maf--point-restore (snapshot &optional anchor landed)
   "Restore point from SNAPSHOT (see `maf--point-snapshot').
 Calc commands that rewrite the stack buffer park point at home; this
 puts it back where the user had it. A `home' snapshot is a no-op —
 calc's default placement already matches. Otherwise point returns to
 its previous buffer position, corrected back to the original line when
 the rewrite shifted it, and EOL/BOL affinity is re-applied on the line
-rather than the exact position."
-  (let ((affinity (alist-get :affinity snapshot)))
-    (unless (eq affinity 'home)
-      (goto-char (alist-get :pos snapshot))
-      (let ((line (alist-get :line snapshot)))
-        (when (/= (line-number-at-pos) line)
-          (goto-char (point-min))
-          (forward-line (1- line))))
-      (pcase affinity
-        ('eol (end-of-line))
-        ('bol (beginning-of-line))))))
+rather than the exact position.
+
+When ANCHOR (the :point-anchor glyph index from resolve) and LANDED
+\(`maf--commit's return) are given, point re-anchors on the committed
+node's own glyphs instead: invoked on the = of an equation, point is
+back on the = after the sides swap, wherever it moved. Falls back to
+the positional restore when the anchor can't be located."
+  (or (and anchor landed (maf--point-restore-anchor anchor landed))
+      (let ((affinity (alist-get :affinity snapshot)))
+        (unless (eq affinity 'home)
+          (goto-char (alist-get :pos snapshot))
+          (let ((line (alist-get :line snapshot)))
+            (when (/= (line-number-at-pos) line)
+              (goto-char (point-min))
+              (forward-line (1- line))))
+          (pcase affinity
+            ('eol (end-of-line))
+            ('bol (beginning-of-line)))))))
 
 (defmacro maf--preserve-point (&rest forms)
   "Evaluate FORMS, then restore point's line, position, and affinity.

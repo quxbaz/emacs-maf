@@ -26,6 +26,11 @@
 ;;   :arg          Second operand for binary commands; nil for unary.
 ;;   :m            Stack position (1 = top) of the target entry. Only set when
 ;;                 the target lives at a specific stack level (e.g. selection).
+;;   :point-anchor Index of point's glyph among the structural glyphs the
+;;                 resolved sub-formula renders itself (operator, comma,
+;;                 function name), or nil when point is inside an operand.
+;;                 Subexpr target only — used to re-anchor point on the
+;;                 committed node after the rewrite.
 ;;   :rel-op       Relation operator symbol (calcFunc-eq/neq/lt/...). Equation
 ;;                 target only — the macro uses it to reassemble the relation
 ;;                 after running the body once per side.
@@ -56,6 +61,7 @@
 
 (require 'maf-lib)
 (require 'maf-sel)
+(require 'maf-comp)
 
 ;; Defined in lazily-loaded calc modules; calc-ext's autoload registry
 ;; resolves them at runtime, but the byte compiler needs declarations.
@@ -63,6 +69,7 @@
 (declare-function calc-locate-cursor-element "calc-yank")
 (declare-function calc-prepare-selection "calc-sel")
 (declare-function calc-find-selected-part "calc-sel")
+
 
 (defun maf--resolve-target-selection (opts)
   "Return the selection target's context alist.
@@ -141,6 +148,11 @@ untouched."
           ;; eq-based splicing.
           (:expr       . ,(maf--strip-encasing encased))
           (:expr-ref   . ,encased)
+          ;; Non-nil when point sits on a glyph the sub-formula renders
+          ;; itself (its operator, comma, function name): the glyph's
+          ;; index, used to re-anchor point on the committed node.
+          (:point-anchor . ,(maf--comp-node-anchor-index
+                             encased (maf--comp-point-cpos)))
           (:arg        . ,(pcase arity ('unary nil) ('binary (math-normalize (calc-top 1 'full)))))
           (:m          . ,m)
           (:commit-m   . ,(if keep 1 m))

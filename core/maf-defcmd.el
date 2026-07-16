@@ -115,15 +115,17 @@ ARG, runs the body, and commits its result to the right stack location."
                (hyp (alist-get :hyperbolic opts))
                (invhyp (alist-get :inverse-hyperbolic opts))
                (context (gensym "context-"))
+               (landed (gensym "landed-"))
                (lhs (gensym "lhs-"))
                (rhs (gensym "rhs-"))
                (main
                 ;; `calc-wrapper' makes the whole command a single undoable
                 ;; unit and runs calc's command epilogue (trail, stack
-                ;; refresh/renumber, point). The context is hoisted out so
-                ;; point can be restored after the epilogue — anything done
-                ;; inside the wrapper would be clobbered by it.
-                `(let (,context)
+                ;; refresh/renumber, point). The context and commit's return
+                ;; (where the result landed) are hoisted out so point can be
+                ;; restored after the epilogue — anything done inside the
+                ;; wrapper would be clobbered by it.
+                `(let (,context ,landed)
                    (calc-wrapper
                     (setq ,context (maf--resolve-context ',opts))
                     (let ((,arg (alist-get :arg ,context)))
@@ -140,16 +142,21 @@ ARG, runs the body, and commits its result to the right stack location."
                             (let ((,expr (alist-get :rhs ,context)))
                               (cl-flet ((,commit (val) (setq ,rhs val)))
                                 ,@body))
-                            (maf--commit (list (alist-get :rel-op ,context)
-                                               ,lhs ,rhs)
-                                         ,context))
+                            (setq ,landed
+                                  (maf--commit (list (alist-get :rel-op ,context)
+                                                     ,lhs ,rhs)
+                                               ,context)))
                         ;; All other targets: body runs once with :expr.
                         (let ((,expr (alist-get :expr ,context)))
-                          (cl-flet ((,commit (val) (maf--commit val ,context)))
+                          (cl-flet ((,commit (val)
+                                      (setq ,landed (maf--commit val ,context))))
                             ,@body)))))
                    ;; The epilogue parks point at home; put it back where
-                   ;; resolve found it.
-                   (maf--point-restore (alist-get :point ,context)))))
+                   ;; resolve found it — re-anchored on the committed node's
+                   ;; glyphs when point was on one (see `maf--point-restore').
+                   (maf--point-restore (alist-get :point ,context)
+                                       (alist-get :point-anchor ,context)
+                                       ,landed))))
     (maf--defcmd-validate-opts opts)
     `(defun ,name ()
        ,@(when docstring (list docstring))

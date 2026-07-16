@@ -29,14 +29,22 @@ Given the context, push or replace VAL into the correct location and pop
 values where necessary.
 
 For example, if point is at home and the command's arity is binary, pop the
-top 2 stack values and push VAL onto the stack."
+top 2 stack values and push VAL onto the stack.
+
+Return an alist describing where the result landed, consumed by anchor
+point restoration: :node is the formula cons now sitting in the stack
+entry (the spliced sub-formula for selection/subexpr, the whole pushed
+formula otherwise) and :m is that entry's stack level after the pops."
   (maf--with-calc-buffer
     (let* ((target   (alist-get :target context))
            (prefix   (alist-get :prefix context))
            (commit-m (alist-get :commit-m context))
            (commit-n (alist-get :commit-n context))
            (post-pop (alist-get :post-pop context))
-           (m        (alist-get :m context)))
+           (m        (alist-get :m context))
+           ;; The target entry's level once post-pop consumes entries at
+           ;; the top: every pop below it renumbers it down by one.
+           (landed-m (- commit-m post-pop)))
       (pcase target
         ((or 'selection 'subexpr)
          ;; Body received the clean :expr and produced a clean val. Splice
@@ -55,10 +63,12 @@ top 2 stack values and push VAL onto the stack."
                 ;; Carry val-encased as the new selection only if :reselect is set
                 ;; (selection had an explicit user selection; subexpr did not).
                 (sels         (when (alist-get :reselect context) val-encased)))
-           (maf--commit-push commit-n prefix new-formula commit-m sels post-pop)))
-        ('home  (maf--commit-push commit-n prefix val commit-m nil post-pop))
-        ('entry (maf--commit-push commit-n prefix val commit-m nil post-pop))
-        ;; val is the relation already reassembled by the macro from both sides.
-        ('equation (maf--commit-push commit-n prefix val commit-m nil post-pop))))))
+           (maf--commit-push commit-n prefix new-formula commit-m sels post-pop)
+           `((:node . ,val-encased) (:m . ,landed-m))))
+        ((or 'home 'entry 'equation)
+         ;; For equation, val is the relation already reassembled by the
+         ;; macro from both sides.
+         (maf--commit-push commit-n prefix val commit-m nil post-pop)
+         `((:node . ,val) (:m . ,landed-m)))))))
 
 (provide 'maf-commit)

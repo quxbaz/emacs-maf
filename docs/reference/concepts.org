@@ -167,9 +167,26 @@ The snapshot (=maf--point-snapshot=) is itself an alist of three keys:
 Line-based restore is correct for every target because of a commit
 invariant: commits only pop entries at the target's level and below it
 in the buffer (=:post-pop= consumes the stack top, which is displayed
-/below/ the target), so the target entry's line never moves. Refining
-subexpr restore to stick to the same symbol when the formula reshapes
-around it is deliberately deferred.
+/below/ the target), so the target entry's line never moves.
+
+One case restores by /anchor/ rather than position: point on a glyph
+the resolved sub-formula renders itself — its operator, a comma, its
+function name. Resolve records the glyph's index as =:point-anchor=,
+commit returns where the committed node landed (its cons and stack
+level), and point goes to that node's same structural glyph, wherever
+the rewrite moved it. Commuting =sin(y) = k= from the = leaves point on
+the = of =k = sin(y)=, and the anchor survives the glyph itself
+changing (commuting =x < y= parks point on the =>=). It also holds
+through relation mapping — factoring from the = re-anchors on the
+rebuilt relation's = — and spaces count as glyphs, since a juxtaposed
+product renders its multiplication as nothing but a space: commuting
+=2 (4 + 3 x)= from that space lands after the =)= of =(4 + 3 x) 2=.
+Atoms have no anchor, and anything the anchor can't locate afterwards
+\(non-flat renderings, a consumed entry) falls back to the positional
+restore. The node-to-text
+coordinate machinery lives in [[file:../../core/maf-comp.el][core/maf-comp.el]]. Sticking point to the
+same /atom/ when the formula reshapes around it is deliberately
+deferred.
 
 ** Relation mapping
 
