@@ -28,6 +28,11 @@
 (define-key maf-mode-map (kbd "D") #'maf-redo)
 ;; Shadows calc's TAB with the contextual line swap.
 (define-key maf-mode-map (kbd "TAB") #'maf-swap-up)
+;; Equate gets both = (shadowing calc-evaluate) and e (shadowing the
+;; e-notation digit start; inside digit entry e still means exponent,
+;; since the entry minibuffer is calc's own).
+(define-key maf-mode-map (kbd "=") #'maf-equal-to)
+(define-key maf-mode-map (kbd "e") #'maf-equal-to)
 
 ;; The digit-entry starters, mirroring calc-mode-map's calcDigit-start set.
 (mapc (lambda (x)
