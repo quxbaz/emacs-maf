@@ -20,6 +20,8 @@
   - [ ] Port my/calc/* features one-by-one.
 
 * IN-PROGRESS Todo
+  - [ ] C-g leaves and moves point to home instead of leaving digit entry and
+    retaining point. This issue was fixed in ~/.emacs.d/my/calc
 ** Later
    - [ ] k k (my/calc-evaluate N) should work on fractions and division.
    - [ ] g i (my/calc-graph-quick-with-range) interval form a:b should work with spaces 'a b'
@@ -42,9 +44,6 @@
 * Bugs
   - Equal command doesn't work with point on line 1, but works on home.
 ** BUG (my/calc-backward-noun) and (my/calc-forward-noun) should ignore line prefix.
-
-* Issues
-  - C-g leaves and moves point to home instead of leaving digit entry and retaining point.
 
 * BACKLOG
 ** Issue: j D (my/calc-sel-distribute)
