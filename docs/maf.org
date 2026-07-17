@@ -20,8 +20,6 @@
   - [ ] Port my/calc/* features one-by-one.
 
 * IN-PROGRESS Todo
-  - [X] TAB command to swap lines should work contextually.
-  - [X] a a (calc-apart) should work contextually.
 ** Later
    - [ ] k k (my/calc-evaluate N) should work on fractions and division.
    - [ ] g i (my/calc-graph-quick-with-range) interval form a:b should work with spaces 'a b'
