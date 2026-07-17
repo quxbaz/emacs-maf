@@ -20,6 +20,8 @@
 (declare-function math-looks-negp "calc-misc")
 (declare-function calc-push "calc-ext")
 (declare-function calcFunc-pfloat "calc-stuff")
+(declare-function calc-roll-down "calc-misc")
+(declare-function calc-locate-cursor-element "calc-yank")
 
 (maf-defcmd mafcmd-factor-by (expr arg commit)
   "Factor the resolved expression by the top-of-stack argument.
@@ -249,6 +251,49 @@ an operator inside a side to toggle there."
     (commit (if (and to (not (and (eq op 'calcFunc-log) (= (length expr) 2))))
                 (cons to (cdr expr))
               expr))))
+
+(defun maf-swap-up (n)
+  "Swap the stack entry at point with the one above it on screen.
+With point on a stack entry at level M, entries M and M+1 exchange
+places while point stays put — same line, same column: the entry at
+point moves up the screen and its upper neighbor lands on the line at
+point. When that neighbor is shorter than point's column, point clamps
+to its end of line; at end of line it stays at end of line. At home
+the top two entries swap. Selections travel with their entries. With
+the entry at point already the highest, or with fewer than two
+entries, there is nothing to swap and the command does nothing.
+
+A prefix argument N bypasses the contextual swap and rolls the top N
+entries by one, as calc's TAB does."
+  (interactive "P")
+  (maf--with-calc-buffer
+    (if n
+        (maf--preserve-point (calc-roll-down n))
+      (let ((m (max (calc-locate-cursor-element (point)) 1)))
+        (when (< m (calc-stack-size))
+          ;; Point is a screen position here, not a formula position:
+          ;; restore it by line and column, not buffer offset — the two
+          ;; lines change length, so `maf--preserve-point's pos-first
+          ;; restore would land unpredictably.
+          (let ((home (maf--at-home-p))
+                (line (line-number-at-pos))
+                (col  (current-column))
+                (eol  (eolp)))
+            (calc-wrapper
+             ;; Both lists run deepest-first, so reversing the pair of
+             ;; values swaps the two levels; the selections travel along.
+             (let ((vals (calc-top-list 2 m))
+                   (sels (calc-top-list 2 m 'sel)))
+               (calc-pop-push-list 2 (list (nth 1 vals) (nth 0 vals))
+                                   m
+                                   (list (nth 1 sels) (nth 0 sels)))))
+            ;; Calc parks point at home after the rewrite; that is
+            ;; already right for a home invocation.
+            (unless home
+              (goto-char (point-min))
+              (forward-line (1- line))
+              ;; move-to-column stops at end of line, clamping for free.
+              (if eol (end-of-line) (move-to-column col)))))))))
 
 (defvar maf-undo--chain-point nil
   "Point snapshot saved by the last `maf-undo'/`maf-redo' in a chain.
