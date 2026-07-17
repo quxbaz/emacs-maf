@@ -35,6 +35,9 @@
       should update as lines are added/removed.
     - Regular calc bindings are not in effect of course - otherwise you would
       end up executing calc stack commands instead of plain text.
+    Does this feature make sense? Is it a suitable and superior replacement to
+    calc-edit-mode. calc-edit-mode places you in a new buffer and removes you
+    from the context of the calc stack.
 ** Later
    - [ ] k k (my/calc-evaluate N) should work on fractions and division.
    - [ ] g i (my/calc-graph-quick-with-range) interval form a:b should work with spaces 'a b'
