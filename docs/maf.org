@@ -17,7 +17,6 @@
     enable a section of features.
 
 * IN-PROGRESS Todo
-  - [X] Replace noun with digit entry if point is on sub-formula
   - [ ] TAB command to swap lines should work contextually.
   - [ ] a a (calc-apart) should work contextually.
 ** Later
