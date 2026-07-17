@@ -18,7 +18,6 @@
   - [ ] Port my/calc/* features one-by-one.
 
 * IN-PROGRESS Todo
-  - [ ] BUG: undo not restoring point after executing a single command and undo.
   - [ ] Make calc-edit-mode obsolete. Instead implement a new mode called
     maf-edit-mode. When in effect, maf-edit-mode is like editing a dired buffer.
     Similar to (dired-toggle-read-only), maf-edit-mode is meant to be toggled.
