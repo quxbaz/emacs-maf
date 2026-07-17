@@ -143,9 +143,13 @@ differs."
        ;; keeps point on the sub-formula the command should resolve
        ;; (this path only runs at a subexpr, never at home).
        (maf--digit-entry-handoff
-        (calc-wrapper
-         (calc-set-command-flag 'no-align)
-         (calc-push-list (list (calc-record (calc-normalize val))))))
+        ;; no-align only stops the home jump; the push's renumbering
+        ;; still disturbs point, and the command about to dispatch
+        ;; resolves whatever position it finds — preserve it for real.
+        (maf--preserve-point
+          (calc-wrapper
+           (calc-set-command-flag 'no-align)
+           (calc-push-list (list (calc-record (calc-normalize val)))))))
        (t (unwind-protect
               (let ((maf--digit-value (math-normalize val)))
                 (maf--digit-apply))
