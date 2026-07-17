@@ -142,6 +142,19 @@ lesson, now baked in: don't rely on transient selection/current-buffer
 persisting across forms — designate state explicitly (`maf-step` creates the
 calc buffer itself and stores it).
 
+## Pitfall 5 — visual-motion commands stall in a non-visible pgtk frame
+
+With `visual-line-mode` on, `C-a`/`C-n` remap to visual-line motion
+(`beginning-of-visual-line`, visual `line-move`), which needs display
+layout. Driven via `emacsclient --eval` while the GUI frame is hidden
+or on another workspace, the pgtk build blocks for minutes waiting on
+the compositor's frame clock — Emacs sleeps (~0% CPU) and stops serving
+further evals. Interactive use with a visible frame is unaffected.
+When piloting: use logical motion from lisp (`beginning-of-line`,
+`forward-line`) instead of `C-a`/`C-n` keypresses in buffers where
+`visual-line-mode` is active (e.g. during maf-edit). If already stuck,
+`kill -USR2 <pid>` can shake it loose; otherwise restart the instance.
+
 ## Verification loop (recommended)
 
 1. Edit the `.el`.
