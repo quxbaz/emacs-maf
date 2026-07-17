@@ -41,15 +41,6 @@
      reuse or recall in case you screw up a calculation.
 
 * Bugs
-  - `saved-point-is-at-home` is nil when it should be true when a binary command
-    is invoked at the first column of the home row because (calc-align-stack-window)
-    is being repressed.
-
-    This is hard to accommodate for because the macro doesn't run until the
-    digit is already pushed to the stack. By that time, point is on line 1
-    instead of home.
-
-    Why is point behaving differently in column 1 vs column 2?
   - Equal command doesn't work with point on line 1, but works on home.
 ** BUG (my/calc-backward-noun) and (my/calc-forward-noun) should ignore line prefix.
 
