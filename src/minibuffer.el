@@ -3,9 +3,9 @@
 ;; minibuffer.el
 ;;
 ;; Digit-entry integration: contextual digit entry (`maf-digit-start'),
-;; and keeping point in place when a command key terminates minibuffer
-;; digit entry, so the command still resolves the position the user
-;; was on.
+;; and keeping point in place when a command key or C-g terminates
+;; minibuffer digit entry, so the command still resolves the position
+;; the user was on.
 
 (require 'calc)
 (require 'maf-lib)
@@ -46,6 +46,25 @@ SPC completes the entry, or when `maf-mode' is off in the calc buffer."
       (calc-set-command-flag 'no-align))))
 
 (advice-add 'calcDigit-nondigit :before #'maf--digit-entry-keep-point)
+
+(defun maf-digit-quit ()
+  "Abort digit entry, leaving point where the entry began.
+Calc binds C-g in the entry minibuffer to plain `abort-recursive-edit';
+the quit unwinds through `calc-do', whose epilogue still aligns the
+stack window and parks point at home. Set `no-align' first so the
+position the user was on survives the abort. At home, or with
+`maf-mode' off in the calc buffer, alignment proceeds as in plain calc."
+  (interactive)
+  (when (and (maf--with-calc-buffer maf-mode)
+             (not (maf--at-home-p)))
+    ;; On the calcDigit-start paths the flag lands in the innermost
+    ;; `calc-do' let-binding, whose unwind then skips the align. On
+    ;; `maf-digit-start's own read there is no wrapper to unwind — the
+    ;; setq hits the global, which every calc-do shadows; harmless.
+    (calc-set-command-flag 'no-align))
+  (abort-recursive-edit))
+
+(define-key calc-digit-map "\C-g" #'maf-digit-quit)
 
 (defvar maf--digit-value nil
   "The number a contextual digit entry read, for `maf--digit-apply'.
