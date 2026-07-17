@@ -51,6 +51,9 @@
 (defvar-local maf-edit--errors nil
   "Error overlays from the last failed commit; cleared on any change.")
 
+(defvar-local maf-edit--pending-repair nil
+  "Non-nil when a repair was deferred while undo replayed changes.")
+
 (defvar maf-edit--inhibit nil
   "Non-nil while maf-edit's own repair edits run, to skip the hooks.")
 
@@ -260,9 +263,13 @@ it."
          (live (and o (overlay-buffer o)
                     (< (overlay-start o) (overlay-end o)))))
     (unless (and live
-                 (equal-including-properties
-                  (buffer-substring (overlay-start o) (overlay-end o))
-                  maf-edit--dot-string)
+                 ;; Content + our own marker property; foreign props
+                 ;; (fontified etc.) must not fail the check, or every
+                 ;; repair re-walls the dot and floods the undo history.
+                 (string= (buffer-substring-no-properties
+                           (overlay-start o) (overlay-end o))
+                          "    .")
+                 (get-text-property (overlay-start o) 'maf-edit-dot)
                  (save-excursion (goto-char (overlay-start o)) (bolp))
                  (= (overlay-end o) (1- (point-max)))
                  (eq (char-after (overlay-end o)) ?\n))
@@ -385,9 +392,13 @@ re-stamping existing indentation doesn't shift the content), and
 inserts WANT at the line beginning."
   (let* ((bol (line-beginning-position))
          (eol (line-end-position))
-         (have (buffer-substring bol (min (+ bol maf-edit--prefix-width)
-                                          eol))))
-    (unless (equal-including-properties have want)
+         (have (buffer-substring-no-properties
+                bol (min (+ bol maf-edit--prefix-width) eol))))
+    ;; Content + our own marker property; foreign props (fontified
+    ;; etc.) must not fail the check, or every repair re-stamps every
+    ;; line and floods the undo history.
+    (unless (and (string= have (substring-no-properties want))
+                 (get-text-property bol 'maf-edit-prefix))
       (maf-edit--strip-prefix bol (line-end-position))
       (save-excursion
         (goto-char bol)
@@ -435,10 +446,58 @@ every stack line."
 
 (defun maf-edit--after-change (beg end _len)
   (unless maf-edit--inhibit
+    (if undo-in-progress
+        ;; primitive-undo replays a change group one record at a time,
+        ;; firing this hook on every half-restored state. Repairing
+        ;; those misreads them as gestures (a mid-restore prefix looks
+        ;; like a join) and records the "fixes" into the history being
+        ;; replayed. Defer: one repair after the command, when the
+        ;; buffer is a complete earlier canonical state again.
+        (setq maf-edit--pending-repair t)
+      (let ((maf-edit--inhibit t)
+            (inhibit-modification-hooks t))
+        (maf-edit--clear-errors)
+        (when (> end beg) (maf-edit--classify-newlines beg end))
+        (maf-edit--repair)))))
+
+(defun maf-edit--derive-splits ()
+  "Split entries at balanced newlines, re-deriving structure from text.
+Live editing decides split vs continuation at the moment a newline is
+inserted; text restored wholesale by undo skipped those moments. The
+rule is a pure function of the text — a newline inside open delimiters
+continues, at balanced depth it splits — and every canonical state
+already satisfies it, so the derivation is exact for undone states."
+  (let ((os (maf-edit--overlays)))
+    (while os
+      (let* ((o (car os))
+             (nl (save-excursion
+                   (goto-char (overlay-start o))
+                   (catch 'found
+                     (while (search-forward "\n" (overlay-end o) t)
+                       (when (zerop (maf-edit--depth (overlay-start o)
+                                                     (1- (point))))
+                         (throw 'found (1- (point)))))
+                     nil))))
+        (if (not nl)
+            (setq os (cdr os))
+          (let ((end (overlay-end o))
+                tail)
+            (move-overlay o (overlay-start o) nl)
+            (when (< (1+ nl) end)
+              (setq tail (maf-edit--make-entry (1+ nl) end)))
+            ;; keep scanning from the tail: it may hold more newlines
+            (setq os (if tail (cons tail (cdr os)) (cdr os)))))))))
+
+(defun maf-edit--post-command ()
+  "Run the repair deferred by `maf-edit--after-change' during undo.
+Also re-derives entry splits (`maf-edit--derive-splits'), since the
+insertion-time newline classification never saw the restored text."
+  (when maf-edit--pending-repair
+    (setq maf-edit--pending-repair nil)
     (let ((maf-edit--inhibit t)
           (inhibit-modification-hooks t))
       (maf-edit--clear-errors)
-      (when (> end beg) (maf-edit--classify-newlines beg end))
+      (maf-edit--derive-splits)
       (maf-edit--repair))))
 
 ;;; Errors
@@ -539,8 +598,10 @@ editing state go on `maf-edit-mode-map'."
       (visual-line-mode 1)
       (cursor-intangible-mode 1)
       (setq buffer-read-only nil
-            buffer-undo-list nil)
+            buffer-undo-list nil
+            maf-edit--pending-repair nil)
       (add-hook 'after-change-functions #'maf-edit--after-change nil t)
+      (add-hook 'post-command-hook #'maf-edit--post-command nil t)
       (maf--point-restore snapshot)
       (message (substitute-command-keys
                 "maf-edit: editing stack — \\<maf-edit-mode-map>\\[maf-edit-commit] commits, \\[maf-edit-discard] discards"))))
@@ -552,6 +613,8 @@ discard semantics; `maf-edit-commit' parses before getting here and
 pushes after."
   (let ((snapshot (maf--point-snapshot)))
     (remove-hook 'after-change-functions #'maf-edit--after-change t)
+    (remove-hook 'post-command-hook #'maf-edit--post-command t)
+    (setq maf-edit--pending-repair nil)
     (maf-edit--clear-errors)
     (mapc #'delete-overlay (maf-edit--overlays))
     (when maf-edit--dot
