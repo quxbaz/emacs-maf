@@ -19,8 +19,9 @@
   - [ ] Port my/calc/* features one-by-one.
 
 * IN-PROGRESS Todo
-  - [ ] C-g leaves and moves point to home instead of leaving digit entry and
-    retaining point. This issue was fixed somewhere in ~/.emacs.d/my/calc
+  - [ ] ISSUE: In digit entry mode, C-g exits (good) and moves point to home
+    (bad) instead of just exiting leaving digit entry and retaining point. This
+    issue was fixed somewhere in ~/.emacs.d/my/calc
 ** Later
    - [ ] k k (my/calc-evaluate N) should work on fractions and division.
    - [ ] g i (my/calc-graph-quick-with-range) interval form a:b should work with spaces 'a b'
