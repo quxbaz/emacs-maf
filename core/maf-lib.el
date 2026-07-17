@@ -182,13 +182,13 @@ so a single undo reverts both, instead of stranding the arg back on
 the stack. Deliberate pushes (1 RET, then + later) keep their own
 group.
 
-`last-command' is whichever calcDigit-* command last ran in the entry
-minibuffer (the first digit is calcDigit-start, later ones
-calcDigit-key); any of them means the entry directly preceded this
-command."
+`last-command' is whichever digit-entry command last ran (the first
+digit is calcDigit-start — or maf-digit-start when maf's binding wraps
+it — later ones calcDigit-key); any of them means the entry directly
+preceded this command."
   (when (and maf--digit-entry-handoff
              (memq last-command '(calcDigit-start calcDigit-key
-                                  calcDigit-nondigit))
+                                  calcDigit-nondigit maf-digit-start))
              (cdr calc-undo-list))
     (setq calc-undo-list (cons (append (car calc-undo-list)
                                        (cadr calc-undo-list))

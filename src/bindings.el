@@ -7,6 +7,7 @@
 ;; made outside the table.
 
 (require 'maf-stack "stack")
+(require 'maf-minibuffer "minibuffer")
 
 ;; Also defvar'd in maf.el and maf-cmds.el; whichever file loads first
 ;; creates the map, the rest are no-ops.
@@ -25,5 +26,10 @@
 (define-key maf-mode-map (kbd ",") #'maf-quick-variable)
 (define-key maf-mode-map (kbd "U") #'maf-undo)
 (define-key maf-mode-map (kbd "D") #'maf-redo)
+
+;; The digit-entry starters, mirroring calc-mode-map's calcDigit-start set.
+(mapc (lambda (x)
+        (define-key maf-mode-map (char-to-string x) #'maf-digit-start))
+      "_0123456789.#@")
 
 (provide 'maf-bindings)

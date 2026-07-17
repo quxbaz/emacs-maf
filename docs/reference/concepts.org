@@ -346,6 +346,20 @@ what keeps cross-linked pairs like ln ↔ exp from looping. A set flag
 with no matching variant signals =user-error= and still consumes the
 flags, so the next command starts clean.
 
+* Contextual digit entry
+
+The digit keys (and =_=, =.=, =#=, =@=) start calc's normal number
+entry, but where the result lands depends on point at the first
+keypress (=maf-digit-start= in [[file:../../src/minibuffer.el][src/minibuffer.el]]). On a numeric leaf
+the entered number replaces it; on any other sub-formula it multiplies
+it, number on the left, with the product left literal so nothing
+distributes; on a relation node it multiplies both sides. At home, in
+the line prefix, or at EOL the number is pushed onto the stack exactly
+as in plain calc — as it is in algebraic mode, for entries that escape
+to algebraic, and for interval entry (=..=). The entry minibuffer is
+calc's own (=calc-digit-map=), so the in-entry keys — =e=, =_=, =:=,
+=n= — are unchanged.
+
 * Files
 
 | File                    | Role                                                        |
@@ -360,6 +374,7 @@ flags, so the next command starts clean.
 | [[file:../../src/maf-cmds.el][src/maf-cmds.el]]         | The mafcmd table: calcFunc-backed commands, keys, variant links |
 | [[file:../../src/math.el][src/math.el]]             | Pure formula helpers (term walk, terms GCD)                 |
 | [[file:../../src/stack.el][src/stack.el]]            | Hand-written contextual stack commands (factor-by, factor-gcd, undo/redo) |
+| [[file:../../src/minibuffer.el][src/minibuffer.el]]       | Digit-entry integration: contextual digit entry, point/undo handoff |
 | [[file:../../src/bindings.el][src/bindings.el]]         | Default key bindings made outside the mafcmd table          |
 | [[file:../../src/maf-hl.el][src/maf-hl.el]]           | =maf-hl-mode=: highlight the sub-formula under point        |
 | [[file:../../debug/maf-step.el][debug/maf-step.el]]       | Step-through harness (cockpit) that drives the tests        |
