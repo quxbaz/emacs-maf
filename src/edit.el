@@ -86,6 +86,18 @@ key falls through to the global map and plain typing works.")
    'front-sticky '(cursor-intangible)
    'face 'shadow))
 
+(defconst maf-edit--pad-string
+  (propertize (make-string 4 ?\s)
+              'maf-edit-prefix t
+              'cursor-intangible t
+              'rear-nonsticky t
+              'front-sticky '(cursor-intangible)
+              'face 'shadow)
+  "Machine-owned pad stamped on continuation lines.
+The continuation counterpart of the level prefix: same width, same
+properties, so column 4 is the first cursor column on every stack
+line and motion skips across the pad to the previous line.")
+
 (defun maf-edit--strip-prefix (start end)
   "Delete prefix-propertied characters between START and END."
   (save-excursion
@@ -97,15 +109,14 @@ key falls through to the global map and plain typing works.")
           (forward-char)))
       (set-marker lim nil))))
 
-(defun maf-edit--prefix-chars-on-line (pos)
-  "Count prefix-propertied characters on POS's line."
+(defun maf-edit--leading-prefix-run (bol)
+  "Length of the machine-owned run at the start of BOL's line."
   (save-excursion
-    (goto-char pos)
+    (goto-char bol)
     (let ((eol (line-end-position)) (n 0))
-      (goto-char (line-beginning-position))
-      (while (< (point) eol)
-        (when (get-text-property (point) 'maf-edit-prefix)
-          (setq n (1+ n)))
+      (while (and (< (point) eol)
+                  (get-text-property (point) 'maf-edit-prefix))
+        (setq n (1+ n))
         (forward-char))
       n)))
 
@@ -242,23 +253,42 @@ it."
       (delete-overlay o))))
 
 (defun maf-edit--join-damaged-prefixes ()
-  "Treat a partially deleted prefix as a join-with-previous gesture.
-Deleting into an entry's machine-owned prefix (DEL at its first text
-character, say) reads as joining lines: finish the job by removing
-the rest of the prefix and the newline before it, so the entries
-merge. A prefix that is entirely gone is just re-stamped."
-  (dolist (o (maf-edit--overlays))
-    (when (overlay-get o 'maf-edit-stamped)
-      (let* ((start (overlay-start o))
-             (bol (save-excursion (goto-char start)
-                                  (line-beginning-position)))
-             (n (maf-edit--prefix-chars-on-line start)))
-        (when (and (= start bol)
-                   (> n 0) (< n maf-edit--prefix-width))
-          (maf-edit--strip-prefix bol (save-excursion (goto-char start)
-                                                      (line-end-position)))
-          (when (> bol (point-min))
-            (delete-region (1- bol) bol)))))))
+  "Treat a partially deleted prefix or pad as a join gesture.
+Deleting into a line's machine-owned leading run (DEL at its first
+text character, say) reads as joining lines: finish the job by
+removing what is left of the run and the newline before it. On an
+entry's first line that merges it into the previous entry; on a
+continuation line it pulls the line up into the one above. A run that
+is entirely gone is just re-stamped."
+  (let (joins)
+    (save-excursion
+      (goto-char (point-min))
+      (while (< (point) (overlay-start maf-edit--dot))
+        (let ((run (maf-edit--leading-prefix-run (point))))
+          (when (and (> run 0) (< run maf-edit--prefix-width)
+                     (> (point) (point-min)))
+            (push (cons (point) run) joins)))
+        (forward-line 1)))
+    ;; joins is bottom-up, so each deletion leaves the rest valid
+    (dolist (j joins)
+      (delete-region (car j) (+ (car j) (cdr j)))
+      (delete-region (1- (car j)) (car j)))))
+
+(defun maf-edit--strip-stray-props ()
+  "Delete machine-owned characters that are not a line's leading run.
+Line joins and yanks can strand prefix or pad characters mid-line;
+they are display furniture, not entry text."
+  (save-excursion
+    (goto-char (point-min))
+    (while (< (point) (overlay-start maf-edit--dot))
+      (goto-char (+ (point) (maf-edit--leading-prefix-run (point))))
+      (let ((eol (copy-marker (line-end-position))))
+        (while (< (point) eol)
+          (if (get-text-property (point) 'maf-edit-prefix)
+              (delete-char 1)
+            (forward-char)))
+        (set-marker eol nil))
+      (forward-line 1))))
 
 (defun maf-edit--merge-shared-lines ()
   "Merge entries that ended up sharing a line (the join gesture)."
@@ -307,23 +337,42 @@ so a yanked multi-line vector arrives as a single entry."
           (forward-line 1))
         (close-group)))))
 
+(defun maf-edit--stamp-line (want)
+  "Ensure the line at point starts with the propertized WANT string.
+No-op when it already does; otherwise strips the line's prefix chars,
+swallows up to `maf-edit--prefix-width' leading plain spaces (so
+re-stamping existing indentation doesn't shift the content), and
+inserts WANT at the line beginning."
+  (let* ((bol (line-beginning-position))
+         (eol (line-end-position))
+         (have (buffer-substring bol (min (+ bol maf-edit--prefix-width)
+                                          eol))))
+    (unless (equal-including-properties have want)
+      (maf-edit--strip-prefix bol (line-end-position))
+      (save-excursion
+        (goto-char bol)
+        (skip-chars-forward " " (min (line-end-position)
+                                     (+ bol maf-edit--prefix-width)))
+        (delete-region bol (point))
+        (insert want)))))
+
 (defun maf-edit--renumber ()
-  "Stamp the canonical level prefix on every entry's first line."
+  "Stamp the level prefix and continuation pads on every entry.
+The first line gets the canonical numbered prefix; each further line
+gets the 4-space pad, making column 4 the first cursor column on
+every stack line."
   (let ((n (length (maf-edit--overlays))))
     (dolist (o (maf-edit--overlays))
-      (let* ((start (overlay-start o))
-             (bol (save-excursion (goto-char start)
-                                  (line-beginning-position)))
-             (eol (save-excursion (goto-char start) (line-end-position)))
-             (want (maf-edit--prefix-string n))
-             (have (buffer-substring bol (min (+ bol maf-edit--prefix-width)
-                                              eol))))
+      (let ((start (overlay-start o))
+            (bol (save-excursion (goto-char (overlay-start o))
+                                 (line-beginning-position))))
         (unless (= start bol) (move-overlay o bol (overlay-end o)))
-        (unless (equal-including-properties have want)
-          (maf-edit--strip-prefix bol
-                                  (save-excursion (goto-char bol)
-                                                  (line-end-position)))
-          (save-excursion (goto-char bol) (insert want)))
+        (save-excursion
+          (goto-char bol)
+          (maf-edit--stamp-line (maf-edit--prefix-string n))
+          (while (and (zerop (forward-line 1))
+                      (< (point) (overlay-end o)))
+            (maf-edit--stamp-line maf-edit--pad-string)))
         (overlay-put o 'maf-edit-stamped t))
       (setq n (1- n)))))
 
@@ -333,6 +382,7 @@ so a yanked multi-line vector arrives as a single entry."
   (maf-edit--drop-empty)
   (maf-edit--join-damaged-prefixes)
   (maf-edit--merge-shared-lines)
+  (maf-edit--strip-stray-props)
   (maf-edit--adopt-new-lines)
   (maf-edit--renumber))
 
@@ -412,7 +462,11 @@ editing state go on `maf-edit-mode-map'."
           (calc-cursor-stack-index 0)
           (setq maf-edit--dot (make-overlay (point) (line-end-position)))
           (add-text-properties (point) (line-end-position)
-                               '(maf-edit-dot t))))
+                               '(maf-edit-dot t)))
+        ;; Stamp continuation pads (idempotent for the prefixes just
+        ;; propertized above), so column 4 is the first cursor column
+        ;; on every line from the start.
+        (maf-edit--renumber))
       ;; Original text recorded after propertizing, so extraction can
       ;; tell prefix from content.
       (dolist (o (maf-edit--overlays))
