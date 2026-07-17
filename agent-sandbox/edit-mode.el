@@ -27,7 +27,7 @@
 
   ;; New entry: RET at a balanced EOL opens a pending line; typing on
   ;; it adopts it, stamps a prefix, and renumbers everything live.
-  (execute-kbd-macro (kbd "RET x * y"))
+  (execute-kbd-macro (kbd "S-<return> x * y"))
   ;; Edited and new entries are flagged dirty in the prefix (N*);
   ;; untouched ones keep N:.
   (cl-assert (string-prefix-p "4*  a + b + 1\n3*  x*y\n2:  [ 2,"
@@ -37,19 +37,19 @@
   ;; Continuation: RET inside the vector's open bracket grows the
   ;; entry by a line instead of splitting it.
   (progn (goto-char (point-min)) (search-forward "[ 2,")
-         (execute-kbd-macro (kbd "RET 9 9 ,")))
+         (execute-kbd-macro (kbd "S-<return> 9 9 ,")))
   (cl-assert (= (length (maf-edit--overlays)) 4))
 
   ;; Split: RET at a balanced point inside c + d cuts it in two.
   (progn (goto-char (point-min)) (search-forward "c +")
-         (execute-kbd-macro (kbd "RET")))
+         (execute-kbd-macro (kbd "S-<return>")))
   (cl-assert (= (length (maf-edit--overlays)) 5))
 
   ;; The invalid "c +" half blocks the commit; editing continues.
   (cl-assert
    (string-match-p "cannot commit"
                    (condition-case err
-                       (progn (execute-kbd-macro (kbd "C-<return>")) "")
+                       (progn (execute-kbd-macro (kbd "RET")) "")
                      (error (error-message-string err)))))
   (cl-assert maf-edit-mode)
 
@@ -62,7 +62,7 @@
   (cl-assert (= (length (maf-edit--overlays)) 4))
 
   ;; Commit: parsed and reused entries land as one stack replacement.
-  (execute-kbd-macro (kbd "C-<return>"))
+  (execute-kbd-macro (kbd "RET"))
   (cl-assert (not maf-edit-mode))
   (cl-assert buffer-read-only)
   (cl-assert (equal maf-edit-test--hooks '(off on)))
@@ -90,7 +90,7 @@
   (calc-pop (calc-stack-size))
   (execute-kbd-macro (kbd "SPC"))
   (progn (goto-char (point-min))
-         (execute-kbd-macro (kbd "4 2 C-<return>")))
+         (execute-kbd-macro (kbd "4 2 RET")))
   (cl-assert (= (calc-stack-size) 1))
   (cl-assert (equal (calc-top 1 'full) 42))
   ;; Three full enter/exit cycles ran: commit, discard, commit.

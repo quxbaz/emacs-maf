@@ -17,7 +17,7 @@
 ;; fails to parse at commit. Level-number prefixes are machine-owned:
 ;; the cursor skips them, and a repair pass renumbers and re-stamps
 ;; them after every change; an entry whose text differs from what is
-;; on the stack shows N* instead of N:. C-RET parses the buffer and commits it
+;; on the stack shows N* instead of N:. RET parses the buffer and commits it
 ;; back to the stack as one undoable operation; entries whose text is
 ;; untouched keep their value objects (display text can be lossy, so
 ;; they are never reparsed) and their selections. C-c C-k discards.
@@ -56,7 +56,10 @@
 
 (defvar maf-edit-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "C-<return>") #'maf-edit-commit)
+    ;; RET confirms; the newline gesture (split/continue) moves to
+    ;; S-RET.
+    (define-key map (kbd "RET") #'maf-edit-commit)
+    (define-key map (kbd "S-<return>") #'newline)
     (define-key map (kbd "C-c C-k") #'maf-edit-discard)
     ;; Line-start motion treats the machine-owned prefix/pad as column
     ;; zero. Direct keys beat visual-line-mode's remaps; the remaps
