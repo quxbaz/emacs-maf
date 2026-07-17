@@ -22,7 +22,7 @@
   - [ ] ISSUE: in digit entry mode, C-g exits (good) and moves point to home
     (bad) instead of just exiting leaving digit entry and retaining point. This
     issue was fixed somewhere in ~/.emacs.d/my/calc
-  - [ ] BUG: undo not working after executing a single command.
+  - [ ] BUG: undo not restoring point after executing a single command and undo.
 ** Later
    - [ ] k k (my/calc-evaluate N) should work on fractions and division.
    - [ ] g i (my/calc-graph-quick-with-range) interval form a:b should work with spaces 'a b'
