@@ -514,7 +514,9 @@ pushes after."
     (unless (plist-get maf-edit--saved :visual) (visual-line-mode -1))
     (cursor-intangible-mode -1)
     (when (plist-get maf-edit--saved :maf-mode) (maf-mode 1))
-    (when (plist-get maf-edit--saved :hl) (maf-hl-mode 1))
+    ;; Unconditional: re-enabling maf-mode drags maf-hl-mode on with
+    ;; it, so a manually-off highlighter must be re-asserted off.
+    (maf-hl-mode (if (plist-get maf-edit--saved :hl) 1 -1))
     (electric-indent-local-mode (if (plist-get maf-edit--saved :electric) 1 -1))
     (setq buffer-undo-list (plist-get maf-edit--saved :undo)
           buffer-read-only t

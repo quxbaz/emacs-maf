@@ -5,8 +5,8 @@
 ;; Persistent sub-formula highlighting. `maf-hl-mode' is a buffer-local minor
 ;; mode for calc buffers that highlights the innermost sub-formula under point
 ;; as the cursor moves — live feedback on what a contextual command would
-;; operate on. maf.el enables it in every calc buffer via `calc-mode-hook';
-;; toggle it per buffer with M-x maf-hl-mode.
+;; operate on. `maf-mode' toggles it together with itself; M-x maf-hl-mode
+;; uses it standalone.
 
 (require 'calc)
 (require 'calc-sel)   ; calc-prepare-selection
