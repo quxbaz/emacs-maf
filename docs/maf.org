@@ -16,8 +16,11 @@
   - [ ] Submodules: graphing submodule, vim bindings submodule, etc. Toggle on to
     enable a section of features.
 
+* Port
+  - [ ] Port my/calc/* features one-by-one.
+
 * IN-PROGRESS Todo
-  - [ ] TAB command to swap lines should work contextually.
+  - [X] TAB command to swap lines should work contextually.
 ** Later
    - [ ] k k (my/calc-evaluate N) should work on fractions and division.
    - [ ] g i (my/calc-graph-quick-with-range) interval form a:b should work with spaces 'a b'
@@ -37,15 +40,7 @@
      pattern of having to duplicate or store an entry that you might want to
      reuse or recall in case you screw up a calculation.
 
-* Port
-  - [ ] Port my/calc/* features one-by-one.
-
 * Bugs
-  - Some commands like * and / don't work in "prefix" area on home line.
-    # Found the issue: when you enter 3 * or some other operation, we prevent
-    # point from moving so make it easier to operate on lines. However this
-    # means that when the digit is entered, point is still on the entry line, so
-    # the stack item is being multiplied by itself, then replaced.
   - `saved-point-is-at-home` is nil when it should be true when a binary command
     is invoked at the first column of the home row because (calc-align-stack-window)
     is being repressed.
