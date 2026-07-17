@@ -67,7 +67,7 @@
 
 * Questions
   - [ ] In binary command should subject and args be taken from stack (m and
-    m + 1)?
+    m + 1)? Current (maf-equal-to) works like this and it seems to make sense.
 
 * Cleanup
   - [ ] Delete my/calc
