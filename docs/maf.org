@@ -11,7 +11,6 @@
 * Major features
   - [ ] Vim bindings (noun, verb, char)
   - [X] Persistent sub-formula highlighting
-  - [ ] Debug modes
   - [ ] Make edit-mode obsolete. Implement free-edit-mode, like editing a dired buffer.
   - [ ] Submodules: graphing submodule, vim bindings submodule, etc. Toggle on to
     enable a section of features.
@@ -42,7 +41,6 @@
      reuse or recall in case you screw up a calculation.
 
 * Bugs
-  - Equal command doesn't work with point on line 1, but works on home.
 ** BUG (my/calc-backward-noun) and (my/calc-forward-noun) should ignore line prefix.
 
 * BACKLOG
