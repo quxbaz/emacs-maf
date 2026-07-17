@@ -16,6 +16,7 @@
     "[a, b, c]"              ; vector
     "[1 .. 3]"               ; interval
     "6 x + 12"               ; expression
+    "1 / (x^2 - 1)"          ; rational function
     "6 x + 12 = 18 y + 6"    ; equation
     )
   "Algebraic entries pushed onto a fresh calc stack for casual testing.
