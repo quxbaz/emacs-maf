@@ -58,6 +58,17 @@
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "C-<return>") #'maf-edit-commit)
     (define-key map (kbd "C-c C-k") #'maf-edit-discard)
+    ;; Line-start motion treats the machine-owned prefix/pad as column
+    ;; zero. Direct keys beat visual-line-mode's remaps; the remaps
+    ;; catch custom bindings of the same commands.
+    (define-key map (kbd "C-a") #'maf-edit-move-beginning-of-line)
+    (define-key map (kbd "M-m") #'maf-edit-back-to-indentation)
+    (define-key map [remap move-beginning-of-line]
+                #'maf-edit-move-beginning-of-line)
+    (define-key map [remap beginning-of-visual-line]
+                #'maf-edit-move-beginning-of-line)
+    (define-key map [remap back-to-indentation]
+                #'maf-edit-back-to-indentation)
     map)
   "Keymap active while `maf-edit-mode' is on.
 Bind commands here to make them available only during editing.")
@@ -127,6 +138,24 @@ line and motion skips across the pad to the previous line.")
         (setq n (1+ n))
         (forward-char))
       n)))
+
+(defun maf-edit-move-beginning-of-line (arg)
+  "Move to the first character after the line's prefix or pad.
+The machine-owned run is column zero as far as the cursor is
+concerned; plain `move-beginning-of-line' (or its visual-line remap)
+targets the real column 0, an intangible position, and gets bounced
+to the previous line. ARG behaves as in `move-beginning-of-line'."
+  (interactive "^p")
+  (unless (or (null arg) (= arg 1))
+    (forward-line (1- arg)))
+  (let ((bol (line-beginning-position)))
+    (goto-char (+ bol (maf-edit--leading-prefix-run bol)))))
+
+(defun maf-edit-back-to-indentation ()
+  "Move to the line's first non-whitespace character after the prefix."
+  (interactive "^")
+  (maf-edit-move-beginning-of-line 1)
+  (skip-chars-forward " \t" (line-end-position)))
 
 ;;; Entry overlays
 
