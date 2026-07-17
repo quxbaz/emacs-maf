@@ -38,6 +38,7 @@
 ;; resolves them at runtime, but the byte compiler needs declarations.
 (declare-function math-read-expr "calc-aent")
 (declare-function maf-mode "maf")
+(declare-function maf-hl-mode "maf-hl")
 
 (defvar-local maf-edit--dot nil
   "Overlay tracking the home (dot) line during maf-edit.")
@@ -475,6 +476,7 @@ editing state go on `maf-edit-mode-map'."
             (list :undo buffer-undo-list
                   :map (current-local-map)
                   :maf-mode (and (boundp 'maf-mode) maf-mode)
+                  :hl (and (boundp 'maf-hl-mode) maf-hl-mode)
                   :visual visual-line-mode
                   :electric electric-indent-mode))
       ;; RET must insert a bare newline; electric indentation would
@@ -483,6 +485,9 @@ editing state go on `maf-edit-mode-map'."
       ;; maf-mode's minor-mode map would shadow plain typing; the local
       ;; map swap alone can't disable it.
       (when (plist-get maf-edit--saved :maf-mode) (maf-mode -1))
+      ;; The sub-formula highlighter resolves point against calc-stack,
+      ;; which the edited text no longer reflects.
+      (when (plist-get maf-edit--saved :hl) (maf-hl-mode -1))
       (use-local-map maf-edit--text-map)
       (visual-line-mode 1)
       (cursor-intangible-mode 1)
@@ -509,6 +514,7 @@ pushes after."
     (unless (plist-get maf-edit--saved :visual) (visual-line-mode -1))
     (cursor-intangible-mode -1)
     (when (plist-get maf-edit--saved :maf-mode) (maf-mode 1))
+    (when (plist-get maf-edit--saved :hl) (maf-hl-mode 1))
     (electric-indent-local-mode (if (plist-get maf-edit--saved :electric) 1 -1))
     (setq buffer-undo-list (plist-get maf-edit--saved :undo)
           buffer-read-only t
