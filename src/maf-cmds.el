@@ -146,6 +146,7 @@ are set, making the I and H prefixes route to the variant contextually.
   (arctanh unary calcFunc-arctanh)
   (appendrev binary calcFunc-appendrev)
   ;; algebra (calc-a-oper-keys)
+  (apart unary calcFunc-apart "a a")
   (collect binary calcFunc-collect "a c")
   (deriv binary calcFunc-deriv "a d" :hyp tderiv)
   (esimplify unary calcFunc-esimplify "a e")
