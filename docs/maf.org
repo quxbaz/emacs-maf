@@ -33,8 +33,8 @@
     - You can delete an entry simply by deleting a line.
     - Line numbers in the prefix area are still off-limits (read-only) and
       should update as lines are added/removed.
-    - Regular calc bindings are not in effect of course - otherwise you wouldn't
-      be able to do plain text entry.
+    - Regular calc bindings are not in effect of course - otherwise you would
+      end up executing calc stack commands instead of plain text.
 ** Later
    - [ ] k k (my/calc-evaluate N) should work on fractions and division.
    - [ ] g i (my/calc-graph-quick-with-range) interval form a:b should work with spaces 'a b'
