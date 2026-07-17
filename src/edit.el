@@ -4,7 +4,8 @@
 ;;
 ;; maf-edit: wdired-style in-place editing of the calc stack.
 ;;
-;; `maf-edit' (C-c C-c) turns the calc buffer into editable plain text.
+;; `maf-edit' (SPC in maf-mode) turns the calc buffer into editable
+;; plain text.
 ;; Each stack entry is tracked by an overlay; the text is the
 ;; interface. Newline gestures are the only structural operators:
 ;;
@@ -15,7 +16,7 @@
 ;; Deleting delimiters never restructures — an unbalanced entry just
 ;; fails to parse at commit. Level-number prefixes are machine-owned:
 ;; the cursor skips them, and a repair pass renumbers and re-stamps
-;; them after every change. C-c C-c parses the buffer and commits it
+;; them after every change. C-RET parses the buffer and commits it
 ;; back to the stack as one undoable operation; entries whose text is
 ;; untouched keep their value objects (display text can be lossy, so
 ;; they are never reparsed) and their selections. C-c C-k discards.
@@ -54,7 +55,7 @@
 
 (defvar maf-edit-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "C-c C-c") #'maf-edit-commit)
+    (define-key map (kbd "C-<return>") #'maf-edit-commit)
     (define-key map (kbd "C-c C-k") #'maf-edit-discard)
     map)
   "Keymap active while `maf-edit-mode' is on.

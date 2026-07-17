@@ -25,9 +25,9 @@
 (define-key maf-mode-map (kbd "S-<up>") #'mafcmd-toggle-op)
 (define-key maf-mode-map (kbd "S-<down>") #'mafcmd-toggle-op)
 (define-key maf-mode-map (kbd ",") #'maf-quick-variable)
-;; Toggle in-place stack editing; C-c C-c again (in maf-edit-mode-map)
-;; commits.
-(define-key maf-mode-map (kbd "C-c C-c") #'maf-edit)
+;; Enter in-place stack editing (shadows calc-enter on SPC); C-RET (in
+;; maf-edit-mode-map) commits.
+(define-key maf-mode-map (kbd "SPC") #'maf-edit)
 (define-key maf-mode-map (kbd "U") #'maf-undo)
 (define-key maf-mode-map (kbd "D") #'maf-redo)
 ;; Shadows calc's TAB with the contextual line swap.

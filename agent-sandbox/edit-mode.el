@@ -13,7 +13,7 @@
   (maf-push "a + b")
   (maf-push "[2, 3]")
   (maf-push "c + d")
-  (execute-kbd-macro (kbd "C-c C-c"))
+  (execute-kbd-macro (kbd "SPC"))
   (cl-assert maf-edit-mode)
   (cl-assert (not buffer-read-only))
   (cl-assert (equal maf-edit-test--hooks '(on)))
@@ -47,7 +47,7 @@
   (cl-assert
    (string-match-p "cannot commit"
                    (condition-case err
-                       (progn (execute-kbd-macro (kbd "C-c C-c")) "")
+                       (progn (execute-kbd-macro (kbd "C-<return>")) "")
                      (error (error-message-string err)))))
   (cl-assert maf-edit-mode)
 
@@ -60,7 +60,7 @@
   (cl-assert (= (length (maf-edit--overlays)) 4))
 
   ;; Commit: parsed and reused entries land as one stack replacement.
-  (execute-kbd-macro (kbd "C-c C-c"))
+  (execute-kbd-macro (kbd "C-<return>"))
   (cl-assert (not maf-edit-mode))
   (cl-assert buffer-read-only)
   (cl-assert (equal maf-edit-test--hooks '(off on)))
@@ -77,7 +77,7 @@
   (cl-assert (string= (math-format-value (calc-top 3 'full)) "a + b"))
 
   ;; Discard: edits vanish, the stack is untouched.
-  (execute-kbd-macro (kbd "C-c C-c"))
+  (execute-kbd-macro (kbd "SPC"))
   (progn (goto-char (point-min)) (end-of-line)
          (execute-kbd-macro (kbd "SPC + SPC 9 9 9")))
   (execute-kbd-macro (kbd "C-c C-k"))
@@ -86,9 +86,9 @@
 
   ;; Empty stack: typing at the dot line becomes the first entry.
   (calc-pop (calc-stack-size))
-  (execute-kbd-macro (kbd "C-c C-c"))
+  (execute-kbd-macro (kbd "SPC"))
   (progn (goto-char (point-min))
-         (execute-kbd-macro (kbd "4 2 C-c C-c")))
+         (execute-kbd-macro (kbd "4 2 C-<return>")))
   (cl-assert (= (calc-stack-size) 1))
   (cl-assert (equal (calc-top 1 'full) 42))
   ;; Three full enter/exit cycles ran: commit, discard, commit.
