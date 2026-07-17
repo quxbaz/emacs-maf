@@ -18,7 +18,7 @@
   - [ ] Port my/calc/* features one-by-one.
 
 * IN-PROGRESS Todo
-  - [ ] Make calc-edit-mode obsolete. Instead implement a new mode called
+  - [-] Make calc-edit-mode obsolete. Instead implement a new mode called
     maf-edit-mode. When in effect, maf-edit-mode is like editing a dired buffer.
     Similar to (dired-toggle-read-only), maf-edit-mode is meant to be toggled.
     When toggled on, the user can enter text freely. When toggled off, the
