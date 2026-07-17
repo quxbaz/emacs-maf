@@ -16,7 +16,8 @@
 ;; Deleting delimiters never restructures — an unbalanced entry just
 ;; fails to parse at commit. Level-number prefixes are machine-owned:
 ;; the cursor skips them, and a repair pass renumbers and re-stamps
-;; them after every change. C-RET parses the buffer and commits it
+;; them after every change; an entry whose text differs from what is
+;; on the stack shows N* instead of N:. C-RET parses the buffer and commits it
 ;; back to the stack as one undoable operation; entries whose text is
 ;; untouched keep their value objects (display text can be lossy, so
 ;; they are never reparsed) and their selections. C-c C-k discards.
@@ -71,13 +72,18 @@ key falls through to the global map and plain typing works.")
 (defconst maf-edit--prefix-width 4
   "Width of calc's level-number prefix (see `calc-renumber-stack').")
 
-(defun maf-edit--prefix-string (n)
-  "Canonical propertized prefix for level N, in calc's own format."
+(defun maf-edit--prefix-string (n &optional dirty)
+  "Canonical propertized prefix for level N, in calc's own format.
+With DIRTY non-nil the separator is * instead of : — flagging an
+entry whose text no longer matches what is on the stack (or a new
+entry). Editing text back to its original clears the flag, since
+dirtiness is text equality, not a touched bit."
   (propertize
-   (if (> n 999)
-       (format "%03d:" (% n 1000))
-     (let ((num (number-to-string n)))
-       (concat num ":" (make-string (- 3 (length num)) ?\s))))
+   (let ((sep (if dirty "*" ":")))
+     (if (> n 999)
+         (format "%03d%s" (% n 1000) sep)
+       (let ((num (number-to-string n)))
+         (concat num sep (make-string (- 3 (length num)) ?\s)))))
    'maf-edit-prefix t
    'cursor-intangible t
    ;; Stickiness so the cursor can never display on prefix text: the
@@ -371,7 +377,14 @@ every stack line."
         (unless (= start bol) (move-overlay o bol (overlay-end o)))
         (save-excursion
           (goto-char bol)
-          (maf-edit--stamp-line (maf-edit--prefix-string n))
+          (maf-edit--stamp-line
+           (maf-edit--prefix-string
+            n
+            ;; Dirty when the text no longer matches the stack entry
+            ;; (a new entry has nothing to match).
+            (not (and (overlay-get o 'maf-edit-val)
+                      (equal (maf-edit--entry-text o)
+                             (overlay-get o 'maf-edit-text))))))
           (while (and (zerop (forward-line 1))
                       (< (point) (overlay-end o)))
             (maf-edit--stamp-line maf-edit--pad-string)))
@@ -465,14 +478,15 @@ editing state go on `maf-edit-mode-map'."
           (setq maf-edit--dot (make-overlay (point) (line-end-position)))
           (add-text-properties (point) (line-end-position)
                                '(maf-edit-dot t)))
+        ;; Original text recorded after propertizing (so extraction can
+        ;; tell prefix from content) but before the stamp pass, which
+        ;; needs it to know every entry starts clean.
+        (dolist (o (maf-edit--overlays))
+          (overlay-put o 'maf-edit-text (maf-edit--entry-text o)))
         ;; Stamp continuation pads (idempotent for the prefixes just
         ;; propertized above), so column 4 is the first cursor column
         ;; on every line from the start.
         (maf-edit--renumber))
-      ;; Original text recorded after propertizing, so extraction can
-      ;; tell prefix from content.
-      (dolist (o (maf-edit--overlays))
-        (overlay-put o 'maf-edit-text (maf-edit--entry-text o)))
       (setq maf-edit--saved
             (list :undo buffer-undo-list
                   :map (current-local-map)
