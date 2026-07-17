@@ -11,7 +11,6 @@
 * Major features
   - [ ] Vim bindings (noun, verb, char)
   - [X] Persistent sub-formula highlighting
-  - [ ] Make edit-mode obsolete. Implement free-edit-mode, like editing a dired buffer.
   - [ ] Submodules: graphing submodule, vim bindings submodule, etc. Toggle on to
     enable a section of features.
 
@@ -23,6 +22,19 @@
     (bad) instead of just exiting leaving digit entry and retaining point. This
     issue was fixed somewhere in ~/.emacs.d/my/calc
   - [ ] BUG: undo not restoring point after executing a single command and undo.
+  - [ ] Make calc-edit-mode obsolete. Instead implement a new mode called
+    maf-edit-mode. When in effect, maf-edit-mode is like editing a dired buffer.
+    Similar to (dired-toggle-read-only), maf-edit-mode is meant to be toggled.
+    When toggled on, the user can enter text freely. When toggled off, the
+    changes are committed to the calc buffer (if syntax is valid. if invalid,
+    prevent toggle until fixed).
+    - In maf-edit-mode, you can freely edit stack entries.
+    - You can create new entries by opening a line above or below another entry.
+    - You can delete an entry simply by deleting a line.
+    - Line numbers in the prefix area are still off-limits (read-only) and
+      should update as lines are added/removed.
+    - Regular calc bindings are not in effect of course - otherwise you wouldn't
+      be able to do plain text entry.
 ** Later
    - [ ] k k (my/calc-evaluate N) should work on fractions and division.
    - [ ] g i (my/calc-graph-quick-with-range) interval form a:b should work with spaces 'a b'
