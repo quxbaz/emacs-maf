@@ -12,6 +12,7 @@
 (require 'calc)  ; so `calc-display-trail' is a declared special before we let-bind it
 
 (declare-function calc-reset "calc-ext")  ; autoloaded from calc-ext at runtime
+(defvar calc-fancy-prefix-map)            ; defined in calc-ext
 
 ;; State is global (only one step session runs at a time) rather than closed
 ;; over, so `maf-step' works at call sites without lexical-binding: t.
@@ -73,11 +74,25 @@ with a fresh calc, \\=`?' shows the key bindings, and \\=`q' quits. Derived from
         (let ((kill-buffer-query-functions nil))
           (kill-buffer b))))))
 
+(defun maf--step-drop-stale-fancy-prefix ()
+  "Clear a leftover calc fancy-prefix keymap override.
+A step that runs `calc-keep-args' (or any `calc-fancy-prefix' command)
+via `call-interactively' installs `calc-fancy-prefix-map' as
+`overriding-terminal-local-map' and relies on the *next keypress* to
+clear it — a keypress the step form never delivers. Left in place, the
+override hijacks the next `execute-kbd-macro' in any later step or
+session (digits become `digit-argument'), so drop it whenever calc is
+reset."
+  (when (and (boundp 'calc-fancy-prefix-map)
+             (eq overriding-terminal-local-map calc-fancy-prefix-map))
+    (setq overriding-terminal-local-map nil)))
+
 (defun maf--step-fresh-calc ()
   "Kill all calc buffers and create a fresh *Calculator*; return that buffer.
 Binds `calc-display-trail' to nil so `calc' does not pop a *Calc Trail* window,
 keeping the cockpit a clean two-window layout."
   (maf--step-kill-calc)
+  (maf--step-drop-stale-fancy-prefix)
   (let ((calc-display-trail nil))
     (save-window-excursion (calc)))
   (with-current-buffer "*Calculator*"
@@ -240,6 +255,7 @@ sticky `maf--step-errored' flag."
 `calc-reset' with arg 0 clears the stack, undo/redo, and restores default modes;
 killing the trail buffer afterward (calc recreates it empty on the next record)
 leaves the trail clean too, so rewinding to step k matches the forward state."
+  (maf--step-drop-stale-fancy-prefix)
   (let ((win (get-buffer-window maf--step-buffer)))
     (if (window-live-p win)
         (with-selected-window win (calc-reset 0))
