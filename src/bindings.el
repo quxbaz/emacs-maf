@@ -8,6 +8,7 @@
 
 (require 'maf-stack "stack")
 (require 'maf-minibuffer "minibuffer")
+(require 'maf-edit "edit")
 
 ;; Also defvar'd in maf.el and maf-cmds.el; whichever file loads first
 ;; creates the map, the rest are no-ops.
@@ -24,6 +25,9 @@
 (define-key maf-mode-map (kbd "S-<up>") #'mafcmd-toggle-op)
 (define-key maf-mode-map (kbd "S-<down>") #'mafcmd-toggle-op)
 (define-key maf-mode-map (kbd ",") #'maf-quick-variable)
+;; Toggle in-place stack editing; C-c C-c again (in maf-edit-mode-map)
+;; commits.
+(define-key maf-mode-map (kbd "C-c C-c") #'maf-edit)
 (define-key maf-mode-map (kbd "U") #'maf-undo)
 (define-key maf-mode-map (kbd "D") #'maf-redo)
 ;; Shadows calc's TAB with the contextual line swap.
