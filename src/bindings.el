@@ -26,6 +26,8 @@
 (define-key maf-mode-map (kbd ",") #'maf-quick-variable)
 (define-key maf-mode-map (kbd "U") #'maf-undo)
 (define-key maf-mode-map (kbd "D") #'maf-redo)
+;; Shadows calc's TAB with the contextual line swap.
+(define-key maf-mode-map (kbd "TAB") #'maf-swap-up)
 
 ;; The digit-entry starters, mirroring calc-mode-map's calcDigit-start set.
 (mapc (lambda (x)
