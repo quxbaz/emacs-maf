@@ -359,16 +359,29 @@ i.e. its position in the state the next chained undo/redo returns to.")
 In an uninterrupted run of `maf-undo'/`maf-redo' commands, each command
 restores the point snapshot its predecessor saved: that snapshot was
 taken in the very state this command returns to, so toggling undo/redo
-bounces point along with the stack. Any other command in between breaks
-the chain — the user has repositioned point deliberately — and point is
-simply kept in place as `maf--preserve-point' does."
+bounces point along with the stack.
+
+Entering a chain with a single undo whose target is the defcmd that
+just ran restores that command's own pre-command snapshot (see
+`maf-undo--cmd-point'): the stack and point revert together. Otherwise
+— point repositioned since, a foreign command's group on top, or a
+multi-step undo — point is simply kept in place as
+`maf--preserve-point' does."
   (let ((snapshot (maf--point-snapshot))
         (chained (and (memq last-command '(maf-undo maf-redo))
-                      maf-undo--chain-point)))
-    (if chained
-        (progn (funcall fn n)
-               (maf--point-restore maf-undo--chain-point))
-      (maf--preserve-point (funcall fn n)))
+                      maf-undo--chain-point))
+        (cmd-point (and (eq fn #'calc-undo) (= n 1)
+                        maf-undo--cmd-point
+                        (eq (nth 0 maf-undo--cmd-point) calc-undo-list)
+                        (= (nth 1 maf-undo--cmd-point) (point))
+                        (nth 2 maf-undo--cmd-point))))
+    (cond (chained
+           (funcall fn n)
+           (maf--point-restore maf-undo--chain-point))
+          (cmd-point
+           (funcall fn n)
+           (maf--point-restore cmd-point))
+          (t (maf--preserve-point (funcall fn n))))
     (setq maf-undo--chain-point snapshot)))
 
 (defun maf-undo (n)

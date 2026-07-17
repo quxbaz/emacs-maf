@@ -104,12 +104,13 @@ undoes it structurally, without re-normalizing the formula — unlike
 
 (defun maf--point-snapshot ()
   "Capture point's placement in the current calc buffer as an alist.
-Records the buffer position (:pos), line (:line), and semantic affinity
-\(:affinity): `home' when point is at or below the . line, `eol' at end
-of line, `bol' in the line-number prefix, else nil. Consumed by
-`maf--point-restore'."
+Records the buffer position (:pos), line (:line), column (:col), and
+semantic affinity (:affinity): `home' when point is at or below the
+. line, `eol' at end of line, `bol' in the line-number prefix, else
+nil. Consumed by `maf--point-restore'."
   `((:pos      . ,(point))
     (:line     . ,(line-number-at-pos))
+    (:col      . ,(current-column))
     (:affinity . ,(cond ((maf--at-home-p) 'home)
                         ((eolp) 'eol)
                         ((maf--at-line-prefix-p) 'bol)))))
@@ -149,7 +150,13 @@ the positional restore when the anchor can't be located."
           (let ((line (alist-get :line snapshot)))
             (when (/= (line-number-at-pos) line)
               (goto-char (point-min))
-              (forward-line (1- line))))
+              (forward-line (1- line))
+              ;; The raw position spilled onto another line — the
+              ;; rewrite changed the text before it — so the position
+              ;; is meaningless; recover the column instead (clamped
+              ;; to the line's end when it shrank).
+              (when-let ((col (alist-get :col snapshot)))
+                (move-to-column col))))
           (pcase affinity
             ('eol (end-of-line))
             ('bol (beginning-of-line)))))))
@@ -163,6 +170,22 @@ restores it after (`maf--point-restore')."
     `(let ((,snapshot (maf--point-snapshot)))
        (prog1 (progn ,@forms)
          (maf--point-restore ,snapshot)))))
+
+(defvar maf-undo--cmd-point nil
+  "Pre-command point snapshot for the head `calc-undo-list' group.
+A list (UNDO-HEAD POST-POS SNAPSHOT). UNDO-HEAD is the `calc-undo-list'
+cons captured when the recording command finished, so it is `eq' to the
+current head only while that command is still the next thing undo
+reverts. POST-POS is where the command left point — matching it means
+the user hasn't repositioned since. When both hold, the first
+`maf-undo' of a chain restores SNAPSHOT, point's placement from before
+the command ran (see `maf--undo-redo').")
+
+(defun maf--undo-record-cmd-point (snapshot)
+  "Record SNAPSHOT as the pre-command point of the just-finished command.
+Called at the end of every defcmd, once its undo group is final (after
+digit-entry amalgamation) and point is restored."
+  (setq maf-undo--cmd-point (list calc-undo-list (point) snapshot)))
 
 (defvar maf--digit-entry-handoff nil
   "Non-nil when the last digit entry was terminated by a command key.

@@ -161,7 +161,11 @@ ARG, runs the body, and commits its result to the right stack location."
                    ;; glyphs when point was on one (see `maf--point-restore').
                    (maf--point-restore (alist-get :point ,context)
                                        (alist-get :point-anchor ,context)
-                                       ,landed))))
+                                       ,landed)
+                   ;; Keep the resolve-time snapshot for undo: a single
+                   ;; `maf-undo' of this command puts point back where it
+                   ;; was before the command ran.
+                   (maf--undo-record-cmd-point (alist-get :point ,context)))))
     (maf--defcmd-validate-opts opts)
     `(defun ,name ()
        ,@(when docstring (list docstring))
