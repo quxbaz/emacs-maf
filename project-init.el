@@ -3,7 +3,8 @@
 ;; project-init.el
 ;;
 ;; Session setup for the maf project: open the working set of files in
-;; background buffers and load the package.
+;; background buffers, load the package, and arrange the starting
+;; layout — maf.org on the left, calc on the right.
 
 (defconst maf-seed-entries
   '("3:4"                    ; fraction
@@ -44,9 +45,11 @@ One entry per common expression shape.")
   ;; once) also keeps maf-mode on across calc-reset, which re-runs calc-mode
   ;; and thereby kills buffer-local minor modes.
   (add-hook 'calc-mode-hook #'maf-mode)
-  ;; Show calc in the other window, keeping the current window selected.
+  ;; Create the calc buffer without letting it pick the layout.
   (save-window-excursion (maf-calc-direct))
-  (save-selected-window
-    (switch-to-buffer-other-window "*Calculator*"))
+  ;; Starting layout: maf.org on the left, calc on the right.
+  (delete-other-windows)
+  (find-file (expand-file-name "docs/maf.org" root))
+  (set-window-buffer (split-window-right) "*Calculator*")
   ;; Seed the stack so casual testing doesn't start from scratch.
   (maf-seed-calc))

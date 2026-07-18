@@ -15,9 +15,15 @@
 
 (setq server-name (or (getenv "MAF_SERVER_NAME") "duo"))
 (server-start)
-(load (expand-file-name "../maf.el"
-                        (file-name-directory (or load-file-name
-                                                 buffer-file-name))))
+(defconst maf-dev--root
+  (expand-file-name ".." (file-name-directory (or load-file-name
+                                                  buffer-file-name)))
+  "Repo root, resolved from this file's location.")
+(load (expand-file-name "maf.el" maf-dev--root))
 (calc)
 (with-current-buffer "*Calculator*"
   (maf-mode 1))
+;; Starting layout: maf.org on the left, calc on the right.
+(delete-other-windows)
+(find-file (expand-file-name "docs/maf.org" maf-dev--root))
+(set-window-buffer (split-window-right) "*Calculator*")
