@@ -17,7 +17,8 @@
 ;; fails to parse at commit. Level-number prefixes are machine-owned:
 ;; the cursor skips them, and a repair pass renumbers and re-stamps
 ;; them after every change; an entry whose text differs from what is
-;; on the stack shows N* instead of N:. RET parses the buffer and commits it
+;; on the stack shows N* instead of N:, and a new entry not on the
+;; stack yet shows N+. RET parses the buffer and commits it
 ;; back to the stack as one undoable operation; entries whose text is
 ;; untouched keep their value objects (display text can be lossy, so
 ;; they are never reparsed) and their selections. C-c C-k discards.
@@ -60,9 +61,9 @@
 (defvar maf-edit-mode-map
   (let ((map (make-sparse-keymap)))
     ;; RET confirms; the newline gesture (split/continue) moves to
-    ;; S-RET.
+    ;; S-RET, indenting past the machine-owned prefix area.
     (define-key map (kbd "RET") #'maf-edit-commit)
-    (define-key map (kbd "S-<return>") #'newline)
+    (define-key map (kbd "S-<return>") #'maf-edit-newline)
     (define-key map (kbd "C-c C-k") #'maf-edit-discard)
     ;; Line-start motion treats the machine-owned prefix/pad as column
     ;; zero. Direct keys beat visual-line-mode's remaps; the remaps
@@ -89,14 +90,14 @@ key falls through to the global map and plain typing works.")
 (defconst maf-edit--prefix-width 4
   "Width of calc's level-number prefix (see `calc-renumber-stack').")
 
-(defun maf-edit--prefix-string (n &optional dirty)
+(defun maf-edit--prefix-string (n &optional state)
   "Canonical propertized prefix for level N, in calc's own format.
-With DIRTY non-nil the separator is * instead of : — flagging an
-entry whose text no longer matches what is on the stack (or a new
-entry). Editing text back to its original clears the flag, since
-dirtiness is text equality, not a touched bit."
+STATE picks the separator: nil for an entry matching the stack (:),
+`dirty' for one whose text no longer matches (*), `new' for one not
+on the stack at all (+). Editing text back to its original clears
+the dirty flag, since dirtiness is text equality, not a touched bit."
   (propertize
-   (let ((sep (if dirty "*" ":")))
+   (let ((sep (pcase state ('dirty "*") ('new "+") (_ ":"))))
      (if (> n 999)
          (format "%03d%s" (% n 1000) sep)
        (let ((num (number-to-string n)))
@@ -162,6 +163,30 @@ to the previous line. ARG behaves as in `move-beginning-of-line'."
   (interactive "^")
   (maf-edit-move-beginning-of-line 1)
   (skip-chars-forward " \t" (line-end-position)))
+
+(defun maf-edit-newline ()
+  "Newline gesture (split or continue), landing on the first content column.
+Plain `newline' leaves point at the real column 0, inside the
+machine-owned prefix area. The repair pass stamps split tails and
+continuation lines on its own; a fresh blank line is not yet an
+entry, so it becomes one here — its numbered prefix stamps
+immediately and the levels above shift up, exactly as they will once
+it holds text. Point then lands after the line's prefix run."
+  (interactive)
+  (newline)
+  (let ((bol (line-beginning-position)))
+    (when (< bol (overlay-start maf-edit--dot))
+      (when (zerop (maf-edit--leading-prefix-run bol))
+        (let ((maf-edit--inhibit t)
+              (inhibit-modification-hooks t))
+          ;; A temporary machine-owned run keeps the fresh zero-length
+          ;; entry out of `maf-edit--drop-empty's reach; the repair
+          ;; then renumbers it into a properly stamped line (or merges
+          ;; it up, when the line continues an open entry).
+          (save-excursion (goto-char bol) (insert maf-edit--pad-string))
+          (maf-edit--make-entry bol (+ bol maf-edit--prefix-width))
+          (maf-edit--repair)))
+      (goto-char (+ bol (maf-edit--leading-prefix-run bol))))))
 
 ;;; Entry overlays
 
@@ -423,11 +448,12 @@ every stack line."
           (maf-edit--stamp-line
            (maf-edit--prefix-string
             n
-            ;; Dirty when the text no longer matches the stack entry
-            ;; (a new entry has nothing to match).
-            (not (and (overlay-get o 'maf-edit-val)
-                      (equal (maf-edit--entry-text o)
-                             (overlay-get o 'maf-edit-text))))))
+            ;; New when not on the stack at all; dirty when the text
+            ;; no longer matches the stack entry.
+            (cond ((not (overlay-get o 'maf-edit-val)) 'new)
+                  ((not (equal (maf-edit--entry-text o)
+                               (overlay-get o 'maf-edit-text)))
+                   'dirty))))
           (while (and (zerop (forward-line 1))
                       (< (point) (overlay-end o)))
             (maf-edit--stamp-line maf-edit--pad-string)))
