@@ -19,35 +19,35 @@
   - [ ] Port my/calc/* features one-by-one.
 
 * IN-PROGRESS Todo
-** Later
-   - [ ] Snapshot after every commit. Navigate through history in history
-     navigation pane.
-   - [ ] k k (my/calc-evaluate N) should work on fractions and division.
-   - [ ] g i (my/calc-graph-quick-with-range) interval form a:b should work with spaces 'a b'
-   - [ ] Full formula buffer should have "recents" section.
-   - [ ] Saved formulas should support "notes" that display in full formula buffer.
-   - [ ] Add command to move to parent expression.
-     1:  y = 2 (x| + 3)^2 - 12
-     ->  y = 2 (x + 3)|^2 - 12
-   - [ ] Distribute and merge should operate contextually.
-   - [ ] Always show entry at point in "big" mode, somewhere.
-   - [ ] Move all options to unified configuration view.
-     - Free up option prefix bindings (eg, m).
-   - [ ] Rebind +, -, negate, negative commands. Since these are used very
-     frequently, make them easily accessible.
-   - [ ] Feature: In stack mode, bind M-[n/p] to recall previous/next bare
-     (starting from empty) edit-mode entries. The purpose of this is to avoid the
-     pattern of having to duplicate or store an entry that you might want to
-     reuse or recall in case you screw up a calculation.
-   - [ ] Set place/point after (maf--commit)
-     - If possible, when (eq :target 'subexpr), stick point to the same symbol
-       prior to the operation.
-   - [ ] Implement options
-      - [ ] simplification
-      - [ ] support-mapping
-      - [ ] force-line
-      - [ ] defcmd may sometimes need the full entry and may also need to write
-        to the full entry, not just its expr. How to handle this elegantly?
+# LATER
+** TODO Snapshot after every commit. Navigate through history in history
+   navigation pane.
+** TODO k k (my/calc-evaluate N) should work on fractions and division.
+** TODO g i (my/calc-graph-quick-with-range) interval form a:b should work with spaces 'a b'
+** TODO Full formula buffer should have "recents" section.
+** TODO Saved formulas should support "notes" that display in full formula buffer.
+** TODO Add command to move to parent expression.
+   1:  y = 2 (x| + 3)^2 - 12
+   ->  y = 2 (x + 3)|^2 - 12
+** TODO Distribute and merge should operate contextually.
+** TODO Always show entry at point in "big" mode, somewhere.
+** TODO Move all options to unified configuration view.
+   - Free up option prefix bindings (eg, m).
+** TODO Rebind +, -, negate, negative commands. Since these are used very
+   frequently, make them easily accessible.
+** TODO Feature: In stack mode, bind M-[n/p] to recall previous/next bare
+   (starting from empty) edit-mode entries. The purpose of this is to avoid the
+   pattern of having to duplicate or store an entry that you might want to reuse
+   or recall in case you screw up a calculation.
+** TODO Set place/point after (maf--commit)
+   - If possible, when (eq :target 'subexpr), stick point to the same symbol
+     prior to the operation.
+** TODO Implement options
+** TODO simplification
+** TODO support-mapping
+** TODO force-line
+** TODO defcmd may sometimes need the full entry and may also need to write
+   to the full entry, not just its expr. How to handle this elegantly?
 
 * Bugs
 ** BUG (my/calc-backward-noun) and (my/calc-forward-noun) should ignore line prefix.
