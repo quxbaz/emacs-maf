@@ -17,10 +17,8 @@
 * Port
   - [ ] Port my/calc/* features one-by-one.
 
-
-   - [ ] maf-edit: indent on newline and stamp prefix
-
 * IN-PROGRESS Todo
+  - [ ] maf-edit: indent on newline and stamp prefix
   - [ ] maf: For custom commands, write docstrings with descriptions and examples. Settle on a
     docstring convention.
     - description
