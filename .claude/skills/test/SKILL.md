@@ -31,7 +31,7 @@ existing examples: `tests/*.el` (e.g. `tests/mult-at-home.el`).
   sometimes as part of a suite; stepped through by hand with the
   `*maf-step*` cockpit (`f4` loader; `l`/`j`/`SPC` forward, `h`/`k`
   back, `r` restart, `q` quit).
-- `agent-sandbox/` — semi-permanent sandbox area for the agent,
+- `sandbox/` — semi-permanent sandbox area for the agent,
   used for a flexible number of purposes including testing. Write
   agent verification tests here; do not mix them into `tests/`.
 
@@ -42,7 +42,7 @@ Load the file into this session's dev instance (socket name chosen at
 cockpit runs clean (`maf-step` machinery is in `debug/maf-step.el`):
 
 ```sh
-emacsclient -s '#emacs' --eval '(load-file "agent-sandbox/foo.el")'
+emacsclient -s '#emacs' --eval '(load-file "sandbox/foo.el")'
 ```
 
 Then step through it with real keypresses in the `*maf-step*` window
@@ -66,7 +66,7 @@ produce.
 ### [EXAMPLE 1] /test test mafcmd-factor-gcd; make sure it works with a wide variety of expressions
 
 The command already exists in maf, so no `maf-defcmd` is needed. Write
-`agent-sandbox/factor-gcd-variety.el` with a `maf-step` block covering
+`sandbox/factor-gcd-variety.el` with a `maf-step` block covering
 distinct expression shapes — one commented case per shape, `calc-pop`
 between cases (cf. the user's `tests/factor-gcd.el`):
 
@@ -88,12 +88,12 @@ load and step it as in the next example.
 
 ### [EXAMPLE 2] /test write a test for an addition command at home
 
-Write `agent-sandbox/add-at-home.el` in the format above (a `maf-defcmd`
+Write `sandbox/add-at-home.el` in the format above (a `maf-defcmd`
 for `maf-add` committing `calcFunc-add`, then a `maf-step` block
 pushing 3 and 4 and asserting the top is 7), then load and step it:
 
 ```sh
-emacsclient -s '#emacs' --eval '(load-file "agent-sandbox/add-at-home.el")'
+emacsclient -s '#emacs' --eval '(load-file "sandbox/add-at-home.el")'
 # one SPC per form, then read the cockpit back
 emacsclient -s '#emacs' --eval '(with-selected-window (get-buffer-window "*maf-step*" t)
   (execute-kbd-macro (kbd "SPC SPC SPC SPC SPC"))
