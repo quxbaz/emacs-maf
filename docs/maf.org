@@ -17,8 +17,15 @@
 * Port
   - [ ] Port my/calc/* features one-by-one.
 
+
+   - [ ] maf-edit: indent on newline and stamp prefix
+
 * IN-PROGRESS Todo
+  - [ ] maf: Write docstrings with descriptions and examples. Settle on a
+    docstring format convention.
 ** Later
+   - [ ] Snapshot after every commit. Navigate through history in history
+     navigator.
    - [ ] k k (my/calc-evaluate N) should work on fractions and division.
    - [ ] g i (my/calc-graph-quick-with-range) interval form a:b should work with spaces 'a b'
    - [ ] Full formula buffer should have "recents" section.
@@ -67,3 +74,5 @@
 * Cleanup
   - [ ] Delete my/calc
   - [ ] Use stock bindings
+  - [ ] Generate tests to cover maf. step tests when testing end-to-end. unit
+    tests for basic stuff.
