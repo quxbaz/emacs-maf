@@ -47,9 +47,13 @@ One entry per common expression shape.")
   (add-hook 'calc-mode-hook #'maf-mode)
   ;; Create the calc buffer without letting it pick the layout.
   (save-window-excursion (maf-calc-direct))
-  ;; Starting layout: maf.org on the left, calc on the right.
-  (delete-other-windows)
-  (find-file (expand-file-name "docs/maf.org" root))
-  (set-window-buffer (split-window-right) "*Calculator*")
+  ;; Starting layout: maf.org on the left, calc on the right. Deferred
+  ;; on a timer so late startup display logic cannot clobber it; loaded
+  ;; interactively, the timer fires right away.
+  (run-at-time 0 nil
+               (lambda ()
+                 (delete-other-windows)
+                 (find-file (expand-file-name "docs/maf.org" root))
+                 (set-window-buffer (split-window-right) "*Calculator*")))
   ;; Seed the stack so casual testing doesn't start from scratch.
   (maf-seed-calc))
