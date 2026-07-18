@@ -11,6 +11,7 @@
 * Major features
   - [ ] Vim bindings (noun, verb, char)
   - [X] Persistent sub-formula highlighting
+  - [ ] History, snapshots
   - [ ] Submodules: graphing submodule, vim bindings submodule, etc. Toggle on to
     enable a section of features.
 
