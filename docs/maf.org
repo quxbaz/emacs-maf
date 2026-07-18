@@ -53,7 +53,6 @@
 * Package
   Binding for "home"
   Config file with all config settings and default values
-  How to use macro with def math
   Alternative graphing
   Alternative trail. Should support time travel and finding old single entries.
   Use transient mode for prefix commands
