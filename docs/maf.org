@@ -52,19 +52,13 @@
 
 * Package
   Binding for "home"
-  Args buffer
   Config file with all config settings and default values
-   calx: calc with alternative ux
   How to use macro with def math
   Alternative graphing
   Alternative trail. Should support time travel and finding old single entries.
   Use transient mode for prefix commands
   Swap _ and -
   Show all formulas buffer
-
-* Questions
-  - [ ] In binary command should subject and args be taken from stack (m and
-    m + 1)? Current (maf-equal-to) works like this and it seems to make sense.
 
 * Cleanup
   - [ ] Delete my/calc
