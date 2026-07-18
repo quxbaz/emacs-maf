@@ -92,17 +92,22 @@ are built literally — nothing is normalized, so 5 on (a + b) gives
 
 (defun maf-digit-start ()
   "Start a numeric entry, committed contextually by point.
-With point on a sub-formula, the entered number replaces it when it is
-a numeric leaf and multiplies it otherwise; on a relation node it
-multiplies both sides. At home, in the line prefix, or at EOL the
-number is pushed onto the stack, exactly as in plain calc — as it is
-in algebraic mode, for entries that escape to algebraic, and for
-interval entry (..), whose incomplete-object flow is inseparable from
-the stack.
 
-The entry minibuffer is calc's own (`calc-digit-map'), so the in-entry
-keys — e, _, :, n, @ — work unchanged; only where the result lands
-differs."
+  12| x + 3     5 RET  =>  5 x + 3        (numeric leaf: replaced)
+  x| + 3        5 RET  =>  5 x + 3        (sub-formula: multiplied)
+  2 + (a| + b)  5 RET  =>  2 + 5 (a + b)  (literal: no distributing)
+
+With point on a sub-formula, the entered number replaces it when it
+is a numeric leaf and multiplies it otherwise, number on the left and
+the product built literally; on a relation node it multiplies both
+sides. At home, in the line prefix, or at EOL the number is pushed
+onto the stack, exactly as in plain calc — as it is in algebraic
+mode, for entries that escape to algebraic, and for interval entry
+(..), whose incomplete-object flow is inseparable from the stack.
+
+The entry minibuffer is calc's own (`calc-digit-map'), so the
+in-entry keys — e, _, :, n, @ — work unchanged; only where the result
+lands differs."
   (interactive)
   (if (or calc-algebraic-mode
           (and (> calc-number-radix 14) (eq last-command-event ?e))

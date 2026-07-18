@@ -25,13 +25,17 @@
 
 (maf-defcmd mafcmd-factor-by (expr arg commit)
   "Factor the resolved expression by the top-of-stack argument.
-Divides EXPR by ARG, normalizes the quotient (expand -> nrat -> expand ->
-simplify), and commits ARG * quotient with the product left undistributed:
-6 x + 12 factored by 6 gives 6 (x + 2), not 6 x + 12 back.
 
-Contextual like every mafcmd: with point on a sub-formula it factors just
-that sub-formula; on an equation it factors each side; at home it factors
-stack level 2 by level 1."
+  6 x + 12 by 6  =>  6 (x + 2)
+
+Divides by the argument and commits argument * quotient with the
+product left undistributed, whatever the argument — dividing by a
+non-factor just moves it out front. Point picks the target as usual:
+a sub-formula at point, each side of an equation, stack level 2 at
+home; the top entry is always the argument, popped on commit.
+
+  6 x + 12 by 5             =>  5 (6:5 x + 12:5)
+  6 x + 12 = 18 y + 6 by 6  =>  6 (x + 2) = 6 (3 y + 1)"
   :arity binary
   :prefix "fctr"
   (let ((quotient (math-simplify
@@ -45,16 +49,20 @@ stack level 2 by level 1."
 
 (maf-defcmd mafcmd-factor-gcd (expr _arg commit)
   "Factor the resolved expression by the GCD of its additive terms.
-Computes the GCD across all terms and pulls it out, keeping the product
-undistributed: 6 x + 12 gives 6 (x + 2). When the leading term is
-negative, the negated GCD is pulled out instead, so -3 x + 3 gives
--3 (x - 1). With nothing to pull out — a single term, or GCD 1 with a
-positive leading term — the expression is committed unchanged, so
-equation sides that don't factor pass through quietly.
 
-Contextual like every mafcmd: with point on a sub-formula it factors
-just that sub-formula; on an equation it factors each side; at home it
-factors the top entry."
+  6 x + 12  =>  6 (x + 2)
+
+The GCD is pulled across all terms with the product left
+undistributed; a negative leading term pulls out the negated GCD.
+With nothing to pull out the expression commits unchanged, so
+equation sides that don't factor pass through quietly. Point picks
+the target as usual: a sub-formula at point, each side of an
+equation, the top entry at home.
+
+  -3 x + 3         =>  -3 (x - 1)
+  10 x y + 15 x z  =>  (5 x)*(3 z + 2 y)
+  3 x + 7          =>  3 x + 7    (coprime terms: unchanged)
+  2.5 x + 5.       =>  2.5 x + 5.  (float coefficients: unchanged)"
   :arity unary
   :prefix "fctr"
   (let* ((terms (let ((calc-simplify-mode nil)
@@ -90,19 +98,22 @@ factors the top entry."
 
 (maf-defcmd mafcmd-commute (expr _arg commit)
   "Swap the first two operands of the resolved expression.
-a + b gives b + a. The swap is structural and nothing is simplified, so
-it also flips non-commutative operators (a - b gives b - a) and works
-on any function call (log(x, b) gives log(b, x)); operands past the
-second stay in place. With nothing to swap — an atom, a unary call, an
-interval — the expression is committed unchanged.
 
-A binary relation keeps its meaning: the sides swap and the operator's
-direction reverses with them, so x = y gives y = x and x < y gives
-y > x, never y < x.
+  a + b  =>  b + a
 
-Contextual like every mafcmd: with point on a sub-formula it swaps just
-that sub-formula's operands; on an equation it swaps the two sides; at
-home it operates on the top entry."
+The swap is structural — nothing simplifies — so non-commutative
+operators flip too, any function call swaps its first two arguments,
+and operands past the second stay in place. A binary relation keeps
+its meaning: the sides swap and the operator's direction reverses
+with them. With nothing to swap — an atom, a unary call, an interval
+— the expression commits unchanged. Point picks the target as usual:
+a sub-formula at point, the two sides of a relation entry, the top
+entry at home.
+
+  a - b      =>  b - a
+  2 (3 + x)  =>  (3 + x) 2   (no distribution)
+  log(x, b)  =>  log(b, x)
+  x < y      =>  y > x       (direction reverses: never y < x)"
   :arity unary
   :prefix "comm"
   :map -1
@@ -128,14 +139,21 @@ home it operates on the top entry."
 
 (maf-defcmd mafcmd-float (expr _arg commit)
   "Float the resolved expression's fractions, leaving integers exact.
-6 x + 8:3 gives 6 x + 2.67 with the 6 untouched, and a whole number is
-a noop — unlike calc's pervasive float, which converts every number.
-With the Hyperbolic flag, `mafcmd-float-all' gives that pervasive
-behavior (6. x + 2.67); the Inverse flag routes to `mafcmd-frac'.
 
-Contextual like every mafcmd: with point on a sub-formula it floats
-just that sub-formula; on an equation it floats each side; at home it
-operates on the top entry."
+  6 x + 8:3  =>  6 x + 2.66666666667
+
+With the Hyperbolic flag, `mafcmd-float-all' floats pervasively,
+integers included.
+
+  6 x + 8:3  =>  6. x + 2.66666666667
+
+With the Inverse flag, routes to `mafcmd-frac': floats back to
+fractions.
+
+An expression without fractions commits unchanged, so equation sides
+already exact pass through quietly. Point picks the target as usual:
+a sub-formula at point, each side of an equation, the top entry at
+home."
   :arity unary
   :prefix "flt"
   :hyperbolic mafcmd-float-all
@@ -144,30 +162,42 @@ operates on the top entry."
 
 (maf-defcmd mafcmd-float-all (expr _arg commit)
   "Float every number in the resolved expression, integers included.
-The pervasive variant of `mafcmd-float' (its Hyperbolic route):
-6 x + 8:3 gives 6. x + 2.66666666667.
 
-Contextual like every mafcmd: with point on a sub-formula it floats
-just that sub-formula; on an equation it floats each side; at home it
-operates on the top entry."
+  6 x + 8:3  =>  6. x + 2.66666666667
+
+The pervasive variant of `mafcmd-float', its Hyperbolic route. Point
+picks the target as usual: a sub-formula at point, each side of an
+equation, the top entry at home."
   :arity unary
   :prefix "flt"
   (commit (math-normalize (list 'calcFunc-pfloat expr))))
 
 (maf-defcmd mafcmd-frac (expr _arg commit)
   "Convert the resolved expression's floats to fractions.
-0.75 x + 2 gives 3:4 x + 2; exact numbers are untouched, and a whole
-number is a noop. A numeric prefix argument gives the tolerance, as in
-calc's pfrac: a positive integer N makes each fraction correct to N
-significant figures (C-u 3 on 3.14159 gives 22:7), a float gives an
-absolute tolerance, and no argument converts exactly within the
-current precision. The take-tolerance-from-stack form of a zero
-prefix argument is not supported; 0 converts exactly too.
 
-Contextual like every mafcmd: with point on a sub-formula it converts
-just that sub-formula; on an equation it converts each side; at home
-it operates on the top entry. The Inverse flag routes back to
-`mafcmd-float'."
+  0.75 x + 2  =>  3:4 x + 2
+
+With the Inverse flag, routes to `mafcmd-float': fractions back to
+floats.
+
+  3:4 x + 2  =>  0.75 x + 2
+
+Only floats change: exact numbers stay untouched, and an expression
+with no floats commits unchanged, so equation sides that are already
+exact pass through quietly. A numeric prefix argument gives the
+tolerance, as in calc's pfrac: a positive integer N makes each
+fraction correct to N significant figures, a float gives an absolute
+tolerance, and no argument (or 0) converts exactly within the current
+precision — the take-tolerance-from-stack form of a zero prefix is
+not supported. Point picks the target as usual: a sub-formula at
+point, each side of an equation, the top entry at home.
+
+  3.14159            =>  314159:100000
+  C-u 3 3.14159      =>  22:7      (3 significant figures)
+  C-u 0.001 3.14159  =>  333:106   (within 0.001)
+  6 x + 2            =>  6 x + 2   (no floats: unchanged)
+  0.5 y + 0.25| x    =>  0.5 y + 1:4 x   (sub-formula at point)
+  x = 0.75 y         =>  x = 3:4 y       (each side of an equation)"
   :arity unary
   :prefix "frac"
   :inverse mafcmd-float
@@ -188,11 +218,14 @@ dispatches here when point is on an expression."
 
 (defun maf-quick-variable ()
   "Read a letter and apply it as a variable, contextually.
-At home with no selection active, push the variable as a new stack
-entry. Anywhere else, multiply the resolved expression by it — the
-selection, the sub-formula at point, each side of an equation, or the
-whole entry from its margin: with point on the a of a + 2, entering x
-gives x a + 2."
+
+  x on a| + 2  =>  x a + 2
+
+At home with no selection active, the variable is pushed as a new
+stack entry instead. Any other target is multiplied by it, variable
+on the left: the selection, the sub-formula at point, each side of an
+equation, the whole entry from its margin. Any letter is a valid
+variable; anything else aborts."
   (interactive)
   (let ((char (read-char-from-minibuffer "Variable: ")))
     (unless (or (<= ?a char ?z) (<= ?A char ?Z))
@@ -228,18 +261,25 @@ to a > b without touching either side.")
 
 (maf-defcmd mafcmd-toggle-op (expr _arg commit)
   "Toggle the top operator of the resolved expression to its counterpart.
-Pairs come from `maf-toggle-op-pairs': a + b gives a - b, a * b gives
-a / b, ln(x) gives exp(x), log(a, b) gives a^b — and each back again.
-Relations flip the same way with both sides untouched: a < b gives
-a > b, x = y gives x != y. The swap is structural: operands stay in
-place and nothing is simplified. With no toggle for the operator — an
-atom, an unpaired operator, a log(x) with no explicit base — the
-expression is committed unchanged.
 
-Contextual like every mafcmd: with point on a sub-formula it toggles
-that sub-formula's operator; at home it operates on the top entry. A
-relation is toggled whole rather than mapped per side — put point on
-an operator inside a side to toggle there."
+  a + b  =>  a - b
+
+Pairs come from `maf-toggle-op-pairs', each toggling both ways. The
+swap is structural: operands stay in place and nothing simplifies, so
+a relation flips its operator with both sides untouched — unlike
+`mafcmd-commute', which moves the sides. With no toggle for the
+operator — an atom, an unpaired operator, a log(x) with no explicit
+base — the expression commits unchanged. Point picks the target as
+usual: a sub-formula at point, the whole relation on a relation entry
+(put point inside a side to toggle there), the top entry at home.
+
+  a * b      =>  a / b
+  ln(x)      =>  exp(x)
+  log(a, b)  =>  a^b
+  sin(x)     =>  arcsin(x)
+  x = y      =>  x != y
+  x < y      =>  x > y    (sides stay put: never y > x)
+  x          =>  x        (no pair: unchanged)"
   :arity unary
   :prefix "togl"
   :map -1
@@ -254,14 +294,18 @@ an operator inside a side to toggle there."
 
 (defun maf-swap-up (n)
   "Swap the stack entry at point with the one above it on screen.
-With point on a stack entry at level M, entries M and M+1 exchange
-places while point stays put — same line, same column: the entry at
-point moves up the screen and its upper neighbor lands on the line at
-point. When that neighbor is shorter than point's column, point clamps
-to its end of line; at end of line it stays at end of line. At home
-the top two entries swap. Selections travel with their entries. With
-the entry at point already the highest, or with fewer than two
-entries, there is nothing to swap and the command does nothing.
+
+  2:  a          2:  b
+  1:  b|    =>   1:  a|
+
+Entries at level M and M+1 exchange places while point stays put —
+same line, same column: the entry at point moves up the screen and
+its upper neighbor lands on the line at point. When that neighbor is
+shorter than point's column, point clamps to its end of line; at end
+of line it stays at end of line. At home the top two entries swap.
+Selections travel with their entries. With the entry at point already
+the highest, or with fewer than two entries, there is nothing to swap
+and the command does nothing.
 
 A prefix argument N bypasses the contextual swap and rolls the top N
 entries by one, as calc's TAB does."
@@ -297,18 +341,24 @@ entries by one, as calc's TAB does."
 
 (defun maf-equal-to ()
   "Join two adjacent stack entries into one equation, contextually.
-With point on a stack entry, the entry above it on screen (level M+1)
-becomes the left side, the entry at point the right side, and the
-equation takes the pair's place on the stack. At home, or with the
-entry at point already the highest on screen, the pairing shifts to
-the nearest pair: the top two entries at home, the top two lines when
-point is on the deepest entry. Both sides are committed structurally
-intact — nothing simplifies or evaluates, so equating 3 with 3 yields
-the equation 3 = 3, not 1.
 
-With the Inverse flag, builds != instead of =. With keep-args, the two
-entries stay put and the equation is pushed on top. Signals an error
-with fewer than two entries."
+  2:  x
+  1:  y|    =>   1:  x = y|
+
+With the Inverse flag, builds != instead of =.
+
+  2:  x
+  1:  y|    =>   1:  x != y|
+
+The entry above point becomes the left side, the entry at point the
+right side, and the equation replaces the pair with point at its end
+of line. At home the top two entries join; on the deepest entry —
+nothing above it — the pair shifts to the entry below, so either
+entry of a two-entry stack gives the same equation. With keep-args
+the pair stays put and the equation is pushed on top instead. Both
+sides commit structurally intact — nothing simplifies or evaluates,
+so equating 3 with 3 gives the equation 3 = 3, not 1. Signals an
+error with fewer than two entries."
   (interactive)
   (maf--with-calc-buffer
     (when (< (calc-stack-size) 2)
