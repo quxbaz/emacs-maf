@@ -562,6 +562,17 @@ editing state go on `maf-edit-mode-map'."
                (signal (car err) (cdr err))))
     (maf-edit--exit)))
 
+(defun maf-edit--header-line ()
+  "Header line shown while editing: a badge plus the exit gestures.
+Built with `substitute-command-keys' so rebinding the gestures in
+`maf-edit-mode-map' keeps the banner accurate."
+  (concat
+   (propertize " maf-edit " 'face '(:inherit warning :inverse-video t))
+   (substitute-command-keys
+    (concat " \\<maf-edit-mode-map>\\[maf-edit-commit] commit"
+            " · \\[maf-edit-newline] newline"
+            " · \\[maf-edit-discard] discard"))))
+
 (defun maf-edit--enter ()
   "Make the calc buffer editable: the body of turning `maf-edit-mode' on."
   (unless (derived-mode-p 'calc-mode)
@@ -610,7 +621,10 @@ editing state go on `maf-edit-mode-map'."
                   :maf-mode (and (boundp 'maf-mode) maf-mode)
                   :hl (and (boundp 'maf-hl-mode) maf-hl-mode)
                   :visual visual-line-mode
-                  :electric electric-indent-mode))
+                  :electric electric-indent-mode
+                  :header header-line-format))
+      ;; The visual indicator that the buffer is in edit state.
+      (setq header-line-format (maf-edit--header-line))
       ;; RET must insert a bare newline; electric indentation would
       ;; salt new lines with stray leading whitespace.
       (electric-indent-local-mode -1)
@@ -654,7 +668,8 @@ pushes after."
     ;; it, so a manually-off highlighter must be re-asserted off.
     (maf-hl-mode (if (plist-get maf-edit--saved :hl) 1 -1))
     (electric-indent-local-mode (if (plist-get maf-edit--saved :electric) 1 -1))
-    (setq buffer-undo-list (plist-get maf-edit--saved :undo)
+    (setq header-line-format (plist-get maf-edit--saved :header)
+          buffer-undo-list (plist-get maf-edit--saved :undo)
           buffer-read-only t
           maf-edit--saved nil)
     (calc-refresh)
