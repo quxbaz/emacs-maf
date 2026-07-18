@@ -64,9 +64,26 @@ Decisions to make deliberately, not by default:
   the *defining* file).
 - Gate with warnings as errors and clean up:
   `emacs --batch -L src -L core -L debug --eval '(setq byte-compile-error-on-warn t)' -f batch-byte-compile FILE` then `rm -f` the `.elc`s.
-- Docstrings: single space after periods; describe the contextual
-  behavior (what it does at home / subexpr / equation); no provenance
-  mentions.
+- Docstrings follow the settled format — session help for the user,
+  not exhaustive reference (model example: `mafcmd-frac` in
+  `src/stack.el`). In order:
+  1. One-sentence description.
+  2. Simple example: `input  =>  output`, in calc display notation.
+  3. The same description + example pair for each declared
+     Inverse/Hyperbolic variant.
+  4. Longer description only if needed: prefix args, degenerate
+     policy, structural guarantees; contextual targeting compressed
+     to one "Point picks the target as usual: a sub-formula at point,
+     each side of an equation, the top entry at home." sentence.
+  5. More examples showing fuller usage — not for complexity's sake:
+     prefix args as the keys pressed (`C-u 3 3.14159  =>  22:7`),
+     surprising degenerate cases as annotated lines
+     (`6 x + 2  =>  6 x + 2   (no floats: unchanged)`), point marked
+     with `|` in contextual examples (`0.5 y + 0.25| x`).
+  Every example output is verified in the live instance before it
+  goes in. No key names in prose (describe-key shows bindings;
+  sibling commands quoted as `mafcmd-float' become links). Single
+  space after periods; no provenance mentions.
 
 ## 5. Load and verify live
 
