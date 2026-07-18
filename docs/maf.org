@@ -19,6 +19,7 @@
   - [ ] Port my/calc/* features one-by-one.
 
 * IN-PROGRESS Todo
+# NOW
 # LATER
 ** TODO Snapshot after every commit. Navigate through history in history
    navigation pane.
