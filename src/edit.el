@@ -622,7 +622,11 @@ Built with `substitute-command-keys' so rebinding the gestures in
                   :hl (and (boundp 'maf-hl-mode) maf-hl-mode)
                   :visual visual-line-mode
                   :electric electric-indent-mode
+                  :pair electric-pair-mode
                   :header header-line-format))
+      ;; Typed delimiters arrive as pairs; unbalanced states are still
+      ;; reachable by deletion, and commit diagnoses them.
+      (electric-pair-local-mode 1)
       ;; The visual indicator that the buffer is in edit state.
       (setq header-line-format (maf-edit--header-line))
       ;; RET must insert a bare newline; electric indentation would
@@ -668,6 +672,7 @@ pushes after."
     ;; it, so a manually-off highlighter must be re-asserted off.
     (maf-hl-mode (if (plist-get maf-edit--saved :hl) 1 -1))
     (electric-indent-local-mode (if (plist-get maf-edit--saved :electric) 1 -1))
+    (electric-pair-local-mode (if (plist-get maf-edit--saved :pair) 1 -1))
     (setq header-line-format (plist-get maf-edit--saved :header)
           buffer-undo-list (plist-get maf-edit--saved :undo)
           buffer-read-only t
