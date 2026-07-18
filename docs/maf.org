@@ -26,7 +26,7 @@
     - what else?
 ** Later
    - [ ] Snapshot after every commit. Navigate through history in history
-     navigator.
+     navigation pane.
    - [ ] k k (my/calc-evaluate N) should work on fractions and division.
    - [ ] g i (my/calc-graph-quick-with-range) interval form a:b should work with spaces 'a b'
    - [ ] Full formula buffer should have "recents" section.
