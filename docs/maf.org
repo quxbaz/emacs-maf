@@ -21,8 +21,11 @@
    - [ ] maf-edit: indent on newline and stamp prefix
 
 * IN-PROGRESS Todo
-  - [ ] maf: Write docstrings with descriptions and examples. Settle on a
-    docstring format convention.
+  - [ ] maf: For custom commands, write docstrings with descriptions and examples. Settle on a
+    docstring convention.
+    - description
+    - examples
+    - what else?
 ** Later
    - [ ] Snapshot after every commit. Navigate through history in history
      navigator.
