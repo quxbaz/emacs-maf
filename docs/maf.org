@@ -18,7 +18,6 @@
   - [ ] Port my/calc/* features one-by-one.
 
 * IN-PROGRESS Todo
-  - [ ] maf-edit: indent on newline and stamp prefix
 ** Later
    - [ ] Snapshot after every commit. Navigate through history in history
      navigation pane.
