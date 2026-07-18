@@ -39,6 +39,15 @@
      (starting from empty) edit-mode entries. The purpose of this is to avoid the
      pattern of having to duplicate or store an entry that you might want to
      reuse or recall in case you screw up a calculation.
+   - [ ] Set place/point after (maf--commit)
+     - If possible, when (eq :target 'subexpr), stick point to the same symbol
+       prior to the operation.
+   - [ ] Implement options
+      - [ ] simplification
+      - [ ] support-mapping
+      - [ ] force-line
+      - [ ] defcmd may sometimes need the full entry and may also need to write
+        to the full entry, not just its expr. How to handle this elegantly?
 
 * Bugs
 ** BUG (my/calc-backward-noun) and (my/calc-forward-noun) should ignore line prefix.
