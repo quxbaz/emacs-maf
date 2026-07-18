@@ -27,7 +27,7 @@ default `duo`:
 ```sh
 cd /home/david/lab/emacs-maf && \
   MAF_SERVER_NAME=duo \
-  nohup emacs -title duo -l debug/maf-dev-init.el >/dev/null 2>&1 &
+  nohup emacs -title duo -l agent/emacs-init.el >/dev/null 2>&1 &
 ```
 
 Properties, all deliberate:
@@ -41,8 +41,11 @@ Properties, all deliberate:
   (`emacs_d-1`); never test there, and never kill it. Other sessions'
   instances are equally off-limits. Verify socket ownership with `lsof`
   before touching anything.
-- `debug/maf-dev-init.el` loads the repo's `maf.el` fresh and opens calc
-  with `maf-mode` (and therefore the mafcmd keymap) enabled.
+- `agent/emacs-init.el` only makes joint agent/human operation
+  work: it names and starts the private server. The project-level setup
+  — loading `maf.el`, opening calc with `maf-mode` (and therefore the
+  mafcmd keymap) enabled, seeding, window layout — comes from
+  `project-init.el`, which the user's config loads.
 
 ## Working loop
 

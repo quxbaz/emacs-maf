@@ -21,7 +21,7 @@ If it is not, launch it from the repo root:
 
 ```sh
 MAF_SERVER_NAME='#emacs' \
-  nohup emacs -title '#emacs' -l debug/maf-dev-init.el >/dev/null 2>&1 &
+  nohup emacs -title '#emacs' -l agent/emacs-init.el >/dev/null 2>&1 &
 ```
 
 Full workflow, properties, and pitfalls: `docs/memory/dev-instance.md`.

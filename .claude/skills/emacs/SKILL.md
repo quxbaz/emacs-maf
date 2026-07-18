@@ -36,7 +36,7 @@ worktrees, each run their own instance side by side.
    ```sh
    cd <repo-root> && \
      MAF_SERVER_NAME=<name> \
-     nohup emacs -title <name> -l debug/maf-dev-init.el >/dev/null 2>&1 &
+     nohup emacs -title <name> -l agent/emacs-init.el >/dev/null 2>&1 &
    ```
 
 3. Confirm it responds, then tell the user the session is ready and
