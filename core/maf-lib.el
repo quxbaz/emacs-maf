@@ -183,8 +183,9 @@ the command ran (see `maf--undo-redo').")
 
 (defun maf--undo-record-cmd-point (snapshot)
   "Record SNAPSHOT as the pre-command point of the just-finished command.
-Called at the end of every defcmd, once its undo group is final (after
-digit-entry amalgamation) and point is restored."
+Called at the end of every defcmd — once its undo group is final
+(after digit-entry amalgamation) and point is restored — and by the
+plain stack commands after their `calc-wrapper' completes."
   (setq maf-undo--cmd-point (list calc-undo-list (point) snapshot)))
 
 (defvar maf--digit-entry-handoff nil

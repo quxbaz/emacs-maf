@@ -313,14 +313,18 @@ entries by one, as calc's TAB does."
   (interactive "P")
   (maf--with-calc-buffer
     (if n
-        (maf--preserve-point (calc-roll-down n))
+        (let ((snapshot (maf--point-snapshot)))
+          (maf--preserve-point (calc-roll-down n))
+          ;; A single undo reverts point along with the stack.
+          (maf--undo-record-cmd-point snapshot))
       (let ((m (max (calc-locate-cursor-element (point)) 1)))
         (when (< m (calc-stack-size))
           ;; Point is a screen position here, not a formula position:
           ;; restore it by line and column, not buffer offset — the two
           ;; lines change length, so `maf--preserve-point's pos-first
           ;; restore would land unpredictably.
-          (let ((home (maf--at-home-p))
+          (let ((snapshot (maf--point-snapshot))
+                (home (maf--at-home-p))
                 (line (line-number-at-pos))
                 (col  (current-column))
                 (eol  (eolp)))
@@ -338,7 +342,9 @@ entries by one, as calc's TAB does."
               (goto-char (point-min))
               (forward-line (1- line))
               ;; move-to-column stops at end of line, clamping for free.
-              (if eol (end-of-line) (move-to-column col)))))))))
+              (if eol (end-of-line) (move-to-column col)))
+            ;; A single undo reverts point along with the stack.
+            (maf--undo-record-cmd-point snapshot)))))))
 
 (defun maf-equal-to ()
   "Join two adjacent stack entries into one equation, contextually.
@@ -388,17 +394,20 @@ error with fewer than two entries."
                                                 1 (list nil))
                    (calc-pop-push-record-list 2 prefix (list result)
                                               m (list nil))))))))
-      (if (or keep (= level 0))
-          ;; Nothing under point moved (keep) or point is at home:
-          ;; keeping it in place is the right restore.
-          (maf--preserve-point (funcall commit))
-        ;; The equation takes the pair's upper line while point was on
-        ;; the lower one, so a line-based restore would drift onto the
-        ;; entry below; follow the equation instead, landing at its EOL
-        ;; — the entry margin, ready for further entry commands.
-        (funcall commit)
-        (calc-cursor-stack-index m)
-        (end-of-line)))))
+      (let ((snapshot (maf--point-snapshot)))
+        (if (or keep (= level 0))
+            ;; Nothing under point moved (keep) or point is at home:
+            ;; keeping it in place is the right restore.
+            (maf--preserve-point (funcall commit))
+          ;; The equation takes the pair's upper line while point was on
+          ;; the lower one, so a line-based restore would drift onto the
+          ;; entry below; follow the equation instead, landing at its EOL
+          ;; — the entry margin, ready for further entry commands.
+          (funcall commit)
+          (calc-cursor-stack-index m)
+          (end-of-line))
+        ;; A single undo reverts point along with the stack.
+        (maf--undo-record-cmd-point snapshot)))))
 
 (defun maf-del ()
   "Delete the target at point: selection, sub-formula, entry, or top.
@@ -422,10 +431,15 @@ an empty stack.
   (maf--with-calc-buffer
     (when (zerop (calc-stack-size))
       (user-error "Stack is empty"))
-    (maf--preserve-point
-      (if (maf--at-home-p)
-          (calc-pop 1)
-        (calc-del-selection)))))
+    (let ((snapshot (maf--point-snapshot)))
+      (maf--preserve-point
+        (if (maf--at-home-p)
+            (calc-pop 1)
+          (calc-del-selection)))
+      ;; A deletion that shortens the line clamps point to EOL; record
+      ;; the pre-command placement so a single undo reverts point along
+      ;; with the stack instead of preserving the clamped spot.
+      (maf--undo-record-cmd-point snapshot))))
 
 (defvar maf-undo--chain-point nil
   "Point snapshot saved by the last `maf-undo'/`maf-redo' in a chain.
