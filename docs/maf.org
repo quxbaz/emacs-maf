@@ -20,6 +20,7 @@
 
 * IN-PROGRESS Todo
 # NOW
+** TODO Port (my/calc-kill)
 # LATER
 ** TODO Snapshot after every commit. Navigate through history in history
    navigation pane.
