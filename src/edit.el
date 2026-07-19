@@ -40,6 +40,7 @@
 ;; Defined in lazily-loaded calc modules; calc-ext's autoload registry
 ;; resolves them at runtime, but the byte compiler needs declarations.
 (declare-function math-read-expr "calc-aent")
+(declare-function calc-locate-cursor-element "calc-yank")
 (declare-function maf-mode "maf")
 (declare-function maf-hl-mode "maf-hl")
 
@@ -700,6 +701,16 @@ On: commit — parse the buffer back to the stack (`maf-edit-commit')."
       (maf-edit-commit)
     (maf-edit-mode 1)))
 
+(defun maf-edit--enter-for-add ()
+  "Enter maf-edit for a quick-add gesture, stashing the return point.
+The pre-edit point snapshot goes into `maf-edit--return', so commit
+and discard alike return point to where it was before the gesture."
+  (when maf-edit-mode
+    (user-error "maf-edit is already active"))
+  (let ((snapshot (maf--point-snapshot)))
+    (maf-edit-mode 1)
+    (setq maf-edit--return snapshot)))
+
 (defun maf-edit-add-entry ()
   "Enter maf-edit with a fresh entry started at the bottom of the stack.
 The new entry opens as a blank numbered line just above the dot, point
@@ -708,11 +719,7 @@ empty stack. When the session ends, commit and discard alike, point
 returns to where it was before this command ran instead of staying in
 the edited text."
   (interactive)
-  (when maf-edit-mode
-    (user-error "maf-edit is already active"))
-  (let ((snapshot (maf--point-snapshot)))
-    (maf-edit-mode 1)
-    (setq maf-edit--return snapshot))
+  (maf-edit--enter-for-add)
   (goto-char (overlay-start maf-edit--dot))
   (let ((maf-edit--inhibit t)
         (inhibit-modification-hooks t)
@@ -721,12 +728,42 @@ the edited text."
     ;; way `maf-edit-newline' does for a balanced newline: a temporary
     ;; machine-owned run keeps the zero-length entry out of
     ;; `maf-edit--drop-empty's reach until the repair renumbers it.
+    ;; (Insertion at the dot's start lands inside the dot overlay;
+    ;; `maf-edit--heal-dot' re-walls it. Entry overlays have no such
+    ;; healing, which is why `maf-edit-add-entry-below' rides the
+    ;; newline gesture instead.)
     (insert "\n")
     (goto-char bol)
     (insert maf-edit--pad-string)
     (maf-edit--make-entry bol (+ bol maf-edit--prefix-width))
     (maf-edit--repair)
     (goto-char (+ bol (maf-edit--leading-prefix-run bol)))))
+
+(defun maf-edit-add-entry-below ()
+  "Enter maf-edit with a fresh entry opened below the entry at point.
+
+  2:  a + b|        3:  a + b
+  1:  c        =>   2+  |
+                    1:  c
+
+The new entry's blank line opens directly below the entry at point's
+line and the levels renumber around it, so typing and committing
+inserts mid-stack. At home, or on an empty stack, it opens at the
+bottom — `maf-edit-add-entry's gesture. When the session ends, commit
+and discard alike, point returns to where it was before this command
+ran."
+  (interactive)
+  (let ((m (max (calc-locate-cursor-element (point)) 1)))
+    (if (zerop (calc-stack-size))
+        (maf-edit-add-entry)
+      (maf-edit--enter-for-add)
+      ;; End of entry M's last line: the character before the next
+      ;; index line's start. From there the newline gesture opens the
+      ;; blank entry through the classify/repair machinery, exactly as
+      ;; a hand-typed newline would.
+      (goto-char (1- (save-excursion (calc-cursor-stack-index (1- m))
+                                     (point))))
+      (maf-edit-newline))))
 
 (defun maf-edit-commit ()
   "Parse the edited buffer and commit it to the stack, leaving maf-edit.

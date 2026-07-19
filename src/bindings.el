@@ -32,6 +32,8 @@
 ;; still runs it.
 (define-key maf-mode-map (kbd "RET") #'maf-edit)
 (define-key maf-mode-map (kbd "C-<return>") #'maf-edit-add-entry)
+;; S-RET opens the new entry below the entry at point instead.
+(define-key maf-mode-map (kbd "S-<return>") #'maf-edit-add-entry-below)
 (define-key maf-mode-map (kbd "U") #'maf-undo)
 (define-key maf-mode-map (kbd "D") #'maf-redo)
 ;; Catch every key that dispatches to undo/redo, so point handling
