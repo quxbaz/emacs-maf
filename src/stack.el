@@ -23,6 +23,7 @@
 (declare-function calc-roll-down "calc-misc")
 (declare-function calc-locate-cursor-element "calc-yank")
 (declare-function calc-del-selection "calc-sel")
+(declare-function calc-change-mode "calc-mode")
 
 (maf-defcmd mafcmd-factor-by (expr arg commit)
   "Factor the resolved expression by the top-of-stack argument.
@@ -359,6 +360,44 @@ usual: a sub-formula at point, the whole relation on a relation entry
     (commit (if (and to (not (and (eq op 'calcFunc-log) (= (length expr) 2))))
                 (cons to (cdr expr))
               expr))))
+
+(defvar maf--simplify-restore 'alg
+  "Simplify mode `maf-toggle-simplify' restores when toggling back on.
+Captured from `calc-simplify-mode' as simplification is toggled off;
+algebraic — calc's default — until the first toggle.")
+
+(defun maf-toggle-simplify ()
+  "Toggle automatic simplification off and back on.
+
+Off, results commit structurally: nothing evaluates, collects, or
+reorders, so 2 + 3 stays 2 + 3. Toggling back on restores the
+simplify mode that was in effect when simplification was turned off —
+algebraic, calc's default, unless another mode was active. Point
+stays put. The echo area reports each switch; the mode line shows
+calc's usual simplify-mode indicator."
+  (interactive)
+  (maf--with-calc-buffer
+    (maf--preserve-point
+      (calc-wrapper
+       (if (eq calc-simplify-mode 'none)
+           (progn
+             (calc-change-mode 'calc-simplify-mode maf--simplify-restore)
+             ;; Each capture is consumed by its restore, so entering
+             ;; none by hand later toggles back to the default instead
+             ;; of resurrecting a stale capture.
+             (setq maf--simplify-restore 'alg)
+             (message "Simplification restored: %s"
+                      (alist-get calc-simplify-mode
+                                 '((nil . "basic only")
+                                   (alg . "algebraic")
+                                   (num . "numeric arguments only")
+                                   (binary . "binary")
+                                   (ext . "extended algebraic")
+                                   (units . "units"))
+                                 "algebraic")))
+         (setq maf--simplify-restore calc-simplify-mode)
+         (calc-change-mode 'calc-simplify-mode 'none)
+         (message "Simplification is disabled"))))))
 
 (defun maf-swap-up (n)
   "Swap the stack entry at point with the one above it on screen.

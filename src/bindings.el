@@ -67,9 +67,15 @@
 (define-key maf-mode-map (kbd "=") #'maf-equal-to)
 (define-key maf-mode-map (kbd "e") #'maf-equal-to)
 
-;; The digit-entry starters, mirroring calc-mode-map's calcDigit-start set.
+;; The simplification toggle takes @ from the digit-entry starters
+;; below; inside digit entry @ still means degrees, since the entry
+;; minibuffer is calc's own (cf. e and maf-equal-to).
+(define-key maf-mode-map (kbd "@") #'maf-toggle-simplify)
+
+;; The digit-entry starters, mirroring calc-mode-map's calcDigit-start
+;; set minus @, which maf-toggle-simplify shadows.
 (mapc (lambda (x)
         (define-key maf-mode-map (char-to-string x) #'maf-digit-start))
-      "_0123456789.#@")
+      "_0123456789.#")
 
 (provide 'maf-bindings)
