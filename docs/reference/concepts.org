@@ -40,11 +40,12 @@ schema documented at the top of [[file:../../core/maf-resolve.el][maf-resolve.el
 
 * The target system
 
-Resolve dispatches to one of five /targets/ based on where point is and
+Resolve dispatches to one of six /targets/ based on where point is and
 what calc state is active. In priority order:
 
 | Target    | When it fires                                              | Operates on                         |
 |-----------+------------------------------------------------------------+-------------------------------------|
+| region    | An active Emacs region lies within one entry               | The run of chain terms (or the sub-formula) the region covers |
 | selection | An active calc selection exists anywhere on the stack       | The selected sub-formula            |
 | home      | Point is past the last stack entry (at or below =.=)        | The top stack entry                 |
 | subexpr   | Point is inside an entry's formula text                     | The sub-formula at cursor           |
@@ -52,7 +53,9 @@ what calc state is active. In priority order:
 | entry     | Point is at line-prefix or EOL of a stack entry             | The whole formula                   |
 
 The cascade lives in =maf--resolve-context=. The predicates live in
-[[file:../../core/maf-lib.el][maf-lib.el]] (=maf--at-*-p=) and [[file:../../core/maf-sel.el][maf-sel.el]] (=maf--sel-any-p=).
+[[file:../../core/maf-lib.el][maf-lib.el]] (=maf--at-*-p=) and [[file:../../core/maf-sel.el][maf-sel.el]] (=maf--sel-any-p=); region
+is just =use-region-p= — the most deliberate gesture there is, so it
+outranks even an explicit calc selection.
 
 Each target has a dedicated =maf--resolve-target-X= function that
 produces the target-specific portion of the context alist.
@@ -60,6 +63,73 @@ produces the target-specific portion of the context alist.
 The equation target also fires by /conversion/: when home, entry, or
 subexpr resolves an =:expr= that is itself a relation, the context is
 rewritten to equation after the fact (see [[*Relation mapping][Relation mapping]]).
+
+The region target frequently resolves /as/ another target: whenever the
+region denotes something a plain subexpr could express, it collapses
+into a subexpr context and only the pointing gesture was new (see
+[[*The region target][The region target]]).
+
+* The region target
+
+Calc stores a sum as a left-nested binary tree and a product as a
+right-nested one — =a + b + c= is =((a + b) + c)=. A contiguous run of
+terms like =b + c= is therefore not a node, and calc's manual declares
+it unselectable ("there is no way to select the =b - c + d= portion").
+The region target fills exactly that gap: an active region resolves to
+the run of chain terms it covers, and every defcmd works on it with no
+per-command code.
+
+The region is never parsed as text. Its two endpoints map into the
+entry's flat rendering ([[file:../../core/maf-comp.el][core/maf-comp.el]]), and the innermost
+sub-formula containing both — the /container/ — decides what the
+gesture means:
+
+- *Not a chain* (=+=/=-= or =*=) → resolve as subexpr on the container
+  itself: the smallest sub-formula defined by two points, the same
+  semantics as calc's =j a=.
+- *A chain* → snap the region outward to the run of terms it touches.
+  Operator glyphs are connective tissue: a trailing =+= is absorbed,
+  and a region covering /only/ an operator pulls in both neighbors.
+  Then:
+  - run = the whole chain → subexpr on the container;
+  - run = one term → subexpr on that term;
+  - anything else → a synthesized *region* context.
+
+Only the synthesized case is new machinery; note that a left-anchored
+sum run (=a + b= in =a + b + c=) or right-anchored product run /is/ a
+real subtree and never reaches it.
+
+** Runs and signs
+
+[[file:../../core/maf-chain.el][core/maf-chain.el]] views a chain as its rendered term list — each term
+paired with the operator glyph in front of it. Only the spine is
+flattened (left for sums, right for products, matching calc's reader);
+an off-spine sub-chain renders parenthesized, reads as a unit, and
+stays one term.
+
+A run's =:expr= is the fold of its covered terms, /each keeping its
+chain sign/, so the fold is exactly the value the run contributes to
+the chain. Selecting =4 x - 12= in =a - 4 x - 12= yields
+=-(4 x) - 12= — including the leading term's sign, whose glyph sits
+just outside the region — and that is what keeps the splice
+value-preserving: the sign is structural, not textual.
+
+** Region commit
+
+A synthesized run has no cons to =eq=-splice, but its container does:
+commit rebuilds the chain — the untouched terms keep their original
+conses, so their text re-renders identically — with the body's result
+joining as one =+= (or =*=) term, then splices the rebuilt chain at
+=:chain-ref= through the ordinary eq-based path. A result that is
+itself a same-kind chain is absorbed as /terms/ rather than spliced as
+a parenthesized unit (commuting =a b= in =a b c= gives =b a c=, not
+=(b a) c=); the absorption only reassociates.
+
+Resolving consumes the gesture — the mark deactivates — while a
+resolve error leaves the region active for adjustment. Version-1 scope
+is =+=/=-= and =*= chains; =/= is excluded because its textual and
+structural readings diverge (=b / c= inside =a / b / c= contributes
+=1/(b c)=, not =b/c=).
 
 * The context alist
 
@@ -103,9 +173,10 @@ resolves to:
 
 Two consumers read it. The macro-generated command wires the body:
 
-- =:target= — a symbol: =home=, =selection=, =subexpr=, =equation=, or
-  =entry=. Selects the execution shape (single body run vs once per
-  side); commit also dispatches on it to pick the splice path.
+- =:target= — a symbol: =region=, =home=, =selection=, =subexpr=,
+  =equation=, or =entry=. Selects the execution shape (single body run
+  vs once per side); commit also dispatches on it to pick the splice
+  path.
 - =:expr= — the clean operand, a normalized calc formula, bound as the
   body's EXPR.
 - =:arg= — the second operand for binary commands, a normalized calc
@@ -127,6 +198,10 @@ Two consumers read it. The macro-generated command wires the body:
   commit fetches the full formula for splicing.
 - =:expr-ref= — the encased cons cell for the eq-based splice.
   Selection and subexpr only (see [[*Encasing][Encasing]]).
+- =:chain-ref=, =:chain-kind=, =:pre-terms=, =:post-terms= — region
+  target only: the chain cons commit splices the rebuilt chain at, its
+  kind (=sum= or =prod=), and the untouched terms on each side of the
+  run (see [[*The region target][The region target]]).
 - =:reselect= — boolean: whether the committed result becomes the new
   selection.
 - =:prefix= — string: trail label recorded with the operation.
@@ -203,6 +278,11 @@ Commands whose body consumes or produces relations whole (solve,
 mapeq, the relation builders) opt out with =:map -1=, which also
 disables the direct equation branch of the cascade.
 
+Synthesized region contexts are exempt by construction — a run of
+chain terms is never a relation. Degenerate regions resolve /as/
+subexpr, though, so a region snapped to a whole relation node maps per
+side like any subexpr would.
+
 * Encasing
 
 Calc's mechanism for distinguishing duplicate atoms by =eq=.
@@ -252,6 +332,11 @@ They're only different for *selection* and *subexpr* (the targets that
 splice into a parent formula). =home= and =entry= don't have =:expr-ref=
 — they operate on whole entries, no sub-formula targeting needed.
 
+A synthesized *region* run has an =:expr= but no =:expr-ref= at all:
+the run is not a cons in the entry, so there is nothing to =eq=-match.
+Commit instead rebuilds the containing chain and splices it at
+=:chain-ref= — which /is/ a real node — through the same eq-based path.
+
 * Reselect
 
 When commit pushes the new entry, should the result be re-selected?
@@ -260,6 +345,9 @@ When commit pushes the new entry, should the result be re-selected?
   selection; preserve their intent by re-selecting the new sub-formula.
 - *subexpr* target: no (=:reselect nil=). User just had a cursor
   position; no explicit selection to preserve.
+- *region* target: no (=:reselect nil=). The gesture is transient —
+  the mark deactivates at resolve — and there is no prior calc
+  selection to preserve.
 - *home / entry / equation*: not applicable (no sub-formula selection).
 
 Commit reads =:reselect= and passes =val-encased= (or nil) as the SELS
@@ -279,6 +367,7 @@ accordingly:
 | home      | Pop arity entries, push result at top             | Push result at top, no pop        |
 | selection | Replace selected entry in place                   | Push result on top, leave entry   |
 | subexpr   | Replace entry in place (sub-formula spliced)      | Push spliced result on top        |
+| region    | Replace entry in place (chain rebuilt)            | Push rebuilt result on top        |
 | entry     | Replace entry in place                            | Push result on top                |
 
 In schema terms, =:commit-m=, =:commit-n=, and =:post-pop= encode the
@@ -323,9 +412,9 @@ entry serves as =:arg=.
 
 This creates a self-reference problem when the target itself is the top:
 
-- *selection / subexpr* — reject. If the selected sub-formula is in the
-  top entry, the arg would be the entry containing the sub-formula.
-  No coherent commit semantic. Resolve errors out.
+- *selection / subexpr / region* — reject. If the selected sub-formula
+  is in the top entry, the arg would be the entry containing the
+  sub-formula. No coherent commit semantic. Resolve errors out.
 - *entry* — /ergonomic shift/. If point is at the line-margin of the top
   entry and arity is binary, =:m= is shifted from 1 to 2. The top
   becomes the arg, the entry below becomes the target. User doesn't
@@ -366,6 +455,7 @@ calc's own (=calc-digit-map=), so the in-entry keys — =e=, =_=, =:=,
 |-------------------------+-------------------------------------------------------------|
 | [[file:../../maf.el][maf.el]]                  | Package entry point, =maf-mode=, load order                 |
 | [[file:../../core/maf-comp.el][core/maf-comp.el]]    | Flat-rendering coordinates: map formula nodes and point to entry text |
+| [[file:../../core/maf-chain.el][core/maf-chain.el]]   | Chain term lists: flatten, fold, and rebuild =+=/=-= and =*= spines |
 | [[file:../../core/maf-lib.el][core/maf-lib.el]]     | Generic predicates and utilities (find calc buffer, at-*-p, point snapshot/restore) |
 | [[file:../../core/maf-sel.el][core/maf-sel.el]]     | Selection-state introspection (any-selection, effective-m)  |
 | [[file:../../core/maf-resolve.el][core/maf-resolve.el]] | Context resolution + target dispatch                        |
@@ -383,9 +473,10 @@ calc's own (=calc-digit-map=), so the in-entry keys — =e=, =_=, =:=,
 | [[file:../../debug/maf-dev-init.el][debug/maf-dev-init.el]]   | Init file for the dedicated =maf-dev= instance              |
 | [[file:../../tests/][tests/]]                  | Step tests; a file passes when no step errors               |
 
-Load order in =maf.el=: =comp= → =lib= → =sel= → =hl= → =step= →
-=hl-verify= → =resolve= → =commit= → =defcmd= → =cmds= → =math= →
-=stack= → =bindings=. Each layer depends only on earlier ones.
+Load order in =maf.el=: =comp= → =chain= → =lib= → =sel= → =hl= →
+=step= → =hl-verify= → =resolve= → =commit= → =defcmd= → =cmds= →
+=math= → =stack= → =bindings=. Each layer depends only on earlier
+ones.
 
 * See also
 
