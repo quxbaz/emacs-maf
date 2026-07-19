@@ -11,6 +11,32 @@
   :group 'calc
   :prefix "maf-")
 
+;;; Contextual commands (stack.el)
+
+(defcustom maf-toggle-op-pairs
+  '((+ . -)
+    (* . /)
+    (calcFunc-ln . calcFunc-exp)
+    (calcFunc-log . ^)
+    (calcFunc-lt . calcFunc-gt)
+    (calcFunc-leq . calcFunc-geq)
+    (calcFunc-eq . calcFunc-neq)
+    ;; Trig pairs with its inverse, like ln/exp. Upstream has no
+    ;; arcsec/arccsc/arccot, so sec/csc/cot stay unpaired.
+    (calcFunc-sin . calcFunc-arcsin)
+    (calcFunc-cos . calcFunc-arccos)
+    (calcFunc-tan . calcFunc-arctan)
+    (calcFunc-sinh . calcFunc-arcsinh)
+    (calcFunc-cosh . calcFunc-arccosh)
+    (calcFunc-tanh . calcFunc-arctanh))
+  "Operator pairs toggled by `mafcmd-toggle-op'.
+Each pair toggles in both directions. Operands stay in place; only the
+operator changes, so log(a, b) toggles to a^b and back, and a < b flips
+to a > b without touching either side. Operators are calc's internal
+symbols: +, -, *, /, ^, neg, or a calcFunc- name."
+  :type '(alist :key-type symbol :value-type symbol)
+  :group 'maf)
+
 ;;; Stack persistence (persist.el)
 
 (defcustom maf-stack-directory (locate-user-emacs-file "maf-stacks/")
