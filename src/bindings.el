@@ -31,12 +31,13 @@
 (define-key maf-mode-map (kbd "S-<up>") #'mafcmd-toggle-op)
 (define-key maf-mode-map (kbd "S-<down>") #'mafcmd-toggle-op)
 (define-key maf-mode-map (kbd ",") #'maf-quick-variable)
-;; RET toggles in-place stack editing: enter maf-edit, and inside it
-;; RET (maf-edit-mode-map) commits — one key edits and commits. C-RET
-;; enters with a fresh entry started at the bottom, returning point
-;; when the session ends. Shadows one of calc-enter's two keys; SPC
-;; still runs it.
-(define-key maf-mode-map (kbd "RET") #'maf-edit)
+;; SPC toggles in-place stack editing: enter maf-edit, and inside it
+;; RET (maf-edit-mode-map) commits. C-RET enters with a fresh entry
+;; started at the bottom, returning point when the session ends.
+;; Shadows one of calc-enter's two keys; RET still runs it. Inside
+;; maf-edit SPC is self-inserting, since the edit text map replaces
+;; this one.
+(define-key maf-mode-map (kbd "SPC") #'maf-edit)
 (define-key maf-mode-map (kbd "C-<return>") #'maf-edit-add-entry)
 ;; S-RET opens the new entry below the entry at point instead.
 (define-key maf-mode-map (kbd "S-<return>") #'maf-edit-add-entry-below)
