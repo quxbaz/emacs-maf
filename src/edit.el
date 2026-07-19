@@ -678,13 +678,32 @@ Built with `substitute-command-keys' so rebinding the gestures in
       (message (substitute-command-keys
                 "maf-edit: editing stack — \\<maf-edit-mode-map>\\[maf-edit-commit] commits, \\[maf-edit-discard] discards"))))
 
+(defun maf-edit--point-snapshot ()
+  "Capture point in the edited buffer, as `maf--point-snapshot' does.
+That function's affinities resolve point against calc-stack, which the
+edited text no longer reflects — on a grown stack an entry line
+misfiles as home and the restore no-ops. Here home is point on or
+below the dot overlay's line, and the prefix test reads the
+machine-owned text property."
+  `((:pos      . ,(point))
+    (:line     . ,(line-number-at-pos))
+    (:col      . ,(current-column))
+    (:affinity . ,(cond ((>= (point)
+                             (save-excursion
+                               (goto-char (overlay-start maf-edit--dot))
+                               (line-beginning-position)))
+                         'home)
+                        ((eolp) 'eol)
+                        ((get-text-property (point) 'maf-edit-prefix)
+                         'bol)))))
+
 (defun maf-edit--exit ()
   "Restore the calc buffer: the body of turning `maf-edit-mode' off.
 Drops all editing state and re-renders from the (untouched) stack —
 discard semantics; `maf-edit-commit' parses before getting here and
 pushes after. A quick-add session (`maf-edit--return') restores the
 pre-edit point instead of the in-edit one."
-  (let ((snapshot (or maf-edit--return (maf--point-snapshot))))
+  (let ((snapshot (or maf-edit--return (maf-edit--point-snapshot))))
     (setq maf-edit--return nil)
     (remove-hook 'after-change-functions #'maf-edit--after-change t)
     (remove-hook 'post-command-hook #'maf-edit--post-command t)
@@ -770,14 +789,21 @@ the edited text."
 The new entry's blank line opens directly below the entry at point's
 line and the levels renumber around it, so typing and committing
 inserts mid-stack. At home, or on an empty stack, it opens at the
-bottom — `maf-edit-add-entry's gesture. When the session ends, commit
-and discard alike, point returns to where it was before this command
-ran."
+bottom — `maf-edit-add-entry's opening gesture. Unlike that command,
+when the session ends point stays with the edited text — after a
+commit it rests on the new entry — rather than returning to where it
+was before this command ran."
   (interactive)
   (let ((m (max (calc-locate-cursor-element (point)) 1)))
     (if (zerop (calc-stack-size))
-        (maf-edit-add-entry)
-      (maf-edit--enter-for-add)
+        (progn
+          (maf-edit-add-entry)
+          ;; This gesture keeps point with the edited text: drop the
+          ;; return snapshot the delegated opener stashed.
+          (setq maf-edit--return nil))
+      (when maf-edit-mode
+        (user-error "maf-edit is already active"))
+      (maf-edit-mode 1)
       ;; End of entry M's last line: the character before the next
       ;; index line's start. From there the newline gesture opens the
       ;; blank entry through the classify/repair machinery, exactly as
@@ -829,7 +855,7 @@ commit is one undo group."
             sels (nreverse sels))
       ;; A quick-add session restores the pre-edit point; read it
       ;; before the mode exit consumes it.
-      (let ((snapshot (or maf-edit--return (maf--point-snapshot))))
+      (let ((snapshot (or maf-edit--return (maf-edit--point-snapshot))))
         ;; Turning the mode off restores the buffer and re-renders from
         ;; the unchanged stack — required before the pop-push, which
         ;; edits the buffer by entry heights the edited text no longer
