@@ -431,13 +431,32 @@ inserts WANT at the line beginning."
     ;; line and floods the undo history.
     (unless (and (string= have (substring-no-properties want))
                  (get-text-property bol 'maf-edit-prefix))
-      (maf-edit--strip-prefix bol (line-end-position))
+      ;; Insert the new run before deleting the old one. The reverse
+      ;; order relocates every marker sitting on the first content
+      ;; column down to bol — point-preserving wrappers around an edit
+      ;; (kill-region's extraction, save-excursion in a command) then
+      ;; restore point into the front-sticky run, and redisplay bounces
+      ;; it to the previous line. Insert-then-delete keeps those
+      ;; markers on the content.
       (save-excursion
         (goto-char bol)
+        (insert want)
+        (maf-edit--strip-prefix (point) (line-end-position))
         (skip-chars-forward " " (min (line-end-position)
-                                     (+ bol maf-edit--prefix-width)))
-        (delete-region bol (point))
-        (insert want)))))
+                                     (+ (point) maf-edit--prefix-width)))
+        (delete-region (+ bol (length want)) (point))))))
+
+(defun maf-edit--snap-point-out-of-run ()
+  "Move point to the first content column when it sits in the prefix run.
+Point exactly on a line's first content column collapses to BOL when
+the repair re-stamps the run under it — `save-excursion' markers do
+not advance past an insertion at their position — and redisplay would
+bounce a point inside the front-sticky run to the previous line.
+Called after every repair, outside any excursion, so the snap holds."
+  (let* ((bol (line-beginning-position))
+         (run (maf-edit--leading-prefix-run bol)))
+    (when (< (- (point) bol) run)
+      (goto-char (+ bol run)))))
 
 (defun maf-edit--renumber ()
   "Stamp the level prefix and continuation pads on every entry.
@@ -491,7 +510,8 @@ every stack line."
             (inhibit-modification-hooks t))
         (maf-edit--clear-errors)
         (when (> end beg) (maf-edit--classify-newlines beg end))
-        (maf-edit--repair)))))
+        (maf-edit--repair)
+        (maf-edit--snap-point-out-of-run)))))
 
 (defun maf-edit--derive-splits ()
   "Split entries at balanced newlines, re-deriving structure from text.
@@ -531,7 +551,8 @@ insertion-time newline classification never saw the restored text."
           (inhibit-modification-hooks t))
       (maf-edit--clear-errors)
       (maf-edit--derive-splits)
-      (maf-edit--repair))))
+      (maf-edit--repair)
+      (maf-edit--snap-point-out-of-run))))
 
 ;;; Errors
 
