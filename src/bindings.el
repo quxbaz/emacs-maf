@@ -26,8 +26,10 @@
 (define-key maf-mode-map (kbd "S-<down>") #'mafcmd-toggle-op)
 (define-key maf-mode-map (kbd ",") #'maf-quick-variable)
 ;; Enter in-place stack editing (shadows calc-enter on SPC); C-RET (in
-;; maf-edit-mode-map) commits.
+;; maf-edit-mode-map) commits. S-SPC enters with a fresh entry started
+;; at the bottom, returning point when the session ends.
 (define-key maf-mode-map (kbd "SPC") #'maf-edit)
+(define-key maf-mode-map (kbd "S-SPC") #'maf-edit-add-entry)
 (define-key maf-mode-map (kbd "U") #'maf-undo)
 (define-key maf-mode-map (kbd "D") #'maf-redo)
 ;; Shadows calc's TAB with the contextual line swap.

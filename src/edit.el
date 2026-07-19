@@ -55,6 +55,12 @@
 (defvar-local maf-edit--pending-repair nil
   "Non-nil when a repair was deferred while undo replayed changes.")
 
+(defvar-local maf-edit--return nil
+  "Point snapshot to restore when this edit session ends, or nil.
+Set by `maf-edit-add-entry' (the quick-add gesture) before entering;
+commit and discard both consult it, returning point to where it was
+before the edit began instead of keeping its in-edit position.")
+
 (defvar maf-edit--inhibit nil
   "Non-nil while maf-edit's own repair edits run, to skip the hooks.")
 
@@ -654,8 +660,10 @@ Built with `substitute-command-keys' so rebinding the gestures in
   "Restore the calc buffer: the body of turning `maf-edit-mode' off.
 Drops all editing state and re-renders from the (untouched) stack —
 discard semantics; `maf-edit-commit' parses before getting here and
-pushes after."
-  (let ((snapshot (maf--point-snapshot)))
+pushes after. A quick-add session (`maf-edit--return') restores the
+pre-edit point instead of the in-edit one."
+  (let ((snapshot (or maf-edit--return (maf--point-snapshot))))
+    (setq maf-edit--return nil)
     (remove-hook 'after-change-functions #'maf-edit--after-change t)
     (remove-hook 'post-command-hook #'maf-edit--post-command t)
     (setq maf-edit--pending-repair nil)
@@ -691,6 +699,34 @@ On: commit — parse the buffer back to the stack (`maf-edit-commit')."
   (if maf-edit-mode
       (maf-edit-commit)
     (maf-edit-mode 1)))
+
+(defun maf-edit-add-entry ()
+  "Enter maf-edit with a fresh entry started at the bottom of the stack.
+The new entry opens as a blank numbered line just above the dot, point
+on its content column, ready to type — from anywhere, including an
+empty stack. When the session ends, commit and discard alike, point
+returns to where it was before this command ran instead of staying in
+the edited text."
+  (interactive)
+  (when maf-edit-mode
+    (user-error "maf-edit is already active"))
+  (let ((snapshot (maf--point-snapshot)))
+    (maf-edit-mode 1)
+    (setq maf-edit--return snapshot))
+  (goto-char (overlay-start maf-edit--dot))
+  (let ((maf-edit--inhibit t)
+        (inhibit-modification-hooks t)
+        (bol (point)))
+    ;; Open a fresh line just above the dot and make it an entry, the
+    ;; way `maf-edit-newline' does for a balanced newline: a temporary
+    ;; machine-owned run keeps the zero-length entry out of
+    ;; `maf-edit--drop-empty's reach until the repair renumbers it.
+    (insert "\n")
+    (goto-char bol)
+    (insert maf-edit--pad-string)
+    (maf-edit--make-entry bol (+ bol maf-edit--prefix-width))
+    (maf-edit--repair)
+    (goto-char (+ bol (maf-edit--leading-prefix-run bol)))))
 
 (defun maf-edit-commit ()
   "Parse the edited buffer and commit it to the stack, leaving maf-edit.
@@ -733,7 +769,9 @@ commit is one undo group."
       ;; calc-pop-push-record-list pushes in.
       (setq vals (nreverse vals)
             sels (nreverse sels))
-      (let ((snapshot (maf--point-snapshot)))
+      ;; A quick-add session restores the pre-edit point; read it
+      ;; before the mode exit consumes it.
+      (let ((snapshot (or maf-edit--return (maf--point-snapshot))))
         ;; Turning the mode off restores the buffer and re-renders from
         ;; the unchanged stack — required before the pop-push, which
         ;; edits the buffer by entry heights the edited text no longer
