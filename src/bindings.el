@@ -38,6 +38,9 @@
 ;; shadows calc-pop, whose behavior maf-del keeps at home.
 (define-key maf-mode-map (kbd "C-d") #'maf-del)
 (define-key maf-mode-map (kbd "DEL") #'maf-del)
+;; Line-based kill: the whole entry at point, onto the kill ring.
+;; Shadows calc-kill, keeping its whole-entry semantics.
+(define-key maf-mode-map (kbd "C-k") #'maf-kill)
 ;; Shadows calc's TAB with the contextual line swap.
 (define-key maf-mode-map (kbd "TAB") #'maf-swap-up)
 ;; Equate gets both = (shadowing calc-evaluate) and e (shadowing the

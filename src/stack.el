@@ -441,6 +441,28 @@ an empty stack.
       ;; with the stack instead of preserving the clamped spot.
       (maf--undo-record-cmd-point snapshot))))
 
+(defun maf-kill ()
+  "Kill the entry at point: off the stack and onto the kill ring.
+
+  2:  a + b|  =>  entry gone   (kill ring gets a + b)
+
+The whole entry is killed wherever point sits on its line — unlike
+`maf-del', which resolves sub-formulas, killing is line-based. At
+home the top of the stack is killed. The kill ring gets the entry's
+formatted text, without the level-number prefix, ready for yanking
+anywhere. Signals an error on an empty stack."
+  (interactive)
+  (maf--with-calc-buffer
+    (when (zerop (calc-stack-size))
+      (user-error "Stack is empty"))
+    (let ((m (max 1 (calc-locate-cursor-element (point))))
+          (snapshot (maf--point-snapshot)))
+      (kill-new (math-format-value (calc-top m 'full)))
+      (maf--preserve-point
+        (calc-wrapper (calc-pop-stack 1 m)))
+      ;; A single undo reverts point along with the stack.
+      (maf--undo-record-cmd-point snapshot))))
+
 (defvar maf-undo--chain-point nil
   "Point snapshot saved by the last `maf-undo'/`maf-redo' in a chain.
 Holds where point stood just before that command changed the buffer —
