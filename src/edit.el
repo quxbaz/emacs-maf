@@ -4,8 +4,8 @@
 ;;
 ;; maf-edit: wdired-style in-place editing of the calc stack.
 ;;
-;; `maf-edit' (SPC in maf-mode) turns the calc buffer into editable
-;; plain text.
+;; `maf-edit' (RET in maf-mode) turns the calc buffer into editable
+;; plain text; the same key commits, so RET toggles edit/commit.
 ;; Each stack entry is tracked by an overlay; the text is the
 ;; interface. Newline gestures are the only structural operators:
 ;;
