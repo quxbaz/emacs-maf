@@ -815,10 +815,11 @@ was before this command ran."
 (defun maf-edit-commit ()
   "Parse the edited buffer and commit it to the stack, leaving maf-edit.
 Entries whose text is untouched keep their value objects and
-selections; changed or new text is parsed in the current input modes.
-If any entry fails to parse the commit is blocked: the offenders are
-underlined, point goes to the first, and editing continues. The whole
-commit is one undo group."
+selections; changed or new text is parsed in the current input modes
+and committed exactly as written, never simplified — 1 + 2 + x stays
+1 + 2 + x. If any entry fails to parse the commit is blocked: the
+offenders are underlined, point goes to the first, and editing
+continues. The whole commit is one undo group."
   (interactive)
   (unless maf-edit-mode (user-error "maf-edit is not active"))
   (let ((maf-edit--inhibit t)
@@ -842,7 +843,9 @@ commit is one undo group."
                                 (concat (nth 2 v)
                                         " (unbalanced delimiters)")))
                       errors)
-              (push (math-normalize v) vals)
+              ;; Raw, not normalized: the user's text commits exactly
+              ;; as written; even 1 + 2 must survive unfolded.
+              (push v vals)
               (push nil sels)))))))
     (if errors
         (let ((errors (nreverse errors)))
