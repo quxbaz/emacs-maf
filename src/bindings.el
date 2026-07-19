@@ -26,6 +26,8 @@
 (define-key maf-mode-map (kbd "l l") #'mafcmd-float)
 (define-key maf-mode-map (kbd "l c") #'mafcmd-frac)
 (define-key maf-mode-map (kbd "O") #'mafcmd-commute)
+;; Shadows calc-call-last-kbd-macro.
+(define-key maf-mode-map (kbd "X") #'mafcmd-log-exp)
 ;; A toggle between pair members is its own inverse, so both directions
 ;; run the same command.
 (define-key maf-mode-map (kbd "S-<up>") #'mafcmd-toggle-op)

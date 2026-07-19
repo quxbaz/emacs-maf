@@ -166,6 +166,71 @@ equation, the top entry at home.
          (coeffs (and base (maf--quadratic-coeffs expr base))))
     (commit (if coeffs (maf--vertex-form coeffs base) expr))))
 
+(defconst maf--log-exp-rules
+  '(;; Exp-of-log compositions collapse. The neg and p*log variants
+    ;; are matched explicitly: a bare pattern variable never matches a
+    ;; missing factor, so b^log(x, b) alone would leave scaled
+    ;; exponents — the very shape the power rules below produce —
+    ;; uncollapsed.
+    "b^log(x, b) := x"
+    "b^(-log(x, b)) := 1/x"
+    "b^(p*log(x, b)) := x^p"
+    "e^ln(x) := x"
+    "e^(-ln(x)) := 1/x"
+    "e^(p*ln(x)) := x^p"
+    "10^log10(x) := x"
+    "10^(-log10(x)) := 1/x"
+    "10^(p*log10(x)) := x^p"
+    ;; Log-of-exp compositions collapse. Ordered before the power
+    ;; rules, which also match these shapes but would leave a stray
+    ;; x*log(b, b) behind.
+    "log(b^x, b) := x"
+    "ln(e^x) := x"
+    "log10(10^x) := x"
+    ;; Base identities.
+    "log(b, b) := 1"
+    "ln(e) := 1"
+    "log10(10) := 1"
+    ;; Power rules: the exponent moves out front.
+    "ln(x^p) := p * ln(x)"
+    "log(x^p, b) := p * log(x, b)"
+    "log10(x^p) := p * log10(x)")
+  "Rewrite rules applied by `mafcmd-log-exp', in match order.
+Calc rewrite syntax; e and the literal 10 match only themselves, so
+the compositions never fire on a mismatched base.")
+
+(maf-defcmd mafcmd-log-exp (expr _arg commit)
+  "Apply logarithm and exponential identities to the resolved expression.
+
+  b^log(x, b)  =>  x
+
+Three families of identities, applied wherever they match and repeated
+until nothing changes: exp-of-log compositions collapse (including
+negated and scaled exponents), log-of-exp compositions collapse, and a
+log of a power moves its exponent out front. Bases must agree for a
+composition to fire — e and 10 match only themselves — and rules only
+rewrite where they match: everything else in the expression, including
+unsimplified arithmetic, commits exactly as it was. An expression with
+no matching site commits unchanged, so equation sides without one pass
+through quietly. Point picks the target as usual: a sub-formula at
+point, each side of an equation, the top entry at home.
+
+  e^(2 ln(x))     =>  x^2
+  ln(e^x)         =>  x
+  10^(-log10(x))  =>  1 / x
+  ln(x^3)         =>  3 ln(x)
+  log(x^p, b)     =>  p log(x, b)
+  ln(e)           =>  1
+  2^ln(x)         =>  2^ln(x)   (base mismatch: unchanged)"
+  :arity unary
+  :prefix "lexp"
+  (let ((rules (cons 'vec (math-read-exprs
+                           (string-join maf--log-exp-rules ",")))))
+    ;; Simplification off: math-rewrite normalizes the whole expression
+    ;; each pass, which would fold arithmetic the rules never touched.
+    (commit (let ((calc-simplify-mode 'none))
+              (math-rewrite expr rules)))))
+
 (maf-defcmd mafcmd-commute (expr _arg commit)
   "Swap the first two operands of the resolved expression.
 
