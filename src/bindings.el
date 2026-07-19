@@ -78,4 +78,8 @@
         (define-key maf-mode-map (char-to-string x) #'maf-digit-start))
       "_0123456789.#")
 
+;; Entry-beginning motion. Shadows calc's own M-m prefix, whose two
+;; sequences (M-m t, M-m M-t) stay reachable as m t and m M-t.
+(define-key maf-mode-map (kbd "M-m") #'maf-beginning-of-entry)
+
 (provide 'maf-bindings)

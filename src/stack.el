@@ -399,6 +399,20 @@ calc's usual simplify-mode indicator."
          (calc-change-mode 'calc-simplify-mode 'none)
          (message "Simplification is disabled"))))))
 
+(defun maf-beginning-of-entry ()
+  "Move point to the beginning of the stack entry on the current line.
+
+  2:  6 x + 12|  =>  2:  |6 x + 12
+
+Point lands on the formula, right after the line-number prefix; on
+the home line or a line without one, right after the leading
+indentation."
+  (interactive)
+  (beginning-of-line)
+  (if (looking-at " *[0-9]+: +")
+      (goto-char (match-end 0))
+    (skip-chars-forward " ")))
+
 (defun maf-swap-up (n)
   "Swap the stack entry at point with the one above it on screen.
 
