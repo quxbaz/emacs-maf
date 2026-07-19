@@ -34,6 +34,10 @@
 (define-key maf-mode-map (kbd "S-<return>") #'maf-edit-add-entry)
 (define-key maf-mode-map (kbd "U") #'maf-undo)
 (define-key maf-mode-map (kbd "D") #'maf-redo)
+;; Contextual delete; C-d is unbound in calc itself, and backspace
+;; shadows calc-pop, whose behavior maf-del keeps at home.
+(define-key maf-mode-map (kbd "C-d") #'maf-del)
+(define-key maf-mode-map (kbd "DEL") #'maf-del)
 ;; Shadows calc's TAB with the contextual line swap.
 (define-key maf-mode-map (kbd "TAB") #'maf-swap-up)
 ;; Equate gets both = (shadowing calc-evaluate) and e (shadowing the

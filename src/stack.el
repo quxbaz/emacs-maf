@@ -22,6 +22,7 @@
 (declare-function calcFunc-pfloat "calc-stuff")
 (declare-function calc-roll-down "calc-misc")
 (declare-function calc-locate-cursor-element "calc-yank")
+(declare-function calc-del-selection "calc-sel")
 
 (maf-defcmd mafcmd-factor-by (expr arg commit)
   "Factor the resolved expression by the top-of-stack argument.
@@ -398,6 +399,33 @@ error with fewer than two entries."
         (funcall commit)
         (calc-cursor-stack-index m)
         (end-of-line)))))
+
+(defun maf-del ()
+  "Delete the target at point: selection, sub-formula, entry, or top.
+
+  a + b|  =>  a
+
+Deletion patches the structure around the deleted part rather than
+zeroing it: a factor or exponent falls out of its product or power, a
+vector element leaves the vector, and deleting one side of a relation
+leaves the other side standing. With point on an entry's margin the
+whole entry is deleted; at home the top of the stack pops, as does an
+entry whose whole formula is selected or deleted. Signals an error on
+an empty stack.
+
+  a b|         =>  a
+  a^b|         =>  a
+  [a, b|, c]   =>  [a, c]
+  x = y|       =>  x
+  2:  a + b|   =>  deletes the whole entry     (point on the margin)"
+  (interactive)
+  (maf--with-calc-buffer
+    (when (zerop (calc-stack-size))
+      (user-error "Stack is empty"))
+    (maf--preserve-point
+      (if (maf--at-home-p)
+          (calc-pop 1)
+        (calc-del-selection)))))
 
 (defvar maf-undo--chain-point nil
   "Point snapshot saved by the last `maf-undo'/`maf-redo' in a chain.
