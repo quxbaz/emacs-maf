@@ -34,6 +34,16 @@
 (define-key maf-mode-map (kbd "S-<return>") #'maf-edit-add-entry)
 (define-key maf-mode-map (kbd "U") #'maf-undo)
 (define-key maf-mode-map (kbd "D") #'maf-redo)
+;; Catch every key that dispatches to undo/redo, so point handling
+;; never depends on which undo key was pressed. Remapping is a single
+;; step: calc-mode-map already remaps undo to calc-undo, and a key
+;; resolved through that chain is never re-remapped — so the plain
+;; Emacs commands must be remapped here too, and the minor-mode map
+;; wins over calc's.
+(define-key maf-mode-map [remap undo] #'maf-undo)
+(define-key maf-mode-map [remap undo-redo] #'maf-redo)
+(define-key maf-mode-map [remap calc-undo] #'maf-undo)
+(define-key maf-mode-map [remap calc-redo] #'maf-redo)
 ;; Contextual delete; C-d is unbound in calc itself, and backspace
 ;; shadows calc-pop, whose behavior maf-del keeps at home.
 (define-key maf-mode-map (kbd "C-d") #'maf-del)
