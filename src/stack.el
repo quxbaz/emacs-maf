@@ -97,6 +97,36 @@ equation, the top entry at home.
         (commit (let ((calc-simplify-mode 'none))
                   (calcFunc-mul factor quotient)))))))
 
+(maf-defcmd mafcmd-complete-square (expr _arg commit)
+  "Complete the square: rewrite the resolved quadratic in vertex form.
+
+  x^2 + 6 x  =>  (x + 3)^2 - 9
+
+The result is a (x + h)^2 + k with h = b/(2 a) and k = c - b^2/(4 a),
+built from the quadratic's coefficients, so any quadratic works:
+symbolic coefficients, a negative or fractional leading term, a
+constant term already present. The square is completed in the
+leftmost sub-expression the formula is quadratic in — usually the
+variable, but sin(y)^2 + 2 sin(y) completes in sin(y). Exact
+coefficients give exact results: fractions, not floats. An expression
+that is not a quadratic commits unchanged, so equation sides without
+one — a bare constant on the right — pass through quietly. Point
+picks the target as usual: a sub-formula at point, each side of an
+equation, the top entry at home.
+
+  2 x^2 + 6 x + 1        =>  2 (x + 3:2)^2 - 7:2
+  a x^2 + b x + c        =>  a*(x + b / (2 a))^2 + c - b^2 / (4 a)
+  -x^2 + 6 x             =>  9 - (x - 3)^2
+  x^2 + 6 x + 9          =>  (x + 3)^2
+  sin(y)^2 + 2 sin(y)    =>  (sin(y) + 1)^2 - 1
+  x^2 + 6 x = 10         =>  (x + 3)^2 - 9 = 10
+  x^3 + x^2              =>  x^3 + x^2   (not a quadratic: unchanged)"
+  :arity unary
+  :prefix "csqr"
+  (let* ((base (maf--quadratic-base expr))
+         (coeffs (and base (maf--quadratic-coeffs expr base))))
+    (commit (if coeffs (maf--vertex-form coeffs base) expr))))
+
 (maf-defcmd mafcmd-commute (expr _arg commit)
   "Swap the first two operands of the resolved expression.
 

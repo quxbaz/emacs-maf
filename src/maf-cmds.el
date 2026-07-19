@@ -250,7 +250,8 @@ are set, making the I and H prefixes route to the variant contextually.
   (moebius unary calcFunc-moebius "k m")
   (nextprime unary calcFunc-nextprime "k n" :inv prevprime)
   (random unary calcFunc-random "k r")
-  (stir1 binary calcFunc-stir1 "k s" :hyp stir2)
+  ;; stir1 cedes calc's k s to mafcmd-complete-square (bindings.el).
+  (stir1 binary calcFunc-stir1 :hyp stir2)
   (totient unary calcFunc-totient "k t")
   (utpc binary calcFunc-utpc "k C" :inv ltpc)
   (utpp binary calcFunc-utpp "k P" :inv ltpp)
