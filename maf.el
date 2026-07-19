@@ -24,6 +24,7 @@
   (add-to-list 'load-path (expand-file-name "core" dir))
   (add-to-list 'load-path (expand-file-name "debug" dir)))
 
+(require 'maf-conf "conf")
 (require 'maf-comp)
 (require 'maf-lib)
 (require 'maf-sel)
@@ -36,13 +37,9 @@
 (require 'maf-cmds)
 (require 'maf-math "math")
 (require 'maf-stack "stack")
+(require 'maf-persist "persist")
 (require 'maf-bindings "bindings")
 (require 'maf-minibuffer "minibuffer")
-
-(defgroup maf nil
-  "Math-Algebra-Formulas: an alternative UX for Emacs Calc."
-  :group 'calc
-  :prefix "maf-")
 
 ;;;###autoload
 (defun maf-calc ()

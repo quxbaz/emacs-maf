@@ -45,6 +45,9 @@ One entry per common expression shape.")
   ;; once) also keeps maf-mode on across calc-reset, which re-runs calc-mode
   ;; and thereby kills buffer-local minor modes.
   (add-hook 'calc-mode-hook #'maf-mode)
+  ;; Stack persistence. The dev instance's server name keys its own
+  ;; save file, so it never collides with other sessions.
+  (maf-stack-persistence-mode 1)
   ;; Create the calc buffer without letting it pick the layout.
   (save-window-excursion (maf-calc-direct))
   ;; Starting layout: maf.org on the left, calc on the right. Deferred
@@ -55,5 +58,7 @@ One entry per common expression shape.")
                  (delete-other-windows)
                  (find-file (expand-file-name "docs/maf.org" root))
                  (set-window-buffer (split-window-right) "*Calculator*")))
-  ;; Seed the stack so casual testing doesn't start from scratch.
-  (maf-seed-calc))
+  ;; Seed the stack so casual testing doesn't start from scratch —
+  ;; unless persistence restored last session's stack.
+  (when (zerop (with-current-buffer "*Calculator*" (calc-stack-size)))
+    (maf-seed-calc)))
