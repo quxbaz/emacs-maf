@@ -26,12 +26,12 @@
 (define-key maf-mode-map (kbd "S-<down>") #'mafcmd-toggle-op)
 (define-key maf-mode-map (kbd ",") #'maf-quick-variable)
 ;; RET toggles in-place stack editing: enter maf-edit, and inside it
-;; RET (maf-edit-mode-map) commits — one key edits and commits. S-RET
+;; RET (maf-edit-mode-map) commits — one key edits and commits. C-RET
 ;; enters with a fresh entry started at the bottom, returning point
-;; when the session ends; inside maf-edit the same key is the newline
-;; gesture. Shadows one of calc-enter's two keys; SPC still runs it.
+;; when the session ends. Shadows one of calc-enter's two keys; SPC
+;; still runs it.
 (define-key maf-mode-map (kbd "RET") #'maf-edit)
-(define-key maf-mode-map (kbd "S-<return>") #'maf-edit-add-entry)
+(define-key maf-mode-map (kbd "C-<return>") #'maf-edit-add-entry)
 (define-key maf-mode-map (kbd "U") #'maf-undo)
 (define-key maf-mode-map (kbd "D") #'maf-redo)
 ;; Catch every key that dispatches to undo/redo, so point handling
