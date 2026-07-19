@@ -667,17 +667,20 @@ pushes after."
     (use-local-map (plist-get maf-edit--saved :map))
     (unless (plist-get maf-edit--saved :visual) (visual-line-mode -1))
     (cursor-intangible-mode -1)
-    (when (plist-get maf-edit--saved :maf-mode) (maf-mode 1))
-    ;; Unconditional: re-enabling maf-mode drags maf-hl-mode on with
-    ;; it, so a manually-off highlighter must be re-asserted off.
-    (maf-hl-mode (if (plist-get maf-edit--saved :hl) 1 -1))
     (electric-indent-local-mode (if (plist-get maf-edit--saved :electric) 1 -1))
     (electric-pair-local-mode (if (plist-get maf-edit--saved :pair) 1 -1))
     (setq header-line-format (plist-get maf-edit--saved :header)
           buffer-undo-list (plist-get maf-edit--saved :undo)
-          buffer-read-only t
-          maf-edit--saved nil)
+          buffer-read-only t)
     (calc-refresh)
+    ;; Re-enable only after the refresh: enabling maf-hl-mode runs its
+    ;; update immediately, and it must see the re-rendered stack, never
+    ;; the edited text, whose positions no longer match calc-stack.
+    (when (plist-get maf-edit--saved :maf-mode) (maf-mode 1))
+    ;; Unconditional: re-enabling maf-mode drags maf-hl-mode on with
+    ;; it, so a manually-off highlighter must be re-asserted off.
+    (maf-hl-mode (if (plist-get maf-edit--saved :hl) 1 -1))
+    (setq maf-edit--saved nil)
     (maf--point-restore snapshot)))
 
 (defun maf-edit ()

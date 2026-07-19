@@ -64,18 +64,23 @@ and end positions in the flat rendering into `maf--comp-flat-start' and
     (maf--comp-flat-term (nth 2 c)))))
 
 (defun maf--comp-flat-to-pos (fpos toppt)
-  "Convert flat-rendering position FPOS to a buffer position.
+  "Convert flat-rendering position FPOS to a buffer position, or nil.
 TOPPT is the buffer position of the start of the entry's first line. When a
 long entry wraps, each continuation line's newline and indentation occupy
 buffer positions but not flat positions, so walk line by line rather than
-adding a single offset."
+adding a single offset. nil when FPOS runs past the end of the buffer —
+a selection cache describing a stack state the buffer no longer shows can
+hand in positions with nothing under them, and the walk must fail rather
+than spin on the last line."
   (save-excursion
     (goto-char (+ toppt calc-selection-cache-offset))
-    (while (> fpos (- (line-end-position) (point)))
-      (setq fpos (- fpos (- (line-end-position) (point))))
-      (forward-line 1)
-      (back-to-indentation))
-    (+ (point) fpos)))
+    (catch 'overrun
+      (while (> fpos (- (line-end-position) (point)))
+        (setq fpos (- fpos (- (line-end-position) (point))))
+        (unless (zerop (forward-line 1))
+          (throw 'overrun nil))
+        (back-to-indentation))
+      (+ (point) fpos))))
 
 (defun maf--comp-point-cpos ()
   "Return point's position in the prepared entry's flat rendering, or nil.
@@ -112,8 +117,10 @@ Mirrors `calc-find-selected-part', walking the composition prepared by
           (maf--comp-flat-end nil))
       (maf--comp-flat-term calc-selection-cache-comp)
       (when maf--comp-flat-start
-        (cons (maf--comp-flat-to-pos maf--comp-flat-start toppt)
-              (maf--comp-flat-to-pos maf--comp-flat-end toppt))))))
+        (let ((start (maf--comp-flat-to-pos maf--comp-flat-start toppt))
+              (end (maf--comp-flat-to-pos maf--comp-flat-end toppt)))
+          (when (and start end)
+            (cons start end)))))))
 
 (defun maf--comp-node-span (node)
   "Return (START END CHILD-SPANS TEXT) for NODE in the prepared composition.
