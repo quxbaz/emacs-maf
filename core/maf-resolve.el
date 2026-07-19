@@ -10,8 +10,8 @@
 ;;
 ;; Target-specific keys (produced by `maf--resolve-target-*'):
 ;;
-;;   :target       Symbol identifying the target: home, selection, subexpr,
-;;                 equation, or entry.
+;;   :target       Symbol identifying the target: region, home, selection,
+;;                 subexpr, equation, or entry.
 ;;   :expr         The expression the command operates on (full formula or
 ;;                 selected sub-formula, depending on target). Clean — the
 ;;                 (cplx N 0) encasing that calc-prepare-selection wraps atoms
@@ -34,6 +34,13 @@
 ;;   :rel-op       Relation operator symbol (calcFunc-eq/neq/lt/...). Equation
 ;;                 target only — the macro uses it to reassemble the relation
 ;;                 after running the body once per side.
+;;   :chain-ref    Region target only — the encased cons of the chain the
+;;                 region's run was carved from; commit splices the rebuilt
+;;                 chain at it.
+;;   :chain-kind   Region target only — sum or prod (see maf-chain.el).
+;;   :pre-terms,
+;;   :post-terms   Region target only — the untouched (OP . TERM) chain terms
+;;                 before and after the run, original conses intact.
 ;;   :lhs, :rhs    The two sides of the relation. Equation target only — the
 ;;                 macro binds :expr to each in turn for the per-side body runs.
 ;;
@@ -62,6 +69,7 @@
 (require 'maf-lib)
 (require 'maf-sel)
 (require 'maf-comp)
+(require 'maf-chain)
 
 ;; Defined in lazily-loaded calc modules; calc-ext's autoload registry
 ;; resolves them at runtime, but the byte compiler needs declarations.
@@ -69,6 +77,10 @@
 (declare-function calc-locate-cursor-element "calc-yank")
 (declare-function calc-prepare-selection "calc-sel")
 (declare-function calc-find-selected-part "calc-sel")
+
+;; calc-sel declares this with a valueless defvar, which marks it
+;; special only within its own file; redeclare so our read is dynamic.
+(defvar calc-selection-cache-offset)
 
 
 (defun maf--resolve-target-selection (opts)
@@ -101,6 +113,108 @@ entry containing the selection, which has no coherent commit semantics."
         (:post-pop   . ,(if keep 0 (pcase arity ('unary 0) ('binary 1))))
         (:reselect   . t)))))
 
+(defun maf--resolve-target-region (opts)
+  "Return the active region's context alist.
+The region denotes its target structurally — the covered text is never
+parsed. Both endpoints must lie in the same stack entry; clamped into
+the entry's formula text, they map into the flat rendering, and the
+innermost sub-formula containing both is the container.
+
+A +/- or * chain container snaps the region outward to the run of
+terms it touches (a region on an operator glyph alone pulls in both
+neighbors). A run that is the whole chain or a single term collapses
+to the subexpr target on that node, and a non-chain container resolves
+as subexpr on the container itself — the smallest sub-formula defined
+by two points, as calc's j a selects. Any other run is synthesized:
+:expr is the fold of the covered terms, each keeping its chain sign,
+and commit rebuilds the chain with the result as one term in the run's
+place (see maf-chain.el).
+
+Binary commands take :arg from the top of the stack and require the
+target entry below the top, as with subexpr. Resolving consumes the
+gesture: the mark deactivates."
+  (maf--with-calc-buffer
+    (let* ((beg (region-beginning))
+           (end (max (region-beginning) (1- (region-end))))
+           (m (calc-locate-cursor-element beg)))
+      (unless (> m 0)
+        (error "Region must lie within a stack entry"))
+      (unless (= m (calc-locate-cursor-element end))
+        (error "Region spans multiple stack entries"))
+      (calc-prepare-selection m)
+      ;; Clamp the endpoints into the entry's formula text: the start
+      ;; may sit in the line prefix, the end on the newline or beyond.
+      (let* ((text-beg (+ (save-excursion (calc-cursor-stack-index m) (point))
+                          calc-selection-cache-offset))
+             (text-end (- (save-excursion (calc-cursor-stack-index (1- m))
+                                          (point))
+                          2))
+             (beg (max beg text-beg))
+             (end (min end text-end)))
+        (when (> beg end)
+          (error "Region does not touch the entry's formula"))
+        (let* ((ca (maf--comp-pos-cpos beg))
+               (cb (maf--comp-pos-cpos end))
+               (container (and ca cb (maf--comp-node-at-range ca cb))))
+          (unless container
+            (error "Region target requires a flat rendering"))
+          (prog1
+              (pcase (maf--chain-kind container)
+                ('nil (maf--resolve-subexpr-context container m opts))
+                (kind (maf--resolve-region-run container kind ca cb m opts)))
+            (deactivate-mark)))))))
+
+(defun maf--resolve-region-run (container kind ca cb m opts)
+  "Context for flat range [CA, CB] inside chain CONTAINER at level M.
+Snaps the range outward to the run of KIND-chain terms it touches and
+builds the region context — or a subexpr context when the run is the
+whole chain or a single term. The split from
+`maf--resolve-target-region' is mechanical; see there for semantics."
+  (let* ((terms (maf--chain-terms container))
+         (spans (mapcar (lambda (term)
+                          (pcase (maf--comp-node-span (cdr term))
+                            (`(,s ,e ,_ ,_) (cons s e))))
+                        terms))
+         ;; First term ending after CA, last term starting at or before
+         ;; CB: when the range meets any term spans, these bracket
+         ;; exactly the touched terms; when it sits wholly in the gap
+         ;; around an operator glyph they cross, and min/max below
+         ;; brackets the gap — the operator pulls in both neighbors.
+         (j1 (cl-position-if (lambda (sp) (and sp (> (cdr sp) ca))) spans))
+         (j2 (cl-position-if (lambda (sp) (and sp (<= (car sp) cb))) spans
+                             :from-end t)))
+    (unless (and j1 j2)
+      (error "Region does not touch the entry's formula"))
+    (let ((i (min j1 j2))
+          (j (max j1 j2))
+          (arity (alist-get :arity opts))
+          (keep calc-keep-args-flag))
+      (cond
+       ((and (= i 0) (= j (1- (length terms))))
+        (maf--resolve-subexpr-context container m opts))
+       ((= i j)
+        (maf--resolve-subexpr-context (cdr (nth i terms)) m opts))
+       (t
+        (when (and (eq arity 'binary) (= m 1))
+          (error "Binary commands on a region require the target entry below the top"))
+        `((:target     . region)
+          ;; The fold of the covered signed terms, encasing stripped for
+          ;; the body like every :expr — never re-read, never normalized.
+          (:expr       . ,(maf--strip-encasing
+                           (maf--chain-fold (cl-subseq terms i (1+ j)))))
+          ;; What commit needs to rebuild: the container cons to splice
+          ;; at, and the untouched terms on each side of the run.
+          (:chain-ref  . ,container)
+          (:chain-kind . ,kind)
+          (:pre-terms  . ,(cl-subseq terms 0 i))
+          (:post-terms . ,(cl-subseq terms (1+ j)))
+          (:arg        . ,(pcase arity ('unary nil) ('binary (math-normalize (calc-top 1 'full)))))
+          (:m          . ,m)
+          (:commit-m   . ,(if keep 1 m))
+          (:commit-n   . ,(if keep 0 1))
+          (:post-pop   . ,(if keep 0 (pcase arity ('unary 0) ('binary 1))))
+          (:reselect   . nil)))))))
+
 (defun maf--resolve-target-home (opts)
   "Return the home target's context alist."
   (maf--with-calc-buffer
@@ -121,6 +235,37 @@ entry containing the selection, which has no coherent commit semantics."
         (:commit-n   . ,(if keep 0 (pcase arity ('unary 1) ('binary 2))))
         (:post-pop   . 0)))))
 
+(defun maf--resolve-subexpr-context (encased m opts)
+  "Context alist for a subexpr-style target on ENCASED at stack level M.
+The shared shape behind the subexpr and region targets: subexpr hands
+in the node under point, region the node its endpoints resolved to.
+Binary commands require the target entry to be below the top (M > 1);
+otherwise the arg would be the entry containing the sub-expression,
+which has no coherent commit semantics."
+  (let ((arity (alist-get :arity opts))
+        (keep calc-keep-args-flag))
+    ;; If m=1 and arity=binary then there's nowhere to take the arg from - reject.
+    (when (and (eq arity 'binary) (= m 1))
+      (error "Binary commands on subexpr require the target entry below the top"))
+    `((:target     . subexpr)
+      ;; :expr is the clean form for the body — encasing stripped, but
+      ;; not re-normalized, which could re-simplify the sub-formula
+      ;; under point. :expr-ref is the encased cons commit needs for
+      ;; eq-based splicing.
+      (:expr       . ,(maf--strip-encasing encased))
+      (:expr-ref   . ,encased)
+      ;; Non-nil when point sits on a glyph the sub-formula renders
+      ;; itself (its operator, comma, function name): the glyph's
+      ;; index, used to re-anchor point on the committed node.
+      (:point-anchor . ,(maf--comp-node-anchor-index
+                         encased (maf--comp-point-cpos)))
+      (:arg        . ,(pcase arity ('unary nil) ('binary (math-normalize (calc-top 1 'full)))))
+      (:m          . ,m)
+      (:commit-m   . ,(if keep 1 m))
+      (:commit-n   . ,(if keep 0 1))
+      (:post-pop   . ,(if keep 0 (pcase arity ('unary 0) ('binary 1))))
+      (:reselect   . nil))))
+
 (defun maf--resolve-target-subexpr (opts)
   "Return the subexpr target's context alist.
 Point is inside an entry's formula text; :expr is the implicit sub-expression
@@ -133,32 +278,9 @@ With keep-args off, commit replaces the sub-expression in-place; with
 keep-args on, commit pushes the spliced result on top, leaving originals
 untouched."
   (maf--with-calc-buffer
-    (let* ((arity (alist-get :arity opts))
-           (m (calc-locate-cursor-element (point)))
-           (keep calc-keep-args-flag))
-      ;; If m=1 and arity=binary then there's nowhere to take the arg from - reject.
-      (when (and (eq arity 'binary) (= m 1))
-        (error "Binary commands on subexpr require the target entry below the top"))
+    (let ((m (calc-locate-cursor-element (point))))
       (calc-prepare-selection m)
-      (let ((encased (calc-find-selected-part)))
-        `((:target     . subexpr)
-          ;; :expr is the clean form for the body — encasing stripped, but
-          ;; not re-normalized, which could re-simplify the sub-formula
-          ;; under point. :expr-ref is the encased cons commit needs for
-          ;; eq-based splicing.
-          (:expr       . ,(maf--strip-encasing encased))
-          (:expr-ref   . ,encased)
-          ;; Non-nil when point sits on a glyph the sub-formula renders
-          ;; itself (its operator, comma, function name): the glyph's
-          ;; index, used to re-anchor point on the committed node.
-          (:point-anchor . ,(maf--comp-node-anchor-index
-                             encased (maf--comp-point-cpos)))
-          (:arg        . ,(pcase arity ('unary nil) ('binary (math-normalize (calc-top 1 'full)))))
-          (:m          . ,m)
-          (:commit-m   . ,(if keep 1 m))
-          (:commit-n   . ,(if keep 0 1))
-          (:post-pop   . ,(if keep 0 (pcase arity ('unary 0) ('binary 1))))
-          (:reselect   . nil))))))
+      (maf--resolve-subexpr-context (calc-find-selected-part) m opts))))
 
 (defun maf--resolve-target-equation (opts)
   "Return the equation target's context alist.
@@ -254,6 +376,8 @@ The returned alist contains:
   - ambient state snapshots (:keep, :point)
 
 Possible :target values, in order of priority:
+  region     Active Emacs region; expr is the run of chain terms (or the
+             sub-formula) the region covers. May resolve as subexpr.
   selection  Active calc selection; expr is the selected sub-expression.
   home       Point is at or below the . line.
   subexpr    Implicit selection. Point is inside an entry.
@@ -271,6 +395,9 @@ the whole relation as :expr."
     (let ((point-snapshot (maf--point-snapshot)))
       (append (maf--resolve-map-relation
                (cond
+                ;; The region is the most deliberate gesture there is;
+                ;; it outranks even an explicit calc selection.
+                ((use-region-p)          (maf--resolve-target-region opts))
                 ((maf--sel-any-p)        (maf--resolve-target-selection opts))
                 ((maf--at-home-p)        (maf--resolve-target-home opts))
                 ((maf--at-subexpr-p)     (maf--resolve-target-subexpr opts))

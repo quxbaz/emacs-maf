@@ -102,6 +102,40 @@ text."
                  (> calc-selection-true-num 0))
         (- (point) toppt calc-selection-cache-offset spaces lcount)))))
 
+(defun maf--comp-pos-cpos (pos)
+  "Return buffer position POS's place in the prepared entry's flat rendering.
+`maf--comp-point-cpos' for an arbitrary position instead of point; nil
+under the same conditions."
+  (save-excursion (goto-char pos) (maf--comp-point-cpos)))
+
+(defun maf--comp-node-at-range (from to)
+  "Return the innermost tagged sub-formula covering flat range [FROM, TO].
+Both bounds are inclusive flat-rendering positions. The walk is
+post-order — children complete before their enclosing tags — so the
+first tag found whose span covers the range is the deepest one. nil
+when the composition is not flat."
+  (when (math-comp-is-flat calc-selection-cache-comp)
+    (let ((math-comp-pos 0)
+          (best nil))
+      (cl-labels
+          ((walk (c)
+             (cond
+              ((not (consp c))
+               (setq math-comp-pos (+ math-comp-pos (length c))))
+              ((memq (car c) '(set break)))
+              ((eq (car c) 'horiz)
+               (dolist (sub (cdr c)) (walk sub)))
+              ((eq (car c) 'tag)
+               (let ((start math-comp-pos))
+                 (walk (nth 2 c))
+                 (when (and (null best)
+                            (<= start from)
+                            (< to math-comp-pos))
+                   (setq best (nth 1 c)))))
+              (t (walk (nth 2 c))))))
+        (walk calc-selection-cache-comp))
+      best)))
+
 (defun maf--comp-find-bounds ()
   "Return (START . END) buffer bounds of the sub-formula at point, or nil.
 Mirrors `calc-find-selected-part', walking the composition prepared by

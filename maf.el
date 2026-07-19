@@ -26,6 +26,7 @@
 
 (require 'maf-conf "conf")
 (require 'maf-comp)
+(require 'maf-chain)
 (require 'maf-lib)
 (require 'maf-sel)
 (require 'maf-hl)

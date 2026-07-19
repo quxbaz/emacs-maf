@@ -7,6 +7,7 @@
 ;; commit consumes that alist and performs the appropriate calc operations.
 
 (require 'maf-lib)
+(require 'maf-chain)
 
 ;; Defined in lazily-loaded calc modules; calc-ext's autoload registry
 ;; resolves them at runtime, but the byte compiler needs declarations.
@@ -64,6 +65,25 @@ formula otherwise) and :m is that entry's stack level after the pops."
                 ;; (selection had an explicit user selection; subexpr did not).
                 (sels         (when (alist-get :reselect context) val-encased)))
            (maf--commit-push commit-n prefix new-formula commit-m sels post-pop)
+           `((:node . ,val-encased) (:m . ,landed-m))))
+        ('region
+         ;; The run the body received is not a node in the entry, but
+         ;; the chain it was carved from is: rebuild the chain with val
+         ;; as one term in the run's place — the terms around it keep
+         ;; their original conses — and splice the rebuilt chain at the
+         ;; container's cons.
+         (let* ((full-formula (calc-top m 'full))
+                (val-encased  (calc-encase-atoms val))
+                (new-chain    (maf--chain-build
+                               (alist-get :chain-kind context)
+                               (alist-get :pre-terms context)
+                               val-encased
+                               (alist-get :post-terms context)))
+                (new-formula  (calc-replace-sub-formula
+                               full-formula
+                               (alist-get :chain-ref context)
+                               new-chain)))
+           (maf--commit-push commit-n prefix new-formula commit-m nil post-pop)
            `((:node . ,val-encased) (:m . ,landed-m))))
         ((or 'home 'entry 'equation)
          ;; For equation, val is the relation already reassembled by the
