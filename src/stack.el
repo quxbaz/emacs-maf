@@ -97,6 +97,43 @@ equation, the top entry at home.
         (commit (let ((calc-simplify-mode 'none))
                   (calcFunc-mul factor quotient)))))))
 
+(maf-defcmd mafcmd-factor-powers (expr _arg commit)
+  "Factor the resolved binomial by a square or cube product identity.
+
+  x^2 - 9  =>  (x + 3) (x - 3)
+
+The two additive terms are rooted and the matching identity built
+from the roots — difference of squares, sum or difference of cubes,
+complex conjugates for a sum of squares — preferring the most exact
+candidate: differences try squares before cubes, sums try cubes
+before conjugates. A root that resists stays under a radical, kept
+exact, when the other term's root is clean: squares of variables,
+perfect numeric powers. Anything else — more or fewer than two terms,
+a linear binomial, radicals that would spill onto both sides — commits
+unchanged, so equation sides without a factorable binomial pass
+through quietly. Point picks the target as usual: a sub-formula at
+point, each side of an equation, the top entry at home.
+
+  x^3 - 8        =>  (x - 2) (x^2 + 2 x + 4)
+  x^3 + 8        =>  (x + 2) (x^2 - 2 x + 4)
+  x^2 + 9        =>  (3 + x i) (3 - x i)
+  x^2 - 5        =>  (x + sqrt(5)) (x - sqrt(5))
+  x^6 - 64       =>  (x^3 + 8) (x^3 - 8)
+  4 x^2 - 9      =>  (2 x + 3) (2 x - 3)
+  9 - x^2        =>  (3 + x) (3 - x)
+  (x + 1)^2 - 9  =>  (x + 4) (x - 2)
+  x^2 - x        =>  x^2 - x   (no identity: unchanged)"
+  :arity unary
+  :prefix "fpow"
+  (let ((terms (let ((calc-simplify-mode nil)
+                     (calc-prefer-frac t))
+                 ;; Normalize each term so signs surface and
+                 ;; coefficients are canonical, as in `mafcmd-factor-gcd'.
+                 (mapcar #'math-normalize (maf--sum-terms expr)))))
+    (commit (or (and (= (length terms) 2)
+                     (maf--factor-powers (nth 0 terms) (nth 1 terms)))
+                expr))))
+
 (maf-defcmd mafcmd-complete-square (expr _arg commit)
   "Complete the square: rewrite the resolved quadratic in vertex form.
 

@@ -241,7 +241,8 @@ are set, making the I and H prefixes route to the variant contextually.
   ;; combinatorics (calc-k-oper-keys)
   (bern unary calcFunc-bern "k b")
   (choose binary calcFunc-choose "k c" :hyp perm)
-  (dfact unary calcFunc-dfact "k d")
+  ;; dfact cedes calc's k d to mafcmd-factor-powers (bindings.el).
+  (dfact unary calcFunc-dfact)
   (euler unary calcFunc-euler "k e")
   (prfac unary calcFunc-prfac "k f")
   (gcd binary calcFunc-gcd "k g")

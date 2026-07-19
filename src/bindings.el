@@ -18,6 +18,9 @@
 ;; Shadows calc-stirling's key; the contextual stirling pair
 ;; (mafcmd-stir1/stir2) cedes it — see the table in maf-cmds.el.
 (define-key maf-mode-map (kbd "k s") #'mafcmd-complete-square)
+;; Shadows calc-double-factorial's key; mafcmd-dfact cedes it — see
+;; the table in maf-cmds.el.
+(define-key maf-mode-map (kbd "k d") #'mafcmd-factor-powers)
 (define-key maf-mode-map (kbd "l f") #'mafcmd-factor-by)
 (define-key maf-mode-map (kbd "l F") #'mafcmd-factor-gcd)
 (define-key maf-mode-map (kbd "l l") #'mafcmd-float)
