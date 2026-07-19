@@ -6,7 +6,8 @@
   [[https://www.gnu.org/software/emacs/manual/html_mono/calc.html#Symbolic-Lisp-Functions][symbolic lisp functions]]
 
 * Plan (macro)
-  1) [ ] Move all of relevant my/calc config into project.
+  1) [ ] Move all of relevant my/calc config into project
+  2) [ ] Harden by using w/ anki math
 
 * Major features
   - [ ] Vim bindings (noun, verb, char)
