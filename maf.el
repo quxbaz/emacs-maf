@@ -51,6 +51,7 @@
 (require 'maf-hl)
 (require 'maf-history "history")
 (require 'maf-persist "persist")
+(require 'maf-edit "edit")
 
 ;;;###autoload
 (defun maf-calc ()

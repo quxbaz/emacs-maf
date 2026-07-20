@@ -8,7 +8,6 @@
 
 (require 'maf-stack "stack")
 (require 'maf-minibuffer "minibuffer")
-(require 'maf-edit "edit")
 
 ;; Also defvar'd in maf.el and maf-cmds.el; whichever file loads first
 ;; creates the map, the rest are no-ops.
@@ -37,16 +36,8 @@
 (define-key maf-mode-map (kbd "S-<up>") #'mafcmd-toggle-op)
 (define-key maf-mode-map (kbd "S-<down>") #'mafcmd-toggle-op)
 (define-key maf-mode-map (kbd ",") #'maf-quick-variable)
-;; SPC toggles in-place stack editing: enter maf-edit, and inside it
-;; RET (maf-edit-mode-map) commits. C-RET enters with a fresh entry
-;; started at the bottom, returning point when the session ends.
-;; Shadows one of calc-enter's two keys; RET still runs it. Inside
-;; maf-edit SPC is self-inserting, since the edit text map replaces
-;; this one.
-(define-key maf-mode-map (kbd "SPC") #'maf-edit)
-(define-key maf-mode-map (kbd "C-<return>") #'maf-edit-add-entry)
-;; S-RET opens the new entry below the entry at point instead.
-(define-key maf-mode-map (kbd "S-<return>") #'maf-edit-add-entry-below)
+;; The in-place editing entry keys (SPC / C-RET / S-RET) are installed
+;; by the edit module when it is enabled (see modules/edit.el), not here.
 (define-key maf-mode-map (kbd "U") #'maf-undo)
 (define-key maf-mode-map (kbd "D") #'maf-redo)
 ;; Catch every key that dispatches to undo/redo, so point handling

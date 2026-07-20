@@ -39,7 +39,7 @@ symbols: +, -, *, /, ^, neg, or a calcFunc- name."
 
 ;;; Modules (maf-module.el)
 
-(defcustom maf-modules '(history highlight)
+(defcustom maf-modules '(history highlight edit)
   "Names of the maf feature modules to enable.
 Each major feature that stands apart from the contextual-command core
 is an optional module (see maf-module.el); this list names the ones

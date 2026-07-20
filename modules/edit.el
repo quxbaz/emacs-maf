@@ -1,10 +1,14 @@
 ;; -*- lexical-binding: t; -*-
 ;;
-;; edit.el
+;; modules/edit.el
 ;;
-;; maf-edit: wdired-style in-place editing of the calc stack.
+;; maf-edit: wdired-style in-place editing of the calc stack, packaged
+;; as the `edit' module. The module toggle only installs the entry
+;; bindings (SPC / C-<return> / S-<return>) into `maf-mode-map'; the
+;; editing itself is the on-demand `maf-edit-mode' session below. See
+;; `maf-modules'.
 ;;
-;; `maf-edit' (RET in maf-mode) turns the calc buffer into editable
+;; `maf-edit' (SPC in maf-mode) turns the calc buffer into editable
 ;; plain text; the same key commits, so RET toggles edit/commit.
 ;; Each stack entry is tracked by an overlay; the text is the
 ;; interface. Newline gestures are the only structural operators:
@@ -36,6 +40,7 @@
 (require 'subr-x)
 (require 'cursor-sensor)  ; cursor-intangible-mode
 (require 'maf-lib)
+(require 'maf-module)
 
 ;; Defined in lazily-loaded calc modules; calc-ext's autoload registry
 ;; resolves them at runtime, but the byte compiler needs declarations.
@@ -43,6 +48,10 @@
 (declare-function calc-locate-cursor-element "calc-yank")
 (declare-function maf-mode "maf")
 (declare-function maf-hl-mode "maf-hl")
+
+;; The module toggle installs its entry keys into this map, defined in
+;; maf.el / bindings.el and current by the time the module is enabled.
+(defvar maf-mode-map)
 
 (defvar-local maf-edit--dot nil
   "Overlay tracking the home (dot) line during maf-edit.")
@@ -882,5 +891,30 @@ continues. The whole commit is one undo group."
   (unless maf-edit-mode (user-error "maf-edit is not active"))
   (maf-edit-mode -1)
   (message "maf-edit: discarded"))
+
+;;; The module
+
+(defun maf-edit--module-toggle (arg)
+  "Install or remove maf-edit's entry key bindings in `maf-mode-map'.
+The module system's toggle for the `edit' module (see `maf-modules'):
+ARG positive binds SPC / C-<return> / S-<return> to the maf-edit entry
+commands; non-positive cedes them back to calc.
+
+The other modules register a minor mode; this one is just these
+bindings plus the on-demand `maf-edit-mode' editing session, so a plain
+binding installer is all the toggle needs. SPC shadows one of
+calc-enter's two keys (RET still runs it) and enters editing, where
+`maf-edit-mode-map's RET commits; C-<return> and S-<return> are the
+quick-add gestures."
+  (if (> arg 0)
+      (progn
+        (define-key maf-mode-map (kbd "SPC") #'maf-edit)
+        (define-key maf-mode-map (kbd "C-<return>") #'maf-edit-add-entry)
+        (define-key maf-mode-map (kbd "S-<return>") #'maf-edit-add-entry-below))
+    (define-key maf-mode-map (kbd "SPC") nil)
+    (define-key maf-mode-map (kbd "C-<return>") nil)
+    (define-key maf-mode-map (kbd "S-<return>") nil)))
+
+(maf-register-module 'edit #'maf-edit--module-toggle)
 
 (provide 'maf-edit)
