@@ -39,7 +39,6 @@
 (require 'maf-cmds)
 (require 'maf-math "math")
 (require 'maf-stack "stack")
-(require 'maf-persist "persist")
 (require 'maf-bindings "bindings")
 (require 'maf-minibuffer "minibuffer")
 
@@ -51,6 +50,7 @@
 ;; here is idempotent and marks it as a module.)
 (require 'maf-hl)
 (require 'maf-history "history")
+(require 'maf-persist "persist")
 
 ;;;###autoload
 (defun maf-calc ()

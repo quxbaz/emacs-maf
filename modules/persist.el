@@ -1,15 +1,20 @@
 ;; -*- lexical-binding: t; -*-
 ;;
-;; persist.el
+;; modules/persist.el
 ;;
-;; Stack persistence: each Emacs session saves its calc stack under its
-;; own name and restores it in the next session, so juggling several
-;; sessions never loses a stack — sessions write only their own file,
-;; and `maf-restore-stack-from' loads any other session's stack on
+;; Stack persistence module: each Emacs session saves its calc stack
+;; under its own name and restores it in the next session, so juggling
+;; several sessions never loses a stack — sessions write only their own
+;; file, and `maf-restore-stack-from' loads any other session's stack on
 ;; request. The whole feature hangs off one switch,
 ;; `maf-stack-persistence-mode' (a global minor mode); loading this
 ;; file changes nothing. Save files hold plain formula values: no
 ;; selections, trail, or undo history.
+;;
+;; The mode is registered with the module system as `persist' (see
+;; `maf-modules'). Unlike the highlight and history modules it is not
+;; in the default module set: it writes files to disk, so it stays
+;; opt-in — the dev instance turns it on in project-init.el.
 ;;
 ;; Session names: a session running a server (daemon, or `server-start'
 ;; from init) is named by its `server-name'. Sessions without a server
@@ -21,6 +26,7 @@
 
 (require 'calc)
 (require 'maf-lib)
+(require 'maf-module)
 (require 'maf-conf "conf")
 
 (defvar maf--stack-session nil
@@ -241,5 +247,7 @@ See `maf-stack-session-name' for how sessions are named, and
       (setq maf--stack-save-timer nil))
     ;; The save file stays; only the name lock lets go.
     (maf--stack-release-lock)))
+
+(maf-register-module 'persist #'maf-stack-persistence-mode)
 
 (provide 'maf-persist)

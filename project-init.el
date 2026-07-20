@@ -45,9 +45,13 @@ One entry per common expression shape.")
   ;; once) also keeps maf-mode on across calc-reset, which re-runs calc-mode
   ;; and thereby kills buffer-local minor modes.
   (add-hook 'calc-mode-hook #'maf-mode)
-  ;; Stack persistence. The dev instance's server name keys its own
-  ;; save file, so it never collides with other sessions.
-  (maf-stack-persistence-mode 1)
+  ;; Opt into the stack-persistence module — off in the package default
+  ;; because it writes files, but wanted here: the dev instance's server
+  ;; name keys its own save file, so it never collides with other
+  ;; sessions. Expressed through `maf-modules' so the module list stays
+  ;; the single source of truth; `maf-modules-apply' enables it.
+  (add-to-list 'maf-modules 'persist t)
+  (maf-modules-apply)
   ;; Create the calc buffer without letting it pick the layout.
   (save-window-excursion (maf-calc-direct))
   ;; Starting layout: maf.org on the left, calc on the right. Deferred

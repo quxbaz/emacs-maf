@@ -469,6 +469,7 @@ calc's own (=calc-digit-map=), so the in-entry keys — =e=, =_=, =:=,
 | [[file:../../src/bindings.el][src/bindings.el]]         | Default key bindings made outside the mafcmd table          |
 | [[file:../../modules/maf-hl.el][modules/maf-hl.el]]       | Highlight module: =maf-hl-mode= per-buffer, =maf-hl-global-mode= toggle |
 | [[file:../../modules/history.el][modules/history.el]]      | History module: =maf-history-mode= records stack states, browse in =*maf-history*= |
+| [[file:../../modules/persist.el][modules/persist.el]]      | Persist module: =maf-stack-persistence-mode= saves/restores the stack across sessions |
 | [[file:../../debug/maf-step.el][debug/maf-step.el]]       | Step-through harness (cockpit) that drives the tests        |
 | [[file:../../debug/maf-hl-verify.el][debug/maf-hl-verify.el]]  | Programmatic highlight verification (overlay state + render) |
 | [[file:../../debug/maf-hl-sweep.el][debug/maf-hl-sweep.el]]   | Highlight sweep across many expression shapes               |
@@ -477,12 +478,12 @@ calc's own (=calc-digit-map=), so the in-entry keys — =e=, =_=, =:=,
 
 Load order in =maf.el=: =conf= → =module= → =comp= → =chain= → =lib= →
 =sel= → =step= → =hl-verify= → =resolve= → =commit= → =defcmd= →
-=cmds= → =math= → =stack= → =persist= → =bindings= → =minibuffer=,
-then the feature modules (=maf-hl=, =history=), then
-=maf-modules-apply=. Each layer depends only on earlier ones; modules
-load last so =maf-mode-map= exists for any key bindings they install.
-(=maf-hl= also loads earlier as a dependency of the =hl-verify= debug
-helper; the require is idempotent.)
+=cmds= → =math= → =stack= → =bindings= → =minibuffer=, then the feature
+modules (=maf-hl=, =history=, =persist=), then =maf-modules-apply=.
+Each layer depends only on earlier ones; modules load last so
+=maf-mode-map= exists for any key bindings they install. (=maf-hl= also
+loads earlier as a dependency of the =hl-verify= debug helper; the
+require is idempotent.)
 
 * Modules
 
@@ -517,6 +518,14 @@ is global or per-buffer:
 A module owns its whole lifecycle, including bindings: =maf-mode= no
 longer enables highlighting or history, and =bindings.el= no longer
 holds the =t d= key.
+
+The default =maf-modules= holds the side-effect-free features —
+=history= and =highlight=. The persist module (=modules/persist.el=,
+=maf-stack-persistence-mode=) writes save files to disk, so it stays
+out of the default and is opt-in: the dev instance adds =persist= to
+=maf-modules= in =project-init.el= and calls =maf-modules-apply=, the
+documented Lisp way to enable a module. Persist itself is already a
+plain global minor mode, registered as-is.
 
 * See also
 
