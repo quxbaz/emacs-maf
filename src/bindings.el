@@ -27,6 +27,8 @@
 (define-key maf-mode-map (kbd "l c") #'mafcmd-frac)
 (define-key maf-mode-map (kbd "l d") #'mafcmd-to-degrees)
 (define-key maf-mode-map (kbd "l r") #'mafcmd-to-radians)
+;; M-o is unbound in calc itself; H M-o runs the mod-180 variant.
+(define-key maf-mode-map (kbd "M-o") #'mafcmd-mod-360)
 (define-key maf-mode-map (kbd "O") #'mafcmd-commute)
 ;; Shadows calc-call-last-kbd-macro.
 (define-key maf-mode-map (kbd "X") #'mafcmd-log-exp)

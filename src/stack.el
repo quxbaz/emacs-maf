@@ -281,6 +281,37 @@ home.
             (math-simplify (math-div (math-mul expr '(var pi var-pi))
                                      180)))))
 
+(maf-defcmd mafcmd-mod-360 (expr _arg commit)
+  "Reduce the resolved expression modulo 360, wrapping an angle in degrees.
+
+  400  =>  40
+
+Negative angles wrap positive, floats keep their fraction, and a
+symbolic expression stays a symbolic % form. With the Hyperbolic
+flag, routes to `mafcmd-mod-180'. Point picks the target as usual: a
+sub-formula at point, each side of an equation, the top entry at
+home.
+
+  -30    =>  330
+  400.5  =>  40.5
+  x      =>  x % 360"
+  :arity unary
+  :prefix "mod"
+  :hyperbolic mafcmd-mod-180
+  (commit (math-mod expr 360)))
+
+(maf-defcmd mafcmd-mod-180 (expr _arg commit)
+  "Reduce the resolved expression modulo 180.
+
+  270  =>  90
+
+`mafcmd-mod-360's Hyperbolic variant; see there. Point picks the
+target as usual: a sub-formula at point, each side of an equation,
+the top entry at home."
+  :arity unary
+  :prefix "mod"
+  (commit (math-mod expr 180)))
+
 (maf-defcmd mafcmd-commute (expr _arg commit)
   "Swap the first two operands of the resolved expression.
 
