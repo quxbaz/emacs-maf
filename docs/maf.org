@@ -30,7 +30,6 @@
 
 * PORT:stack.el
 ** Modes and session
-   - [ ] my/calc-next-cmd-no-simplify (#) — run just the next command with simplification off
    - [ ] my/calc-toggle-big-language (G) — toggle Big/normal display
    - [ ] my/calc-reset (C-M-k) — calc-reset + clear history (was: trail) + reload settings
    - [ ] my/calc-reset-settings (C-M-l) — reset display/modes only, keep the stack
