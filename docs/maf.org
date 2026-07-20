@@ -24,7 +24,6 @@
 
 * IN-PROGRESS Todo
 # NOW
-** TODO Always show big display mode for active entry in non-selectable buffer.
 # LATER
 ** REVIEW Snapshot after every commit. Navigate through history in history
    navigation pane.
