@@ -10,11 +10,10 @@
   2) [ ] Harden through using w/ anki math
 
 * Major features [2/9]
-  - [ ] Vim bindings (noun, verb, char)
+  - [ ] Vim bindings module (noun, verb, char)
   - [X] Persistent sub-formula highlighting
   - [ ] History, snapshots
-  - [ ] Modules: graphing submodule, vim bindings submodule, etc.
-    - Toggle to use or disable a features
+  - [ ] Graphing module
   - [ ] Omni options buffer
   - [ ] Formulas module. Support categories, docs per formula, examples
   - [-] Modules manager: Buffer where you can toggle modules
