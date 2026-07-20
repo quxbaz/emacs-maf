@@ -586,7 +586,9 @@ insertion-time newline classification never saw the restored text."
 The mode variable is the editing state: turning it on makes the stack
 plain editable text (entries tracked by overlays, prefixes machine-
 owned and renumbered live); turning it off restores the calc buffer
-with the stack untouched — discard semantics. To keep the edits, use
+with the stack untouched — discard semantics. It is unavailable under
+the Big display language, whose multi-line entries it cannot edit. To
+keep the edits, use
 \\<maf-edit-mode-map>\\[maf-edit-commit] (`maf-edit-commit'), which
 parses the buffer, then turns the mode off, then replaces the stack.
 
@@ -619,6 +621,10 @@ Built with `substitute-command-keys' so rebinding the gestures in
     (user-error "maf-edit only works in a calc buffer"))
   (unless calc-line-numbering
     (user-error "maf-edit requires calc-line-numbering"))
+  ;; The Big display language renders entries across multiple lines,
+  ;; which maf-edit's one-entry-per-line model cannot handle.
+  (when (eq calc-language 'big)
+    (user-error "maf-edit does not work in the Big display language"))
   (let ((snapshot (maf--point-snapshot)))
       ;; Render without width-based line breaking: any multi-line entry
       ;; left is structural (matrix/vector row layout), which the
