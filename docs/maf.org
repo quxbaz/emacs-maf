@@ -9,7 +9,7 @@
   1) [ ] Move all of relevant my/calc config into project
   2) [ ] Harden by using w/ anki math
 
-* Major features
+* Major features [2/9]
   - [ ] Vim bindings (noun, verb, char)
   - [X] Persistent sub-formula highlighting
   - [ ] History, snapshots
