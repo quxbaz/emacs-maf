@@ -18,9 +18,127 @@
 
 * Port
   - [ ] Port my/calc/* features one-by-one.
+  Full inventory of ~/.emacs.d/my/calc below; legacy bindings in parens
+  are reference only, maf rebinds at port time. Features already ported
+  or superseded are noted at the end of each section.
 
-* Port::stack.el
-** TODO
+* PORT:stack.el
+** Modes and session
+   - [ ] my/calc-next-cmd-no-simplify (#) — run just the next command with simplification off
+   - [ ] my/calc-toggle-big-language (G) — toggle Big/normal display
+   - [ ] my/calc-reset (C-M-k) — calc-reset + clear history (was: trail) + reload settings
+   - [ ] my/calc-reset-settings (C-M-l) — reset display/modes only, keep the stack
+** Motion
+   - [ ] my/calc-forward-noun / my/calc-backward-noun (M-f/M-b) — next/previous number or
+     variable, skipping function names; fix the line-prefix bug while at it (see Bugs)
+** Copying
+   - [ ] my/calc-kill-ring-save-dwim (M-w) — copy region/entry/top; invoked twice, copies LaTeX
+   - [ ] LaTeX composition for log: log(x, b) → \log_{b}(x) (math-compose-latex property)
+** Stack shuffling and duplication
+   - [ ] my/calc-duplicate (RET) + my/calc-push-dwim (M-RET) + my/calc-duplicate-no-move —
+     fold into one contextual duplicate: entry at point, sub-formula, or region
+   - [ ] my/calc-roll-to-top (S-RET) — move the entry at point to the top
+   - [ ] my/calc-roll-to-bottom (C-M-backspace)
+   - [ ] my/calc-duplicate-stack (C-M-RET) — duplicate the whole stack
+   - [ ] my/calc-store-stack / my/calc-recall-stack (s RET / r RET) — in-memory stack
+     save/restore; possibly superseded by maf-history r — decide before porting
+** Variables
+   - [ ] my/calc-recall-browse (p) — completing-read recall, values as annotations
+     (drop the ivy-specific TAB cycling)
+   - [ ] my/calc-recall / my/calc-recall-quick (r 0-9) — recall without simplification
+   - [ ] my/calc-substitute (a b) — calc-substitute variant with an empty new-name prompt
+   - [ ] my/calc-swap-variables (l x) — swap two variables in the top entry
+   - [ ] my/calc-quick-substitution (C-RET) — substitute the top assignment into level 2;
+     needs a maf answer to the saved keep-args-flag hack
+** Equation arithmetic
+   - [ ] my/calc-plus / my/calc-minus (+/-) — eq + eq adds/subtracts both sides;
+     layer onto mafcmd-add/sub
+** Solving
+   - [ ] my/calc-auto-solve (M-i) — solve for the first variable, cycle when already solved
+   - [ ] my/calc-inverse-function (l v) — invert y = f(x), any variable names
+   - [ ] my/calc-poly-roots (M-r) — roots via factoring, with multiplicity
+** Angles
+   - [ ] my/calc-ref-angle (M-l) — reference angle (+ my/math-ref-angle helper)
+   - [ ] my/calc-supplement / my/calc-complement (M-s / M-c) — 180−x / 90−x, pi-aware
+** Polynomials
+   - [ ] my/calc-poly-lcm (a L) — LCM of two polynomials by factorization
+   - [ ] Polynomial term ordering — math-normalize advice keeping sums in descending degree
+** Vectors
+   - [ ] my/calc-coordinate-toggle (M-k) — cycle [1 2] → [x=1 y=2] → [h=1 k=2] → [p=1 q=2];
+     also f(2) = 0 → [2 0]
+   - [ ] my/calc-unique-groups (l g) — all size-n combinations of a vector
+   - [ ] my/calc-vector-flatten (v L)
+** Triangles
+   - [ ] my/calc-cath / my/calc-unit-cath (f l / f L) — right-triangle leg from hyp+leg / unit hyp
+   - [ ] calcFunc-hypot advice — symbolic args: sqrt(abssqr(a) + abssqr(b))
+** Already covered
+   Stack persistence (persist.el), maf-calc/-direct, maf-undo/redo, maf-kill,
+   maf-del, maf-beginning-of-entry, maf-equal-to, maf-quick-variable,
+   maf-toggle-simplify; mafcmd: factor-by, factor-gcd, sqrt/sqr, exp, ln, log,
+   pow, mul, div, add, sub, neg, inv, esimplify, factor, expand. Trail yank
+   commands superseded by maf-history RET/C-RET.
+
+* PORT:evaluate.el
+  - [ ] my/calc-evaluate (k k) — evaluate numerically, contextual (see Todo: fractions/division)
+  - [ ] my/calc--identify-expr (I k k) — identify a float as integer, p/q, (p/q)·√n,
+    n^(1/3), n^(1/4), (p/q)·π/e, ln(n)
+
+* PORT:ineq.el
+  - [ ] my/calc-abs-ineq (a k) — |a| < b → compound inequality, each part solved for the variable
+
+* PORT:rewrite.el
+  - [ ] my/calc-collect-fractions (l t) — combine additive terms over their LCD;
+    flatten (frac p q)/e stacked division
+  Already covered: to-degrees/to-radians, mod-360/180, log-exp identities,
+  complete-square, factor-powers — all reimplemented structurally in maf.
+
+* PORT:selection.el
+  - [ ] my/calc-sel-jump-equals (j e) — move term across =, unselect after; includes
+    the JumpRules advice extending every rule to !=
+  - [ ] my/calc-sel-negate (N) — negate in place, contextual, unselect after
+  - [ ] my/calc-sel-distribute (j D) — contextual, no-simplify, frac→division fix (see BACKLOG)
+  - [ ] my/calc-sel-merge (j M) — contextual, unselect after
+  - [ ] my/calc-clear-selections (j c) — point-preserving clear
+  Already covered: my/calc-commute → mafcmd-commute (with relation flipping).
+
+* PORT:edit.el
+  maf-edit replaces the calc-edit buffer workflow itself; these are the
+  in-entry conveniences worth recreating in maf-edit / digit entry:
+  - [ ] Entry history (M-p / M-n) — recall previous entries (see Todo)
+  - [ ] my/calc-vector-edit \"(\" — start a bracketed vector entry
+  - [ ] Wrap helpers (\\ L |) — sqrt/ln/abs around the preceding expression or region
+  - [ ] my/calc-edit-square-dwim / -cube-dwim (: W \") — insert ^2/^3; repeats increment
+  - [ ] Power shortcuts (M-2..M-9, M-') — insert ^n / ^()
+  - [ ] my/calc-edit-wrap-parens (M-o) / -escape-parens (TAB) / -toggle-brackets (S-up/down)
+  - [ ] my/calc-edit-jump-sides — jump between the sides of =, inserting \" = \" if absent
+  - [ ] my/calc-edit-insert-pi (P); ; → :; J → *
+  - [ ] my/calc-edit-duplicate (M-RET) — duplicate line, comma-aware (vector entry)
+  - [ ] my/calc-duplicate-paren-expr (C-RET) — duplicate innermost paren group
+  Already covered: edit-dwim/edit-selection → maf-edit (SPC); no-simplify
+  commit is maf-edit's default commit path.
+
+* PORT:minibuffer.el
+  - [ ] Digit-map shortcuts: ; → :, n/P → push × pi, e → equal-to from entry, o → mod-360
+  Already covered: no-align on command-key termination and C-g quit
+  (src/minibuffer.el).
+
+* PORT:plot.el
+  - [ ] my/calc-graph-quick / -with-range (g l / g i) — plot the top entry straight to
+    gnuplot (see Todo: interval form for the range prompt)
+  - [ ] my/calc-to-gnuplot-string — calc expr → gnuplot formula (fortran mode + fixups)
+  - [ ] gnuplot session defaults (index.el) — resolution 1000, qt device, seeded
+    \"set grid / set nokey\"
+
+* PORT:debug.el
+  - [ ] my/calc-debug-mode (M-d) — live structural sexp view of the entry at point
+    in *calc-debug*; S dumps the whole stack
+  Already covered: highlight mode → maf-hl.
+
+* PORT:lib.el, var.el, index.el, bindings.el
+  Nothing to port on their own: the replace-expr-dwim macro and the predicates
+  became resolve/commit and maf-lib, bindings travel with their commands, and
+  index.el's trail auto-hide dies with the trail (maf-history). The trail-mode
+  navigation bindings are likewise obsolete.
 
 * IN-PROGRESS Todo
 # NOW
