@@ -250,6 +250,7 @@ See `maf-stack-session-name' for how sessions are named, and
 ;; Register with the module system when it is present; the mode above
 ;; works on its own without it.
 (when (require 'maf-module nil t)
-  (maf-register-module 'maf-persist #'maf-persist-mode))
+  (maf-register-module 'maf-persist #'maf-persist-mode
+                       "Save and restore the calc stack across Emacs sessions."))
 
 (provide 'maf-persist)

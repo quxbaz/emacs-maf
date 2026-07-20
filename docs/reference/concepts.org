@@ -461,7 +461,7 @@ calc's own (=calc-digit-map=), so the in-entry keys — =e=, =_=, =:=,
 | [[file:../../core/maf-resolve.el][core/maf-resolve.el]] | Context resolution + target dispatch                        |
 | [[file:../../core/maf-commit.el][core/maf-commit.el]]  | Commit recipes (push/pop choreography per target)           |
 | [[file:../../core/maf-defcmd.el][core/maf-defcmd.el]]  | The =maf-defcmd= macro + parsing helpers + I/H dispatch     |
-| [[file:../../core/maf-module.el][core/maf-module.el]]  | Module system: register minor-mode modules, drive/reconcile them against =maf-modules= |
+| [[file:../../core/maf-module.el][core/maf-module.el]]  | Module system: register minor-mode modules, drive/reconcile against =maf-modules=, =maf-list-modules= toggle menu |
 | [[file:../../src/maf-cmds.el][src/maf-cmds.el]]         | The mafcmd table: calcFunc-backed commands, keys, variant links |
 | [[file:../../src/math.el][src/math.el]]             | Pure formula helpers (term walk, terms GCD)                 |
 | [[file:../../src/stack.el][src/stack.el]]            | Hand-written contextual stack commands (factor-by, factor-gcd, undo/redo) |
@@ -516,6 +516,14 @@ knows nothing of the registry, so each module guards its registration
 (=(when (require 'maf-module nil t) ...)=) and the feature stays fully
 usable with the registry absent — you just lose the list-driven
 management.
+
+=M-x maf-list-modules= opens =*maf-modules*=, a =tabulated-list-mode=
+buffer of every registered module — state, name, and a one-line
+description — split into its own window. =RET= on a row toggles that
+module in place: it calls the mode directly, so the reconcile above
+keeps =maf-modules= in step. Each module supplies its own description
+as the third argument to =maf-register-module=, so the menu documents
+whatever is loaded without a central list to maintain.
 
 Two module shapes have appeared, matching the feature's state:
 

@@ -364,6 +364,7 @@ recorded stay browsable. Managed through the module system; see
 ;; Register with the module system when it is present; the mode above
 ;; works on its own without it.
 (when (require 'maf-module nil t)
-  (maf-register-module 'maf-timeline #'maf-use-timeline-mode))
+  (maf-register-module 'maf-timeline #'maf-use-timeline-mode
+                       "Browsable timeline of stack states; step through and restore snapshots."))
 
 (provide 'maf-timeline)

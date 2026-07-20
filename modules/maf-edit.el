@@ -917,6 +917,7 @@ on-demand `maf-edit-mode' editing session they lead into."
 ;; Register with the module system when it is present; the mode above
 ;; works on its own without it.
 (when (require 'maf-module nil t)
-  (maf-register-module 'maf-edit #'maf-use-edit-mode))
+  (maf-register-module 'maf-edit #'maf-use-edit-mode
+                       "Edit the stack in place as plain text (SPC / C-RET / S-RET)."))
 
 (provide 'maf-edit)

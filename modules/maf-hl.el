@@ -77,6 +77,7 @@ major mode settles; highlighting only makes sense in a calc buffer."
 ;; Register with the module system when it is present; the mode above
 ;; works on its own without it.
 (when (require 'maf-module nil t)
-  (maf-register-module 'maf-hl #'maf-use-hl-mode))
+  (maf-register-module 'maf-hl #'maf-use-hl-mode
+                       "Highlight the innermost sub-formula under point as the cursor moves."))
 
 (provide 'maf-hl)
