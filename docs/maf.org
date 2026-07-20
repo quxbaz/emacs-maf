@@ -21,7 +21,7 @@
     - [X] Create manager
     - [ ] Bind to key
   - [ ] Support module architecture (history, maf-edit)
-  - [ ] Discovery mode for useful features, behaviors, modules, etc
+  - [ ] Discovery document for useful features, behaviors, modules, etc
 
 * Port
   - [ ] Port my/calc/* features one-by-one.
