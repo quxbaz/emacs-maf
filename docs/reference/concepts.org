@@ -461,23 +461,45 @@ calc's own (=calc-digit-map=), so the in-entry keys — =e=, =_=, =:=,
 | [[file:../../core/maf-resolve.el][core/maf-resolve.el]] | Context resolution + target dispatch                        |
 | [[file:../../core/maf-commit.el][core/maf-commit.el]]  | Commit recipes (push/pop choreography per target)           |
 | [[file:../../core/maf-defcmd.el][core/maf-defcmd.el]]  | The =maf-defcmd= macro + parsing helpers + I/H dispatch     |
+| [[file:../../core/maf-module.el][core/maf-module.el]]  | Module system: register/toggle optional feature modules per =maf-modules= |
 | [[file:../../src/maf-cmds.el][src/maf-cmds.el]]         | The mafcmd table: calcFunc-backed commands, keys, variant links |
 | [[file:../../src/math.el][src/math.el]]             | Pure formula helpers (term walk, terms GCD)                 |
 | [[file:../../src/stack.el][src/stack.el]]            | Hand-written contextual stack commands (factor-by, factor-gcd, undo/redo) |
-| [[file:../../src/history.el][src/history.el]]          | Stack history: snapshot every stack change, browse in =*maf-history*= |
 | [[file:../../src/minibuffer.el][src/minibuffer.el]]       | Digit-entry integration: contextual digit entry, point/undo handoff |
 | [[file:../../src/bindings.el][src/bindings.el]]         | Default key bindings made outside the mafcmd table          |
 | [[file:../../src/maf-hl.el][src/maf-hl.el]]           | =maf-hl-mode=: highlight the sub-formula under point        |
+| [[file:../../modules/history.el][modules/history.el]]      | History module: =maf-history-mode= records stack states, browse in =*maf-history*= |
 | [[file:../../debug/maf-step.el][debug/maf-step.el]]       | Step-through harness (cockpit) that drives the tests        |
 | [[file:../../debug/maf-hl-verify.el][debug/maf-hl-verify.el]]  | Programmatic highlight verification (overlay state + render) |
 | [[file:../../debug/maf-hl-sweep.el][debug/maf-hl-sweep.el]]   | Highlight sweep across many expression shapes               |
 | [[file:../../debug/maf-dev-init.el][debug/maf-dev-init.el]]   | Init file for the dedicated =maf-dev= instance              |
 | [[file:../../tests/][tests/]]                  | Step tests; a file passes when no step errors               |
 
-Load order in =maf.el=: =comp= → =chain= → =lib= → =sel= → =hl= →
-=step= → =hl-verify= → =resolve= → =commit= → =defcmd= → =cmds= →
-=math= → =stack= → =bindings=. Each layer depends only on earlier
-ones.
+Load order in =maf.el=: =conf= → =module= → =comp= → =chain= → =lib= →
+=sel= → =hl= → =step= → =hl-verify= → =resolve= → =commit= → =defcmd=
+→ =cmds= → =math= → =stack= → =persist= → =bindings= → =minibuffer=,
+then the feature modules (=history=), then =maf-modules-apply=. Each
+layer depends only on earlier ones; modules load last so =maf-mode-map=
+exists for any key bindings they install.
+
+* Modules
+
+Major features that stand apart from the contextual-command core live
+as optional modules under =modules/=, toggled independently of
+=maf-mode=. A module is a global minor mode that installs everything it
+needs when enabled — hooks, advice, its own key bindings — and removes
+it all when disabled; loading the file only defines the mode. Each
+module calls =maf-register-module= to register its toggle under a short
+name. =maf-modules= (a defcustom) lists the active names, and
+=maf-modules-apply= reconciles the live state with that list, enabling
+the listed modules and disabling the rest — run at load and whenever
+=maf-modules= is set through Customize.
+
+The history module (=modules/history.el=) is the model: =maf-history-mode=
+installs the recording hook and the =calc-record= advice, and binds
+=t d= to =maf-history= in =maf-mode-map=; disabling removes them and
+cedes =t d= back to calc's =calc-trail-display=. The browsing buffer
+runs in its own =maf-history-list-mode= major mode.
 
 * See also
 

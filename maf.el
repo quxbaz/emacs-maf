@@ -22,9 +22,11 @@
 (let ((dir (file-name-directory (or load-file-name buffer-file-name))))
   (add-to-list 'load-path (expand-file-name "src" dir))
   (add-to-list 'load-path (expand-file-name "core" dir))
+  (add-to-list 'load-path (expand-file-name "modules" dir))
   (add-to-list 'load-path (expand-file-name "debug" dir)))
 
 (require 'maf-conf "conf")
+(require 'maf-module)
 (require 'maf-comp)
 (require 'maf-chain)
 (require 'maf-lib)
@@ -38,10 +40,15 @@
 (require 'maf-cmds)
 (require 'maf-math "math")
 (require 'maf-stack "stack")
-(require 'maf-history "history")
 (require 'maf-persist "persist")
 (require 'maf-bindings "bindings")
 (require 'maf-minibuffer "minibuffer")
+
+;; Feature modules (modules/). Loading each only registers its toggle
+;; with the module system; `maf-modules-apply' below activates the ones
+;; listed in `maf-modules'. Required after bindings.el so `maf-mode-map'
+;; exists for any module that installs keys into it.
+(require 'maf-history "history")
 
 ;;;###autoload
 (defun maf-calc ()
@@ -79,10 +86,11 @@ standalone for the highlight alone."
   :lighter " maf"
   :keymap maf-mode-map
   :group 'maf
-  (maf-hl-mode (if maf-mode 1 -1))
-  ;; Stack history recording travels with the mode the same way; its
-  ;; hook is global, so toggling in any one calc buffer is enough.
-  (if maf-mode (maf-history--install) (maf-history--uninstall)))
+  (maf-hl-mode (if maf-mode 1 -1)))
+
+;; Activate the feature modules listed in `maf-modules'. Runs once at
+;; load, after every module file has registered its toggle.
+(maf-modules-apply)
 
 (provide 'maf)
 

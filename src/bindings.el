@@ -7,7 +7,6 @@
 ;; made outside the table.
 
 (require 'maf-stack "stack")
-(require 'maf-history "history")
 (require 'maf-minibuffer "minibuffer")
 (require 'maf-edit "edit")
 
@@ -90,9 +89,7 @@
 ;; sequences (M-m t, M-m M-t) stay reachable as m t and m M-t.
 (define-key maf-mode-map (kbd "M-m") #'maf-beginning-of-entry)
 
-;; The stack history buffer replaces the trail; its window opens on
-;; the trail-display key. Only t d is shadowed — the rest of calc's t
-;; prefix (trail motion, time commands) still falls through.
-(define-key maf-mode-map (kbd "t d") #'maf-history)
+;; The `t d' stack-history binding is installed by the history module
+;; when it is enabled (see modules/history.el), not here.
 
 (provide 'maf-bindings)

@@ -37,7 +37,25 @@ symbols: +, -, *, /, ^, neg, or a calcFunc- name."
   :type '(alist :key-type symbol :value-type symbol)
   :group 'maf)
 
-;;; Stack history (history.el)
+;;; Modules (maf-module.el)
+
+(defcustom maf-modules '(history)
+  "Names of the maf feature modules to enable.
+Each major feature that stands apart from the contextual-command core
+is an optional module (see maf-module.el); this list names the ones
+that should be active. Setting it through Customize applies the change
+at once — enabling newly-listed modules and disabling removed ones.
+Set from Lisp, call `maf-modules-apply' to take effect."
+  :type '(set (const :tag "Stack history" history)
+              (const :tag "Sub-formula highlighting" highlight)
+              (const :tag "Stack persistence" persist)
+              (const :tag "In-place editing" edit))
+  :set (lambda (sym val)
+         (set-default sym val)
+         (when (fboundp 'maf-modules-apply) (maf-modules-apply)))
+  :group 'maf)
+
+;;; Stack history (modules/history.el)
 
 (defcustom maf-history-size 100
   "Maximum number of stack states kept in the history.
