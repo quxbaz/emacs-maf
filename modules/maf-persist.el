@@ -7,7 +7,7 @@
 ;; several sessions never loses a stack — sessions write only their own
 ;; file, and `maf-restore-stack-from' loads any other session's stack on
 ;; request. The whole feature hangs off one switch,
-;; `maf-stack-persistence-mode' (a global minor mode); loading this
+;; `maf-persist-mode' (a global minor mode); loading this
 ;; file changes nothing. Save files hold plain formula values: no
 ;; selections, trail, or undo history.
 ;;
@@ -26,7 +26,6 @@
 
 (require 'calc)
 (require 'maf-lib)
-(require 'maf-module)
 (require 'maf-conf "conf")
 
 (defvar maf--stack-session nil
@@ -219,7 +218,7 @@ records it under this session's own name."
   (maf--stack-release-lock))
 
 ;;;###autoload
-(define-minor-mode maf-stack-persistence-mode
+(define-minor-mode maf-persist-mode
   "Global minor mode persisting the calc stack across Emacs sessions.
 Each session saves its stack under its own name — at Emacs exit, and
 after every `maf-stack-save-interval' idle seconds when it changed —
@@ -230,7 +229,7 @@ See `maf-stack-session-name' for how sessions are named, and
 `maf-stack-directory' for where the files live."
   :global t
   :group 'maf
-  (if maf-stack-persistence-mode
+  (if maf-persist-mode
       (progn
         (add-hook 'kill-emacs-hook #'maf--stack-shutdown)
         (add-hook 'calc-mode-hook #'maf-restore-stack)
@@ -248,6 +247,9 @@ See `maf-stack-session-name' for how sessions are named, and
     ;; The save file stays; only the name lock lets go.
     (maf--stack-release-lock)))
 
-(maf-register-module 'persist #'maf-stack-persistence-mode)
+;; Register with the module system when it is present; the mode above
+;; works on its own without it.
+(when (require 'maf-module nil t)
+  (maf-register-module 'maf-persist #'maf-persist-mode))
 
 (provide 'maf-persist)

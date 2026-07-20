@@ -50,7 +50,7 @@ One entry per common expression shape.")
   ;; name keys its own save file, so it never collides with other
   ;; sessions. Expressed through `maf-modules' so the module list stays
   ;; the single source of truth; `maf-modules-apply' enables it.
-  (add-to-list 'maf-modules 'persist t)
+  (add-to-list 'maf-modules 'maf-persist t)
   (maf-modules-apply)
   ;; Create the calc buffer without letting it pick the layout.
   (save-window-excursion (maf-calc-direct))

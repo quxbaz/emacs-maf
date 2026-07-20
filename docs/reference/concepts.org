@@ -461,16 +461,16 @@ calc's own (=calc-digit-map=), so the in-entry keys — =e=, =_=, =:=,
 | [[file:../../core/maf-resolve.el][core/maf-resolve.el]] | Context resolution + target dispatch                        |
 | [[file:../../core/maf-commit.el][core/maf-commit.el]]  | Commit recipes (push/pop choreography per target)           |
 | [[file:../../core/maf-defcmd.el][core/maf-defcmd.el]]  | The =maf-defcmd= macro + parsing helpers + I/H dispatch     |
-| [[file:../../core/maf-module.el][core/maf-module.el]]  | Module system: register/toggle optional feature modules per =maf-modules= |
+| [[file:../../core/maf-module.el][core/maf-module.el]]  | Module system: register minor-mode modules, drive/reconcile them against =maf-modules= |
 | [[file:../../src/maf-cmds.el][src/maf-cmds.el]]         | The mafcmd table: calcFunc-backed commands, keys, variant links |
 | [[file:../../src/math.el][src/math.el]]             | Pure formula helpers (term walk, terms GCD)                 |
 | [[file:../../src/stack.el][src/stack.el]]            | Hand-written contextual stack commands (factor-by, factor-gcd, undo/redo) |
 | [[file:../../src/minibuffer.el][src/minibuffer.el]]       | Digit-entry integration: contextual digit entry, point/undo handoff |
 | [[file:../../src/bindings.el][src/bindings.el]]         | Default key bindings made outside the mafcmd table          |
-| [[file:../../modules/maf-hl.el][modules/maf-hl.el]]       | Highlight module: =maf-hl-mode= per-buffer, =maf-hl-global-mode= toggle |
-| [[file:../../modules/history.el][modules/history.el]]      | History module: =maf-history-mode= records stack states, browse in =*maf-history*= |
-| [[file:../../modules/persist.el][modules/persist.el]]      | Persist module: =maf-stack-persistence-mode= saves/restores the stack across sessions |
-| [[file:../../modules/edit.el][modules/edit.el]]         | Edit module: =maf-edit= in-place stack editing (=maf-edit-mode= session), SPC/C-RET/S-RET |
+| [[file:../../modules/maf-hl.el][modules/maf-hl.el]]       | Highlight module: =maf-hl-mode= per-buffer, =maf-use-hl-mode= toggle |
+| [[file:../../modules/maf-timeline.el][modules/maf-timeline.el]]  | Timeline module: =maf-use-timeline-mode= records stack snapshots, browse in =*maf-timeline*= |
+| [[file:../../modules/maf-persist.el][modules/maf-persist.el]]   | Persist module: =maf-persist-mode= saves/restores the stack across sessions |
+| [[file:../../modules/maf-edit.el][modules/maf-edit.el]]      | Edit module: =maf-use-edit-mode= binds SPC/C-RET/S-RET to =maf-edit= in-place stack editing (=maf-edit-mode= session) |
 | [[file:../../debug/maf-step.el][debug/maf-step.el]]       | Step-through harness (cockpit) that drives the tests        |
 | [[file:../../debug/maf-hl-verify.el][debug/maf-hl-verify.el]]  | Programmatic highlight verification (overlay state + render) |
 | [[file:../../debug/maf-hl-sweep.el][debug/maf-hl-sweep.el]]   | Highlight sweep across many expression shapes               |
@@ -480,7 +480,7 @@ calc's own (=calc-digit-map=), so the in-entry keys — =e=, =_=, =:=,
 Load order in =maf.el=: =conf= → =module= → =comp= → =chain= → =lib= →
 =sel= → =step= → =hl-verify= → =resolve= → =commit= → =defcmd= →
 =cmds= → =math= → =stack= → =bindings= → =minibuffer=, then the feature
-modules (=maf-hl=, =history=, =persist=, =edit=), then
+modules (=maf-hl=, =maf-timeline=, =maf-persist=, =maf-edit=), then
 =maf-modules-apply=. Each layer depends only on earlier ones; modules
 load last so =maf-mode-map= exists for any key bindings they install.
 (=maf-hl= also loads earlier as a dependency of the =hl-verify= debug
@@ -490,50 +490,65 @@ helper; the require is idempotent.)
 
 Major features that stand apart from the contextual-command core live
 as optional modules under =modules/=, toggled independently of
-=maf-mode=. A module registers a toggle — a global minor-mode function
-— under a short name with =maf-register-module=; loading the file only
-defines the mode, changing nothing until it is turned on. =maf-modules=
-(a defcustom) lists the active names, and =maf-modules-apply=
-reconciles the live state with that list, enabling the listed modules
-and disabling the rest — run at load and whenever =maf-modules= is set
-through Customize.
+=maf-mode=. A module is nothing but a global minor mode: it installs
+everything it needs when enabled and removes it all when disabled, and
+it works on its own, =M-x=-toggled like any minor mode, whether or not
+the module system is loaded. "Module" is just our name for one of
+these modes.
 
-Three module shapes have appeared, matching the feature's state:
+The registry in =core/maf-module.el= adds list-driven management on
+top. Loading a module file registers its mode under a short name with
+=maf-register-module=; =maf-modules= (a defcustom) lists the names that
+should be active. The list and the live modes stay in sync in both
+directions:
 
-- *Global mode.* The history module (=modules/history.el=) is one
-  =maf-history-mode= global minor mode: enabling installs the recording
-  hook and the =calc-record= advice and binds =t d= to =maf-history= in
+- On activation, =maf-modules-apply= drives the modes from the list,
+  enabling the listed modules and disabling the rest — run at load and
+  whenever =maf-modules= is set through Customize.
+- When a mode is toggled directly, its hook writes the list back from
+  live state (=maf-module--reconcile=), so =maf-modules= stays an
+  accurate record of what is on. A dynamic flag suppresses this while
+  =maf-modules-apply= runs, so applying the list never turns around and
+  rewrites it.
+
+The registry hooks *into* the modes, never the reverse: a mode body
+knows nothing of the registry, so each module guards its registration
+(=(when (require 'maf-module nil t) ...)=) and the feature stays fully
+usable with the registry absent — you just lose the list-driven
+management.
+
+Two module shapes have appeared, matching the feature's state:
+
+- *Global mode.* The timeline module (=modules/maf-timeline.el=) is one
+  =maf-use-timeline-mode= global minor mode: enabling installs the recording
+  hook and the =calc-record= advice and binds =t d= to =maf-timeline= in
   =maf-mode-map=; disabling removes them and cedes =t d= back to calc's
   =calc-trail-display=. The browsing buffer runs in its own
-  =maf-history-list-mode= major mode. Persistence
-  (=maf-stack-persistence-mode=) is the same shape, already a global
-  minor mode, registered as-is.
+  =maf-timeline-mode= major mode. Persistence
+  (=maf-persist-mode=) is the same shape. The edit module too
+  (=modules/maf-edit.el=): =maf-use-edit-mode= installs SPC /
+  C-<return> / S-<return> in =maf-mode-map= when enabled and cedes them
+  back when disabled — its body is just those bindings, the on-demand
+  editing session (=maf-edit-mode=, turned on per gesture, not a
+  feature switch) being separate.
 
 - *Globalized buffer-local mode.* Highlighting is inherently
   per-buffer (an overlay per calc buffer), so =modules/maf-hl.el= keeps
   the buffer-local =maf-hl-mode= and wraps it in a
-  =define-globalized-minor-mode=, =maf-hl-global-mode=, which turns the
+  =define-globalized-minor-mode=, =maf-use-hl-mode=, which turns the
   buffer-local mode on in every calc buffer. That globalized mode is
   the registered toggle; =M-x maf-hl-mode= still works standalone in a
   single buffer.
 
-- *Binding-only toggle.* The edit module (=modules/edit.el=) is just
-  its entry keys plus an on-demand editing session
-  (=maf-edit-mode=, turned on per gesture, not a feature switch), so
-  its registered toggle is a plain function,
-  =maf-edit--module-toggle=, that installs SPC / C-<return> /
-  S-<return> in =maf-mode-map= when enabled and cedes them back to calc
-  when disabled — no feature-level minor mode of its own.
-
 A module owns its whole lifecycle, including bindings: =maf-mode= no
-longer enables highlighting or history, and =bindings.el= no longer
+longer enables highlighting or the timeline, and =bindings.el= no longer
 holds the =t d= or in-place-editing keys.
 
 The default =maf-modules= holds the features that belong in the base
-UX — =history=, =highlight=, and =edit=. The persist module
-(=modules/persist.el=) is the exception: it writes save files to disk,
+UX — =maf-timeline=, =maf-hl=, and =maf-edit=. The persist module
+(=modules/maf-persist.el=) is the exception: it writes save files to disk,
 so it stays out of the default and is opt-in — the dev instance adds
-=persist= to =maf-modules= in =project-init.el= and calls
+=maf-persist= to =maf-modules= in =project-init.el= and calls
 =maf-modules-apply=, the documented Lisp way to enable a module.
 
 * See also

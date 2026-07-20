@@ -40,7 +40,6 @@
 (require 'subr-x)
 (require 'cursor-sensor)  ; cursor-intangible-mode
 (require 'maf-lib)
-(require 'maf-module)
 
 ;; Defined in lazily-loaded calc modules; calc-ext's autoload registry
 ;; resolves them at runtime, but the byte compiler needs declarations.
@@ -894,19 +893,19 @@ continues. The whole commit is one undo group."
 
 ;;; The module
 
-(defun maf-edit--module-toggle (arg)
-  "Install or remove maf-edit's entry key bindings in `maf-mode-map'.
-The module system's toggle for the `edit' module (see `maf-modules'):
-ARG positive binds SPC / C-<return> / S-<return> to the maf-edit entry
-commands; non-positive cedes them back to calc.
+(define-minor-mode maf-use-edit-mode
+  "Global minor mode making maf-edit's entry keys live in `maf-mode-map'.
+Enabled, SPC / C-<return> / S-<return> run the maf-edit entry commands;
+disabled, they cede back to calc. SPC shadows one of calc-enter's two
+keys (RET still runs it) and enters editing, where `maf-edit-mode-map's
+RET commits; C-<return> and S-<return> are the quick-add gestures.
 
-The other modules register a minor mode; this one is just these
-bindings plus the on-demand `maf-edit-mode' editing session, so a plain
-binding installer is all the toggle needs. SPC shadows one of
-calc-enter's two keys (RET still runs it) and enters editing, where
-`maf-edit-mode-map's RET commits; C-<return> and S-<return> are the
-quick-add gestures."
-  (if (> arg 0)
+This is the `edit' module (see `maf-modules'). Unlike the other
+modules it installs no hook or advice — just these bindings, plus the
+on-demand `maf-edit-mode' editing session they lead into."
+  :global t
+  :group 'maf
+  (if maf-use-edit-mode
       (progn
         (define-key maf-mode-map (kbd "SPC") #'maf-edit)
         (define-key maf-mode-map (kbd "C-<return>") #'maf-edit-add-entry)
@@ -915,6 +914,9 @@ quick-add gestures."
     (define-key maf-mode-map (kbd "C-<return>") nil)
     (define-key maf-mode-map (kbd "S-<return>") nil)))
 
-(maf-register-module 'edit #'maf-edit--module-toggle)
+;; Register with the module system when it is present; the mode above
+;; works on its own without it.
+(when (require 'maf-module nil t)
+  (maf-register-module 'maf-edit #'maf-use-edit-mode))
 
 (provide 'maf-edit)

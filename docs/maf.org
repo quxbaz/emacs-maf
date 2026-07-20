@@ -45,7 +45,7 @@
    - [ ] my/calc-roll-to-bottom (C-M-backspace)
    - [ ] my/calc-duplicate-stack (C-M-RET) — duplicate the whole stack
    - [ ] my/calc-store-stack / my/calc-recall-stack (s RET / r RET) — in-memory stack
-     save/restore; possibly superseded by maf-history r — decide before porting
+     save/restore; possibly superseded by maf-timeline r — decide before porting
 ** Variables
    - [ ] my/calc-recall-browse (p) — completing-read recall, values as annotations
      (drop the ivy-specific TAB cycling)
@@ -80,7 +80,7 @@
    maf-del, maf-beginning-of-entry, maf-equal-to, maf-quick-variable,
    maf-toggle-simplify; mafcmd: factor-by, factor-gcd, sqrt/sqr, exp, ln, log,
    pow, mul, div, add, sub, neg, inv, esimplify, factor, expand. Trail yank
-   commands superseded by maf-history RET/C-RET.
+   commands superseded by maf-timeline RET/C-RET.
 
 * PORT:evaluate.el
   - [ ] my/calc-evaluate (k k) — evaluate numerically, contextual (see Todo: fractions/division)
@@ -141,7 +141,7 @@
 * PORT:lib.el, var.el, index.el, bindings.el
   Nothing to port on their own: the replace-expr-dwim macro and the predicates
   became resolve/commit and maf-lib, bindings travel with their commands, and
-  index.el's trail auto-hide dies with the trail (maf-history). The trail-mode
+  index.el's trail auto-hide dies with the trail (maf-timeline). The trail-mode
   navigation bindings are likewise obsolete.
 
 * IN-PROGRESS Todo

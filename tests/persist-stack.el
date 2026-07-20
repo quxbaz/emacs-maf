@@ -104,13 +104,13 @@
 
   ;; The single switch: on wires hooks and one timer, off removes them
   ;; and releases the name lock.
-  (maf-stack-persistence-mode 1)
-  (maf-stack-persistence-mode 1)
+  (maf-persist-mode 1)
+  (maf-persist-mode 1)
   (cl-assert (memq 'maf--stack-shutdown kill-emacs-hook))
   (cl-assert (memq 'maf-restore-stack calc-mode-hook))
   (cl-assert (= 1 (seq-count (lambda (tm) (eq (timer--function tm) 'maf-save-stack))
                              timer-idle-list)))
-  (maf-stack-persistence-mode -1)
+  (maf-persist-mode -1)
   (cl-assert (not (memq 'maf--stack-shutdown kill-emacs-hook)))
   (cl-assert (not (memq 'maf-restore-stack calc-mode-hook)))
   (cl-assert (not (seq-some (lambda (tm) (eq (timer--function tm) 'maf-save-stack))
@@ -125,4 +125,4 @@
                maf--stack-session (nth 2 maf--persist-stash)
                maf--stack-restored (nth 3 maf--persist-stash)
                maf--stack-last-saved (nth 4 maf--persist-stash))
-         (maf-stack-persistence-mode 1)))
+         (maf-persist-mode 1)))
