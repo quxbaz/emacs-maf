@@ -22,7 +22,7 @@
 * IN-PROGRESS Todo
 # NOW
 # LATER
-** TODO Snapshot after every commit. Navigate through history in history
+** REVIEW Snapshot after every commit. Navigate through history in history
    navigation pane.
 ** TODO k k (my/calc-evaluate N) should work on fractions and division.
 ** TODO g i (my/calc-graph-quick-with-range) interval form a:b should work with spaces 'a b'
