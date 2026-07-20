@@ -47,8 +47,10 @@ never get the hook function disabled."
 (define-minor-mode maf-hl-mode
   "Highlight the sub-formula under point in a calc buffer.
 As point moves over a stack entry, the innermost sub-formula containing
-point is shown with the `maf-hl' face. Entries rendered across multiple
-lines (matrices, Big language mode) are not highlighted."
+point is shown with the `maf-hl' face. A matrix or other multi-line
+entry is not highlighted. Under the Big display language `maf-use-hl-mode'
+disables this mode entirely, since a sub-formula there has no single
+flat range to mark."
   :lighter " hl"
   :group 'maf
   (if maf-hl-mode
@@ -65,14 +67,34 @@ lines (matrices, Big language mode) are not highlighted."
 (defun maf-hl--turn-on ()
   "Enable `maf-hl-mode' in the current buffer if it is a calc buffer.
 The per-buffer arm of `maf-use-hl-mode', run in every buffer as its
-major mode settles; highlighting only makes sense in a calc buffer."
-  (when (derived-mode-p 'calc-mode)
+major mode settles; highlighting only makes sense in a calc buffer, and
+only in a flat rendering — never under the Big display language."
+  (when (and (derived-mode-p 'calc-mode)
+             (not (eq calc-language 'big)))
     (maf-hl-mode 1)))
+
+(defun maf-hl--sync-language (&rest _)
+  "Track the display language: `maf-hl-mode' off under Big, on otherwise.
+Advice on `calc-set-language' while `maf-use-hl-mode' is on. Highlighting
+maps a sub-formula to one flat character range, which the Big language's
+multi-line rendering has no equivalent for, so the mode steps aside in
+Big mode and returns when the display goes back to normal."
+  (let ((big (eq calc-language 'big)))
+    (dolist (buf (buffer-list))
+      (with-current-buffer buf
+        (when (derived-mode-p 'calc-mode)
+          (cond ((and big maf-hl-mode) (maf-hl-mode -1))
+                ((and (not big) (not maf-hl-mode)) (maf-hl-mode 1))))))))
 
 ;;;###autoload
 (define-globalized-minor-mode maf-use-hl-mode
   maf-hl-mode maf-hl--turn-on
-  :group 'maf)
+  :group 'maf
+  ;; React to display-language changes so the mode follows Big mode in
+  ;; and out; advice lives only while the module is on.
+  (if maf-use-hl-mode
+      (advice-add 'calc-set-language :after #'maf-hl--sync-language)
+    (advice-remove 'calc-set-language #'maf-hl--sync-language)))
 
 ;; Register with the module system when it is present; the mode above
 ;; works on its own without it.
