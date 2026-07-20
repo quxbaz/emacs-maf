@@ -31,7 +31,6 @@
 (require 'maf-chain)
 (require 'maf-lib)
 (require 'maf-sel)
-(require 'maf-hl)
 (require 'maf-step)
 (require 'maf-hl-verify)
 (require 'maf-resolve)
@@ -47,7 +46,10 @@
 ;; Feature modules (modules/). Loading each only registers its toggle
 ;; with the module system; `maf-modules-apply' below activates the ones
 ;; listed in `maf-modules'. Required after bindings.el so `maf-mode-map'
-;; exists for any module that installs keys into it.
+;; exists for any module that installs keys into it. (maf-hl also loads
+;; earlier as a dependency of the hl-verify debug helper; the require
+;; here is idempotent and marks it as a module.)
+(require 'maf-hl)
 (require 'maf-history "history")
 
 ;;;###autoload
@@ -80,13 +82,12 @@ Otherwise delegates to calc interactively."
 (define-minor-mode maf-mode
   "Toggle MAF mode.
 When enabled, provides contextual commands for manipulating Calc
-expressions on the stack and home line. Sub-formula highlighting is
-part of the UX and toggles with the mode; `maf-hl-mode' also works
-standalone for the highlight alone."
+expressions on the stack and home line. Sub-formula highlighting, the
+stack history, and other major features are independent modules toggled
+through `maf-modules', not by this mode."
   :lighter " maf"
   :keymap maf-mode-map
-  :group 'maf
-  (maf-hl-mode (if maf-mode 1 -1)))
+  :group 'maf)
 
 ;; Activate the feature modules listed in `maf-modules'. Runs once at
 ;; load, after every module file has registered its toggle.

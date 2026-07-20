@@ -728,12 +728,12 @@ pre-edit point instead of the in-edit one."
           buffer-undo-list (plist-get maf-edit--saved :undo)
           buffer-read-only t)
     (calc-refresh)
-    ;; Re-enable only after the refresh: enabling maf-hl-mode runs its
-    ;; update immediately, and it must see the re-rendered stack, never
-    ;; the edited text, whose positions no longer match calc-stack.
     (when (plist-get maf-edit--saved :maf-mode) (maf-mode 1))
-    ;; Unconditional: re-enabling maf-mode drags maf-hl-mode on with
-    ;; it, so a manually-off highlighter must be re-asserted off.
+    ;; Restore the highlighter to its pre-edit state, an independent
+    ;; module now (not dragged along by maf-mode). Only after the
+    ;; refresh: enabling maf-hl-mode runs its update immediately, and it
+    ;; must see the re-rendered stack, never the edited text, whose
+    ;; positions no longer match calc-stack.
     (maf-hl-mode (if (plist-get maf-edit--saved :hl) 1 -1))
     (setq maf-edit--saved nil)
     (maf--point-restore snapshot)))

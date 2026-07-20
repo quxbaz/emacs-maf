@@ -1,17 +1,22 @@
 ;; -*- lexical-binding: t; -*-
 ;;
-;; maf-hl.el
+;; modules/maf-hl.el
 ;;
-;; Persistent sub-formula highlighting. `maf-hl-mode' is a buffer-local minor
-;; mode for calc buffers that highlights the innermost sub-formula under point
-;; as the cursor moves — live feedback on what a contextual command would
-;; operate on. `maf-mode' toggles it together with itself; M-x maf-hl-mode
-;; uses it standalone.
+;; Sub-formula highlighting module. `maf-hl-mode' is a buffer-local
+;; minor mode for calc buffers that highlights the innermost
+;; sub-formula under point as the cursor moves — live feedback on what
+;; a contextual command would operate on.
+;;
+;; The module toggle is `maf-hl-global-mode', which turns the
+;; buffer-local mode on in every calc buffer and registers with the
+;; module system as `highlight' (see `maf-modules'). M-x maf-hl-mode
+;; still toggles the highlight in a single buffer, standalone.
 
 (require 'calc)
 (require 'calc-sel)   ; calc-prepare-selection
 (require 'calc-yank)  ; calc-locate-cursor-element
 (require 'maf-comp)   ; maf--comp-find-bounds
+(require 'maf-module)
 
 (defface maf-hl
   '((t :inherit highlight))
@@ -55,5 +60,21 @@ lines (matrices, Big language mode) are not highlighted."
     (when maf-hl--overlay
       (delete-overlay maf-hl--overlay)
       (setq maf-hl--overlay nil))))
+
+;;; The module
+
+(defun maf-hl--turn-on ()
+  "Enable `maf-hl-mode' in the current buffer if it is a calc buffer.
+The per-buffer arm of `maf-hl-global-mode', run in every buffer as its
+major mode settles; highlighting only makes sense in a calc buffer."
+  (when (derived-mode-p 'calc-mode)
+    (maf-hl-mode 1)))
+
+;;;###autoload
+(define-globalized-minor-mode maf-hl-global-mode
+  maf-hl-mode maf-hl--turn-on
+  :group 'maf)
+
+(maf-register-module 'highlight #'maf-hl-global-mode)
 
 (provide 'maf-hl)
