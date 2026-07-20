@@ -471,6 +471,7 @@ calc's own (=calc-digit-map=), so the in-entry keys — =e=, =_=, =:=,
 | [[file:../../modules/maf-timeline.el][modules/maf-timeline.el]]  | Timeline module: =maf-use-timeline-mode= records stack snapshots, browse in =*maf-timeline*= |
 | [[file:../../modules/maf-persist.el][modules/maf-persist.el]]   | Persist module: =maf-persist-mode= saves/restores the stack across sessions |
 | [[file:../../modules/maf-edit.el][modules/maf-edit.el]]      | Edit module: =maf-use-edit-mode= binds SPC/C-RET/S-RET to =maf-edit= in-place stack editing (=maf-edit-mode= session) |
+| [[file:../../modules/maf-preview.el][modules/maf-preview.el]]   | Preview module: =maf-use-preview-mode= shows the entry at point in Big display in a floating child frame (posframe) |
 | [[file:../../debug/maf-step.el][debug/maf-step.el]]       | Step-through harness (cockpit) that drives the tests        |
 | [[file:../../debug/maf-hl-verify.el][debug/maf-hl-verify.el]]  | Programmatic highlight verification (overlay state + render) |
 | [[file:../../debug/maf-hl-sweep.el][debug/maf-hl-sweep.el]]   | Highlight sweep across many expression shapes               |
@@ -480,7 +481,7 @@ calc's own (=calc-digit-map=), so the in-entry keys — =e=, =_=, =:=,
 Load order in =maf.el=: =conf= → =module= → =comp= → =chain= → =lib= →
 =sel= → =step= → =hl-verify= → =resolve= → =commit= → =defcmd= →
 =cmds= → =math= → =stack= → =bindings= → =minibuffer=, then the feature
-modules (=maf-hl=, =maf-timeline=, =maf-persist=, =maf-edit=), then
+modules (=maf-hl=, =maf-timeline=, =maf-persist=, =maf-edit=, =maf-preview=), then
 =maf-modules-apply=. Each layer depends only on earlier ones; modules
 load last so =maf-mode-map= exists for any key bindings they install.
 (=maf-hl= also loads earlier as a dependency of the =hl-verify= debug
@@ -546,14 +547,24 @@ Two module shapes have appeared, matching the feature's state:
   =define-globalized-minor-mode=, =maf-use-hl-mode=, which turns the
   buffer-local mode on in every calc buffer. That globalized mode is
   the registered toggle; =M-x maf-hl-mode= still works standalone in a
-  single buffer.
+  single buffer. The preview module (=modules/maf-preview.el=) is the
+  same shape: =maf-use-preview-mode= turns the buffer-local
+  =maf-preview-mode= on in every calc buffer, showing the entry at point
+  in Big display in a floating child frame (via =posframe=) at the
+  top-right of the calc window. Parented to the calc frame and
+  focus-refused, the frame stays out of the window manager's reach (no
+  Alt-Tab, no focus) and stays in view regardless of how far the stack
+  is scrolled — unlike an in-buffer overlay, which scrolls away once the
+  stack outgrows the window. It hides itself while the whole buffer is
+  already in Big display and during a =maf-edit= session. =posframe= is
+  an optional dependency; without it the mode is inert.
 
 A module owns its whole lifecycle, including bindings: =maf-mode= no
 longer enables highlighting or the timeline, and =bindings.el= no longer
 holds the =t d= or in-place-editing keys.
 
 The default =maf-modules= holds the features that belong in the base
-UX — =maf-timeline=, =maf-hl=, and =maf-edit=. The persist module
+UX — =maf-timeline=, =maf-hl=, =maf-edit=, and =maf-preview=. The persist module
 (=modules/maf-persist.el=) is the exception: it writes save files to disk,
 so it stays out of the default and is opt-in — the dev instance adds
 =maf-persist= to =maf-modules= in =project-init.el= and calls

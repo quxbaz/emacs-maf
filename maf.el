@@ -52,6 +52,7 @@
 (require 'maf-timeline)
 (require 'maf-persist)
 (require 'maf-edit)
+(require 'maf-preview)
 
 ;;;###autoload
 (defun maf-calc ()
