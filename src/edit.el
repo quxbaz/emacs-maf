@@ -281,7 +281,11 @@ pass once they carry text."
 ;;; Repair pass
 
 (defconst maf-edit--dot-string
-  (propertize "    ." 'maf-edit-dot t)
+  ;; rear-nonsticky: a char typed inside the dot must not inherit
+  ;; maf-edit-dot, or the healing salvage below deletes it as one of
+  ;; the dot's own characters — swallowing the first keypress of an
+  ;; edit session entered with point on the dot.
+  (propertize "    ." 'maf-edit-dot t 'rear-nonsticky t)
   "Canonical home-line text, propertized so healing can identify it.")
 
 (defun maf-edit--heal-dot ()
@@ -632,8 +636,10 @@ Built with `substitute-command-keys' so rebinding the gestures in
         (save-excursion
           (calc-cursor-stack-index 0)
           (setq maf-edit--dot (make-overlay (point) (line-end-position)))
+          ;; rear-nonsticky as in `maf-edit--dot-string': a char typed
+          ;; mid-dot must not inherit maf-edit-dot, or healing deletes it.
           (add-text-properties (point) (line-end-position)
-                               '(maf-edit-dot t)))
+                               '(maf-edit-dot t rear-nonsticky t)))
         ;; Original text recorded after propertizing (so extraction can
         ;; tell prefix from content) but before the stamp pass, which
         ;; needs it to know every entry starts clean.
