@@ -84,7 +84,7 @@
 ;; sequences (M-m t, M-m M-t) stay reachable as m t and m M-t.
 (define-key maf-mode-map (kbd "M-m") #'maf-beginning-of-entry)
 
-;; The `t d' stack-history binding is installed by the history module
-;; when it is enabled (see modules/history.el), not here.
+;; The `t d' stack-timeline binding is installed by the maf-timeline
+;; module when it is enabled (see modules/maf-timeline.el), not here.
 
 (provide 'maf-bindings)
