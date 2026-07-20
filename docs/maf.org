@@ -20,7 +20,7 @@
   - [-] Modules manager: Buffer where you can toggle modules
     - [X] Create manager
     - [ ] Bind to key
-  - [ ] Support module architecture (history, maf-edit)
+  - [X] Use module architecture (maf-timeline, maf-edit)
   - [ ] Discovery document for useful features, behaviors, modules, etc
 
 * Port
