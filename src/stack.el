@@ -231,6 +231,56 @@ point, each side of an equation, the top entry at home.
     (commit (let ((calc-simplify-mode 'none))
               (math-rewrite expr rules)))))
 
+(maf-defcmd mafcmd-to-degrees (expr _arg commit)
+  "Convert the resolved expression from radians to degrees.
+
+  pi / 2  =>  90
+
+Multiplies by 180 / pi and simplifies, so exact multiples of pi
+convert exactly — fractions, not floats. A float anywhere in the
+expression switches to numeric pi: the value already forfeited
+exactness, and a symbolic pi would survive the division as clutter.
+No unit bookkeeping happens — the command trusts that the value is
+radians. With the Inverse flag, routes to `mafcmd-to-radians'. Point
+picks the target as usual: a sub-formula at point, each side of an
+equation, the top entry at home.
+
+  pi / 6   =>  30
+  2 pi     =>  360
+  1.5708   =>  90.0002104591
+  r        =>  180 r / pi"
+  :arity unary
+  :prefix "deg"
+  :inverse mafcmd-to-radians
+  (commit (if (maf--contains-float-p expr)
+              (math-div (math-mul expr 180) (math-pi))
+            (let ((calc-prefer-frac t))
+              (math-simplify (math-div (math-mul expr 180)
+                                       '(var pi var-pi)))))))
+
+(maf-defcmd mafcmd-to-radians (expr _arg commit)
+  "Convert the resolved expression from degrees to radians, as a factor of pi.
+
+  30  =>  pi / 6
+
+Multiplies by pi / 180 and simplifies; pi stays symbolic even for
+float inputs, so the result always reads as a factor of pi, exact
+inputs giving exact fractions. No unit bookkeeping happens — the
+command trusts that the value is degrees. With the Inverse flag,
+routes to `mafcmd-to-degrees'. Point picks the target as usual: a
+sub-formula at point, each side of an equation, the top entry at
+home.
+
+  90    =>  pi / 2
+  45.0  =>  0.25 pi
+  d     =>  d pi / 180"
+  :arity unary
+  :prefix "rad"
+  :inverse mafcmd-to-degrees
+  (commit (let ((calc-prefer-frac t))
+            (math-simplify (math-div (math-mul expr '(var pi var-pi))
+                                     180)))))
+
 (maf-defcmd mafcmd-commute (expr _arg commit)
   "Swap the first two operands of the resolved expression.
 

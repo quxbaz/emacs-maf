@@ -38,6 +38,15 @@ so the returned terms sum back to EXPR: 6 x - 12 gives (6 x, -12) and
     ('neg (mapcar #'math-neg (maf--sum-terms (nth 1 expr))))
     (_ (list expr))))
 
+(defun maf--contains-float-p (expr)
+  "Return t if EXPR contains a float anywhere.
+Unlike `math-floatp', which only looks inside number types (complex,
+intervals, dates), this walks whole formulas: 1.5 x + 2 contains one."
+  (or (eq (car-safe expr) 'float)
+      (and (consp expr)
+           (cl-some #'maf--contains-float-p (cdr expr))
+           t)))
+
 (defun maf--terms-gcd (terms)
   "Return the GCD of TERMS via `calcFunc-pgcd', iterated to a fixpoint.
 A single reduce can overshoot when both arguments carry variables the
