@@ -70,6 +70,10 @@
 ;; minibuffer is calc's own (cf. e and maf-equal-to).
 (define-key maf-mode-map (kbd "@") #'maf-toggle-simplify)
 
+;; Big-language display toggle. mafcmd-arg cedes calc's G — see the
+;; table in maf-cmds.el.
+(define-key maf-mode-map (kbd "G") #'maf-toggle-big-language)
+
 ;; The digit-entry starters, mirroring calc-mode-map's calcDigit-start
 ;; set minus @, which maf-toggle-simplify shadows.
 (mapc (lambda (x)

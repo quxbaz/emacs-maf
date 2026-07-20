@@ -25,6 +25,8 @@
 (declare-function calc-locate-cursor-element "calc-yank")
 (declare-function calc-del-selection "calc-sel")
 (declare-function calc-change-mode "calc-mode")
+(declare-function calc-normal-language "calc-lang")
+(declare-function calc-big-language "calc-lang")
 
 (maf-defcmd mafcmd-factor-by (expr arg commit)
   "Factor the resolved expression by the top-of-stack argument.
@@ -524,6 +526,21 @@ calc's usual simplify-mode indicator."
          (setq maf--simplify-restore calc-simplify-mode)
          (calc-change-mode 'calc-simplify-mode 'none)
          (message "Simplification is disabled"))))))
+
+(defun maf-toggle-big-language ()
+  "Toggle Calc's \"Big\" display language on and off.
+
+Big language renders the stack in multi-line 2D notation — fractions
+stacked over a bar, exponents raised, radicals under a drawn sign;
+toggling off restores the normal one-line notation. Only the display
+changes, never the stack values. Point stays put, and the echo area
+reports the switch."
+  (interactive)
+  (maf--with-calc-buffer
+    (maf--preserve-point
+      (if (eq calc-language 'big)
+          (calc-normal-language)
+        (calc-big-language)))))
 
 (defun maf-beginning-of-entry ()
   "Move point to the beginning of the stack entry on the current line.

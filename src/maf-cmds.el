@@ -110,7 +110,8 @@ are set, making the I and H prefixes route to the variant contextually.
   (neg unary calcFunc-neg "n")
   (abs unary calcFunc-abs "A")
   (conj unary calcFunc-conj "J")
-  (arg unary calcFunc-arg "G")
+  ;; arg cedes calc's G to maf-toggle-big-language (bindings.el).
+  (arg unary calcFunc-arg)
   (sqrt unary calcFunc-sqrt "Q" :inv sqr)
   (min binary calcFunc-min "f n")
   (max binary calcFunc-max "f x")
