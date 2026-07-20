@@ -18,7 +18,7 @@
   - [ ] Formulas module. Support categories, docs per formula, examples
   - [-] Modules manager: Buffer where you can toggle modules
     - [X] Create manager
-    - [ ] Bind to key
+    - [ ] Set default binding
   - [X] Use module architecture (maf-timeline, maf-edit)
   - [ ] Discovery document for useful features, behaviors, modules, etc
 
