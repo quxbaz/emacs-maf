@@ -37,6 +37,16 @@ symbols: +, -, *, /, ^, neg, or a calcFunc- name."
   :type '(alist :key-type symbol :value-type symbol)
   :group 'maf)
 
+;;; Stack history (history.el)
+
+(defcustom maf-history-size 100
+  "Maximum number of stack states kept in the history.
+Recording past the limit drops the oldest states. A state shares all
+formula structure with the stack it was taken from, so even a large
+history stays cheap."
+  :type 'natnum
+  :group 'maf)
+
 ;;; Stack persistence (persist.el)
 
 (defcustom maf-stack-directory (locate-user-emacs-file "maf-stacks/")

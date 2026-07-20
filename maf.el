@@ -38,6 +38,7 @@
 (require 'maf-cmds)
 (require 'maf-math "math")
 (require 'maf-stack "stack")
+(require 'maf-history "history")
 (require 'maf-persist "persist")
 (require 'maf-bindings "bindings")
 (require 'maf-minibuffer "minibuffer")
@@ -78,7 +79,10 @@ standalone for the highlight alone."
   :lighter " maf"
   :keymap maf-mode-map
   :group 'maf
-  (maf-hl-mode (if maf-mode 1 -1)))
+  (maf-hl-mode (if maf-mode 1 -1))
+  ;; Stack history recording travels with the mode the same way; its
+  ;; hook is global, so toggling in any one calc buffer is enough.
+  (if maf-mode (maf-history--install) (maf-history--uninstall)))
 
 (provide 'maf)
 

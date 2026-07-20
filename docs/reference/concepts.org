@@ -464,6 +464,7 @@ calc's own (=calc-digit-map=), so the in-entry keys — =e=, =_=, =:=,
 | [[file:../../src/maf-cmds.el][src/maf-cmds.el]]         | The mafcmd table: calcFunc-backed commands, keys, variant links |
 | [[file:../../src/math.el][src/math.el]]             | Pure formula helpers (term walk, terms GCD)                 |
 | [[file:../../src/stack.el][src/stack.el]]            | Hand-written contextual stack commands (factor-by, factor-gcd, undo/redo) |
+| [[file:../../src/history.el][src/history.el]]          | Stack history: snapshot every stack change, browse in =*maf-history*= |
 | [[file:../../src/minibuffer.el][src/minibuffer.el]]       | Digit-entry integration: contextual digit entry, point/undo handoff |
 | [[file:../../src/bindings.el][src/bindings.el]]         | Default key bindings made outside the mafcmd table          |
 | [[file:../../src/maf-hl.el][src/maf-hl.el]]           | =maf-hl-mode=: highlight the sub-formula under point        |
