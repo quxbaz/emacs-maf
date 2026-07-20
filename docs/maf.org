@@ -25,6 +25,7 @@
 * IN-PROGRESS Todo
 # NOW
 ** TODO Timeline module: should show subset of operations around current history item
+   - Bind M-n/p to maf-timeline-next/prev
 ** TODO Formulas module: support categories, docs per formula, examples
 # LATER
 ** TODO k k (my/calc-evaluate N) should work on fractions and division.
