@@ -7,7 +7,7 @@
 
 * Plan (macro)
   1) [ ] Move all of relevant my/calc config into project
-  2) [ ] Harden by using w/ anki math
+  2) [ ] Harden through using w/ anki math
 
 * Major features [2/9]
   - [ ] Vim bindings (noun, verb, char)
