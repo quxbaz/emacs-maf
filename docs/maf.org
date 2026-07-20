@@ -22,6 +22,39 @@
   - [X] Use module architecture (maf-timeline, maf-edit)
   - [ ] Discovery document for useful features, behaviors, modules, etc
 
+* IN-PROGRESS Todo
+# NOW
+** TODO Always show big display mode for active entry in non-selectable buffer.
+# LATER
+** REVIEW Snapshot after every commit. Navigate through history in history
+   navigation pane.
+** TODO k k (my/calc-evaluate N) should work on fractions and division.
+** TODO g i (my/calc-graph-quick-with-range) interval form a:b should work with spaces 'a b'
+** TODO Full formula buffer should have "recents" section.
+** TODO Saved formulas should support "notes" that display in full formula buffer.
+** TODO Add command to move to parent expression.
+   1:  y = 2 (x| + 3)^2 - 12
+   ->  y = 2 (x + 3)|^2 - 12
+** TODO Distribute and merge should operate contextually.
+** TODO Always show entry at point in "big" mode, somewhere.
+** TODO Move all options to unified configuration view.
+   - Free up option prefix bindings (eg, m).
+** TODO Rebind +, -, negate, negative commands. Since these are used very
+   frequently, make them easily accessible.
+** TODO Feature: In stack mode, bind M-[n/p] to recall previous/next bare
+   (starting from empty) edit-mode entries. The purpose of this is to avoid the
+   pattern of having to duplicate or store an entry that you might want to reuse
+   or recall in case you screw up a calculation.
+** TODO Set place/point after (maf--commit)
+   - If possible, when (eq :target 'subexpr), stick point to the same symbol
+     prior to the operation.
+** TODO Implement options
+** TODO simplification
+** TODO support-mapping
+** TODO force-line
+** TODO defcmd may sometimes need the full entry and may also need to write
+   to the full entry, not just its expr. How to handle this elegantly?
+
 * Port
   - [ ] Port my/calc/* features one-by-one.
   Full inventory of ~/.emacs.d/my/calc below; legacy bindings in parens
@@ -144,38 +177,6 @@
   became resolve/commit and maf-lib, bindings travel with their commands, and
   index.el's trail auto-hide dies with the trail (maf-timeline). The trail-mode
   navigation bindings are likewise obsolete.
-
-* IN-PROGRESS Todo
-# NOW
-# LATER
-** REVIEW Snapshot after every commit. Navigate through history in history
-   navigation pane.
-** TODO k k (my/calc-evaluate N) should work on fractions and division.
-** TODO g i (my/calc-graph-quick-with-range) interval form a:b should work with spaces 'a b'
-** TODO Full formula buffer should have "recents" section.
-** TODO Saved formulas should support "notes" that display in full formula buffer.
-** TODO Add command to move to parent expression.
-   1:  y = 2 (x| + 3)^2 - 12
-   ->  y = 2 (x + 3)|^2 - 12
-** TODO Distribute and merge should operate contextually.
-** TODO Always show entry at point in "big" mode, somewhere.
-** TODO Move all options to unified configuration view.
-   - Free up option prefix bindings (eg, m).
-** TODO Rebind +, -, negate, negative commands. Since these are used very
-   frequently, make them easily accessible.
-** TODO Feature: In stack mode, bind M-[n/p] to recall previous/next bare
-   (starting from empty) edit-mode entries. The purpose of this is to avoid the
-   pattern of having to duplicate or store an entry that you might want to reuse
-   or recall in case you screw up a calculation.
-** TODO Set place/point after (maf--commit)
-   - If possible, when (eq :target 'subexpr), stick point to the same symbol
-     prior to the operation.
-** TODO Implement options
-** TODO simplification
-** TODO support-mapping
-** TODO force-line
-** TODO defcmd may sometimes need the full entry and may also need to write
-   to the full entry, not just its expr. How to handle this elegantly?
 
 * Bugs
 ** BUG (my/calc-backward-noun) and (my/calc-forward-noun) should ignore line prefix.
