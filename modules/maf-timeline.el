@@ -47,8 +47,8 @@
 Each state is a list (VALUES LABEL): VALUES the stack's formula values
 top first, with `calc-encase-atoms' wrappers stripped, and LABEL what
 produced the state — the change's trail prefix (a string, \"fctr\"),
-falling back to the command that ran (a symbol) when nothing was
-recorded, or nil for a plain entry.")
+else \"undo\"/\"redo\", else a structural classification of the change
+against the previous stack (see `maf-timeline--classify').")
 
 (defvar maf-timeline--last-raw nil
   "Raw stack values at the last capture, for cheap change detection.")
@@ -63,14 +63,51 @@ prefix never outlives the command that recorded it.")
 (defun maf-timeline--stash-prefix (_val &optional prefix)
   "Stash PREFIX for `maf-timeline--capture'; advice on `calc-record'.
 The interactive command running when a stack change lands is often
-noise — a minibuffer RET terminating an entry — while the trail
-prefix names the operation; every recorded write passes one here."
-  (setq maf-timeline--record-prefix (list prefix)))
+noise — a minibuffer RET terminating an entry — while the trail prefix
+names the operation. The FIRST prefix of a command wins: a multi-value
+push records its first value with the real prefix and the rest with
+calc's \"...\" continuation marker, so keeping the first preserves the
+operation name instead of the meaningless continuation."
+  (unless maf-timeline--record-prefix
+    (setq maf-timeline--record-prefix (list prefix))))
 
 (defvar-local maf-timeline--index 0
   "Index into `maf-timeline--states' of the state shown, 0 the newest.")
 
 ;;; Recording
+
+(defun maf-timeline--one-inserted-p (short long)
+  "Non-nil if LONG is SHORT with exactly one element inserted anywhere.
+Both are top-first value lists; comparison is by `equal'."
+  (and (= (length long) (1+ (length short)))
+       (let ((s short) (l long) (skipped nil) (ok t))
+         (while (and l ok)
+           (cond
+            ((and s (equal (car s) (car l))) (setq s (cdr s) l (cdr l)))
+            ((not skipped) (setq skipped t l (cdr l)))  ; the inserted one
+            (t (setq ok nil))))
+         (and ok (null s)))))
+
+(defun maf-timeline--classify (old new)
+  "Label the change from OLD to NEW stack values, both top-first lists.
+For a change with no trail prefix, name it structurally: `new' when one
+entry was added (the rest unchanged, wherever it landed), `edit' when
+exactly one value changed in place, `del' when entries were removed,
+else `change' (several changes at once, a reorder). Distinguishes
+adding an entry from editing one — the common single-entry cases
+exactly, the rest best-effort."
+  (let ((no (length old)) (nn (length new)))
+    (cond
+     ((and (= nn (1+ no)) (maf-timeline--one-inserted-p old new)) "new")
+     ((and (= nn no)
+           (= 1 (let ((d 0) (o old) (n new))
+                  (while o
+                    (unless (equal (car o) (car n)) (setq d (1+ d)))
+                    (setq o (cdr o) n (cdr n)))
+                  d)))
+      "edit")
+     ((< nn no) "del")
+     (t "change"))))
 
 (defun maf-timeline--capture ()
   "Record a stack snapshot when the stack changed; on `post-command-hook'.
@@ -93,11 +130,24 @@ swallowed so a bad calc state can never get the hook disabled."
             ;; change was a trail message, not this change's prefix.
             (setq maf-timeline--record-prefix nil)
             (unless (equal raw maf-timeline--last-raw)
-              (setq maf-timeline--last-raw raw)
-              (maf-timeline--record (mapcar #'maf--strip-encasing raw)
-                                   (if prefix (car prefix)
-                                     (and (symbolp this-command)
-                                          this-command))))))))))
+              (let* ((old maf-timeline--last-raw)
+                     (trail (and prefix (car prefix)))
+                     ;; maf-edit's "edit" prefix is a blanket label, so
+                     ;; describe what it did structurally (new/edit/del);
+                     ;; undo/redo keep their identity (a diff would
+                     ;; mislabel them); a named trail prefix otherwise
+                     ;; wins, falling back to a structural classification.
+                     (label
+                      (cond
+                       ((eq this-command 'maf-edit-commit)
+                        (maf-timeline--classify old raw))
+                       ((memq this-command '(maf-undo calc-undo)) "undo")
+                       ((memq this-command '(maf-redo calc-redo)) "redo")
+                       ((and (stringp trail) (> (length trail) 0)) trail)
+                       (t (maf-timeline--classify old raw)))))
+                (setq maf-timeline--last-raw raw)
+                (maf-timeline--record (mapcar #'maf--strip-encasing raw)
+                                      label)))))))))
 
 (defun maf-timeline--record (values label)
   "Record VALUES as the newest state, produced by the command LABEL.
