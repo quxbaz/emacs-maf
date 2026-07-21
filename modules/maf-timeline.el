@@ -37,6 +37,11 @@
   "Face for entries new in a timeline state relative to the state before it."
   :group 'maf)
 
+(defface maf-timeline-strip-current
+  '((t :inherit warning :weight bold))
+  "Face for the current operation in the timeline strip."
+  :group 'maf)
+
 (defvar maf-timeline--states nil
   "Recorded stack states, newest first, at most `maf-timeline-size'.
 Each state is a list (VALUES LABEL): VALUES the stack's formula values
@@ -135,10 +140,45 @@ from the \"1:\" that `math-format-stack-value' hardcodes."
             (- total index) total
             (if label (format " — %s" label) ""))))
 
+(defun maf-timeline--strip-label (state)
+  "Return the display string for STATE's label in the operation strip.
+A trail-prefix string shows as-is and a command symbol as its name.
+States with no named operation read as `entry' — a plain entry (nil
+label) and calc's `...' continuation prefix (the extra values of a
+multi-value push) — so unnamed steps stay legible and 1:1 with `u'/`i'."
+  (let ((label (nth 1 state)))
+    (cond ((member label '(nil "" "...")) "entry")
+          ((stringp label) label)
+          ((symbolp label) (symbol-name label))
+          (t "entry"))))
+
+(defun maf-timeline--strip (total index)
+  "Return the horizontal operation strip around INDEX of TOTAL states.
+Older operations to the left, newer to the right, the current one
+highlighted; `maf-timeline-strip-radius' slots show on each side, with
+a `…' at an end when more states lie beyond the window."
+  (let* ((radius maf-timeline-strip-radius)
+         (hi (min (1- total) (+ index radius)))   ; oldest shown, leftmost
+         (lo (max 0 (- index radius)))            ; newest shown, rightmost
+         (parts nil)
+         (i hi))
+    ;; Walk older -> newer so `nreverse' yields left-to-right order.
+    (while (>= i lo)
+      (let ((label (maf-timeline--strip-label (nth i maf-timeline--states))))
+        (push (propertize label 'face
+                          (if (= i index) 'maf-timeline-strip-current 'shadow))
+              parts))
+      (setq i (1- i)))
+    (concat (if (< hi (1- total)) "… " "")
+            (string-join (nreverse parts) " · ")
+            (if (> lo 0) " …" ""))))
+
 (defun maf-timeline--render ()
   "Render the state at `maf-timeline--index' into the current buffer.
-Point keeps its line and column when the buffer had content; a fresh
-buffer gets point on the top-of-stack entry, the likeliest RET target."
+A one-line operation strip (see `maf-timeline--strip') sits at the top,
+above the stack state. Point keeps its line and column when the buffer
+had content; a fresh buffer gets point on the top-of-stack entry, the
+likeliest RET target."
   (let* ((total (length maf-timeline--states))
          (index (max 0 (min maf-timeline--index (max 0 (1- total)))))
          (state (nth index maf-timeline--states))
@@ -154,6 +194,11 @@ buffer gets point on the top-of-stack entry, the likeliest RET target."
          (inhibit-read-only t))
     (setq maf-timeline--index index)
     (erase-buffer)
+    ;; The operation strip: a row of nearby operations beneath the
+    ;; header, above the stack state. No `maf-timeline-value' property,
+    ;; so RET/r ignore it.
+    (when (> total 0)
+      (insert (maf-timeline--strip total index) "\n\n"))
     (cond
      ((null state)
       (insert (propertize "(no states yet)" 'face 'shadow) "\n"))
@@ -169,8 +214,10 @@ buffer gets point on the top-of-stack entry, the likeliest RET target."
             (when (and prev-values (not (member val prev-values)))
               (put-text-property start (point) 'face 'maf-timeline-changed)))
           (setq level (1- level))))))
+    ;; The current op is highlighted in the strip, so the header keeps
+    ;; only the position counter.
     (setq header-line-format
-          (maf-timeline--header total index (nth 1 state)))
+          (maf-timeline--header total index nil))
     (if fresh
         (progn (goto-char (point-max)) (forward-line -1))
       (goto-char (point-min))

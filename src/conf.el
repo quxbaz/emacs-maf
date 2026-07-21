@@ -66,6 +66,14 @@ timeline stays cheap."
   :type 'natnum
   :group 'maf)
 
+(defcustom maf-timeline-strip-radius 3
+  "Operations shown on each side of the current one in the timeline strip.
+The `*maf-timeline*' buffer shows a horizontal strip of nearby operation
+labels beneath its header; this is how many appear on each side of the
+current item."
+  :type 'natnum
+  :group 'maf)
+
 ;;; Stack persistence (modules/maf-persist.el)
 
 (defcustom maf-stack-directory (locate-user-emacs-file "maf-stacks/")

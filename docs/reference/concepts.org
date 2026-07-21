@@ -533,7 +533,10 @@ Two module shapes have appeared, matching the feature's state:
   hook and the =calc-record= advice and binds =t d= to =maf-timeline= in
   =maf-mode-map=; disabling removes them and cedes =t d= back to calc's
   =calc-trail-display=. The browsing buffer runs in its own
-  =maf-timeline-mode= major mode. Persistence
+  =maf-timeline-mode= major mode; beneath the header it shows a
+  horizontal strip of the operations around the current one (older
+  left, newer right, current highlighted), for context while stepping.
+  Persistence
   (=maf-persist-mode=) is the same shape. The edit module too
   (=modules/maf-edit.el=): =maf-use-edit-mode= installs SPC /
   C-<return> / S-<return> in =maf-mode-map= when enabled and cedes them
