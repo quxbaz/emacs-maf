@@ -30,6 +30,7 @@
    - docs per formula
    - examples
    - quick menu
+   - add binding
 # LATER
 ** TODO k k (my/calc-evaluate N) should work on fractions and division.
 ** TODO g i (my/calc-graph-quick-with-range) interval form a:b should work with spaces 'a b'
