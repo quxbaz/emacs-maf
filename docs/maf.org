@@ -22,7 +22,7 @@
   - [X] Use module architecture (maf-timeline, maf-edit)
   - [ ] Discovery document for useful features, behaviors, modules, etc
 
-* IN-PROGRESS Todo
+* Todo
 # NOW
 ** IN-PROGRESS Formulas module: support categories, docs per formula, examples
 # LATER
