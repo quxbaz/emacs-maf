@@ -472,6 +472,7 @@ calc's own (=calc-digit-map=), so the in-entry keys — =e=, =_=, =:=,
 | [[file:../../modules/maf-persist.el][modules/maf-persist.el]]   | Persist module: =maf-persist-mode= saves/restores the stack across sessions |
 | [[file:../../modules/maf-edit.el][modules/maf-edit.el]]      | Edit module: =maf-use-edit-mode= binds SPC/C-RET/S-RET to =maf-edit= in-place stack editing (=maf-edit-mode= session) |
 | [[file:../../modules/maf-preview.el][modules/maf-preview.el]]   | Preview module: =maf-use-preview-mode= shows the entry at point in Big display in a floating child frame (posframe) |
+| [[file:../../modules/maf-formulas.el][modules/maf-formulas.el]]  | Formulas module: =maf-formulas= menu of saved formulas by category (detail + RET-insert); data in maf-formulas-data.el |
 | [[file:../../debug/maf-step.el][debug/maf-step.el]]       | Step-through harness (cockpit) that drives the tests        |
 | [[file:../../debug/maf-hl-verify.el][debug/maf-hl-verify.el]]  | Programmatic highlight verification (overlay state + render) |
 | [[file:../../debug/maf-hl-sweep.el][debug/maf-hl-sweep.el]]   | Highlight sweep across many expression shapes               |
@@ -481,7 +482,8 @@ calc's own (=calc-digit-map=), so the in-entry keys — =e=, =_=, =:=,
 Load order in =maf.el=: =conf= → =module= → =comp= → =chain= → =lib= →
 =sel= → =step= → =hl-verify= → =resolve= → =commit= → =defcmd= →
 =cmds= → =math= → =stack= → =bindings= → =minibuffer=, then the feature
-modules (=maf-hl=, =maf-timeline=, =maf-persist=, =maf-edit=, =maf-preview=), then
+modules (=maf-hl=, =maf-timeline=, =maf-persist=, =maf-edit=, =maf-preview=,
+=maf-formulas=), then
 =maf-modules-apply=. Each layer depends only on earlier ones; modules
 load last so =maf-mode-map= exists for any key bindings they install.
 (=maf-hl= also loads earlier as a dependency of the =hl-verify= debug
@@ -567,7 +569,8 @@ longer enables highlighting or the timeline, and =bindings.el= no longer
 holds the =t d= or in-place-editing keys.
 
 The default =maf-modules= holds the features that belong in the base
-UX — =maf-timeline=, =maf-hl=, =maf-edit=, and =maf-preview=. The persist module
+UX — =maf-timeline=, =maf-hl=, =maf-edit=, =maf-preview=, and =maf-formulas=.
+The persist module
 (=modules/maf-persist.el=) is the exception: it writes save files to disk,
 so it stays out of the default and is opt-in — the dev instance adds
 =maf-persist= to =maf-modules= in =project-init.el= and calls

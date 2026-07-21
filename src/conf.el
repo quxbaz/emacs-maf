@@ -39,7 +39,7 @@ symbols: +, -, *, /, ^, neg, or a calcFunc- name."
 
 ;;; Modules (maf-module.el)
 
-(defcustom maf-modules '(maf-timeline maf-hl maf-edit maf-preview)
+(defcustom maf-modules '(maf-timeline maf-hl maf-edit maf-preview maf-formulas)
   "Names of the maf feature modules to enable.
 Each major feature that stands apart from the contextual-command core
 is an optional module (see maf-module.el); this list names the ones
@@ -50,7 +50,8 @@ Set from Lisp, call `maf-modules-apply' to take effect."
               (const :tag "Sub-formula highlighting" maf-hl)
               (const :tag "Stack persistence" maf-persist)
               (const :tag "In-place editing" maf-edit)
-              (const :tag "Big preview of active entry" maf-preview))
+              (const :tag "Big preview of active entry" maf-preview)
+              (const :tag "Saved formulas" maf-formulas))
   :set (lambda (sym val)
          (set-default sym val)
          (when (fboundp 'maf-modules-apply) (maf-modules-apply)))

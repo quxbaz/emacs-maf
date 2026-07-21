@@ -53,6 +53,7 @@
 (require 'maf-persist)
 (require 'maf-edit)
 (require 'maf-preview)
+(require 'maf-formulas)
 
 ;;;###autoload
 (defun maf-calc ()
