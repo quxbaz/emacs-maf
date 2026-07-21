@@ -294,6 +294,8 @@ its index shifted under it."
 ;; to the existing map.
 (define-key maf-timeline-mode-map (kbd "u") #'maf-timeline-previous)
 (define-key maf-timeline-mode-map (kbd "i") #'maf-timeline-next)
+(define-key maf-timeline-mode-map (kbd "M-p") #'maf-timeline-previous)
+(define-key maf-timeline-mode-map (kbd "M-n") #'maf-timeline-next)
 (define-key maf-timeline-mode-map (kbd "<") #'maf-timeline-oldest)
 (define-key maf-timeline-mode-map (kbd ">") #'maf-timeline-newest)
 ;; Line motion between entries, for picking a RET target.
