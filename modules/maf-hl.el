@@ -16,6 +16,11 @@
 (require 'calc-sel)   ; calc-prepare-selection
 (require 'calc-yank)  ; calc-locate-cursor-element
 (require 'maf-comp)   ; maf--comp-find-bounds
+(require 'maf-lib)    ; maf--at-line-margin-p
+
+;; Set by `calc-prepare-selection'; declared for the dynamic reads below.
+(defvar calc-selection-cache-num)
+(defvar calc-selection-cache-offset)
 
 (defface maf-hl
   '((t :inherit highlight))
@@ -25,18 +30,40 @@
 (defvar-local maf-hl--overlay nil
   "Overlay marking the sub-formula under point, or nil if none is shown.")
 
+(defun maf-hl--entry-bounds ()
+  "Return (START . END) buffer bounds of the whole entry under point.
+Uses the selection cache `maf-hl--update' prepared. Returns nil for a
+multi-line entry (a matrix), which has no single flat range to mark, as
+with the sub-formula highlight."
+  (save-excursion
+    (calc-cursor-stack-index calc-selection-cache-num)
+    (let ((beg (+ (point) calc-selection-cache-offset))
+          (below (save-excursion
+                   (calc-cursor-stack-index (1- calc-selection-cache-num))
+                   (point))))
+      (goto-char beg)
+      ;; Single-line only: the next entry down begins right after this
+      ;; line's newline, one column past its end.
+      (when (= below (1+ (line-end-position)))
+        (cons beg (line-end-position))))))
+
 (defun maf-hl--update ()
   "Move the highlight to the sub-formula under point, or hide it.
 Runs on `post-command-hook'; errors are swallowed so a bad calc state can
 never get the hook function disabled. While a region is active the
 highlight steps aside — its overlay would fight the region's own — and
-returns on the next command once the region is gone."
+returns on the next command once the region is gone. At the line prefix
+or EOL, where no sub-formula is under point, the whole entry is marked."
   (let ((bounds (unless (region-active-p)
                   (ignore-errors
                     (let ((idx (calc-locate-cursor-element (point))))
                       (when (> idx 0)
                         (calc-prepare-selection idx)
-                        (maf--comp-find-bounds)))))))
+                        (or (maf--comp-find-bounds)
+                            ;; Prefix/EOL: no sub-formula, so mark the
+                            ;; whole entry — the entry target's subject.
+                            (and (maf--at-line-margin-p)
+                                 (maf-hl--entry-bounds)))))))))
     (cond
      (bounds
       (unless maf-hl--overlay
@@ -50,7 +77,9 @@ returns on the next command once the region is gone."
 (define-minor-mode maf-hl-mode
   "Highlight the sub-formula under point in a calc buffer.
 As point moves over a stack entry, the innermost sub-formula containing
-point is shown with the `maf-hl' face. A matrix or other multi-line
+point is shown with the `maf-hl' face. At the line prefix or end of line
+— where no sub-formula sits under point — the whole entry is marked, the
+subject the entry target would act on. A matrix or other multi-line
 entry is not highlighted. Under the Big display language `maf-use-hl-mode'
 disables this mode entirely, since a sub-formula there has no single
 flat range to mark."
