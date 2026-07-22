@@ -25,7 +25,6 @@
 
 * Todo
 # NOW
-** TODO Disable maf-hl when region is active
 ** IN-PROGRESS formulas module
    - [X] categories
    - [X] docs per formula
