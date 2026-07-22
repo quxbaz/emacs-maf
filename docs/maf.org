@@ -101,7 +101,8 @@
      layer onto mafcmd-add/sub
 ** Solving
    - [ ] my/calc-auto-solve (M-i) — solve for the first variable, cycle when already solved
-   - [ ] my/calc-poly-roots (M-r) — roots via factoring, with multiplicity
+   - [X] my/calc-poly-roots (M-r) — roots via factoring, with multiplicity
+     (mafcmd-poly-roots on M-r; auto variable, no prompt)
    - [ ] my/calc-inverse-function (l v) — invert y = f(x), any variable names
 ** Angles
    - [ ] my/calc-ref-angle (M-l) — reference angle (+ my/math-ref-angle helper)

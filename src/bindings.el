@@ -86,6 +86,10 @@
 ;; table in maf-cmds.el.
 (define-key maf-mode-map (kbd "G") #'maf-toggle-big-language)
 
+;; Polynomial roots by factoring, with multiplicity. M-r is unbound in
+;; calc itself.
+(define-key maf-mode-map (kbd "M-r") #'mafcmd-poly-roots)
+
 ;; The digit-entry starters, mirroring calc-mode-map's calcDigit-start
 ;; set minus @, which maf-toggle-simplify shadows.
 (mapc (lambda (x)

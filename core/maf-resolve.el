@@ -388,13 +388,24 @@ Whenever the resolved subject (:expr) is itself a relation — the entry at
 the margin, the entry at home, the shifted entry target, or the relation
 node under point — the context is converted to the equation target so the
 body runs once per side. Commands opt out with :map -1 in OPTS, keeping
-the whole relation as :expr."
+the whole relation as :expr.
+
+With `:scope entry' in OPTS the sub-formula/selection/region targets are
+bypassed entirely: the command always operates on the whole entry at
+point (or the top at home). For commands with no sub-formula meaning —
+solving an equation, finding a polynomial's roots."
   (maf--with-calc-buffer
     ;; Snapshot point before target resolution: the target functions probe
     ;; calc state and must not perturb what restore later reproduces.
     (let ((point-snapshot (maf--point-snapshot)))
       (append (maf--resolve-map-relation
                (cond
+                ;; Whole-entry commands take the entry at point (or the
+                ;; top at home) regardless of where point sits within it.
+                ((eq (alist-get :scope opts) 'entry)
+                 (if (maf--at-home-p)
+                     (maf--resolve-target-home opts)
+                   (maf--resolve-target-entry opts)))
                 ;; The region is the most deliberate gesture there is;
                 ;; it outranks even an explicit calc selection.
                 ((use-region-p)          (maf--resolve-target-region opts))
