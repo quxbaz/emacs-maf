@@ -61,6 +61,16 @@
     (cl-assert (string-prefix-p "maf-timeline 2/2" header-line-format))
     (cl-assert (not (ignore-errors (call-interactively 'maf-timeline-next) t))))
 
+  ;; h/l are bound to older/newer navigation too, matching u/i. Driving
+  ;; them through the keymap steps the view and back.
+  (with-current-buffer (maf-timeline--buffer)
+    (cl-assert (eq (lookup-key maf-timeline-mode-map (kbd "h")) 'maf-timeline-previous))
+    (cl-assert (eq (lookup-key maf-timeline-mode-map (kbd "l")) 'maf-timeline-next))
+    (call-interactively (lookup-key maf-timeline-mode-map (kbd "h")))
+    (cl-assert (string-prefix-p "maf-timeline 1/2" header-line-format))
+    (call-interactively (lookup-key maf-timeline-mode-map (kbd "l")))
+    (cl-assert (string-prefix-p "maf-timeline 2/2" header-line-format)))
+
   ;; C-RET on an entry of an older state pushes it onto the live stack —
   ;; a copy — and the view stays on that state as the log grows under it.
   ;; (RET is the same push followed by quit-window, which would quit the

@@ -294,6 +294,9 @@ its index shifted under it."
 ;; to the existing map.
 (define-key maf-timeline-mode-map (kbd "u") #'maf-timeline-previous)
 (define-key maf-timeline-mode-map (kbd "i") #'maf-timeline-next)
+;; h/l step older/newer too, matching the strip's left-older orientation.
+(define-key maf-timeline-mode-map (kbd "h") #'maf-timeline-previous)
+(define-key maf-timeline-mode-map (kbd "l") #'maf-timeline-next)
 (define-key maf-timeline-mode-map (kbd "M-p") #'maf-timeline-previous)
 (define-key maf-timeline-mode-map (kbd "M-n") #'maf-timeline-next)
 (define-key maf-timeline-mode-map (kbd "<") #'maf-timeline-oldest)
