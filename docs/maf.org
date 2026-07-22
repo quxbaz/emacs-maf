@@ -31,9 +31,10 @@
    - [X] examples
    - [ ] quick menu
    - [ ] add binding
-** TODO New command: contextual duplicate (binding: RET)
+** DONE New command: contextual duplicate (binding: RET)
    duplicate the item at point and push to stack
    uses normal resolver targeting rules (ie, entry, subexpr, home, region, etc)
+   maf-dup in src/stack.el; verbatim copy, point home, keep-args ignored.
 ** TODO Highlight entire entry when point is at prefix/eol
 # LATER
 ** TODO k k (my/calc-evaluate N) should work on fractions and division.

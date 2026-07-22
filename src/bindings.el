@@ -62,6 +62,11 @@
 (define-key maf-mode-map (kbd "C-k") #'maf-kill)
 ;; Shadows calc's TAB with the contextual line swap.
 (define-key maf-mode-map (kbd "TAB") #'maf-swap-up)
+;; Contextual duplicate, shadowing calc-enter. At home it dups the top
+;; as calc-enter does; elsewhere it pushes a copy of the resolved item.
+;; During digit/algebraic entry RET stays calc's own (the entry
+;; minibuffer terminates), as with e / = / @.
+(define-key maf-mode-map (kbd "RET") #'maf-dup)
 ;; Equate gets both = (shadowing calc-evaluate) and e (shadowing the
 ;; e-notation digit start; inside digit entry e still means exponent,
 ;; since the entry minibuffer is calc's own).

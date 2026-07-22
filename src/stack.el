@@ -726,6 +726,43 @@ anywhere. Signals an error on an empty stack."
       ;; A single undo reverts point along with the stack.
       (maf--undo-record-cmd-point snapshot))))
 
+(defun maf-dup ()
+  "Duplicate the item at point, pushing a copy onto the stack.
+
+  1:  a + b|   =>   2:  a + b
+                    1:  a + b
+
+The copy is pushed on top and the originals are untouched, so the
+stack grows by one. Like calc's own duplicate the copy is verbatim:
+nothing simplifies or evaluates, and keep-args makes no difference.
+Signals an error on an empty stack.
+
+Point picks the target as usual — a sub-formula at point, a calc
+selection or an active region's run when either is present, the whole
+entry from its margin, the top entry at home. A sub-formula is pushed
+on its own, lifted out of the entry it came from; a relation is
+duplicated whole from its margin, or by the side under point from
+within it.
+
+  1:  (a +| b) c   =>   2:  (a + b) c
+                        1:  a + b        (sub-formula at point)
+  1:  x = y|       =>   2:  x = y
+                        1:  x = y        (whole relation, from the margin)"
+  (interactive)
+  (maf--with-calc-buffer
+    (when (zerop (calc-stack-size))
+      (user-error "Stack is empty"))
+    ;; Unary resolution (no arg, so no below-top restriction) with
+    ;; :map -1 so a relation stays whole in :expr rather than mapping
+    ;; per side. We only read :expr and push it; calc-wrapper's epilogue
+    ;; parks point home.
+    (let ((context (maf--resolve-context '((:arity . unary) (:map . -1)))))
+      (calc-wrapper
+       (calc-push (alist-get :expr context)))
+      ;; Record the resolve-time point so a single `maf-undo' reverts
+      ;; point along with the pushed copy, back to where the command ran.
+      (maf--undo-record-cmd-point (alist-get :point context)))))
+
 (defvar maf-undo--chain-point nil
   "Point snapshot saved by the last `maf-undo'/`maf-redo' in a chain.
 Holds where point stood just before that command changed the buffer —
