@@ -28,12 +28,15 @@
 (defun maf-hl--update ()
   "Move the highlight to the sub-formula under point, or hide it.
 Runs on `post-command-hook'; errors are swallowed so a bad calc state can
-never get the hook function disabled."
-  (let ((bounds (ignore-errors
-                  (let ((idx (calc-locate-cursor-element (point))))
-                    (when (> idx 0)
-                      (calc-prepare-selection idx)
-                      (maf--comp-find-bounds))))))
+never get the hook function disabled. While a region is active the
+highlight steps aside — its overlay would fight the region's own — and
+returns on the next command once the region is gone."
+  (let ((bounds (unless (region-active-p)
+                  (ignore-errors
+                    (let ((idx (calc-locate-cursor-element (point))))
+                      (when (> idx 0)
+                        (calc-prepare-selection idx)
+                        (maf--comp-find-bounds)))))))
     (cond
      (bounds
       (unless maf-hl--overlay
