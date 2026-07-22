@@ -10,13 +10,13 @@
   1) [ ] Move all of relevant my/calc config into project
   2) [ ] Harden through using w/ anki math
 
-* Major features [3/9]
+* Major features [4/9]
   - [ ] Vim bindings module (noun, verb, char)
   - [X] Persistent sub-formula highlighting
   - [X] Timeline module
   - [ ] Graphing module
   - [ ] Omni-options menu buffer
-  - [ ] Formulas module. Support categories, docs per formula, examples
+  - [X] Formulas module. Support categories, docs, examples
   - [-] Modules manager: Buffer where you can toggle modules
     - [X] Create manager
     - [ ] Set default binding
