@@ -19,17 +19,17 @@
 ;;    :examples ("..." ...)             ; optional worked examples
 ;;    :vars ((A . "area") ...))         ; optional variable meanings
 ;;
-;; The built-in set migrates the formulas from the user's calc settings
-;; file (see maf-formulas-data.el); `maf-formulas-user' holds additions.
-;; Enabling the module (see `maf-modules') registers every formula as a
-;; calc `var-eq-<name>' variable, so calc's own recall and rewrite see
-;; them too — the data here is the single source, calc's variables
+;; The formulas live in `maf-formulas-file' (a file in your Emacs config
+;; by default); it is loaded on first use and sets `maf-formulas-user'.
+;; Set that variable directly in your init to skip the file. Enabling
+;; the module (see `maf-modules') registers every formula as a calc
+;; `var-eq-<name>' variable, so calc's own recall and rewrite see them
+;; too — `maf-formulas-user' is the single source, calc's variables
 ;; generated from it.
 
 (require 'calc)
 (require 'maf-lib)
 (require 'cl-lib)
-(require 'maf-formulas-data)   ; defines `maf-formulas--builtin' (generated)
 
 ;; Defined in lazily-loaded calc modules; declared for the byte compiler.
 (declare-function math-format-value "calc-ext")
@@ -64,21 +64,36 @@
   "Face for the formula shown beside each title in the menu list."
   :group 'maf)
 
-;; `maf-formulas--builtin' is defined in maf-formulas-data.el (generated,
-;; required above) — the migrated formula set.
+(defcustom maf-formulas-file (locate-user-emacs-file "maf-formulas.el")
+  "File of saved formulas, loaded on first use when it exists.
+The file sets `maf-formulas-user' to a list of formula plists (see the
+commentary above for the shape). nil disables file loading; populate
+`maf-formulas-user' from your init instead."
+  :type '(choice (const :tag "None" nil) file)
+  :group 'maf)
 
 (defcustom maf-formulas-user nil
-  "Your own saved formulas, in the same plist shape as the built-ins.
-See `modules/maf-formulas.el' commentary; only :expr is required."
+  "Your saved formulas, in the plist shape described in the commentary.
+Loaded from `maf-formulas-file' when that file exists; set it directly
+in your init to add formulas without a file. Only :expr is required."
   :type '(repeat plist)
   :group 'maf)
 
 (defconst maf-formulas--detail-buffer " *maf-formulas-detail*"
   "Name of the buffer showing detail for the formula at point.")
 
+(defvar maf-formulas--loaded nil
+  "Non-nil once `maf-formulas-file' has been consulted this session.")
+
 (defun maf-formulas--all ()
-  "All formulas: the built-ins followed by `maf-formulas-user'."
-  (append maf-formulas--builtin maf-formulas-user))
+  "All saved formulas, loading `maf-formulas-file' the first time.
+The file, when present, populates `maf-formulas-user'; after that the
+variable is the single source, so runtime additions to it persist."
+  (unless maf-formulas--loaded
+    (setq maf-formulas--loaded t)
+    (when (and maf-formulas-file (file-exists-p maf-formulas-file))
+      (load (expand-file-name maf-formulas-file) nil t)))
+  maf-formulas-user)
 
 (defun maf-formulas--title (f)
   "Menu title for formula F, derived from its name when :title is absent."
@@ -356,8 +371,8 @@ filters, \\[maf-formulas-clear-filter] clears the filter, \\[maf-formulas-quit] 
 (define-minor-mode maf-use-formulas-mode
   "Global minor mode making the saved formulas available.
 Enabled, every formula is registered as a calc `var-eq-<name>' variable
-so calc's own recall and rewrite see them (the data in
-`maf-formulas--builtin' / `maf-formulas-user' is the single source).
+so calc's own recall and rewrite see them (`maf-formulas-user',
+populated from `maf-formulas-file', is the single source).
 The `maf-formulas' menu works whenever this file is loaded; see
 `maf-modules'."
   :global t
