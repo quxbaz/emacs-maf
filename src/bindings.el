@@ -31,6 +31,9 @@
 (define-key maf-mode-map (kbd "O") #'mafcmd-commute)
 ;; Shadows calc-call-last-kbd-macro.
 (define-key maf-mode-map (kbd "X") #'mafcmd-log-exp)
+;; A single-key alias for expand, which also keeps its table key a x.
+;; Shadows calc-execute-extended-command.
+(define-key maf-mode-map (kbd "x") #'mafcmd-expand)
 ;; A toggle between pair members is its own inverse, so both directions
 ;; run the same command.
 (define-key maf-mode-map (kbd "S-<up>") #'mafcmd-toggle-op)
