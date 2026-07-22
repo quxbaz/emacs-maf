@@ -83,6 +83,18 @@
   (cl-assert (eq (char-after) ?+))
   (calc-pop (calc-stack-size))
 
+  ;; keep-point: maf-dup-here pushes the same copy but leaves point on
+  ;; the item instead of moving home. The copy lands at level 1 (below),
+  ;; so the entry point was on keeps its line.
+  (maf-push "(a + b) c")
+  (progn (goto-char (point-min)) (search-forward "+") (backward-char 1))
+  (call-interactively 'maf-dup-here)
+  (cl-assert (= (calc-stack-size) 2))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "a + b"))
+  (cl-assert (eq (char-after) ?+))
+  (cl-assert (not (maf--at-home-p)))
+  (calc-pop (calc-stack-size))
+
   ;; verbatim: nothing simplifies. With point on the + of an unsimplified
   ;; sub-formula the pushed copy keeps its literal form (1 + 2, not 3).
   (let ((calc-simplify-mode 'none))

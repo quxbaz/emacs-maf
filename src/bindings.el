@@ -67,6 +67,10 @@
 ;; During digit/algebraic entry RET stays calc's own (the entry
 ;; minibuffer terminates), as with e / = / @.
 (define-key maf-mode-map (kbd "RET") #'maf-dup)
+;; M-RET is the keep-point variant: same duplicate, point stays put.
+;; Bind the GUI event and the terminal form both, as calc has no M-RET.
+(define-key maf-mode-map (kbd "M-<return>") #'maf-dup-here)
+(define-key maf-mode-map (kbd "M-RET") #'maf-dup-here)
 ;; Equate gets both = (shadowing calc-evaluate) and e (shadowing the
 ;; e-notation digit start; inside digit entry e still means exponent,
 ;; since the entry minibuffer is calc's own).

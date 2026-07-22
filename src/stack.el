@@ -726,7 +726,7 @@ anywhere. Signals an error on an empty stack."
       ;; A single undo reverts point along with the stack.
       (maf--undo-record-cmd-point snapshot))))
 
-(defun maf-dup ()
+(defun maf-dup (&optional keep-point)
   "Duplicate the item at point, pushing a copy onto the stack.
 
   1:  a + b|   =>   2:  a + b
@@ -747,21 +747,33 @@ within it.
   1:  (a +| b) c   =>   2:  (a + b) c
                         1:  a + b        (sub-formula at point)
   1:  x = y|       =>   2:  x = y
-                        1:  x = y        (whole relation, from the margin)"
+                        1:  x = y        (whole relation, from the margin)
+
+Point moves home to the copy. With KEEP-POINT non-nil it stays where
+it was instead — `maf-dup-here' is the keep-point entry point."
   (interactive)
   (maf--with-calc-buffer
     (when (zerop (calc-stack-size))
       (user-error "Stack is empty"))
     ;; Unary resolution (no arg, so no below-top restriction) with
     ;; :map -1 so a relation stays whole in :expr rather than mapping
-    ;; per side. We only read :expr and push it; calc-wrapper's epilogue
-    ;; parks point home.
-    (let ((context (maf--resolve-context '((:arity . unary) (:map . -1)))))
-      (calc-wrapper
-       (calc-push (alist-get :expr context)))
+    ;; per side. We only read :expr and push it.
+    (let* ((context (maf--resolve-context '((:arity . unary) (:map . -1))))
+           (expr (alist-get :expr context)))
+      ;; calc-wrapper's epilogue parks point home; keep-point puts it back.
+      (if keep-point
+          (maf--preserve-point (calc-wrapper (calc-push expr)))
+        (calc-wrapper (calc-push expr)))
       ;; Record the resolve-time point so a single `maf-undo' reverts
       ;; point along with the pushed copy, back to where the command ran.
       (maf--undo-record-cmd-point (alist-get :point context)))))
+
+(defun maf-dup-here ()
+  "Duplicate the item at point like `maf-dup', but keep point in place.
+The copy is still pushed on top; point stays where it was instead of
+moving home to the copy."
+  (interactive)
+  (maf-dup t))
 
 (defvar maf-undo--chain-point nil
   "Point snapshot saved by the last `maf-undo'/`maf-redo' in a chain.

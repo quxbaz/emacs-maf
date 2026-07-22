@@ -82,8 +82,9 @@
    - [ ] my/calc-kill-ring-save-dwim (M-w) — copy region/entry/top; invoked twice, copies LaTeX
    - [ ] LaTeX composition for log: log(x, b) → \log_{b}(x) (math-compose-latex property)
 ** Stack shuffling and duplication
-   - [ ] my/calc-duplicate (RET) + my/calc-push-dwim (M-RET) + my/calc-duplicate-no-move —
+   - [X] my/calc-duplicate (RET) + my/calc-push-dwim (M-RET) + my/calc-duplicate-no-move —
      fold into one contextual duplicate: entry at point, sub-formula, or region
+     (maf-dup on RET; maf-dup-here on M-RET keeps point — the no-move variant)
    - [ ] my/calc-roll-to-top (S-RET) — move the entry at point to the top
    - [ ] my/calc-roll-to-bottom (C-M-backspace)
    - [ ] my/calc-duplicate-stack (C-M-RET) — duplicate the whole stack
