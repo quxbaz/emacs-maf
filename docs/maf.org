@@ -35,6 +35,7 @@
 ** TODO New command: contextual duplicate (binding: RET)
    duplicate the item at point and push to stack
    uses normal resolver targeting rules (ie, entry, subexpr, home, region, etc)
+** TODO Highlight entire entry when point is at prefix/eol
 # LATER
 ** TODO k k (my/calc-evaluate N) should work on fractions and division.
 ** TODO g i (my/calc-graph-quick-with-range) interval form a:b should work with spaces 'a b'
