@@ -831,21 +831,32 @@ within it.
   1:  x = y|       =>   2:  x = y
                         1:  x = y        (whole relation, from the margin)
 
-Point moves home to the copy. With KEEP-POINT non-nil it stays where
-it was instead — `maf-dup-here' is the keep-point entry point."
+Point moves home to the copy, leaving a mark where it was so a single
+`pop-to-mark-command' returns there. With KEEP-POINT non-nil point stays
+put instead and no mark is left — `maf-dup-here' is the keep-point entry
+point."
   (interactive)
   (maf--with-calc-buffer
     (when (zerop (calc-stack-size))
       (user-error "Stack is empty"))
-    ;; Unary resolution (no arg, so no below-top restriction) with
-    ;; :map -1 so a relation stays whole in :expr rather than mapping
-    ;; per side. We only read :expr and push it.
-    (let* ((context (maf--resolve-context '((:arity . unary) (:map . -1))))
+    ;; The origin to mark before point homes: nil when point is already
+    ;; home or keep-point will hold it. Captured now, before resolve
+    ;; probes calc state and may move point; the buffer is unedited until
+    ;; the push, so the position stays valid.
+    (let* ((origin (unless (or keep-point (maf--at-home-p)) (point)))
+           ;; Unary resolution (no arg, so no below-top restriction) with
+           ;; :map -1 so a relation stays whole in :expr rather than mapping
+           ;; per side. We only read :expr and push it.
+           (context (maf--resolve-context '((:arity . unary) (:map . -1))))
            (expr (alist-get :expr context)))
       ;; calc-wrapper's epilogue parks point home; keep-point puts it back.
       (if keep-point
           (maf--preserve-point (calc-wrapper (calc-push expr)))
-        (calc-wrapper (calc-push expr)))
+        ;; Mark the origin before the push homes point, so it can be
+        ;; popped back to (the marker rides the push's renumber).
+        (progn
+          (when origin (maf--mark-before-home origin))
+          (calc-wrapper (calc-push expr))))
       ;; Record the resolve-time point so a single `maf-undo' reverts
       ;; point along with the pushed copy, back to where the command ran.
       (maf--undo-record-cmd-point (alist-get :point context)))))

@@ -171,6 +171,16 @@ restores it after (`maf--point-restore')."
        (prog1 (progn ,@forms)
          (maf--point-restore ,snapshot)))))
 
+(defun maf--mark-before-home (&optional pos)
+  "Leave a silent mark at POS (or point) in the calc buffer.
+Commands that push a new entry park point on the home line, losing the
+spot the user was on. A mark left there — the marker rides the push and
+renumber, so it keeps tracking the entry — lets a single
+`pop-to-mark-command' return to it. Call this while point (or POS) is
+still at the origin, before the push homes it. No-op at POS nil with
+point already gone is the caller's concern."
+  (maf--with-calc-buffer (push-mark pos t)))
+
 (defvar maf-undo--cmd-point nil
   "Pre-command point snapshot for the head `calc-undo-list' group.
 A list (UNDO-HEAD POST-POS SNAPSHOT). UNDO-HEAD is the `calc-undo-list'

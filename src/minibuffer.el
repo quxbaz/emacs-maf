@@ -66,10 +66,10 @@ Point already at home, or `maf-mode' off in the calc buffer, is a no-op
        (maf--digit-commit-in-place)
        ;; A sub-formula RET commits contextually and keeps point.
        ((maf--at-subexpr-p))
-       ;; RET/SPC at a margin pushes and homes point: mark first so the
-       ;; user can pop back. push-mark runs in the calc buffer (the advice
-       ;; body is in the minibuffer) at the position about to be vacated.
-       (t (maf--with-calc-buffer (push-mark nil t)))))))
+       ;; RET/SPC at a margin pushes and homes point: mark the origin so
+       ;; the user can pop back. Point (in the calc buffer) is still on the
+       ;; entry about to be vacated.
+       (t (maf--mark-before-home))))))
 
 (advice-add 'calcDigit-nondigit :before #'maf--digit-entry-keep-point)
 

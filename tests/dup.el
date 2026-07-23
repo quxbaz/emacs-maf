@@ -112,6 +112,38 @@
   (cl-assert (= (calc-stack-size) 2))
   (calc-pop (calc-stack-size))
 
+  ;; --- A homing dup leaves a mark to pop back to ---
+
+  ;; From an entry margin, dup pushes the copy and parks point home, but
+  ;; marks the entry first, so a single pop returns there.
+  (maf-push "x + 3")
+  (maf-push "y + 5")
+  (progn (calc-cursor-stack-index 2) (end-of-line)
+         (setq mark-ring nil) (set-mark nil))
+  (call-interactively 'maf-dup)
+  (cl-assert (maf--at-home-p))            ; homed
+  (cl-assert (integerp (mark t)))         ; a mark was left
+  (progn (setq this-command 'set-mark-command last-command nil)
+         (pop-to-mark-command))
+  (cl-assert (not (maf--at-home-p)))      ; popped back off home
+  (calc-pop (calc-stack-size))
+
+  ;; keep-point dup (maf-dup-here) never leaves home, so no mark.
+  (maf-push "x + 3")
+  (progn (calc-cursor-stack-index 1) (end-of-line)
+         (setq mark-ring nil) (set-mark nil))
+  (call-interactively 'maf-dup-here)
+  (cl-assert (not (maf--at-home-p)))
+  (cl-assert (null (mark t)))
+  (calc-pop (calc-stack-size))
+
+  ;; A dup already at home moves nowhere, so no mark either.
+  (maf-push "a")
+  (progn (goto-char (point-max)) (setq mark-ring nil) (set-mark nil))
+  (call-interactively 'maf-dup)
+  (cl-assert (null (mark t)))
+  (calc-pop (calc-stack-size))
+
   ;; empty stack: signals a user-error and the stack stays empty.
   (cl-assert (equal (condition-case e
                         (progn (goto-char (point-max))
