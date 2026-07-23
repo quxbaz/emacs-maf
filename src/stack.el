@@ -32,6 +32,10 @@
 (declare-function math-expr-contains "calc-alg")
 (declare-function calc-find-selected-part "calc-sel")
 (declare-function calc-prepare-selection "calc-sel")
+(declare-function calc-commute-left "calcsel2")
+(declare-function calc-commute-right "calcsel2")
+(declare-function calc-auto-selection "calc-sel")
+(declare-function calc-find-assoc-parent-formula "calc-sel")
 (declare-function calcFunc-factor "calc-poly")
 (declare-function calcFunc-roots "calcalg2")
 (declare-function calcFunc-sub "calc-arith")
@@ -362,6 +366,85 @@ entry at home.
             (append (list (car expr) (nth 2 expr) (nth 1 expr))
                     (nthcdr 3 expr)))
            (t expr))))
+
+(defun maf--commute-anchor (m node)
+  "Put point on NODE within the entry at stack level M; nil if not found.
+NODE is matched by identity in the freshly rewritten entry, so it works
+only while calc reuses the same cons — true for + and * chains, false
+once a - or / crossing wraps the term in a fresh neg/reciprocal."
+  (ignore-errors
+    (calc-prepare-selection m)
+    (when-let ((pos (maf--comp-node-start-pos node)))
+      (goto-char pos))))
+
+(defun maf--commute (dir arg)
+  "Shift the term under point one place through its associative chain.
+DIR is `left' or `right'; ARG is the repeat count (negative reverses,
+as in calc).  The associative rewrite — including the sign flips that
+keep the value when a term crosses a - or / — is delegated to calc's own
+`calc-commute-left'/`calc-commute-right'.  Point then follows the moved
+term where identity survives the rewrite (+ and * chains), falling back
+to its prior line and column otherwise.
+
+With no commutable term under point — at home, on a whole entry, or on a
+term that is not inside a + or * chain — the command does nothing rather
+than signaling calc's \"No term is selected\"."
+  (maf--with-calc-buffer
+    (let ((m (calc-locate-cursor-element (point))))
+      (when (> m 0)
+        (let* ((entry (calc-top m 'entry))
+               (expr  (car entry))
+               (sel   (ignore-errors (calc-auto-selection entry))))
+          (when (and (consp sel)
+                     (consp (calc-find-assoc-parent-formula expr sel)))
+            (let ((snapshot (maf--point-snapshot))
+                  ;; Leave no lingering selection behind: maf resolves the
+                  ;; term from point each time, as the subexpr target does.
+                  (calc-keep-selection nil))
+              (condition-case nil
+                  (if (eq dir 'left)
+                      (calc-commute-left arg)
+                    (calc-commute-right arg))
+                ;; "Term is already leftmost/rightmost" — nothing to do.
+                (error nil))
+              (or (maf--commute-anchor m sel)
+                  (maf--point-restore snapshot))
+              ;; A single undo reverts point along with the stack.
+              (maf--undo-record-cmd-point snapshot))))))))
+
+(defun maf-commute-left (arg)
+  "Move the term under point one place left through its associative chain.
+
+  a + b + c|  =>  a + c| + b   (point on c)
+
+Point selects the term as usual — the sub-formula under the cursor — and
+follows it as it moves.  The shift respects the operators it crosses: a
+term moved left past a minus becomes an addition of its negation, past a
+division a multiplication by its reciprocal, so the value is preserved.
+Repeat to walk the term further left; with the entry below the top, the
+lower entry is acted on in place.
+
+A numeric prefix N shifts N places (a negative N shifts right).  At home,
+on a whole entry, or on a term outside any + or * chain — nothing to
+move — the command does nothing.
+
+  a - b|      =>  -b| + a
+  a / b|      =>  (1/b)| a"
+  (interactive "p")
+  (maf--commute 'left arg))
+
+(defun maf-commute-right (arg)
+  "Move the term under point one place right through its associative chain.
+
+  a| + b + c  =>  b + a| + c   (point on a)
+
+The mirror of `maf-commute-left': point selects the term under the cursor
+and follows it right, with the same sign handling when it crosses a minus
+or a division.  A numeric prefix N shifts N places (a negative N shifts
+left).  At home, on a whole entry, or on a term outside any + or * chain,
+the command does nothing."
+  (interactive "p")
+  (maf--commute 'right arg))
 
 (maf-defcmd mafcmd-float (expr _arg commit)
   "Float the resolved expression's fractions, leaving integers exact.

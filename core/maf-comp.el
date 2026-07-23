@@ -229,4 +229,18 @@ INDEX clamps to the last glyph, so a node that shrank still anchors."
                      (point))))
         (maf--comp-flat-to-pos fpos toppt)))))
 
+(defun maf--comp-node-start-pos (node)
+  "Buffer position of the first glyph of NODE's whole span, or nil.
+Where `maf--comp-node-anchor-pos' targets a node's own structural
+glyphs — and so returns nil for an atom, which has none — this returns
+the start of NODE's rendering, the place to put point to land on the
+node itself, atom or not. nil when NODE has no tag in the prepared
+composition (identity lost, or a non-flat rendering)."
+  (pcase (maf--comp-node-span node)
+    (`(,start ,_end ,_children ,_text)
+     (let ((toppt (save-excursion
+                    (calc-cursor-stack-index calc-selection-cache-num)
+                    (point))))
+       (maf--comp-flat-to-pos start toppt)))))
+
 (provide 'maf-comp)

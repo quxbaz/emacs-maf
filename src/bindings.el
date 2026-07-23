@@ -29,6 +29,10 @@
 ;; M-o is unbound in calc itself; H M-o runs the mod-180 variant.
 (define-key maf-mode-map (kbd "M-o") #'mafcmd-mod-360)
 (define-key maf-mode-map (kbd "O") #'mafcmd-commute)
+;; Shift the term under point through its associative chain. Lowercase
+;; j l / j r (calc binds the shifts to capital j L / j R, left reachable).
+(define-key maf-mode-map (kbd "j l") #'maf-commute-left)
+(define-key maf-mode-map (kbd "j r") #'maf-commute-right)
 ;; Shadows calc-call-last-kbd-macro.
 (define-key maf-mode-map (kbd "X") #'mafcmd-log-exp)
 ;; A single-key alias for expand, which also keeps its table key a x.
