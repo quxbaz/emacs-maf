@@ -6,31 +6,6 @@
 ;; background buffers, load the package, and arrange the starting
 ;; layout — maf.org on the left, calc on the right.
 
-(defconst maf-seed-entries
-  '("3:4"                    ; fraction
-    "2.5"                    ; float
-    "x"                      ; variable
-    "(a + b) (2 c - d)"      ; nested expressions
-    "2 x - 3 < 7"            ; inequality
-    "f(x) = x^2 + 1"         ; function
-    "sin(2 x + 1)"           ; trig
-    "[a, b, c]"              ; vector
-    "[1 .. 3]"               ; interval
-    "6 x + 12"               ; expression
-    "1 / (x^2 - 1)"          ; rational function
-    "6 x + 12 = 18 y + 6"    ; equation
-    )
-  "Algebraic entries pushed onto a fresh calc stack for casual testing.
-One entry per common expression shape.")
-
-(defun maf-seed-calc ()
-  "Push `maf-seed-entries' onto the calc stack."
-  (interactive)
-  ;; calc-wrapper's epilogue renumbers and refreshes the stack display;
-  ;; raw pushes would leave every entry rendered as level 1.
-  (calc-wrapper
-   (mapc #'maf-push maf-seed-entries)))
-
 (let ((root (file-name-directory (or load-file-name buffer-file-name))))
   ;; Open docs and sources without selecting them.
   (dolist (file (append
@@ -61,8 +36,4 @@ One entry per common expression shape.")
                (lambda ()
                  (delete-other-windows)
                  (find-file (expand-file-name "docs/maf.org" root))
-                 (set-window-buffer (split-window-right) "*Calculator*")))
-  ;; Seed the stack so casual testing doesn't start from scratch —
-  ;; unless persistence restored last session's stack.
-  (when (zerop (with-current-buffer "*Calculator*" (calc-stack-size)))
-    (maf-seed-calc)))
+                 (set-window-buffer (split-window-right) "*Calculator*"))))
