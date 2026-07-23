@@ -211,5 +211,6 @@
 * Cleanup
   - [ ] Delete my/calc
   - [ ] Use stock bindings
-  - [ ] Generate tests to cover maf. step tests when testing end-to-end. unit
+  - [ ] Generate tests to cover maf. Step tests when testing end-to-end. Unit
     tests for basic stuff.
+  - [ ] Remove seed entries
