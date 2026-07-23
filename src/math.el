@@ -16,6 +16,7 @@
 (declare-function math-polynomial-base "calc-alg")
 (declare-function math-polynomial-p "calc-alg")
 (declare-function math-is-polynomial "calc-alg")
+(declare-function math-const-var "calc-ext")
 
 ;; Polynomial-recognizer knobs, defvar'd in lazily-loaded calc-ext;
 ;; declared here so the let bindings below stay dynamic even when that
@@ -37,6 +38,26 @@ so the returned terms sum back to EXPR: 6 x - 12 gives (6 x, -12) and
                 (mapcar #'math-neg (maf--sum-terms (nth 2 expr)))))
     ('neg (mapcar #'math-neg (maf--sum-terms (nth 1 expr))))
     (_ (list expr))))
+
+(defun maf--solve-sorted-vars (expr)
+  "Return EXPR's distinct non-constant variables in solve-priority order.
+The conventional unknowns x, y, z, t come first, in that order; any
+other variables follow alphabetically. Used to pick which variable to
+solve or find roots for."
+  (let (vars)
+    (cl-labels ((collect (e)
+                  (cond ((and (eq (car-safe e) 'var) (not (math-const-var e)))
+                         (cl-pushnew e vars :test #'equal))
+                        ((consp e) (mapc #'collect (cdr e))))))
+      (collect expr))
+    (let ((priority '("x" "y" "z" "t")))
+      (sort vars
+            (lambda (a b)
+              (let* ((na (symbol-name (nth 1 a)))
+                     (nb (symbol-name (nth 1 b)))
+                     (pa (or (cl-position na priority :test #'string=) 999))
+                     (pb (or (cl-position nb priority :test #'string=) 999)))
+                (or (< pa pb) (and (= pa pb) (string< na nb)))))))))
 
 (defun maf--contains-float-p (expr)
   "Return t if EXPR contains a float anywhere.

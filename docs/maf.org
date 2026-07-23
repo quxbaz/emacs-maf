@@ -100,7 +100,8 @@
    - [ ] my/calc-plus / my/calc-minus (+/-) — eq + eq adds/subtracts both sides;
      layer onto mafcmd-add/sub
 ** Solving
-   - [ ] my/calc-auto-solve (M-i) — solve for the first variable, cycle when already solved
+   - [X] my/calc-auto-solve (M-i) — solve for the first variable, cycle when already solved
+     (mafcmd-auto-solve on M-i; contextual, :map -1)
    - [ ] my/calc-poly-roots (M-r) — roots via factoring, with multiplicity
    - [ ] my/calc-inverse-function (l v) — invert y = f(x), any variable names
 ** Angles

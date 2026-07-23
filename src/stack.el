@@ -27,6 +27,10 @@
 (declare-function calc-change-mode "calc-mode")
 (declare-function calc-normal-language "calc-lang")
 (declare-function calc-big-language "calc-lang")
+(declare-function math-solve-eqn "calcalg2")
+(declare-function math-expr-subst "calc-alg")
+(declare-function calc-find-selected-part "calc-sel")
+(declare-function calc-prepare-selection "calc-sel")
 
 (maf-defcmd mafcmd-factor-by (expr arg commit)
   "Factor the resolved expression by the top-of-stack argument.
@@ -774,6 +778,145 @@ The copy is still pushed on top; point stays where it was instead of
 moving home to the copy."
   (interactive)
   (maf-dup t))
+
+;;; Solving
+
+(defun maf--solve-solved-for (expr)
+  "Return the variable EXPR is already solved for, or nil.
+That is the plain variable standing alone on one side of a relation —
+an equation or an inequality."
+  (when (maf--relation-p expr)
+    (let ((lhs (nth 1 expr)) (rhs (nth 2 expr)))
+      (cond ((eq (car-safe lhs) 'var) lhs)
+            ((eq (car-safe rhs) 'var) rhs)))))
+
+(defun maf--solve-fresh-var (expr)
+  "Return a variable node whose name does not occur in EXPR."
+  (let ((names (mapcar (lambda (v) (symbol-name (nth 1 v)))
+                       (maf--solve-sorted-vars expr)))
+        (n 0) name)
+    (while (member (setq name (format "u%d" n)) names)
+      (setq n (1+ n)))
+    (list 'var (intern name) (intern (concat "var-" name)))))
+
+(defun maf--solve-for-subexpr (rel target)
+  "Solve relation REL for the sub-expression TARGET, or nil.
+A plain variable is solved directly. A compound sub-expression is
+isolated by substituting a fresh variable for it — calc cannot solve
+for a compound directly through a nonlinear operator like sqrt — then
+solving for that variable and substituting the sub-expression back."
+  (if (eq (car-safe target) 'var)
+      (math-solve-eqn rel target nil)
+    (let* ((u (maf--solve-fresh-var rel))
+           (soln (math-solve-eqn (math-expr-subst rel target u) u nil)))
+      (and soln (math-expr-subst soln u target)))))
+
+(defvar maf--solve-target nil
+  "Sub-expression `mafcmd-auto-solve' should isolate, bound per call.
+Nil means solve for a variable instead; read by `maf--auto-solve-run'.")
+
+(defun maf--auto-solve-target ()
+  "Return the sub-expression under point to isolate, or nil.
+Any sub-expression under point is a target — a constant included, to
+stay consistent with subexpr targeting. Nil only when there is no
+sub-expression to speak of: point at a line margin, or on the relation
+operator (whose sub-formula is the whole relation); the caller then
+solves for a variable instead."
+  (when (maf--at-subexpr-p)
+    (maf--with-calc-buffer
+      (save-excursion
+        (let ((m (calc-locate-cursor-element (point))))
+          (calc-prepare-selection m)
+          (let ((sub (ignore-errors
+                       (maf--strip-encasing (calc-find-selected-part)))))
+            (and sub (not (maf--relation-p sub)) sub)))))))
+
+(maf-defcmd maf--auto-solve-run (expr _arg commit)
+  "Solve the whole relation for `maf--solve-target', else for a variable.
+The worker behind `mafcmd-auto-solve' — see there. Takes the whole entry
+\(`:scope entry') and solves it: for `maf--solve-target' (the
+sub-expression under point) when that is set and solvable, otherwise for
+a variable — the first of x, y, z, t then alphabetical, cycling to the
+next when already solved for one. Symbolic and prefer-frac so a
+non-integer solution stays exact (1:2 and sqrt(2), not 0.5 and 1.414); a
+bare expression is treated as = 0; nothing solvable commits unchanged."
+  :arity unary
+  :prefix "slv"
+  :map -1
+  :scope entry
+  (let* ((rel (if (maf--relation-p expr) expr (list 'calcFunc-eq expr 0)))
+         (result
+          (let ((calc-symbolic-mode t) (calc-prefer-frac t))
+            (or
+             ;; Isolate the sub-expression under point, when solvable.
+             (and maf--solve-target (maf--solve-for-subexpr rel maf--solve-target))
+             ;; Else solve for a variable, cycling on repeat.
+             (let* ((vars (maf--solve-sorted-vars rel))
+                    (n (length vars)))
+               (and (> n 0)
+                    (let* ((solved (and (> n 1) (maf--solve-solved-for rel)))
+                           (var (if solved
+                                    (nth (mod (1+ (cl-position solved vars :test #'equal)) n) vars)
+                                  (car vars))))
+                      (math-solve-eqn rel var nil))))))))
+    (commit (if (maf--relation-p result) result expr))))
+
+(defun maf--auto-solve-point-offset ()
+  "Point's offset within the sub-expression under point, or nil.
+Measured from the sub-formula's first non-`(' glyph, so its wrapping
+parens — rendered here but gone once it leads the isolated relation —
+do not shift the offset."
+  (save-excursion
+    (let ((pt (point))
+          (idx (calc-locate-cursor-element (point))))
+      (when (> idx 0)
+        (calc-prepare-selection idx)
+        (let ((bounds (ignore-errors (maf--comp-find-bounds))))
+          (when bounds
+            (goto-char (car bounds))
+            (skip-chars-forward "(")
+            (max 0 (- pt (point)))))))))
+
+(defun mafcmd-auto-solve ()
+  "Isolate the sub-expression under point, else solve the relation at point.
+
+With point on a sub-expression, isolate it: solve the relation for that
+sub-expression, standing it alone on the left. Any sub-expression works
+— a compound whole (point on the product 30 x in y = 30 x + 12), one
+under a nonlinear operator (x + 1 in sqrt(x + 1) = 3 y), even a bare
+constant (the 1 in x + 1 = 3 y). The result stays exact: a root gives
+sqrt(2), a ratio 1:2.
+
+  a = b| c        =>  b = a / c        (isolate the factor at point)
+  y = 30 x| + 12  =>  x = y / 30 - 2:5 (isolate x)
+  x + 1| = 3 y    =>  1 = 3 y - x      (isolate the constant)
+
+With no sub-expression to isolate — the line prefix or end of line, the
+relation operator, or point at home — it solves the whole relation for a
+variable instead: the first of x, y, z, t, else alphabetical, cycling to
+the next on repeat when already solved for one. Equations and
+inequalities alike, the relation kept (calc flips an inequality's sense
+when it must); a bare expression is treated as = 0, one with no variable
+is unchanged.
+
+  x + 3 = 7|      =>  x = 4
+  x + y = 5       =>  x = 5 - y        (again: y = 5 - x)
+  2 x - 3 < 7     =>  x < 5
+  x + 3 != 7      =>  x != 4
+  3 = 3           =>  3 = 3            (no variable: unchanged)"
+  (interactive)
+  (let* ((maf--solve-target (maf--auto-solve-target))
+         (snapshot (maf--point-snapshot))
+         (offset (and maf--solve-target (maf--auto-solve-point-offset))))
+    (call-interactively #'maf--auto-solve-run)
+    (when maf--solve-target
+      ;; Point follows the isolated sub-expression: it now leads the
+      ;; entry, so return to the same offset within it. Re-record the
+      ;; undo point so one `maf-undo' still returns to where it ran.
+      (maf-beginning-of-entry)
+      (skip-chars-forward "(")
+      (when (and offset (> offset 0)) (forward-char offset))
+      (maf--undo-record-cmd-point snapshot))))
 
 (defvar maf-undo--chain-point nil
   "Point snapshot saved by the last `maf-undo'/`maf-redo' in a chain.
