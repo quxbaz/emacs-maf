@@ -26,27 +26,50 @@
 (defvar calc-prev-char)
 (defvar calc-prev-prev-char)
 
+(defvar maf--digit-commit-in-place nil
+  "Non-nil while `maf-digit-commit-here' drives `calcDigit-nondigit'.
+It spoofs a RET termination to suppress calc's command re-dispatch, so
+the keep-point advice would otherwise mistake it for a homing RET and
+drop a mark. This flag tells the advice the entry keeps point by design.")
+
 (defun maf--digit-entry-keep-point ()
-  "Suppress stack alignment when a command key completes digit entry.
+  "Keep or mark point when a digit entry completes, by how it completed.
 Finishing a digit entry normally parks point at home, destroying the
 context the terminating command should resolve: with point on an entry,
 typing 1 + would add 1 to the top of the stack instead of that entry.
-Setting the `no-align' flag makes the entry's push leave point where it
-was, and the entry's row survives the push (only its level number
-changes), so the command that follows targets the position the user
-was on. Point still goes home when it already was there or when RET
-or SPC completes the entry. With `maf-mode' off in the calc buffer
-the whole function is a no-op — plain calc behavior, no maf state
-touched."
+
+A command-key termination (1 +) sets the `no-align' flag so the push
+leaves point where it was — the entry's row survives, only its level
+number changes — and the command that follows targets that position. A
+sub-formula RET commits contextually and keeps point too; C-<return> is
+the explicit keep-point commit.
+
+A plain RET or SPC at a margin, though, does park point home. Before it
+does, drop a mark where the user was, so a single `pop-to-mark-command'
+brings them back from the home line. The mark's marker rides the push,
+tracking the entry as it renumbers.
+
+Point already at home, or `maf-mode' off in the calc buffer, is a no-op
+\(plain calc behavior, no maf state touched)."
   (when (maf--with-calc-buffer maf-mode)
     (let ((command-key (not (memq last-command-event '(?\r ?\s)))))
       ;; Record how this entry completed on every run (self-clearing):
       ;; a command-key termination marks the entry's push and the command
       ;; it dispatches as one gesture for undo amalgamation.
       (setq maf--digit-entry-handoff command-key)
-      (when (and (not (maf--at-home-p))
-                 command-key)
-        (calc-set-command-flag 'no-align)))))
+      (cond
+       ;; Already home: nothing to preserve, nowhere to return from.
+       ((maf--at-home-p))
+       ;; 1 + and friends: keep point on the entry the command resolves.
+       (command-key (calc-set-command-flag 'no-align))
+       ;; C-<return>'s keep-point commit stays put by design.
+       (maf--digit-commit-in-place)
+       ;; A sub-formula RET commits contextually and keeps point.
+       ((maf--at-subexpr-p))
+       ;; RET/SPC at a margin pushes and homes point: mark first so the
+       ;; user can pop back. push-mark runs in the calc buffer (the advice
+       ;; body is in the minibuffer) at the position about to be vacated.
+       (t (maf--with-calc-buffer (push-mark nil t)))))))
 
 (advice-add 'calcDigit-nondigit :before #'maf--digit-entry-keep-point)
 
@@ -86,7 +109,8 @@ push."
   (interactive)
   (when (and (maf--with-calc-buffer maf-mode) (not (maf--at-home-p)))
     (calc-set-command-flag 'no-align))
-  (let ((last-command-event ?\r))
+  (let ((last-command-event ?\r)
+        (maf--digit-commit-in-place t))
     (calcDigit-nondigit)))
 
 (define-key calc-digit-map (kbd "C-<return>") #'maf-digit-commit-here)

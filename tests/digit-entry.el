@@ -104,4 +104,34 @@
   (cl-assert (= (calc-stack-size) 2))
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "9"))
   (cl-assert (maf--at-home-p))
+  (calc-pop (calc-stack-size))
+
+  ;; --- A homing RET leaves a mark to pop back to ---
+
+  ;; RET at a margin parks point home, but drops a mark on the entry the
+  ;; user was on: popping it returns there.
+  (maf-push "x + 3")
+  (progn (goto-char (point-min)) (end-of-line) (setq mark-ring nil) (set-mark nil))
+  (execute-kbd-macro (kbd "7 RET"))
+  (cl-assert (maf--at-home-p))                    ; homed
+  (cl-assert (integerp (mark t)))                 ; a mark was set
+  (progn (setq this-command 'set-mark-command last-command nil)
+         (pop-to-mark-command))
+  (cl-assert (not (maf--at-home-p)))              ; popped back off home
+  (cl-assert (= (line-number-at-pos) 1))          ; onto the x + 3 entry
+  (calc-pop (calc-stack-size))
+
+  ;; The keep-point completions do not leave a stray mark: point never
+  ;; moved, so there is nothing to pop back to.
+  (maf-push "x + 3")
+  (progn (goto-char (point-min)) (end-of-line) (setq mark-ring nil) (set-mark nil))
+  (execute-kbd-macro (kbd "7 C-<return>"))
+  (cl-assert (null (mark t)))
+  (calc-pop (calc-stack-size))
+
+  (maf-push "12 x + 3")
+  (progn (goto-char (point-min)) (search-forward "12") (backward-char 1)
+         (setq mark-ring nil) (set-mark nil))
+  (execute-kbd-macro (kbd "5 RET"))
+  (cl-assert (null (mark t)))
   (calc-pop (calc-stack-size)))
