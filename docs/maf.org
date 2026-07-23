@@ -214,3 +214,4 @@
   - [ ] Generate tests to cover maf. Step tests when testing end-to-end. Unit
     tests for basic stuff.
   - [ ] Remove seed entries
+  - [ ] Remove project-init.el
