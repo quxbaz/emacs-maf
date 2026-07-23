@@ -14,6 +14,9 @@
 (declare-function calc-top "calc-ext")
 (declare-function calc-encase-atoms "calc-sel")
 (declare-function calc-replace-sub-formula "calc-sel")
+(defvar calc-use-selections)
+(defvar calc-any-selections)
+(defvar calc-stack)
 
 (defun maf--commit-push (commit-n prefix val commit-m sels post-pop)
   "Push VAL at COMMIT-M (popping COMMIT-N entries there first), then optionally
@@ -87,8 +90,19 @@ formula otherwise) and :m is that entry's stack level after the pops."
            `((:node . ,val-encased) (:m . ,landed-m))))
         ((or 'home 'entry 'equation)
          ;; For equation, val is the relation already reassembled by the
-         ;; macro from both sides.
-         (maf--commit-push commit-n prefix val commit-m nil post-pop)
+         ;; macro from both sides.  Calc normally redirects a nil-SELS push
+         ;; into any active sub-formula selection.  Entry-scoped commands
+         ;; deliberately bypass selections, so disable that redirection for
+         ;; this operation; the replacement entry carries no selection.
+         (let* ((entry-scoped-p
+                 (eq (alist-get :scope context) 'entry))
+                (calc-use-selections
+                 (and (not entry-scoped-p) calc-use-selections)))
+           (maf--commit-push commit-n prefix val commit-m nil post-pop)
+           ;; calc-any-selections is a cache, not derived on every access.
+           (when entry-scoped-p
+             (setq calc-any-selections
+                   (cl-some (lambda (entry) (nth 2 entry)) calc-stack))))
          `((:node . ,val) (:m . ,landed-m)))))))
 
 (provide 'maf-commit)
