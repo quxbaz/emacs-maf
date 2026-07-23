@@ -26,6 +26,7 @@
 
 * Todo
 # NOW
+** TODO | cmd should always create vector
 ** IN-PROGRESS formulas module
    - [X] categories
    - [X] docs per formula
