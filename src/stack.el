@@ -700,68 +700,46 @@ entries by one, as calc's TAB does."
             ;; A single undo reverts point along with the stack.
             (maf--undo-record-cmd-point snapshot)))))))
 
-(defun maf-equal-to ()
-  "Join two adjacent stack entries into one equation, contextually.
+(maf-defcmd mafcmd-equal-to (expr arg commit)
+  "Equate the entry at point with the top-of-stack argument.
 
   2:  x
   1:  y|    =>   1:  x = y|
 
-With the Inverse flag, builds != instead of =.
+Like any binary command, the entry at point is the subject and the top
+of the stack is the argument: the equation is subject = argument, the
+argument is consumed, and the result lands where the subject was. Point
+on the top entry shifts the pair down — the top becomes the argument and
+the entry below the subject — so on a two-entry stack either entry gives
+the same equation; at home the top two join. With a deeper stack, the
+entry at point equates with the top regardless of the entries between.
 
-  2:  x
-  1:  y|    =>   1:  x != y|
+  3:  a|         2:  a = c
+  2:  b     =>   1:  b
+  1:  c
 
-The entry above point becomes the left side, the entry at point the
-right side, and the equation replaces the pair with point at its end
-of line. At home the top two entries join; on the deepest entry —
-nothing above it — the pair shifts to the entry below, so either
-entry of a two-entry stack gives the same equation. With keep-args
-the pair stays put and the equation is pushed on top instead. Both
-sides commit structurally intact — nothing simplifies or evaluates,
-so equating 3 with 3 gives the equation 3 = 3, not 1. Signals an
-error with fewer than two entries."
-  (interactive)
-  (maf--with-calc-buffer
-    (when (< (calc-stack-size) 2)
-      (user-error "Two stack entries are needed to equate"))
-    (let* ((level (calc-locate-cursor-element (point)))
-           ;; Pair (m+1, m): home resolves to the top pair, and on the
-           ;; deepest entry — no upper neighbor — the pair shifts down.
-           (m (min (max level 1) (1- (calc-stack-size))))
-           (keep calc-keep-args-flag)
-           (func (if calc-inverse-flag 'calcFunc-neq 'calcFunc-eq))
-           (prefix (if calc-inverse-flag "neq" "eq"))
-           (commit
-            (lambda ()
-              (calc-wrapper
-               ;; The list runs deepest-first: nth 0 is the entry above
-               ;; point — the upper line — which reads as the left side.
-               (let* ((vals (mapcar #'maf--strip-encasing
-                                    (calc-top-list 2 m)))
-                      (result (list func (nth 0 vals) (nth 1 vals))))
-                 ;; Explicit nil sels keep the commit on the plain
-                 ;; pop/push path; selections elsewhere on the stack stay
-                 ;; untouched, and the operands' own selections end with
-                 ;; them.
-                 (if keep
-                     (calc-pop-push-record-list 0 prefix (list result)
-                                                1 (list nil))
-                   (calc-pop-push-record-list 2 prefix (list result)
-                                              m (list nil))))))))
-      (let ((snapshot (maf--point-snapshot)))
-        (if (or keep (= level 0))
-            ;; Nothing under point moved (keep) or point is at home:
-            ;; keeping it in place is the right restore.
-            (maf--preserve-point (funcall commit))
-          ;; The equation takes the pair's upper line while point was on
-          ;; the lower one, so a line-based restore would drift onto the
-          ;; entry below; follow the equation instead, landing at its EOL
-          ;; — the entry margin, ready for further entry commands.
-          (funcall commit)
-          (calc-cursor-stack-index m)
-          (end-of-line))
-        ;; A single undo reverts point along with the stack.
-        (maf--undo-record-cmd-point snapshot)))))
+With the Inverse flag, `mafcmd-not-equal-to' builds != instead. With
+keep-args the operands stay and the equation is pushed on top. Both
+sides commit structurally intact — nothing simplifies or evaluates, so
+equating 3 with 3 gives the equation 3 = 3, not 1. Signals an error
+with fewer than two entries."
+  :arity binary
+  :prefix "eq"
+  :scope entry
+  :map -1
+  :inverse mafcmd-not-equal-to
+  (commit (list 'calcFunc-eq expr arg)))
+
+(maf-defcmd mafcmd-not-equal-to (expr arg commit)
+  "Build != between the entry at point and the top-of-stack argument.
+
+The Inverse route of `mafcmd-equal-to' — identical in every way but the
+relation it forms: subject != argument, structural, no simplification."
+  :arity binary
+  :prefix "neq"
+  :scope entry
+  :map -1
+  (commit (list 'calcFunc-neq expr arg)))
 
 (defun maf-del ()
   "Delete the target at point: selection, sub-formula, entry, or top.

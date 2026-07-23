@@ -121,7 +121,7 @@
    - [ ] calcFunc-hypot advice — symbolic args: sqrt(abssqr(a) + abssqr(b))
 ** Already covered
    Stack persistence (persist.el), maf-calc/-direct, maf-undo/redo, maf-kill,
-   maf-del, maf-beginning-of-entry, maf-equal-to, maf-quick-variable,
+   maf-del, maf-beginning-of-entry, mafcmd-equal-to, maf-quick-variable,
    maf-toggle-simplify; mafcmd: factor-by, factor-gcd, sqrt/sqr, exp, ln, log,
    pow, mul, div, add, sub, neg, inv, esimplify, factor, expand. Trail yank
    commands superseded by maf-timeline RET/C-RET.
