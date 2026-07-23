@@ -5,10 +5,11 @@ description: Write and/or run a maf step test — the project's test convention 
 
 # Step tests
 
-A step test is a single `.el` file containing a `maf-defcmd` definition
-and a `maf-step` block of forms with `cl-assert` checks. The test passes
-if no form signals an error. Format reference: `tests/README.md`;
-existing examples: `tests/*.el` (e.g. `tests/mult-at-home.el`).
+A step test is a single `.el` file containing a `maf-step` block of
+forms with `cl-assert` checks. It may define a command with `maf-defcmd`
+when the command itself is part of the test. The test passes if no form
+signals an error. Format reference: `tests/README.md`; existing
+examples: `tests/*.el` (e.g. `tests/mult-at-home.el`).
 
 ```elisp
 (maf-defcmd maf-mult (expr arg commit)
@@ -29,8 +30,8 @@ existing examples: `tests/*.el` (e.g. `tests/mult-at-home.el`).
 
 - `tests/` (a.k.a. step-tests) — durable tests, executed repeatedly and
   sometimes as part of a suite; stepped through by hand with the
-  `*maf-step*` cockpit (`f4` loader; `l`/`j`/`SPC` forward, `h`/`k`
-  back, `r` restart, `q` quit).
+  `*maf-step*` cockpit (`f4` loader; `j`/`SPC` forward, `k` back, `r`
+  restart, `?` help, `q` quit).
 - `sandbox/` — semi-permanent sandbox area for the agent,
   used for a flexible number of purposes including testing. Write
   agent verification tests here; do not mix them into `tests/`.

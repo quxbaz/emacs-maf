@@ -110,8 +110,8 @@ Decisions to make deliberately, not by default:
 ## 7. Close out
 
 - Docs: a new concept or context key goes in
-  `docs/reference/concepts.org` (re-export the HTML); tick any
-  covered checkbox in `docs/Todo.org` / `docs/maf.org`.
+  `docs/reference/concepts.org` (re-export the HTML); tick any covered
+  checkbox in `docs/maf.org`.
 - Report what was decided along the way — deviations from the request,
   upstream quirks found, degenerate-case policy — and leave the work
   uncommitted for the user's `*`.

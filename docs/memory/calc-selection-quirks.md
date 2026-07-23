@@ -11,7 +11,7 @@ Calc renders some parentheses without putting them in the composition: the
 flat renderer emits `(`/`)` from `(set LEVEL ...)`/`(break LEVEL)` markers
 (see `math-comp-to-string-flat-term` in `calccomp.el`). The selection
 walker `math-comp-sel-flat-term` — and maf's clone `maf-hl--flat-term` in
-`src/maf-hl.el` — treats `set`/`break` as **zero-width**, so from the first
+`modules/maf-hl.el` — treats `set`/`break` as **zero-width**, so from the first
 synthesized paren onward, cursor columns map to shifted formula positions.
 
 Example: `(a + b)^(c - d) / (e f)`. The numerator's parens are literal

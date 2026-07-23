@@ -36,10 +36,10 @@ its keybinding in `~/.emacs.d/my/calc/bindings.el`.
 
 ## Verify
 
-After porting: load the file into #emacs (see the `emacs` skill),
-write and run a step test in `sandbox/` covering the feature's
-distinct input shapes (see the `test` skill), and exercise any new
-binding with real keypresses (see the `drive` skill).
+After porting: load the file into this session's dev instance (see the
+`emacs` skill), write and run a step test in `sandbox/` covering the
+feature's distinct input shapes (see the `test` skill), and exercise
+any new binding with real keypresses (see the `drive` skill).
 
 ## Examples
 

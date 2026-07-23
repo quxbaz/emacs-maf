@@ -35,8 +35,8 @@ worktrees, each run their own instance side by side.
 
    ```sh
    cd <repo-root> && \
-     MAF_SERVER_NAME=<name> \
-     nohup emacs -title <name> -l agent/emacs-init.el >/dev/null 2>&1 &
+     MAF_SERVER_NAME='<name>' \
+     nohup emacs -title '<name>' -l agent/emacs-init.el >/dev/null 2>&1 &
    ```
 
 3. Confirm it responds, then tell the user the session is ready and
@@ -48,7 +48,7 @@ worktrees, each run their own instance side by side.
   the running Emacs. Immediately after every edit to an `.el` file:
 
   ```sh
-  emacsclient -s <name> --eval '(load-file "src/maf-hl.el")'
+  emacsclient -s <name> --eval '(load-file "modules/maf-hl.el")'
   ```
 
   Relative paths resolve against the repo root. An unloaded edit means

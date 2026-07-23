@@ -8,26 +8,26 @@ Written for a future AI assistant working in this repo; general piloting
 techniques are in [piloting-emacs.md](piloting-emacs.md).
 
 The server name is chosen at session start (the `emacs` skill's
-argument) and defaults to `duo`. Distinct names let multiple
+argument) and defaults to `#emacs`. Distinct names let multiple
 sessions — e.g. in separate worktrees — each run their own instance side
-by side. Examples below use `duo`; substitute the session's name.
+by side. Examples below use `#emacs`; substitute the session's name.
 
 ## Initialization (start of a working session)
 
 Check whether it is already running:
 
 ```sh
-emacsclient -s duo --eval t   # error => not running
+emacsclient -s '#emacs' --eval t   # error => not running
 ```
 
 If not, launch it from the session's repo root (this is part of session
 initialization). `MAF_SERVER_NAME` sets the server name; omit it for the
-default `duo`:
+default `#emacs`:
 
 ```sh
 cd /home/david/lab/emacs-maf && \
-  MAF_SERVER_NAME=duo \
-  nohup emacs -title duo -l agent/emacs-init.el >/dev/null 2>&1 &
+  MAF_SERVER_NAME='#emacs' \
+  nohup emacs -title '#emacs' -l agent/emacs-init.el >/dev/null 2>&1 &
 ```
 
 Properties, all deliberate:
@@ -36,7 +36,7 @@ Properties, all deliberate:
   against the real config, not a sterile one.
 - **Launched from the project root**, so every buffer's
   `default-directory` is the repo.
-- **Private server name** (from `MAF_SERVER_NAME`, default `duo`) —
+- **Private server name** (from `MAF_SERVER_NAME`, default `#emacs`) —
   the default `server` socket belongs to the user's main session
   (`emacs_d-1`); never test there, and never kill it. Other sessions'
   instances are equally off-limits. Verify socket ownership with `lsof`
@@ -54,7 +54,7 @@ Properties, all deliberate:
    it** — do this unprompted, as part of the edit itself. Editing disk
    does not change the running Emacs (piloting-emacs.md pitfall 3), and
    an unloaded edit means the next joint test silently exercises stale
-   code: `emacsclient -s duo --eval '(load-file "src/maf-hl.el")'`
+   code: `emacsclient -s '#emacs' --eval '(load-file "modules/maf-hl.el")'`
    (relative paths resolve against the repo root).
 3. Exercise the change: the user types in the frame, or the assistant
    drives real keypresses (`execute-kbd-macro`, or `unread-command-events`
@@ -72,7 +72,7 @@ Kill by exact PID only (`pkill -f` self-matches the assistant's shell);
 the launch title makes the session's name greppable:
 
 ```sh
-pgrep -x emacs -a | grep 'title duo' | awk '{print $1}' | xargs -r kill
+pgrep -x emacs -a | grep 'title #emacs' | awk '{print $1}' | xargs -r kill
 ```
 
 Restart with the launch command above (e.g. after config-level changes
