@@ -16,6 +16,7 @@
 (declare-function calc-alg-entry "calc-aent")
 (declare-function calc-dots "calc-incom")
 (declare-function calcDigit-nondigit "calc")
+(declare-function calc-algebraic-entry "calc-aent")
 
 (defvar maf-mode)  ; defined in maf.el; declared for the byte compiler
 
@@ -72,6 +73,20 @@ Point already at home, or `maf-mode' off in the calc buffer, is a no-op
        (t (maf--mark-before-home))))))
 
 (advice-add 'calcDigit-nondigit :before #'maf--digit-entry-keep-point)
+
+(defun maf--algebraic-entry-leave-mark (&rest _)
+  "Mark point before `calc-algebraic-entry' pushes an entry and homes.
+Pressing ' to start an entry runs calc's own `calc-algebraic-entry',
+which maf does not shadow; from a real position it pushes the result and
+parks point home. Leave a mark first — as a homing digit-entry RET or
+`maf-dup' do — so a single `pop-to-mark-command' returns there. Point is
+still at the origin when this :before advice runs. At home, or with
+`maf-mode' off in the calc buffer, a no-op. A mark is left even when the
+entry is then aborted; that stray mark sits at point and pops to a no-op."
+  (when (and (maf--with-calc-buffer maf-mode) (not (maf--at-home-p)))
+    (maf--mark-before-home)))
+
+(advice-add 'calc-algebraic-entry :before #'maf--algebraic-entry-leave-mark)
 
 (defun maf-digit-quit ()
   "Abort digit entry, leaving point where the entry began.
