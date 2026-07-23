@@ -139,4 +139,131 @@
   (goto-char (point-max))
   (call-interactively 'mafcmd-auto-solve)
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "3 = 3"))
-  (calc-pop (calc-stack-size)))
+  (calc-pop (calc-stack-size))
+
+  ;; --- More complex expressions ---
+
+  ;; Symbolic coefficients: the solution is a compound quotient.
+  (maf-push "a x + b = c")
+  (goto-char (point-max))
+  (call-interactively 'mafcmd-auto-solve)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "x = (c - b) / a"))
+  (calc-pop (calc-stack-size))
+
+  ;; Fractional coefficients combine to an exact integer.
+  (maf-push "x/2 + x/3 = 5")
+  (goto-char (point-max))
+  (call-interactively 'mafcmd-auto-solve)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "x = 6"))
+  (calc-pop (calc-stack-size))
+
+  ;; The variable appears on both sides and inside parens; calc expands
+  ;; and collects to a single value.
+  (maf-push "3 (x - 1) = 2 x + 4")
+  (goto-char (point-max))
+  (call-interactively 'mafcmd-auto-solve)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "x = 7"))
+  (calc-pop (calc-stack-size))
+
+  ;; Isolate a power: point on the ^ isolates the whole x^2, not the base
+  ;; x, and point follows onto the operator.
+  (maf-push "x^2 + 1 = 5")
+  (progn (calc-cursor-stack-index 1) (beginning-of-line)
+         (search-forward "^") (backward-char 1))
+  (call-interactively 'mafcmd-auto-solve)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "x^2 = 4"))
+  (cl-assert (eq (char-after) ?^))
+  (calc-clear-selections) (calc-pop (calc-stack-size))
+
+  ;; Isolating a multi-term sum lifts it whole to the left.
+  (maf-push "y = a + b + c")
+  (progn (calc-cursor-stack-index 1) (beginning-of-line)
+         (search-forward "a") (backward-char 1))
+  (call-interactively 'mafcmd-auto-solve)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "a = y - c - b"))
+  (cl-assert (eq (char-after) ?a))
+  (calc-clear-selections) (calc-pop (calc-stack-size))
+
+  ;; --- Inequality flavors and sense ---
+
+  ;; <= and >= are solved keeping their sense.
+  (maf-push "2 x - 3 <= 7")
+  (goto-char (point-max))
+  (call-interactively 'mafcmd-auto-solve)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "x <= 5"))
+  (calc-pop (calc-stack-size))
+
+  (maf-push "x + 1 >= 4")
+  (goto-char (point-max))
+  (call-interactively 'mafcmd-auto-solve)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "x >= 3"))
+  (calc-pop (calc-stack-size))
+
+  ;; With the variable on the greater side, calc isolates it on the right
+  ;; and keeps the relation reading correctly (3 > x, not x < 3).
+  (maf-push "5 - x > 2")
+  (goto-char (point-max))
+  (call-interactively 'mafcmd-auto-solve)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "3 > x"))
+  (calc-pop (calc-stack-size))
+
+  ;; A negative coefficient flips the sense; here the flip lands the
+  ;; variable on the right as -3 < x (i.e. x > -3).
+  (maf-push "-2 x < 6")
+  (goto-char (point-max))
+  (call-interactively 'mafcmd-auto-solve)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "-3 < x"))
+  (calc-pop (calc-stack-size))
+
+  ;; --- Point on the relation operator ---
+
+  ;; Point on the = itself has no sub-formula to isolate, so it solves
+  ;; the whole relation for a variable.
+  (maf-push "x + 3 = 7")
+  (progn (calc-cursor-stack-index 1) (beginning-of-line)
+         (search-forward "=") (backward-char 1))
+  (call-interactively 'mafcmd-auto-solve)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "x = 4"))
+  (calc-clear-selections) (calc-pop (calc-stack-size))
+
+  ;; --- Various stack positions ---
+
+  ;; Point on a lower entry solves that entry, leaving the top untouched.
+  (maf-push "3 x + 1 = 7")   ; lands at index 2 after the next push
+  (maf-push "y - 2 = 8")     ; the top decoy (index 1)
+  (progn (calc-cursor-stack-index 2) (beginning-of-line)
+         (goto-char (line-end-position)))
+  (call-interactively 'mafcmd-auto-solve)
+  (cl-assert (string= (math-format-value (calc-top 2 'full)) "x = 2"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "y - 2 = 8"))
+  (calc-pop (calc-stack-size))
+
+  ;; Sub-expression isolation on a lower entry: the isolate happens in
+  ;; place at index 2, point follows onto the lifted factor, and the top
+  ;; entry is left intact.
+  (maf-push "a = b c")       ; index 2
+  (maf-push "111")           ; index 1 (top)
+  (progn (calc-cursor-stack-index 2) (beginning-of-line)
+         (search-forward "b") (backward-char 1))
+  (call-interactively 'mafcmd-auto-solve)
+  (cl-assert (string= (math-format-value (calc-top 2 'full)) "b = a / c"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "111"))
+  (cl-assert (eq (char-after) ?b))
+  (calc-clear-selections) (calc-pop (calc-stack-size))
+
+  ;; --- Robust across calc modes ---
+
+  ;; The command forces symbolic + prefer-frac internally, so the result
+  ;; stays exact even when both global modes are off.
+  (let ((calc-symbolic-mode nil) (calc-prefer-frac nil))
+    (maf-push "x^2 = 2")
+    (goto-char (point-max))
+    (call-interactively 'mafcmd-auto-solve)
+    (cl-assert (string= (math-format-value (calc-top 1 'full)) "x = sqrt(2)"))
+    (calc-pop (calc-stack-size))
+
+    (maf-push "2 x = 1")
+    (goto-char (point-max))
+    (call-interactively 'mafcmd-auto-solve)
+    (cl-assert (string= (math-format-value (calc-top 1 'full)) "x = 1:2"))
+    (calc-pop (calc-stack-size))))
