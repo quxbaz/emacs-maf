@@ -266,4 +266,149 @@
     (goto-char (point-max))
     (call-interactively 'mafcmd-auto-solve)
     (cl-assert (string= (math-format-value (calc-top 1 'full)) "x = 1:2"))
-    (calc-pop (calc-stack-size))))
+    (calc-pop (calc-stack-size)))
+
+  ;; --- Hardening and interaction boundaries ---
+
+  ;; Exercise the actual maf-mode binding from home. A bare expression is
+  ;; treated as = 0 and solved without requiring an explicit relation.
+  (maf-push "x + 3")
+  (let* ((buf (get-buffer "*Calculator*"))
+         (win (get-buffer-window buf t)))
+    (cl-assert win)
+    (with-selected-window win
+      (with-current-buffer buf
+        (execute-kbd-macro (kbd "M-i")))))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "x = -3"))
+  (calc-pop (calc-stack-size))
+
+  ;; A constant variable standing alone is not a solve-cycle candidate.
+  ;; Solve the first actual unknown rather than indexing past a missing pi.
+  (maf-push "pi = x + y")
+  (goto-char (point-max)) (call-interactively 'mafcmd-auto-solve)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "x = pi - y"))
+  (calc-pop (calc-stack-size))
+
+  ;; Match Calc's documented unknown-sign inequality behavior: strict <
+  ;; degrades to !=, while <= cannot be partially solved and stays intact.
+  (maf-push "a < b c")
+  (goto-char (point-max)) (call-interactively 'mafcmd-auto-solve)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "b != a / c"))
+  (calc-pop (calc-stack-size))
+
+  (maf-push "a <= b c")
+  (goto-char (point-max)) (call-interactively 'mafcmd-auto-solve)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "a <= b c"))
+  (calc-pop (calc-stack-size))
+
+  ;; An equation Calc cannot solve symbolically remains unchanged.
+  (maf-push "x^6 + x + 1 = 0")
+  (goto-char (point-max)) (call-interactively 'mafcmd-auto-solve)
+  (cl-assert (string= (math-format-value (calc-top 1 'full))
+                      "x^6 + x + 1 = 0"))
+  (calc-pop (calc-stack-size))
+
+  ;; If compound isolation fails, the documented variable fallback still
+  ;; runs, but point must not jump to the relation operator as if the target
+  ;; had been lifted to the left.
+  (maf-push "2 x = f(y + z)")
+  (progn (calc-cursor-stack-index 1) (beginning-of-line)
+         (search-forward "+") (backward-char 1))
+  (call-interactively 'mafcmd-auto-solve)
+  (cl-assert (string= (math-format-value (calc-top 1 'full))
+                      "x = f(y + z) / 2"))
+  (cl-assert (eq (char-after) ?z))
+  (calc-pop (calc-stack-size))
+
+  ;; Structural substitution intentionally replaces equal occurrences of a
+  ;; compound target, so two equal factors isolate as one shared expression.
+  (maf-push "y = (a + b) (a + b)")
+  (progn (calc-cursor-stack-index 1) (beginning-of-line)
+         (search-forward "+") (backward-char 1))
+  (call-interactively 'mafcmd-auto-solve)
+  (cl-assert (string= (math-format-value (calc-top 1 'full))
+                      "a + b = sqrt(y)"))
+  (cl-assert (eq (char-after) ?+))
+  (calc-pop (calc-stack-size))
+
+  ;; Fresh substitution variables avoid every variable node, including a
+  ;; Calc special constant that the normal solve-candidate collector omits.
+  (cl-progv (list 'var-u0) (list '(special-const (identity 42)))
+    (unwind-protect
+        (progn
+          (maf-push "u0 = 2 (a + b)")
+          (calc-cursor-stack-index 1) (beginning-of-line)
+          (search-forward "+") (backward-char 1)
+          (cl-assert (equal (maf--solve-fresh-var (calc-top 1 'full))
+                            '(var u1 var-u1)))
+          (call-interactively 'mafcmd-auto-solve)
+          (cl-assert (string= (math-format-value (calc-top 1 'full))
+                              "a + b = u0 / 2")))
+      (calc-pop (calc-stack-size))))
+
+  ;; An explicit Calc selection is honored as the isolation target, then
+  ;; cleared when the entry-scoped replacement lands.
+  (maf-push "a = b c")
+  (progn (calc-cursor-stack-index 1) (beginning-of-line)
+         (search-forward "b") (backward-char 1)
+         (call-interactively 'calc-select-here))
+  (cl-assert (nth 2 (calc-top 1 'entry)))
+  (let* ((buf (get-buffer "*Calculator*"))
+         (win (get-buffer-window buf t)))
+    (cl-assert win)
+    (with-selected-window win
+      (with-current-buffer buf
+        (execute-kbd-macro (kbd "M-i")))))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "b = a / c"))
+  (cl-assert (null (nth 2 (calc-top 1 'entry))))
+  (cl-assert (null calc-any-selections))
+  (cl-assert (eq (char-after) ?b))
+  (calc-pop (calc-stack-size))
+
+  ;; The same selection behavior works in place on a lower entry.
+  (maf-push "a = b c")
+  (maf-push "777")
+  (progn (calc-cursor-stack-index 2) (beginning-of-line)
+         (search-forward "b") (backward-char 1)
+         (call-interactively 'calc-select-here))
+  (call-interactively 'mafcmd-auto-solve)
+  (cl-assert (string= (math-format-value (calc-top 2 'full)) "b = a / c"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "777"))
+  (cl-assert (null (nth 2 (calc-top 2 'entry))))
+  (cl-assert (null calc-any-selections))
+  (calc-pop (calc-stack-size))
+
+  ;; Keep-args leaves the original relation below the solved result.
+  (maf-push "2 x = 1")
+  (call-interactively 'calc-keep-args)
+  (call-interactively 'mafcmd-auto-solve)
+  (cl-assert (= (calc-stack-size) 2))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "x = 1:2"))
+  (cl-assert (string= (math-format-value (calc-top 2 'full)) "2 x = 1"))
+  (calc-pop (calc-stack-size))
+
+  ;; Undo and redo restore both the entry and the original spot within the
+  ;; isolated compound; this covers the command's custom point bookkeeping.
+  (maf-push "y = 30 x + 12")
+  (progn (calc-cursor-stack-index 1) (beginning-of-line) (search-forward "30"))
+  (call-interactively 'mafcmd-auto-solve)
+  (cl-assert (and (string= (math-format-value (calc-top 1 'full))
+                           "30 x = y - 12")
+                  (eq (char-before) ?0) (eq (char-after) ?\s)))
+  (progn (setq last-command nil) (call-interactively 'maf-undo))
+  (cl-assert (and (string= (math-format-value (calc-top 1 'full))
+                           "y = 30 x + 12")
+                  (eq (char-before) ?0) (eq (char-after) ?\s)))
+  (progn (setq last-command 'maf-undo) (call-interactively 'maf-redo))
+  (cl-assert (and (string= (math-format-value (calc-top 1 'full))
+                           "30 x = y - 12")
+                  (eq (char-before) ?0) (eq (char-after) ?\s)))
+  (calc-pop (calc-stack-size))
+
+  ;; Empty-stack invocation fails cleanly without creating an entry.
+  (let (message)
+    (condition-case err
+        (call-interactively 'mafcmd-auto-solve)
+      (error (setq message (error-message-string err))))
+    (cl-assert (string= message "Too few elements on stack"))
+    (cl-assert (zerop (calc-stack-size)))))
