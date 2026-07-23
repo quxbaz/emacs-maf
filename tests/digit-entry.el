@@ -134,4 +134,47 @@
          (setq mark-ring nil) (set-mark nil))
   (execute-kbd-macro (kbd "5 RET"))
   (cl-assert (null (mark t)))
+  (calc-pop (calc-stack-size))
+
+  ;; --- S-RET adds the number as a new entry just below the one at point ---
+
+  ;; On a mid-stack entry the number lands at that entry's level; the
+  ;; entry bumps up one, lower entries stay, and point rests on the new one.
+  (maf-push "w") (maf-push "x") (maf-push "y") (maf-push "z")  ; 4:w 3:x 2:y 1:z
+  (progn (goto-char (point-min)) (forward-line 1) (end-of-line))   ; on 3: x
+  (execute-kbd-macro (kbd "9 S-<return>"))
+  (cl-assert (equal (mapcar (lambda (i) (math-format-value (calc-top i 'full)))
+                            (number-sequence 1 5))
+                    '("z" "y" "9" "x" "w")))     ; 9 inserted at level 3
+  (cl-assert (not (maf--at-home-p)))
+  (cl-assert (string= (math-format-value (calc-top 3 'full)) "9"))
+  (calc-pop (calc-stack-size))
+
+  ;; From a sub-formula, it adds below the whole containing entry.
+  (maf-push "a + b") (maf-push "c")             ; 2: a + b   1: c
+  (progn (calc-cursor-stack-index 2) (beginning-of-line)
+         (search-forward "a") (backward-char 1))
+  (execute-kbd-macro (kbd "9 S-<return>"))
+  (cl-assert (equal (mapcar (lambda (i) (math-format-value (calc-top i 'full)))
+                            (number-sequence 1 3))
+                    '("c" "9" "a + b")))
+  (calc-pop (calc-stack-size))
+
+  ;; On the top entry there is nothing below but home, so it lands on top.
+  (maf-push "p") (maf-push "q") (maf-push "r")  ; 3:p 2:q 1:r
+  (progn (calc-cursor-stack-index 1) (end-of-line))
+  (execute-kbd-macro (kbd "9 S-<return>"))
+  (cl-assert (equal (mapcar (lambda (i) (math-format-value (calc-top i 'full)))
+                            (number-sequence 1 4))
+                    '("9" "r" "q" "p")))
+  (calc-pop (calc-stack-size))
+
+  ;; The push and the roll are one undoable gesture: a single undo reverts.
+  (maf-push "w") (maf-push "x") (maf-push "y") (maf-push "z")
+  (progn (goto-char (point-min)) (forward-line 1) (end-of-line))
+  (execute-kbd-macro (kbd "9 S-<return>"))
+  (execute-kbd-macro (kbd "U"))
+  (cl-assert (equal (mapcar (lambda (i) (math-format-value (calc-top i 'full)))
+                            (number-sequence 1 4))
+                    '("z" "y" "x" "w")))
   (calc-pop (calc-stack-size)))
