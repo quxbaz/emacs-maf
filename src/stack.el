@@ -754,6 +754,19 @@ relation it forms: subject != argument, structural, no simplification."
   :map -1
   (commit (list 'calcFunc-neq expr arg)))
 
+(defun maf--del-land-above (m snapshot)
+  "Put point on the entry now at level M — the one just above the deleted
+entry — keeping SNAPSHOT's eol/bol affinity. After a whole entry at level
+M is removed, the entry that was above it (old M+1) drops to level M; land
+there. When M is past the new top — the deleted entry was the highest —
+there is no entry above, so point rests at home."
+  (if (> m (calc-stack-size))
+      (goto-char (point-max))
+    (calc-cursor-stack-index m)
+    (pcase (alist-get :affinity snapshot)
+      ('bol (beginning-of-line))
+      (_    (end-of-line)))))
+
 (defun maf-del ()
   "Delete the target at point: selection, sub-formula, entry, or top.
 
@@ -771,19 +784,36 @@ an empty stack.
   a^b|         =>  a
   [a, b|, c]   =>  [a, c]
   x = y|       =>  x
-  2:  a + b|   =>  deletes the whole entry     (point on the margin)"
+  2:  a + b|   =>  deletes the whole entry     (point on the margin)
+
+When a whole entry goes, point lands on the entry that was just above it
+(the next one up the stack), at the same end — eol stays eol, the
+line-prefix stays there. Deleting the topmost entry leaves point at home.
+A sub-formula deletion, which leaves the entry standing, keeps point in
+place, as does the home pop."
   (interactive)
   (maf--with-calc-buffer
     (when (zerop (calc-stack-size))
       (user-error "Stack is empty"))
-    (let ((snapshot (maf--point-snapshot)))
-      (maf--preserve-point
-        (if (maf--at-home-p)
-            (calc-pop 1)
-          (calc-del-selection)))
-      ;; A deletion that shortens the line clamps point to EOL; record
-      ;; the pre-command placement so a single undo reverts point along
-      ;; with the stack instead of preserving the clamped spot.
+    (let ((snapshot (maf--point-snapshot))
+          (home (maf--at-home-p))
+          (m (max 1 (calc-locate-cursor-element (point))))
+          (size0 (calc-stack-size)))
+      (if home
+          (calc-pop 1)
+        (calc-del-selection))
+      (cond
+       ;; Home pop: calc already parked point at home.
+       (home)
+       ;; A whole entry was removed (the stack shrank): land on the entry
+       ;; that was above it.
+       ((< (calc-stack-size) size0)
+        (maf--del-land-above m snapshot))
+       ;; A sub-formula went but the entry remains: keep point on it. The
+       ;; deletion may have shortened the line and clamped point to EOL.
+       (t (maf--point-restore snapshot)))
+      ;; Record the pre-command placement so a single undo reverts point
+      ;; along with the stack.
       (maf--undo-record-cmd-point snapshot))))
 
 (defun maf-kill ()
