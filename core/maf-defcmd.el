@@ -116,6 +116,7 @@ ARG, runs the body, and commits its result to the right stack location."
                (invhyp (alist-get :inverse-hyperbolic opts))
                (context (gensym "context-"))
                (landed (gensym "landed-"))
+               (err (gensym "err-"))
                (lhs (gensym "lhs-"))
                (rhs (gensym "rhs-"))
                (main
@@ -126,46 +127,64 @@ ARG, runs the body, and commits its result to the right stack location."
                 ;; restored after the epilogue — anything done inside the
                 ;; wrapper would be clobbered by it.
                 `(let (,context ,landed)
-                   (calc-wrapper
-                    (setq ,context (maf--resolve-context ',opts))
-                    (let ((,arg (alist-get :arg ,context)))
-                      (if (eq (alist-get :target ,context) 'equation)
-                          ;; Equation target: run the body once per side (expr
-                          ;; bound to the LHS, then the RHS), capturing each
-                          ;; side's committed result. Then reassemble into a new
-                          ;; relation and commit once. arg is bound once above,
-                          ;; so both sides share it.
-                          (let (,lhs ,rhs)
-                            (let ((,expr (alist-get :lhs ,context)))
-                              (cl-flet ((,commit (val) (setq ,lhs val)))
-                                ,@body))
-                            (let ((,expr (alist-get :rhs ,context)))
-                              (cl-flet ((,commit (val) (setq ,rhs val)))
-                                ,@body))
-                            (setq ,landed
-                                  (maf--commit (list (alist-get :rel-op ,context)
-                                                     ,lhs ,rhs)
-                                               ,context)))
-                        ;; All other targets: body runs once with :expr.
-                        (let ((,expr (alist-get :expr ,context)))
-                          (cl-flet ((,commit (val)
-                                      (setq ,landed (maf--commit val ,context))))
-                            ,@body)))))
-                   ;; An arg the user typed as part of this gesture (1 +)
-                   ;; folds into this command's undo group, so one undo
-                   ;; reverts both instead of stranding the arg.
-                   ,@(when (eq (alist-get :arity opts) 'binary)
-                       '((maf--undo-amalgamate-digit-entry)))
-                   ;; The epilogue parks point at home; put it back where
-                   ;; resolve found it — re-anchored on the committed node's
-                   ;; glyphs when point was on one (see `maf--point-restore').
-                   (maf--point-restore (alist-get :point ,context)
-                                       (alist-get :point-anchor ,context)
-                                       ,landed)
-                   ;; Keep the resolve-time snapshot for undo: a single
-                   ;; `maf-undo' of this command puts point back where it
-                   ;; was before the command ran.
-                   (maf--undo-record-cmd-point (alist-get :point ,context)))))
+                   (condition-case ,err
+                       (progn
+                         (calc-wrapper
+                          (setq ,context (maf--resolve-context ',opts))
+                          (let ((,arg (alist-get :arg ,context)))
+                            (if (eq (alist-get :target ,context) 'equation)
+                                ;; Equation target: run the body once per side
+                                ;; (expr bound to the LHS, then the RHS),
+                                ;; capturing each side's committed result. Then
+                                ;; reassemble into a new relation and commit
+                                ;; once. arg is bound once above, so both sides
+                                ;; share it.
+                                (let (,lhs ,rhs)
+                                  (let ((,expr (alist-get :lhs ,context)))
+                                    (cl-flet ((,commit (val) (setq ,lhs val)))
+                                      ,@body))
+                                  (let ((,expr (alist-get :rhs ,context)))
+                                    (cl-flet ((,commit (val) (setq ,rhs val)))
+                                      ,@body))
+                                  (setq ,landed
+                                        (maf--commit
+                                         (list (alist-get :rel-op ,context)
+                                               ,lhs ,rhs)
+                                         ,context)))
+                              ;; All other targets: body runs once with :expr.
+                              (let ((,expr (alist-get :expr ,context)))
+                                (cl-flet ((,commit (val)
+                                            (setq ,landed
+                                                  (maf--commit val ,context))))
+                                  ,@body)))))
+                         ;; An arg the user typed as part of this gesture (1 +)
+                         ;; folds into this command's undo group, so one undo
+                         ;; reverts both instead of stranding the arg.
+                         ,@(when (eq (alist-get :arity opts) 'binary)
+                             '((maf--undo-amalgamate-digit-entry)))
+                         ;; The epilogue parks point at home; put it back where
+                         ;; resolve found it — re-anchored on the committed
+                         ;; node's glyphs when point was on one (see
+                         ;; `maf--point-restore').
+                         (maf--point-restore (alist-get :point ,context)
+                                             (alist-get :point-anchor ,context)
+                                             ,landed)
+                         ;; Keep the resolve-time snapshot for undo: a single
+                         ;; `maf-undo' of this command puts point back where it
+                         ;; was before the command ran.
+                         (maf--undo-record-cmd-point (alist-get :point ,context)))
+                     ;; A body that signals inside `calc-wrapper' unwinds
+                     ;; through calc's refresh, which parks point at home. Put
+                     ;; point back where resolve found it (best effort — only
+                     ;; when context was resolved) so a failed command does not
+                     ;; teleport the cursor, then re-raise so the error still
+                     ;; reaches the echo area.
+                     (error
+                      (when ,context
+                        (maf--point-restore (alist-get :point ,context)
+                                            (alist-get :point-anchor ,context)
+                                            ,landed))
+                      (signal (car ,err) (cdr ,err)))))))
     (maf--defcmd-validate-opts opts)
     `(defun ,name ()
        ,@(when docstring (list docstring))
