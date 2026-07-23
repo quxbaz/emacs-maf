@@ -86,9 +86,12 @@
 ;; table in maf-cmds.el.
 (define-key maf-mode-map (kbd "G") #'maf-toggle-big-language)
 
-;; Auto-solve: solve the equation at point for a variable, cycling
-;; through the variables on repeat. M-i is unbound in calc itself.
+;; Auto-solve: solve or isolate at point, cycling through the variables
+;; on repeat. M-i is unbound in calc itself.
 (define-key maf-mode-map (kbd "M-i") #'mafcmd-auto-solve)
+;; Polynomial roots by factoring, with multiplicity. M-r is unbound in
+;; calc itself.
+(define-key maf-mode-map (kbd "M-r") #'mafcmd-poly-roots)
 
 ;; The digit-entry starters, mirroring calc-mode-map's calcDigit-start
 ;; set minus @, which maf-toggle-simplify shadows.

@@ -31,6 +31,9 @@
 (declare-function math-expr-subst "calc-alg")
 (declare-function calc-find-selected-part "calc-sel")
 (declare-function calc-prepare-selection "calc-sel")
+(declare-function calcFunc-factor "calc-poly")
+(declare-function calcFunc-roots "calcalg2")
+(declare-function calcFunc-sub "calc-arith")
 
 (maf-defcmd mafcmd-factor-by (expr arg commit)
   "Factor the resolved expression by the top-of-stack argument.
@@ -917,6 +920,76 @@ is unchanged.
       (skip-chars-forward "(")
       (when (and offset (> offset 0)) (forward-char offset))
       (maf--undo-record-cmd-point snapshot))))
+
+;;; Roots
+
+(defun maf--poly-factors (expr)
+  "Return EXPR's multiplicative factors as (FACTOR . MULTIPLICITY) pairs.
+Splits products and positive integer powers, so (x - 2)^2 (x + 1)
+yields (x - 2) with multiplicity 2 and (x + 1) with multiplicity 1."
+  (cond
+   ((eq (car-safe expr) '*)
+    (append (maf--poly-factors (nth 1 expr))
+            (maf--poly-factors (nth 2 expr))))
+   ((and (eq (car-safe expr) '^) (integerp (nth 2 expr)) (> (nth 2 expr) 0))
+    (let ((sub (maf--poly-factors (nth 1 expr)))
+          (e (nth 2 expr)))
+      (mapcar (lambda (fm) (cons (car fm) (* (cdr fm) e))) sub)))
+   (t (list (cons expr 1)))))
+
+(defun maf--poly-roots-of (poly var)
+  "Return a calc vector of the roots of POLY in VAR, with multiplicity.
+POLY is factored first, then each factor's roots are taken and repeated
+by the factor's multiplicity, so (x - 2)^2 contributes 2 twice."
+  (cons 'vec
+        (cl-mapcan
+         (lambda (fm)
+           (let* ((r (calcFunc-roots (car fm) var))
+                  (rs (and (eq (car-safe r) 'vec) (cdr r))))
+             (cl-mapcan (lambda (root) (make-list (cdr fm) root)) rs)))
+         (maf--poly-factors (calcFunc-factor poly)))))
+
+(defun maf--poly-roots-subject (expr)
+  "Return the polynomial whose roots EXPR asks for.
+A relation reduces to one side or the difference of sides: f(x) REL g
+uses g when the left side is a function call (as in f(x) = x^2 - 4),
+otherwise the difference of the sides — so an equation, an inequality,
+or a != all yield the roots of their boundary. A bare expression is
+returned unchanged."
+  (if (maf--relation-p expr)
+      (let ((lhs (nth 1 expr)) (rhs (nth 2 expr)))
+        (if (and (= (length lhs) 2)
+                 (string-prefix-p "calcFunc-" (symbol-name (car-safe lhs))))
+            rhs
+          (calcFunc-sub lhs rhs)))
+    expr))
+
+(maf-defcmd mafcmd-poly-roots (expr _arg commit)
+  "Find the roots of the resolved polynomial, as a vector.
+
+  x^2 - 4  =>  [-2, 2]
+
+The polynomial is factored first, so repeated factors keep their
+multiplicity and the roots come out one per factor. An equation is
+accepted too: f(x) = g uses g when the left side is a function call,
+otherwise the difference of the sides. The variable is chosen as for
+`mafcmd-auto-solve' — x, y, z, t first, then alphabetical — and an
+expression with no variable commits unchanged. It acts on the whole
+entry — the polynomial or equation at point, wherever point sits on its
+line — or the top entry at home; finding roots has no sub-formula
+meaning, so point within the formula is not used to narrow it.
+
+  x^3 - x^2 - 4 x + 4    =>  [-2, 1, 2]
+  (x - 1)^2 (x + 2)      =>  [-2, 1, 1]   (multiplicity kept)
+  x^2 - 4 = 0            =>  [-2, 2]
+  f(x) = x - 3           =>  [3]"
+  :arity unary
+  :prefix "root"
+  :map -1
+  :scope entry
+  (let* ((poly (maf--poly-roots-subject expr))
+         (vars (maf--solve-sorted-vars poly)))
+    (commit (if vars (maf--poly-roots-of poly (car vars)) expr))))
 
 (defvar maf-undo--chain-point nil
   "Point snapshot saved by the last `maf-undo'/`maf-redo' in a chain.
