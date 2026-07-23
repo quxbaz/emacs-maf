@@ -90,6 +90,57 @@
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "sin(x)"))
   (calc-pop 1)
 
+  ;; --- Only value-preserving arithmetic parents (+ - * /) ---
+
+  ;; A term under ^ must not be reordered: x^2 -> 2^x changes the value.
+  ;; No-op even nested inside an arithmetic expression.
+  (maf-push "1 / (x^2 - 1)")
+  (progn (goto-char (point-min)) (search-forward "x^"))  ; point on the exponent 2
+  (call-interactively 'maf-commute-left)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "1 / (x^2 - 1)"))
+  (calc-pop 1)
+
+  ;; The base of a power is likewise not commutable out of the ^.
+  (maf-push "x^2 + 1")
+  (progn (goto-char (point-min)) (search-forward "x") (backward-char 1))
+  (call-interactively 'maf-commute-left)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "x^2 + 1"))
+  (calc-pop 1)
+
+  ;; --- Relations stay balanced ---
+
+  ;; A term directly under a relation is NOT reordered: shuffling a < b
+  ;; to b < a would reverse the inequality (that is mafcmd-commute's job,
+  ;; which flips the direction).  So this is a no-op.
+  (maf-push "a < b")
+  (progn (goto-char (point-min)) (search-forward "b") (backward-char 1))
+  (call-interactively 'maf-commute-left)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "a < b"))
+  (calc-pop 1)
+
+  ;; Symmetric relations are left alone too, for consistency.
+  (maf-push "a = b")
+  (progn (goto-char (point-min)) (search-forward "b") (backward-char 1))
+  (call-interactively 'maf-commute-left)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "a = b"))
+  (calc-pop 1)
+
+  ;; But a term INSIDE one side commutes freely — the side keeps its
+  ;; value, so the relation stays balanced.
+  (maf-push "p + q + r < s")
+  (progn (goto-char (point-min)) (search-forward "r") (backward-char 1))
+  (call-interactively 'maf-commute-left)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "p + r + q < s"))
+  (cl-assert (eq (char-after) ?r))
+  (calc-pop 1)
+
+  ;; Sign flip inside a side of an equation is value-preserving.
+  (maf-push "x - y = z")
+  (progn (goto-char (point-min)) (search-forward "y") (backward-char 1))
+  (call-interactively 'maf-commute-left)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "-y + x = z"))
+  (calc-pop 1)
+
   ;; --- Stack position: a lower entry is acted on in place ---
 
   (maf-push "x + y + z")     ; index 2 after the next push

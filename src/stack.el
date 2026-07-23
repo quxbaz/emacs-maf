@@ -386,17 +386,30 @@ keep the value when a term crosses a - or / — is delegated to calc's own
 term where identity survives the rewrite (+ and * chains), falling back
 to its prior line and column otherwise.
 
-With no commutable term under point — at home, on a whole entry, or on a
-term that is not inside a + or * chain — the command does nothing rather
-than signaling calc's \"No term is selected\"."
+The term must sit inside a + - * / parent, where the shift preserves
+value: sums and products commute, and calc flips the sign crossing a - or
+the reciprocal crossing a /.  Any other parent is left untouched, because
+reordering its operands would change the value — a ^ (x^2 would become
+2^x), a vector concatenation, a function's arguments — or, for a relation,
+would reverse it (a < b to b < a, not b > a; swapping a relation's sides
+with the direction flip that keeps it true is `mafcmd-commute' (O)).
+
+With no such term under point — at home, on a whole entry, on a lone
+term, or on a term whose parent is not + - * / — the command does nothing
+rather than signaling calc's \"No term is selected\"."
   (maf--with-calc-buffer
     (let ((m (calc-locate-cursor-element (point))))
       (when (> m 0)
-        (let* ((entry (calc-top m 'entry))
-               (expr  (car entry))
-               (sel   (ignore-errors (calc-auto-selection entry))))
-          (when (and (consp sel)
-                     (consp (calc-find-assoc-parent-formula expr sel)))
+        (let* ((entry  (calc-top m 'entry))
+               (expr   (car entry))
+               (sel    (ignore-errors (calc-auto-selection entry)))
+               (parent (and (consp sel)
+                            (calc-find-assoc-parent-formula expr sel))))
+          ;; Only commute within an arithmetic chain, where calc's shift is
+          ;; value-preserving. Every other binary parent — ^, | (concat), a
+          ;; relation, a function call — would have its operands reordered
+          ;; by calc without regard to meaning, so reject it.
+          (when (memq (car-safe parent) '(+ - * /))
             (let ((snapshot (maf--point-snapshot))
                   ;; Leave no lingering selection behind: maf resolves the
                   ;; term from point each time, as the subexpr target does.
