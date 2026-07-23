@@ -65,4 +65,43 @@
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "x + 8"))
   (execute-kbd-macro (kbd "U"))
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "x + 3"))
-  (cl-assert (= (calc-stack-size) 1)))
+  (cl-assert (= (calc-stack-size) 1))
+  (calc-pop (calc-stack-size))
+
+  ;; --- C-RET commits like RET but keeps point ---
+
+  ;; At a margin, RET pushes and drops point home; C-<return> pushes the
+  ;; same number but leaves point on the entry it was on.
+  (maf-push "x + 3")
+  (progn (goto-char (point-min)) (end-of-line))
+  (execute-kbd-macro (kbd "7 RET"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "7"))
+  (cl-assert (maf--at-home-p))            ; RET homes
+  (calc-pop (calc-stack-size))
+
+  (maf-push "x + 3")
+  (progn (goto-char (point-min)) (end-of-line))
+  (execute-kbd-macro (kbd "7 C-<return>"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "7"))
+  (cl-assert (string= (math-format-value (calc-top 2 'full)) "x + 3"))
+  (cl-assert (not (maf--at-home-p)))      ; C-RET keeps point
+  (cl-assert (= (line-number-at-pos) 1))  ; still on the x + 3 entry's line
+  (calc-pop (calc-stack-size))
+
+  ;; On a sub-formula the commit is contextual (as with RET) and point
+  ;; stays: a numeric leaf is replaced, point off the home line.
+  (maf-push "12 x + 3")
+  (progn (goto-char (point-min)) (search-forward "12") (backward-char 1))
+  (execute-kbd-macro (kbd "5 C-<return>"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "5 x + 3"))
+  (cl-assert (not (maf--at-home-p)))
+  (calc-pop (calc-stack-size))
+
+  ;; At home there is nowhere to keep point, so C-<return> matches RET.
+  (maf-push "a")
+  (goto-char (point-max))
+  (execute-kbd-macro (kbd "9 C-<return>"))
+  (cl-assert (= (calc-stack-size) 2))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "9"))
+  (cl-assert (maf--at-home-p))
+  (calc-pop (calc-stack-size)))

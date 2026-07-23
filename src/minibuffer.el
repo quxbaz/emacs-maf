@@ -15,6 +15,7 @@
 ;; resolves them at runtime, but the byte compiler needs declarations.
 (declare-function calc-alg-entry "calc-aent")
 (declare-function calc-dots "calc-incom")
+(declare-function calcDigit-nondigit "calc")
 
 (defvar maf-mode)  ; defined in maf.el; declared for the byte compiler
 
@@ -67,6 +68,28 @@ position the user was on survives the abort. At home, or with
   (abort-recursive-edit))
 
 (define-key calc-digit-map "\C-g" #'maf-digit-quit)
+
+(defun maf-digit-commit-here ()
+  "Commit the digit entry like RET, but keep point instead of homing.
+The keep-point sibling of RET in the digit-entry minibuffer, on
+C-<return>: the number commits exactly where RET would put it — pushed
+onto the stack from a margin, applied to the sub-formula under point on a
+subexpr — but point stays on the entry it was on rather than dropping to
+the home line. At home there is nowhere to stay, so it matches RET. With
+`maf-mode' off in the calc buffer, plain calc behavior.
+
+`calcDigit-nondigit' is calc's own terminator; binding `last-command-event'
+to RET around it takes its RET path — commit, no command re-dispatch (so
+this never triggers `maf-edit-add-entry', C-<return>'s stack-mode
+binding) — while `no-align', set first, is what carries point through the
+push."
+  (interactive)
+  (when (and (maf--with-calc-buffer maf-mode) (not (maf--at-home-p)))
+    (calc-set-command-flag 'no-align))
+  (let ((last-command-event ?\r))
+    (calcDigit-nondigit)))
+
+(define-key calc-digit-map (kbd "C-<return>") #'maf-digit-commit-here)
 
 (defvar maf--digit-value nil
   "The number a contextual digit entry read, for `maf--digit-apply'.
