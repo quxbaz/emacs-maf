@@ -963,21 +963,27 @@ yields (x - 2) with multiplicity 2 and (x + 1) with multiplicity 1."
 POLY is factored first, then each factor's roots are taken and repeated
 by the factor's multiplicity, so (x - 2)^2 contributes 2 twice.
 Factors independent of VAR are ignored.  If Calc cannot solve any factor
-that does contain VAR, return nil rather than a misleading partial vector."
-  (catch 'unsolved
-    (cons 'vec
-          (cl-mapcan
-           (lambda (fm)
-             (let ((factor (car fm)))
-               (if (not (member var (maf--solve-sorted-vars factor)))
-                   nil
-                 (let ((result (calcFunc-roots factor var)))
-                   (unless (eq (car-safe result) 'vec)
-                     (throw 'unsolved nil))
-                   (cl-mapcan
-                    (lambda (root) (make-list (cdr fm) root))
-                    (cdr result))))))
-           (maf--poly-factors (calcFunc-factor poly))))))
+that does contain VAR, return nil rather than a misleading partial vector.
+A Calc signal during factoring or root-finding (e.g. `calcFunc-roots'
+raising division-by-zero on a rational with no roots) is likewise treated
+as unsolved: return nil so the command commits the entry unchanged rather
+than letting the error escape `calc-wrapper' and strand point at home."
+  (condition-case nil
+      (catch 'unsolved
+        (cons 'vec
+              (cl-mapcan
+               (lambda (fm)
+                 (let ((factor (car fm)))
+                   (if (not (member var (maf--solve-sorted-vars factor)))
+                       nil
+                     (let ((result (calcFunc-roots factor var)))
+                       (unless (eq (car-safe result) 'vec)
+                         (throw 'unsolved nil))
+                       (cl-mapcan
+                        (lambda (root) (make-list (cdr fm) root))
+                        (cdr result))))))
+               (maf--poly-factors (calcFunc-factor poly)))))
+    (error nil)))
 
 (defun maf--poly-roots-subject (expr)
   "Return the polynomial whose roots EXPR asks for.

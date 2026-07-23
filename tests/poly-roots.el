@@ -245,6 +245,15 @@
   (cl-assert (= (length (calc-top 1 'full)) 7))
   (calc-pop (calc-stack-size))
 
+  ;; A rational whose numerator is a nonzero constant has no roots, and
+  ;; `calcFunc-roots' signals division-by-zero on it.  That signal is
+  ;; caught and treated as unsolved: the entry commits unchanged rather
+  ;; than letting the error escape `calc-wrapper'.
+  (maf-push "1 / (x^2 - 1:4)")
+  (goto-char (point-max)) (call-interactively 'mafcmd-poly-roots)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "1 / (x^2 - 1:4)"))
+  (calc-pop (calc-stack-size))
+
   ;; A factor independent of the chosen variable is not a failed factor.
   (maf-push "(x - 1) * (y - 2)")
   (goto-char (point-max)) (call-interactively 'mafcmd-poly-roots)
@@ -296,4 +305,19 @@
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "888"))
   (cl-assert (null (nth 2 (calc-top 2 'entry))))
   (cl-assert (null calc-any-selections))
+  (calc-pop (calc-stack-size))
+
+  ;; A no-root rational on a lower entry: the signal is swallowed, the
+  ;; entry is left intact, and point stays on its line instead of being
+  ;; stranded at home (the escaping error used to skip point restoration).
+  (maf-push "1 / (x^2 - 1:4)")   ; index 2 after the next push
+  (maf-push "555")               ; top decoy (index 1)
+  (progn (calc-cursor-stack-index 2) (goto-char (line-end-position)))
+  (call-interactively 'mafcmd-poly-roots)
+  (cl-assert (string= (math-format-value (calc-top 2 'full)) "1 / (x^2 - 1:4)"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "555"))
+  ;; index 2 renders on buffer line 1 (calc shows the top entry lowest),
+  ;; so point stays there rather than dropping to the home line below.
+  (cl-assert (= (line-number-at-pos) 1))
+  (cl-assert (not (maf--at-home-p)))
   (calc-pop (calc-stack-size)))
