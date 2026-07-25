@@ -42,7 +42,7 @@ ARG UID=1000
 ARG GID=1000
 RUN groupadd -g ${GID} dev \
     && useradd -m -u ${UID} -g ${GID} -s /bin/bash dev \
-    && mkdir -p /home/dev/.emacs.d /home/dev/.claude /home/dev/.codex \
+    && mkdir -p /home/dev/.emacs.d/my /home/dev/.claude /home/dev/.codex \
                 /home/dev/conf/agents \
     && chown -R ${UID}:${GID} /home/dev
 
