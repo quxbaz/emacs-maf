@@ -136,6 +136,23 @@ box=${feature//\//-}
 sudo=
 docker info >/dev/null 2>&1 || sudo=sudo
 
+# Your agent config, each file mounted where its agent looks for it. On
+# the host these are symlinks into ~/conf; a box skips the indirection
+# and takes the real files. AGENTS.md is mounted twice: once for codex,
+# once at the path CLAUDE.md imports it from.
+conf=${MAF_CONF:-$HOME/conf}
+mounts=()
+mount_ro() {
+    # Optional, all of them: an absent file is left unmounted rather than
+    # handed to docker, which would make a directory in its place.
+    [ -f "$1" ] && mounts+=(-v "$1:$2:ro")
+    return 0
+}
+mount_ro "$conf/claude/CLAUDE.md"  /home/dev/.claude/CLAUDE.md
+mount_ro "$conf/agents/AGENTS.md"  /home/dev/conf/agents/AGENTS.md
+mount_ro "$conf/agents/AGENTS.md"  /home/dev/.codex/AGENTS.md
+mount_ro "$conf/codex/config.toml" /home/dev/.codex/config.toml
+
 # A box outlives its shell, so naming one again revisits it rather than
 # building a second: running, join it in another shell; stopped, start it
 # back up. Only a name docker has never heard of is a fresh container.
@@ -155,6 +172,7 @@ case $state in
              -v "$repo/.git:$repo/.git" \
              -v "$HOME/.claude/.credentials.json:/seed/.credentials.json:ro" \
              -v "$HOME/.gitconfig:/home/dev/.gitconfig:ro" \
+             "${mounts[@]}" \
              -e "MAF_SERVER_NAME=$box" \
              maf
         ;;
