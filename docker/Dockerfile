@@ -9,19 +9,27 @@ FROM debian:trixie-slim
 # emacs-nox: terminal Emacs (30.x) — no X libs. Run under tmux it still
 #   gets a real tty frame, so windows exist and execute-kbd-macro works.
 # tmux: keeps Emacs on a pty while you use the shell.
-# nodejs/npm: for the agent.
 # ripgrep: the agent's search tool.
 RUN apt-get update && apt-get install -y --no-install-recommends \
         emacs-nox \
         git \
         tmux \
-        nodejs \
-        npm \
         ripgrep \
         ca-certificates \
         curl \
+        gnupg \
         less \
         procps \
+    && rm -rf /var/lib/apt/lists/*
+
+# Node for the agent, from NodeSource rather than Debian: trixie ships
+# node 20, and claude-code requires >=22. npm only warns about that, so
+# without this the image builds fine and fails at runtime instead.
+RUN curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
+        | gpg --dearmor -o /usr/share/keyrings/nodesource.gpg \
+    && echo 'deb [signed-by=/usr/share/keyrings/nodesource.gpg] https://deb.nodesource.com/node_22.x nodistro main' \
+        > /etc/apt/sources.list.d/nodesource.list \
+    && apt-get update && apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/*
 
 RUN npm install -g @anthropic-ai/claude-code \
