@@ -43,23 +43,31 @@ git.
 
 5. Repeat 2–4 in another terminal for each additional feature.
 
-6. When the feature is done, exit the shell (the container is removed)
-   and merge on the host:
+6. Exiting the shell leaves the box behind, stopped. `docker/box
+   my-feature` again picks it up where you left it — the same container,
+   its filesystem intact, Emacs started fresh. While one is running, the
+   same command opens another shell inside it.
+
+7. When the feature is done, merge on the host and throw the box away:
 
    ```sh
    git merge my-feature
    git worktree remove .worktrees/my-feature
    git branch -d my-feature
+   sudo docker rm maf-my-feature
    ```
 
 ## The run command, flag by flag
 
-`docker/box` creates nothing — it takes the feature name and derives the
-`docker run` below from it, so a worktree that does not exist is an error
-rather than a guess. Run it by hand if you want a box shaped differently:
+`docker/box` derives the `docker run` below from the feature name, but
+only for a name docker has never seen: an existing box it joins with
+`docker exec` if it is running, or restarts with `docker start -ai` if it
+is not. Without `-b` it creates nothing else — a worktree that does not
+exist is an error rather than a guess. Run it by hand if you want a box
+shaped differently:
 
 ```sh
-sudo docker run -it --rm --name maf-my-feature \
+sudo docker run -it --name maf-my-feature \
   -v ~/lab/emacs-maf/.worktrees/my-feature:/work \
   -v ~/lab/emacs-maf/.git:/home/david/lab/emacs-maf/.git \
   -v ~/.claude/.credentials.json:/seed/.credentials.json:ro \
@@ -71,7 +79,7 @@ sudo docker run -it --rm --name maf-my-feature \
 | flag | why |
 |---|---|
 | `-it` | interactive shell; drop it and add `-d` to run detached |
-| `--rm` | delete the container on exit (the code is on the host, nothing to lose) |
+| no `--rm` | the box outlives the shell, so you can come back to it; `docker rm maf-<feature>` when done |
 | `-v ...worktrees/my-feature:/work` | the worktree this box works on — the one line that assigns the branch |
 | `-v ...emacs-maf/.git:<same path>` | the main `.git`, at its *host path*: a worktree's `.git` file names that path absolutely, so git inside only resolves if the path matches exactly |
 | `-v ...credentials.json:/seed/...:ro` | agent auth; copied in at startup, read-only so the container can't touch your host token |
