@@ -61,6 +61,9 @@ COPY --chown=dev:dev files/settings.json /home/dev/.claude/settings.json
 # sources ~/.bash_aliases if it is there, so nothing else is needed.
 COPY --chown=dev:dev files/bash_aliases /home/dev/.bash_aliases
 
+# tmux: C-t as prefix, out of the way of an outer session's C-b.
+COPY --chown=dev:dev files/tmux.conf /home/dev/.tmux.conf
+
 COPY --chmod=0755 files/entrypoint.sh /usr/local/bin/entrypoint
 
 USER dev

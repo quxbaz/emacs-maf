@@ -163,6 +163,12 @@ mount_ro "$HOME/.emacs.d/my/calc" /home/dev/.emacs.d/my/calc
 # with it. Exiting that shell still stops the box.
 session=(bash -c 'tmux attach -t emacs 2>/dev/null; exec bash')
 
+# Docker's detach sequence, moved off its C-p C-q default: C-p is
+# previous-line, pressed constantly in the Emacs pane, and the client
+# swallows it waiting to see whether C-q follows. C-q C-q costs only
+# Emacs's quoted-insert of a literal C-q, which nothing here types.
+detach=(--detach-keys 'ctrl-q,ctrl-q')
+
 # A box outlives its shell, so naming one again revisits it rather than
 # building a second: running, join it in another shell; stopped, start it
 # back up. Only a name docker has never heard of is a fresh container.
@@ -171,13 +177,13 @@ state=$($sudo docker inspect -f '{{.State.Status}}' "maf-$box" 2>/dev/null) || s
 
 case $state in
     running)
-        exec $sudo docker exec -it "maf-$box" bash
+        exec $sudo docker exec -it "${detach[@]}" "maf-$box" bash
         ;;
     "")
         # Mounts: the worktree at /work, plus the main .git at its *host
         # path* — a worktree's .git file names that path absolutely, so
         # git inside the container only resolves if it matches exactly.
-        exec $sudo docker run -it --name "maf-$box" \
+        exec $sudo docker run -it "${detach[@]}" --name "maf-$box" \
              -v "$tree:/work" \
              -v "$repo/.git:$repo/.git" \
              -v "$HOME/.claude/.credentials.json:/seed/.credentials.json:ro" \
@@ -189,6 +195,6 @@ case $state in
         # Exited, created, paused: the filesystem is as you left it. The
         # entrypoint runs again, so credentials are re-seeded and Emacs
         # comes back up — the tmux session did not survive the stop.
-        exec $sudo docker start -ai "maf-$box"
+        exec $sudo docker start -ai "${detach[@]}" "maf-$box"
         ;;
 esac

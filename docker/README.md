@@ -41,9 +41,16 @@ git.
    claude
    ```
 
-   `C-b o` moves between panes, `C-b z` zooms one full-screen. `C-b d`
-   detaches and drops you to a plain shell in the same box, with Emacs
-   still up behind it; `tmux attach -t emacs` returns.
+   The tmux prefix in a box is `C-t`, clear of an outer session's `C-b`;
+   `C-t C-t` sends a literal `C-t` to the pane. `C-t o` moves between
+   panes, `C-t z` zooms one full-screen. `C-t d` detaches tmux and drops
+   you to a plain shell in the same box, with Emacs still up behind it;
+   `tmux attach -t emacs` returns.
+
+   Detaching from the *container* is `C-q C-q`, not docker's `C-p C-q`
+   default — `C-p` is `previous-line`, which the client would otherwise
+   swallow in the Emacs pane while it waited to see if `C-q` followed.
+   It leaves the box running; `docker/box <feature>` comes back.
 
 5. Repeat 2–4 in another terminal for each additional feature.
 
@@ -101,7 +108,7 @@ sudo docker run -it --name maf-my-feature \
 
 ```sh
 claude                      # agent, already authed — instruct it from here
-tmux attach -t emacs        # back to Emacs beside a shell (C-b d to detach)
+tmux attach -t emacs        # back to Emacs beside a shell (C-t d to detach)
 emacsclient -s '#emacs' --eval '(calc-stack-size)'
 git commit -am '...'        # lands on the host branch
 ```
