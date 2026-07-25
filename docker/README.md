@@ -110,9 +110,10 @@ the repo's `CLAUDE.md` keys off.
   `box my-feature`. Completion alone lives in `docker/completions/`
   (bash, zsh, fish) — each shim asks `box --names` for the candidates
   rather than parsing the listing, and says how to load it.
-- The agent runs with permission prompts off (`docker/files/settings.json`,
-  `defaultMode: bypassPermissions`) — the container is the sandbox. Change
-  that file and rebuild to tighten it.
+- The agent's defaults are `docker/files/settings.json`: Opus as the
+  model, and permission prompts off (`defaultMode: bypassPermissions`) —
+  the container is the sandbox. Change that file and rebuild to alter
+  either.
 - Auth is a copy: a token refresh inside the box updates only the
   container's copy, and is lost when it exits. Re-seeded from the host
   file on every start. To run a box on a different account, mount that
