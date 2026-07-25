@@ -81,7 +81,6 @@ sudo docker run -it --name maf-my-feature \
   -v ~/conf/agents/AGENTS.md:/home/dev/.codex/AGENTS.md:ro \
   -v ~/conf/codex/config.toml:/home/dev/.codex/config.toml:ro \
   -v ~/.emacs.d/my/calc:/home/dev/.emacs.d/my/calc:ro \
-  -e MAF_SERVER_NAME=my-feature \
   maf
 ```
 
@@ -95,14 +94,14 @@ sudo docker run -it --name maf-my-feature \
 | `-v ~/.gitconfig:...:ro` | your name/email, so commits from inside are attributed |
 | `-v ~/conf/claude/...:ro` (×4) | your agent config, each file where its agent reads it — on the host these paths are symlinks into `~/conf`, a box takes the real files. `AGENTS.md` appears twice: for codex, and at the path `CLAUDE.md` imports. Any that is missing is skipped; `$MAF_CONF` names another `conf` |
 | `-v ~/.emacs.d/my/calc:...:ro` | the legacy Calc config the `port` skill reads, at the path that skill names — without it, porting has nothing to port from |
-| `-e MAF_SERVER_NAME=` | names the Emacs server, one per box |
+| (no `-e MAF_SERVER_NAME`) | the image names the Emacs server `#emacs`, the name the `emacs` skill uses when given none — a container holds one instance, so the skills' examples work in a box unchanged |
 
 ## Inside the box
 
 ```sh
 claude                      # agent, already authed — instruct it from here
 tmux attach -t emacs        # back to Emacs beside a shell (C-b d to detach)
-emacsclient -s my-feature --eval '(calc-stack-size)'
+emacsclient -s '#emacs' --eval '(calc-stack-size)'
 git commit -am '...'        # lands on the host branch
 ```
 

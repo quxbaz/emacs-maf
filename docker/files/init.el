@@ -18,7 +18,7 @@
 (setq inhibit-startup-screen t)
 
 ;; Private server, one per container (name from the env, as on the host).
-(setq server-name (or (getenv "MAF_SERVER_NAME") "maf"))
+(setq server-name (or (getenv "MAF_SERVER_NAME") "#emacs"))
 (server-start)
 
 ;; The bind-mounted worktree. project-init.el loads maf.el, enables

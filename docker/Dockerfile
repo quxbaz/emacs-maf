@@ -67,8 +67,12 @@ USER dev
 ENV HOME=/home/dev
 WORKDIR /work
 
-# Emacs server name inside this container; override with -e per box.
-ENV MAF_SERVER_NAME=maf
+# Emacs server name inside this container. '#emacs' is what the emacs
+# skill reaches for when given no name, and a container holds only one
+# instance, so the skills' examples work here as written. Per-box names
+# would buy nothing: the socket is not reachable from outside anyway,
+# and the container name already says which feature this is.
+ENV MAF_SERVER_NAME="#emacs"
 # Marks the shell as a container box (the repo's CLAUDE.md keys off it).
 ENV MAF_CONTAINER=1
 

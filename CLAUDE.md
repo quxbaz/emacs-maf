@@ -25,8 +25,9 @@ MAF_SERVER_NAME='#emacs' \
 ```
 
 In a dev container (`$MAF_CONTAINER` set), the instance is already
-running under tmux and its server name is `$MAF_SERVER_NAME` — do not
-launch Emacs, just use it. Setup: `docker/README.md`.
+running under tmux, in a pane beside your shell, and its server name is
+the default `#emacs` — do not launch Emacs, just use it. Setup:
+`docker/README.md`.
 
 Full workflow, properties, and pitfalls: `docs/memory/dev-instance.md`.
 General techniques for piloting a live Emacs: `docs/memory/piloting-emacs.md`.

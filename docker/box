@@ -126,9 +126,8 @@ elif [ ! -d "$tree" ]; then
     exit 1
 fi
 
-# A feature may hold slashes; a container name may not, and an Emacs
-# server name is a socket file, so a slash there would name a directory
-# that does not exist. The branch keeps the slash, these do not.
+# A feature may hold slashes; a container name may not. The branch keeps
+# the slash, the container does not.
 box=${feature//\//-}
 
 # The docker socket is root-owned unless you are in the docker group.
@@ -183,7 +182,6 @@ case $state in
              -v "$HOME/.claude/.credentials.json:/seed/.credentials.json:ro" \
              -v "$HOME/.gitconfig:/home/dev/.gitconfig:ro" \
              "${mounts[@]}" \
-             -e "MAF_SERVER_NAME=$box" \
              maf "${session[@]}"
         ;;
     *)
