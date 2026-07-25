@@ -1,28 +1,94 @@
 #!/usr/bin/env bash
 #
-# box — run a dev box on an existing worktree.
-#
-#   docker/box <feature>
+# box — run a dev box on a worktree.
 #
 # Derives the whole `docker run` line from the feature name: the worktree
 # to mount at /work, the container name, and the Emacs server name. The
 # raw command it stands for, flag by flag, is in README.md.
 #
-# It creates nothing. Making the branch and worktree is your call, so a
-# missing worktree is an error with the git command to fix it, not an
-# invitation for this script to guess.
+# Creating the worktree is opt-in. Named alone, a feature must already
+# have one, and a missing one is an error carrying the git command to fix
+# it rather than a guess; -b says make it, the way git worktree add -b
+# does, and go.
 
 set -euo pipefail
 
-feature=${1:?usage: docker/box <feature>}
-repo=$(git rev-parse --show-toplevel)
+usage() {
+    cat <<'EOF'
+usage: box <feature>      run a dev box on .worktrees/<feature>
+       box -b <feature>   make that worktree and branch first
+       box                list the worktrees you can name
+       box --help         this text
+
+One box per feature branch, several at once. Without -b the worktree is
+yours to make: git worktree add .worktrees/<feature>
+EOF
+}
+
+# --help before anything else, so it answers outside a repo too.
+create=
+case ${1-} in
+    -h|--help)
+        usage
+        exit 0
+        ;;
+    -b)
+        create=1
+        shift
+        ;;
+    -*)
+        echo "box: unknown option: $1" >&2
+        usage >&2
+        exit 1
+        ;;
+esac
+
+# The main checkout, from the common git dir rather than the current
+# toplevel: run from inside a worktree, --show-toplevel would name that
+# worktree, so boxes would nest under it and $repo/.git would be a file
+# instead of the repository.
+repo=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
+
+if [ -n "$create" ] && [ $# -eq 0 ]; then
+    echo "box: -b needs a feature name" >&2
+    usage >&2
+    exit 1
+fi
+
+# Bare `box` is git's own listing kept to .worktrees/ — the main checkout
+# is not a box, and what follows .worktrees/ is the name box takes. The
+# branch in brackets is highlighted for a terminal only, so piped output
+# stays git's own text.
+if [ $# -eq 0 ]; then
+    list=$(git worktree list | grep -F "$repo/.worktrees/") || exit 0
+    if [ -t 1 ]; then
+        esc=$(printf '\033')
+        printf '%s\n' "$list" | sed "s/\[\([^]]*\)\]/[${esc}[1;36m\1${esc}[0m]/"
+    else
+        printf '%s\n' "$list"
+    fi
+    exit 0
+fi
+
+feature=$1
 tree=$repo/.worktrees/$feature
 
-if [ ! -d "$tree" ]; then
+if [ -n "$create" ]; then
+    # -b by name rather than letting git name the branch after the path:
+    # for a feature like my/feature the basename alone would leave you on
+    # a branch called `feature`. Existing branch or worktree => git says
+    # so and we stop, which is what an explicit create should do.
+    git worktree add -b "$feature" "$tree"
+elif [ ! -d "$tree" ]; then
     echo "box: no worktree at $tree" >&2
     echo "     git worktree add .worktrees/$feature" >&2
     exit 1
 fi
+
+# A feature may hold slashes; a container name may not, and an Emacs
+# server name is a socket file, so a slash there would name a directory
+# that does not exist. The branch keeps the slash, these do not.
+box=${feature//\//-}
 
 # The docker socket is root-owned unless you are in the docker group.
 # Only the docker call is elevated — the paths above stay yours.
@@ -32,10 +98,10 @@ docker info >/dev/null 2>&1 || sudo=sudo
 # Mounts: the worktree at /work, plus the main .git at its *host path* —
 # a worktree's .git file names that path absolutely, so git inside the
 # container only resolves if the path matches exactly.
-exec $sudo docker run -it --rm --name "maf-$feature" \
+exec $sudo docker run -it --rm --name "maf-$box" \
      -v "$tree:/work" \
      -v "$repo/.git:$repo/.git" \
      -v "$HOME/.claude/.credentials.json:/seed/.credentials.json:ro" \
      -v "$HOME/.gitconfig:/home/dev/.gitconfig:ro" \
-     -e "MAF_SERVER_NAME=$feature" \
+     -e "MAF_SERVER_NAME=$box" \
      maf-dev

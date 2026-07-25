@@ -29,6 +29,11 @@ git.
    docker/box my-feature
    ```
 
+   `docker/box -b my-feature` does steps 2 and 3 in one, making the
+   worktree and branch before starting the box. Run `docker/box` with no
+   arguments to list the worktrees you can name, `docker/box --help` for
+   usage.
+
 4. You land in a shell at `/work`, Emacs already running. Start the
    agent and instruct it:
 
