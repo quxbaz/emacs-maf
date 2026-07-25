@@ -13,7 +13,7 @@ git.
 1. Build the image (once per machine):
 
    ```sh
-   sudo docker build --build-arg UID=$(id -u) --build-arg GID=$(id -g) -t maf-dev docker/
+   sudo docker build --build-arg UID=$(id -u) --build-arg GID=$(id -g) -t maf docker/
    ```
 
 2. Make a worktree for the feature — the branch is named after the
@@ -73,7 +73,7 @@ sudo docker run -it --name maf-my-feature \
   -v ~/.claude/.credentials.json:/seed/.credentials.json:ro \
   -v ~/.gitconfig:/home/dev/.gitconfig:ro \
   -e MAF_SERVER_NAME=my-feature \
-  maf-dev
+  maf
 ```
 
 | flag | why |

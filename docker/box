@@ -156,7 +156,7 @@ case $state in
              -v "$HOME/.claude/.credentials.json:/seed/.credentials.json:ro" \
              -v "$HOME/.gitconfig:/home/dev/.gitconfig:ro" \
              -e "MAF_SERVER_NAME=$box" \
-             maf-dev
+             maf
         ;;
     *)
         # Exited, created, paused: the filesystem is as you left it. The
