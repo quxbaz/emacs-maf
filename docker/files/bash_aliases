@@ -14,6 +14,7 @@ alias ll='ls -lh --group-directories-first --color'
 alias lla='ls -Alh --group-directories-first --color'
 alias ls='ls --group-directories-first --color'
 alias mkd='mkdir'
+alias tm='tmux'
 
 ## git — co and lg come from the mounted ~/.gitconfig
 alias br='git branch'
