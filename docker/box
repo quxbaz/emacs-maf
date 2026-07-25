@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+#
+# box — run a dev box on an existing worktree.
+#
+#   docker/box <feature>
+#
+# Derives the whole `docker run` line from the feature name: the worktree
+# to mount at /work, the container name, and the Emacs server name. The
+# raw command it stands for, flag by flag, is in README.md.
+#
+# It creates nothing. Making the branch and worktree is your call, so a
+# missing worktree is an error with the git command to fix it, not an
+# invitation for this script to guess.
+
+set -euo pipefail
+
+feature=${1:?usage: docker/box <feature>}
+repo=$(git rev-parse --show-toplevel)
+tree=$repo/.worktrees/$feature
+
+if [ ! -d "$tree" ]; then
+    echo "box: no worktree at $tree" >&2
+    echo "     git worktree add .worktrees/$feature -b $feature" >&2
+    exit 1
+fi
+
+# The docker socket is root-owned unless you are in the docker group.
+# Only the docker call is elevated — the paths above stay yours.
+sudo=
+docker info >/dev/null 2>&1 || sudo=sudo
+
+# Mounts: the worktree at /work, plus the main .git at its *host path* —
+# a worktree's .git file names that path absolutely, so git inside the
+# container only resolves if the path matches exactly.
+exec $sudo docker run -it --rm --name "maf-$feature" \
+     -v "$tree:/work" \
+     -v "$repo/.git:$repo/.git" \
+     -v "$HOME/.claude/.credentials.json:/seed/.credentials.json:ro" \
+     -v "$HOME/.gitconfig:/home/dev/.gitconfig:ro" \
+     -e "MAF_SERVER_NAME=$feature" \
+     maf-dev

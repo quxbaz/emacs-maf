@@ -25,13 +25,7 @@ git.
 3. Start the box on it:
 
    ```sh
-   sudo docker run -it --rm --name maf-my-feature \
-     -v ~/lab/emacs-maf/.worktrees/my-feature:/work \
-     -v ~/lab/emacs-maf/.git:/home/david/lab/emacs-maf/.git \
-     -v ~/.claude/.credentials.json:/seed/.credentials.json:ro \
-     -v ~/.gitconfig:/home/dev/.gitconfig:ro \
-     -e MAF_SERVER_NAME=my-feature \
-     maf-dev
+   docker/box my-feature
    ```
 
 4. You land in a shell at `/work`, Emacs already running. Start the
@@ -53,6 +47,20 @@ git.
    ```
 
 ## The run command, flag by flag
+
+`docker/box` creates nothing — it takes the feature name and derives the
+`docker run` below from it, so a worktree that does not exist is an error
+rather than a guess. Run it by hand if you want a box shaped differently:
+
+```sh
+sudo docker run -it --rm --name maf-my-feature \
+  -v ~/lab/emacs-maf/.worktrees/my-feature:/work \
+  -v ~/lab/emacs-maf/.git:/home/david/lab/emacs-maf/.git \
+  -v ~/.claude/.credentials.json:/seed/.credentials.json:ro \
+  -v ~/.gitconfig:/home/dev/.gitconfig:ro \
+  -e MAF_SERVER_NAME=my-feature \
+  maf-dev
+```
 
 | flag | why |
 |---|---|
@@ -80,7 +88,9 @@ the repo's `CLAUDE.md` keys off.
 
 ## Notes
 
-- Drop `sudo` by joining the docker group: `sudo usermod -aG docker $USER`, then log back in.
+- `docker/box` adds `sudo` only when the docker socket needs it. Drop it
+  everywhere by joining the docker group: `sudo usermod -aG docker $USER`,
+  then log back in.
 - The agent runs with permission prompts off (`docker/files/settings.json`,
   `defaultMode: bypassPermissions`) — the container is the sandbox. Change
   that file and rebuild to tighten it.
