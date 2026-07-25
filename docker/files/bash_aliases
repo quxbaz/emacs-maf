@@ -1,0 +1,55 @@
+# Shell aliases in a box, from my ~/.zshrc — the subset with something
+# to run against here: no browser, no systemd, no docker, no vim. The
+# box runs bash, so this is the bash translation; the home .bashrc picks
+# it up on its own.
+
+## Shell basics
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+alias .....='cd ../../../..'
+alias l1='ls -1 | nl'
+alias la='ls -A --group-directories-first --color'
+alias ll='ls -lh --group-directories-first --color'
+alias lla='ls -Alh --group-directories-first --color'
+alias ls='ls --group-directories-first --color'
+alias mkd='mkdir'
+
+## git — co and lg come from the mounted ~/.gitconfig
+alias br='git branch'
+alias ci='git commit'
+alias co='git co'
+alias dif='git diff'
+alias ga='git add'
+alias git-root='cd $(git rev-parse --show-cdup)'
+alias gs='git status'
+alias lg='git lg'
+alias lga='git lg --all'
+alias lgg='git log --color --pretty=oneline --abbrev-commit'
+alias pull='git pull'
+alias push='git push'
+alias show='git show'
+
+## `wo` alone lists worktrees; otherwise passes through to `git worktree`
+## — except prune, which is destructive from in here. The box mounts the
+## shared .git but only its own worktree, so every worktree's gitdir
+## points at a path this container does not have and the whole lot reads
+## as prunable. Pruning would strike them all, in the real .git.
+wo () {
+    if [ $# -eq 0 ]; then
+        git worktree list
+    elif [ "$1" = prune ]; then
+        echo "wo: prune is refused in a box — from in here every worktree" >&2
+        echo "    looks prunable, including this one. Prune on the host." >&2
+        return 1
+    else
+        git worktree "$@"
+    fi
+}
+
+## Agents — cx waits on codex, which is not in the image yet.
+alias cc='claude'
+alias ca='claude agents'
+alias cu='claude --continue'
+alias re='claude --resume'
+alias cx='codex'

@@ -57,6 +57,10 @@ COPY --chown=dev:dev files/init.el /home/dev/.emacs.d/init.el
 COPY --chown=dev:dev files/claude.json /home/dev/.claude.json
 COPY --chown=dev:dev files/settings.json /home/dev/.claude/settings.json
 
+# My shell aliases, the ones that apply in a box. Debian's stock .bashrc
+# sources ~/.bash_aliases if it is there, so nothing else is needed.
+COPY --chown=dev:dev files/bash_aliases /home/dev/.bash_aliases
+
 COPY --chmod=0755 files/entrypoint.sh /usr/local/bin/entrypoint
 
 USER dev
