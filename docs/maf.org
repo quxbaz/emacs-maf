@@ -33,7 +33,9 @@
    - [ ] quick menu
    - [ ] add binding
 # LATER
-** TODO k k (my/calc-evaluate N) should work on fractions and division.
+** DONE k k (my/calc-evaluate N) should work on fractions and division.
+   mafcmd-evaluate floats what the evaluation leaves exact: 1:3 gives
+   0.333333333333, x / 3 gives 0.333333333333 x.
 ** TODO g i (my/calc-graph-quick-with-range) interval form a:b should work with spaces 'a b'
 ** TODO Full formula buffer should have "recents" section.
 ** TODO Saved formulas should support "notes" that display in full formula buffer.
@@ -125,9 +127,11 @@
    commands superseded by maf-timeline RET/C-RET.
 
 * PORT:evaluate.el
-  - [ ] my/calc-evaluate (k k) — evaluate numerically, contextual (see Todo: fractions/division)
-  - [ ] my/calc--identify-expr (I k k) — identify a float as integer, p/q, (p/q)·√n,
+  - [X] my/calc-evaluate (k k) — evaluate numerically, contextual (see Todo: fractions/division)
+    (mafcmd-evaluate on k k; leftover fractions and divisions float too)
+  - [X] my/calc--identify-expr (I k k) — identify a float as integer, p/q, (p/q)·√n,
     n^(1/3), n^(1/4), (p/q)·π/e, ln(n)
+    (mafcmd-identify on I k k; maf--identify-expr in math.el holds the candidates)
 
 * PORT:ineq.el
   - [ ] my/calc-abs-ineq (a k) — |a| < b → compound inequality, each part solved for the variable
