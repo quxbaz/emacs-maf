@@ -12,11 +12,18 @@
 ;; resolves them at runtime, but the byte compiler needs declarations.
 (declare-function calcFunc-pgcd "calc-poly")
 (declare-function calcFunc-mul "calc-arith")
+(declare-function calcFunc-round "calc-arith")
+(declare-function math-abs "calc-arith")
 (declare-function math-looks-negp "calc-misc")
+(declare-function math-negp "calc-misc")
+(declare-function math-posp "calc-misc")
+(declare-function math-zerop "calc-misc")
 (declare-function math-polynomial-base "calc-alg")
 (declare-function math-polynomial-p "calc-alg")
 (declare-function math-is-polynomial "calc-alg")
 (declare-function math-const-var "calc-ext")
+(declare-function math-lessp "calc-ext")
+(declare-function math-evaluate-expr "calc-ext")
 
 ;; Polynomial-recognizer knobs, defvar'd in lazily-loaded calc-ext;
 ;; declared here so the let bindings below stay dynamic even when that
@@ -91,6 +98,128 @@ convert: 6 x + 8:3 becomes 6 x + 2.67."
    ((eq (car-safe expr) 'frac) (math-float expr))
    ((consp expr) (cons (car expr) (mapcar #'maf--float-fracs (cdr expr))))
    (t expr)))
+
+(defun maf--float-rationals (expr)
+  "Make EXPR's exact rational arithmetic inexact.
+Fractions float, and a quotient whose divisor is a number becomes the
+floated quotient — 1:3 gives 0.333333333333, and x / 3 gives
+0.333333333333 x — so a numeric evaluation of the result reaches a
+float instead of stopping at an exact rational or at a symbolic
+division. Integers that divide nothing stay exact, so 2 + 3 still
+evaluates to 5, and division by a non-number (1 / (x + 1)) is left
+alone. Runs after the evaluation in `mafcmd-evaluate', finishing off
+the exact rationals numeric evaluation leaves behind."
+  (pcase expr
+    (`(frac . ,_) (math-float expr))
+    (`(/ ,a ,b)
+     (let ((fa (maf--float-rationals a))
+           (fb (maf--float-rationals b)))
+       (cond
+        ;; Nothing to reach for: the divisor has no numeric value.
+        ((or (not (Math-realp fb)) (math-zerop fb)) (list '/ fa fb))
+        ;; A wholly numeric quotient divides directly.
+        ((Math-realp fa) (math-div (math-float fa) fb))
+        ;; Otherwise the quotient becomes a floated coefficient. Let
+        ;; calc reduce it first — 3 x / 6 is x / 2 — so the float is
+        ;; rounded once: floating 1/6 and multiplying the 3 back in
+        ;; would give 0.500000000001 x.
+        (t (pcase (math-div fa fb)
+             ((and `(/ ,qa ,qb) (guard (Math-realp qb)))
+              (math-mul (math-float (math-div 1 qb)) qa))
+             (q (maf--float-rationals q)))))))
+    ((pred consp) (cons (car expr) (mapcar #'maf--float-rationals (cdr expr))))
+    (_ expr)))
+
+(defconst maf--identify-tolerance '(float 1 -8)
+  "Absolute tolerance `maf--identify-expr' matches candidates within.
+A candidate qualifies when its value differs from the target by less
+than this — loose enough that a hand-typed 1.41421356 still identifies
+as sqrt(2). Past a magnitude of 100 the tolerance grows with the
+target, since calc's own precision cannot resolve a fixed 1e-8 there.")
+
+(defun maf--identify-expr (x)
+  "Return a simple closed form for the real number X, or nil if none fits.
+Candidates are tried in this order, the first match winning: integer,
+fraction p/q with q <= 20, (p/q) sqrt(n) for square-free n <= 30,
+sqrt(n), n^(1/3), n^(1/4) for n <= 10000, (p/q) pi, (p/q) e, and ln(n)
+for 2 <= n <= 1000. A candidate matches when its own value comes within
+`maf--identify-tolerance' of X, so the float a closed form evaluates
+to identifies back to it: 1.41421356237 gives sqrt(2).
+
+The result is normalized in symbolic mode, so it stays exact instead
+of collapsing back into the float it was matched against. X may be
+negative; the search runs on its magnitude and the winner is negated.
+This is the transformation behind `mafcmd-identify'; to change,
+reorder, or extend the candidates, change this function."
+  (let* ((calc-symbolic-mode nil)
+         (neg (math-negp x))
+         (ax (if neg (math-neg x) x))
+         ;; Square-free integers 2..30 (no repeated prime factor). Keeps
+         ;; the sqrt(n) candidates irreducible, so sqrt(6) is not
+         ;; identified as (1/2) sqrt(24).
+         (sqfree '(2 3 5 6 7 10 11 13 14 15 17 19 21 22 23 26 29 30)))
+    (cl-flet* ((val (e) (math-evaluate-expr e))
+               (sym (e) (let ((calc-symbolic-mode t)) (math-normalize e)))
+               ;; Past a magnitude of 100 the tolerance scales with the
+               ;; target: a flat 1e-8 is below what calc's 12-digit
+               ;; precision can resolve there. It stays absolute below
+               ;; that, since scaling it everywhere admits nonsense
+               ;; matches — 12345.6789 is within a scaled tolerance of
+               ;; sqrt(152415788).
+               (near-p (a b)
+                 (let ((m (math-abs b)))
+                   (math-lessp (math-abs (math-sub a b))
+                               (math-mul maf--identify-tolerance
+                                         (if (math-lessp m 100)
+                                             1
+                                           (math-div m 100))))))
+               (close-p (e) (near-p (val e) ax))
+               ;; Rounding the target's power to a radicand is only
+               ;; meaningful while that radicand stays small: root(n) for
+               ;; a huge n is neither simple nor pinned down, since the
+               ;; rounding moves the root itself by more than the
+               ;; tolerance allows for.
+               (radicand-p (n) (and (math-posp n) (math-lessp n 10001)))
+               (signed (e) (sym (if neg (math-neg e) e)))
+               (try-rat (af)  ; AF as an exact p/q with q <= 20, else nil
+                 (cl-loop for q from 1 to 20 thereis
+                          (let* ((pf (math-mul af q))
+                                 (p (calcFunc-round pf)))
+                            (and (near-p pf p)
+                                 (math-normalize (list 'frac p q)))))))
+      (or
+       ;; Integer.
+       (let ((n (calcFunc-round ax)))
+         (and (close-p n) (signed n)))
+       ;; Fraction p/q.
+       (let ((r (try-rat ax)))
+         (and r (signed r)))
+       ;; (p/q) sqrt(n) for square-free n, which covers a bare sqrt(n)
+       ;; too (the ratio comes back 1).
+       (cl-loop for n in sqfree thereis
+                (let ((r (try-rat (math-div ax (val (list 'calcFunc-sqrt n))))))
+                  (and r (signed (list '* r (list 'calcFunc-sqrt n))))))
+       ;; sqrt(n) for any n: the radicands the square-free search skips.
+       (let ((n (calcFunc-round (math-mul ax ax))))
+         (and (radicand-p n)
+              (close-p (list 'calcFunc-sqrt n))
+              (signed (list 'calcFunc-sqrt n))))
+       ;; n^(1/3) and n^(1/4).
+       (cl-loop for k in '(3 4) thereis
+                (let* ((n (calcFunc-round (val (list '^ ax k))))
+                       (e (list '^ n (list 'frac 1 k))))
+                  (and (radicand-p n) (close-p e) (signed e))))
+       ;; (p/q) pi and (p/q) e.
+       (cl-loop for c in '((var pi var-pi) (var e var-e)) thereis
+                (let ((r (try-rat (math-div ax (val c)))))
+                  (and r (signed (list '* r c)))))
+       ;; ln(n), for positive x only. Above ln(1000) no candidate can
+       ;; match, and exponentiating a large x is pointless work.
+       (and (not neg) (math-lessp ax 7)
+            (let ((n (calcFunc-round (val (list 'calcFunc-exp ax)))))
+              (and (not (math-lessp n 2)) (math-lessp n 1001)
+                   (close-p (list 'calcFunc-ln n))
+                   (sym (list 'calcFunc-ln n)))))))))
 
 (defun maf--quadratic-base (expr)
   "Return the base EXPR is a quadratic in, or nil if there is none.

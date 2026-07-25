@@ -24,6 +24,9 @@
 (define-key maf-mode-map (kbd "l F") #'mafcmd-factor-gcd)
 (define-key maf-mode-map (kbd "l l") #'mafcmd-float)
 (define-key maf-mode-map (kbd "l c") #'mafcmd-frac)
+;; Numeric evaluation; k k is unbound in calc itself. I k k routes to
+;; mafcmd-identify, the closed-form match for a float.
+(define-key maf-mode-map (kbd "k k") #'mafcmd-evaluate)
 (define-key maf-mode-map (kbd "l d") #'mafcmd-to-degrees)
 (define-key maf-mode-map (kbd "l r") #'mafcmd-to-radians)
 ;; M-o is unbound in calc itself; H M-o runs the mod-180 variant.
