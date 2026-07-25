@@ -148,6 +148,7 @@ mount_ro() {
     return 0
 }
 mount_ro "$conf/claude/CLAUDE.md"  /home/dev/.claude/CLAUDE.md
+mount_ro "$conf/claude/keybindings.json" /home/dev/.claude/keybindings.json
 mount_ro "$conf/agents/AGENTS.md"  /home/dev/conf/agents/AGENTS.md
 mount_ro "$conf/agents/AGENTS.md"  /home/dev/.codex/AGENTS.md
 mount_ro "$conf/codex/config.toml" /home/dev/.codex/config.toml

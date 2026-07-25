@@ -77,6 +77,7 @@ sudo docker run -it --name maf-my-feature \
   -v ~/.claude/.credentials.json:/seed/.credentials.json:ro \
   -v ~/.gitconfig:/home/dev/.gitconfig:ro \
   -v ~/conf/claude/CLAUDE.md:/home/dev/.claude/CLAUDE.md:ro \
+  -v ~/conf/claude/keybindings.json:/home/dev/.claude/keybindings.json:ro \
   -v ~/conf/agents/AGENTS.md:/home/dev/conf/agents/AGENTS.md:ro \
   -v ~/conf/agents/AGENTS.md:/home/dev/.codex/AGENTS.md:ro \
   -v ~/conf/codex/config.toml:/home/dev/.codex/config.toml:ro \
@@ -92,7 +93,7 @@ sudo docker run -it --name maf-my-feature \
 | `-v ...emacs-maf/.git:<same path>` | the main `.git`, at its *host path*: a worktree's `.git` file names that path absolutely, so git inside only resolves if the path matches exactly |
 | `-v ...credentials.json:/seed/...:ro` | agent auth; copied in at startup, read-only so the container can't touch your host token |
 | `-v ~/.gitconfig:...:ro` | your name/email, so commits from inside are attributed |
-| `-v ~/conf/claude/...:ro` (×4) | your agent config, each file where its agent reads it — on the host these paths are symlinks into `~/conf`, a box takes the real files. `AGENTS.md` appears twice: for codex, and at the path `CLAUDE.md` imports. Any that is missing is skipped; `$MAF_CONF` names another `conf` |
+| `-v ~/conf/claude/...:ro` (×5) | your agent config, each file where its agent reads it — on the host these paths are symlinks into `~/conf`, a box takes the real files. `AGENTS.md` appears twice: for codex, and at the path `CLAUDE.md` imports. Any that is missing is skipped; `$MAF_CONF` names another `conf` |
 | `-v ~/.emacs.d/my/calc:...:ro` | the legacy Calc config the `port` skill reads, at the path that skill names — without it, porting has nothing to port from |
 | (no `-e MAF_SERVER_NAME`) | the image names the Emacs server `#emacs`, the name the `emacs` skill uses when given none — a container holds one instance, so the skills' examples work in a box unchanged |
 
