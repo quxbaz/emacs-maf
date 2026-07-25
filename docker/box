@@ -18,18 +18,65 @@ usage() {
 usage: box <feature>      run a dev box on .worktrees/<feature>
        box -b <feature>   make that worktree and branch first
        box                list the worktrees you can name
+       box --names        those names alone, for completion
        box --help         this text
 
 One box per feature branch, several at once. Without -b the worktree is
 yours to make: git worktree add .worktrees/<feature>
+
+Tab completion for bash, zsh and fish: docker/completions/
 EOF
 }
 
 # --help before anything else, so it answers outside a repo too.
-create=
 case ${1-} in
     -h|--help)
         usage
+        exit 0
+        ;;
+esac
+
+# The main checkout, from the common git dir rather than the current
+# toplevel: run from inside a worktree, --show-toplevel would name that
+# worktree, so boxes would nest under it and $repo/.git would be a file
+# instead of the repository.
+if ! common=$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null); then
+    # Completion is asked on every tab, including in directories that are
+    # no repo at all. It answers nothing there rather than complaining.
+    case ${1-} in
+        --names|--complete) exit 0 ;;
+    esac
+    echo "box: not inside a git repository" >&2
+    exit 1
+fi
+repo=$(dirname "$common")
+
+# The feature names, bare and one per line — what completion consumes,
+# and the reason no shell has to parse the listing above.
+names() {
+    local key rest
+    while read -r key rest; do
+        [ "$key" = worktree ] || continue
+        case $rest in
+            "$repo/.worktrees/"*) echo "${rest#"$repo"/.worktrees/}" ;;
+        esac
+    done < <(git worktree list --porcelain) | sort
+}
+
+create=
+case ${1-} in
+    --names)
+        names
+        exit 0
+        ;;
+    --complete)
+        # bash `complete -C` runs: box --complete <command> <word> <prev>.
+        # It does no filtering of its own, so match the prefix here — by
+        # glob, so a word holding . or * stays literal.
+        cur=${3-}
+        names | while IFS= read -r name; do
+            case $name in "$cur"*) echo "$name" ;; esac
+        done
         exit 0
         ;;
     -b)
@@ -42,12 +89,6 @@ case ${1-} in
         exit 1
         ;;
 esac
-
-# The main checkout, from the common git dir rather than the current
-# toplevel: run from inside a worktree, --show-toplevel would name that
-# worktree, so boxes would nest under it and $repo/.git would be a file
-# instead of the repository.
-repo=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
 
 if [ -n "$create" ] && [ $# -eq 0 ]; then
     echo "box: -b needs a feature name" >&2

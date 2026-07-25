@@ -97,6 +97,9 @@ the repo's `CLAUDE.md` keys off.
 - `docker/box` adds `sudo` only when the docker socket needs it. Drop it
   everywhere by joining the docker group: `sudo usermod -aG docker $USER`,
   then log back in.
+- Tab completion for feature names lives in `docker/completions/` (bash,
+  zsh, fish). Each shim asks `box --names` for the candidates rather than
+  parsing the listing, and says how to load it.
 - The agent runs with permission prompts off (`docker/files/settings.json`,
   `defaultMode: bypassPermissions`) — the container is the sandbox. Change
   that file and rebuild to tighten it.
