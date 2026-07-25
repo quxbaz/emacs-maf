@@ -97,7 +97,7 @@ the repo's `CLAUDE.md` keys off.
 - `docker/box` adds `sudo` only when the docker socket needs it. Drop it
   everywhere by joining the docker group: `sudo usermod -aG docker $USER`,
   then log back in.
-- `. ./dev-init.sh` at the repo root puts `box` on `PATH` and turns on
+- `. ./dev.sh` at the repo root puts `box` on `PATH` and turns on
   tab completion for feature names, so the commands above shorten to
   `box my-feature`. Completion alone lives in `docker/completions/`
   (bash, zsh, fish) — each shim asks `box --names` for the candidates

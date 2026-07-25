@@ -1,6 +1,6 @@
-# dev-init.sh — shell setup for working on maf. Source it:
+# dev.sh — shell setup for working on maf. Source it:
 #
-#   . ./dev-init.sh
+#   . ./dev.sh
 #
 # Puts docker/box on PATH and turns tab completion for feature names on,
 # in bash and zsh. The Emacs counterpart is project-init.el.
@@ -19,8 +19,8 @@ elif [ -n "${BASH_VERSION-}" ]; then
 fi
 
 if [ "$_maf_sourced" = 0 ]; then
-    echo "dev-init.sh does nothing when run; source it instead:" >&2
-    echo "  . ./dev-init.sh   (bash or zsh)" >&2
+    echo "dev.sh does nothing when run; source it instead:" >&2
+    echo "  . ./dev.sh   (bash or zsh)" >&2
     unset _maf_sourced
     # return when there is one to make, exit only when actually run:
     # sourced from a shell this file does not know, exit would close it.
