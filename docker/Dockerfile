@@ -43,7 +43,7 @@ ARG GID=1000
 RUN groupadd -g ${GID} dev \
     && useradd -m -u ${UID} -g ${GID} -s /bin/bash dev \
     && mkdir -p /home/dev/.emacs.d/my /home/dev/.claude /home/dev/.codex \
-                /home/dev/conf/agents \
+                /home/dev/conf/agents /home/dev/.config/tmux \
     && chown -R ${UID}:${GID} /home/dev
 
 # Everything below comes from files/ — the files baked into the image.
@@ -60,9 +60,6 @@ COPY --chown=dev:dev files/settings.json /home/dev/.claude/settings.json
 # My shell aliases, the ones that apply in a box. Debian's stock .bashrc
 # sources ~/.bash_aliases if it is there, so nothing else is needed.
 COPY --chown=dev:dev files/bash_aliases /home/dev/.bash_aliases
-
-# tmux: C-t as prefix, out of the way of an outer session's C-b.
-COPY --chown=dev:dev files/tmux.conf /home/dev/.tmux.conf
 
 COPY --chmod=0755 files/entrypoint.sh /usr/local/bin/entrypoint
 

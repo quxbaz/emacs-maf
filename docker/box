@@ -152,6 +152,7 @@ mount_ro "$conf/claude/keybindings.json" /home/dev/.claude/keybindings.json
 mount_ro "$conf/agents/AGENTS.md"  /home/dev/conf/agents/AGENTS.md
 mount_ro "$conf/agents/AGENTS.md"  /home/dev/.codex/AGENTS.md
 mount_ro "$conf/codex/config.toml" /home/dev/.codex/config.toml
+mount_ro "$conf/tmux/tmux.conf"   /home/dev/.config/tmux/tmux.conf
 
 # The legacy Calc config the port skill reads from, at the path that
 # skill names. Read-only: a port takes from it and never writes back.

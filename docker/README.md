@@ -41,11 +41,14 @@ git.
    claude
    ```
 
-   The tmux prefix in a box is `C-t`, clear of an outer session's `C-b`;
-   `C-t C-t` sends a literal `C-t` to the pane. `C-t o` moves between
-   panes, `C-t z` zooms one full-screen. `C-t d` detaches tmux and drops
-   you to a plain shell in the same box, with Emacs still up behind it;
-   `tmux attach -t emacs` returns.
+   tmux is yours: `~/conf/tmux/tmux.conf` is mounted, so the box answers
+   to the same keys as anywhere else — prefix `C-t`, `|` and `_` to
+   split, `j`/`k` to cycle windows, `l` to list them. `C-t o` moves
+   between panes, `C-t z` zooms one full-screen. `C-t d` detaches tmux
+   and drops you to a plain shell in the same box, with Emacs still up
+   behind it; `tmux attach -t emacs` returns. Your `C-t C-t` is
+   `last-window` rather than send-prefix, so nothing reaches the pane as
+   a literal `C-t` — Emacs's `transpose-chars` is out of reach in there.
 
    Detaching from the *container* is `C-q C-q`, not docker's `C-p C-q`
    default — `C-p` is `previous-line`, which the client would otherwise
@@ -88,6 +91,7 @@ sudo docker run -it --name maf-my-feature \
   -v ~/conf/agents/AGENTS.md:/home/dev/conf/agents/AGENTS.md:ro \
   -v ~/conf/agents/AGENTS.md:/home/dev/.codex/AGENTS.md:ro \
   -v ~/conf/codex/config.toml:/home/dev/.codex/config.toml:ro \
+  -v ~/conf/tmux/tmux.conf:/home/dev/.config/tmux/tmux.conf:ro \
   -v ~/.emacs.d/my/calc:/home/dev/.emacs.d/my/calc:ro \
   maf
 ```
@@ -100,7 +104,7 @@ sudo docker run -it --name maf-my-feature \
 | `-v ...emacs-maf/.git:<same path>` | the main `.git`, at its *host path*: a worktree's `.git` file names that path absolutely, so git inside only resolves if the path matches exactly |
 | `-v ...credentials.json:/seed/...:ro` | agent auth; copied in at startup, read-only so the container can't touch your host token |
 | `-v ~/.gitconfig:...:ro` | your name/email, so commits from inside are attributed |
-| `-v ~/conf/claude/...:ro` (×5) | your agent config, each file where its agent reads it — on the host these paths are symlinks into `~/conf`, a box takes the real files. `AGENTS.md` appears twice: for codex, and at the path `CLAUDE.md` imports. Any that is missing is skipped; `$MAF_CONF` names another `conf` |
+| `-v ~/conf/claude/...:ro` (×6) | your agent config, each file where its agent reads it — on the host these paths are symlinks into `~/conf`, a box takes the real files. `AGENTS.md` appears twice: for codex, and at the path `CLAUDE.md` imports. Any that is missing is skipped; `$MAF_CONF` names another `conf` |
 | `-v ~/.emacs.d/my/calc:...:ro` | the legacy Calc config the `port` skill reads, at the path that skill names — without it, porting has nothing to port from |
 | (no `-e MAF_SERVER_NAME`) | the image names the Emacs server `#emacs`, the name the `emacs` skill uses when given none — a container holds one instance, so the skills' examples work in a box unchanged |
 
