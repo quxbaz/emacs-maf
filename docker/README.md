@@ -16,10 +16,11 @@ git.
    sudo docker build --build-arg UID=$(id -u) --build-arg GID=$(id -g) -t maf-dev docker/
    ```
 
-2. Make a worktree for the feature:
+2. Make a worktree for the feature — the branch is named after the
+   directory, created from HEAD if it does not exist yet:
 
    ```sh
-   git worktree add .worktrees/my-feature -b my-feature
+   git worktree add .worktrees/my-feature
    ```
 
 3. Start the box on it:

@@ -20,7 +20,7 @@ tree=$repo/.worktrees/$feature
 
 if [ ! -d "$tree" ]; then
     echo "box: no worktree at $tree" >&2
-    echo "     git worktree add .worktrees/$feature -b $feature" >&2
+    echo "     git worktree add .worktrees/$feature" >&2
     exit 1
 fi
 
