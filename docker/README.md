@@ -62,13 +62,15 @@ git.
    its filesystem intact, Emacs started fresh. While one is running, the
    same command opens another shell inside it.
 
-7. When the feature is done, merge on the host and throw the box away:
+7. When the feature is done, close it out from the host — the box has
+   only its own worktree and no key to push with, so integrating is the
+   main checkout's job. Merge first: until it lands, the box is still
+   there to go back to if something turns out to be wrong.
 
    ```sh
-   git merge my-feature
-   git worktree remove .worktrees/my-feature
-   git branch -d my-feature
-   sudo docker rm maf-my-feature
+   git merge my-feature                  # from the main checkout
+   sudo docker rm -f maf-my-feature      # the box, no longer needed
+   git worktree remove .worktrees/my-feature && git branch -d my-feature
    ```
 
 ## The run command, flag by flag
