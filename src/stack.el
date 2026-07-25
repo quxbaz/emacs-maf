@@ -39,6 +39,7 @@
 (declare-function calcFunc-factor "calc-poly")
 (declare-function calcFunc-roots "calcalg2")
 (declare-function calcFunc-sub "calc-arith")
+(declare-function math-evaluate-expr "calc-ext")
 
 (maf-defcmd mafcmd-factor-by (expr arg commit)
   "Factor the resolved expression by the top-of-stack argument.
@@ -526,6 +527,70 @@ point, each side of an equation, the top entry at home.
   (commit (math-normalize
            (list 'calcFunc-pfrac expr
                  (prefix-numeric-value (or current-prefix-arg 0))))))
+
+(maf-defcmd mafcmd-evaluate (expr _arg commit)
+  "Evaluate the resolved expression numerically.
+
+  sqrt(2)  =>  1.41421356237
+
+Symbolic mode is off for the evaluation, so anything with no exact
+value becomes a float — roots, pi and e, trig — and stored variables
+are substituted along the way. Exact rational arithmetic goes inexact
+too: fractions float and a division by a number becomes its floated
+quotient, so 1:3 gives 0.333333333333 and x / 3 gives
+0.333333333333 x. Whatever stays exact stays exact: 2 + 3 is 5, and
+what has no numeric value at all (x^2, 1 / (x + 1)) commits unchanged.
+
+With the Inverse flag, routes to `mafcmd-identify': the float back to
+a closed form.
+
+  I on 1.41421356237  =>  sqrt(2)
+
+Point picks the target as usual: a sub-formula at point, each side of
+an equation, the top entry at home.
+
+  x = 2 sqrt(2)  =>  x = 2.82842712475
+  2 + sin(30)|   =>  2 + 0.5"
+  :arity unary
+  :prefix "eval"
+  :inverse mafcmd-identify
+  ;; Float the leftover rationals after the evaluation, not before: the
+  ;; evaluation computes sqrt(2) / 2 to full precision, where halving a
+  ;; floated sqrt(2) would round twice.
+  (commit (maf--float-rationals
+           (let ((calc-symbolic-mode nil)) (math-evaluate-expr expr)))))
+
+(maf-defcmd mafcmd-identify (expr _arg commit)
+  "Identify the resolved expression as a simple closed form.
+
+  1.41421356237  =>  sqrt(2)
+
+The Inverse route of `mafcmd-evaluate', undoing it where the value is
+recognizable. The expression is evaluated to a number first, then
+matched against the candidates `maf--identify-expr' knows — integers,
+small fractions, rational multiples of a square root, cube and fourth
+roots, rational multiples of pi and e, and logarithms of integers —
+and the match commits in exact symbolic form.
+
+  0.333333333333   =>  1:3
+  2.44948974278    =>  sqrt(6)
+  4.71238898038    =>  3:2 pi
+  1.60943791243    =>  ln(5)
+
+An expression with no numeric value commits unchanged, so the x in
+x = 0.333333333333 passes through quietly while the other side
+identifies. A number that matches no candidate signals instead,
+committing nothing. Point picks the target as usual: a sub-formula at
+point, each side of an equation, the top entry at home.
+
+  x = 0.333333333333  =>  x = 1:3"
+  :arity unary
+  :prefix "idfy"
+  (let ((val (let ((calc-symbolic-mode nil)) (math-evaluate-expr expr))))
+    (commit (cond ((not (Math-realp val)) expr)
+                  ((maf--identify-expr val))
+                  (t (user-error "Cannot identify %s as a simple expression"
+                                 (math-format-value val)))))))
 
 (defvar maf--quick-variable nil
   "Variable read by `maf-quick-variable', for the contextual body.")
