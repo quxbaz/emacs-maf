@@ -34,12 +34,16 @@ git.
    arguments to list the worktrees you can name, `docker/box --help` for
    usage.
 
-4. You land in a shell at `/work`, Emacs already running. Start the
-   agent and instruct it:
+4. You land in tmux: a shell at `/work` on top, Emacs below it. Start
+   the agent in the shell and instruct it:
 
    ```sh
    claude
    ```
+
+   `C-b o` moves between panes, `C-b z` zooms one full-screen. `C-b d`
+   detaches and drops you to a plain shell in the same box, with Emacs
+   still up behind it; `tmux attach -t emacs` returns.
 
 5. Repeat 2–4 in another terminal for each additional feature.
 
@@ -97,7 +101,7 @@ sudo docker run -it --name maf-my-feature \
 
 ```sh
 claude                      # agent, already authed — instruct it from here
-tmux attach -t emacs        # the live Emacs (C-b d to detach)
+tmux attach -t emacs        # back to Emacs beside a shell (C-b d to detach)
 emacsclient -s my-feature --eval '(calc-stack-size)'
 git commit -am '...'        # lands on the host branch
 ```

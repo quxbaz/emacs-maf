@@ -157,6 +157,12 @@ mount_ro "$conf/codex/config.toml" /home/dev/.codex/config.toml
 # skill names. Read-only: a port takes from it and never writes back.
 mount_ro "$HOME/.emacs.d/my/calc" /home/dev/.emacs.d/my/calc
 
+# Land in the tmux session the entrypoint laid out — Emacs beside a
+# shell — and fall through to a plain shell when you detach, so C-b d
+# leaves the box up rather than ending the container's main process
+# with it. Exiting that shell still stops the box.
+session=(bash -c 'tmux attach -t emacs 2>/dev/null; exec bash')
+
 # A box outlives its shell, so naming one again revisits it rather than
 # building a second: running, join it in another shell; stopped, start it
 # back up. Only a name docker has never heard of is a fresh container.
@@ -178,7 +184,7 @@ case $state in
              -v "$HOME/.gitconfig:/home/dev/.gitconfig:ro" \
              "${mounts[@]}" \
              -e "MAF_SERVER_NAME=$box" \
-             maf
+             maf "${session[@]}"
         ;;
     *)
         # Exited, created, paused: the filesystem is as you left it. The

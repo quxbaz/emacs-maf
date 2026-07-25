@@ -13,10 +13,15 @@ if [ -f /seed/.credentials.json ]; then
     chmod 600 "$HOME/.claude/.credentials.json"
 fi
 
-# The dev Emacs, on a tmux pty so it has a real tty frame. Attach with
-# `tmux attach -t emacs`; drive it with `emacsclient -s $MAF_SERVER_NAME`.
+# The dev Emacs, on a tmux pty so it has a real tty frame. Beside it, a
+# shell in a second pane: the two things a box is for, visible at once.
+# Drive Emacs from either with `emacsclient -s $MAF_SERVER_NAME`.
 if [ -f /work/project-init.el ] && ! tmux has-session -t emacs 2>/dev/null; then
     tmux new-session -d -s emacs 'emacs -nw'
+    # -b puts the new pane before the current one: shell on top, Emacs
+    # below it with the larger share.
+    tmux split-window -v -b -l 40% -t emacs:0 -c /work
+    tmux select-pane -t emacs:0.0
 fi
 
 exec "$@"
