@@ -39,6 +39,8 @@
    - This should work in:
      - digit entry minibuffer
      - maf-edit mode
+   - Use old source material my/calc/ as reference, but don't assume everything
+     is ok as is.
 ** TODO | cmd should always create vector
 ** IN-PROGRESS formulas module
    - [X] categories
