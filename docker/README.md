@@ -11,8 +11,7 @@ git.
 ## Commands
 
 ```sh
-box <feature>          start a box, or come back to one already made
-box -b <feature>       make the worktree and branch first, then start
+box <feature>          start a box, making its worktree and branch if new
 box --close <feature>  done and merged: container, worktree, branch
 box -d <feature>       discard it instead: the same three, work and all
 box                    list the worktrees you can name
@@ -31,25 +30,19 @@ Spelled `docker/box` until `dev.sh` is sourced.
    sudo docker build --build-arg UID=$(id -u) --build-arg GID=$(id -g) -t maf docker/
    ```
 
-2. Make a worktree for the feature — the branch is named after the
-   directory, created from HEAD if it does not exist yet:
-
-   ```sh
-   git worktree add .worktrees/my-feature
-   ```
-
-3. Start the box on it:
+2. Start a box on the feature:
 
    ```sh
    docker/box my-feature
    ```
 
-   `docker/box -b my-feature` does steps 2 and 3 in one, making the
-   worktree and branch before starting the box. Run `docker/box` with no
-   arguments to list the worktrees you can name, `docker/box --help` for
-   usage.
+   First time out that makes `.worktrees/my-feature` and a branch of the
+   same name from HEAD; if the branch already exists it is checked out
+   instead. After that the same command comes back to the box. Run
+   `docker/box` with no arguments to list the worktrees you can name,
+   `docker/box --help` for usage.
 
-4. You land in tmux: a shell at `/work` on the left, Emacs on the right.
+3. You land in tmux: a shell at `/work` on the left, Emacs on the right.
    Start the agent in the shell and instruct it:
 
    ```sh
@@ -70,14 +63,14 @@ Spelled `docker/box` until `dev.sh` is sourced.
    swallow in the Emacs pane while it waited to see if `C-q` followed.
    It leaves the box running; `docker/box <feature>` comes back.
 
-5. Repeat 2–4 in another terminal for each additional feature.
+4. Repeat 2–3 in another terminal for each additional feature.
 
-6. Exiting the shell leaves the box behind, stopped. `docker/box
+5. Exiting the shell leaves the box behind, stopped. `docker/box
    my-feature` again picks it up where you left it — the same container,
    its filesystem intact, Emacs started fresh. While one is running, the
    same command opens another shell inside it.
 
-7. When the feature is done, close it out from the host — the box has
+6. When the feature is done, close it out from the host — the box has
    only its own worktree and no key to push with, so integrating is the
    main checkout's job. Merge first: until it lands, the box is still
    there to go back to if something turns out to be wrong.
@@ -109,9 +102,8 @@ Spelled `docker/box` until `dev.sh` is sourced.
 `docker/box` derives the `docker run` below from the feature name, but
 only for a name docker has never seen: an existing box it joins with
 `docker exec` if it is running, or restarts with `docker start -ai` if it
-is not. Without `-b` it creates nothing else — a worktree that does not
-exist is an error rather than a guess. Run it by hand if you want a box
-shaped differently:
+is not, and makes the worktree when the feature has none yet. Run it by
+hand if you want a box shaped differently:
 
 ```sh
 sudo docker run -it --name maf-my-feature \

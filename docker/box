@@ -6,25 +6,23 @@
 # to mount at /work, the container name, and the Emacs server name. The
 # raw command it stands for, flag by flag, is in README.md.
 #
-# Creating the worktree is opt-in. Named alone, a feature must already
-# have one, and a missing one is an error carrying the git command to fix
-# it rather than a guess; -b says make it, the way git worktree add -b
-# does, and go.
+# Naming a feature is enough: if it has no worktree yet, this is its
+# first box, so the worktree is made — with a branch of that name, or
+# checking out the branch if it already exists.
 
 set -euo pipefail
 
 usage() {
     cat <<'EOF'
-usage: box <feature>          run a dev box on .worktrees/<feature>
-       box -b <feature>       make that worktree and branch first
+usage: box <feature>          a box on .worktrees/<feature>, made if new
        box --close <feature>  close it: container, worktree, branch
        box -d <feature>       discard it: the same three, work and all
        box                    list the worktrees you can name
        box --names            those names alone, for completion
        box --help             this text
 
-One box per feature branch, several at once. Without -b the worktree is
-yours to make: git worktree add .worktrees/<feature>
+One box per feature branch, several at once. A feature with no worktree
+gets one, and a branch to go with it, both named after it.
 
 --close is for a feature that has landed. Merge it first: it refuses a
 branch that is not merged, a worktree holding changes, or the tree you
@@ -58,6 +56,8 @@ if ! common=$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)
 fi
 repo=$(dirname "$common")
 
+branch_exists() { git show-ref --quiet --verify "refs/heads/$feature"; }
+
 # The feature names, bare and one per line — what completion consumes,
 # and the reason no shell has to parse the listing above.
 names() {
@@ -70,7 +70,6 @@ names() {
     done < <(git worktree list --porcelain) | sort
 }
 
-create=
 close=
 discard=
 case ${1-} in
@@ -88,10 +87,6 @@ case ${1-} in
         done
         exit 0
         ;;
-    -b)
-        create=1
-        shift
-        ;;
     --close)
         close=1
         shift
@@ -107,8 +102,8 @@ case ${1-} in
         ;;
 esac
 
-if [ $# -eq 0 ] && { [ -n "$create$close$discard" ]; }; then
-    echo "box: ${create:+-b}${close:+--close}${discard:+-d} needs a feature name" >&2
+if [ $# -eq 0 ] && [ -n "$close$discard" ]; then
+    echo "box: ${close:+--close}${discard:+-d} needs a feature name" >&2
     usage >&2
     exit 1
 fi
@@ -131,18 +126,17 @@ fi
 feature=$1
 tree=$repo/.worktrees/$feature
 
-if [ -n "$create" ]; then
-    # -b by name rather than letting git name the branch after the path:
-    # for a feature like my/feature the basename alone would leave you on
-    # a branch called `feature`. Existing branch or worktree => git says
-    # so and we stop, which is what an explicit create should do.
-    git worktree add -b "$feature" "$tree"
-elif [ -n "$close$discard" ]; then
-    :   # --close and -d tolerate a half-cleaned feature; see below
-elif [ ! -d "$tree" ]; then
-    echo "box: no worktree at $tree" >&2
-    echo "     git worktree add .worktrees/$feature" >&2
-    exit 1
+# No worktree yet: this is the feature's first box, so make one. git's
+# own -b names the branch rather than letting the path do it — for a
+# feature like my/feature the basename alone would leave you on a branch
+# called `feature`. A branch that already exists is checked out instead.
+# --close and -d skip all this: they tolerate a half-cleaned feature.
+if [ ! -d "$tree" ] && [ -z "$close$discard" ]; then
+    if branch_exists; then
+        git worktree add "$tree" "$feature"
+    else
+        git worktree add -b "$feature" "$tree"
+    fi
 fi
 
 # A feature may hold slashes; a container name may not. The branch keeps
@@ -163,8 +157,6 @@ docker info >/dev/null 2>&1 || sudo=sudo
 # Either way, what is already gone counts as done, so a half-finished
 # cleanup can be run again.
 if [ -n "$close" ] || [ -n "$discard" ]; then
-    branch_exists() { git show-ref --quiet --verify "refs/heads/$feature"; }
-
     # Both refuse this one: removing the worktree you are standing in
     # leaves the shell in a directory that is no longer there.
     case $PWD/ in
