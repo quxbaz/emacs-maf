@@ -25,6 +25,8 @@
 
 * Todo
 # NOW
+** TODO Bind unwrap (M-u)
+** TODO Bind (M-.)
 ** TODO | cmd should always create vector
 ** IN-PROGRESS formulas module
    - [X] categories
