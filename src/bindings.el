@@ -100,6 +100,11 @@
 ;; calc itself.
 (define-key maf-mode-map (kbd "M-r") #'mafcmd-poly-roots)
 
+;; Coordinate naming, cycling the name sets on repeat. Shadows
+;; calc-copy-as-kill; M-w still copies the region, and maf-kill (C-k)
+;; puts the whole entry on the kill ring.
+(define-key maf-mode-map (kbd "M-k") #'mafcmd-coordinate-toggle)
+
 ;; The digit-entry starters, mirroring calc-mode-map's calcDigit-start
 ;; set minus @, which maf-toggle-simplify shadows.
 (mapc (lambda (x)

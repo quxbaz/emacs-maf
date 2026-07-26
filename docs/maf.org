@@ -112,8 +112,9 @@
    - [ ] my/calc-poly-lcm (a L) — LCM of two polynomials by factorization
    - [ ] Polynomial term ordering — math-normalize advice keeping sums in descending degree
 ** Vectors
-   - [ ] my/calc-coordinate-toggle (M-k) — cycle [1 2] → [x=1 y=2] → [h=1 k=2] → [p=1 q=2];
+   - [X] my/calc-coordinate-toggle (M-k) — cycle [1 2] → [x=1 y=2] → [h=1 k=2] → [p=1 q=2];
      also f(2) = 0 → [2 0]
+     (mafcmd-coordinate-toggle on M-k; name sets in maf-coordinate-name-sets)
    - [ ] my/calc-unique-groups (l g) — all size-n combinations of a vector
    - [ ] my/calc-vector-flatten (v L)
 ** Triangles

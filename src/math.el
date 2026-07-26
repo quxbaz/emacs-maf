@@ -7,6 +7,7 @@
 
 (require 'calc)
 (require 'cl-lib)
+(require 'maf-conf "conf")
 
 ;; Defined in lazily-loaded calc modules; calc-ext's autoload registry
 ;; resolves them at runtime, but the byte compiler needs declarations.
@@ -396,6 +397,47 @@ arguments."
          (not (fboundp fn))
          (or (null nargs) (= (length (cdr expr)) nargs))
          t)))
+
+(defun maf--coordinate-set-index (items)
+  "Return the `maf-coordinate-name-sets' index naming ITEMS, or nil.
+ITEMS is a coordinate vector's element list. It counts as named by a set
+when every element is an equation whose left side is that set's name for
+its position — exactly the forms `maf--coordinate-cycle' produces. A
+plain vector, a partially named one, or one named with variables from no
+set all return nil, and so re-enter the cycle at the first set."
+  (and items
+       (cl-position-if
+        (lambda (names)
+          (and (<= (length items) (length names))
+               (cl-every (lambda (item name)
+                           (and (eq (car-safe item) 'calcFunc-eq)
+                                (equal (nth 1 item) name)))
+                         items names)))
+        maf-coordinate-name-sets)))
+
+(defun maf--coordinate-cycle (vec)
+  "Return calc vector VEC named by the next coordinate set, or nil.
+The components keep their values — the right side of an element that is
+already an equation, the element itself otherwise — and are paired with
+the names of the set following the one VEC uses (see
+`maf--coordinate-set-index'), wrapping around at the end of
+`maf-coordinate-name-sets'. Returns nil when VEC is empty or has more
+components than the target set has names."
+  (let ((items (cdr vec)))
+    (when items
+      (let* ((cur (maf--coordinate-set-index items))
+             (names (nth (if cur
+                             (mod (1+ cur) (length maf-coordinate-name-sets))
+                           0)
+                         maf-coordinate-name-sets)))
+        (when (<= (length items) (length names))
+          (cons 'vec
+                (cl-mapcar (lambda (name item)
+                             (list 'calcFunc-eq name
+                                   (if (eq (car-safe item) 'calcFunc-eq)
+                                       (nth 2 item)
+                                     item)))
+                           names items)))))))
 
 (defun maf--flip-relation-op (op)
   "Return relation OP with its direction reversed: lt <-> gt, leq <-> geq.
