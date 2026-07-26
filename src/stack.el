@@ -151,6 +151,36 @@ point, each side of an equation, the top entry at home.
                      (maf--factor-powers (nth 0 terms) (nth 1 terms)))
                 expr))))
 
+(maf-defcmd mafcmd-poly-lcm (expr arg commit)
+  "Take the LCM of the resolved expression and the top-of-stack argument.
+
+  x^2 - 1 with x^2 - x  =>  (x + 1) (x - 1) x
+
+Both operands are factored — the content out front, then calc's own
+factoring on what remains — and the result keeps every
+distinct factor at the higher of its two exponents, with the LCM of
+the contents as the coefficient. It commits factored, not distributed,
+so the shared and unshared parts stay legible. The coefficient comes
+out positive, and factors differing only in sign count as one, so
+x^2 - 4 and 4 - x^2 give a degree-2 LCM rather than stacking both
+orientations. A zero operand gives 0.
+
+Like any binary command, the entry at point is the subject and the top
+of the stack is the argument, consumed on commit; point picks the
+subject as usual — a sub-formula at point, each side of an equation,
+stack level 2 at home. The polynomial GCD is calc's own, on a g
+\(`mafcmd-pgcd').
+
+  6 (x + 1) with 4 (x + 1)      =>  12 (x + 1)
+  6 x + 6 with 4 x + 4          =>  12 (x + 1)
+  x + 1 with x + 2              =>  (x + 1) (x + 2)   (coprime)
+  x^2 - 1 with x^2 - 1          =>  (x + 1) (x - 1)
+  12 z^6 (w - 7)^3 with 20 z^5 (w - 7)^4
+                                =>  60 z^6 (w - 7)^4"
+  :arity binary
+  :prefix "plcm"
+  (commit (maf--poly-lcm expr arg)))
+
 (maf-defcmd mafcmd-complete-square (expr _arg commit)
   "Complete the square: rewrite the resolved quadratic in vertex form.
 

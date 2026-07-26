@@ -105,6 +105,10 @@
 ;; Polynomial roots by factoring, with multiplicity. M-r is unbound in
 ;; calc itself.
 (define-key maf-mode-map (kbd "M-r") #'mafcmd-poly-roots)
+;; Polynomial LCM, beside calc's own polynomial GCD on a g
+;; (mafcmd-pgcd, from the table in maf-cmds.el). a L is unbound in
+;; calc itself.
+(define-key maf-mode-map (kbd "a L") #'mafcmd-poly-lcm)
 
 ;; Coordinate naming, cycling the name sets on repeat. Shadows
 ;; calc-copy-as-kill; M-w still copies the region, and maf-kill (C-k)
