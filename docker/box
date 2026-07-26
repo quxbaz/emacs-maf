@@ -15,6 +15,7 @@ set -euo pipefail
 usage() {
     cat <<'EOF'
 usage: box <feature>          a box on .worktrees/<feature>, made if new
+       box --bare <feature>   the same, with a bare Emacs config instead
        box --close <feature>  close it: container, worktree, branch
        box -d <feature>       discard it: the same three, work and all
        box                    list the worktrees you can name
@@ -23,6 +24,11 @@ usage: box <feature>          a box on .worktrees/<feature>, made if new
 
 One box per feature branch, several at once. A feature with no worktree
 gets one, and a branch to go with it, both named after it.
+
+A box runs my own Emacs: ~/.emacs.d is copied in at startup, packages and
+all. --bare leaves it out, for a box that wants stock Emacs and only the
+legacy Calc config the port skill reads. Either way it is settled when
+the container is made, so an existing box has to go before it changes.
 
 --close is for a feature that has landed. Merge it first: it refuses a
 branch that is not merged, a worktree holding changes, or the tree you
@@ -72,6 +78,7 @@ names() {
 
 close=
 discard=
+bare=
 case ${1-} in
     --names)
         names
@@ -95,6 +102,10 @@ case ${1-} in
         discard=1
         shift
         ;;
+    --bare)
+        bare=1
+        shift
+        ;;
     -*)
         echo "box: unknown option: $1" >&2
         usage >&2
@@ -102,8 +113,8 @@ case ${1-} in
         ;;
 esac
 
-if [ $# -eq 0 ] && [ -n "$close$discard" ]; then
-    echo "box: ${close:+--close}${discard:+-d} needs a feature name" >&2
+if [ $# -eq 0 ] && [ -n "$close$discard$bare" ]; then
+    echo "box: ${close:+--close}${discard:+-d}${bare:+--bare} needs a feature name" >&2
     usage >&2
     exit 1
 fi
@@ -247,9 +258,15 @@ mount_ro "$conf/agents/AGENTS.md"  /home/dev/.codex/AGENTS.md
 mount_ro "$conf/codex/config.toml" /home/dev/.codex/config.toml
 mount_ro "$conf/tmux/tmux.conf"   /home/dev/.config/tmux/tmux.conf
 
-# The legacy Calc config the port skill reads from, at the path that
-# skill names. Read-only: a port takes from it and never writes back.
-mount_ro "$HOME/.emacs.d/my/calc" /home/dev/.emacs.d/my/calc
+# My whole Emacs config, seeded rather than mounted, since Emacs writes
+# into it — the entrypoint copies it in. That carries my/calc along, so
+# the narrow mount is only for --bare: the legacy Calc config the port
+# skill reads, at the path that skill names.
+if [ -n "$bare" ]; then
+    mount_ro "$HOME/.emacs.d/my/calc" /home/dev/.emacs.d/my/calc
+else
+    mount_ro "$HOME/.emacs.d" /seed/emacs.d
+fi
 
 # Land in the tmux session the entrypoint laid out — Emacs beside a
 # shell — and fall through to a plain shell when you detach, so C-b d
@@ -281,7 +298,7 @@ case $state in
              --hostname "$box" \
              -v "$tree:/work" \
              -v "$repo/.git:$repo/.git" \
-             -v "$HOME/.claude/.credentials.json:/seed/.credentials.json:ro" \
+             -v "$HOME/.claude/.credentials.json:/seed/credentials.json:ro" \
              -v "$HOME/.gitconfig:/home/dev/.gitconfig:ro" \
              "${mounts[@]}" \
              maf "${session[@]}"

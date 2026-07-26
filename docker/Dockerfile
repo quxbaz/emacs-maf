@@ -48,8 +48,10 @@ RUN groupadd -g ${GID} dev \
 
 # Everything below comes from files/ — the files baked into the image.
 
-# Emacs config: private server + load the project (see files/init.el).
-COPY --chown=dev:dev files/init.el /home/dev/.emacs.d/init.el
+# The Emacs bits a box needs — private server, load the project. Not an
+# init.el: with --emacsd the user's own config lands at that path, so
+# this is loaded after it with -l (see files/container-init.el).
+COPY files/container-init.el /etc/maf/container-init.el
 
 # Agent config, pre-seeded so `claude` starts straight into a session:
 # no onboarding, no trust prompt, no per-tool permission prompts (the

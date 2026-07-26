@@ -12,6 +12,7 @@ git.
 
 ```sh
 box <feature>          start a box, making its worktree and branch if new
+box --bare <feature>   the same, with stock Emacs instead of my config
 box --close <feature>  done and merged: container, worktree, branch
 box -d <feature>       discard it instead: the same three, work and all
 box                    list the worktrees you can name
@@ -109,7 +110,7 @@ hand if you want a box shaped differently:
 sudo docker run -it --name maf-my-feature \
   -v ~/lab/emacs-maf/.worktrees/my-feature:/work \
   -v ~/lab/emacs-maf/.git:/home/david/lab/emacs-maf/.git \
-  -v ~/.claude/.credentials.json:/seed/.credentials.json:ro \
+  -v ~/.claude/.credentials.json:/seed/credentials.json:ro \
   -v ~/.gitconfig:/home/dev/.gitconfig:ro \
   -v ~/conf/claude/CLAUDE.md:/home/dev/.claude/CLAUDE.md:ro \
   -v ~/conf/claude/keybindings.json:/home/dev/.claude/keybindings.json:ro \
@@ -117,7 +118,7 @@ sudo docker run -it --name maf-my-feature \
   -v ~/conf/agents/AGENTS.md:/home/dev/.codex/AGENTS.md:ro \
   -v ~/conf/codex/config.toml:/home/dev/.codex/config.toml:ro \
   -v ~/conf/tmux/tmux.conf:/home/dev/.config/tmux/tmux.conf:ro \
-  -v ~/.emacs.d/my/calc:/home/dev/.emacs.d/my/calc:ro \
+  -v ~/.emacs.d:/seed/emacs.d:ro \
   maf
 ```
 
@@ -130,7 +131,7 @@ sudo docker run -it --name maf-my-feature \
 | `-v ...credentials.json:/seed/...:ro` | agent auth; copied in at startup, read-only so the container can't touch your host token |
 | `-v ~/.gitconfig:...:ro` | your name/email, so commits from inside are attributed |
 | `-v ~/conf/claude/...:ro` (×6) | your agent config, each file where its agent reads it — on the host these paths are symlinks into `~/conf`, a box takes the real files. `AGENTS.md` appears twice: for codex, and at the path `CLAUDE.md` imports. Any that is missing is skipped; `$MAF_CONF` names another `conf` |
-| `-v ~/.emacs.d/my/calc:...:ro` | the legacy Calc config the `port` skill reads, at the path that skill names — without it, porting has nothing to port from |
+| `-v ~/.emacs.d:/seed/emacs.d:ro` | my Emacs config, copied in at startup by the entrypoint rather than mounted, since Emacs writes into it. `--bare` swaps this for `-v ~/.emacs.d/my/calc:...:ro` alone — the legacy Calc config the `port` skill reads, at the path that skill names |
 | (no `-e MAF_SERVER_NAME`) | the image names the Emacs server `#emacs`, the name the `emacs` skill uses when given none — a container holds one instance, so the skills' examples work in a box unchanged |
 
 ## Inside the box
@@ -172,8 +173,15 @@ the repo's `CLAUDE.md` keys off.
 - `LANG=C.UTF-8` is set in the image. Without a locale tmux starts its
   client in ASCII mode and draws `_` for every glyph it cannot emit,
   which shreds the agent's boxes and gutters.
-- No personal Emacs config in the box — no `posframe`, so `maf-preview`
-  is inert, and `maf-hl-verify`'s screenshot check reports `skipped`.
+- A box runs my Emacs config: `~/.emacs.d` is copied in at startup,
+  packages and all, minus `eln-cache` (keyed to an Emacs version and ABI
+  that are not the box's) and `.git`. Emacs writes to the copy, so
+  nothing a box does reaches the host config. `box --bare` skips it for
+  stock Emacs plus the legacy Calc config alone.
+- Emacs in a box has a tmux pane, not a frame, so `display-graphic-p` is
+  nil: child frames cannot show, `maf-preview` is inert even though
+  posframe is installed, and `maf-hl-verify`'s screenshot check reports
+  `skipped`.
 - All boxes share this repo's `.git`; isolation is per-worktree, not
   per-repository.
 - Worktrees live in `.worktrees/`, git-ignored, so they never show up as
