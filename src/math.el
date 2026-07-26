@@ -14,10 +14,13 @@
 (declare-function calcFunc-mul "calc-arith")
 (declare-function calcFunc-round "calc-arith")
 (declare-function math-abs "calc-arith")
+(declare-function math-floor "calc-misc")
+(declare-function math-from-hms "calc-forms")
 (declare-function math-looks-negp "calc-misc")
 (declare-function math-negp "calc-misc")
 (declare-function math-posp "calc-misc")
 (declare-function math-zerop "calc-misc")
+(declare-function math-simplify "calc-alg")
 (declare-function math-polynomial-base "calc-alg")
 (declare-function math-polynomial-p "calc-alg")
 (declare-function math-is-polynomial "calc-alg")
@@ -74,6 +77,74 @@ intervals, dates), this walks whole formulas: 1.5 x + 2 contains one."
       (and (consp expr)
            (cl-some #'maf--contains-float-p (cdr expr))
            t)))
+
+(defun maf--contains-pi-p (expr)
+  "Return t if EXPR contains pi as a symbolic variable anywhere.
+Only the unevaluated constant counts: 5 pi / 4 contains one, its float
+value 3.92699081699 does not."
+  (or (equal expr '(var pi var-pi))
+      (and (consp expr)
+           (cl-some #'maf--contains-pi-p (cdr expr))
+           t)))
+
+(defun maf--ref-angle (x)
+  "Return the reference angle of the angle X, or nil if it has no quadrant.
+The reference angle is X's acute angle to the horizontal axis: X wraps
+into one turn, then folds into quadrant I — 210 gives 30, and -45 gives
+45.
+
+X is measured against a half turn of pi when it reads as radians (it
+contains pi symbolically, or `calc-angle-mode' is rad) and 180
+otherwise; an hms form is degrees by construction and takes 180 either
+way. The quadrant is decided on a numeric evaluation of X in half
+turns, but the folding subtractions run on X itself, so exactness
+survives: 100.7 gives 79.3 rather than a rounded 79.3000000001, and
+5 pi / 4 gives pi / 4 rather than a float.
+
+Nil comes back when that numeric evaluation is not a real number — a
+free variable, a complex number, an interval — since nothing fixes
+which quadrant such an X lies in. This is the transformation behind
+`mafcmd-ref-angle'; to change it, change this function."
+  (let* ((hms (eq (car-safe x) 'hms))
+         ;; An hms form is degrees by construction, and calc's own hms
+         ;; arithmetic is exact where a detour through a degree float
+         ;; drifts (20@ 30' 15" comes back a millionth of a second off),
+         ;; so the folding runs on the hms form — with the angle mode
+         ;; pinned to deg, or the plain 180 it meets would be read as
+         ;; radians and converted.
+         (calc-angle-mode (if hms 'deg calc-angle-mode))
+         (half-turn (if (or (eq calc-angle-mode 'rad) (maf--contains-pi-p x))
+                        '(var pi var-pi)
+                      180))
+         ;; Exact ratios must not detour through floats: without this,
+         ;; 300 / 180 floats and 300 folds to 59.9999999994.
+         (calc-prefer-frac t))
+    ;; Half turns of E as a plain number. Dividing an hms form yields a
+    ;; smaller hms rather than a ratio, so those convert to degrees for
+    ;; the measurement only.
+    (cl-flet ((turns (e)
+                (let ((calc-symbolic-mode nil))
+                  (math-evaluate-expr
+                   (math-div (if hms (math-from-hms e 'deg) e) half-turn)))))
+      (let ((whole (turns x)))
+        (when (Math-realp whole)
+          (let* ((full (math-mul 2 half-turn))
+                 ;; Wrap into [0, 2) half turns. Flooring the signed
+                 ;; count is what turns a negative angle positive: -45
+                 ;; wraps to 315, whose reference angle is 45.
+                 (turn (math-floor (math-div whole 2)))
+                 (r (if (math-zerop turn) x (math-sub x (math-mul turn full))))
+                 (h (turns r)))
+            ;; Quadrant boundaries belong to the quadrant above them, as
+            ;; they must: at 90 and 270 the reference angle is 90, and
+            ;; at 180 it is 0. The fold is simplified because a pi
+            ;; subtraction does not collect on its own — 5 pi / 4 - pi
+            ;; stays written out until it does.
+            (math-simplify
+             (cond ((not (math-lessp h '(frac 3 2))) (math-sub full r))
+                   ((not (math-lessp h 1)) (math-sub r half-turn))
+                   ((not (math-lessp h '(frac 1 2))) (math-sub half-turn r))
+                   (t r)))))))))
 
 (defun maf--terms-gcd (terms)
   "Return the GCD of TERMS via `calcFunc-pgcd', iterated to a fixpoint.
