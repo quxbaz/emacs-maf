@@ -32,8 +32,14 @@
   ;; Starting layout: maf.org on the left, calc on the right. Deferred
   ;; on a timer so late startup display logic cannot clobber it; loaded
   ;; interactively, the timer fires right away.
+  ;;
+  ;; In a dev container Emacs has a tmux pane rather than a frame, too
+  ;; narrow to split usefully, so there it is calc alone. The docs are
+  ;; still open in background buffers either way.
   (run-at-time 0 nil
                (lambda ()
                  (delete-other-windows)
-                 (find-file (expand-file-name "docs/maf.org" root))
-                 (set-window-buffer (split-window-right) "*Calculator*"))))
+                 (if (getenv "MAF_CONTAINER")
+                     (switch-to-buffer "*Calculator*")
+                   (find-file (expand-file-name "docs/maf.org" root))
+                   (set-window-buffer (split-window-right) "*Calculator*")))))
