@@ -25,10 +25,10 @@
 
 * Todo
 # NOW
-** TODO Create new command based on calc-unpack
+** TODO /cmd new command based on calc-unpack
    - Set default binding to `M-u`
    - Make is contextual
-** TODO Create new command based on calc-remove-equal
+** TODO /cmd new command based on calc-remove-equal
    - Set default binding to `M-.`
    - New command should be contextual. I suppose subexpr targeting is
      meaningless here, right?
