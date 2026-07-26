@@ -22,6 +22,10 @@ if [ -f /work/project-init.el ] && ! tmux has-session -t emacs 2>/dev/null; then
     # Emacs on the right with the larger share.
     tmux split-window -h -b -l 40% -t emacs:0 -c /work
     tmux select-pane -t emacs:0.0
+    # Which box is this? The session is called emacs in every one of
+    # them, so the status line says the hostname instead — box sets that
+    # to the feature name.
+    tmux set -g status-left '[#h] '
 fi
 
 exec "$@"

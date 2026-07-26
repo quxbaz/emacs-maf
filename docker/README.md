@@ -165,6 +165,10 @@ the repo's `CLAUDE.md` keys off.
   container's copy, and is lost when it exits. Re-seeded from the host
   file on every start. To run a box on a different account, mount that
   account's credentials file instead.
+- Which box is this? The feature is the container's hostname, so it is
+  in the shell prompt (`dev@my-feature:/work$`) and at both ends of
+  tmux's status bar — the session is called `emacs` in every box, so the
+  status line shows the hostname instead.
 - `LANG=C.UTF-8` is set in the image. Without a locale tmux starts its
   client in ASCII mode and draws `_` for every glyph it cannot emit,
   which shreds the agent's boxes and gutters.

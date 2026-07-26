@@ -278,6 +278,7 @@ case $state in
         # path* — a worktree's .git file names that path absolutely, so
         # git inside the container only resolves if it matches exactly.
         exec $sudo docker run -it "${detach[@]}" --name "maf-$box" \
+             --hostname "$box" \
              -v "$tree:/work" \
              -v "$repo/.git:$repo/.git" \
              -v "$HOME/.claude/.credentials.json:/seed/.credentials.json:ro" \
