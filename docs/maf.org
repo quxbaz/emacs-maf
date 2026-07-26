@@ -25,14 +25,14 @@
 
 * Todo
 # NOW
-** TODO /cmd new command based on calc-unpack
+** IN-PROGRESS /cmd new command based on calc-unpack
    - Set default binding to `M-u`
    - Make is contextual
-** TODO /cmd new command based on calc-remove-equal
+** IN-PROGRESS /cmd new command based on calc-remove-equal
    - Set default binding to `M-.`
    - New command should be contextual. I suppose subexpr targeting is
      meaningless here, right?
-** TODO semicolon feature
+** IN-PROGRESS semicolon feature
    - Bind ; to :
    - The point of this is to make fractions a bit more convenient to enter.
    - Fractions are used so frequently that's there's a worthy payoff to making
@@ -42,7 +42,7 @@
      - maf-edit mode
    - Use old source material my/calc/ as reference, but don't assume everything
      is ok as is.
-** TODO | cmd should always create vector
+** IN-PROGRESS | cmd should always create vector
 ** IN-PROGRESS formulas module
    - [X] categories
    - [X] docs per formula
