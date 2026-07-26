@@ -32,10 +32,13 @@
    - Set default binding to `M-.`
    - New command should be contextual. I suppose subexpr targeting is
      meaningless here, right?
-** TODO Bind/forward ; to :
-   The point of this is to make fractions a bit more convenient to enter.
-   Fractions are used so frequently that's there's a worthy payoff to making it
-   a single-key without any modifier.
+** TODO Bind ; to :
+   - The point of this is to make fractions a bit more convenient to enter.
+   - Fractions are used so frequently that's there's a worthy payoff to making
+     it a single-key without any modifier.
+   - This should work in:
+     - digit entry minibuffer
+     - maf-edit mode
 ** TODO | cmd should always create vector
 ** IN-PROGRESS formulas module
    - [X] categories
