@@ -109,7 +109,9 @@
    - [ ] my/calc-ref-angle (M-l) — reference angle (+ my/math-ref-angle helper)
    - [ ] my/calc-supplement / my/calc-complement (M-s / M-c) — 180−x / 90−x, pi-aware
 ** Polynomials
-   - [ ] my/calc-poly-lcm (a L) — LCM of two polynomials by factorization
+   - [X] my/calc-poly-lcm (a L) — LCM of two polynomials by factorization
+     (mafcmd-poly-lcm on a L; contextual binary, maf--poly-lcm in math.el
+     holds the factor merge and its pgcd minimality check)
    - [ ] Polynomial term ordering — math-normalize advice keeping sums in descending degree
 ** Vectors
    - [ ] my/calc-coordinate-toggle (M-k) — cycle [1 2] → [x=1 y=2] → [h=1 k=2] → [p=1 q=2];

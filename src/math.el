@@ -11,6 +11,12 @@
 ;; Defined in lazily-loaded calc modules; calc-ext's autoload registry
 ;; resolves them at runtime, but the byte compiler needs declarations.
 (declare-function calcFunc-pgcd "calc-poly")
+(declare-function calcFunc-pdivrem "calc-poly")
+(declare-function calcFunc-expand "calc-poly")
+(declare-function calcFunc-factor "calc-poly")
+(declare-function math-simplify "calc-alg")
+(declare-function calcFunc-gcd "calc-comb")
+(declare-function calcFunc-lcm "calc-comb")
 (declare-function calcFunc-mul "calc-arith")
 (declare-function calcFunc-round "calc-arith")
 (declare-function math-abs "calc-arith")
@@ -23,6 +29,7 @@
 (declare-function math-is-polynomial "calc-alg")
 (declare-function math-const-var "calc-ext")
 (declare-function math-lessp "calc-ext")
+(declare-function math-equal "calc-ext")
 (declare-function math-evaluate-expr "calc-ext")
 
 ;; Polynomial-recognizer knobs, defvar'd in lazily-loaded calc-ext;
@@ -88,6 +95,235 @@ the true common factor."
              until (equal g f)
              do (setq f g))
     f))
+
+(defun maf--term-coefficient (term)
+  "Return TERM's numeric coefficient, or 1 when it carries none.
+TERM is one additive term of a normalized formula, where calc puts the
+numeric factor first: 6 x gives 6, -12 gives -12, x y gives 1."
+  (cond ((Math-realp term) term)
+        ((and (eq (car-safe term) '*) (Math-realp (nth 1 term))) (nth 1 term))
+        (t 1)))
+
+(defun maf--poly-content (expr)
+  "Return the content of EXPR: the GCD of its terms' numeric coefficients.
+Always positive, and exact — rational coefficients give a rational
+content, so 1:2 x + 1:3 has content 1:6 and dividing by it leaves
+3 x + 2. A float coefficient has no exact content, so an expression
+carrying one gives 1, as does one whose terms are coprime. Calc's own
+`calcFunc-factor' leaves content in place (12 x + 12 factors to
+itself), which is why `maf--poly-factorization' takes it out first."
+  (let ((coeffs (mapcar (lambda (term)
+                          (math-abs (maf--term-coefficient term)))
+                        (mapcar #'math-normalize (maf--sum-terms expr)))))
+    (if (and coeffs (cl-every #'Math-ratp coeffs))
+        (let ((c (cl-reduce #'calcFunc-gcd coeffs)))
+          ;; An all-zero sum gcds to 0; nothing to take out.
+          (if (math-zerop c) 1 c))
+      1)))
+
+(defun maf--poly-leading-negp (expr)
+  "Return t when EXPR's leading coefficient is negative.
+Leading means the highest power of the variable calc reads EXPR as a
+polynomial in, so 2 - x is negative-leading while x - 2 is not —
+calc's own term order alone cannot tell them apart. An expression that
+is no polynomial falls back to the sign of its first additive term.
+Used to orient a factor before comparing it with another: a factor and
+its negation are the same factor."
+  (let* (;; Pin the recognizer to plain integer powers, as
+         ;; `maf--quadratic-coeffs' does: these are its defaults, but
+         ;; calc's own callers rebind them and it setqs some as it works.
+         (math-poly-base-variable nil)
+         (math-poly-neg-powers nil)
+         (math-poly-mult-powers 1)
+         (math-poly-frac-powers nil)
+         (base (ignore-errors (math-polynomial-base expr)))
+         (coeffs (and base (ignore-errors (math-is-polynomial expr base)))))
+    (math-looks-negp (if coeffs
+                         (car (last coeffs))
+                       (car (maf--sum-terms expr))))))
+
+(defun maf--poly-factorization (expr)
+  "Return EXPR as a flat list of (BASE . EXPONENT) factors.
+The factors multiply back to EXPR, with numeric bases left as numbers
+and every exponent a nonzero integer. Products split, integer powers
+distribute their exponent over the base's own factors — (x + 1)^2
+gives x + 1 twice over, not the square as one opaque factor — a
+quotient inverts its divisor's exponents, and a negation contributes
+-1. A sum has its content taken out as a numeric factor and
+`calcFunc-factor' applied to what remains, so 12 x + 12 gives 12 and
+x + 1. Whatever resists — an irreducible sum, a variable, a symbolic
+power — comes back as one factor with exponent 1."
+  (cond
+   ((Math-realp expr) (list (cons expr 1)))
+   ((eq (car-safe expr) '*)
+    (append (maf--poly-factorization (nth 1 expr))
+            (maf--poly-factorization (nth 2 expr))))
+   ((eq (car-safe expr) '/)
+    (append (maf--poly-factorization (nth 1 expr))
+            (mapcar (lambda (f) (cons (car f) (- (cdr f))))
+                    (maf--poly-factorization (nth 2 expr)))))
+   ((eq (car-safe expr) 'neg)
+    (cons (cons -1 1) (maf--poly-factorization (nth 1 expr))))
+   ((and (eq (car-safe expr) '^)
+         (integerp (nth 2 expr))
+         (/= (nth 2 expr) 0))
+    (let ((e (nth 2 expr)))
+      (mapcar (lambda (f) (cons (car f) (* (cdr f) e)))
+              (maf--poly-factorization (nth 1 expr)))))
+   ((memq (car-safe expr) '(+ -))
+    (let* ((c (maf--poly-content expr))
+           (prim (if (equal c 1) expr (math-div expr c)))
+           ;; Factoring can signal on shapes calc's polynomial code
+           ;; rejects (float or symbolic coefficients); the primitive
+           ;; part then stands as its own factor.
+           (factored (condition-case nil (calcFunc-factor prim) (error prim)))
+           ;; Recurse only into a shape factoring actually opened up:
+           ;; a sum that came back a sum is irreducible, and recursing
+           ;; on it would factor it again forever.
+           (parts (if (memq (car-safe factored) '(* / ^ neg))
+                      (maf--poly-factorization factored)
+                    (list (cons factored 1)))))
+      (if (equal c 1) parts (cons (cons c 1) parts))))
+   (t (list (cons expr 1)))))
+
+(defun maf--poly-lcm-merge (a b)
+  "Return a common multiple of A and B, factored: `maf--poly-lcm's merge.
+Both operands are factored by `maf--poly-factorization', and the
+result keeps every distinct factor at the higher of its two exponents,
+with the LCM of the two numeric coefficients out front. Factors that
+differ only in sign count as one — 2 - x is x - 2 with the sign moved
+into the coefficient — so x^2 - 4 and 4 - x^2 share their factors
+instead of stacking both orientations. The coefficient always comes
+out positive, as calc's own lcm does; float coefficients, which have
+no lcm, multiply instead. A zero operand gives 0.
+
+The result is built as a literal product under `calc-simplify-mode'
+`none', so committing it keeps the factored form rather than
+distributing the coefficient back in. Merging is only as good as
+calc's factoring, so `maf--poly-lcm' checks the result for minimality
+before returning it."
+  (let ((calc-simplify-mode nil)
+        (calc-prefer-frac t))
+    (if (or (math-zerop a) (math-zerop b))
+        0
+      (let (table)                      ; rows of (BASE EXP-A EXP-B)
+        (cl-labels
+            ((absorb (expr slot)
+               ;; Fold EXPR's factors into TABLE at SLOT, returning the
+               ;; numeric coefficient they carry.
+               (let ((coeff 1))
+                 (dolist (factor (maf--poly-factorization expr) coeff)
+                   (let ((base (car factor))
+                         (e (cdr factor)))
+                     (if (Math-realp base)
+                         (setq coeff (math-mul coeff (math-pow base e)))
+                       ;; Simplify the factor into calc's canonical
+                       ;; shape — its terms ordered, its arithmetic
+                       ;; folded — so two spellings of one factor match
+                       ;; structurally below.
+                       (setq base (math-simplify base))
+                       ;; Then orient it positive-leading, the sign
+                       ;; moving into the coefficient, so 2 - x and
+                       ;; x - 2 are one factor and the LCM comes out
+                       ;; reading forwards.
+                       (when (maf--poly-leading-negp base)
+                         (setq base (math-simplify (math-neg base)))
+                         (setq coeff (math-mul coeff (math-pow -1 e))))
+                       (let ((row (cl-find base table
+                                           :key #'car :test #'math-equal)))
+                         (unless row
+                           ;; Recorded in the opposite orientation: reuse
+                           ;; that row and move the sign into the
+                           ;; coefficient, so (2 - x) folds onto (x - 2).
+                           (setq row (cl-find (math-neg base) table
+                                              :key #'car :test #'math-equal))
+                           (when row
+                             (setq coeff (math-mul coeff (math-pow -1 e)))))
+                         (unless row
+                           (setq row (list base 0 0))
+                           (setq table (nconc table (list row))))
+                         (cl-incf (nth slot row) e))))))))
+          (let* ((ca (absorb a 1))
+                 (cb (absorb b 2))
+                 (coeff (math-abs (if (and (Math-ratp ca) (Math-ratp cb))
+                                      (calcFunc-lcm ca cb)
+                                    (math-mul ca cb))))
+                 (factors
+                  (cl-loop for row in table
+                           for e = (max (nth 1 row) (nth 2 row))
+                           unless (zerop e)
+                           collect (if (= e 1) (car row) (list '^ (car row) e))))
+                 ;; Build the product literally; commit pushes
+                 ;; structurally, so the factored form survives without
+                 ;; calc-normalize distributing the coefficient. Nest it
+                 ;; to the right, as calc's own canonical products are,
+                 ;; so it prints as one flat juxtaposition rather than a
+                 ;; left-leaning pile of parentheses.
+                 (calc-simplify-mode 'none))
+            (if (null factors)
+                coeff
+              (cl-reduce #'calcFunc-mul
+                         (if (equal coeff 1) factors (cons coeff factors))
+                         :from-end t))))))))
+
+(defun maf--poly-exact-quotient (a b)
+  "Return A / B when B divides A exactly, else nil.
+The division is polynomial (calc's `calcFunc-pdivrem'), so the
+quotient comes back a polynomial and a remainder disqualifies it.
+Calc's rational simplifier is not usable here: `calcFunc-nrat' spins
+forever on some of the shapes involved, ((-6 x - 6) (4 x + 4)) over
+2 x + 2 among them."
+  (let ((calc-simplify-mode nil)
+        (calc-prefer-frac t))
+    (ignore-errors
+      (let ((dr (calcFunc-pdivrem (math-simplify (calcFunc-expand a)) b)))
+        (and (eq (car-safe dr) 'vec)
+             (math-zerop (math-simplify (nth 2 dr)))
+             (math-simplify (nth 1 dr)))))))
+
+(defun maf--poly-lcm-by-gcd (a b)
+  "Return A B / pgcd(A, B), expanded, or nil when calc cannot compute it.
+The textbook LCM, built from calc's own polynomial GCD. It is exact in
+its factors but expanded, and its content can overshoot where pgcd's
+does — calc's pgcd(10 x y, 15 x z) is 10 x, not 5 x — so
+`maf--poly-lcm' uses it as a yardstick for the merged LCM rather than
+as the answer. Nil when pgcd declines the operands (float
+coefficients: \"Coefficients must be rational\") or the GCD is zero."
+  (ignore-errors
+    (let ((g (let ((calc-simplify-mode nil) (calc-prefer-frac t))
+               (calcFunc-pgcd a b))))
+      (and (not (math-zerop g))
+           (maf--poly-exact-quotient (calcFunc-mul a b) g)))))
+
+(defun maf--poly-lcm (a b)
+  "Return the least common multiple of the polynomials A and B, factored.
+The LCM is merged from the two factorizations by `maf--poly-lcm-merge'
+— see there for how the factors, signs, and coefficient come out.
+
+That merge is only as good as calc's factoring, which does not always
+split a polynomial completely: x^10 - 1 factors to
+(x + 1) (x - 1) (x^8 + x^6 + x^4 + x^2 + 1), burying the
+x^4 + x^3 + x^2 + x + 1 that x^5 - 1 shares inside the last term, and
+the merge would then carry that factor twice. So the merged result is
+divided by `maf--poly-lcm-by-gcd', the LCM calc's polynomial GCD
+gives: anything but a number left over means the merge overshot, and
+the GCD-derived LCM is factored and returned in its place. Where the
+comparison cannot be made — float coefficients, which pgcd rejects —
+the merged result stands. A zero operand gives 0.
+
+This is the transformation behind `mafcmd-poly-lcm'; to change it,
+change this function."
+  (let ((merged (maf--poly-lcm-merge a b)))
+    (or (and (not (math-zerop merged))
+             (let* ((least (maf--poly-lcm-by-gcd a b))
+                    (excess (and least
+                                 (not (math-zerop least))
+                                 (maf--poly-exact-quotient merged least))))
+               ;; Present the fallback through the same merge, so it
+               ;; comes back factored like any other result.
+               (and excess (not (Math-realp excess))
+                    (maf--poly-lcm-merge least 1))))
+        merged)))
 
 (defun maf--float-fracs (expr)
   "Float the fractions in EXPR, leaving integers exact.
