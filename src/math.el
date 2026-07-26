@@ -32,6 +32,8 @@
 (declare-function math-polynomial-p "calc-alg")
 (declare-function math-is-polynomial "calc-alg")
 (declare-function math-const-var "calc-ext")
+(declare-function math-vectorp "calc-ext")
+(declare-function math-matrixp "calc-ext")
 (declare-function math-lessp "calc-ext")
 (declare-function math-equal "calc-ext")
 (declare-function math-evaluate-expr "calc-ext")
@@ -745,6 +747,31 @@ components than the target set has names."
                                        (nth 2 item)
                                      item)))
                            names items)))))))
+
+(defun maf-vconcat (a b)
+  "Concatenate A and B into a vector.
+Calc's own `calcFunc-vconcat' (the | operator) only builds the vector
+when it can prove both operands are objects, vectors, or declared
+scalars; otherwise it leaves `a | b' symbolic, so x | y, 1 | x and
+[1, 2] | x all stay unconcatenated. maf commits to the vector reading
+instead — the operator's whole point here is to build a vector — and so
+gives [x, y], [1, x] and [1, 2, x].
+
+Vector operands still splice rather than nest, and a plain vector joined
+with a matrix becomes one row of it; those are `math-concat''s rules,
+reproduced here without its scalar test."
+  (append (if (and (math-vectorp a)
+                   (or (math-matrixp a) (not (math-matrixp b))))
+              a
+            (list 'vec a))
+          (if (and (math-vectorp b)
+                   (or (math-matrixp b) (not (math-matrixp a))))
+              (cdr b)
+            (list b))))
+
+(defun maf-vconcatrev (a b)
+  "Concatenate B and A into a vector, the reverse of `maf-vconcat'."
+  (maf-vconcat b a))
 
 (defun maf--flip-relation-op (op)
   "Return relation OP with its direction reversed: lt <-> gt, leq <-> geq.

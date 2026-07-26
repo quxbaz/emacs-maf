@@ -34,6 +34,7 @@
 ;; entry.
 
 (require 'maf-defcmd)
+(require 'maf-math "math")   ; maf-vconcat, applied by the vconcat rows below
 
 ;; Also defvar'd in maf.el next to the minor mode; whichever file loads first
 ;; creates the map and the other defvar is a no-op. Declared here too so this
@@ -102,7 +103,11 @@ are set, making the I and H prefixes route to the variant contextually.
   (mul binary calcFunc-mul "*")
   (div binary calcFunc-div "/")
   (pow binary calcFunc-pow "^" :inv nroot)
-  (vconcat binary calcFunc-vconcat "|" :inv vconcatrev :hyp append :invhyp appendrev)
+  ;; vconcat/vconcatrev use maf's own concatenation rather than
+  ;; calcFunc-vconcat: | here always builds a vector, where calc leaves
+  ;; it symbolic whenever an operand is not provably scalar (see
+  ;; `maf-vconcat').
+  (vconcat binary maf-vconcat "|" :inv vconcatrev :hyp append :invhyp appendrev)
   (mod binary calcFunc-mod "%")
   (idiv binary calcFunc-idiv "\\")
   (fact unary calcFunc-fact "!")
@@ -131,7 +136,7 @@ are set, making the I and H prefixes route to the variant contextually.
   (arctan unary calcFunc-arctan)
   (alog binary calcFunc-alog)
   (nroot binary calcFunc-nroot)
-  (vconcatrev binary calcFunc-vconcatrev)
+  (vconcatrev binary maf-vconcatrev)
   (ffloor unary calcFunc-ffloor)
   (fround unary calcFunc-fround)
   (sinh unary calcFunc-sinh)
