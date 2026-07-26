@@ -37,6 +37,21 @@ symbols: +, -, *, /, ^, neg, or a calcFunc- name."
   :type '(alist :key-type symbol :value-type symbol)
   :group 'maf)
 
+(defcustom maf-coordinate-name-sets
+  '(((var x var-x) (var y var-y) (var z var-z) (var w var-w))
+    ((var h var-h) (var k var-k) (var l var-l) (var m var-m))
+    ((var p var-p) (var q var-q) (var r var-r) (var s var-s)))
+  "Coordinate name sets cycled by `mafcmd-coordinate-toggle'.
+Each element is an ordered list of calc variable nodes, one per
+dimension: the first names a vector's first component, the second its
+second, and so on. An unnamed vector takes the first set; a vector
+already named by one set advances to the next, wrapping around at the
+end. A vector with more components than the target set has names is
+refused rather than truncated, so adding a dimension means adding a
+name to every set."
+  :type '(repeat (repeat sexp))
+  :group 'maf)
+
 ;;; Modules (maf-module.el)
 
 (defcustom maf-modules '(maf-timeline maf-hl maf-edit maf-preview maf-formulas)

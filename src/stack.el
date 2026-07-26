@@ -1024,6 +1024,75 @@ moving home to the copy."
   (interactive)
   (maf-dup t))
 
+;;; Coordinates
+
+(defun maf--coordinate-form (expr)
+  "Return EXPR's next coordinate form, or nil when it has none.
+
+A vector advances to the next name set (`maf--coordinate-cycle'). An
+equation whose left side is an unknown function of one argument is a
+graph point, f(a) = b, and unfolds to the pair [a, b] — the entry point
+into the cycle for a value read off a graph. Any other relation cycles
+whichever of its sides are vectors and leaves the rest alone, so v =
+\[1, 2] names the right side in place."
+  (cond
+   ((eq (car-safe expr) 'vec)
+    (maf--coordinate-cycle expr))
+   ;; f(a) = b, f unknown. A known function (sin(2) = 0) is an equation
+   ;; about a value, not a point, so it falls through to the relation
+   ;; branch below.
+   ((and (eq (car-safe expr) 'calcFunc-eq)
+         (maf--unknown-fn-call-p (nth 1 expr) 1))
+    (list 'vec (nth 1 (nth 1 expr)) (nth 2 expr)))
+   ((maf--relation-p expr)
+    (let ((sides (mapcar (lambda (side)
+                           (if (eq (car-safe side) 'vec)
+                               (maf--coordinate-cycle side)
+                             side))
+                         (cdr expr))))
+      ;; Nil from a side means that vector could not be cycled; with no
+      ;; vector side at all there is nothing to name.
+      (and (cl-some (lambda (side) (eq (car-safe side) 'vec)) (cdr expr))
+           (not (memq nil sides))
+           (cons (car expr) sides))))))
+
+(maf-defcmd mafcmd-coordinate-toggle (expr _arg commit)
+  "Cycle the resolved vector through the coordinate name sets.
+
+  [2, 4]  =>  [x = 2, y = 4]
+
+A plain vector is named x, y, z, w; naming again advances to h, k, l, m,
+then p, q, r, s, then back to x, y, z, w — so repeated presses walk the
+naming conventions for a point, a vertex, and a second point without
+disturbing the values. A vector named with anything else, or named only
+in part, re-enters the cycle at x, y, z, w. The sets are
+`maf-coordinate-name-sets'.
+
+An equation f(a) = b whose function is undefined is a graph point and
+unfolds to [a, b], which the next press names. Any other relation names
+its vector sides in place. A vector with more components than the target
+set has names is refused rather than silently truncated, and so is an
+expression with no coordinate reading.
+
+Point picks the target as usual: a vector under point, the vector entry
+at point, the top entry at home.
+
+  [1, 2, 3]          =>  [x = 1, y = 2, z = 3]
+  [x = 1, y = 2]     =>  [h = 1, k = 2]
+  [p = 1, q = 2]     =>  [x = 1, y = 2]
+  [a = 1, b = 2]     =>  [x = 1, y = 2]
+  f(2) = 0           =>  [2, 0]
+  v = [1, 2]         =>  v = [x = 1, y = 2]"
+  :arity unary
+  :prefix "crd"
+  ;; The graph-point case consumes the whole equation, and the relation
+  ;; branch handles the per-side naming that mapping would otherwise do.
+  :map -1
+  (let ((form (maf--coordinate-form expr)))
+    (unless form
+      (user-error "No coordinate form for this expression"))
+    (commit form)))
+
 ;;; Solving
 
 (defun maf--solve-solved-for (expr)
@@ -1236,12 +1305,7 @@ their boundary.  A bare expression is returned unchanged."
   (if (maf--relation-p expr)
       (let ((lhs (nth 1 expr)) (rhs (nth 2 expr)))
         (if (and (eq (car expr) 'calcFunc-eq)
-                 (consp lhs)
-                 (= (length lhs) 2)
-                 (let ((fn (car-safe lhs)))
-                   (and (symbolp fn)
-                        (string-prefix-p "calcFunc-" (symbol-name fn))
-                        (not (fboundp fn)))))
+                 (maf--unknown-fn-call-p lhs 1))
             rhs
           (calcFunc-sub lhs rhs)))
     expr))
