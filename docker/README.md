@@ -8,6 +8,20 @@ The code is *not* in the image. A worktree is bind-mounted at `/work`,
 so everything the agent writes lands on the host and merging is plain
 git.
 
+## Commands
+
+```sh
+box <feature>          start a box, or come back to one already made
+box -b <feature>       make the worktree and branch first, then start
+box --close <feature>  done and merged: container, worktree, branch
+box                    list the worktrees you can name
+box --names            those names alone, for completion
+box --help             usage
+. ./dev.sh             put box on PATH with tab completion
+```
+
+Spelled `docker/box` until `dev.sh` is sourced.
+
 ## Quick start
 
 1. Build the image (once per machine):
