@@ -14,6 +14,7 @@ git.
 box <feature>          start a box, or come back to one already made
 box -b <feature>       make the worktree and branch first, then start
 box --close <feature>  done and merged: container, worktree, branch
+box -d <feature>       discard it instead: the same three, work and all
 box                    list the worktrees you can name
 box --names            those names alone, for completion
 box --help             usage
@@ -89,12 +90,19 @@ Spelled `docker/box` until `dev.sh` is sourced.
    `--close` reports each of the three, and refuses before touching
    anything if the branch is not merged, the worktree holds changes, or
    you are standing in it. What is already gone counts as done, so a
-   half-cleaned feature can be finished off. By hand it is:
+   half-cleaned feature can be finished off.
+
+   `docker/box -d my-feature` is the same three steps for work you are
+   throwing away: it forces past uncommitted changes and an unmerged
+   branch, so nothing survives but the reflog. By hand:
 
    ```sh
    sudo docker rm -f maf-my-feature
    git worktree remove .worktrees/my-feature && git branch -d my-feature
    ```
+
+   Discarding by hand is the same with `--force` on the worktree remove
+   and `-D` on the branch.
 
 ## The run command, flag by flag
 
@@ -123,7 +131,7 @@ sudo docker run -it --name maf-my-feature \
 
 | flag | why |
 |---|---|
-| `-it` | interactive shell; drop it and add `-d` to run detached |
+| `-it` | interactive shell; drop it and add docker's own `-d` to run detached |
 | no `--rm` | the box outlives the shell, so you can come back to it; `docker rm maf-<feature>` when done |
 | `-v ...worktrees/my-feature:/work` | the worktree this box works on — the one line that assigns the branch |
 | `-v ...emacs-maf/.git:<same path>` | the main `.git`, at its *host path*: a worktree's `.git` file names that path absolutely, so git inside only resolves if the path matches exactly |

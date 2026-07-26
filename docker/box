@@ -18,6 +18,7 @@ usage() {
 usage: box <feature>          run a dev box on .worktrees/<feature>
        box -b <feature>       make that worktree and branch first
        box --close <feature>  close it: container, worktree, branch
+       box -d <feature>       discard it: the same three, work and all
        box                    list the worktrees you can name
        box --names            those names alone, for completion
        box --help             this text
@@ -27,7 +28,8 @@ yours to make: git worktree add .worktrees/<feature>
 
 --close is for a feature that has landed. Merge it first: it refuses a
 branch that is not merged, a worktree holding changes, or the tree you
-are standing in.
+are standing in. -d is for one you are throwing away, and forces past
+the first two — uncommitted changes go, unmerged commits go.
 
 Tab completion for bash, zsh and fish: docker/completions/
 EOF
@@ -70,6 +72,7 @@ names() {
 
 create=
 close=
+discard=
 case ${1-} in
     --names)
         names
@@ -93,6 +96,10 @@ case ${1-} in
         close=1
         shift
         ;;
+    -d)
+        discard=1
+        shift
+        ;;
     -*)
         echo "box: unknown option: $1" >&2
         usage >&2
@@ -100,8 +107,8 @@ case ${1-} in
         ;;
 esac
 
-if [ $# -eq 0 ] && { [ -n "$create" ] || [ -n "$close" ]; }; then
-    echo "box: ${create:+-b}${close:+--close} needs a feature name" >&2
+if [ $# -eq 0 ] && { [ -n "$create$close$discard" ]; }; then
+    echo "box: ${create:+-b}${close:+--close}${discard:+-d} needs a feature name" >&2
     usage >&2
     exit 1
 fi
@@ -130,8 +137,8 @@ if [ -n "$create" ]; then
     # a branch called `feature`. Existing branch or worktree => git says
     # so and we stop, which is what an explicit create should do.
     git worktree add -b "$feature" "$tree"
-elif [ -n "$close" ]; then
-    :   # --close tolerates a half-cleaned feature; see below
+elif [ -n "$close$discard" ]; then
+    :   # --close and -d tolerate a half-cleaned feature; see below
 elif [ ! -d "$tree" ]; then
     echo "box: no worktree at $tree" >&2
     echo "     git worktree add .worktrees/$feature" >&2
@@ -147,14 +154,19 @@ box=${feature//\//-}
 sudo=
 docker info >/dev/null 2>&1 || sudo=sudo
 
-# --close: close a feature that has landed — container, worktree and
-# branch. Everything refusable is refused up front: a step that balked
-# after the container was gone would have taken away the one place set up
-# to look into why. What is already gone counts as done, so a half-
-# cleaned feature can be finished off.
-if [ -n "$close" ]; then
+# --close and -d take the same three things away — container, worktree,
+# branch — and differ only in what they will step over. --close is for a
+# feature that has landed: an unmerged branch or a worktree holding
+# changes stops it, and stops it up front, since a step that balked after
+# the container was gone would have taken away the one place set up to
+# look into why. -d is for throwing the work out, so it forces past both.
+# Either way, what is already gone counts as done, so a half-finished
+# cleanup can be run again.
+if [ -n "$close" ] || [ -n "$discard" ]; then
     branch_exists() { git show-ref --quiet --verify "refs/heads/$feature"; }
 
+    # Both refuse this one: removing the worktree you are standing in
+    # leaves the shell in a directory that is no longer there.
     case $PWD/ in
         "$tree"/*)
             echo "box: you are standing in $tree" >&2
@@ -162,18 +174,29 @@ if [ -n "$close" ]; then
             ;;
     esac
 
-    if [ -d "$tree" ] && [ -n "$(git -C "$tree" status --porcelain)" ]; then
-        echo "box: $feature has uncommitted changes — commit or discard first" >&2
-        exit 1
+    if [ -n "$close" ]; then
+        if [ -d "$tree" ] && [ -n "$(git -C "$tree" status --porcelain)" ]; then
+            echo "box: $feature has uncommitted changes — commit them, or box -d to discard" >&2
+            exit 1
+        fi
+
+        if branch_exists && ! git merge-base --is-ancestor "$feature" HEAD; then
+            echo "box: $feature is not merged into $(git rev-parse --abbrev-ref HEAD)" >&2
+            echo "     merge it first, or box -d $feature to discard it" >&2
+            exit 1
+        fi
     fi
 
-    if branch_exists && ! git merge-base --is-ancestor "$feature" HEAD; then
-        echo "box: $feature is not merged into $(git rev-parse --abbrev-ref HEAD)" >&2
-        echo "     merge it first; git branch -D $feature to drop it unmerged" >&2
-        exit 1
+    if [ -n "$discard" ]; then
+        printf 'discarding %s\n' "$feature"
+        wt_force=(--force)      # a worktree with changes in it
+        br_delete=-D            # a branch whose commits went nowhere
+    else
+        printf 'closing %s\n' "$feature"
+        wt_force=()
+        br_delete=-d
     fi
 
-    printf 'closing %s\n' "$feature"
     status() { printf '  %-34s %s\n' "$1" "$2"; }
     rc=0
 
@@ -189,7 +212,7 @@ if [ -n "$close" ]; then
     fi
 
     if [ -d "$tree" ]; then
-        if err=$(git worktree remove "$tree" 2>&1); then
+        if err=$(git worktree remove "${wt_force[@]}" "$tree" 2>&1); then
             status ".worktrees/$feature" removed
         else
             status ".worktrees/$feature" "ERROR: $err"
@@ -200,7 +223,7 @@ if [ -n "$close" ]; then
     fi
 
     if branch_exists; then
-        if err=$(git branch -d "$feature" 2>&1); then
+        if err=$(git branch "$br_delete" "$feature" 2>&1); then
             status "branch $feature" deleted
         else
             status "branch $feature" "ERROR: $err"
