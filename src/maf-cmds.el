@@ -172,7 +172,9 @@ are set, making the I and H prefixes route to the variant contextually.
   (lnot unary calcFunc-lnot "a !" :map -1)
   (land binary calcFunc-land "a &" :map -1)
   (lor binary calcFunc-lor "a |" :map -1)
-  (rmeq binary calcFunc-rmeq "a ." :map -1)
+  ;; rmeq cedes calc's a . to mafcmd-remove-equal (bindings.el): the
+  ;; seed table lists it with two arguments, but calcFunc-rmeq takes
+  ;; one, and the whole-entry scope it needs has no table spelling.
   (subscr binary calcFunc-subscr "a _")
   (pdiv binary calcFunc-pdiv "a \\")
   (prem binary calcFunc-prem "a %")

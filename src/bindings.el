@@ -89,6 +89,11 @@
 ;; since the entry minibuffer is calc's own).
 (define-key maf-mode-map (kbd "=") #'mafcmd-equal-to)
 (define-key maf-mode-map (kbd "e") #'mafcmd-equal-to)
+;; The other direction: drop the relation, keep a side. M-. is unbound
+;; in calc itself; a . is calc's own key for the operation, which the
+;; table in maf-cmds.el no longer claims.
+(define-key maf-mode-map (kbd "M-.") #'mafcmd-remove-equal)
+(define-key maf-mode-map (kbd "a .") #'mafcmd-remove-equal)
 
 ;; The simplification toggle takes @ from the digit-entry starters
 ;; below; inside digit entry @ still means degrees, since the entry

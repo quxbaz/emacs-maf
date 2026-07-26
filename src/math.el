@@ -35,6 +35,7 @@
 (declare-function math-lessp "calc-ext")
 (declare-function math-equal "calc-ext")
 (declare-function math-evaluate-expr "calc-ext")
+(declare-function calcFunc-rmeq "calc-prog")
 
 ;; Polynomial-recognizer knobs, defvar'd in lazily-loaded calc-ext;
 ;; declared here so the let bindings below stay dynamic even when that
@@ -406,6 +407,24 @@ convert: 6 x + 8:3 becomes 6 x + 2.67."
    ((eq (car-safe expr) 'frac) (math-float expr))
    ((consp expr) (cons (car expr) (mapcar #'maf--float-fracs (cdr expr))))
    (t expr)))
+
+(defun maf--remove-relation (expr)
+  "Return the meaningful side of EXPR's relation, or EXPR when it has none.
+`calcFunc-rmeq' decides which side that is: the right-hand side of a
+relation (x = 5 gives 5, a < b gives b), except when the right side is
+a bare variable and the left an object, where the object side wins
+\(5 = x gives 5); the right side of an assignment and the left of an
+evalto. A vector maps element-wise, keeping its shape, so a list of
+equations gives a list of sides.
+
+Whatever rmeq cannot strip — anything that is not a relation — comes
+back unchanged rather than wrapped in an unevaluated rmeq() call."
+  (if (eq (car-safe expr) 'vec)
+      (cons 'vec (mapcar #'maf--remove-relation (cdr expr)))
+    (let ((removed (calcFunc-rmeq expr)))
+      ;; rmeq returns its own call unevaluated when there is nothing to
+      ;; remove; that is the no-op signal.
+      (if (eq (car-safe removed) 'calcFunc-rmeq) expr removed))))
 
 (defun maf--float-rationals (expr)
   "Make EXPR's exact rational arithmetic inexact.
