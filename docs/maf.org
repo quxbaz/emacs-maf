@@ -25,8 +25,13 @@
 
 * Todo
 # NOW
-** TODO Bind unwrap (M-u)
-** TODO Bind (M-.)
+** TODO Create new command based on calc-unpack
+   - Set default binding to `M-u`
+   - Make is contextual
+** TODO Create new command based on calc-remove-equal
+   - Set default binding to `M-.`
+   - New command should be contextual. I suppose subexpr targeting is
+     meaningless here, right?
 ** TODO Bind/forward ; to :
    The point of this is to make fractions a bit more convenient to enter.
    Fractions are used so frequently that's there's a worthy payoff to making it
