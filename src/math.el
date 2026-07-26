@@ -384,6 +384,19 @@ extend the identities, change this function."
             (setq best c)))
         (and best (funcall (cdr best)))))))
 
+(defun maf--unknown-fn-call-p (expr &optional nargs)
+  "Return t if EXPR is a call to a function Calc does not define.
+An unknown function is a `calcFunc-' head with no Lisp definition —
+what Calc leaves behind for f(x) when f has never been defined, as
+opposed to sin(x) or ln(x). With NARGS, also require exactly that many
+arguments."
+  (let ((fn (car-safe expr)))
+    (and fn (symbolp fn)
+         (string-prefix-p "calcFunc-" (symbol-name fn))
+         (not (fboundp fn))
+         (or (null nargs) (= (length (cdr expr)) nargs))
+         t)))
+
 (defun maf--flip-relation-op (op)
   "Return relation OP with its direction reversed: lt <-> gt, leq <-> geq.
 Symmetric operators (eq, neq) return unchanged."

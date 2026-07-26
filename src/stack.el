@@ -1175,12 +1175,7 @@ their boundary.  A bare expression is returned unchanged."
   (if (maf--relation-p expr)
       (let ((lhs (nth 1 expr)) (rhs (nth 2 expr)))
         (if (and (eq (car expr) 'calcFunc-eq)
-                 (consp lhs)
-                 (= (length lhs) 2)
-                 (let ((fn (car-safe lhs)))
-                   (and (symbolp fn)
-                        (string-prefix-p "calcFunc-" (symbol-name fn))
-                        (not (fboundp fn)))))
+                 (maf--unknown-fn-call-p lhs 1))
             rhs
           (calcFunc-sub lhs rhs)))
     expr))
