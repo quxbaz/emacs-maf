@@ -327,6 +327,33 @@ the top entry at home."
   :prefix "mod"
   (commit (math-mod expr 180)))
 
+(maf-defcmd mafcmd-ref-angle (expr _arg commit)
+  "Fold the resolved expression into its reference angle in quadrant I.
+
+  210  =>  30
+
+The angle wraps into one turn first, so anything reduces — past a full
+turn, negative, or both. Radians are recognized: an expression carrying
+pi, or any angle while `calc-angle-mode' is rad, folds against pi
+instead of 180, while an hms form stays in degrees. An angle with no
+determined quadrant — a free variable, a complex number — commits
+unchanged, so equation sides that do not apply pass through quietly.
+Point picks the target as usual: a sub-formula at point, each side of
+an equation, the top entry at home.
+
+  135          =>  45
+  -45          =>  45
+  750          =>  30           (wraps a full turn first)
+  400.5        =>  40.5
+  270          =>  90           (boundaries go to the quadrant above)
+  1.25 pi      =>  0.25 pi      (pi folds against pi, not 180)
+  200@ 30\\=' 0\"  =>  20@ 30\\=' 0\"   (hms stays hms, and stays degrees)
+  y + 210|     =>  y + 30       (sub-formula at point)
+  x            =>  x            (no quadrant: unchanged)"
+  :arity unary
+  :prefix "refa"
+  (commit (or (maf--ref-angle expr) expr)))
+
 (maf-defcmd mafcmd-commute (expr _arg commit)
   "Swap the first two operands of the resolved expression.
 

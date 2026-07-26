@@ -106,7 +106,8 @@
      (mafcmd-poly-roots on M-r; auto variable, no prompt)
    - [ ] my/calc-inverse-function (l v) — invert y = f(x), any variable names
 ** Angles
-   - [ ] my/calc-ref-angle (M-l) — reference angle (+ my/math-ref-angle helper)
+   - [X] my/calc-ref-angle (M-l) — reference angle (+ my/math-ref-angle helper)
+     (mafcmd-ref-angle on M-l; maf--ref-angle in math.el, pi- and hms-aware)
    - [ ] my/calc-supplement / my/calc-complement (M-s / M-c) — 180−x / 90−x, pi-aware
 ** Polynomials
    - [ ] my/calc-poly-lcm (a L) — LCM of two polynomials by factorization
