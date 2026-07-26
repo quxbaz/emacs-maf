@@ -353,6 +353,40 @@ an equation, the top entry at home.
   :arity unary
   :prefix "refa"
   (commit (or (maf--ref-angle expr) expr)))
+(maf-defcmd mafcmd-supplement (expr _arg commit)
+  "Replace the resolved expression with its supplement: a half turn less it.
+
+  30  =>  150
+
+The half turn follows the angle rather than the mode alone: symbolic
+pi anywhere in the expression makes it pi — pi / 6 supplements to
+5:6 pi even in degrees mode — and otherwise `calc-angle-mode' picks
+pi for radians and 180 for degrees or HMS. Exact angles stay exact,
+and a float switches a radian half turn to numeric pi, as in
+`mafcmd-to-degrees': the value has already forfeited exactness, and a
+symbolic pi would linger as clutter. Nothing checks that the value is
+an angle at all — a symbolic expression just subtracts as it stands.
+Point picks the target as usual: a sub-formula at point, each side of
+an equation, the top entry at home.
+
+  150      =>  30
+  pi / 6   =>  5:6 pi
+  2 pi / 3 =>  pi / 3
+  0.5      =>  2.64159265359  (radians mode)
+  30@ 30'  =>  149@ 30'       (HMS mode)
+  x        =>  180 - x"
+  :arity unary
+  :prefix "supp"
+  (let* ((radians (or (math-expr-contains expr '(var pi var-pi))
+                      (eq calc-angle-mode 'rad)))
+         (half-turn (cond ((not radians) 180)
+                          ((maf--contains-float-p expr) (math-pi))
+                          (t '(var pi var-pi)))))
+    ;; Fractions preferred: the subtraction divides out a common
+    ;; denominator, and at calc's default an exact pi - 2 pi / 3 would
+    ;; land on 0.333333333333 pi instead of pi / 3.
+    (commit (let ((calc-prefer-frac t))
+              (math-simplify (math-sub half-turn expr))))))
 
 (maf-defcmd mafcmd-commute (expr _arg commit)
   "Swap the first two operands of the resolved expression.
