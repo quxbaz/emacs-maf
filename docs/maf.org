@@ -107,7 +107,9 @@
    - [ ] my/calc-inverse-function (l v) — invert y = f(x), any variable names
 ** Angles
    - [ ] my/calc-ref-angle (M-l) — reference angle (+ my/math-ref-angle helper)
-   - [ ] my/calc-supplement / my/calc-complement (M-s / M-c) — 180−x / 90−x, pi-aware
+   - [X] my/calc-supplement (M-s) — 180−x / pi−x, pi-aware
+     (mafcmd-supplement on M-s; contextual, HMS included, exact in radians)
+   - [ ] my/calc-complement (M-c) — 90−x / (pi/2)−x, pi-aware
 ** Polynomials
    - [ ] my/calc-poly-lcm (a L) — LCM of two polynomials by factorization
    - [ ] Polynomial term ordering — math-normalize advice keeping sums in descending degree
