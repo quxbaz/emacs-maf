@@ -67,6 +67,14 @@ USER dev
 ENV HOME=/home/dev
 WORKDIR /work
 
+# A UTF-8 locale. Debian's default is none at all, and tmux decides at
+# client start whether the terminal is UTF-8 by reading LC_ALL, LC_CTYPE
+# and LANG: with all three empty it falls back to ASCII and draws an
+# underscore for every glyph it cannot emit, which turns the agent's box
+# drawing and gutters into rows of them. C.UTF-8 is the only UTF-8
+# locale the image has, so this needs no locales package.
+ENV LANG=C.UTF-8
+
 # Emacs server name inside this container. '#emacs' is what the emacs
 # skill reaches for when given no name, and a container holds only one
 # instance, so the skills' examples work here as written. Per-box names

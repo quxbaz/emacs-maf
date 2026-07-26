@@ -173,6 +173,9 @@ the repo's `CLAUDE.md` keys off.
   container's copy, and is lost when it exits. Re-seeded from the host
   file on every start. To run a box on a different account, mount that
   account's credentials file instead.
+- `LANG=C.UTF-8` is set in the image. Without a locale tmux starts its
+  client in ASCII mode and draws `_` for every glyph it cannot emit,
+  which shreds the agent's boxes and gutters.
 - No personal Emacs config in the box — no `posframe`, so `maf-preview`
   is inert, and `maf-hl-verify`'s screenshot check reports `skipped`.
 - All boxes share this repo's `.git`; isolation is per-worktree, not
