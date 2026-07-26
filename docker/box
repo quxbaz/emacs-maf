@@ -15,14 +15,19 @@ set -euo pipefail
 
 usage() {
     cat <<'EOF'
-usage: box <feature>      run a dev box on .worktrees/<feature>
-       box -b <feature>   make that worktree and branch first
-       box                list the worktrees you can name
-       box --names        those names alone, for completion
-       box --help         this text
+usage: box <feature>          run a dev box on .worktrees/<feature>
+       box -b <feature>       make that worktree and branch first
+       box --close <feature>  close it: container, worktree, branch
+       box                    list the worktrees you can name
+       box --names            those names alone, for completion
+       box --help             this text
 
 One box per feature branch, several at once. Without -b the worktree is
 yours to make: git worktree add .worktrees/<feature>
+
+--close is for a feature that has landed. Merge it first: it refuses a
+branch that is not merged, a worktree holding changes, or the tree you
+are standing in.
 
 Tab completion for bash, zsh and fish: docker/completions/
 EOF
@@ -64,6 +69,7 @@ names() {
 }
 
 create=
+close=
 case ${1-} in
     --names)
         names
@@ -83,6 +89,10 @@ case ${1-} in
         create=1
         shift
         ;;
+    --close)
+        close=1
+        shift
+        ;;
     -*)
         echo "box: unknown option: $1" >&2
         usage >&2
@@ -90,8 +100,8 @@ case ${1-} in
         ;;
 esac
 
-if [ -n "$create" ] && [ $# -eq 0 ]; then
-    echo "box: -b needs a feature name" >&2
+if [ $# -eq 0 ] && { [ -n "$create" ] || [ -n "$close" ]; }; then
+    echo "box: ${create:+-b}${close:+--close} needs a feature name" >&2
     usage >&2
     exit 1
 fi
@@ -120,6 +130,8 @@ if [ -n "$create" ]; then
     # a branch called `feature`. Existing branch or worktree => git says
     # so and we stop, which is what an explicit create should do.
     git worktree add -b "$feature" "$tree"
+elif [ -n "$close" ]; then
+    :   # --close tolerates a half-cleaned feature; see below
 elif [ ! -d "$tree" ]; then
     echo "box: no worktree at $tree" >&2
     echo "     git worktree add .worktrees/$feature" >&2
@@ -134,6 +146,72 @@ box=${feature//\//-}
 # Only the docker call is elevated — the paths above stay yours.
 sudo=
 docker info >/dev/null 2>&1 || sudo=sudo
+
+# --close: close a feature that has landed — container, worktree and
+# branch. Everything refusable is refused up front: a step that balked
+# after the container was gone would have taken away the one place set up
+# to look into why. What is already gone counts as done, so a half-
+# cleaned feature can be finished off.
+if [ -n "$close" ]; then
+    branch_exists() { git show-ref --quiet --verify "refs/heads/$feature"; }
+
+    case $PWD/ in
+        "$tree"/*)
+            echo "box: you are standing in $tree" >&2
+            exit 1
+            ;;
+    esac
+
+    if [ -d "$tree" ] && [ -n "$(git -C "$tree" status --porcelain)" ]; then
+        echo "box: $feature has uncommitted changes — commit or discard first" >&2
+        exit 1
+    fi
+
+    if branch_exists && ! git merge-base --is-ancestor "$feature" HEAD; then
+        echo "box: $feature is not merged into $(git rev-parse --abbrev-ref HEAD)" >&2
+        echo "     merge it first; git branch -D $feature to drop it unmerged" >&2
+        exit 1
+    fi
+
+    printf 'closing %s\n' "$feature"
+    status() { printf '  %-34s %s\n' "$1" "$2"; }
+    rc=0
+
+    if [ -n "$($sudo docker ps -aq --filter "name=^maf-$box$")" ]; then
+        if err=$($sudo docker rm -f "maf-$box" 2>&1 >/dev/null); then
+            status "container maf-$box" removed
+        else
+            status "container maf-$box" "ERROR: $err"
+            rc=1
+        fi
+    else
+        status "container maf-$box" "none"
+    fi
+
+    if [ -d "$tree" ]; then
+        if err=$(git worktree remove "$tree" 2>&1); then
+            status ".worktrees/$feature" removed
+        else
+            status ".worktrees/$feature" "ERROR: $err"
+            rc=1
+        fi
+    else
+        status ".worktrees/$feature" "none"
+    fi
+
+    if branch_exists; then
+        if err=$(git branch -d "$feature" 2>&1); then
+            status "branch $feature" deleted
+        else
+            status "branch $feature" "ERROR: $err"
+            rc=1
+        fi
+    else
+        status "branch $feature" "none"
+    fi
+
+    exit $rc
+fi
 
 # Your agent config, each file mounted where its agent looks for it. On
 # the host these are symlinks into ~/conf; a box skips the indirection

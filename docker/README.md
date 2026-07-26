@@ -68,8 +68,17 @@ git.
    there to go back to if something turns out to be wrong.
 
    ```sh
-   git merge my-feature                  # from the main checkout
-   sudo docker rm -f maf-my-feature      # the box, no longer needed
+   git merge my-feature            # from the main checkout
+   docker/box --close my-feature   # container, worktree, branch
+   ```
+
+   `--close` reports each of the three, and refuses before touching
+   anything if the branch is not merged, the worktree holds changes, or
+   you are standing in it. What is already gone counts as done, so a
+   half-cleaned feature can be finished off. By hand it is:
+
+   ```sh
+   sudo docker rm -f maf-my-feature
    git worktree remove .worktrees/my-feature && git branch -d my-feature
    ```
 
