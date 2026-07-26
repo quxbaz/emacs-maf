@@ -39,6 +39,8 @@
     (define-key map (kbd "j")   #'maf-step-next)
     (define-key map (kbd "SPC") #'maf-step-next)
     (define-key map (kbd "k")   #'maf-step-prev)
+    (define-key map (kbd "<")   #'maf-step-first)
+    (define-key map (kbd ">")   #'maf-step-last)
     (define-key map (kbd "r")   #'maf-step-restart)
     (define-key map (kbd "?")   #'maf-step-help)
     (define-key map (kbd "q")   #'maf-step-quit)
@@ -47,9 +49,10 @@
 (define-derived-mode maf-step-mode emacs-lisp-mode "maf-step"
   "Major mode for the maf step-through transcript buffer.
 The buffer is the session cockpit: \\=`j' (or SPC) runs the next form in the
-calc buffer (returning here afterward), \\=`k' rewinds one step, \\=`r' restarts
-with a fresh calc, \\=`?' shows the key bindings, and \\=`q' quits. Derived from
-`emacs-lisp-mode' so the rendered forms are fontified."
+calc buffer (returning here afterward), \\=`k' rewinds one step, \\=`<' and
+\\=`>' jump to the start/end (leaving calc in that step's state), \\=`r'
+restarts with a fresh calc, \\=`?' shows the key bindings, and \\=`q' quits.
+Derived from `emacs-lisp-mode' so the rendered forms are fontified."
   ;; Highlight the DONE/ERROR status markers. These live in the `;;' header
   ;; line, so the keywords must override the comment fontification (the
   ;; trailing t) to win over `font-lock-comment-face'.
@@ -273,26 +276,50 @@ leaves the trail clean too, so rewinding to step k matches the forward state."
   (cl-incf maf--step-idx)
   (maf--step-render))
 
+(defun maf--step-rewind-to (k)
+  "Rewind to step K by replaying from a clean calc.
+Resets calc and silently re-runs forms 0..K-1, which reproduces the exact state
+at step K — stack, flags, selections, and point — since they were all produced
+by those forms. Outputs for steps >= K are dropped; earlier outputs (captured on
+the way forward) are kept."
+  (maf--step-clean-calc)
+  (setq maf--step-errored nil)
+  (cl-loop for i from k below maf--step-total
+           do (setf (nth i maf--step-outputs) nil))
+  ;; Silent replay restores calc state (and recomputes the errored flag).
+  ;; Bind message-log-max so replayed messages don't pollute *Messages*.
+  (let ((message-log-max nil))
+    (cl-loop for i from 0 below k do (maf--step-run i nil)))
+  (setq maf--step-idx k)
+  (maf--step-render))
+
 (defun maf-step-prev ()
-  "Rewind one step by replaying from a clean calc.
-Resets calc and silently re-runs forms 0..k-1 (k = idx-1), which reproduces the
-exact state at step k — stack, flags, selections, and point — since they were
-all produced by those forms. Outputs for steps >= k are dropped; earlier
-outputs (captured on the way forward) are kept."
+  "Rewind one step, restoring calc to the state before the last form ran."
   (interactive)
   (when (<= maf--step-idx 0)
     (user-error "maf-step: already at the start"))
-  (let ((k (1- maf--step-idx)))
-    (maf--step-clean-calc)
-    (setq maf--step-errored nil)
-    (cl-loop for i from k below maf--step-total
-             do (setf (nth i maf--step-outputs) nil))
-    ;; Silent replay restores calc state (and recomputes the errored flag).
-    ;; Bind message-log-max so replayed messages don't pollute *Messages*.
-    (let ((message-log-max nil))
-      (cl-loop for i from 0 below k do (maf--step-run i nil)))
-    (setq maf--step-idx k)
-    (maf--step-render)))
+  (maf--step-rewind-to (1- maf--step-idx)))
+
+(defun maf-step-first ()
+  "Jump back to the first form, with calc reset to the pre-run state.
+Like repeated `maf-step-prev': calc is cleaned and no form is replayed, so the
+context matches the start of the session. All captured outputs are dropped."
+  (interactive)
+  (when (<= maf--step-idx 0)
+    (user-error "maf-step: already at the start"))
+  (maf--step-rewind-to 0))
+
+(defun maf-step-last ()
+  "Jump to the end, running every remaining form so calc holds the final state.
+Like repeated `maf-step-next': each form runs in order and its output is
+captured, so errors along the way are recorded rather than halting the run."
+  (interactive)
+  (when (>= maf--step-idx maf--step-total)
+    (user-error "maf-step: no more forms"))
+  (while (< maf--step-idx maf--step-total)
+    (maf--step-run maf--step-idx t)
+    (cl-incf maf--step-idx))
+  (maf--step-render))
 
 (defun maf-step-restart ()
   "Restart the session from the top with a fresh calc buffer.
@@ -310,6 +337,8 @@ source file still existing or being unedited."
       (princ "=====================\n\n")
       (princ "  j / SPC   run the next form\n")
       (princ "  k         rewind one step\n")
+      (princ "  <         jump to the first form (calc reset)\n")
+      (princ "  >         jump to the end (run all remaining forms)\n")
       (princ "  r         restart with a fresh calc\n")
       (princ "  ?         show this help\n")
       (princ "  q         quit\n"))))
@@ -346,9 +375,10 @@ that window happened to display before (e.g. *Messages*)."
   "Run each form in BODY step by step against a fresh calc buffer.
 Kills any existing calc buffers and creates a clean *Calculator*, lays out the
 cockpit (`*maf-step*' left, calc right), and enters `maf-step-mode': `j'/SPC run
-the next form in calc (returning here), `k' rewinds one step, `r' restarts,
-`?' shows the key bindings, `q' quits. Each form's return value, *Messages*
-output, and any error render beneath it."
+the next form in calc (returning here), `k' rewinds one step, `<' and `>' jump
+to the start/end with calc in that step's state, `r' restarts, `?' shows the key
+bindings, `q' quits. Each form's return value, *Messages* output, and any error
+render beneath it."
   (declare (indent 0))
   ;; Resolve the source label at expansion time (the current buffer is still
   ;; the source then). `load-file-name' covers `load'; `buffer-file-name'
