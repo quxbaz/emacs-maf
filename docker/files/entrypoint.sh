@@ -18,9 +18,9 @@ fi
 # Drive Emacs from either with `emacsclient -s $MAF_SERVER_NAME`.
 if [ -f /work/project-init.el ] && ! tmux has-session -t emacs 2>/dev/null; then
     tmux new-session -d -s emacs 'emacs -nw'
-    # -b puts the new pane before the current one: shell on top, Emacs
-    # below it with the larger share.
-    tmux split-window -v -b -l 40% -t emacs:0 -c /work
+    # -b puts the new pane before the current one: shell on the left,
+    # Emacs on the right with the larger share.
+    tmux split-window -h -b -l 40% -t emacs:0 -c /work
     tmux select-pane -t emacs:0.0
 fi
 

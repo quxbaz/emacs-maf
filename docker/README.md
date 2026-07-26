@@ -48,8 +48,8 @@ Spelled `docker/box` until `dev.sh` is sourced.
    arguments to list the worktrees you can name, `docker/box --help` for
    usage.
 
-4. You land in tmux: a shell at `/work` on top, Emacs below it. Start
-   the agent in the shell and instruct it:
+4. You land in tmux: a shell at `/work` on the left, Emacs on the right.
+   Start the agent in the shell and instruct it:
 
    ```sh
    claude
