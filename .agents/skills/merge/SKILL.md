@@ -1,6 +1,6 @@
 ---
-name: close
-description: Merge a named maf feature branch or box worktree into the current branch, then close its box with `box --close NAME` only after the merge succeeds. Use when asked to close, merge, land, integrate, or finish a feature branch/worktree and clean up its box.
+name: merge
+description: Merge a named maf feature branch or box worktree into the current branch, then close its box with `box --close NAME` only after the merge succeeds. Use when asked to merge, land, integrate, or finish a feature branch/worktree and clean up its box.
 ---
 
 # Merge and close a feature
