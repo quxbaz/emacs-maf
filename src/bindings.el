@@ -47,6 +47,11 @@
 ;; A single-key alias for expand, which also keeps its table key a x.
 ;; Shadows calc-execute-extended-command.
 (define-key maf-mode-map (kbd "x") #'mafcmd-expand)
+;; A single-key alias for the reciprocal, which also keeps its table
+;; key &. Shadows calc-realign: point already returns home after every
+;; command, and M-x calc-realign still reaches its other two jobs
+;; (undo horizontal scrolling, prefix-arg jump to a stack element).
+(define-key maf-mode-map (kbd "o") #'mafcmd-inv)
 ;; A toggle between pair members is its own inverse, so both directions
 ;; run the same command.
 (define-key maf-mode-map (kbd "S-<up>") #'mafcmd-toggle-op)
