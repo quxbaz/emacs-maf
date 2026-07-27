@@ -86,6 +86,11 @@
 (define-key maf-mode-map (kbd "M-w") #'maf-copy)
 ;; Shadows calc's TAB with the contextual line swap.
 (define-key maf-mode-map (kbd "TAB") #'maf-swap-up)
+;; Send the entry at point all the way down the stack, the long-range
+;; counterpart of TAB's one-step swap. C-M-DEL is unbound in calc
+;; itself; bind the GUI event and the terminal form both.
+(define-key maf-mode-map (kbd "C-M-<backspace>") #'maf-roll-to-bottom)
+(define-key maf-mode-map (kbd "C-M-DEL") #'maf-roll-to-bottom)
 ;; Contextual duplicate, shadowing calc-enter. At home it dups the top
 ;; as calc-enter does; elsewhere it pushes a copy of the resolved item.
 ;; During digit/algebraic entry RET stays calc's own (the entry

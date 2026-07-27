@@ -71,7 +71,8 @@
 ** Stack shuffling and duplication
    - [X] my/calc-roll-to-top (S-RET) — move the entry at point to the top
      → maf-roll-to-top (C-S-RET); point rides along to level 1
-   - [-] my/calc-roll-to-bottom (C-M-backspace)
+   - [X] my/calc-roll-to-bottom (C-M-backspace) — ported as maf-roll-to-bottom
+   - [ ] my/calc-duplicate-stack (C-M-RET) — duplicate the whole stack
    - [ ] my/calc-store-stack / my/calc-recall-stack (s RET / r RET) — in-memory stack
      save/restore; possibly superseded by maf-timeline r — decide before porting
 ** Variables
