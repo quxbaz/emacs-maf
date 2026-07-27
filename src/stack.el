@@ -874,6 +874,70 @@ entries by one, as calc's TAB does."
             ;; A single undo reverts point along with the stack.
             (maf--undo-record-cmd-point snapshot)))))))
 
+(defun maf-roll-to-bottom ()
+  "Bury the stack entry at point at the bottom of the stack.
+
+  3:  a          3:  b
+  2:  b|    =>   2:  c
+  1:  c          1:  a
+
+The entry at point sinks to the deepest level — the top line of the
+stack window — and everything that was above it drops one level, so the
+entry that was one line up lands on the line at point. The entries below
+point are untouched. At home the top entry is buried; with point already
+on the deepest entry, or with fewer than two entries, there is nothing
+to bury and the command does nothing.
+
+Point keeps its level rather than following the entry it moved: it stays
+at level M, on whatever entry arrives there, at the same column (clamped
+to the new line's end, with end-of-line and line-prefix positions
+staying at their end). Selections travel with their entries."
+  (interactive)
+  (maf--with-calc-buffer
+    (let ((n (calc-stack-size))
+          (m (max 1 (calc-locate-cursor-element (point)))))
+      ;; m = n is the entry already at the bottom: a genuine no-op, so
+      ;; skip the rewrite rather than record an undo group for it.
+      (when (and (> n 1) (< m n))
+        (let ((snapshot (maf--point-snapshot))
+              (home (maf--at-home-p)))
+          (calc-wrapper
+           ;; Rotate the window of levels M..N by one. Both lists run
+           ;; deepest-first — (N N-1 ... M+1 M) — so moving the last
+           ;; element to the front sends level M to the bottom and slides
+           ;; the rest down one. Passing `sels' explicitly keeps the
+           ;; selections with their entries and, more importantly, keeps
+           ;; `calc-pop-push-list' off its `calc-replace-selections'
+           ;; path, which would splice each rolled value into the
+           ;; selected sub-formula of the entry landing on it — the bug
+           ;; in calc's own `calc-roll-up'/`calc-roll-down' whenever a
+           ;; selection exists and `calc-use-selections' is on.
+           ;;
+           ;; `full' is required on the value list: with sel-mode nil,
+           ;; `calc-get-stack-element' hands back the *selection* of a
+           ;; selected entry, not the entry, so a plain `calc-top-list'
+           ;; would bury the sub-formula and drop the rest of its entry.
+           (let* ((count (1+ (- n m)))
+                  (vals (calc-top-list count m 'full))
+                  (sels (calc-top-list count m 'sel))
+                  (roll (lambda (l) (cons (car (last l)) (butlast l)))))
+             (calc-pop-push-list count (funcall roll vals)
+                                 m (funcall roll sels))))
+          ;; Calc parks point at home after the rewrite; that is already
+          ;; right for a home invocation. Otherwise return to level M by
+          ;; index, not by screen line: the rewrite relaid out every line
+          ;; from M up, and the arriving entry need not be the same
+          ;; height as the one that left.
+          (unless home
+            (calc-cursor-stack-index m)
+            (pcase (alist-get :affinity snapshot)
+              ('eol (end-of-line))
+              ('bol (maf--point-restore-margin (alist-get :col snapshot)))
+              ;; move-to-column stops at end of line, clamping for free.
+              (_ (move-to-column (alist-get :col snapshot)))))
+          ;; A single undo reverts point along with the stack.
+          (maf--undo-record-cmd-point snapshot))))))
+
 (maf-defcmd mafcmd-equal-to (expr arg commit)
   "Equate the entry at point with the top-of-stack argument.
 
