@@ -1,6 +1,6 @@
 ---
-name: done
-description: Answer whether a task or feature is done, in plain simple words. Use when asked "is this done?", "did it work?", "is X finished?", or invoked as `/done [what]` — the answer is a short verdict, not a report.
+name: donep
+description: Answer whether a task or feature is done, in plain simple words. Use when asked "is this done?", "did it work?", "is X finished?", or invoked as `/donep [what]` — the answer is a short verdict, not a report.
 ---
 
 # Is it done?
@@ -9,7 +9,7 @@ Say whether the thing is done. Nothing else.
 
 ## What to check
 
-The subject is whatever follows `/done`. With no argument, it is the
+The subject is whatever follows `/donep`. With no argument, it is the
 last thing worked on in this session.
 
 Check it for real before answering — do not answer from memory of what
@@ -42,21 +42,21 @@ Rules for the wording:
 
 ## Examples
 
-### [EXAMPLE 1] /done
+### [EXAMPLE 1] /donep
 
 ```
 Done.
 The new command works in the dev instance and the tests pass.
 ```
 
-### [EXAMPLE 2] /done maf-frac binding
+### [EXAMPLE 2] /donep maf-frac binding
 
 ```
 Not done.
 The command exists but no key is bound to it yet.
 ```
 
-### [EXAMPLE 3] /done selection fix
+### [EXAMPLE 3] /donep selection fix
 
 ```
 Not done.
