@@ -60,6 +60,11 @@
 ;;
 ;;   :arity        From OPTS: unary or binary.
 ;;   :prefix       From OPTS: calc trail label.
+;;   :widen        From OPTS: predicate naming the sub-formula a command can
+;;                 act on. Subexpr target only — the node under point is
+;;                 widened outward to the innermost accepted ancestor (see
+;;                 `maf--resolve-widen'). Absent for most commands, which
+;;                 take the node under point as it comes.
 ;;   :keep         Snapshot of `calc-keep-args-flag' at resolve time.
 ;;   :point        Snapshot of point's placement at resolve time (see
 ;;                 `maf--point-snapshot'). The generated command restores
@@ -266,10 +271,48 @@ which has no coherent commit semantics."
       (:post-pop   . ,(if keep 0 (pcase arity ('unary 0) ('binary 1))))
       (:reselect   . nil))))
 
+(defun maf--resolve-ancestors (formula node)
+  "Return NODE's ancestors within FORMULA, innermost first.
+NODE is matched by `eq', so it must be a cons taken from FORMULA itself
+— the encased node `calc-find-selected-part' returns, not a copy."
+  (let (found)
+    (cl-labels ((walk (cur path)
+                  (unless found
+                    (if (eq cur node)
+                        (setq found path)
+                      (when (consp cur)
+                        (dolist (kid (cdr cur))
+                          (walk kid (cons cur path))))))))
+      (walk formula nil))
+    found))
+
+(defun maf--resolve-widen (encased m opts)
+  "Widen ENCASED outward to the innermost node OPTS' `:widen' predicate accepts.
+The predicate is called with each candidate's clean form, starting at
+ENCASED itself and walking out through its ancestors in the entry at
+stack level M; the first acceptance wins. Without a `:widen' predicate,
+or when nothing out to the whole entry is accepted, ENCASED stands.
+
+This is what lets a command whose result does not fit the node under
+point act on the enclosing node that can hold it, instead of doing
+nothing: `mafcmd-unpack' peels the innermost single-argument wrapper
+around point rather than only the node point names. An explicit calc
+selection is a deliberate gesture and is never widened — the selection
+target does not come through here."
+  (let ((pred (alist-get :widen opts)))
+    (or (and pred
+             (cl-find-if (lambda (node)
+                           (funcall pred (maf--strip-encasing node)))
+                         (cons encased
+                               (maf--resolve-ancestors (calc-top m 'full)
+                                                       encased))))
+        encased)))
+
 (defun maf--resolve-target-subexpr (opts)
   "Return the subexpr target's context alist.
 Point is inside an entry's formula text; :expr is the implicit sub-expression
-under cursor.
+under cursor, widened outward when OPTS carries a `:widen' predicate
+\(see `maf--resolve-widen').
 
 For binary commands, :arg is the top of the stack. Binary commands require the
 target entry to be below the top (:m > 1); otherwise the arg would be the
@@ -280,7 +323,8 @@ untouched."
   (maf--with-calc-buffer
     (let ((m (calc-locate-cursor-element (point))))
       (calc-prepare-selection m)
-      (maf--resolve-subexpr-context (calc-find-selected-part) m opts))))
+      (maf--resolve-subexpr-context
+       (maf--resolve-widen (calc-find-selected-part) m opts) m opts))))
 
 (defun maf--resolve-target-equation (opts)
   "Return the equation target's context alist.
