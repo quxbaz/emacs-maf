@@ -314,7 +314,13 @@ are set, making the I and H prefixes route to the variant contextually.
   (pack binary calcFunc-pack "v p")
   (mrow binary calcFunc-mrow "v r")
   (trn unary calcFunc-trn "v t")
-  (unpack unary calcFunc-unpack "v u")
+  ;; Unpacking lives in stack.el: mafcmd-unpack (M-u, and calc's own
+  ;; v u / j U) unwraps the resolved expression into its parts. It is
+  ;; not a row here because calcFunc-unpack is binary — it takes a mode
+  ;; ahead of the thing — and the contextual command takes that mode
+  ;; from a prefix argument rather than the stack. A row would also be
+  ;; the wrong shape: the result is a list of values at a whole entry,
+  ;; not a single applied call.
   (rev unary calcFunc-rev "v v")
   (index unary calcFunc-index "v x")
   (apply unary calcFunc-apply "v A")

@@ -11,6 +11,19 @@
 (require 'maf-resolve)
 (require 'maf-commit)
 
+(defvar maf-target nil
+  "The resolved target, bound while a `maf-defcmd' body runs.
+One of the `:target' symbols `maf--resolve-context' produces — `home',
+`entry', `equation', `selection', `subexpr', or `region'.
+
+Bodies read it when the shape of the result depends on where it will
+land, not just on the operand. A whole stack entry (`home', `entry')
+accepts a list of values, committed as separate stack entries; a
+sub-formula slot (`selection', `subexpr', `region') holds exactly one
+expression. `mafcmd-unpack' is the case in point: it spreads an
+expression's parts across the stack at home, and in a slot unwraps
+only when the parts amount to a single expression.")
+
 (defun maf--defcmd-parse-docstring (forms)
   "Return the docstring from FORMS if the first element is a string, else nil."
   (when (stringp (car forms))
@@ -78,7 +91,11 @@ body sees:
           stack top); nil for `unary' commands.
   COMMIT  A local function; call it with the result to write it back to
           the resolved location. Call it once per body run (once per
-          side, for an equation target).
+          side, for an equation target). At a whole-entry target the
+          result may be a list of values, committed as one stack entry
+          each; a sub-formula slot takes a single expression. Bodies
+          that can produce either read `maf-target' to tell which
+          applies.
 
 REST is an optional docstring, then zero or more keyword-value option
 pairs (OPTS), then the body forms — in that order.
@@ -101,6 +118,14 @@ OPTS configure context resolution and commit:
           is a relation stays whole in EXPR instead of the body running
           once per side. For commands that consume or produce relations
           (solve, mapeq, the relation builders).
+
+  :widen  A predicate (named as a bare symbol) deciding which
+          sub-formulas the command can act on. At the subexpr target the
+          node under point is widened outward to the innermost ancestor
+          the predicate accepts, so a command whose result does not fit
+          the node point names can still act on the enclosing node that
+          holds it, rather than doing nothing. Explicit calc selections
+          are never widened. See `maf--resolve-widen'.
 
 Any other keyword in OPTS is merged verbatim into the resolved context
 alist, so resolve/commit extensions can read it.
@@ -131,7 +156,8 @@ ARG, runs the body, and commits its result to the right stack location."
                        (progn
                          (calc-wrapper
                           (setq ,context (maf--resolve-context ',opts))
-                          (let ((,arg (alist-get :arg ,context)))
+                          (let ((,arg (alist-get :arg ,context))
+                                (maf-target (alist-get :target ,context)))
                             (if (eq (alist-get :target ,context) 'equation)
                                 ;; Equation target: run the body once per side
                                 ;; (expr bound to the LHS, then the RHS),

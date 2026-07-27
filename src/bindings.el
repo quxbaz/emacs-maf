@@ -126,6 +126,20 @@
 ;; calc itself.
 (define-key maf-mode-map (kbd "a L") #'mafcmd-poly-lcm)
 
+;; Unwrap the target into its parts. M-u is unbound in calc itself (it
+;; shadows the global upcase-dwim, which has no place in the stack
+;; buffer). The other two are calc's own unpack keys, and mafcmd-unpack
+;; subsumes both commands: v u is calc-unpack, which spreads a whole
+;; entry's parts over the stack, and j U (with its j M-U alias) is
+;; calc-sel-unpack, which replaces a selected one-argument call with
+;; its argument. Shadowing both keeps one unpack behavior in the
+;; buffer — left alone, j U would still signal on the multi-part
+;; sub-formulas the contextual command commits unchanged.
+(define-key maf-mode-map (kbd "M-u") #'mafcmd-unpack)
+(define-key maf-mode-map (kbd "v u") #'mafcmd-unpack)
+(define-key maf-mode-map (kbd "j U") #'mafcmd-unpack)
+(define-key maf-mode-map (kbd "j M-U") #'mafcmd-unpack)
+
 ;; Coordinate naming, cycling the name sets on repeat. Shadows
 ;; calc-copy-as-kill; maf-copy (M-w) copies the region or the entry,
 ;; and maf-kill (C-k) kills the whole entry onto the kill ring.
