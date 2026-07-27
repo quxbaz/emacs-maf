@@ -179,9 +179,9 @@ the repo's `CLAUDE.md` keys off.
   nothing a box does reaches the host config. `box --bare` skips it for
   stock Emacs plus the legacy Calc config alone.
 - Emacs in a box has a tmux pane, not a frame, so `display-graphic-p` is
-  nil: child frames cannot show, `maf-preview` is inert even though
-  posframe is installed, and `maf-hl-verify`'s screenshot check reports
-  `skipped`.
+  nil: child frames cannot show, so `maf-preview` falls back to drawing
+  its panel inside the calc window (posframe is installed but unusable
+  here), and `maf-hl-verify`'s screenshot check reports `skipped`.
 - All boxes share this repo's `.git`; isolation is per-worktree, not
   per-repository.
 - Worktrees live in `.worktrees/`, git-ignored, so they never show up as
