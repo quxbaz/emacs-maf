@@ -861,27 +861,41 @@ displaced sub-formula becomes the new level-1 entry."
        (signal (car err) (cdr err))))))
 
 (defun maf-swap-up (n)
-  "Swap context upward while point stays put.
+  "Swap the stack entry at point with the one above it on screen.
 
   2:  a          2:  b
   1:  b|    =>   1:  a|
 
-Normally, entries at level M and M+1 exchange places: the entry at
-point moves up the screen and its upper neighbor lands on the line at
-point. At home the top two entries swap. With an explicit calc
-selection, the selected sub-formula instead swaps with the level-1
-entry. With the Hyperbolic flag and no selection, the sub-formula at
-point swaps with level 1.
+With an active selection the selected sub-formula swaps with the
+level-1 entry instead, however far apart the two sit, and the value
+that arrives stays selected.
 
-Point stays on the same line and column for an entry swap. When the
-arriving entry is shorter, point clamps to its end of line; at end of
-line it stays at end of line. A sub-formula swap keeps point on the
-containing entry. With the entry at point already the highest, or with
-fewer than two entries, there is nothing to swap and the command does
-nothing.
+  3:  20 x + 10      3:  7 x + 10     (20 selected)
+  2:  8         =>   2:  8
+  1:  7              1:  20
+
+With the Hyperbolic flag the sub-formula at point is the target, and
+no selection is left behind.
+
+  3:  |20 x + 10     3:  7 x + 10
+  2:  8         =>   2:  8
+  1:  7              1:  20
+
+For an entry swap, levels M and M+1 exchange places: the entry at
+point moves up the screen and its upper neighbor lands on the line at
+point. At home the top two entries swap. Point stays on the same line
+and column; when the arriving entry is shorter it clamps to that
+line's end, and at end of line it stays at end of line. A sub-formula
+swap keeps point on the containing entry. With the entry at point
+already the highest, or with fewer than two entries, there is nothing
+to swap and the command does nothing.
 
 A prefix argument N bypasses the contextual swap and rolls the top N
-entries by one, as calc's TAB does."
+entries by one, as calc's own roll does.
+
+  C-u 3  3:  a       3:  c
+         2:  b   =>  2:  a
+         1:  c       1:  b"
   (interactive "P")
   (maf--with-calc-buffer
     (cond
