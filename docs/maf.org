@@ -35,7 +35,6 @@
 # LATER
 ** TODO g i (my/calc-graph-quick-with-range) interval form a:b should work with spaces 'a b'
 ** TODO Full formula buffer should have "recents" section.
-** TODO Saved formulas should support "notes" that display in full formula buffer.
 ** TODO Add command to move to parent expression.
    1:  y = 2 (x| + 3)^2 - 12
    ->  y = 2 (x + 3)|^2 - 12
