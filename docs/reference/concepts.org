@@ -449,6 +449,19 @@ to algebraic, and for interval entry (=..=). The entry minibuffer is
 calc's own (=calc-digit-map=), so the in-entry keys — =e=, =_=, =:=,
 =n= — are unchanged.
 
+One key is added there: =;= is the fraction colon (=maf-digit-colon=),
+so 3 ; 4 enters 3:4 without a modifier. It is an alias, not an
+insertion — it re-dispatches calc's own =calcDigit-key= with the event
+spoofed to =:=, so calc's colon handling (the leading 1 for a bare
+=;=, mixed numbers, format validation) applies unchanged. During a
+maf-edit session =;= types =:= too (=maf-edit-insert-colon=); the
+literal semicolon — calc's row separator in matrix notation — moves to
+=M-;= there (=maf-edit-insert-semicolon=). While an incomplete object
+is on the stack — a vector, matrix, complex number, or interval being
+entered — the digit-entry =;= steps aside for calc's own: it is the
+row separator of matrix entry, typed from inside digit entry, and a
+fraction there still goes in on =:=.
+
 * Files
 
 | File                    | Role                                                        |
