@@ -91,6 +91,11 @@ before the edit began instead of keeping its in-edit position.")
                 #'maf-edit-move-beginning-of-line)
     (define-key map [remap back-to-indentation]
                 #'maf-edit-back-to-indentation)
+    ;; The fraction colon on an unmodified key, as in digit entry
+    ;; (`maf-digit-colon'); the displaced semicolon moves one modifier
+    ;; up, keeping matrix notation typeable.
+    (define-key map (kbd ";") #'maf-edit-insert-colon)
+    (define-key map (kbd "M-;") #'maf-edit-insert-semicolon)
     map)
   "Keymap active while `maf-edit-mode' is on.
 Bind commands here to make them available only during editing.")
@@ -202,6 +207,25 @@ it holds text. Point then lands after the line's prefix run."
           (maf-edit--make-entry bol (+ bol maf-edit--prefix-width))
           (maf-edit--repair)))
       (goto-char (+ bol (maf-edit--leading-prefix-run bol))))))
+
+(defun maf-edit-insert-colon (n)
+  "Insert the fraction colon, N times, on the unmodified `;' key.
+Fractions are common enough in an edited entry to deserve a key with
+no modifier, so `;' types `:' here as it does in digit entry
+\(`maf-digit-colon'): 3 ; 4 reads back as the fraction 3:4."
+  (interactive "p")
+  (self-insert-command n ?:))
+
+(defun maf-edit-insert-semicolon (n)
+  "Insert a literal semicolon, N times, on \\<maf-edit-mode-map>\\[maf-edit-insert-semicolon].
+The character `;' itself gave up its key to the fraction colon
+\(`maf-edit-insert-colon'), and it is still calc's row separator in
+matrix notation — [1, 2; 3, 4] — so it keeps a key of its own here.
+\\[quoted-insert] is not that key: pausing to read a character
+re-locks the calc buffer under the editing session, and the insert
+that follows fails on a read-only buffer."
+  (interactive "p")
+  (self-insert-command n ?\;))
 
 ;;; Entry overlays
 
