@@ -87,10 +87,16 @@
 ;; Shadows calc's TAB with the contextual line swap.
 (define-key maf-mode-map (kbd "TAB") #'maf-swap-up)
 ;; Send the entry at point all the way down the stack, the long-range
-;; counterpart of TAB's one-step swap. C-M-DEL is unbound in calc
-;; itself; bind the GUI event and the terminal form both.
+;; counterpart of TAB's one-step swap. Reaching this key on a terminal
+;; needs the decode entry installed at the end of this file, and a
+;; terminal that sends the sequence — see docs/memory/dev-instance.md.
+;; A terminal that does not send it falls back to ESC 0x08, which
+;; arrives as C-M-h; bind that as the terminal stand-in, as the edit
+;; module does with C-j for S-<return>. It shadows only mark-defun,
+;; which has no use in a calc buffer, at the cost of Ctrl+Alt+h
+;; rolling too.
 (define-key maf-mode-map (kbd "C-M-<backspace>") #'maf-roll-to-bottom)
-(define-key maf-mode-map (kbd "C-M-DEL") #'maf-roll-to-bottom)
+(define-key maf-mode-map (kbd "C-M-h") #'maf-roll-to-bottom)
 ;; Contextual duplicate, shadowing calc-enter. At home it dups the top
 ;; as calc-enter does; elsewhere it pushes a copy of the resolved item.
 ;; During digit/algebraic entry RET stays calc's own (the entry
@@ -171,5 +177,26 @@
 
 ;; The `t d' stack-timeline binding is installed by the maf-timeline
 ;; module when it is enabled (see modules/maf-timeline.el), not here.
+
+;; A terminal cannot say "backspace with Ctrl and Alt" as a character:
+;; backspace is ASCII 127 and the modifiers have nowhere to go. One
+;; that supports modifyOtherKeys spells the key out instead, but
+;; term/xterm.el decodes that form from a hardcoded table of
+;; modifier/keycode pairs with no entry for keycode 127 under any
+;; modifier — so the sequence falls through undecoded and its tail
+;; self-inserts, which in a calc buffer means junk on the stack.
+;; term/tmux.el defers to the same table and inherits the gap. Supply
+;; the missing entry in both of the formats xterm.el generates.
+(defun maf--tty-setup-keys ()
+  "Decode terminal sequences for keys maf binds and `term/xterm.el' omits."
+  (define-key input-decode-map "\e[27;7;127~" [C-M-backspace])
+  (define-key input-decode-map "\e[127;7u" [C-M-backspace]))
+
+;; `input-decode-map' is terminal-local, so this runs once per tty
+;; rather than once at load.
+(add-hook 'tty-setup-hook #'maf--tty-setup-keys)
+;; The hook has already run for a terminal that exists by now.
+(unless (display-graphic-p)
+  (maf--tty-setup-keys))
 
 (provide 'maf-bindings)
