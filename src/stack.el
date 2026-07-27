@@ -20,6 +20,7 @@
 (declare-function calc-redo "calc-undo")
 (declare-function math-looks-negp "calc-misc")
 (declare-function calc-push "calc-ext")
+(declare-function calc-push-list "calc-ext")
 (declare-function calcFunc-pfloat "calc-stuff")
 (declare-function calc-roll-down "calc-misc")
 (declare-function calc-locate-cursor-element "calc-yank")
@@ -821,30 +822,79 @@ indentation."
       (goto-char (match-end 0))
     (skip-chars-forward " ")))
 
+(defun maf--swap-target-with-top (target)
+  "Swap resolved sub-formula TARGET with the level-1 entry.
+TARGET is `selection' for an explicit calc selection or `subexpr' for
+the sub-formula at point. The argument replaces that slot, and the
+displaced sub-formula becomes the new level-1 entry."
+  (let (context landed)
+    (condition-case err
+        (progn
+          (calc-wrapper
+           (setq context
+                 (maf--resolve-context
+                  '((:arity . binary) (:prefix . "swap") (:map . -1))))
+           (unless (eq (alist-get :target context) target)
+             (user-error
+              (if (eq target 'selection)
+                  "Swap requires an active calc selection"
+                "Hyperbolic swap requires a sub-formula at point")))
+           (let ((expr (alist-get :expr context))
+                 (arg (alist-get :arg context)))
+             ;; Commit ARG into the resolved slot, consuming the old
+             ;; level-1 entry. Then put the displaced slot value on top.
+             (setq landed (maf--commit arg context))
+             (calc-push-list (list expr))
+             ;; Commit reports the target's level after consuming level 1.
+             ;; Pushing EXPR restores its original level.
+             (setcdr (assq :m landed) (1+ (alist-get :m landed)))))
+          (maf--undo-amalgamate-digit-entry)
+          (maf--point-restore (alist-get :point context)
+                              (alist-get :point-anchor context)
+                              landed)
+          (maf--undo-record-cmd-point (alist-get :point context)))
+      (error
+       (when context
+         (maf--point-restore (alist-get :point context)
+                             (alist-get :point-anchor context)
+                             landed))
+       (signal (car err) (cdr err))))))
+
 (defun maf-swap-up (n)
-  "Swap the stack entry at point with the one above it on screen.
+  "Swap context upward while point stays put.
 
   2:  a          2:  b
   1:  b|    =>   1:  a|
 
-Entries at level M and M+1 exchange places while point stays put —
-same line, same column: the entry at point moves up the screen and
-its upper neighbor lands on the line at point. When that neighbor is
-shorter than point's column, point clamps to its end of line; at end
-of line it stays at end of line. At home the top two entries swap.
-Selections travel with their entries. With the entry at point already
-the highest, or with fewer than two entries, there is nothing to swap
-and the command does nothing.
+Normally, entries at level M and M+1 exchange places: the entry at
+point moves up the screen and its upper neighbor lands on the line at
+point. At home the top two entries swap. With an explicit calc
+selection, the selected sub-formula instead swaps with the level-1
+entry. With the Hyperbolic flag and no selection, the sub-formula at
+point swaps with level 1.
+
+Point stays on the same line and column for an entry swap. When the
+arriving entry is shorter, point clamps to its end of line; at end of
+line it stays at end of line. A sub-formula swap keeps point on the
+containing entry. With the entry at point already the highest, or with
+fewer than two entries, there is nothing to swap and the command does
+nothing.
 
 A prefix argument N bypasses the contextual swap and rolls the top N
 entries by one, as calc's TAB does."
   (interactive "P")
   (maf--with-calc-buffer
-    (if n
-        (let ((snapshot (maf--point-snapshot)))
-          (maf--preserve-point (calc-roll-down n))
-          ;; A single undo reverts point along with the stack.
-          (maf--undo-record-cmd-point snapshot))
+    (cond
+     (n
+      (let ((snapshot (maf--point-snapshot)))
+        (maf--preserve-point (calc-roll-down n))
+        ;; A single undo reverts point along with the stack.
+        (maf--undo-record-cmd-point snapshot)))
+     ((maf--sel-any-p)
+      (maf--swap-target-with-top 'selection))
+     (calc-hyperbolic-flag
+      (maf--swap-target-with-top 'subexpr))
+     (t
       (let ((m (max (calc-locate-cursor-element (point)) 1)))
         (when (< m (calc-stack-size))
           ;; Point is a screen position here, not a formula position:
@@ -858,11 +908,8 @@ entries by one, as calc's TAB does."
                 (eol  (eolp)))
             (calc-wrapper
              ;; Both lists run deepest-first, so reversing the pair of
-             ;; values swaps the two levels; the selections travel along.
-             ;; The values are read with `full': a plain `calc-top-list'
-             ;; hands back the *selection* for a selected entry, which
-             ;; would put the selected part on the stack in place of the
-             ;; whole formula.
+             ;; values swaps the two levels. Disabled selections travel
+             ;; with their whole entries on this path.
              (let ((vals (calc-top-list 2 m 'full))
                    (sels (calc-top-list 2 m 'sel)))
                (calc-pop-push-list 2 (list (nth 1 vals) (nth 0 vals))
@@ -876,7 +923,7 @@ entries by one, as calc's TAB does."
               ;; move-to-column stops at end of line, clamping for free.
               (if eol (end-of-line) (move-to-column col)))
             ;; A single undo reverts point along with the stack.
-            (maf--undo-record-cmd-point snapshot)))))))
+            (maf--undo-record-cmd-point snapshot))))))))
 
 (defun maf-roll-to-top ()
   "Move the stack entry at point to the top of the stack.
