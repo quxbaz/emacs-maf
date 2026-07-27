@@ -79,6 +79,10 @@ before the edit began instead of keeping its in-edit position.")
     ;; S-RET, indenting past the machine-owned prefix area.
     (define-key map (kbd "RET") #'maf-edit-commit)
     (define-key map (kbd "S-<return>") #'maf-edit-newline)
+    ;; C-j is the same gesture on a terminal, which cannot deliver
+    ;; Shift-Return at all: every wire format folds it back to plain
+    ;; RET. It is also the newline key everywhere else in Emacs.
+    (define-key map (kbd "C-j") #'maf-edit-newline)
     (define-key map (kbd "C-c C-k") #'maf-edit-discard)
     ;; Line-start motion treats the machine-owned prefix/pad as column
     ;; zero. Direct keys beat visual-line-mode's remaps; the remaps
@@ -944,7 +948,9 @@ undo group."
 Enabled, SPC / C-<return> / S-<return> run the maf-edit entry commands;
 disabled, they cede back to calc. SPC shadows one of calc-enter's two
 keys (RET still runs it) and enters editing, where `maf-edit-mode-map's
-RET commits; C-<return> and S-<return> are the quick-add gestures.
+RET commits; C-<return> and S-<return> are the quick-add gestures. C-j
+doubles for S-<return>, which no terminal can deliver; it shadows
+calc-over, whose level-2 duplicate is `maf-dup' at point.
 
 This is the `edit' module (see `maf-modules'). Unlike the other
 modules it installs no hook or advice — just these bindings, plus the
@@ -955,10 +961,12 @@ on-demand `maf-edit-mode' editing session they lead into."
       (progn
         (define-key maf-mode-map (kbd "SPC") #'maf-edit)
         (define-key maf-mode-map (kbd "C-<return>") #'maf-edit-add-entry)
-        (define-key maf-mode-map (kbd "S-<return>") #'maf-edit-add-entry-below))
+        (define-key maf-mode-map (kbd "S-<return>") #'maf-edit-add-entry-below)
+        (define-key maf-mode-map (kbd "C-j") #'maf-edit-add-entry-below))
     (define-key maf-mode-map (kbd "SPC") nil)
     (define-key maf-mode-map (kbd "C-<return>") nil)
-    (define-key maf-mode-map (kbd "S-<return>") nil)))
+    (define-key maf-mode-map (kbd "S-<return>") nil)
+    (define-key maf-mode-map (kbd "C-j") nil)))
 
 ;; Register with the module system when it is present; the mode above
 ;; works on its own without it.
