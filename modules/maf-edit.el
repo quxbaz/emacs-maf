@@ -862,8 +862,10 @@ Entries whose text is untouched keep their value objects and
 selections; changed or new text is parsed in the current input modes
 and committed exactly as written, never simplified — 1 + 2 + x stays
 1 + 2 + x. If any entry fails to parse the commit is blocked: the
-offenders are underlined, point goes to the first, and editing
-continues. The whole commit is one undo group."
+offenders are underlined and editing continues, with point sent to the
+first offender — unless it is already inside one, where it stays put
+and that entry's error is the one reported. The whole commit is one
+undo group."
   (interactive)
   (unless maf-edit-mode (user-error "maf-edit is not active"))
   (let ((maf-edit--inhibit t)
@@ -892,10 +894,24 @@ continues. The whole commit is one undo group."
               (push v vals)
               (push nil sels)))))))
     (if errors
-        (let ((errors (nreverse errors)))
+        (let* ((errors (nreverse errors))
+               ;; Point inside an offender is already at the problem —
+               ;; typically mid-typing, on the very entry that failed to
+               ;; parse. Sending it to the entry's first column there
+               ;; would only cost the user their place.
+               (here (seq-find (lambda (e)
+                                 (let ((o (car e)))
+                                   (and (>= (point) (overlay-start o))
+                                        (<= (point) (overlay-end o)))))
+                               errors)))
           (dolist (e errors) (maf-edit--flag-error (car e) (cdr e)))
-          (goto-char (overlay-start (caar errors)))
-          (user-error "maf-edit: cannot commit — %s" (cdar errors)))
+          (unless here
+            (goto-char (overlay-start (caar errors)))
+            ;; Land on the first content column: the overlay starts at
+            ;; the machine-owned prefix, which point may not occupy.
+            (maf-edit-move-beginning-of-line 1))
+          (user-error "maf-edit: cannot commit — %s"
+                      (cdr (or here (car errors)))))
       ;; Buffer top-to-bottom is deepest-first, the order
       ;; calc-pop-push-record-list pushes in.
       (setq vals (nreverse vals)
