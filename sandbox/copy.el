@@ -1,0 +1,144 @@
+;; maf-copy: region / entry / top, and the LaTeX repeat.
+;;
+;; Each interaction is one form: a real M-w is a single command, and
+;; under `maf-step' the command loop resets `last-command' and the mark
+;; between forms. A repeat press is spelled as a `last-command'
+;; binding around the call, exactly what a second M-w would see.
+
+(maf-step
+  ;; Empty stack with no region: signals instead of guessing.
+  (cl-assert (condition-case nil
+                 (progn (call-interactively 'maf-copy) nil)
+               (error t)))
+
+  ;; Mid-formula point: the whole entry is copied anyway — copying is
+  ;; line-based, like maf-kill. The stack is untouched.
+  (maf-push "q1 + q2")
+  (maf-push "q3")
+  (progn (calc-cursor-stack-index 2)
+         (search-forward "q1" (line-end-position))
+         (backward-char 1)
+         (call-interactively 'maf-copy))
+  (cl-assert (= (calc-stack-size) 2))
+  (cl-assert (string= (current-kill 0) "q1 + q2"))
+  (setq maf--test-kills (length kill-ring))
+
+  ;; Second press: the same entry as LaTeX, replacing the plain copy
+  ;; rather than pushing a second kill. Plain sums of plain variables
+  ;; are already LaTeX, so only the kill count moves here.
+  (let ((last-command 'maf-copy)) (call-interactively 'maf-copy))
+  (cl-assert (string= (current-kill 0) "q1 + q2"))
+  (cl-assert (= (length kill-ring) maf--test-kills))
+
+  ;; Third press toggles back to the plain form, still one kill.
+  (let ((last-command 'maf-copy)) (call-interactively 'maf-copy))
+  (cl-assert (string= (current-kill 0) "q1 + q2"))
+  (cl-assert (= (length kill-ring) maf--test-kills))
+
+  ;; A press that is not a repeat starts over: no LaTeX, and the copy
+  ;; follows point to the other entry.
+  (progn (calc-cursor-stack-index 1)
+         (end-of-line)
+         (call-interactively 'maf-copy))
+  (cl-assert (string= (current-kill 0) "q3"))
+  (calc-pop (calc-stack-size))
+
+  ;; Home: the top entry is copied, formatted as calc renders it — no
+  ;; level-number prefix.
+  (maf-push "sqrt(x)/3")
+  (progn (goto-char (point-max)) (call-interactively 'maf-copy))
+  (cl-assert (string= (current-kill 0) "sqrt(x) / 3"))
+  (let ((last-command 'maf-copy)) (call-interactively 'maf-copy))
+  (cl-assert (string= (current-kill 0) "\\frac{\\sqrt{x}}{3}"))
+  ;; Formatting in latex left the display language alone.
+  (cl-assert (null calc-language))
+  (calc-pop (calc-stack-size))
+
+  ;; A region is copied verbatim — not rounded out to whole entry lines
+  ;; the way calc's own M-w does it.
+  (maf-push "a + b + c")
+  (progn (calc-cursor-stack-index 1)
+         (search-forward "b" (line-end-position))
+         (push-mark (- (point) 5) t t)   ; over "a + b"
+         (call-interactively 'maf-copy))
+  (cl-assert (string= (current-kill 0) "a + b"))
+  (cl-assert (= (calc-stack-size) 1))
+
+  ;; The repeat converts what was copied, even though the region is
+  ;; gone by then.
+  (progn (deactivate-mark)
+         (let ((last-command 'maf-copy)) (call-interactively 'maf-copy)))
+  (cl-assert (string= (current-kill 0) "a + b"))
+  (calc-pop (calc-stack-size))
+
+  ;; A region that swept up the level prefix still converts: the prefix
+  ;; is dropped before parsing, though the plain copy keeps it.
+  (maf-push "2 x")
+  (progn (calc-cursor-stack-index 1)
+         (beginning-of-line)
+         (push-mark (line-end-position) t t)
+         (call-interactively 'maf-copy))
+  (cl-assert (string-match-p "\\`1: +2 x\\'" (current-kill 0)))
+  (progn (deactivate-mark)
+         (let ((last-command 'maf-copy)) (call-interactively 'maf-copy)))
+  (cl-assert (string= (current-kill 0) "2 x"))
+  (calc-pop (calc-stack-size))
+
+  ;; Region text that is not a formula has no LaTeX form: the repeat
+  ;; says so and leaves the plain copy on the kill ring.
+  (maf-push "u")
+  (maf-push "v")
+  (progn (calc-cursor-stack-index 2)
+         (beginning-of-line)
+         (push-mark (point-max) t t)
+         (call-interactively 'maf-copy))
+  (setq maf--test-plain (current-kill 0))
+  (cl-assert (string-match-p "u" maf--test-plain))
+  (progn (deactivate-mark)
+         (cl-assert (condition-case nil
+                        (progn (let ((last-command 'maf-copy))
+                                 (call-interactively 'maf-copy))
+                               nil)
+                      (error t))))
+  (cl-assert (string= (current-kill 0) maf--test-plain))
+  (calc-pop (calc-stack-size))
+
+  ;; A region cut off mid-formula has no LaTeX either: calc's reader
+  ;; would happily read "a + sqrt(" as a zero-argument sqrt, so the
+  ;; parse is checked by formatting it back.
+  (maf-push "a + sqrt(b) + c")
+  (progn (calc-cursor-stack-index 1)
+         (search-forward "a" (line-end-position))
+         (backward-char 1)
+         (push-mark (+ (point) 9) t t)   ; over "a + sqrt("
+         (call-interactively 'maf-copy))
+  (cl-assert (string= (substring-no-properties (current-kill 0)) "a + sqrt("))
+  (progn (deactivate-mark)
+         (cl-assert (condition-case nil
+                        (progn (let ((last-command 'maf-copy))
+                                 (call-interactively 'maf-copy))
+                               nil)
+                      (error t))))
+  (cl-assert (string= (substring-no-properties (current-kill 0)) "a + sqrt("))
+  (calc-pop (calc-stack-size))
+
+  ;; A region over a fraction: 1:2 is calc's fraction notation, not a
+  ;; level prefix, and only the level prefix is stripped.
+  (maf-push "1/2")
+  (progn (calc-cursor-stack-index 1)
+         (beginning-of-line)
+         (push-mark (line-end-position) t t)
+         (call-interactively 'maf-copy))
+  (progn (deactivate-mark)
+         (let ((last-command 'maf-copy)) (call-interactively 'maf-copy)))
+  (cl-assert (string= (current-kill 0) "\\frac{1}{2}"))
+  (calc-pop (calc-stack-size))
+
+  ;; Logarithms: calc renders log(x, b) unTeXed and log10 without its
+  ;; base; maf's compose forms give both a subscripted \log.
+  (maf-push "log(x, 3) + log10(y)")
+  (progn (goto-char (point-max)) (call-interactively 'maf-copy))
+  (let ((last-command 'maf-copy)) (call-interactively 'maf-copy))
+  (cl-assert (string= (current-kill 0)
+                      "\\log_{3}\\left( x \\right) + \\log_{10}\\left( y \\right)"))
+  (calc-pop (calc-stack-size)))

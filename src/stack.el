@@ -40,6 +40,9 @@
 (declare-function calcFunc-roots "calcalg2")
 (declare-function calcFunc-sub "calc-arith")
 (declare-function math-evaluate-expr "calc-ext")
+(declare-function math-compose-expr "calccomp")
+(declare-function calc-set-language "calc-lang")
+(declare-function math-read-expr "calc-aent")
 
 (maf-defcmd mafcmd-factor-by (expr arg commit)
   "Factor the resolved expression by the top-of-stack argument.
@@ -1027,6 +1030,168 @@ anywhere. Signals an error on an empty stack."
         (calc-wrapper (calc-pop-stack 1 m)))
       ;; A single undo reverts point along with the stack.
       (maf--undo-record-cmd-point snapshot))))
+
+;;; LaTeX composition
+
+;; LaTeX composition forms for the logarithms, consulted by
+;; `math-compose-expr' whenever calc formats in the latex language —
+;; calc's own latex display mode (d L), and maf's latex output.
+;;
+;; Calc renders log(x, b) as the literal "log\left( x, 3 \right)" and,
+;; worse, log10(x) as "\log{x}", which silently drops the base. Both
+;; become \log with the base as a subscript.
+;;
+;; The composition is keyed on nil (the whole expression) rather than an
+;; argument count, since the handler returns a composition, not a
+;; formula. calccomp's dispatch is `math-compose-forms'; the property
+;; name is not free-form.
+(defun maf--latex-compose-log (expr)
+  "Compose EXPR, a `calcFunc-log' call, as LaTeX.
+Two arguments give \\log_{base}, one gives \\ln — calc normalizes
+log(x) to ln(x), so the one-argument form only shows up unevaluated."
+  (if (= (length expr) 3)
+      (list 'horiz
+            "\\log_{" (math-compose-expr (nth 2 expr) 0) "}"
+            "\\left( " (math-compose-expr (nth 1 expr) 0) " \\right)")
+    (list 'horiz
+          "\\ln\\left( " (math-compose-expr (nth 1 expr) 0) " \\right)")))
+
+(defun maf--latex-compose-log10 (expr)
+  "Compose EXPR, a `calcFunc-log10' call, as LaTeX \\log_{10}."
+  (list 'horiz
+        "\\log_{10}\\left( " (math-compose-expr (nth 1 expr) 0) " \\right)"))
+
+(with-eval-after-load 'calccomp
+  (put 'calcFunc-log 'math-compose-forms
+       '((latex (nil . maf--latex-compose-log))))
+  (put 'calcFunc-log10 'math-compose-forms
+       '((latex (nil . maf--latex-compose-log10)))))
+
+;;; Copy
+
+(defvar maf--copy-state nil
+  "What the last `maf-copy' put on the kill ring, for its repeat toggle.
+A plist:
+
+  :text    the plain-language text that was copied
+  :expr    the calc value behind it, or nil for region text that has
+           not been parsed
+  :format  `normal' or `latex' — which of the two is on the kill ring
+
+Read only when `maf-copy' is the immediately preceding command, so a
+stale entry is never picked up by a later copy.")
+
+(defun maf--latex-string (expr)
+  "Format EXPR as a single line of LaTeX.
+Calc's latex language does the formatting, but only for the call: the
+language variables it sets are restored afterwards, so the stack
+display never changes language. `math-format-value' inhibits line
+breaking, so the result is one line however wide."
+  (maf--with-calc-buffer
+    (let ((lang calc-language)
+          (opt calc-language-option))
+      (unwind-protect
+          (progn (calc-set-language 'latex nil t)
+                 (math-format-value expr))
+        (calc-set-language lang opt t)))))
+
+(defun maf--copy-squeeze (text)
+  "Return TEXT with all whitespace removed, for comparing renderings."
+  (replace-regexp-in-string "[[:space:]]+" "" (substring-no-properties text)))
+
+(defun maf--copy-read (text)
+  "Parse copied TEXT into a calc value.
+A leading level prefix (\"2: \") is dropped, so a region that swept up
+the whole display line still parses. Signals a `user-error' when the
+text is not a complete formula — text taken off the display verbatim
+need not be one.
+
+Calc's reader is lenient about truncated input rather than rejecting
+it: \"a + sqrt(\" reads as a zero-argument sqrt, \"[1, 2\" closes the
+vector for you, \"((a\" drops the parens. None of those say what the
+region says, so a parse counts only when formatting it back reproduces
+the text, whitespace aside."
+  ;; The prefix needs the whitespace calc puts after the colon to be
+  ;; told from a fraction, which is written 1:2 with none.
+  (let* ((clean (replace-regexp-in-string "\\`[0-9]+:[[:space:]]+" ""
+                                          (string-trim text)))
+         (val (math-read-expr clean)))
+    (when (eq (car-safe val) 'error)
+      (user-error "No LaTeX for this copy: %s" (nth 2 val)))
+    (unless (string= (maf--copy-squeeze (math-format-value val))
+                     (maf--copy-squeeze clean))
+      (user-error "No LaTeX for this copy: not a complete formula"))
+    val))
+
+(defun maf--copy-fresh ()
+  "Copy the region, the entry at point, or the top entry.
+Returns the new `maf--copy-state'."
+  (cond
+   ;; Verbatim text, as M-w means everywhere else: the region may cover
+   ;; several entries, half a token, or the level prefixes, and none of
+   ;; that has to parse as a formula. Unlike calc's own M-w this does
+   ;; not round the region out to whole entry lines.
+   ((use-region-p)
+    (copy-region-as-kill (region-beginning) (region-end) 'region)
+    (list :text (car kill-ring) :expr nil :format 'normal))
+   (t
+    (when (zerop (calc-stack-size))
+      (user-error "Stack is empty"))
+    (let* ((m (max 1 (calc-locate-cursor-element (point))))
+           (val (calc-top m 'full))
+           (text (math-format-value val)))
+      (kill-new text)
+      (list :text text :expr val :format 'normal)))))
+
+(defun maf--copy-toggle-format ()
+  "Re-copy the last `maf-copy' source in the other format.
+Replaces the head of the kill ring instead of pushing a second entry:
+the two formats are one copy, not two."
+  (let ((text (plist-get maf--copy-state :text)))
+    (if (eq (plist-get maf--copy-state :format) 'latex)
+        (progn
+          (kill-new text t)
+          (setq maf--copy-state (plist-put maf--copy-state :format 'normal)))
+      ;; The value from an entry copy is exact; region text has to be
+      ;; read back. Cache what it parsed to, so toggling back and forth
+      ;; parses once.
+      (let ((expr (or (plist-get maf--copy-state :expr)
+                      (maf--copy-read text))))
+        (kill-new (maf--latex-string expr) t)
+        (setq maf--copy-state
+              (plist-put (plist-put maf--copy-state :expr expr)
+                         :format 'latex))))))
+
+(defun maf-copy ()
+  "Copy the region, the entry at point, or the top of the stack.
+
+  region       =>  kill ring gets the selected text, verbatim
+  2:  a + b|   =>  kill ring gets a + b
+  home         =>  kill ring gets the top entry
+
+Copying is line-based like `maf-kill': the whole entry goes wherever
+point sits on its line, sub-formulas and calc selections included. An
+entry is copied as calc formats it, without the level-number prefix,
+so it reads back in — unlike the region, which is taken verbatim.
+
+Pressed twice in a row the same copy is remade as LaTeX, replacing
+what the first press put on the kill ring rather than adding a second
+entry; a third press goes back to the plain form. Region text that is
+not a formula has no LaTeX form, and says so, leaving the plain copy
+in place.
+
+  1:  sqrt(x)/3   M-w      =>  sqrt(x) / 3
+                  M-w M-w  =>  \\frac{\\sqrt{x}}{3}
+
+Signals an error on an empty stack when there is no region."
+  (interactive)
+  (maf--with-calc-buffer
+    (if (and (eq last-command 'maf-copy) maf--copy-state)
+        (maf--copy-toggle-format)
+      (setq maf--copy-state (maf--copy-fresh)))
+    (message "Copied%s: %s"
+             (if (eq (plist-get maf--copy-state :format) 'latex) " as LaTeX" "")
+             (string-trim (car kill-ring)))))
 
 (defun maf-dup (&optional keep-point)
   "Duplicate the item at point, pushing a copy onto the stack.

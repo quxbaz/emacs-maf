@@ -73,6 +73,12 @@
 ;; Line-based kill: the whole entry at point, onto the kill ring.
 ;; Shadows calc-kill, keeping its whole-entry semantics.
 (define-key maf-mode-map (kbd "C-k") #'maf-kill)
+;; Copy, the non-destructive counterpart of C-k: the region when there
+;; is one, else the entry at point. Shadows calc-copy-region-as-kill,
+;; which rounds a region out to whole display lines, prefixes included;
+;; maf-copy takes the region verbatim, as M-w does everywhere else.
+;; Pressed twice it recopies as LaTeX.
+(define-key maf-mode-map (kbd "M-w") #'maf-copy)
 ;; Shadows calc's TAB with the contextual line swap.
 (define-key maf-mode-map (kbd "TAB") #'maf-swap-up)
 ;; Contextual duplicate, shadowing calc-enter. At home it dups the top
@@ -116,8 +122,8 @@
 (define-key maf-mode-map (kbd "a L") #'mafcmd-poly-lcm)
 
 ;; Coordinate naming, cycling the name sets on repeat. Shadows
-;; calc-copy-as-kill; M-w still copies the region, and maf-kill (C-k)
-;; puts the whole entry on the kill ring.
+;; calc-copy-as-kill; maf-copy (M-w) copies the region or the entry,
+;; and maf-kill (C-k) kills the whole entry onto the kill ring.
 (define-key maf-mode-map (kbd "M-k") #'mafcmd-coordinate-toggle)
 
 ;; The digit-entry starters, mirroring calc-mode-map's calcDigit-start
