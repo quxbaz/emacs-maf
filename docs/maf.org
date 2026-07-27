@@ -26,36 +26,6 @@
 * Todo
 # NOW
 ** NEXT Try to render preview with LaTex
-** IN-PROGRESS /cmd new command based on calc-unpack
-   - Set default binding to `M-u`
-   - Make is contextual
-** DONE /cmd new command based on calc-remove-equal
-   - Set default binding to `M-.`
-   - New command should be contextual. I suppose subexpr targeting is
-     meaningless here, right?
-   (mafcmd-remove-equal on M-. and calc's own a .; whole-entry scope —
-   subexpr targeting would hijack the common gesture of point resting
-   inside the relation, and a vector of equations maps element-wise
-   instead. The old table row was binary, i.e. broken; it's gone.)
-** IN-PROGRESS semicolon feature
-   - Bind ; to :
-   - The point of this is to make fractions a bit more convenient to enter.
-   - Fractions are used so frequently that's there's a worthy payoff to making
-     it a single-key without any modifier.
-   - This should work in:
-     - digit entry minibuffer
-     - maf-edit mode
-   - Use old source material my/calc/ as reference, but don't assume everything
-     is ok as is.
-** DONE | cmd should always create vector
-   mafcmd-vconcat applies maf-vconcat instead of calcFunc-vconcat. Calc
-   only concatenates when it can prove both operands are objects,
-   vectors, or declared scalars, and otherwise leaves `a | b' symbolic,
-   so x | y, 1 | x and [1, 2] | x all stayed unconcatenated; maf now
-   gives [x, y], [1, x] and [1, 2, x]. Vectors still splice and a plain
-   vector joined with a matrix still becomes a row of it. I | (vconcatrev)
-   goes through the same function; H | / I H | (append, appendrev) are
-   unchanged. Test: tests/vconcat.el.
 ** IN-PROGRESS formulas module
    - [X] categories
    - [X] docs per formula
@@ -63,9 +33,6 @@
    - [ ] quick menu
    - [ ] add binding
 # LATER
-** DONE k k (my/calc-evaluate N) should work on fractions and division.
-   mafcmd-evaluate floats what the evaluation leaves exact: 1:3 gives
-   0.333333333333, x / 3 gives 0.333333333333 x.
 ** TODO g i (my/calc-graph-quick-with-range) interval form a:b should work with spaces 'a b'
 ** TODO Full formula buffer should have "recents" section.
 ** TODO Saved formulas should support "notes" that display in full formula buffer.
