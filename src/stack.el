@@ -878,6 +878,61 @@ entries by one, as calc's TAB does."
             ;; A single undo reverts point along with the stack.
             (maf--undo-record-cmd-point snapshot)))))))
 
+(defun maf-roll-to-top ()
+  "Move the stack entry at point to the top of the stack.
+
+  3:  a|         3:  b
+  2:  b     =>   2:  c
+  1:  c          1:  a|
+
+The entry at point becomes level 1, on the bottom line; the entries
+that were under it on screen each move up a line, keeping their order,
+and the entries above it stay where they are. Only the arrangement
+changes — nothing is evaluated, and no entry is added or dropped.
+
+Point travels with the entry, keeping its place within it: on a
+sub-formula it stays on that sub-formula, at end of line it stays at
+end of line, in the line-number margin it stays in the margin.
+Selections travel with their entries. With the entry at point already
+on top, at home, or on an empty stack, there is nothing to move and
+the command does nothing."
+  (interactive)
+  (maf--with-calc-buffer
+    (let ((m (calc-locate-cursor-element (point))))
+      ;; m of 1 (the top entry) or 0 (home, empty stack) has nothing to
+      ;; move; leaving early also spares point calc-wrapper's homing.
+      (when (> m 1)
+        (let ((snapshot (maf--point-snapshot))
+              ;; Point as an offset into the entry's own text. The roll
+              ;; reprints the same formula and the stack keeps its size,
+              ;; so the line-number prefixes keep their width too: the
+              ;; offset lands on the same character once the entry is at
+              ;; level 1, multi-line renderings included.
+              (offset (- (point) (save-excursion
+                                   (calc-cursor-stack-index m)
+                                   (point)))))
+          (calc-wrapper
+           ;; Both lists run deepest-first, so moving the entry at point
+           ;; (their car) to the end puts it on level 1 while the rest
+           ;; keep their order. The selections travel along — calc's own
+           ;; roll keeps them only while `calc-use-selections' is nil.
+           ;; The values are read with `full': a plain `calc-top-list'
+           ;; hands back the *selection* for a selected entry, which
+           ;; would put the selected part on the stack in place of the
+           ;; whole formula.
+           (let ((vals (calc-top-list m 1 'full))
+                 (sels (calc-top-list m 1 'sel)))
+             (calc-pop-push-list m
+                                 (append (cdr vals) (list (car vals)))
+                                 1
+                                 (append (cdr sels) (list (car sels))))))
+          ;; Calc parks point at home after the rewrite; follow the
+          ;; entry down to level 1 instead.
+          (calc-cursor-stack-index 1)
+          (goto-char (min (+ (point) offset) (point-max)))
+          ;; A single undo reverts point along with the stack.
+          (maf--undo-record-cmd-point snapshot))))))
+
 (maf-defcmd mafcmd-equal-to (expr arg commit)
   "Equate the entry at point with the top-of-stack argument.
 
