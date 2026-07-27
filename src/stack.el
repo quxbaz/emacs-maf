@@ -40,6 +40,7 @@
 (declare-function calcFunc-roots "calcalg2")
 (declare-function calcFunc-sub "calc-arith")
 (declare-function math-evaluate-expr "calc-ext")
+(declare-function math-compose-expr "calccomp")
 
 (maf-defcmd mafcmd-factor-by (expr arg commit)
   "Factor the resolved expression by the top-of-stack argument.
@@ -993,6 +994,42 @@ anywhere. Signals an error on an empty stack."
         (calc-wrapper (calc-pop-stack 1 m)))
       ;; A single undo reverts point along with the stack.
       (maf--undo-record-cmd-point snapshot))))
+
+;;; LaTeX composition
+
+;; LaTeX composition forms for the logarithms, consulted by
+;; `math-compose-expr' whenever calc formats in the latex language —
+;; calc's own latex display mode (d L), and maf's latex output.
+;;
+;; Calc renders log(x, b) as the literal "log\left( x, 3 \right)" and,
+;; worse, log10(x) as "\log{x}", which silently drops the base. Both
+;; become \log with the base as a subscript.
+;;
+;; The composition is keyed on nil (the whole expression) rather than an
+;; argument count, since the handler returns a composition, not a
+;; formula. calccomp's dispatch is `math-compose-forms'; the property
+;; name is not free-form.
+(defun maf--latex-compose-log (expr)
+  "Compose EXPR, a `calcFunc-log' call, as LaTeX.
+Two arguments give \\log_{base}, one gives \\ln — calc normalizes
+log(x) to ln(x), so the one-argument form only shows up unevaluated."
+  (if (= (length expr) 3)
+      (list 'horiz
+            "\\log_{" (math-compose-expr (nth 2 expr) 0) "}"
+            "\\left( " (math-compose-expr (nth 1 expr) 0) " \\right)")
+    (list 'horiz
+          "\\ln\\left( " (math-compose-expr (nth 1 expr) 0) " \\right)")))
+
+(defun maf--latex-compose-log10 (expr)
+  "Compose EXPR, a `calcFunc-log10' call, as LaTeX \\log_{10}."
+  (list 'horiz
+        "\\log_{10}\\left( " (math-compose-expr (nth 1 expr) 0) " \\right)"))
+
+(with-eval-after-load 'calccomp
+  (put 'calcFunc-log 'math-compose-forms
+       '((latex (nil . maf--latex-compose-log))))
+  (put 'calcFunc-log10 'math-compose-forms
+       '((latex (nil . maf--latex-compose-log10)))))
 
 (defun maf-dup (&optional keep-point)
   "Duplicate the item at point, pushing a copy onto the stack.

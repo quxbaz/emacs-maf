@@ -95,7 +95,11 @@
      variable, skipping function names; fix the line-prefix bug while at it (see Bugs)
 ** Copying
    - [ ] my/calc-kill-ring-save-dwim (M-w) — copy region/entry/top; invoked twice, copies LaTeX
-   - [ ] LaTeX composition for log: log(x, b) → \log_{b}(x) (math-compose-latex property)
+   - [X] LaTeX composition for log: log(x, b) → \log_{b}(x) (math-compose-latex property)
+     (maf--latex-compose-log/-log10 in stack.el. The draft's math-compose-latex
+     property is never consulted by calccomp — the dispatch is math-compose-forms
+     keyed by language — so it had never taken effect; log10 needed the same
+     treatment, calc renders it \log{x} and drops the base outright)
 ** Stack shuffling and duplication
    - [X] my/calc-duplicate (RET) + my/calc-push-dwim (M-RET) + my/calc-duplicate-no-move —
      fold into one contextual duplicate: entry at point, sub-formula, or region
