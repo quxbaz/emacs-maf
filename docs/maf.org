@@ -87,26 +87,12 @@
    - [ ] my/calc-plus / my/calc-minus (+/-) — eq + eq adds/subtracts both sides;
      layer onto mafcmd-add/sub
 ** Solving
-   - [X] my/calc-auto-solve (M-i) — solve for the first variable, cycle when already solved
-     (mafcmd-auto-solve on M-i; contextual solve or isolate-subexpr)
-   - [X] my/calc-poly-roots (M-r) — roots via factoring, with multiplicity
-     (mafcmd-poly-roots on M-r; auto variable, no prompt)
    - [ ] my/calc-inverse-function (l v) — invert y = f(x), any variable names
 ** Angles
-   - [X] my/calc-ref-angle (M-l) — reference angle (+ my/math-ref-angle helper)
-     (mafcmd-ref-angle on M-l; maf--ref-angle in math.el, pi- and hms-aware)
-   - [X] my/calc-supplement (M-s) — 180−x / pi−x, pi-aware
-     (mafcmd-supplement on M-s; contextual, HMS included, exact in radians)
    - [ ] my/calc-complement (M-c) — 90−x / (pi/2)−x, pi-aware
 ** Polynomials
-   - [X] my/calc-poly-lcm (a L) — LCM of two polynomials by factorization
-     (mafcmd-poly-lcm on a L; contextual binary, maf--poly-lcm in math.el
-     holds the factor merge and its pgcd minimality check)
    - [ ] Polynomial term ordering — math-normalize advice keeping sums in descending degree
 ** Vectors
-   - [X] my/calc-coordinate-toggle (M-k) — cycle [1 2] → [x=1 y=2] → [h=1 k=2] → [p=1 q=2];
-     also f(2) = 0 → [2 0]
-     (mafcmd-coordinate-toggle on M-k; name sets in maf-coordinate-name-sets)
    - [ ] my/calc-unique-groups (l g) — all size-n combinations of a vector
    - [ ] my/calc-vector-flatten (v L)
 ** Triangles
@@ -118,13 +104,6 @@
    maf-toggle-simplify; mafcmd: factor-by, factor-gcd, sqrt/sqr, exp, ln, log,
    pow, mul, div, add, sub, neg, inv, esimplify, factor, expand. Trail yank
    commands superseded by maf-timeline RET/C-RET.
-
-* PORT:evaluate.el
-  - [X] my/calc-evaluate (k k) — evaluate numerically, contextual (see Todo: fractions/division)
-    (mafcmd-evaluate on k k; leftover fractions and divisions float too)
-  - [X] my/calc--identify-expr (I k k) — identify a float as integer, p/q, (p/q)·√n,
-    n^(1/3), n^(1/4), (p/q)·π/e, ln(n)
-    (mafcmd-identify on I k k; maf--identify-expr in math.el holds the candidates)
 
 * PORT:ineq.el
   - [ ] my/calc-abs-ineq (a k) — |a| < b → compound inequality, each part solved for the variable
