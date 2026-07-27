@@ -26,6 +26,7 @@
 * Todo
 # NOW
 ** NEXT Try to render preview with LaTex
+** TODO Add command to duplicate current entry below it
 ** DONE Create new command based on calc-unpack
    - [X] Set default binding to `M-u`
    - [X] Make is contextual
