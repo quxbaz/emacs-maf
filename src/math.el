@@ -792,6 +792,38 @@ reproduced here without its scalar test."
   "Concatenate B and A into a vector, the reverse of `maf-vconcat'."
   (maf-vconcat b a))
 
+(defun maf--combinations (items k)
+  "Return every K-element combination of list ITEMS, as a list of lists.
+Combinations are taken by position, so each element is used at most once
+per group, and both the order within a group and the order among the
+groups follow ITEMS: (a b c) taken two at a time gives (a b), (a c),
+(b c). A K of zero gives one empty combination; a K larger than ITEMS
+gives none."
+  (cond ((<= k 0) (list nil))
+        ((null items) nil)
+        (t (append
+            (mapcar (lambda (rest) (cons (car items) rest))
+                    (maf--combinations (cdr items) (1- k)))
+            (maf--combinations (cdr items) k)))))
+
+(defun maf--unique-groups (vec n)
+  "Return calc vector VEC's elements grouped N at a time, as a vector.
+Each group is itself a vector, holding N of VEC's elements in VEC's own
+order, and the groups run in the order `maf--combinations' produces.
+
+Groups that come out identical are kept once: VEC's elements are taken
+by position, so repeated elements would otherwise repeat whole groups —
+\[a, a, b] would list [a, b] twice. What is left is the distinct
+groupings, which is what the vector's contents, rather than its
+positions, have to say."
+  (let ((seen (make-hash-table :test #'equal))
+        groups)
+    (dolist (group (maf--combinations (cdr vec) n))
+      (unless (gethash group seen)
+        (puthash group t seen)
+        (push (cons 'vec group) groups)))
+    (cons 'vec (nreverse groups))))
+
 (defun maf--flip-relation-op (op)
   "Return relation OP with its direction reversed: lt <-> gt, leq <-> geq.
 Symmetric operators (eq, neq) return unchanged."
