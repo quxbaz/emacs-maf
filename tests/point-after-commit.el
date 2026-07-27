@@ -28,14 +28,29 @@
   (cl-assert (eq (char-after) ?x))
   (calc-pop (calc-stack-size))
 
-  ;; target=entry from the line prefix: BOL affinity is kept on the line.
+  ;; target=entry from the line prefix: point keeps its place in the
+  ;; margin — same line, same column — rather than being normalized to
+  ;; the line's start.
   (maf-push "8 x + 4")
   (maf-push "sin(y)")
   (progn (goto-char (point-min)) (forward-char 1))
   (call-interactively 'maf-square)
   (cl-assert (string= (math-format-value (calc-top 2 'full)) "(8 x + 4)^2"))
-  (cl-assert (bolp))
   (cl-assert (= (line-number-at-pos) 1))
+  (cl-assert (= (current-column) 1))
+  (cl-assert (maf--at-line-prefix-p))
+  (calc-pop (calc-stack-size))
+
+  ;; A no-op command must not move point at all: the margin column is
+  ;; preserved wherever in the margin it sat.
+  (maf-push "(a + b) (2 c - d)")
+  (maf-push "sin(y)")
+  (progn (goto-char (point-min)) (forward-char 3))
+  (call-interactively 'mafcmd-remove-equal)
+  (cl-assert (string= (math-format-value (calc-top 2 'full))
+                      "(a + b) (2 c - d)"))
+  (cl-assert (= (line-number-at-pos) 1))
+  (cl-assert (= (current-column) 3))
   (calc-pop (calc-stack-size))
 
   ;; target=equation from EOL of a relation entry: point stays at that

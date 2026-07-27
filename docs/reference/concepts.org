@@ -69,6 +69,26 @@ region denotes something a plain subexpr could express, it collapses
 into a subexpr context and only the pointing gesture was new (see
 [[*The region target][The region target]]).
 
+** Whole-entry scope
+
+=:scope entry= in a command's options bypasses the cascade above: the
+sub-formula targets (region, selection, subexpr) never fire, and the
+command resolves =entry= at point — or =home= when point is past the
+last entry — however the pointing gesture looked. Point still chooses
+/which/ entry; it just cannot narrow the subject inside it.
+
+For commands with no sub-formula meaning: building a relation between
+two entries (=mafcmd-equal-to=), removing one (=mafcmd-remove-equal=),
+solving (=mafcmd-auto-solve=), finding roots (=mafcmd-poly-roots=).
+Without it, the far more common gesture — point resting somewhere
+inside the formula — would resolve to whatever sub-formula happens to
+sit under the cursor and the command would act on that instead.
+
+Commit honors the same intent: an entry-scoped push binds
+=calc-use-selections= to nil so calc does not redirect the new value
+into an active sub-formula selection, and the replacement entry
+carries no selection.
+
 * The region target
 
 Calc stores a sum as a left-nested binary tree and a product as a

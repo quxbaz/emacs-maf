@@ -28,10 +28,14 @@
 ** IN-PROGRESS /cmd new command based on calc-unpack
    - Set default binding to `M-u`
    - Make is contextual
-** IN-PROGRESS /cmd new command based on calc-remove-equal
+** DONE /cmd new command based on calc-remove-equal
    - Set default binding to `M-.`
    - New command should be contextual. I suppose subexpr targeting is
      meaningless here, right?
+   (mafcmd-remove-equal on M-. and calc's own a .; whole-entry scope —
+   subexpr targeting would hijack the common gesture of point resting
+   inside the relation, and a vector of equations maps element-wise
+   instead. The old table row was binary, i.e. broken; it's gone.)
 ** IN-PROGRESS semicolon feature
    - Bind ; to :
    - The point of this is to make fractions a bit more convenient to enter.

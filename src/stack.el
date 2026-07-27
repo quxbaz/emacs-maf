@@ -910,6 +910,40 @@ relation it forms: subject != argument, structural, no simplification."
   :map -1
   (commit (list 'calcFunc-neq expr arg)))
 
+(maf-defcmd mafcmd-remove-equal (expr _arg commit)
+  "Drop the relation from the entry at point, keeping the side that matters.
+
+  x = 5  =>  5
+
+The side kept is the right one, except when the right side is a bare
+variable and the left an object — there the object wins, so a solution
+reads the same whichever way round it was written. Every relation
+qualifies, not just equality, along with assignments and evalto. A
+vector maps element-wise, so a list of equations gives the list of its
+sides.
+
+Nothing else changes: the surviving side commits structurally, exactly
+as it stood inside the relation. An entry with no relation in it
+commits unchanged, as does a vector element that has none. With
+keep-args the entry stays and the side is pushed on top.
+
+It acts on the whole entry — the relation at point, wherever point sits
+on its line — or the top entry at home; removing a relation has no
+sub-formula meaning, so point within the formula is not used to narrow
+it.
+
+  y = 2 x + 1     =>  2 x + 1
+  5 = x           =>  5           (the bare variable loses)
+  a < b           =>  b
+  x := 5          =>  5
+  [x = 1, y = 2]  =>  [1, 2]
+  2 x + 1         =>  2 x + 1     (no relation: unchanged)"
+  :arity unary
+  :prefix "rmeq"
+  :map -1
+  :scope entry
+  (commit (maf--remove-relation expr)))
+
 (defun maf--del-land-above (m snapshot)
   "Put point on the entry now at level M — the one just above the deleted
 entry — keeping SNAPSHOT's eol/bol affinity. After a whole entry at level
