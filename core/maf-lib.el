@@ -129,14 +129,28 @@ the positional restore."
         (when-let ((pos (maf--comp-node-anchor-pos node index)))
           (goto-char pos))))))
 
+(defun maf--point-restore-margin (col)
+  "Put point back at COL within the current line's line-number margin.
+The margin is the only part of the line whose width the stack's own
+numbering controls, and it changes under the user: a push past entry 9
+widens every prefix by a column. So COL is clamped into the margin as
+it now stands, keeping point in the margin without normalizing away
+where in it the user was. Falls back to the line's start when the line
+no longer carries a prefix at all."
+  (beginning-of-line)
+  (when (and col (looking-at " *[0-9]+: +"))
+    (move-to-column (min col (- (match-end 0) (point) 1)))))
+
 (defun maf--point-restore (snapshot &optional anchor landed)
   "Restore point from SNAPSHOT (see `maf--point-snapshot').
 Calc commands that rewrite the stack buffer park point at home; this
 puts it back where the user had it. A `home' snapshot is a no-op —
 calc's default placement already matches. Otherwise point returns to
 its previous buffer position, corrected back to the original line when
-the rewrite shifted it, and EOL/BOL affinity is re-applied on the line
-rather than the exact position.
+the rewrite shifted it. EOL affinity is re-applied on the line rather
+than at the exact position, since the line's end moves with the
+formula; BOL affinity keeps its column within the line-number margin
+\(see `maf--point-restore-margin').
 
 When ANCHOR (the :point-anchor glyph index from resolve) and LANDED
 \(`maf--commit's return) are given, point re-anchors on the committed
@@ -159,7 +173,8 @@ the positional restore when the anchor can't be located."
                 (move-to-column col))))
           (pcase affinity
             ('eol (end-of-line))
-            ('bol (beginning-of-line)))))))
+            ('bol (maf--point-restore-margin
+                   (alist-get :col snapshot))))))))
 
 (defmacro maf--preserve-point (&rest forms)
   "Evaluate FORMS, then restore point's line, position, and affinity.
