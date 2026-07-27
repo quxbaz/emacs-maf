@@ -37,6 +37,9 @@
 ;; M-s is unbound in calc itself; it shadows the global `search-map'
 ;; prefix, which calc buffers have no use for.
 (define-key maf-mode-map (kbd "M-s") #'mafcmd-supplement)
+;; The supplement's twin. M-c is unbound in calc itself; it shadows the
+;; global `capitalize-dwim', which has no place in the stack buffer.
+(define-key maf-mode-map (kbd "M-c") #'mafcmd-complement)
 (define-key maf-mode-map (kbd "O") #'mafcmd-commute)
 ;; Shift the term under point through its associative chain. Lowercase
 ;; j l / j r (calc binds the shifts to capital j L / j R, left reachable).

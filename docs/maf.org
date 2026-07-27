@@ -87,7 +87,9 @@
 ** Solving
    - [ ] my/calc-inverse-function (l v) — invert y = f(x), any variable names
 ** Angles
-   - [ ] my/calc-complement (M-c) — 90−x / (pi/2)−x, pi-aware
+   - [X] my/calc-complement (M-c) — 90−x / (pi/2)−x, pi-aware
+     (mafcmd-complement on M-c; maf--turn-complement in math.el now holds the
+     turn choice for both it and mafcmd-supplement)
 ** Polynomials
    - [ ] Polynomial term ordering — math-normalize advice keeping sums in descending degree
 ** Vectors

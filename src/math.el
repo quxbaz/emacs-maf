@@ -32,6 +32,7 @@
 (declare-function math-polynomial-p "calc-alg")
 (declare-function math-is-polynomial "calc-alg")
 (declare-function math-const-var "calc-ext")
+(declare-function math-pi "calc-ext")
 (declare-function math-vectorp "calc-ext")
 (declare-function math-matrixp "calc-ext")
 (declare-function math-lessp "calc-ext")
@@ -97,6 +98,38 @@ value 3.92699081699 does not."
       (and (consp expr)
            (cl-some #'maf--contains-pi-p (cdr expr))
            t)))
+
+(defun maf--turn-complement (x part)
+  "Return PART of a full turn less the angle X.
+PART is the fraction of a turn X is taken away from: 1:2 gives X's
+supplement, 1:4 its complement.
+
+The turn follows the angle rather than the mode alone: symbolic pi
+anywhere in X makes it 2 pi — pi / 6 supplements to 5:6 pi even in
+degrees mode — and otherwise `calc-angle-mode' picks 2 pi for radians
+and 360 for degrees. An hms form is degrees by construction, so it
+takes the degree turn in any mode, with the angle mode pinned to deg so
+that the plain number it meets is not read as radians and converted.
+
+Exact angles stay exact, and a float switches a radian turn to numeric
+pi, as in `mafcmd-to-degrees': the value has already forfeited
+exactness, and a symbolic pi would linger as clutter. Nothing checks
+that X is an angle at all, or that the difference stays in the first
+turn — an obtuse angle has a negative complement, and a symbolic
+expression just subtracts as it stands. This is the transformation
+behind `mafcmd-supplement' and `mafcmd-complement'; to change it,
+change this function."
+  (let* ((hms (eq (car-safe x) 'hms))
+         (calc-angle-mode (if hms 'deg calc-angle-mode))
+         (radians (or (eq calc-angle-mode 'rad) (maf--contains-pi-p x)))
+         (full-turn (cond ((not radians) 360)
+                          ((maf--contains-float-p x) (math-mul 2 (math-pi)))
+                          (t (math-mul 2 '(var pi var-pi)))))
+         ;; Fractions preferred: the subtraction divides out a common
+         ;; denominator, and at calc's default an exact pi - 2 pi / 3
+         ;; would land on 0.333333333333 pi instead of pi / 3.
+         (calc-prefer-frac t))
+    (math-simplify (math-sub (math-mul part full-turn) x))))
 
 (defun maf--ref-angle (x)
   "Return the reference angle of the angle X, or nil if it has no quadrant.
