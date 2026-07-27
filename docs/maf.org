@@ -78,7 +78,19 @@
    - [ ] my/calc-recall-browse (p) — completing-read recall, values as annotations
      (drop the ivy-specific TAB cycling)
    - [ ] my/calc-recall / my/calc-recall-quick (r 0-9) — recall without simplification
-   - [ ] my/calc-substitute (a b) — calc-substitute variant with an empty new-name prompt
+   - [X] my/calc-substitute (a b) — calc-substitute variant with an empty new-name prompt
+     (mafcmd-substitute on a b. Contextual: the subject is the selection,
+     sub-formula, equation side, region, or entry at point, not just the stack
+     top. The first prompt defaults to the subject's priority variable; the
+     draft's empty new-name prompt comes free, since both prompts offer
+     defaults rather than initial input. The old/new-from-the-stack forms
+     collapse into one: $ at the replacement prompt makes the command binary,
+     so the entry above the subject is the replacement and commit consumes it.
+     A substitution matching nothing is refused before anything is committed,
+     for every form — the draft skipped that check whenever the old side came
+     off the stack, silently popping three entries for a no-op. Its parse
+     errors also printed (nth 1 err), the error's position, where the message
+     was meant.)
    - [ ] my/calc-swap-variables (l x) — swap two variables in the top entry
    - [ ] my/calc-quick-substitution (C-RET) — substitute the top assignment into level 2;
      needs a maf answer to the saved keep-args-flag hack
