@@ -69,7 +69,8 @@
    - [ ] my/calc-forward-noun / my/calc-backward-noun (M-f/M-b) — next/previous number or
      variable, skipping function names; fix the line-prefix bug while at it (see Bugs)
 ** Stack shuffling and duplication
-   - [-] my/calc-roll-to-top (S-RET) — move the entry at point to the top
+   - [X] my/calc-roll-to-top (S-RET) — move the entry at point to the top
+     → maf-roll-to-top (C-S-RET); point rides along to level 1
    - [-] my/calc-roll-to-bottom (C-M-backspace)
    - [ ] my/calc-store-stack / my/calc-recall-stack (s RET / r RET) — in-memory stack
      save/restore; possibly superseded by maf-timeline r — decide before porting

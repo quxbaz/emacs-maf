@@ -95,6 +95,11 @@
 ;; Bind the GUI event and the terminal form both, as calc has no M-RET.
 (define-key maf-mode-map (kbd "M-<return>") #'maf-dup-here)
 (define-key maf-mode-map (kbd "M-RET") #'maf-dup-here)
+;; Restack: the entry at point travels to the top, point riding along.
+;; The graphical event only — C-S-<return> is unbound in calc itself and
+;; no terminal can deliver it (cf. the edit module's S-<return>, which
+;; takes C-j as its terminal stand-in).
+(define-key maf-mode-map (kbd "C-S-<return>") #'maf-roll-to-top)
 ;; Equate gets both = (shadowing calc-evaluate) and e (shadowing the
 ;; e-notation digit start; inside digit entry e still means exponent,
 ;; since the entry minibuffer is calc's own).
