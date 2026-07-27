@@ -1324,6 +1324,126 @@ at point, the top entry at home.
       (user-error "No coordinate form for this expression"))
     (commit form)))
 
+;;; Variables
+
+(defun maf--swap-vars-in (expr a b)
+  "Return EXPR with variables A and B traded throughout.
+Every occurrence of A becomes B and every occurrence of B becomes A, in
+a single structural pass — no temporary variable that a name already in
+EXPR could collide with, and nothing normalized or reordered along the
+way, so only the names change and the shape is left alone.
+
+Descends the same nodes as `math-expr-subst' (`Math-primp' terminates
+the walk), but without its two-argument deriv special case, which skips
+the differentiated body: a rename that reached only the deriv's variable
+slot would change the expression's meaning."
+  (cond ((equal expr a) b)
+        ((equal expr b) a)
+        ((Math-primp expr) expr)
+        (t (cons (car expr)
+                 (mapcar (lambda (part) (maf--swap-vars-in part a b))
+                         (cdr expr))))))
+
+(defvar maf--swap-vars-pair nil
+  "The two calc variables `maf--swap-vars-run' should trade, as a list.
+Bound per `mafcmd-swap-vars' call, from the prompt it reads.")
+
+(defun maf--swap-vars-default ()
+  "Return the variable pair `mafcmd-swap-vars' offers as its default.
+A string of two names, or nil when the entry has fewer than two
+variables — or when point resolves to no entry at all, leaving the
+prompt without a default. Read-only: resolves the same whole-entry
+subject the command will act on and takes its first two variables in
+priority order (see `maf--solve-sorted-vars'), without touching calc
+state."
+  (ignore-errors
+    (let* ((context (maf--resolve-context
+                     '((:arity . unary) (:scope . entry) (:map . -1))))
+           (vars (maf--solve-sorted-vars (alist-get :expr context))))
+      (when (nth 1 vars)
+        (format "%s %s" (nth 1 (nth 0 vars)) (nth 1 (nth 1 vars)))))))
+
+(defun maf--swap-vars-read (default)
+  "Read the two variable names to swap; return them as calc variables.
+DEFAULT is the pair empty input stands for, or nil to require input.
+The two names are separated by a space or a comma, and surrounding
+brackets are ignored, so x y, x,y and [x, y] all name the same pair.
+Anything but exactly two plain variable names is a `user-error'."
+  (let* ((input (string-trim
+                 (read-string (if default
+                                  (format "Swap variables (default %s): " default)
+                                "Swap variables: ")
+                              nil nil default)))
+         ;; Brackets and commas are separators, not part of a name; the
+         ;; rest splits on whitespace.
+         (names (split-string (replace-regexp-in-string "[][,]" " " input)
+                              nil t)))
+    (unless (= (length names) 2)
+      (user-error "Give exactly two variable names, as in x y"))
+    (mapcar (lambda (name)
+              (let ((var (math-read-expr name)))
+                ;; Only plain names, so that a bare x y can be split on
+                ;; whitespace rather than read as the product x y. A parse
+                ;; failure comes back as (error POSITION MESSAGE), which is
+                ;; no more a variable than 2 or f(x) is.
+                (unless (eq (car-safe var) 'var)
+                  (user-error "Not a variable name: %s" name))
+                var))
+            names)))
+
+(maf-defcmd maf--swap-vars-run (expr _arg commit)
+  "Trade the variables in `maf--swap-vars-pair' throughout the entry.
+The worker behind `mafcmd-swap-vars' — see there. Takes the whole entry
+\(`:scope entry'), so point within the formula never narrows the subject,
+and takes a relation whole (`:map -1') rather than a side at a time, so a
+pair split across the sides still swaps."
+  :arity unary
+  :prefix "swap"
+  :map -1
+  :scope entry
+  (let ((a (nth 0 maf--swap-vars-pair))
+        (b (nth 1 maf--swap-vars-pair)))
+    ;; With neither name present the swap is a no-op, which reads as
+    ;; nothing having happened; say so instead of committing a copy.
+    (unless (or (math-expr-contains expr a) (math-expr-contains expr b))
+      (user-error "Neither %s nor %s occurs in this entry"
+                  (nth 1 a) (nth 1 b)))
+    (commit (maf--swap-vars-in expr a b))))
+
+(defun mafcmd-swap-vars ()
+  "Swap two variables read from the minibuffer, throughout the expression.
+
+  2 y = x + 2  =>  2 x = y + 2
+
+Renaming only: the two names trade places wherever they occur and
+nothing else moves, so the expression keeps its shape — no side is
+re-solved and no sum reordered. Naming a variable that does not occur
+renames the other one to it, which is how a single variable gets
+renamed; when neither occurs the command signals rather than commit an
+unchanged copy.
+
+The prompt offers the entry's first two variables as its default — x, y,
+z, t first, then alphabetical. Both names are given at once,
+separated by a space or a comma; brackets around the pair are ignored.
+Only plain variable names are accepted, since a bare x y has to split on
+whitespace rather than read as the product.
+
+It acts on the whole entry — the one at point, wherever point sits on its
+line, or the top entry at home. Renaming is a statement about the whole
+formula, so point within it is not used to narrow the subject, and a
+relation is taken whole rather than a side at a time: a pair split across
+the sides still swaps.
+
+  x^2 + y            =>  y^2 + x      (typed: x y)
+  a x + b y          =>  a y + b x    (typed: x y)
+  x^2 + y            =>  y^2 + x      (typed: y x — order is immaterial)
+  u + 1              =>  x + 1        (typed: u x — a rename)"
+  (interactive)
+  ;; Read the prompt before any calc state is touched, so C-g aborts with
+  ;; nothing done.
+  (let ((maf--swap-vars-pair (maf--swap-vars-read (maf--swap-vars-default))))
+    (call-interactively #'maf--swap-vars-run)))
+
 ;;; Solving
 
 (defun maf--solve-solved-for (expr)

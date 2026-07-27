@@ -79,7 +79,6 @@
      (drop the ivy-specific TAB cycling)
    - [ ] my/calc-recall / my/calc-recall-quick (r 0-9) — recall without simplification
    - [ ] my/calc-substitute (a b) — calc-substitute variant with an empty new-name prompt
-   - [ ] my/calc-swap-variables (l x) — swap two variables in the top entry
    - [ ] my/calc-quick-substitution (C-RET) — substitute the top assignment into level 2;
      needs a maf answer to the saved keep-args-flag hack
 ** Equation arithmetic
@@ -102,7 +101,8 @@
    maf-del, maf-beginning-of-entry, mafcmd-equal-to, maf-quick-variable,
    maf-toggle-simplify; mafcmd: factor-by, factor-gcd, sqrt/sqr, exp, ln, log,
    pow, mul, div, add, sub, neg, inv, esimplify, factor, expand. Trail yank
-   commands superseded by maf-timeline RET/C-RET.
+   commands superseded by maf-timeline RET/C-RET. my/calc-swap-variables →
+   mafcmd-swap-vars (l x), whole-entry like solve-for.
 
 * PORT:ineq.el
   - [ ] my/calc-abs-ineq (a k) — |a| < b → compound inequality, each part solved for the variable

@@ -130,6 +130,10 @@
 ;; calc itself.
 (define-key maf-mode-map (kbd "a L") #'mafcmd-poly-lcm)
 
+;; Swap two variables, read from the minibuffer. l x is unbound in calc
+;; itself (l is its logarithmic-units prefix).
+(define-key maf-mode-map (kbd "l x") #'mafcmd-swap-vars)
+
 ;; Unwrap the target into its parts. M-u is unbound in calc itself (it
 ;; shadows the global upcase-dwim, which has no place in the stack
 ;; buffer). The other two are calc's own unpack keys, and mafcmd-unpack
