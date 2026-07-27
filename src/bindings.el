@@ -144,6 +144,14 @@
 (define-key maf-mode-map (kbd "j U") #'mafcmd-unpack)
 (define-key maf-mode-map (kbd "j M-U") #'mafcmd-unpack)
 
+;; Flatten the target vector. Takes calc's v L from calc-lud (LU
+;; decomposition), which the table in maf-cmds.el gives up its key for;
+;; mafcmd-lud is still reachable by name. Flattening earns the vector
+;; key: it is the everyday shape fix after a map or a pack leaves
+;; rows where a plain list was wanted, and it sits a keystroke from
+;; mafcmd-arrange (v a), the N-column form it degenerates from.
+(define-key maf-mode-map (kbd "v L") #'mafcmd-flatten)
+
 ;; Coordinate naming, cycling the name sets on repeat. Shadows
 ;; calc-copy-as-kill; maf-copy (M-w) copies the region or the entry,
 ;; and maf-kill (C-k) kills the whole entry onto the kill ring.

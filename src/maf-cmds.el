@@ -331,7 +331,8 @@ are set, making the I and H prefixes route to the variant contextually.
   (grade unary calcFunc-grade "v G" :inv rgrade)
   (histogram binary calcFunc-histogram "v H")
   (inner binary calcFunc-inner "v I")
-  (lud unary calcFunc-lud "v L")
+  ;; lud cedes calc's v L to mafcmd-flatten (bindings.el).
+  (lud unary calcFunc-lud)
   (cnorm unary calcFunc-cnorm "v N")
   (outer binary calcFunc-outer "v O")
   (reduce unary calcFunc-reduce "v R" :inv rreduce :hyp nest :invhyp fixp)
