@@ -26,44 +26,6 @@
 * Todo
 # NOW
 ** TODO Add command to duplicate current entry below it
-** DONE Create new command based on calc-unpack
-   - [X] Set default binding to `M-u`
-   - [X] Make is contextual
-   mafcmd-unpack unwraps the resolved target. A whole entry spreads one
-   stack entry per part, as calc-unpack does ([x, y] gives 2: x / 1: y).
-   A sub-formula holds one expression, so there the command peels the
-   innermost single-argument wrapper around point: anywhere within
-   sin(2 x) it takes off the sin, and nesting still follows point
-   (sin(cos(x|)) -> sin(x), sin|(cos(x)) -> cos(x)). With nothing
-   peelable out to the entry it does nothing. A relation comes apart
-   into its two sides (:map -1) rather than mapping per side. A numeric
-   prefix gives calc's unpacking mode.
-   Anything with nothing to give -- a bare variable, a plain number, an
-   empty vector, a mode the expression does not fit -- commits unchanged
-   instead of signaling; calc would empty the stack on the empty vector.
-
-   The one command covers both of calc's, and takes all their keys
-   besides M-u:
-   - v u, calc-unpack: spread a whole entry's parts over the stack.
-   - j U (and its j M-U alias), calc-sel-unpack: replace a selected
-     one-argument call with its argument. Wherever calc-sel-unpack
-     succeeds mafcmd-unpack agrees; where it signals ("Selection must
-     be a function of one argument") maf commits unchanged. Shadowing
-     the key keeps one unpack behavior in the buffer.
-
-   It also replaces the broken table row that held v u: that row
-   declared calcFunc-unpack unary, but the function is binary (mode,
-   thing), so it only ever produced a symbolic unpack(x).
-
-   Machinery, both general and documented in concepts.org:
-   - maf-defcmd binds maf-target to the resolved target around the body,
-     so a body can shape its result to where it lands -- a value list
-     for a whole entry, a single expression for a slot.
-   - A :widen PREDICATE option walks the subexpr target outward to the
-     innermost ancestor the predicate accepts, so a command whose result
-     does not fit the node under point can act on the enclosing node
-     that holds it. Explicit selections are never widened. This is also
-     the machinery the "move to parent expression" todo wants.
 ** IN-PROGRESS formulas module
    - [X] categories
    - [X] docs per formula
