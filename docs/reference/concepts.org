@@ -588,8 +588,8 @@ Two module shapes have appeared, matching the feature's state:
   single buffer. The preview module (=modules/maf-preview.el=) is the
   same shape: =maf-use-preview-mode= turns the buffer-local
   =maf-preview-mode= on in every calc buffer, showing the entry at point
-  in Big display in a floating panel at the top-right of the calc
-  window. On a graphical frame the panel is a =posframe= child frame:
+  — as it stands on the stack, unsimplified — in Big display in a
+  floating panel at the top-right of the calc window. On a graphical frame the panel is a =posframe= child frame:
   parented to the calc frame and focus-refused, it stays out of the
   window manager's reach (no Alt-Tab, no focus). Where a child frame
   cannot be had — a text terminal, or no =posframe= — the same panel is

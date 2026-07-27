@@ -4,11 +4,11 @@
 ;;
 ;; Big-display preview of the active stack entry. `maf-preview-mode' is
 ;; a buffer-local minor mode for calc buffers that shows the entry at
-;; point, rendered in the Big display language, in a panel over the
-;; top-right of the calc window — so the stack itself stays in the
-;; normal one-line display where navigating and editing are
-;; convenient, while the 2D form is always visible for the entry you
-;; are on.
+;; point — as it stands on the stack, unsimplified — rendered in the Big
+;; display language, in a panel over the top-right of the calc window.
+;; The stack itself stays in the normal one-line display, where
+;; navigating and editing are convenient, while the 2D form is always
+;; visible for the entry you are on.
 ;;
 ;; Two display backends, picked per update by what the frame can do:
 ;;
@@ -81,10 +81,18 @@ buffer already showing the Big language (the panel would be redundant)."
       (unless (zerop size)
         (let* ((idx (calc-locate-cursor-element (point)))
                (level (if (> idx 0) (min idx size) 1)))
-          ;; Render the value in Big without disturbing the buffer's own
-          ;; display language (see this file's commentary).
+          ;; The stored value, via `calc-top' rather than `calc-top-n':
+          ;; the preview is a second view of the entry as it stands on
+          ;; the stack, so it must show what the stack line shows.
+          ;; `calc-top-n' normalizes, which under a simplification mode
+          ;; would preview `6 x + 12 = 18 y + 6' as `x + 1 = 3 y' — a
+          ;; different formula from the one being worked on. This is the
+          ;; value calc itself composes the stack line from.
+          ;;
+          ;; Rendered in Big without disturbing the buffer's own display
+          ;; language (see this file's commentary).
           (let ((calc-language 'big))
-            (math-format-value (calc-top-n level))))))))
+            (math-format-value (calc-top level))))))))
 
 ;;; The child-frame backend
 

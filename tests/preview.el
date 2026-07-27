@@ -11,6 +11,17 @@
   (cl-assert (string-match-p "a / b" (buffer-substring-no-properties
                                       (point-min) (point-max))))
 
+  ;; The preview shows the entry as it stands on the stack, not what calc
+  ;; would make of it: an unsimplified formula previews unsimplified,
+  ;; matching its stack line (`calc-top', not the normalizing
+  ;; `calc-top-n', which would preview this one as "5 a").
+  (progn (calc-push '(+ (* 2 (var a var-a)) (* 3 (var a var-a))))
+         (calc-refresh)
+         (goto-char (point-min)) (search-forward "2 a + 3 a") (backward-char 3))
+  (cl-assert (equal (maf-preview--render) "2 a + 3 a"))
+  (progn (calc-pop 1) (calc-refresh)
+         (goto-char (point-min)) (search-forward "a / b") (backward-char 3))
+
   ;; The rendered entry is laid out as a bordered, titled panel whose
   ;; rows are all one width — what both backends put on screen.
   (cl-assert (equal (maf-preview--panel-rows "a\n-\nb" 40 10)
