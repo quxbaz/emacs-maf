@@ -1,0 +1,4 @@
+interface:
+  display_name: "Close Feature"
+  short_description: "Merge and close a completed feature box"
+  default_prompt: "Use $close to merge a feature branch and close its box after success."
