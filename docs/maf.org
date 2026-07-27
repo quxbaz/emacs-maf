@@ -94,7 +94,13 @@
    - [ ] my/calc-forward-noun / my/calc-backward-noun (M-f/M-b) — next/previous number or
      variable, skipping function names; fix the line-prefix bug while at it (see Bugs)
 ** Copying
-   - [ ] my/calc-kill-ring-save-dwim (M-w) — copy region/entry/top; invoked twice, copies LaTeX
+   - [X] my/calc-kill-ring-save-dwim (M-w) — copy region/entry/top; invoked twice, copies LaTeX
+     (maf-copy on M-w; the repeat converts what the first press copied, so a
+     region survives its own deactivation, and replaces the kill instead of
+     stacking a second one — a third press toggles back. Entries are copied
+     from the stack value, not re-read off the display; region text is
+     verbatim, and is parsed for the LaTeX press only if formatting the parse
+     back reproduces it — calc's reader accepts "a + sqrt(" as sqrt of nothing)
    - [X] LaTeX composition for log: log(x, b) → \log_{b}(x) (math-compose-latex property)
      (maf--latex-compose-log/-log10 in stack.el. The draft's math-compose-latex
      property is never consulted by calccomp — the dispatch is math-compose-forms
