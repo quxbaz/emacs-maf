@@ -1483,6 +1483,135 @@ is unchanged.
       (when (and offset (> offset 0)) (forward-char offset))
       (maf--undo-record-cmd-point snapshot))))
 
+(defvar maf--solve-for-vars nil
+  "Variable (or vector of them) `maf--solve-for-run' should solve for.
+Bound per `mafcmd-solve-for' call, from the prompt it reads.")
+
+(defvar maf--solve-for-func nil
+  "Solver `maf--solve-for-run' should apply, a calcFunc symbol.
+Bound per `mafcmd-solve-for' call, from calc's Inverse/Hyperbolic flags.")
+
+(defun maf--solve-for-default-var ()
+  "Return the variable name `mafcmd-solve-for' offers as its default.
+Read-only: resolves the whole entry the command will act on and takes
+its priority variable (see `maf--solve-sorted-vars'), so the prompt can
+show a default without touching calc state. Nil when the subject has no
+variable, or when point resolves to no entry at all — the prompt then
+has no default and the command's own error, if any, reports the miss."
+  (ignore-errors
+    (let* ((context (maf--resolve-context
+                     '((:arity . unary) (:scope . entry) (:map . -1))))
+           (vars (maf--solve-sorted-vars (alist-get :expr context))))
+      (and vars (symbol-name (nth 1 (car vars)))))))
+
+(defun maf--solve-for-read-vars (default)
+  "Read the variable(s) to solve for; return them as a calc expression.
+DEFAULT is the variable name empty input stands for, or nil to require
+input. Several names, separated by commas or spaces, come back as a
+vector, so a system of equations can be solved for all its unknowns at
+once. Anything calc cannot parse is a `user-error'."
+  (let ((input (string-trim
+                (read-string (if default
+                                 (format "Solve for (default %s): " default)
+                               "Solve for: ")
+                             nil nil default))))
+    (when (string-empty-p input)
+      (user-error "No variable to solve for"))
+    ;; Two or more names denote a vector; bracket them so calc reads one,
+    ;; since bare "x y" would otherwise parse as the product x y. Input
+    ;; that already brackets its own list is passed through as written.
+    (let ((expr (math-read-expr
+                 (if (and (string-match-p ",\\|[^ ] +[^ ]" input)
+                          (not (string-search "[" input)))
+                     (concat "[" input "]")
+                   input))))
+      ;; A parse failure comes back as (error POSITION MESSAGE).
+      (when (eq (car-safe expr) 'error)
+        (user-error "Bad format in expression: %s" (nth 2 expr)))
+      expr)))
+
+(maf-defcmd maf--solve-for-run (expr _arg commit)
+  "Apply `maf--solve-for-func' to the whole entry for `maf--solve-for-vars'.
+The worker behind `mafcmd-solve-for' — see there. Takes the whole entry
+\(`:scope entry'), so point within the formula never narrows the
+subject. Symbolic and prefer-frac, so a non-integer solution stays
+exact. Calc leaves an unsolvable input as an unevaluated call to the
+solver; that, and a calc signal raised along the way, both commit the
+entry unchanged instead."
+  :arity unary
+  :prefix "solv"
+  :map -1
+  :scope entry
+  (let ((result (let ((calc-symbolic-mode t) (calc-prefer-frac t))
+                  (condition-case nil
+                      (funcall maf--solve-for-func expr maf--solve-for-vars)
+                    (error nil)))))
+    (commit (if (or (null result)
+                    (eq (car-safe result) maf--solve-for-func))
+                expr
+              result))))
+
+(defun mafcmd-solve-for ()
+  "Solve the relation at point for a variable read from the minibuffer.
+
+  x + 3 = 7  =>  x = 4
+
+Inverse: give the solver's inverse function instead, as an expression in
+the named variable.
+
+  x^2  =>  sqrt(x)
+
+Hyperbolic: solve fully, naming the remaining freedom with a dummy
+variable — s1 over the signs of an even root, n1 over the integer
+multiples of a periodic solution.
+
+  x^2 = 4  =>  x = 2 s1
+
+Inverse Hyperbolic: the inverse function, likewise fully.
+
+  x^2  =>  s1 sqrt(x)
+
+The prompt offers the subject's priority variable as its default — x, y,
+z, t first, then alphabetical. Several names separated by commas or
+spaces solve a vector of equations for all of them at once. Solutions
+stay exact: a root gives sqrt(2), a ratio 1:2, so an arc function of a
+float stays unevaluated rather than collapsing to a number.
+
+It acts on the whole entry — the relation at point, wherever point sits
+on its line, or the top entry at home; solving has no sub-formula
+meaning, so point within the formula is not used to narrow it. To solve
+for something Calc cannot solve for directly — a compound
+sub-expression, under a nonlinear operator — use `mafcmd-auto-solve',
+which isolates the sub-expression under point. A bare expression is
+treated as = 0, inequalities keep their relation, and an input Calc
+cannot solve for the named variable commits unchanged.
+
+  x + y = 5                     =>  y = 5 - x       (typed: y)
+  [x + y = 3, x - y = 1]        =>  [x = 2, y = 1]  (typed: x,y)
+  2 x - 3 < 7                   =>  x < 5
+  -2 x < 4                      =>  -2 < x          (sides swap, sense kept)
+  x^2 + y^2 = r^2               =>  y = sqrt(r^2 - x^2)
+  x + 3                         =>  x = -3          (bare: solved = 0)
+  2 x = 1                       =>  x = 1:2         (exact, not 0.5)
+  x + 3 = 7                     =>  x + 3 = 7       (no y in it: unchanged)"
+  (interactive)
+  (let ((func (cond ((and calc-inverse-flag calc-hyperbolic-flag)
+                     'calcFunc-ffinv)
+                    (calc-inverse-flag 'calcFunc-finv)
+                    (calc-hyperbolic-flag 'calcFunc-fsolve)
+                    (t 'calcFunc-solve)))
+        ;; Read the prompt before any calc state is touched, so C-g
+        ;; aborts with nothing done. The flags are consumed only once the
+        ;; input is in hand, and the worker's epilogue clears the mode
+        ;; line — an abort leaves I/H set for the next command, as calc
+        ;; itself does.
+        (vars (maf--solve-for-read-vars (maf--solve-for-default-var))))
+    (setq calc-inverse-flag nil
+          calc-hyperbolic-flag nil)
+    (let ((maf--solve-for-vars vars)
+          (maf--solve-for-func func))
+      (call-interactively #'maf--solve-for-run))))
+
 ;;; Roots
 
 (defun maf--poly-factors (expr)

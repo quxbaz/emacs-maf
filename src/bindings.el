@@ -118,6 +118,10 @@
 ;; Auto-solve: solve or isolate at point, cycling through the variables
 ;; on repeat. M-i is unbound in calc itself.
 (define-key maf-mode-map (kbd "M-i") #'mafcmd-auto-solve)
+;; Solve for a variable read from the minibuffer, beside the automatic
+;; solve on M-i. Shadows calc-info, which stays reachable on calc's own
+;; help prefix (h i) and as M-x calc-info.
+(define-key maf-mode-map (kbd "i") #'mafcmd-solve-for)
 ;; Polynomial roots by factoring, with multiplicity. M-r is unbound in
 ;; calc itself.
 (define-key maf-mode-map (kbd "M-r") #'mafcmd-poly-roots)

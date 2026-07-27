@@ -79,7 +79,8 @@ last entry — however the pointing gesture looked. Point still chooses
 
 For commands with no sub-formula meaning: building a relation between
 two entries (=mafcmd-equal-to=), removing one (=mafcmd-remove-equal=),
-solving (=mafcmd-auto-solve=), finding roots (=mafcmd-poly-roots=).
+solving (=mafcmd-auto-solve=, =mafcmd-solve-for=), finding roots
+(=mafcmd-poly-roots=).
 Without it, the far more common gesture — point resting somewhere
 inside the formula — would resolve to whatever sub-formula happens to
 sit under the cursor and the command would act on that instead.
