@@ -155,6 +155,24 @@ When piloting: use logical motion from lisp (`beginning-of-line`,
 `visual-line-mode` is active (e.g. during maf-edit). If already stuck,
 `kill -USR2 <pid>` can shake it loose; otherwise restart the instance.
 
+## Seeing the screen in a terminal instance
+
+`--eval` reads buffer text, which is not what a terminal Emacs actually
+draws: overlay strings, `display` properties, line-number margins and
+truncation only exist on screen. In a dev container the instance runs in
+a tmux pane, so the rendered screen can be read directly:
+
+```sh
+tmux list-panes -a -F '#{session_name}:#{window_index}.#{pane_index} #{pane_current_command}'
+tmux capture-pane -p -t emacs:0.1        # the pane running emacs, not your own shell
+```
+
+That is the only way to check something like `maf-preview`'s in-window
+panel, which is entirely overlay strings — the buffer text has no trace
+of it. `tmux send-keys -t emacs:0.1 Up` delivers real keypresses through
+the same path, so the whole command loop (including `post-command-hook`
+and redisplay) runs as it does for the user.
+
 ## Verification loop (recommended)
 
 1. Edit the `.el`.
