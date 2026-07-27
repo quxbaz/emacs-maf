@@ -25,6 +25,7 @@
 
 * Todo
 # NOW
+** NEXT Try to render preview with LaTex
 ** IN-PROGRESS /cmd new command based on calc-unpack
    - Set default binding to `M-u`
    - Make is contextual
