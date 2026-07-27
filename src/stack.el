@@ -859,7 +859,11 @@ entries by one, as calc's TAB does."
             (calc-wrapper
              ;; Both lists run deepest-first, so reversing the pair of
              ;; values swaps the two levels; the selections travel along.
-             (let ((vals (calc-top-list 2 m))
+             ;; The values are read with `full': a plain `calc-top-list'
+             ;; hands back the *selection* for a selected entry, which
+             ;; would put the selected part on the stack in place of the
+             ;; whole formula.
+             (let ((vals (calc-top-list 2 m 'full))
                    (sels (calc-top-list 2 m 'sel)))
                (calc-pop-push-list 2 (list (nth 1 vals) (nth 0 vals))
                                    m

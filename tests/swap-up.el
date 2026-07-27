@@ -55,6 +55,27 @@
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "9"))
   (cl-assert (looking-at "9"))
 
+  ;; A selection travels with its entry, whole: the swap must move the
+  ;; formula, not the selected part of it.
+  (calc-pop (calc-stack-size))
+  (maf-push "sin(2 x + 1)")
+  (calc-push 7)
+  (calc-push 9)
+  (calc-refresh)
+  (progn (goto-char (point-min)) (search-forward "3:  sin(2 x") (backward-char 1))
+  (progn (setq last-command nil) (call-interactively 'calc-select-here))
+  (cl-assert (equal (calc-top 3 'sel) '(var x var-x)))
+  (progn (calc-cursor-stack-index 2) (end-of-line))
+  (call-interactively 'maf-swap-up)
+  (cl-assert (string= (math-format-value (maf--strip-encasing (calc-top 2 'full)))
+                      "sin(2 x + 1)"))
+  (cl-assert (equal (calc-top 2 'sel) '(var x var-x)))
+  (cl-assert (string= (math-format-value (calc-top 3 'full)) "7"))
+  (progn (setq last-command nil) (call-interactively 'calc-clear-selections))
+  (calc-pop (calc-stack-size))
+  (calc-push 9)
+  (calc-refresh)
+
   ;; Entries of different lengths: point is a screen position — same
   ;; line, same column, whatever entry lands there.
   (calc-pop 1)
