@@ -176,7 +176,10 @@ Two consumers read it. The macro-generated command wires the body:
 - =:target= — a symbol: =region=, =home=, =selection=, =subexpr=,
   =equation=, or =entry=. Selects the execution shape (single body run
   vs once per side); commit also dispatches on it to pick the splice
-  path.
+  path. The macro also binds it to the dynamic variable =maf-target=
+  around the body, for bodies whose /result shape/ depends on where it
+  lands (see [[*Multi-value commit][Multi-value commit]]); most bodies
+  ignore it and just act on EXPR.
 - =:expr= — the clean operand, a normalized calc formula, bound as the
   body's EXPR.
 - =:arg= — the second operand for binary commands, a normalized calc
@@ -403,6 +406,63 @@ After post-pop 1 from top:
 #+end_example
 
 Two operations, one push and one optional post-pop. See =maf--commit-push=.
+
+* Multi-value commit
+
+A body normally commits one expression. At a /whole-entry/ target
+(=home=, =entry=) it may instead commit a *list* of values, which lands
+as one stack entry per value: =calc-pop-push-record-list= already
+distinguishes the two, reading its VALS as a list of values when the
+car is an integer or a cons, and as a single value otherwise. A calc
+formula always leads with a symbol head (=+=, =calcFunc-sin=, =vec=),
+so the two never collide.
+
+A /slot/ target (=selection=, =subexpr=, =region=) cannot take a list:
+its result is spliced into one cons in a larger formula, so exactly one
+expression fits. Committing a list there signals.
+
+Bodies that can produce either read =maf-target= to tell which applies:
+
+#+begin_example
+(cond ((memq maf-target '(home entry)) parts)   ; one entry per part
+      ((null (cdr parts)) (car parts))          ; a slot fits one
+      (t expr))                                 ; no room: unchanged
+#+end_example
+
+=mafcmd-unpack= is the case in point — =[x, y]= at home becomes two
+entries, while =y + sin(x)|= unwraps in place to =y + x=.
+
+* Widening the sub-formula target
+
+A slot fits one expression, so a command whose result does not fit the
+node under point would simply do nothing there — the key would look
+broken from most positions in a formula. =:widen= is the way out: the
+declaration names a predicate, and resolve walks from the node under
+point outward through its ancestors, stopping at the innermost one the
+predicate accepts. That node becomes =:expr= and =:expr-ref=. Nothing
+accepted out to the whole entry means the node under point stands, and
+the command no-ops as before.
+
+The walk starts /at/ the node under point, so a position that already
+had an acceptable target is unaffected — widening only ever fills in
+where the command used to be silent.
+
+For =mafcmd-unpack= the predicate is "unwraps to exactly one part", so
+the command means *peel the innermost single-argument wrapper around
+point*:
+
+#+begin_example
+sin(2| x)      =>  2 x        ; the 2 x under point has two parts, so
+sin(2 x)|      =>  2 x        ; the sin around it is peeled instead
+sin(cos(x|))   =>  sin(x)     ; innermost wins: cos is peeled
+sin|(cos(x))   =>  cos(x)     ; on sin itself, sin is peeled
+(a| + b) (2 c - d)  =>  unchanged   ; nothing peelable out to the entry
+#+end_example
+
+Explicit calc selections are never widened — an active selection is a
+deliberate gesture, and the selection target does not route through
+=maf--resolve-widen=. That also keeps =j U= faithful to
+=calc-sel-unpack=, which acts on the selection exactly as given.
 
 * Binary on selection-like targets
 
