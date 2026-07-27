@@ -8,6 +8,7 @@
 ;; the user was on.
 
 (require 'calc)
+(require 'seq)
 (require 'maf-lib)
 (require 'maf-defcmd)
 
@@ -16,6 +17,7 @@
 (declare-function calc-alg-entry "calc-aent")
 (declare-function calc-dots "calc-incom")
 (declare-function calcDigit-nondigit "calc")
+(declare-function calcDigit-key "calc")
 (declare-function calc-algebraic-entry "calc-aent")
 (declare-function calc-roll-down "calc-misc")
 (declare-function calc-cursor-stack-index "calc")
@@ -110,6 +112,44 @@ position the user was on survives the abort. At home, or with
   (abort-recursive-edit))
 
 (define-key calc-digit-map "\C-g" #'maf-digit-quit)
+
+(defun maf--incomplete-entry-p ()
+  "Non-nil while calc is entering an incomplete object.
+`[' or `(' starts one — a vector, matrix, complex number, or interval,
+built up element by element and held on the stack as an `incomplete'
+object until its closing bracket. Scans the whole stack, as
+`calc-find-first-incomplete' does: the object need not be on top."
+  (maf--with-calc-buffer
+    (seq-some (lambda (x) (eq (car-safe (car-safe x)) 'incomplete))
+              (nthcdr calc-stack-top calc-stack))))
+
+(defun maf-digit-colon ()
+  "Type the fraction colon in the digit-entry minibuffer, on `;'.
+Fractions are entered often enough to be worth a key with no modifier:
+`;' is the unshifted twin of `:', so 3 ; 4 RET enters 3:4.
+
+The key is a pure alias, not an insertion: it re-dispatches calc's own
+`calcDigit-key' with the event spoofed to `:', so every part of calc's
+colon handling applies — the leading 1 supplied for a bare `;', the
+second colon of the mixed number 1:2:3, radix and format validation.
+Naming `calcDigit-key' as `this-command' keeps the run of digit keys
+unbroken for the next key's `last-command' test (calc's `..' path).
+
+While an incomplete object is being entered the key is calc's own
+again: `;' is the row separator of matrix entry ([ 1 , 2 ; 3 , 4 ]),
+which is typed from inside digit entry, and taking it there would make
+matrices untypeable on the stack. A fraction inside one still goes in
+on `:'."
+  (interactive)
+  (if (maf--incomplete-entry-p)
+      ;; The stock binding: terminate the entry and re-dispatch `;',
+      ;; which reaches `calc-semi' in `calc-mode-map' as it always did.
+      (calcDigit-nondigit)
+    (setq this-command 'calcDigit-key)
+    (let ((last-command-event ?:))
+      (calcDigit-key))))
+
+(define-key calc-digit-map ";" #'maf-digit-colon)
 
 (defun maf-digit-commit-here ()
   "Commit the digit entry like RET, but keep point instead of homing.

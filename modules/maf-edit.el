@@ -91,6 +91,11 @@ before the edit began instead of keeping its in-edit position.")
                 #'maf-edit-move-beginning-of-line)
     (define-key map [remap back-to-indentation]
                 #'maf-edit-back-to-indentation)
+    ;; The fraction colon on an unmodified key, as in digit entry
+    ;; (`maf-digit-colon'); the displaced semicolon moves one modifier
+    ;; up, keeping matrix notation typeable.
+    (define-key map (kbd ";") #'maf-edit-insert-colon)
+    (define-key map (kbd "M-;") #'maf-edit-insert-semicolon)
     map)
   "Keymap active while `maf-edit-mode' is on.
 Bind commands here to make them available only during editing.")
@@ -202,6 +207,25 @@ it holds text. Point then lands after the line's prefix run."
           (maf-edit--make-entry bol (+ bol maf-edit--prefix-width))
           (maf-edit--repair)))
       (goto-char (+ bol (maf-edit--leading-prefix-run bol))))))
+
+(defun maf-edit-insert-colon (n)
+  "Insert the fraction colon, N times, on the unmodified `;' key.
+Fractions are common enough in an edited entry to deserve a key with
+no modifier, so `;' types `:' here as it does in digit entry
+\(`maf-digit-colon'): 3 ; 4 reads back as the fraction 3:4."
+  (interactive "p")
+  (self-insert-command n ?:))
+
+(defun maf-edit-insert-semicolon (n)
+  "Insert a literal semicolon, N times, on \\<maf-edit-mode-map>\\[maf-edit-insert-semicolon].
+The character `;' itself gave up its key to the fraction colon
+\(`maf-edit-insert-colon'), and it is still calc's row separator in
+matrix notation — [1, 2; 3, 4] — so it keeps a key of its own here.
+\\[quoted-insert] is not that key: pausing to read a character
+re-locks the calc buffer under the editing session, and the insert
+that follows fails on a read-only buffer."
+  (interactive "p")
+  (self-insert-command n ?\;))
 
 ;;; Entry overlays
 
@@ -838,8 +862,10 @@ Entries whose text is untouched keep their value objects and
 selections; changed or new text is parsed in the current input modes
 and committed exactly as written, never simplified — 1 + 2 + x stays
 1 + 2 + x. If any entry fails to parse the commit is blocked: the
-offenders are underlined, point goes to the first, and editing
-continues. The whole commit is one undo group."
+offenders are underlined and editing continues, with point sent to the
+first offender — unless it is already inside one, where it stays put
+and that entry's error is the one reported. The whole commit is one
+undo group."
   (interactive)
   (unless maf-edit-mode (user-error "maf-edit is not active"))
   (let ((maf-edit--inhibit t)
@@ -868,10 +894,24 @@ continues. The whole commit is one undo group."
               (push v vals)
               (push nil sels)))))))
     (if errors
-        (let ((errors (nreverse errors)))
+        (let* ((errors (nreverse errors))
+               ;; Point inside an offender is already at the problem —
+               ;; typically mid-typing, on the very entry that failed to
+               ;; parse. Sending it to the entry's first column there
+               ;; would only cost the user their place.
+               (here (seq-find (lambda (e)
+                                 (let ((o (car e)))
+                                   (and (>= (point) (overlay-start o))
+                                        (<= (point) (overlay-end o)))))
+                               errors)))
           (dolist (e errors) (maf-edit--flag-error (car e) (cdr e)))
-          (goto-char (overlay-start (caar errors)))
-          (user-error "maf-edit: cannot commit — %s" (cdar errors)))
+          (unless here
+            (goto-char (overlay-start (caar errors)))
+            ;; Land on the first content column: the overlay starts at
+            ;; the machine-owned prefix, which point may not occupy.
+            (maf-edit-move-beginning-of-line 1))
+          (user-error "maf-edit: cannot commit — %s"
+                      (cdr (or here (car errors)))))
       ;; Buffer top-to-bottom is deepest-first, the order
       ;; calc-pop-push-record-list pushes in.
       (setq vals (nreverse vals)

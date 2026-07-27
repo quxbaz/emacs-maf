@@ -196,16 +196,17 @@
   - [ ] Power shortcuts (M-2..M-9, M-') — insert ^n / ^()
   - [ ] my/calc-edit-wrap-parens (M-o) / -escape-parens (TAB) / -toggle-brackets (S-up/down)
   - [ ] my/calc-edit-jump-sides — jump between the sides of =, inserting \" = \" if absent
-  - [ ] my/calc-edit-insert-pi (P); ; → :; J → *
+  - [ ] my/calc-edit-insert-pi (P); J → *
   - [ ] my/calc-edit-duplicate (M-RET) — duplicate line, comma-aware (vector entry)
   - [ ] my/calc-duplicate-paren-expr (C-RET) — duplicate innermost paren group
   Already covered: edit-dwim/edit-selection → maf-edit (SPC); no-simplify
-  commit is maf-edit's default commit path.
+  commit is maf-edit's default commit path; ; → : is
+  maf-edit-insert-colon, with the literal ; moved to M-;.
 
 * PORT:minibuffer.el
-  - [ ] Digit-map shortcuts: ; → :, n/P → push × pi, e → equal-to from entry, o → mod-360
-  Already covered: no-align on command-key termination and C-g quit
-  (src/minibuffer.el).
+  - [ ] Digit-map shortcuts: n/P → push × pi, e → equal-to from entry, o → mod-360
+  Already covered: ; → : (maf-digit-colon, re-dispatching calcDigit-key);
+  no-align on command-key termination and C-g quit (src/minibuffer.el).
 
 * PORT:plot.el
   - [ ] my/calc-graph-quick / -with-range (g l / g i) — plot the top entry straight to
