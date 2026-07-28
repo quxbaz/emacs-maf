@@ -1879,6 +1879,138 @@ Inverse prefix (I i), which gives the bare inverse expression.
   :scope entry
   (commit (or (maf--function-inverse expr) expr)))
 
+;;; Substitution
+
+(defvar maf--subst-old nil
+  "The expression `maf--substitute-run' replaces.
+Bound per `mafcmd-substitute' call, from the prompt it reads.")
+
+(defvar maf--subst-new nil
+  "The replacement `maf--substitute-run' puts in `maf--subst-old's place.
+Bound per `mafcmd-substitute' call; nil for the $ form, whose
+replacement is the stack arg `maf--substitute-arg-run' receives.")
+
+(defun maf--subst-subject (arity)
+  "Return the expression `mafcmd-substitute' will act on, or nil.
+Read-only: resolves the target an ARITY command would resolve without
+touching calc state, so the prompt can offer a default and a
+substitution that matches nothing can be refused before anything is
+committed.
+
+The mark is saved and restored around the resolve: the region target
+consumes the gesture by deactivating the mark, and this probe must
+leave the region standing for the run that follows. Nil when point
+resolves to no target at all — the run then raises the real error."
+  (ignore-errors
+    (save-mark-and-excursion
+      (alist-get :expr (maf--resolve-context `((:arity . ,arity)))))))
+
+(defun maf--subst-parse (input)
+  "Return INPUT parsed as a calc expression.
+Empty input, and anything calc cannot parse, are `user-error's."
+  (when (string-empty-p input)
+    (user-error "No expression given"))
+  (let ((expr (math-read-expr input)))
+    ;; A parse failure comes back as (error POSITION MESSAGE).
+    (when (eq (car-safe expr) 'error)
+      (user-error "Bad format in expression: %s" (nth 2 expr)))
+    expr))
+
+(defun maf--subst-read-old (default)
+  "Read the expression to replace; return it parsed.
+DEFAULT is the name empty input stands for, or nil to require input."
+  (maf--subst-parse
+   (string-trim (read-string (if default
+                                 (format "Substitute (default %s): " default)
+                               "Substitute: ")
+                             nil nil default))))
+
+(defun maf--subst-read-new (old)
+  "Read the replacement for OLD; return it parsed.
+A lone $ comes back as the symbol `stack': the replacement is then the
+entry above the subject, taken as the command's binary arg."
+  (let ((input (string-trim
+                (read-string (format "Substitute %s with: "
+                                     (math-format-value old))))))
+    (if (string= input "$")
+        'stack
+      (maf--subst-parse input))))
+
+(maf-defcmd maf--substitute-run (expr _arg commit)
+  "Replace `maf--subst-old' with `maf--subst-new' in the resolved expression.
+The worker behind `mafcmd-substitute' — see there. The rewritten
+expression is normalized, so a substitution that makes a part constant
+folds it under the current simplification mode."
+  :arity unary
+  :prefix "sbst"
+  (commit (math-normalize
+           (math-expr-subst expr maf--subst-old maf--subst-new))))
+
+(maf-defcmd maf--substitute-arg-run (expr arg commit)
+  "Like `maf--substitute-run', with the stack supplying the replacement.
+The $ form of `mafcmd-substitute': the entry above the subject is the
+replacement, and commit consumes it as the binary arg it is."
+  :arity binary
+  :prefix "sbst"
+  (commit (math-normalize (math-expr-subst expr maf--subst-old arg))))
+
+(defun mafcmd-substitute ()
+  "Replace every occurrence of one expression with another, contextually.
+
+  2 x + 1  =>  2 a + 3     (typed: x, then a + 1)
+
+Reads the expression to replace and its replacement from the
+minibuffer, both in algebraic notation. The first prompt offers the
+subject's priority variable as its default — x, y, z, t first, then
+alphabetical — so substituting for the obvious unknown is two returns.
+
+Point picks the subject as usual: the selection or sub-formula at
+point, each side of an equation, the whole entry from its margin, the
+top entry at home. Only the subject is rewritten, so a substitution
+can be confined to one part of a formula.
+
+  x^2 + x|            =>  x^2 + 3     (subject is the term at point)
+  y = x^2 - 1         =>  y = 8       (both sides; typed: x, 3)
+
+The result is normalized under the current simplification mode, as
+calc's own substitution is: putting a value in collapses what it makes
+constant, and what lands beside it combines, exactly as if the
+substituted formula had been typed in. What surrounds the subject is
+untouched and never refolded, so putting 5 in for a selected x leaves
+y (5 + 2) standing. With simplification off (@) the substitution is
+structural throughout — 2 + 3 stays 2 + 3.
+
+  x + 3               =>  5           (typed: x, 2)
+  x + 3               =>  2 + 3       (the same, simplification off)
+
+Answering $ at the replacement prompt takes the replacement from the
+stack — the entry above the subject, the top entry at home — and
+consumes it on commit, so an expression already on the stack need not
+be retyped. As for any binary command, the subject must lie below the
+top for that form.
+
+An expression the subject does not contain is refused before anything
+is committed, rather than rewritten to an unchanged copy."
+  (interactive)
+  (let* ((subject (maf--subst-subject 'unary))
+         (vars (and subject (maf--solve-sorted-vars subject)))
+         ;; Read both prompts before any calc state is touched, so C-g
+         ;; aborts with nothing done.
+         (old (maf--subst-read-old
+               (and vars (symbol-name (nth 1 (car vars))))))
+         (new (maf--subst-read-new old))
+         (stack-arg (eq new 'stack))
+         ;; $ makes the command binary, which resolves a different
+         ;; subject (the entry below the top at home); check that one.
+         (subject (if stack-arg (maf--subst-subject 'binary) subject)))
+    (when (and subject (not (math-expr-contains subject old)))
+      (user-error "No occurrences of %s" (math-format-value old)))
+    (let ((maf--subst-old old)
+          (maf--subst-new (unless stack-arg new)))
+      (call-interactively (if stack-arg
+                              #'maf--substitute-arg-run
+                            #'maf--substitute-run)))))
+
 ;;; Roots
 
 (defun maf--poly-factors (expr)
