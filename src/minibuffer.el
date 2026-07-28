@@ -199,14 +199,13 @@ path (no command re-dispatch); the number pushes on top as usual, and
         (maf--digit-commit-in-place t))
     (calcDigit-nondigit)))
 
-;; Both shift forms, matching `maf-edit-add-entry-below's keys in stack
-;; mode: the gesture is the same one, and which map is live depends only
-;; on whether a digit entry happens to be in progress.
+;; Matching `maf-edit-add-entry-below's key in stack mode: the gesture is
+;; the same one, and which map is live depends only on whether a digit
+;; entry happens to be in progress.
 (define-key calc-digit-map (kbd "S-<return>") #'maf-digit-commit-below)
-(define-key calc-digit-map (kbd "C-S-<return>") #'maf-digit-commit-below)
-;; The terminal stand-in for the two above, neither of which a terminal
-;; can deliver. It shadows this map's own C-j, one of the many nondigit
-;; keys that merely terminate the entry.
+;; The terminal stand-in for it, which no terminal can deliver. It
+;; shadows this map's own C-j, one of the many nondigit keys that merely
+;; terminate the entry.
 (define-key calc-digit-map (kbd "C-j") #'maf-digit-commit-below)
 
 (defun maf--digit-relocate-below (m)

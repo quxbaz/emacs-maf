@@ -34,7 +34,7 @@
    - Editing
      + SPC: edit current entry
      + RET: duplicate item, contextually (and move point to home)
-     + S-RET: open & edit new entry below point (C-S-RET still does too)
+     + S-RET: open & edit new entry below point
      + C-RET: edit new entry at home (then return point)
      + M-RET: duplicate entry at point, copy directly beneath it
 ** TODO Find out why maf-preview doesn't work on up/down movement
