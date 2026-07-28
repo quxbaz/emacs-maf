@@ -42,6 +42,8 @@
 (declare-function calcFunc-sub "calc-arith")
 (declare-function math-evaluate-expr "calc-ext")
 (declare-function math-compose-expr "calccomp")
+(declare-function math-vectorp "calc-ext")
+(declare-function math-flatten-vector "calc-vec")
 (declare-function calc-set-language "calc-lang")
 (declare-function math-read-expr "calc-aent")
 (declare-function calc-unpack-item "calc-vec")
@@ -2273,6 +2275,58 @@ selection is taken as it stands and never widened.
     (commit (if (math-vectorp expr)
                 (maf--unique-groups expr n)
               expr))))
+
+;;; Flattening
+
+(defun maf--flatten-nested-p (expr)
+  "Non-nil when EXPR is a vector with a vector among its elements.
+The `:widen' predicate for `mafcmd-flatten', and the same test its body
+uses to decide there is work to do: a vector whose elements are all
+scalars is already flat, so flattening it would commit it unchanged.
+Widening past such a vector is what lets the command mean something
+from anywhere inside a matrix — point on the 1 of [[1, 2], [3, 4]]
+names the flat row [1, 2], and the matrix that holds that row is the
+node with nesting to remove."
+  (and (math-vectorp expr)
+       (cl-some #'math-vectorp (cdr expr))))
+
+(maf-defcmd mafcmd-flatten (expr _arg commit)
+  "Flatten the resolved vector into a single flat vector.
+
+  [[1, 2], [3, 4]]  =>  [1, 2, 3, 4]
+
+Nesting is removed at every depth, not just the top level, and the
+elements keep their reading order. This is calc's `v a' (arrange) with
+a column count of zero — `mafcmd-arrange' spreads a vector into rows of
+N columns, and flattening is the degenerate case that asks for no rows
+at all.
+
+The result is a single expression, so it fits any target. Within a
+formula, point widens outward to the innermost vector that actually has
+nesting to remove, so the command means the same thing from anywhere
+inside a matrix. Anything with no nesting to remove — a scalar, a
+variable, an already-flat vector, or a sub-formula with no nested
+vector around it — commits unchanged rather than signaling.
+
+  [1, [2, [3, 4]], 5]      =>  [1, 2, 3, 4, 5]   (all depths)
+  [[1, 2], [3]]            =>  [1, 2, 3]         (ragged rows are fine)
+  x + [[1, 2], [3, 4]]|    =>  x + [1, 2, 3, 4]
+  [[1|, 2], [3, 4]]        =>  [1, 2, 3, 4]      (widens to the matrix)
+  [1, 2]                   =>  [1, 2]            (already flat)
+  5                        =>  5                 (nothing to flatten)"
+  :arity unary
+  :prefix "flat"
+  ;; In a formula slot the node under point is often a row or an element,
+  ;; neither of which has nesting to remove. Widening to the innermost
+  ;; vector that does is what keeps the key from silently doing nothing
+  ;; when pressed inside a matrix.
+  :widen maf--flatten-nested-p
+  ;; calcFunc-arrange returns nil for a non-vector, which normalizes to
+  ;; the inert form arrange(5, 0) — so guard on the vector test and build
+  ;; the flat vector directly instead of going through the call.
+  (commit (if (maf--flatten-nested-p expr)
+              (cons 'vec (math-flatten-vector expr))
+            expr)))
 
 ;;; Unpacking
 

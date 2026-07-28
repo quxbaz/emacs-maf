@@ -110,7 +110,9 @@
      (mafcmd-unique-groups on l g; contextual binary, n from the stack,
      maf--combinations / maf--unique-groups in math.el, :widen to the
      innermost vector around point)
-   - [-] my/calc-vector-flatten (v L)
+   - [X] my/calc-vector-flatten (v L)
+     (mafcmd-flatten on v L, ceded by the lud row; contextual unary,
+     widening to the innermost vector with nesting to remove)
 ** Triangles
    - [ ] my/calc-cath / my/calc-unit-cath (f l / f L) — right-triangle leg from hyp+leg / unit hyp
    - [ ] calcFunc-hypot advice — symbolic args: sqrt(abssqr(a) + abssqr(b))
