@@ -176,14 +176,14 @@ push."
 
 (defvar maf--digit-below-level nil
   "Stack level a digit entry should be inserted just below, or nil.
-Set by `maf-digit-commit-below' (S-<return>) to the level point was on;
+Set by `maf-digit-commit-below' (C-S-<return>) to the level point was on;
 read by `maf-digit-start' once the number has been pushed on top, which
 rolls it down into that slot. nil for every other completion.")
 
 (defun maf-digit-commit-below ()
   "Commit the digit entry as a new stack entry just below the one at point.
-The S-<return> sibling of RET in the digit-entry minibuffer, mirroring
-`maf-edit-add-entry-below' (S-<return> in stack mode): where RET pushes
+The C-S-<return> sibling of RET in the digit-entry minibuffer, mirroring
+`maf-edit-add-entry-below' (C-S-<return> in stack mode): where RET pushes
 the number on top, this inserts it at point's own level, so it lands just
 below the entry point was on and bumps that entry up one. On the top
 entry or at home it lands on top, as RET does; point rests on the new
@@ -199,8 +199,8 @@ path (no command re-dispatch); the number pushes on top as usual, and
         (maf--digit-commit-in-place t))
     (calcDigit-nondigit)))
 
-(define-key calc-digit-map (kbd "S-<return>") #'maf-digit-commit-below)
-;; The terminal stand-in for S-<return>, which no terminal can deliver.
+(define-key calc-digit-map (kbd "C-S-<return>") #'maf-digit-commit-below)
+;; The terminal stand-in for C-S-<return>, which no terminal can deliver.
 ;; It shadows this map's own C-j, one of the many nondigit keys that
 ;; merely terminate the entry.
 (define-key calc-digit-map (kbd "C-j") #'maf-digit-commit-below)
@@ -212,7 +212,7 @@ M, bumping the entry that was there up one — and leave point at its
 margin. M of 1 (the top entry, or home) needs no roll.
 
 The roll is folded into the push's undo group so a single `maf-undo'
-reverts the whole S-<return> gesture rather than just the roll."
+reverts the whole C-S-<return> gesture rather than just the roll."
   (when (> m 1)
     (calc-wrapper (calc-roll-down m))
     (when (cdr calc-undo-list)
@@ -266,7 +266,7 @@ lands differs."
   (if (or calc-algebraic-mode
           (and (> calc-number-radix 14) (eq last-command-event ?e))
           (not (maf--at-subexpr-p)))
-      ;; calc's own entry pushes on top; S-<return> (set during the read)
+      ;; calc's own entry pushes on top; C-S-<return> (set during the read)
       ;; then relocates that push just below where point was.
       (let ((size0 (calc-stack-size)))
         (call-interactively #'calcDigit-start)
@@ -290,12 +290,12 @@ lands differs."
                          "Calc: " (calc-digit-start-entry) calc-digit-map))
                     (define-key global-map "\e" old-esc))))
            (val (or calc-digit-value (math-read-number buf)))
-           ;; S-<return>'s target level, captured and cleared before the
+           ;; C-S-<return>'s target level, captured and cleared before the
            ;; cond so a stale flag never carries to the next entry.
            (below (prog1 maf--digit-below-level
                     (setq maf--digit-below-level nil))))
       (cond
-       ;; S-<return>: add the number as a new entry, not a contextual
+       ;; C-S-<return>: add the number as a new entry, not a contextual
        ;; edit. Push it, then roll it just below the entry point was on.
        ((and below val (not (stringp val)) (not (eq calc-prev-char 'dots)))
         (calc-wrapper (calc-push-list (list (calc-record (calc-normalize val)))))

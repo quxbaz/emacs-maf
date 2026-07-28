@@ -60,7 +60,7 @@
 (define-key maf-mode-map (kbd "S-<up>") #'mafcmd-toggle-op)
 (define-key maf-mode-map (kbd "S-<down>") #'mafcmd-toggle-op)
 (define-key maf-mode-map (kbd ",") #'maf-quick-variable)
-;; The in-place editing entry keys (SPC / C-RET / S-RET) are installed
+;; The in-place editing entry keys (SPC / C-RET / C-S-RET) are installed
 ;; by the edit module when it is enabled (see modules/edit.el), not here.
 (define-key maf-mode-map (kbd "U") #'maf-undo)
 (define-key maf-mode-map (kbd "D") #'maf-redo)
@@ -97,7 +97,7 @@
 ;; terminal that sends the sequence — see docs/memory/dev-instance.md.
 ;; A terminal that does not send it falls back to ESC 0x08, which
 ;; arrives as C-M-h; bind that as the terminal stand-in, as the edit
-;; module does with C-j for S-<return>. It shadows only mark-defun,
+;; module does with C-j for C-S-<return>. It shadows only mark-defun,
 ;; which has no use in a calc buffer, at the cost of Ctrl+Alt+h
 ;; rolling too.
 (define-key maf-mode-map (kbd "C-M-<backspace>") #'maf-roll-to-bottom)
@@ -112,10 +112,12 @@
 (define-key maf-mode-map (kbd "M-<return>") #'maf-dup-here)
 (define-key maf-mode-map (kbd "M-RET") #'maf-dup-here)
 ;; Restack: the entry at point travels to the top, point riding along.
-;; The graphical event only — C-S-<return> is unbound in calc itself and
-;; no terminal can deliver it (cf. the edit module's S-<return>, which
-;; takes C-j as its terminal stand-in).
-(define-key maf-mode-map (kbd "C-S-<return>") #'maf-roll-to-top)
+;; The graphical event only — S-<return> is unbound in calc itself and no
+;; terminal can deliver it (every wire format folds it back to plain RET,
+;; which is maf-dup above). The edit module binds S-<return> too, to its
+;; newline gesture, but in `maf-edit-mode-map' — and maf-mode is off for
+;; the duration of an edit session, so the two never compete.
+(define-key maf-mode-map (kbd "S-<return>") #'maf-roll-to-top)
 ;; Equate gets both = (shadowing calc-evaluate) and e (shadowing the
 ;; e-notation digit start; inside digit entry e still means exponent,
 ;; since the entry minibuffer is calc's own).
