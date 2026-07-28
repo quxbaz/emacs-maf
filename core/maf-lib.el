@@ -15,6 +15,7 @@
 (declare-function calc-find-selected-part "calc-sel")
 ;; maf-comp requires maf-lib; declared to avoid the circular require.
 (declare-function maf--comp-node-anchor-pos "maf-comp")
+(declare-function maf--comp-node-start-pos "maf-comp")
 (declare-function math-read-expr "calc-aent")
 
 (defun maf--find-calc-buffer ()
@@ -127,6 +128,25 @@ the positional restore."
       (when (and node (integerp m) (>= m 1))
         (calc-prepare-selection m)
         (when-let ((pos (maf--comp-node-anchor-pos node index)))
+          (goto-char pos))))))
+
+(defun maf--point-restore-start (landed)
+  "Put point on the first character of the committed node's rendering.
+LANDED is `maf--commit's return alist (:node, :m). Where
+`maf--point-restore-anchor' keeps point on the glyph it was on — right
+for a command that rewrites the node in place — this lands on the node
+itself, which is what a command that puts a *different* value in the
+slot wants: point on what arrived, not on a column the old node's
+shape happened to hold. Works for atoms too, which have no structural
+glyphs. Return the new position, or nil when the node can't be located
+\(entry consumed, non-flat rendering) — the caller then falls back to
+the positional restore."
+  (ignore-errors
+    (let ((node (alist-get :node landed))
+          (m    (alist-get :m landed)))
+      (when (and node (integerp m) (>= m 1))
+        (calc-prepare-selection m)
+        (when-let ((pos (maf--comp-node-start-pos node)))
           (goto-char pos))))))
 
 (defun maf--point-restore-margin (col)
