@@ -4,9 +4,9 @@
 ;;
 ;; maf-edit: wdired-style in-place editing of the calc stack, packaged
 ;; as the `edit' module. The module toggle only installs the entry
-;; bindings (SPC / C-<return> / C-S-<return>) into `maf-mode-map'; the
-;; editing itself is the on-demand `maf-edit-mode' session below. See
-;; `maf-modules'.
+;; bindings (SPC / C-<return> / S-<return> / C-S-<return>) into
+;; `maf-mode-map'; the editing itself is the on-demand `maf-edit-mode'
+;; session below. See `maf-modules'.
 ;;
 ;; `maf-edit' (SPC in maf-mode) turns the calc buffer into editable
 ;; plain text; the same key commits, so RET toggles edit/commit.
@@ -945,12 +945,18 @@ undo group."
 
 (define-minor-mode maf-use-edit-mode
   "Global minor mode making maf-edit's entry keys live in `maf-mode-map'.
-Enabled, SPC / C-<return> / C-S-<return> run the maf-edit entry commands;
-disabled, they cede back to calc. SPC shadows one of calc-enter's two
-keys (RET still runs it) and enters editing, where `maf-edit-mode-map's
-RET commits; C-<return> and C-S-<return> are the quick-add gestures. C-j
-doubles for C-S-<return>, which no terminal can deliver; it shadows
-calc-over, whose level-2 duplicate is `maf-dup' at point.
+Enabled, SPC / C-<return> / S-<return> / C-S-<return> run the maf-edit
+entry commands; disabled, they cede back to calc. SPC shadows one of
+calc-enter's two keys (RET still runs it) and enters editing, where
+`maf-edit-mode-map's RET commits; the others are the quick-add
+gestures. S-<return> and C-S-<return> both open an entry below point,
+and C-j doubles for them on terminals, which can deliver neither; it
+shadows calc-over, whose level-2 duplicate is `maf-dup' at point.
+
+S-<return> means newline inside `maf-edit-mode-map', so the key that
+opens an entry below point also breaks the line once the session is
+running — the two never compete, since maf-mode is off for the
+duration of an edit session.
 
 This is the `edit' module (see `maf-modules'). Unlike the other
 modules it installs no hook or advice — just these bindings, plus the
@@ -961,10 +967,12 @@ on-demand `maf-edit-mode' editing session they lead into."
       (progn
         (define-key maf-mode-map (kbd "SPC") #'maf-edit)
         (define-key maf-mode-map (kbd "C-<return>") #'maf-edit-add-entry)
+        (define-key maf-mode-map (kbd "S-<return>") #'maf-edit-add-entry-below)
         (define-key maf-mode-map (kbd "C-S-<return>") #'maf-edit-add-entry-below)
         (define-key maf-mode-map (kbd "C-j") #'maf-edit-add-entry-below))
     (define-key maf-mode-map (kbd "SPC") nil)
     (define-key maf-mode-map (kbd "C-<return>") nil)
+    (define-key maf-mode-map (kbd "S-<return>") nil)
     (define-key maf-mode-map (kbd "C-S-<return>") nil)
     (define-key maf-mode-map (kbd "C-j") nil)))
 
@@ -972,6 +980,6 @@ on-demand `maf-edit-mode' editing session they lead into."
 ;; works on its own without it.
 (when (require 'maf-module nil t)
   (maf-register-module 'maf-edit #'maf-use-edit-mode
-                       "Edit the stack in place as plain text (SPC / C-RET / C-S-RET)."))
+                       "Edit the stack in place as plain text (SPC / C-RET / S-RET)."))
 
 (provide 'maf-edit)

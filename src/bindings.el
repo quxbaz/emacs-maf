@@ -60,7 +60,7 @@
 (define-key maf-mode-map (kbd "S-<up>") #'mafcmd-toggle-op)
 (define-key maf-mode-map (kbd "S-<down>") #'mafcmd-toggle-op)
 (define-key maf-mode-map (kbd ",") #'maf-quick-variable)
-;; The in-place editing entry keys (SPC / C-RET / C-S-RET) are installed
+;; The in-place editing entry keys (SPC / C-RET / S-RET / C-S-RET) are installed
 ;; by the edit module when it is enabled (see modules/edit.el), not here.
 (define-key maf-mode-map (kbd "U") #'maf-undo)
 (define-key maf-mode-map (kbd "D") #'maf-redo)
@@ -102,6 +102,17 @@
 ;; rolling too.
 (define-key maf-mode-map (kbd "C-M-<backspace>") #'maf-roll-to-bottom)
 (define-key maf-mode-map (kbd "C-M-h") #'maf-roll-to-bottom)
+;; Restack: the entry at point travels to the top, point riding along.
+;; The long-range move up, sharing the backspace key with the bury
+;; above — one base key for both ends of the stack, the modifier
+;; picking the end. Bind the GUI event and the DEL form both:
+;; `function-key-map' rewrites <backspace> to DEL, and an unbound
+;; modified function key falls back to that translation with the
+;; modifier kept, so shift-backspace can arrive either way. Neither
+;; shadows anything in calc; plain DEL stays `maf-del' above.
+;; Terminals need the decode entry installed at the end of this file.
+(define-key maf-mode-map (kbd "S-<backspace>") #'maf-roll-to-top)
+(define-key maf-mode-map (kbd "S-DEL") #'maf-roll-to-top)
 ;; Contextual duplicate, shadowing calc-enter. At home it dups the top
 ;; as calc-enter does; elsewhere it pushes a copy of the resolved item.
 ;; During digit/algebraic entry RET stays calc's own (the entry
@@ -116,13 +127,11 @@
 ;; Reachable via M-x maf-dup-here.
 (define-key maf-mode-map (kbd "M-<return>") #'maf-dup-below)
 (define-key maf-mode-map (kbd "M-RET") #'maf-dup-below)
-;; Restack: the entry at point travels to the top, point riding along.
-;; The graphical event only — S-<return> is unbound in calc itself and no
-;; terminal can deliver it (every wire format folds it back to plain RET,
-;; which is maf-dup above). The edit module binds S-<return> too, to its
-;; newline gesture, but in `maf-edit-mode-map' — and maf-mode is off for
-;; the duration of an edit session, so the two never compete.
-(define-key maf-mode-map (kbd "S-<return>") #'maf-roll-to-top)
+;; S-<return> is the edit module's add-entry-below (see
+;; modules/maf-edit.el), installed there with the rest of its entry
+;; keys. The restack it used to carry now sits on S-<backspace>, beside
+;; the bury it pairs with.
+
 ;; Equate gets both = (shadowing calc-evaluate) and e (shadowing the
 ;; e-notation digit start; inside digit entry e still means exponent,
 ;; since the entry minibuffer is calc's own).
@@ -213,7 +222,7 @@
 ;; The `t d' stack-timeline binding is installed by the maf-timeline
 ;; module when it is enabled (see modules/maf-timeline.el), not here.
 
-;; A terminal cannot say "backspace with Ctrl and Alt" as a character:
+;; A terminal cannot say "backspace with a modifier" as a character:
 ;; backspace is ASCII 127 and the modifiers have nowhere to go. One
 ;; that supports modifyOtherKeys spells the key out instead, but
 ;; term/xterm.el decodes that form from a hardcoded table of
@@ -221,11 +230,15 @@
 ;; modifier — so the sequence falls through undecoded and its tail
 ;; self-inserts, which in a calc buffer means junk on the stack.
 ;; term/tmux.el defers to the same table and inherits the gap. Supply
-;; the missing entry in both of the formats xterm.el generates.
+;; the missing entries in both of the formats xterm.el generates. The
+;; modifier number is 1 plus the bitmask (shift 1, alt 2, ctrl 4): 7
+;; for the bury's Ctrl+Alt, 2 for the restack's Shift.
 (defun maf--tty-setup-keys ()
   "Decode terminal sequences for keys maf binds and `term/xterm.el' omits."
   (define-key input-decode-map "\e[27;7;127~" [C-M-backspace])
-  (define-key input-decode-map "\e[127;7u" [C-M-backspace]))
+  (define-key input-decode-map "\e[127;7u" [C-M-backspace])
+  (define-key input-decode-map "\e[27;2;127~" [S-backspace])
+  (define-key input-decode-map "\e[127;2u" [S-backspace]))
 
 ;; `input-decode-map' is terminal-local, so this runs once per tty
 ;; rather than once at load.

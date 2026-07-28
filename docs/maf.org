@@ -29,13 +29,13 @@
    - Navigation
      + TAB: move entry up
      + C-M-i: roll up top 3 entries
-     + S-RET: Move entry to top of stack
+     + S-<backspace>: Move entry to top of stack
      + C-M-<backspace>: move entry to bottom of stack
    - Editing
      + SPC: edit current entry
      + RET: duplicate item, contextually (and move point to home)
      + C-RET*: edit new entry at home (then return point)
-     + C-S-RET*: open & edit new entry below point
+     + S-RET*: open & edit new entry below point (C-S-RET still does too)
      + M-RET: duplicate entry at point, copy directly beneath it
 ** TODO Find out why maf-preview doesn't work on up/down movement
    - Debounce it for perf and don't show unless point is over entry for N ms
