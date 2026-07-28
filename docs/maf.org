@@ -44,6 +44,7 @@
      + M-RET: duplicate entry at point, copy directly beneath it
 ** TODO Find out why maf-preview doesn't work on up/down movement
    - Debounce it for perf and don't show unless point is over entry for N ms
+   - Or, generate previews ahead of time
 ** DONE Add command to duplicate current entry below it
    maf-dup-below (M-RET). Whole entry, copy into the slot just below;
    point travels to the copy, keeping its place inside the entry.
