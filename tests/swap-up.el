@@ -22,8 +22,8 @@
   (cl-assert (= (line-number-at-pos) 3))
 
   ;; Mid-stack (level 2): levels 2 and 3 swap; point keeps its line.
-  ;; Asked for from end of line — on the formula text point would name a
-  ;; sub-formula instead, which is the other target entirely.
+  ;; End of line, not the formula text — a position on the text asks for
+  ;; the sub-formula swap instead (covered below).
   (progn (calc-cursor-stack-index 2) (end-of-line))
   (cl-assert (maf--at-line-margin-p))
   (call-interactively 'maf-swap-up)
@@ -36,6 +36,7 @@
   (progn (calc-cursor-stack-index 3) (end-of-line))
   (call-interactively 'maf-swap-up)
   (cl-assert (string= (math-format-value (calc-top 3 'full)) "7"))
+  (cl-assert (= (line-number-at-pos) 1))
 
   ;; A single undo reverts one swap.
   (progn (setq last-command nil) (call-interactively 'maf-undo))
@@ -75,7 +76,12 @@
   (cl-assert (equal (maf--strip-encasing (calc-top 3 'sel)) 7))
   (cl-assert (string= (math-format-value (calc-top 2 'full)) "8"))
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "20"))
-  (cl-assert (= (calc-locate-cursor-element (point)) 2))
+  ;; Point follows the arriving value onto its first character, leaving
+  ;; the level-2 line it was on for the level-3 entry the 7 landed in.
+  ;; With the selection displayed, the entry renders as the selected
+  ;; part and dots for the rest, so this is the 7 alone on the line.
+  (cl-assert (= (calc-locate-cursor-element (point)) 3))
+  (cl-assert (looking-at "7"))
   (progn (setq last-command nil) (call-interactively 'maf-undo))
   (cl-assert (string= (math-format-value (maf--strip-encasing (calc-top 3 'full)))
                       "20 x + 10"))
@@ -125,12 +131,30 @@
   (cl-assert (string= (math-format-value (calc-top 2 'full)) "8"))
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "20"))
   (cl-assert (= (calc-locate-cursor-element (point)) 3))
+  (cl-assert (looking-at "7 x"))
   (progn (setq last-command nil) (call-interactively 'maf-undo))
   (cl-assert (string= (math-format-value (maf--strip-encasing (calc-top 3 'full)))
                       "20 x + 10"))
   (cl-assert (null (calc-top 3 'sel)))
   (cl-assert (string= (math-format-value (calc-top 2 'full)) "8"))
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "7"))
+
+  ;; Point on a glyph the sub-formula renders itself — the space of the
+  ;; juxtaposed product 6 x — still lands on the arriving value, not on
+  ;; the column that glyph happened to occupy (which is past the end of
+  ;; a shorter arrival).
+  (calc-pop (calc-stack-size))
+  (maf-push "6 x + 12")
+  (maf-push "Z")
+  (calc-refresh)
+  (progn (goto-char (point-min)) (search-forward "2:  6"))
+  (cl-assert (looking-at " x"))
+  (call-interactively 'maf-swap-up)
+  (cl-assert (string= (math-format-value (maf--strip-encasing (calc-top 2 'full)))
+                      "Z + 12"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "6 x"))
+  (cl-assert (= (calc-locate-cursor-element (point)) 2))
+  (cl-assert (looking-at "Z"))
 
   ;; A sub-formula in the top entry has no argument below it, so point
   ;; there keeps the neighboring-entry swap rather than erroring.

@@ -870,15 +870,16 @@ displaced sub-formula becomes the new level-1 entry."
              ;; Pushing EXPR restores its original level.
              (setcdr (assq :m landed) (1+ (alist-get :m landed)))))
           (maf--undo-amalgamate-digit-entry)
-          (maf--point-restore (alist-get :point context)
-                              (alist-get :point-anchor context)
-                              landed)
+          ;; Deliberately not the glyph anchor other commands use: swap
+          ;; puts a foreign value in the slot rather than rewriting the
+          ;; node in place, so the old node's glyph index means nothing
+          ;; here. Point goes to the start of what arrived.
+          (or (maf--point-restore-start landed)
+              (maf--point-restore (alist-get :point context)))
           (maf--undo-record-cmd-point (alist-get :point context)))
       (error
        (when context
-         (maf--point-restore (alist-get :point context)
-                             (alist-get :point-anchor context)
-                             landed))
+         (maf--point-restore (alist-get :point context)))
        (signal (car err) (cdr err))))))
 
 (defun maf-swap-up (n)
@@ -892,7 +893,7 @@ with the level-1 entry, and an active selection is taken instead of
 it, however far apart the two sit. The value that arrives stays
 selected only when a selection asked for it.
 
-  3:  |20 x + 10     3:  7 x + 10
+  3:  |20 x + 10     3:  |7 x + 10
   2:  8         =>   2:  8
   1:  7              1:  20
 
@@ -904,7 +905,9 @@ too — a sub-formula there has nothing below it to trade with.
 
 Point stays on the same line and column; when the arriving entry is
 shorter it clamps to that line's end, and at end of line it stays at
-end of line. A sub-formula swap keeps point on the containing entry.
+end of line. A sub-formula swap instead follows the value: point lands
+on the first character of what arrived, in the entry it arrived in, so
+the swapped-in sub-formula is what the next command sees.
 With the entry at point already the highest, or with fewer than two
 entries, there is nothing to swap and the command does nothing.
 
