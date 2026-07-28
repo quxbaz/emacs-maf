@@ -993,17 +993,35 @@ changes — nothing is evaluated, and no entry is added or dropped.
 
 Point travels with the entry, keeping its place within it: on a
 sub-formula it stays on that sub-formula, at end of line it stays at
-end of line, in the line-number margin it stays in the margin.
-Selections travel with their entries. With the entry at point already
-on top, at home, or on an empty stack, there is nothing to move and
-the command does nothing."
+end of line, in the line-number margin it stays in the margin. The
+position point left is pushed on the mark ring, so \\[universal-argument] \\[set-mark-command] returns to
+it; the region is not left active. Selections travel with their
+entries. With the entry at point already on top, at home, or on an
+empty stack, there is nothing to move and the command does nothing —
+the mark ring included."
   (interactive)
   (maf--with-calc-buffer
     (let ((m (calc-locate-cursor-element (point))))
       ;; m of 1 (the top entry) or 0 (home, empty stack) has nothing to
       ;; move; leaving early also spares point calc-wrapper's homing.
       (when (> m 1)
+        ;; The entry can travel a long way, so leave a mark behind to
+        ;; jump back to, as `beginning-of-buffer' and friends do. Only
+        ;; on a roll that actually happens — the early exits above must
+        ;; not disturb the mark ring. `calc-refresh' restores the mark
+        ;; with `set-mark', which activates it, so the region is killed
+        ;; off again once the roll is done: the mark is a place to
+        ;; return to, not a selection the user asked for.
+        (push-mark nil t)
         (let ((snapshot (maf--point-snapshot))
+              ;; The screen place the mark stands for. The roll reprints
+              ;; the whole buffer, which collapses the mark marker to
+              ;; column 0 — the line-number margin, where the contextual
+              ;; commands read a different target than they would inside
+              ;; the formula. Restore it by line and column afterwards,
+              ;; as `maf--swap-adjacent-entries' does for point.
+              (mline (line-number-at-pos))
+              (mcol  (current-column))
               ;; Point as an offset into the entry's own text. The roll
               ;; reprints the same formula and the stack keeps its size,
               ;; so the line-number prefixes keep their width too: the
@@ -1031,6 +1049,13 @@ the command does nothing."
           ;; entry down to level 1 instead.
           (calc-cursor-stack-index 1)
           (goto-char (min (+ (point) offset) (point-max)))
+          (save-excursion
+            (goto-char (point-min))
+            (forward-line (1- mline))
+            ;; move-to-column stops at end of line, clamping for free.
+            (move-to-column mcol)
+            (set-marker (mark-marker) (point)))
+          (deactivate-mark)
           ;; A single undo reverts point along with the stack.
           (maf--undo-record-cmd-point snapshot))))))
 

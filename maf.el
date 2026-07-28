@@ -90,7 +90,20 @@ stack timeline, and other major features are independent modules toggled
 through `maf-modules', not by this mode."
   :lighter " maf"
   :keymap maf-mode-map
-  :group 'maf)
+  :group 'maf
+  ;; `calc-refresh' preserves the mark across a redraw with `set-mark',
+  ;; which *activates* it. So once the buffer has a mark at all — from
+  ;; `maf-roll-to-top', or from the user having set one — every redraw
+  ;; manufactures a live region nobody asked for, and the contextual
+  ;; commands then resolve that region and refuse ("Region spans
+  ;; multiple stack entries"). What lets calc see an inactive mark is
+  ;; reading it through `(mark)', so switch that off here: the mark
+  ;; stays set for `C-u C-SPC', which reads `(mark t)' regardless, it
+  ;; just stops coming back to life on its own. Buffer-local and undone
+  ;; on exit, so stock calc is unaffected.
+  (if maf-mode
+      (setq-local mark-even-if-inactive nil)
+    (kill-local-variable 'mark-even-if-inactive)))
 
 ;; Activate the feature modules listed in `maf-modules'. Runs once at
 ;; load, after every module file has registered its toggle.
