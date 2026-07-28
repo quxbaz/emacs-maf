@@ -33,7 +33,7 @@
      + C-M-<backspace>: move entry to bottom of stack
    - Editing
      - SPC: edit current entry
-     - RET: duplicate item contextually (and move point to home)
+     - RET: duplicate item, contextually (and move point to home)
      - C-RET*: edit new entry at home (then return point)
      - C-S-RET*: open & edit new entry below point
      - M-RET*: duplicate
