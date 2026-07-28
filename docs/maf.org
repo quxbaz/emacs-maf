@@ -23,6 +23,36 @@
   - [X] Use module architecture (maf-timeline, maf-edit)
   - [ ] Discovery document for useful features, behaviors, modules, etc
 
+* Low-hanging fruit
+  Small, self-contained items — one command, one binding, or one move.
+  Each names where the work lands.
+** TODO Bind the formulas menu (modules/maf-formulas.el)
+   ~maf-formulas~ is autoloaded and complete, but no key reaches it;
+   the menu is M-x only. Same "Set default binding" item as under
+   Major features.
+** TODO Bind the modules manager (core/maf-module.el)
+   ~maf-list-modules~ has the same gap: buffer works, no key.
+** TODO Give maf-dup-here a key, or drop it (src/bindings.el)
+   It lost M-<return> to ~maf-dup-below~ and is currently unbound —
+   reachable only as M-x. Decide which.
+** TODO Move the formulas options into conf.el (src/conf.el)
+   ~maf-formulas-file~ and ~maf-formulas-user~ are defcustoms living in
+   modules/maf-formulas.el, against conf.el's "every user option in one
+   place". The faces can stay with their module.
+** TODO Port the digit-map shortcuts (src/minibuffer.el)
+   n/P → push × pi, e → equal-to from the entry, o → mod-360. Three
+   keys beside the existing ~maf-digit-colon~. (PORT:minibuffer.el)
+** TODO Port j c, clear selections point-preserving (PORT:selection.el)
+   A short command: clear every selection without moving point.
+** TODO Port N, negate in place (PORT:selection.el)
+   Contextual negate, unselect after — a plain ~maf-defcmd~ row.
+** TODO Port the edit-mode insertions (modules/maf-edit.el)
+   Independent one-liners, portable one at a time: P → pi, M-2..M-9 /
+   M-' → ^n and ^(), and the \ L | wrap helpers around the preceding
+   expression or region. (PORT:edit.el)
+** TODO Port "(" to start a bracketed vector entry (modules/maf-edit.el)
+   ~my/calc-vector-edit~: one key, one insertion. (PORT:edit.el)
+
 * Todo
 # NOW
 ** TODO Bind quick-substitute (formerly C-RET)
