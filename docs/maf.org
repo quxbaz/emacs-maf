@@ -35,6 +35,8 @@
    C-M-<backspace>: move entry to bottom of stack
    C-M-i: roll up top 3 entries
    S-RET: Move entry to top of stack
+** TODO Find out why maf-preview doesn't work on up/down movement
+   - Debounce it for perf and don't show unless point is over entry for N ms
 ** TODO Add command to duplicate current entry below it
 ** IN-PROGRESS formulas module
    - [X] categories
