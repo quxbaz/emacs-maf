@@ -36,7 +36,7 @@
      + RET: duplicate item, contextually (and move point to home)
      + C-RET*: edit new entry at home (then return point)
      + C-S-RET*: open & edit new entry below point
-     + M-RET*: duplicate
+     + M-RET*: duplicate entry at point
 ** TODO Find out why maf-preview doesn't work on up/down movement
    - Debounce it for perf and don't show unless point is over entry for N ms
 ** TODO Add command to duplicate current entry below it
