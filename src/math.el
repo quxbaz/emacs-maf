@@ -39,6 +39,9 @@
 (declare-function math-equal "calc-ext")
 (declare-function math-evaluate-expr "calc-ext")
 (declare-function calcFunc-rmeq "calc-prog")
+(declare-function calcFunc-finv "calcalg2")
+(declare-function math-solve-eqn "calcalg2")
+(declare-function math-expr-contains "calc-alg")
 
 ;; Polynomial-recognizer knobs, defvar'd in lazily-loaded calc-ext;
 ;; declared here so the let bindings below stay dynamic even when that
@@ -80,6 +83,119 @@ solve or find roots for."
                      (pa (or (cl-position na priority :test #'string=) 999))
                      (pb (or (cl-position nb priority :test #'string=) 999)))
                 (or (< pa pb) (and (= pa pb) (string< na nb)))))))))
+
+(defun maf--inverse-out-var (expr)
+  "Return the variable naming the output of the bare function EXPR.
+The conventional y, unless EXPR already uses that name — a parameter y
+would otherwise be captured by the equation the inverse is committed as
+— in which case y1, y2 and so on, the first name EXPR does not use."
+  (let ((n 0) var)
+    (while (progn
+             (let ((name (if (zerop n) "y" (format "y%d" n))))
+               (setq var (list 'var (intern name)
+                               (intern (concat "var-" name)))))
+             (math-expr-contains expr var))
+      (setq n (1+ n)))
+    var))
+
+(defun maf--inverse-parts (expr)
+  "Split EXPR into (OUT IN F), the pieces its inverse is built from.
+OUT is what the inverted equation keeps on its left — the name of the
+function's output; IN is the variable the function takes as its input;
+F is the function's body, an expression in IN. Nil when EXPR names no
+function of a variable.
+
+Four shapes are recognized, in order:
+
+  y = x + 1    a plain variable alone on one side and absent from the
+               other: that variable is OUT, the other side is F —
+               either way round, so x + 1 = y reads the same
+  f(x) = ...   a call to a function Calc does not define (f, not sin)
+               on one side: the call is OUT and its argument is IN, so
+               f(k) = k^2 + x inverts in k rather than in x
+  2 y = x + 1  neither side explicit: the equation is first solved for
+               its output variable — y when it occurs, else the second
+               of exactly two variables in `maf--solve-sorted-vars'
+               order — and F is what that solve leaves
+  x + 1        no relation at all: EXPR is F itself, and OUT is a fresh
+               y (see `maf--inverse-out-var')
+
+A relation other than an equation states a bound rather than a
+function, and gives nil rather than being read as a bare body.
+
+Except in the f(x) shape, where the call names it, IN is F's first
+variable in `maf--solve-sorted-vars' order — x before y, then the
+alphabet — so a body with parameters inverts in the conventional
+unknown."
+  (cl-flet ((in-var (fx out)
+              (car (cl-remove out (maf--solve-sorted-vars fx) :test #'equal))))
+    (if (not (eq (car-safe expr) 'calcFunc-eq))
+        ;; Only an equation states a function. Another relation bounds
+        ;; one, so there is no function to invert — and it must not fall
+        ;; through to the bare-expression reading, which would take the
+        ;; whole inequality for a body.
+        (and (not (memq (car-safe expr) '(calcFunc-neq calcFunc-lt
+                                          calcFunc-leq calcFunc-gt
+                                          calcFunc-geq)))
+             (let ((in (car (maf--solve-sorted-vars expr))))
+               (and in (list (maf--inverse-out-var expr) in expr))))
+      (let ((lhs (nth 1 expr))
+            (rhs (nth 2 expr)))
+        (cl-flet ((explicit (out fx)
+                    ;; A variable naming the output must not also appear
+                    ;; in the body: y = x + y is an implicit relation,
+                    ;; not a function of x.
+                    (and (eq (car-safe out) 'var)
+                         (not (math-expr-contains fx out))
+                         (let ((in (in-var fx out)))
+                           (and in (list out in fx)))))
+                  (call (out fx)
+                    (and (maf--unknown-fn-call-p out 1)
+                         (eq (car-safe (nth 1 out)) 'var)
+                         (list out (nth 1 out) fx))))
+          (or (explicit lhs rhs)
+              (explicit rhs lhs)
+              (call lhs rhs)
+              (call rhs lhs)
+              ;; Implicit: make the equation explicit by solving it for
+              ;; the output variable, then invert what comes back.
+              (let* ((vars (maf--solve-sorted-vars expr))
+                     (out (cond ((member '(var y var-y) vars) '(var y var-y))
+                                ((= (length vars) 2) (nth 1 vars))))
+                     (solved (and out (math-solve-eqn expr out nil)))
+                     (fx (and (eq (car-safe solved) 'calcFunc-eq)
+                              (nth 2 solved)))
+                     (in (and fx (in-var fx out))))
+                (and in (list out in fx)))))))))
+
+(defun maf--function-inverse (expr)
+  "Return the inverse of the function EXPR as an equation, or nil.
+EXPR is read as a function of one variable — an equation naming its
+output, or a bare expression (see `maf--inverse-parts') — and the
+result equates that same output name to the inverse function of the
+same input variable: y = 2 x + 3 gives y = x / 2 - 3:2.
+
+The inversion is calc's own `calcFunc-finv', which solves the body
+against a fresh unknown and renames it back to the input variable, so
+the input and output are swapped without any variable in the body being
+captured. Symbolic and prefer-frac, so the inverse stays exact: a root
+gives sqrt, a ratio 1:2.
+
+Nil when EXPR names no invertible function: a shape
+`maf--inverse-parts' does not recognize (an inequality, a variable-free
+equation, an implicit relation in three unknowns), or a body calc
+cannot solve. This is the transformation behind
+`mafcmd-inverse-function'; to change it, change this function."
+  (let ((calc-symbolic-mode t) (calc-prefer-frac t))
+    (condition-case nil
+        (pcase (maf--inverse-parts expr)
+          (`(,out ,in ,fx)
+           (let ((inv (calcFunc-finv fx in)))
+             ;; A body calc cannot invert comes back as an unevaluated
+             ;; finv call.
+             (and (not (eq (car-safe inv) 'calcFunc-finv))
+                  (list 'calcFunc-eq out inv)))))
+      (error nil))))
 
 (defun maf--contains-float-p (expr)
   "Return t if EXPR contains a float anywhere.

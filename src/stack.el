@@ -1828,6 +1828,57 @@ cannot solve for the named variable commits unchanged.
           (maf--solve-for-func func))
       (call-interactively #'maf--solve-for-run))))
 
+(maf-defcmd mafcmd-inverse-function (expr _arg commit)
+  "Invert the function at point: y = f(x) becomes y = f-inverse(x).
+
+  y = 2 x + 3  =>  y = x / 2 - 3:2
+
+The input and output are swapped and the equation solved back, so the
+result reads as a function of the same input variable. Any names work:
+the variable standing alone on one side is the output, the other side
+the body, and the body's first variable in solve order — x, y, z, t,
+then the alphabet — is the input, so parameters beside it carry
+through.
+
+  y = x^2            =>  y = sqrt(x)
+  y = sqrt(x)        =>  y = x^2
+  y = e^(x + k) + 3  =>  y = ln(x - 3) - k    (k is a parameter)
+  x + 1 = y          =>  y = x - 1            (either side)
+
+An f(x) on one side is kept as written and its argument is the input
+variable, so the entry keeps naming the same function while its body
+inverts.
+
+  f(x) = x^2         =>  f(x) = sqrt(x)
+  f(k) = k^2 + x     =>  f(k) = sqrt(k - x)   (inverts in k, not x)
+
+An equation with no side standing alone is solved for its output
+variable first — y when it occurs, else the second of its two
+variables. A bare expression is the body alone; its inverse is named
+y, or y1 when the expression itself uses y.
+
+  2 y = x + 1        =>  y = 2 x - 1
+  x^2 + y^2 = 1      =>  y = sqrt(1 - x^2)    (its own inverse)
+  x + 1              =>  y = x - 1
+  y^2                =>  y1 = sqrt(y)
+
+The subject is the whole entry — the equation at point wherever point
+sits on its line, or the top entry at home; inverting has no
+sub-formula meaning, so point within the formula does not narrow it.
+Solutions stay exact, a root giving sqrt rather than a float. Anything
+that names no invertible function of a variable commits unchanged: an
+inequality, an equation without variables, a body calc cannot solve.
+To invert for a variable you name, use `mafcmd-solve-for' with calc's
+Inverse prefix (I i), which gives the bare inverse expression.
+
+  2 x - 3 < 7        =>  2 x - 3 < 7          (not a function)
+  y = x^6 + x + 1    =>  y = x^6 + x + 1      (calc cannot solve it)"
+  :arity unary
+  :prefix "finv"
+  :map -1
+  :scope entry
+  (commit (or (maf--function-inverse expr) expr)))
+
 ;;; Roots
 
 (defun maf--poly-factors (expr)

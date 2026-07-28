@@ -143,6 +143,9 @@
 ;; solve on M-i. Shadows calc-info, which stays reachable on calc's own
 ;; help prefix (h i) and as M-x calc-info.
 (define-key maf-mode-map (kbd "i") #'mafcmd-solve-for)
+;; Invert the function at point, beside the two solve commands. l v is
+;; unbound in calc itself (its l prefix is the logarithmic units).
+(define-key maf-mode-map (kbd "l v") #'mafcmd-inverse-function)
 ;; Polynomial roots by factoring, with multiplicity. M-r is unbound in
 ;; calc itself.
 (define-key maf-mode-map (kbd "M-r") #'mafcmd-poly-roots)
