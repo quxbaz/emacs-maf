@@ -32,6 +32,7 @@
    S-RET*: open & edit new entry below point
    C-RET*: edit new entry at home (then return point)
    C-M-<backspace>: move entry to bottom of stack
+   C-M-i: roll up top 3 entries
    ?: Move entry to top of stack
 ** TODO Add command to duplicate current entry below it
 ** IN-PROGRESS formulas module
