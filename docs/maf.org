@@ -86,21 +86,6 @@
 ** Triangles
    - [ ] my/calc-cath / my/calc-unit-cath (f l / f L) — right-triangle leg from hyp+leg / unit hyp
    - [ ] calcFunc-hypot advice — symbolic args: sqrt(abssqr(a) + abssqr(b))
-** Ported or superseded
-   - Stack: maf-roll-to-top (C-S-RET), maf-roll-to-bottom (C-M-backspace),
-     maf-dup (RET), stack persistence (persist.el), maf-undo/redo, maf-kill,
-     maf-del, and maf-beginning-of-entry.
-   - Variables: my/calc-substitute → mafcmd-substitute (a b);
-     my/calc-swap-variables → mafcmd-swap-vars (l x).
-   - Algebra: my/calc-inverse-function → mafcmd-inverse-function (l v);
-     my/calc-complement → mafcmd-complement (M-c); mafcmd-equal-to,
-     factor-by, factor-gcd, sqrt/sqr, exp, ln, log, pow, mul, div, add,
-     sub, neg, inv, esimplify, factor, and expand.
-   - Vectors: my/calc-unique-groups → mafcmd-unique-groups (l g);
-     my/calc-vector-flatten → mafcmd-flatten (v L).
-   - Session behavior: maf-calc/-direct, maf-quick-variable, and
-     maf-toggle-simplify. Trail yank commands are superseded by
-     maf-timeline RET/C-RET.
 
 * PORT:ineq.el
   - [ ] my/calc-abs-ineq (a k) — |a| < b → compound inequality, each part solved for the variable
