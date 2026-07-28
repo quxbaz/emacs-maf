@@ -272,13 +272,49 @@ fi
 # shell — and fall through to a plain shell when you detach, so C-b d
 # leaves the box up rather than ending the container's main process
 # with it. Exiting that shell still stops the box.
-session=(bash -c 'tmux attach -t emacs 2>/dev/null; exec bash')
+#
+# attach keeps its stderr: the fall-through means a box whose session
+# never came up still hands you a shell, and looks like an ordinary one.
+# Whatever tmux has to say about the missing session is the only sign.
+session=(bash -c 'tmux attach -t emacs; exec bash')
 
 # Docker's detach sequence, moved off its C-p C-q default: C-p is
 # previous-line, pressed constantly in the Emacs pane, and the client
 # swallows it waiting to see whether C-q follows. C-q C-q costs only
 # Emacs's quoted-insert of a literal C-q, which nothing here types.
 detach=(--detach-keys 'ctrl-q,ctrl-q')
+
+# The image a fresh box is cut from. Two ways it goes wrong, both quiet:
+# absent, and docker takes `maf` for a registry name and pulls a stranger's
+# image; present but built from an older Dockerfile, and the container comes
+# up without the entrypoint that lays out the tmux session, so the box is a
+# bare shell with no sign of what is missing. The entrypoint is the thing to
+# look for either way — it is what the rest of this script assumes ran.
+build="docker build --build-arg UID=\$(id -u) --build-arg GID=\$(id -g) -t maf docker/"
+check_image() {
+    local entry
+    if ! $sudo docker image inspect maf >/dev/null 2>&1; then
+        echo "box: no maf image yet — building it (once per machine)" >&2
+        $sudo docker build --build-arg UID="$(id -u)" --build-arg GID="$(id -g)" \
+              -t maf "$repo/docker/"
+        return
+    fi
+    # An image with no entrypoint at all has no Entrypoint key to index —
+    # the template has to test it before reaching in, or it errors instead
+    # of reporting the empty answer that is the whole point of asking.
+    entry=$($sudo docker image inspect \
+                  -f '{{if .Config.Entrypoint}}{{index .Config.Entrypoint 0}}{{end}}' maf)
+    if [ "$entry" != /usr/local/bin/entrypoint ]; then
+        # Rebuilding for them would overwrite an image this may not even be
+        # — the tag is short enough for something else on the machine to have
+        # taken it.
+        echo "box: the maf image was not built from docker/Dockerfile" >&2
+        echo "     (its entrypoint is ${entry:-none}, expected /usr/local/bin/entrypoint)" >&2
+        echo "     rebuild it, keeping the old one first if it is still wanted:" >&2
+        echo "     docker tag maf maf-old && $build" >&2
+        exit 1
+    fi
+}
 
 # A box outlives its shell, so naming one again revisits it rather than
 # building a second: running, join it in another shell; stopped, start it
@@ -291,6 +327,8 @@ case $state in
         exec $sudo docker exec -it "${detach[@]}" "maf-$box" bash
         ;;
     "")
+        check_image
+
         # Mounts: the worktree at /work, plus the main .git at its *host
         # path* — a worktree's .git file names that path absolutely, so
         # git inside the container only resolves if it matches exactly.
