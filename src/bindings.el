@@ -9,9 +9,6 @@
 (require 'maf-stack "stack")
 (require 'maf-minibuffer "minibuffer")
 
-(declare-function calc-fancy-prefix-other-key "calc-ext" (arg))
-(defvar calc-fancy-prefix-map)
-
 ;; Also defvar'd in maf.el and maf-cmds.el; whichever file loads first
 ;; creates the map, the rest are no-ops.
 (defvar maf-mode-map (make-sparse-keymap)
@@ -87,26 +84,8 @@
 ;; maf-copy takes the region verbatim, as M-w does everywhere else.
 ;; Pressed twice it recopies as LaTeX.
 (define-key maf-mode-map (kbd "M-w") #'maf-copy)
-;; Calc's H prefix temporarily installs `calc-fancy-prefix-map'. That
-;; map preserves H for the GUI `tab' event, but treats terminal TAB
-;; (C-i) as a non-Calc key and clears the flag before redispatching it.
-;; Intercept only that event while maf is active; outside maf, delegate
-;; unchanged to calc's handler.
-(defun maf--calc-fancy-prefix-tab (arg)
-  "Redispatch fancy-prefix terminal TAB without losing maf's H flag."
-  (interactive "P")
-  (if (bound-and-true-p maf-mode)
-      (progn
-        (setq overriding-terminal-local-map nil)
-        (maf-swap-up arg))
-    (calc-fancy-prefix-other-key arg)))
-
-(with-eval-after-load 'calc-ext
-  (define-key calc-fancy-prefix-map (kbd "TAB")
-              #'maf--calc-fancy-prefix-tab))
-
-;; Shadows calc's TAB with the contextual swap. Bind both terminal and
-;; GUI events; the H-prefix bridge above handles the terminal form.
+;; Shadows calc's TAB with the contextual swap. Bind both the terminal
+;; and GUI events.
 (define-key maf-mode-map (kbd "TAB") #'maf-swap-up)
 (define-key maf-mode-map (kbd "<tab>") #'maf-swap-up)
 ;; Send the entry at point all the way down the stack, the long-range

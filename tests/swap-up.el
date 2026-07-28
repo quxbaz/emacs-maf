@@ -105,17 +105,17 @@
   (call-interactively 'calc-enable-selections)
   (progn (setq last-command nil) (call-interactively 'calc-clear-selections))
 
-  ;; H TAB uses the sub-formula under point as the target without
-  ;; creating a persistent selection. It also exchanges with level 1,
-  ;; leaving an unrelated middle entry untouched.
+  ;; Point on a sub-formula takes it as the target with no flag and no
+  ;; persistent selection, exchanging with level 1 and leaving an
+  ;; unrelated middle entry untouched. The Hyperbolic flag, which used
+  ;; to be what asked for this, now changes nothing.
   (calc-pop (calc-stack-size))
   (maf-push "20 x + 10")
   (calc-push 8)
   (calc-push 7)
   (calc-refresh)
   (progn (goto-char (point-min)) (search-forward "3:  20") (backward-char 2))
-  (call-interactively 'calc-hyperbolic)
-  (cl-assert calc-hyperbolic-flag)
+  (cl-assert (not calc-hyperbolic-flag))
   (call-interactively 'maf-swap-up)
   (cl-assert (string= (math-format-value (maf--strip-encasing (calc-top 3 'full)))
                       "7 x + 10"))
@@ -123,13 +123,25 @@
   (cl-assert (string= (math-format-value (calc-top 2 'full)) "8"))
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "20"))
   (cl-assert (= (calc-locate-cursor-element (point)) 3))
-  (cl-assert (not calc-hyperbolic-flag))
   (progn (setq last-command nil) (call-interactively 'maf-undo))
   (cl-assert (string= (math-format-value (maf--strip-encasing (calc-top 3 'full)))
                       "20 x + 10"))
   (cl-assert (null (calc-top 3 'sel)))
   (cl-assert (string= (math-format-value (calc-top 2 'full)) "8"))
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "7"))
+
+  ;; A sub-formula in the top entry has no argument below it, so point
+  ;; there keeps the neighboring-entry swap rather than erroring.
+  (calc-pop (calc-stack-size))
+  (maf-push "20 x + 10")
+  (maf-push "5 y + 1")
+  (calc-refresh)
+  (progn (goto-char (point-min)) (search-forward "1:  5") (backward-char 1))
+  (call-interactively 'maf-swap-up)
+  (cl-assert (string= (math-format-value (maf--strip-encasing (calc-top 1 'full)))
+                      "20 x + 10"))
+  (cl-assert (string= (math-format-value (maf--strip-encasing (calc-top 2 'full)))
+                      "5 y + 1"))
 
   ;; Entries of different lengths: point is a screen position — same
   ;; line, same column, whatever entry lands there.
