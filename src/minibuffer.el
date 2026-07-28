@@ -211,14 +211,10 @@ The number was pushed on top; move it just below where point was — level
 M, bumping the entry that was there up one — and leave point at its
 margin. M of 1 (the top entry, or home) needs no roll.
 
-The roll is folded into the push's undo group so a single `maf-undo'
-reverts the whole C-S-<return> gesture rather than just the roll."
-  (when (> m 1)
-    (calc-wrapper (calc-roll-down m))
-    (when (cdr calc-undo-list)
-      (setq calc-undo-list (cons (append (car calc-undo-list)
-                                         (cadr calc-undo-list))
-                                 (cddr calc-undo-list)))))
+The roll — and the undo fold that keeps the whole C-S-<return> gesture
+a single `maf-undo' — is `maf--roll-top-below'; this adds the digit
+entry's own point placement on top."
+  (maf--roll-top-below m)
   (calc-cursor-stack-index m)
   (end-of-line))
 
