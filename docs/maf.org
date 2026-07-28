@@ -25,6 +25,7 @@
 
 * Todo
 # NOW
+** TODO Bind quick-substitute (formerly C-RET)
 ** TODO Organize entry movement and entry command bindings
    - Navigation
      + TAB: move entry up
