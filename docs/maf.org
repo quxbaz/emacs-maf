@@ -29,6 +29,7 @@
    s-SPC
    s-RET
    S-SPC
+** TODO M-RET should be contextual
 ** TODO Organize entry movement and entry command bindings
    - Navigation
      + TAB: move entry up
