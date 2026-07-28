@@ -25,6 +25,14 @@
 
 * Todo
 # NOW
+** TODO Organize entry movement and entry command bindings
+   TAB: move entry up
+   SPC: edit current entry
+   RET: duplicate item contextually (and move point to home)
+   S-RET*: open & edit new entry below point
+   C-RET*: edit new entry at home (then return point)
+   C-M-<backspace>: move entry to bottom of stack
+   ?: Move entry to top of stack
 ** TODO Add command to duplicate current entry below it
 ** IN-PROGRESS formulas module
    - [X] categories
