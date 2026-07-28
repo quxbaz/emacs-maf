@@ -22,18 +22,20 @@
   (cl-assert (= (line-number-at-pos) 3))
 
   ;; Mid-stack (level 2): levels 2 and 3 swap; point keeps its line.
-  (progn (goto-char (point-min)) (search-forward "2:  7") (backward-char 1))
+  ;; End of line, not the formula text — a position on the text asks for
+  ;; the sub-formula swap instead (covered below).
+  (progn (calc-cursor-stack-index 2) (end-of-line))
   (call-interactively 'maf-swap-up)
   (cl-assert (string= (math-format-value (calc-top 2 'full)) "5"))
   (cl-assert (string= (math-format-value (calc-top 3 'full)) "7"))
-  (cl-assert (looking-at "5"))
   (cl-assert (= (line-number-at-pos) 2))
+  (cl-assert (eolp))
 
   ;; The highest entry has nothing above it: no-op, no error.
-  (progn (goto-char (point-min)) (search-forward "3:  7") (backward-char 1))
+  (progn (calc-cursor-stack-index 3) (end-of-line))
   (call-interactively 'maf-swap-up)
   (cl-assert (string= (math-format-value (calc-top 3 'full)) "7"))
-  (cl-assert (looking-at "7"))
+  (cl-assert (= (line-number-at-pos) 1))
 
   ;; A single undo reverts one swap.
   (progn (setq last-command nil) (call-interactively 'maf-undo))
