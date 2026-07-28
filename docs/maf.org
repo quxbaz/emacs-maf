@@ -106,7 +106,10 @@
 ** Polynomials
    - [ ] Polynomial term ordering — math-normalize advice keeping sums in descending degree
 ** Vectors
-   - [-] my/calc-unique-groups (l g) — all size-n combinations of a vector
+   - [X] my/calc-unique-groups (l g) — all size-n combinations of a vector
+     (mafcmd-unique-groups on l g; contextual binary, n from the stack,
+     maf--combinations / maf--unique-groups in math.el, :widen to the
+     innermost vector around point)
    - [-] my/calc-vector-flatten (v L)
 ** Triangles
    - [ ] my/calc-cath / my/calc-unit-cath (f l / f L) — right-triangle leg from hyp+leg / unit hyp

@@ -45,6 +45,9 @@
 (declare-function calc-set-language "calc-lang")
 (declare-function math-read-expr "calc-aent")
 (declare-function calc-unpack-item "calc-vec")
+(declare-function math-vectorp "calc-ext")
+(declare-function math-num-integerp "calc-ext")
+(declare-function math-trunc "calc-misc")
 (defvar calc-unpack-with-type)
 
 (maf-defcmd mafcmd-factor-by (expr arg commit)
@@ -2217,6 +2220,59 @@ formula is not used to narrow it.
          (vars (maf--solve-sorted-vars poly)))
     (commit (or (and vars (maf--poly-roots-of poly (car vars)))
                 expr))))
+
+;;; Vectors
+
+(maf-defcmd mafcmd-unique-groups (expr arg commit)
+  "Group the resolved vector's elements, the top of the stack at a time.
+
+  [a, b, c] with 2  =>  [[a, b], [a, c], [b, c]]
+
+Every group of that many distinct positions is produced, each element
+used at most once per group, so the result holds the combinations of
+the vector rather than its permutations — [b, a] never appears beside
+\[a, b]. The order within a group and among the groups is the vector's
+own. Groups that come out identical are listed once, so a vector with
+repeated elements gives the distinct groupings instead of one group per
+position.
+
+A size larger than the vector gives the empty vector, having no group
+to make, and a size of zero the one empty group. Anything but a
+non-negative integer is not a size and signals; a subject that is not a
+vector commits unchanged, so equation sides without one pass through
+quietly.
+
+Like any binary command, the entry at point is the subject and the top
+of the stack is the argument, consumed on commit; point picks the
+subject as usual — a sub-formula at point, each side of an equation,
+stack level 2 at home. Within a formula the subject is the innermost
+vector around point rather than the node point names, so pressing the
+key on an element groups the vector holding it. An explicit calc
+selection is taken as it stands and never widened.
+
+  [a, b, c, d] with 2  =>  [[a, b], [a, c], [a, d], [b, c], [b, d], [c, d]]
+  [a, b, c, d] with 3  =>  [[a, b, c], [a, b, d], [a, c, d], [b, c, d]]
+  [a, b, c] with 1     =>  [[a], [b], [c]]
+  [a, b, c] with 3     =>  [[a, b, c]]
+  [a, b] with 3        =>  []
+  [a, a, b] with 2     =>  [[a, a], [a, b]]
+  v = [a, b, c] with 2 =>  v = [[a, b], [a, c], [b, c]]
+  x with 2             =>  x    (not a vector: unchanged)"
+  :arity binary
+  :prefix "ugrp"
+  ;; Only a vector has groups, so resolve hands the body the innermost
+  ;; one around point instead of whatever node point happens to name.
+  ;; Without this, pressing the key on an element — the obvious place to
+  ;; stand — would silently commit that element unchanged.
+  :widen math-vectorp
+  ;; An integer written as a float (3.) still names a size; anything
+  ;; with a fractional part, a negative, or a symbol does not.
+  (let ((n (and (math-num-integerp arg) (math-trunc arg))))
+    (unless (and n (>= n 0))
+      (user-error "Group size must be a non-negative integer"))
+    (commit (if (math-vectorp expr)
+                (maf--unique-groups expr n)
+              expr))))
 
 ;;; Unpacking
 

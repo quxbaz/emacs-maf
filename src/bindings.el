@@ -176,6 +176,11 @@
 (define-key maf-mode-map (kbd "j U") #'mafcmd-unpack)
 (define-key maf-mode-map (kbd "j M-U") #'mafcmd-unpack)
 
+;; Group a vector's elements N at a time, N from the stack. l g is
+;; unbound in calc itself — its l prefix is the logarithmic units,
+;; which has no g — and it joins maf's other l bindings above.
+(define-key maf-mode-map (kbd "l g") #'mafcmd-unique-groups)
+
 ;; Coordinate naming, cycling the name sets on repeat. Shadows
 ;; calc-copy-as-kill; maf-copy (M-w) copies the region or the entry,
 ;; and maf-kill (C-k) kills the whole entry onto the kill ring.
