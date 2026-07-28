@@ -58,8 +58,8 @@
 * Port
   - [ ] Port my/calc/* features one-by-one.
   Full inventory of ~/.emacs.d/my/calc below; legacy bindings in parens
-  are reference only, maf rebinds at port time. Features already ported
-  or superseded are noted at the end of each section.
+  are reference only, maf rebinds at port time. Ported or superseded
+  features are summarized at the end of each section.
 
 * PORT:stack.el
 ** Modes and session
@@ -69,9 +69,6 @@
    - [ ] my/calc-forward-noun / my/calc-backward-noun (M-f/M-b) — next/previous number or
      variable, skipping function names; fix the line-prefix bug while at it (see Bugs)
 ** Stack shuffling and duplication
-   - [X] my/calc-roll-to-top (S-RET) — move the entry at point to the top
-     → maf-roll-to-top (C-S-RET); point rides along to level 1
-   - [X] my/calc-roll-to-bottom (C-M-backspace) — ported as maf-roll-to-bottom
    - [ ] my/calc-duplicate-stack (C-M-RET) — duplicate the whole stack
    - [ ] my/calc-store-stack / my/calc-recall-stack (s RET / r RET) — in-memory stack
      save/restore; possibly superseded by maf-timeline r — decide before porting
@@ -79,50 +76,31 @@
    - [ ] my/calc-recall-browse (p) — completing-read recall, values as annotations
      (drop the ivy-specific TAB cycling)
    - [ ] my/calc-recall / my/calc-recall-quick (r 0-9) — recall without simplification
-   - [X] my/calc-substitute (a b) — calc-substitute variant with an empty new-name prompt
-     (mafcmd-substitute on a b. Contextual: the subject is the selection,
-     sub-formula, equation side, region, or entry at point, not just the stack
-     top. The first prompt defaults to the subject's priority variable; the
-     draft's empty new-name prompt comes free, since both prompts offer
-     defaults rather than initial input. The old/new-from-the-stack forms
-     collapse into one: $ at the replacement prompt makes the command binary,
-     so the entry above the subject is the replacement and commit consumes it.
-     A substitution matching nothing is refused before anything is committed,
-     for every form — the draft skipped that check whenever the old side came
-     off the stack, silently popping three entries for a no-op. Its parse
-     errors also printed (nth 1 err), the error's position, where the message
-     was meant.)
    - [ ] my/calc-quick-substitution (C-RET) — substitute the top assignment into level 2;
      needs a maf answer to the saved keep-args-flag hack
 ** Equation arithmetic
    - [ ] my/calc-plus / my/calc-minus (+/-) — eq + eq adds/subtracts both sides;
      layer onto mafcmd-add/sub
-** Solving
-   - [X] my/calc-inverse-function (l v) — invert y = f(x), any variable names
-** Angles
-   - [X] my/calc-complement (M-c) — 90−x / (pi/2)−x, pi-aware
-     (mafcmd-complement on M-c; maf--turn-complement in math.el now holds the
-     turn choice for both it and mafcmd-supplement)
 ** Polynomials
    - [ ] Polynomial term ordering — math-normalize advice keeping sums in descending degree
-** Vectors
-   - [X] my/calc-unique-groups (l g) — all size-n combinations of a vector
-     (mafcmd-unique-groups on l g; contextual binary, n from the stack,
-     maf--combinations / maf--unique-groups in math.el, :widen to the
-     innermost vector around point)
-   - [X] my/calc-vector-flatten (v L)
-     (mafcmd-flatten on v L, ceded by the lud row; contextual unary,
-     widening to the innermost vector with nesting to remove)
 ** Triangles
    - [ ] my/calc-cath / my/calc-unit-cath (f l / f L) — right-triangle leg from hyp+leg / unit hyp
    - [ ] calcFunc-hypot advice — symbolic args: sqrt(abssqr(a) + abssqr(b))
-** Already covered
-   Stack persistence (persist.el), maf-calc/-direct, maf-undo/redo, maf-kill,
-   maf-del, maf-beginning-of-entry, mafcmd-equal-to, maf-quick-variable,
-   maf-toggle-simplify; mafcmd: factor-by, factor-gcd, sqrt/sqr, exp, ln, log,
-   pow, mul, div, add, sub, neg, inv, esimplify, factor, expand. Trail yank
-   commands superseded by maf-timeline RET/C-RET. my/calc-swap-variables →
-   mafcmd-swap-vars (l x), whole-entry like solve-for.
+** Ported or superseded
+   - Stack: maf-roll-to-top (C-S-RET), maf-roll-to-bottom (C-M-backspace),
+     maf-dup (RET), stack persistence (persist.el), maf-undo/redo, maf-kill,
+     maf-del, and maf-beginning-of-entry.
+   - Variables: my/calc-substitute → mafcmd-substitute (a b);
+     my/calc-swap-variables → mafcmd-swap-vars (l x).
+   - Algebra: my/calc-inverse-function → mafcmd-inverse-function (l v);
+     my/calc-complement → mafcmd-complement (M-c); mafcmd-equal-to,
+     factor-by, factor-gcd, sqrt/sqr, exp, ln, log, pow, mul, div, add,
+     sub, neg, inv, esimplify, factor, and expand.
+   - Vectors: my/calc-unique-groups → mafcmd-unique-groups (l g);
+     my/calc-vector-flatten → mafcmd-flatten (v L).
+   - Session behavior: maf-calc/-direct, maf-quick-variable, and
+     maf-toggle-simplify. Trail yank commands are superseded by
+     maf-timeline RET/C-RET.
 
 * PORT:ineq.el
   - [ ] my/calc-abs-ineq (a k) — |a| < b → compound inequality, each part solved for the variable
