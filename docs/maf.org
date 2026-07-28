@@ -36,10 +36,12 @@
      + RET: duplicate item, contextually (and move point to home)
      + C-RET*: edit new entry at home (then return point)
      + C-S-RET*: open & edit new entry below point
-     + M-RET*: duplicate entry at point
+     + M-RET: duplicate entry at point, copy directly beneath it
 ** TODO Find out why maf-preview doesn't work on up/down movement
    - Debounce it for perf and don't show unless point is over entry for N ms
-** TODO Add command to duplicate current entry below it
+** DONE Add command to duplicate current entry below it
+   maf-dup-below (M-RET). Whole entry, copy into the slot just below;
+   point travels to the copy, keeping its place inside the entry.
 ** IN-PROGRESS formulas module
    - [X] categories
    - [X] docs per formula

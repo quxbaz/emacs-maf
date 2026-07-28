@@ -107,10 +107,15 @@
 ;; During digit/algebraic entry RET stays calc's own (the entry
 ;; minibuffer terminates), as with e / = / @.
 (define-key maf-mode-map (kbd "RET") #'maf-dup)
-;; M-RET is the keep-point variant: same duplicate, point stays put.
-;; Bind the GUI event and the terminal form both, as calc has no M-RET.
-(define-key maf-mode-map (kbd "M-<return>") #'maf-dup-here)
-(define-key maf-mode-map (kbd "M-RET") #'maf-dup-here)
+;; M-RET duplicates the whole entry into the slot just below it, the
+;; in-place counterpart of RET's copy onto the top. Bind the GUI event
+;; and the terminal form both, as calc has no M-RET.
+;;
+;; `maf-dup-here' — the keep-point variant of RET's duplicate — held
+;; this key until the entry-duplicate took it, and is currently unbound.
+;; Reachable via M-x maf-dup-here.
+(define-key maf-mode-map (kbd "M-<return>") #'maf-dup-below)
+(define-key maf-mode-map (kbd "M-RET") #'maf-dup-below)
 ;; Restack: the entry at point travels to the top, point riding along.
 ;; The graphical event only — S-<return> is unbound in calc itself and no
 ;; terminal can deliver it (every wire format folds it back to plain RET,
