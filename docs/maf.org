@@ -32,10 +32,19 @@
    Major features.
 ** TODO Bind the modules manager (core/maf-module.el)
    ~maf-list-modules~ has the same gap: buffer works, no key.
-** TODO Move the formulas options into conf.el (src/conf.el)
-   ~maf-formulas-file~ and ~maf-formulas-user~ are defcustoms living in
-   modules/maf-formulas.el, against conf.el's "every user option in one
-   place". The faces can stay with their module.
+** DONE Move the module options out of conf.el (src/conf.el)
+   Self-containment beats "every user option in one place": a module
+   keeps its own options, like it keeps its own faces. The timeline and
+   persist options moved to their module files, joining the formulas
+   ones already there; conf.el now holds the group and the core options
+   only. Cheap because maf.el loads every module file unconditionally,
+   so the customize group is complete regardless of ~maf-modules~.
+** TODO Derive maf-modules' :type from the registry (src/conf.el)
+   Its ~:type '(set (const ...))~ hardcodes every module name, so adding
+   a module means editing conf.el — the same coupling the option move
+   above removed. The defcustom is evaluated before any module file
+   loads, so the list cannot simply be read from ~maf-module-registry~
+   at definition time; needs a deferred :type or a re-put on register.
 ** TODO Port the digit-map shortcuts (src/minibuffer.el)
    n/P → push × pi, e → equal-to from the entry, o → mod-360. Three
    keys beside the existing ~maf-digit-colon~. (PORT:minibuffer.el)
