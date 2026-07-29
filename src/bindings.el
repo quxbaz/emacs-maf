@@ -161,8 +161,9 @@
 ;; the bury it pairs with.
 
 ;; Equate gets both = (shadowing calc-evaluate) and e (shadowing the
-;; e-notation digit start; inside digit entry e still means exponent,
-;; since the entry minibuffer is calc's own).
+;; e-notation digit start). Inside digit entry e reaches the same
+;; command: `maf-digit-equal-to' (src/minibuffer.el) ends the entry on
+;; it and the number becomes the argument.
 (define-key maf-mode-map (kbd "=") #'mafcmd-equal-to)
 (define-key maf-mode-map (kbd "e") #'mafcmd-equal-to)
 ;; The other direction: drop the relation, keep a side. M-. is unbound
@@ -173,7 +174,8 @@
 
 ;; The simplification toggle takes @ from the digit-entry starters
 ;; below; inside digit entry @ still means degrees, since the entry
-;; minibuffer is calc's own (cf. e and mafcmd-equal-to).
+;; minibuffer is calc's own but for the keys src/minibuffer.el takes
+;; there (; : and n P e).
 (define-key maf-mode-map (kbd "@") #'maf-toggle-simplify)
 
 ;; Big-language display toggle. mafcmd-arg cedes calc's G — see the
