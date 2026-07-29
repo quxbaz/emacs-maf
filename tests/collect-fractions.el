@@ -1,6 +1,9 @@
-;; Port verification for mafcmd-collect-fractions (l t): the resolved
-;; expression's additive terms combined over their least common
-;; denominator, committed as a single undistributed fraction.
+;; mafcmd-collect-fractions (l t): the resolved expression's additive
+;; terms combined over their least common denominator, committed as a
+;; single undistributed fraction. Covers the denominator shapes calc
+;; produces — literal ratios, divisions, factors of a product,
+;; negative powers — and the targets home, equation, selection and a
+;; sub-formula at point, widening included.
 
 (maf-step
   ;; Basic: like denominators, numerators added.
