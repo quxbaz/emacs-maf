@@ -413,8 +413,10 @@ target would have replaced."
                 (:rhs    . ,(nth 2 expr)))
               context))))
 
-(defun maf--resolve-pair-arg (context)
+(defun maf--resolve-pair-arg (context opts)
   "Pair a relation :arg with the equation target's sides in CONTEXT.
+OPTS may contain :pair -1 to keep a relation argument whole.
+
 At an equation target the body runs once per side against a single
 shared :arg. That is right for a scalar — x = y then + 1 gives
 x+1 = y+1 — but wrong when the arg is itself an equation: each side
@@ -429,7 +431,8 @@ on sign — and the command table has no spelling for which operators are
 monotone in a relation. Rather than produce an unsound result or fall
 back to the cancelling behavior above, those signal."
   (let ((arg (alist-get :arg context)))
-    (if (or (not (eq (alist-get :target context) 'equation))
+    (if (or (eql (alist-get :pair opts) -1)
+            (not (eq (alist-get :target context) 'equation))
             (not (maf--relation-p arg)))
         context
       (unless (and (eq (alist-get :rel-op context) 'calcFunc-eq)
@@ -464,7 +467,8 @@ the whole relation as :expr.
 
 At an equation target whose :arg is itself an equation, :arg-lhs and
 :arg-rhs split the arg so the two relations pair side by side rather
-than each side taking the whole arg as a term — see
+than each side taking the whole arg as a term. Commands opt out with
+:pair -1 in OPTS when the relation arg is one semantic operand — see
 `maf--resolve-pair-arg'.
 
 With `:scope entry' in OPTS the sub-formula/selection/region targets are
@@ -507,7 +511,8 @@ solving an equation, finding a polynomial's roots."
                                           (maf--resolve-target-equation opts))
                  ((maf--at-line-margin-p) (maf--resolve-target-entry opts))
                  (t (error "Could not resolve target at point")))
-                opts))
+                opts)
+               opts)
               ;; Also include options declared in the defcmd body like :arity, :prefix, etc
               opts
               ;; Include some useful properties as well like calc flag states

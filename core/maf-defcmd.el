@@ -119,6 +119,10 @@ OPTS configure context resolution and commit:
           once per side. For commands that consume or produce relations
           (solve, mapeq, the relation builders).
 
+  :pair   When -1, keep a relation ARG whole at an equation target
+          instead of pairing its two sides with the subject's sides. For
+          commands that consume a relation argument as one operand.
+
   :widen  A predicate (named as a bare symbol) deciding which
           sub-formulas the command can act on. At the subexpr target the
           node under point is widened outward to the innermost ancestor

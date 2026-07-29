@@ -49,6 +49,16 @@
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "y = 10"))
   (calc-pop (calc-stack-size))
 
+  ;; A plain equation assignment also stays whole when the subject is an
+  ;; equation; generic equation arithmetic would pair their sides.
+  (maf-push "6 x + 12 = 18 y + 6")
+  (maf-push "x = 2")
+  (goto-char (point-max))
+  (call-interactively 'mafcmd-let)
+  (cl-assert (string= (math-format-value (calc-top 1 'full))
+                      "24 = 18 y + 6"))
+  (calc-pop (calc-stack-size))
+
   ;; Sub-formula at point: only the term point names takes the value,
   ;; the other x stands.
   (maf-push "x^2 + x")
