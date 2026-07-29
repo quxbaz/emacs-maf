@@ -62,6 +62,10 @@
 (declare-function math-trunc "calc-misc")
 (declare-function math-evenp "calc-misc")
 (defvar calc-unpack-with-type)
+;; Defined in maf.el, which cannot be required from here — it loads
+;; this file. `maf-reset-settings' restores the mode calc-reset kills.
+(defvar maf-mode)
+(declare-function maf-mode "maf")
 
 (maf-defcmd mafcmd-factor-by (expr arg commit)
   "Factor the resolved expression by the top-of-stack argument.
