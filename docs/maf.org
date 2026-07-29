@@ -130,23 +130,12 @@
   commit is maf-edit's default commit path; ; → : is
   maf-edit-insert-colon, with the literal ; moved to M-;.
 
-* PORT:minibuffer.el
-  Nothing left to port. Already covered: ; → : (maf-digit-colon,
-  re-dispatching calcDigit-key); n/P → × pi (maf-digit-pi); e → equal-to from
-  the entry (maf-digit-equal-to); no-align on command-key termination and C-g
-  quit (src/minibuffer.el). Dropped: o → mod-360.
-
 * PORT:plot.el
   - [ ] my/calc-graph-quick / -with-range (g l / g i) — plot the top entry straight to
     gnuplot (see Todo: interval form for the range prompt)
   - [ ] my/calc-to-gnuplot-string — calc expr → gnuplot formula (fortran mode + fixups)
   - [ ] gnuplot session defaults (index.el) — resolution 1000, qt device, seeded
     \"set grid / set nokey\"
-
-* PORT:debug.el
-  - [ ] my/calc-debug-mode (M-d) — live structural sexp view of the entry at point
-    in *calc-debug*; S dumps the whole stack
-  Already covered: highlight mode → maf-hl.
 
 * PORT:lib.el, var.el, index.el, bindings.el
   Nothing to port on their own: the replace-expr-dwim macro and the predicates
