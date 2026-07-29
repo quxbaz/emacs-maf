@@ -50,6 +50,7 @@
 (declare-function math-vectorp "calc-ext")
 (declare-function math-num-integerp "calc-ext")
 (declare-function math-trunc "calc-misc")
+(declare-function math-evenp "calc-misc")
 (defvar calc-unpack-with-type)
 
 (maf-defcmd mafcmd-factor-by (expr arg commit)
@@ -580,6 +581,233 @@ left).  At home, on a whole entry, or on a term outside any + or * chain,
 the command does nothing."
   (interactive "p")
   (maf--commute 'right arg))
+
+
+;;; Balanced negation
+
+(defconst maf-negate-odd-functions
+  '(calcFunc-sin calcFunc-tan calcFunc-cot calcFunc-csc
+    calcFunc-arcsin calcFunc-arctan
+    calcFunc-sinh calcFunc-tanh calcFunc-coth calcFunc-csch
+    calcFunc-arcsinh calcFunc-arctanh
+    calcFunc-re calcFunc-im calcFunc-conj calcFunc-sign
+    calcFunc-trunc calcFunc-round calcFunc-ftrunc calcFunc-fround)
+  "One-argument functions f satisfying f(-x) = -f(x).
+`mafcmd-negate' negates such a call's argument and moves the sign it
+gives up out in front of the call.")
+
+(defconst maf-negate-even-functions
+  '(calcFunc-cos calcFunc-sec calcFunc-cosh calcFunc-sech calcFunc-abs)
+  "One-argument functions f satisfying f(-x) = f(x).
+`mafcmd-negate' negates such a call's argument and the call swallows the
+sign, leaving everything around it alone.")
+
+(defun maf--negate-whole (expr)
+  "Return EXPR with its own sign flipped and the flip paid for inside it.
+
+The in-slot form: what negating comes to wherever there is no operator
+in front of the target to flip — the whole entry, and the leading term
+of a sum.
+
+A binary relation negates both sides at once and reverses its direction,
+which leaves it saying the same thing. Anything else becomes the
+negation of its negation: the expression is shown negated behind a
+leading minus, with the same value as before. Where negating does not
+reach inside EXPR — an atom, a symbolic product, a function call — that
+would only stack a second minus sign on the first, so EXPR stands."
+  (cond
+   ((maf--relation-p expr)
+    ;; Chained relations (a < b < c) have no single direction to
+    ;; reverse, so only the two-sided ones are negated.
+    (if (= (length expr) 3)
+        (list (maf--flip-relation-op (car expr))
+              (math-neg (nth 1 expr))
+              (math-neg (nth 2 expr)))
+      expr))
+   (t (let ((negated (math-neg expr)))
+        (if (eq (car-safe negated) 'neg) expr (list 'neg negated))))))
+
+(defun maf--negate-binary (op a b i)
+  "Return the binary OP node on A and B with its Ith operand negated.
+Value-preserving: whatever sign the operand gives up is taken back
+somewhere else in the node. Nil when OP cannot absorb the flip, leaving
+the sign for the target's own slot to hold."
+  (let ((neg (math-neg (if (= i 1) a b))))
+    (pcase (cons op i)
+      ;; A sum or difference flips the operator joining the two terms.
+      ;; Only the right-hand term has one: a leading term has nothing
+      ;; in front of it to flip, and negating the node as a whole would
+      ;; rewrite the entire sum to show one term's sign — so that case
+      ;; falls through to the in-slot form instead.
+      ('(+ . 2) (list '- a neg))
+      ('(- . 2) (list '+ a neg))
+      ;; A product or quotient hands the sign to the other operand,
+      ;; where the two minus signs cancel — no wrapping parens needed.
+      ('(* . 1) (list '* neg (math-neg b)))
+      ('(* . 2) (list '* (math-neg a) neg))
+      ('(/ . 1) (list '/ neg (math-neg b)))
+      ('(/ . 2) (list '/ (math-neg a) neg))
+      ;; A power absorbs a base's sign only through an integer exponent:
+      ;; an even one swallows it, an odd one passes it out front. Under
+      ;; a symbolic exponent the sign has nowhere to go, and negating an
+      ;; exponent is not a sign flip at all.
+      ('(^ . 1) (and (math-num-integerp b)
+                     (if (math-evenp b)
+                         (list '^ neg b)
+                       (list 'neg (list '^ neg b))))))))
+
+(defun maf--negate-slot (parent i)
+  "Return PARENT with its Ith operand replaced by its own in-slot negation.
+The fallback when PARENT cannot absorb the flip itself: the minus stays
+inside the target rather than reaching out to rewrite the node holding
+it. PARENT itself when the target has nowhere to put the sign either."
+  (let* ((target (nth i parent))
+         (negated (maf--negate-whole target)))
+    (if (eq negated target)
+        parent
+      (let ((rebuilt (copy-sequence parent)))
+        (setcar (nthcdr i rebuilt) negated)
+        rebuilt))))
+
+(defun maf--negate-operand (parent i)
+  "Return PARENT rewritten so its Ith operand shows negated, value unchanged.
+Nil when PARENT has no way to take back the sign its operand gave up."
+  (let ((op (car-safe parent))
+        (n  (length (cdr parent))))
+    (cond
+     ;; A relation is balanced by negating both sides together — which
+     ;; side point named makes no difference to the result.
+     ((maf--relation-p parent) (maf--negate-whole parent))
+     ((and (= n 2) (memq op '(+ - * / ^)))
+      (maf--negate-binary op (nth 1 parent) (nth 2 parent) i))
+     ((and (= n 1) (= i 1) (memq op maf-negate-odd-functions))
+      (list 'neg (list op (math-neg (nth 1 parent)))))
+     ((and (= n 1) (= i 1) (memq op maf-negate-even-functions))
+      (list op (math-neg (nth 1 parent)))))))
+
+(defun maf--negate-at (expr path)
+  "Return EXPR rewritten so the sub-formula at PATH shows negated.
+PATH is the list of `nth' indices leading from EXPR down to the target;
+nil means EXPR itself. Nothing is normalized: the node is rebuilt down
+the path and every branch off it keeps the cons it already had, so the
+rest of the entry cannot be reordered or re-simplified on the way."
+  (cond
+   ((null path) (maf--negate-whole expr))
+   ;; Last index: EXPR is the target's parent, and gets first refusal on
+   ;; the sign — it is the only node that can flip an operator in front
+   ;; of the target. Where it cannot, the minus stays inside the
+   ;; target's own slot; nothing wider than the parent is ever touched.
+   ((null (cdr path))
+    (or (maf--negate-operand expr (car path))
+        (maf--negate-slot expr (car path))))
+   (t (let ((rebuilt (copy-sequence expr)))
+        (setcar (nthcdr (car path) rebuilt)
+                (maf--negate-at (nth (car path) expr) (cdr path)))
+        rebuilt))))
+
+(defun maf--negate-tree-path (tree node)
+  "Return the list of `nth' indices leading from TREE down to NODE.
+NODE is matched by `eq', so it must be a cons taken from TREE itself —
+the encased node `calc-find-selected-part' returns, not a copy. Nil when
+NODE is TREE, or is absent from it; both mean the whole of TREE."
+  (catch 'maf--negate-tree-path
+    (cl-labels ((walk (cur path)
+                  (when (eq cur node)
+                    (throw 'maf--negate-tree-path (reverse path)))
+                  (when (consp cur)
+                    (cl-loop for kid in (cdr cur)
+                             for i from 1
+                             do (walk kid (cons i path))))))
+      (walk tree nil))
+    nil))
+
+(defun maf--negate-target-path ()
+  "Path from the entry at point down to the sub-formula to negate.
+Nil — the whole entry — at home, at an entry's margin, and wherever
+point names the entry's whole formula (its relation operator, say). An
+explicit calc selection on the entry outranks point, as it does
+everywhere else in maf."
+  (maf--with-calc-buffer
+    (save-excursion
+      (let ((m (calc-locate-cursor-element (point))))
+        (when (> m 0)
+          (let* ((entry (calc-top m 'entry))
+                 (node (or (and calc-use-selections (nth 2 entry))
+                           (and (maf--at-subexpr-p)
+                                (ignore-errors
+                                  (calc-prepare-selection m)
+                                  (calc-find-selected-part))))))
+            (and node (maf--negate-tree-path (car entry) node))))))))
+
+(defun maf--negate-follow-selection ()
+  "Put point on the entry maf's selection target would pick, if elsewhere.
+`:scope entry' resolves the target entry from point, but an active calc
+selection outranks point everywhere else in maf; moving point onto the
+selected entry first keeps negate in line with the rest."
+  (maf--with-calc-buffer
+    (when (maf--sel-any-p)
+      (let ((m (maf--sel-effective-m)))
+        (when (and m (/= m (calc-locate-cursor-element (point))))
+          (calc-cursor-stack-index m))))))
+
+(defvar maf--negate-path nil
+  "Path to the sub-formula `maf--negate-run' negates, bound per call.
+Set by `mafcmd-negate' from point before the worker resolves its own
+context; nil means the whole entry.")
+
+(maf-defcmd maf--negate-run (expr _arg commit)
+  "Negate the sub-formula at `maf--negate-path' inside EXPR.
+The worker behind `mafcmd-negate' — see there. Takes the whole entry
+\(`:scope entry'), since the sign an operand gives up may be paid for by
+the node above it, which no sub-formula target could reach."
+  :arity unary
+  :prefix "bneg"
+  :map -1
+  :scope entry
+  (commit (maf--negate-at expr maf--negate-path)))
+
+(defun mafcmd-negate ()
+  "Flip the sign of the target, keeping the entry worth what it was.
+
+  2 - 3| x  =>  2 + -3 x
+
+The minus goes to the operator in front of the target if there is one,
+and stays inside the target's own slot if there is not. Nothing wider
+than the target's parent is ever rewritten. Point picks the target as
+usual: a sub-formula at point, an active selection, the whole entry at
+its margin or at home.
+
+  a + |x     =>  a - -x        (the operator in front flips)
+  6| x + 12  =>  -(-6 x) + 12  (leading term: no operator to flip)
+  |a x       =>  -a*-x         (the other factor takes the sign)
+  |x = a     =>  -x = -a       (a relation negates both sides)
+  |x < a     =>  -x > -a       (direction reverses with the sides)
+
+At the whole entry the same rule reads as pulling a minus sign out to
+the front — an entry is a slot with no operator in front of it.
+
+  2 - x     =>  -(x - 2)
+  a + b     =>  -(-a - b)
+
+Nothing simplifies: the result is built structurally, so the doubled
+signs stay visible rather than cancelling, and everything off the path
+to the target keeps the form it had. Where the sign has nowhere to go
+at all — negating does not reach inside the target and its parent has
+no operator to flip — the expression commits unchanged rather than
+changing value. This is the balanced negation; `mafcmd-neg' is the
+plain one, which does change the value.
+
+  x           =>  x             (nothing to balance against: unchanged)
+  |x^2        =>  (-x)^2        (even power swallows the sign)
+  |x^3        =>  -(-x)^3       (odd power passes it out front)
+  sin(|x)     =>  -sin(-x)      (odd function)
+  cos(|x)     =>  cos(-x)       (even function)
+  |x^y        =>  x^y           (symbolic power: nowhere to go)
+  a + |x + b  =>  a - -x + b    (the rest of the entry is untouched)"
+  (interactive)
+  (maf--negate-follow-selection)
+  (let ((maf--negate-path (maf--negate-target-path)))
+    (call-interactively #'maf--negate-run)))
 
 (maf-defcmd mafcmd-float (expr _arg commit)
   "Float the resolved expression's fractions, leaving integers exact.
