@@ -108,42 +108,9 @@
      still open, f h alone. maf--cath needs none of it: squaring under a
      structural math-normalize already reduces sqrt(2)^2 to 2.
 
-* PORT:ineq.el
-  - [X] my/calc-abs-ineq (a k) — ported as mafcmd-abs-ineq, still on a k:
-    |a| < b splits into a band (&&), |a| > b into two tails (||), each half
-    solved for the body's first variable in maf's solve order. Contextual and
-    widening, so it also splits an abs inequality nested in a compound.
-    Fixed on the way over: the bounds stay exact instead of turning into
-    floats; an abs on the right (5 > |x|) is flipped rather than ignored;
-    constant vars (pi, e) are no longer mistaken for the unknown; and a half
-    calc answers with a != boundary — which states something else entirely —
-    is kept as written rather than committed.
-
-* PORT:rewrite.el
-  - [X] my/calc-collect-fractions (l t) → mafcmd-collect-fractions, keeping
-    the key: additive terms over their LCD, stacked divisions flattened.
-    Denominators are no longer integer-only — variables, polynomials and
-    opaque factors take part, sharing repeated factors via maf--poly-lcm.
-  Already covered: to-degrees/to-radians, mod-360/180, log-exp identities,
-  complete-square, factor-powers — all reimplemented structurally in maf.
-
 * PORT:selection.el
-  - [X] my/calc-sel-jump-equals (j e) → maf-jump-equals, on j e: moves the term
-    under point across an = or !=, unselects, and sends point after it. The !=
-    rules are derived from calc's JumpRules instead of hand-copied, and are
-    let-bound over the jump instead of advising calc-JumpRules — the advice only
-    fired before calc cached the rule set, so it lost whenever calc's j E ran
-    first. Point lands on the moved term via the composition, dropping the
-    legacy show-selections/"#" search hack.
-  - [X] my/calc-sel-negate (N) — negate in place, contextual, unselect after
-    → ~mafcmd-negate~, rebuilt structurally rather than through calc's
-    NegateRules (which normalizes, and so reorders the terms around the
-    target; its two integer-power rules are also broken upstream)
   - [ ] my/calc-sel-distribute (j D) — contextual, no-simplify, frac→division fix (see BACKLOG)
   - [ ] my/calc-sel-merge (j M) — contextual, unselect after
-  - [X] my/calc-clear-selections (j c) → maf-clear-selections, on RET when
-    a selection is active
-  Already covered: my/calc-commute → mafcmd-commute (with relation flipping).
 
 * PORT:edit.el
   maf-edit replaces the calc-edit buffer workflow itself; these are the
