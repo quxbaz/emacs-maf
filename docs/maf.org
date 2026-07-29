@@ -128,8 +128,11 @@
    - [ ] my/calc-recall-browse (p) — completing-read recall, values as annotations
      (drop the ivy-specific TAB cycling)
    - [ ] my/calc-recall / my/calc-recall-quick (r 0-9) — recall without simplification
-   - [ ] my/calc-quick-substitution (C-RET) — substitute the top assignment into level 2;
-     needs a maf answer to the saved keep-args-flag hack
+   - [X] my/calc-quick-substitution (C-RET) — ported as mafcmd-let, currently unbound
+     (M-x): the top assignment (or vector of them) binds for one evaluation of the
+     subject at point. The keep-args-flag hack was only needed because C-RET is a
+     non-character key; on a character key calc's K prefix survives on its own and
+     maf's resolve snapshot handles it. Key still to pick — s SPC is the obvious one.
 ** Equation arithmetic
    - [ ] my/calc-plus / my/calc-minus (+/-) — eq + eq adds/subtracts both sides;
      layer onto mafcmd-add/sub
