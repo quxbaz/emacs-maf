@@ -91,22 +91,6 @@
   features are summarized at the end of each section.
 
 * PORT:stack.el
-** Modes and session
-   - [X] my/calc-reset (C-M-k) — ported as maf-reset, keeping C-M-k: clears the
-     stack, undo/redo, the trail, and the timeline (the history the trail used to
-     be), then re-reads calc-settings-file for what calc-reset itself skips —
-     stored variables, macros, user units. C-u now means "factory defaults" and
-     suppresses the file reload; the legacy version forwarded calc-reset's whole
-     overloaded prefix and then loaded the file regardless, which put the saved
-     modes straight back and made C-u 0 a no-op. Also restores maf-mode across
-     the reset (calc-reset re-runs calc-mode, killing the buffer-local), so the
-     command no longer depends on the calc-mode-hook in project-init.el.
-   - [X] my/calc-reset-settings (C-M-l) — ported as maf-reset-settings, keeping
-     C-M-l: modes and display only, stack and selections kept. Now preserves
-     undo/redo as well — calc-reset clears both whatever its argument, which only
-     makes sense when the stack goes too — and keeps point. C-u is the
-     factory-defaults variant here too. Timeline clearing landed alongside as
-     maf-timeline-clear (M-x; deliberately unbound in the browser).
 ** Motion
    - [ ] my/calc-forward-noun / my/calc-backward-noun (M-f/M-b) — next/previous number or
      variable, skipping function names; fix the line-prefix bug while at it (see Bugs)
@@ -117,30 +101,9 @@
 ** Variables
    - [ ] my/calc-recall-browse (p) — completing-read recall, values as annotations
      (drop the ivy-specific TAB cycling)
-   - [ ] my/calc-recall / my/calc-recall-quick (r 0-9) — recall without simplification
-   - [X] my/calc-quick-substitution (C-RET) — ported as mafcmd-let (C-c C-c):
-     the top assignment (or vector of them) binds for one evaluation of the
-     subject at point. The keep-args-flag hack was only needed because C-RET is a
-     non-character key; on a character key calc's K prefix survives on its own and
-     maf's resolve snapshot handles it.
-** Equation arithmetic
-   - [X] my/calc-plus / my/calc-minus (+/-) — eq + eq adds/subtracts both sides.
-     Ported one level lower than the legacy pair: at an equation target resolve
-     now splits an equation :arg into :arg-lhs/:arg-rhs and the defcmd macro
-     binds one per side, so every binary contextual command pairs two equations,
-     not just + and - (* and / included). Only = pairs with =; a non-matching
-     relation on either side signals rather than produce an unsound result.
-     Open: a relation arg against a *non*-relation target (2 then x = 5 then *)
-     still gives 2 (x = 5) — the pairing keys off the target, and mapping the
-     arg alone is a separate decision.
 ** Polynomials
    - [ ] Polynomial term ordering — math-normalize advice keeping sums in descending degree
 ** Triangles
-   - [X] my/calc-cath / my/calc-unit-cath (f l / f L) — ported as mafcmd-cath and
-     mafcmd-unit-cath over maf--cath, on the same keys; f L taken from mafcmd-lnp1,
-     which cedes it and keeps I f E. cath and hypot are each other's Inverse variant.
-     Exactness is forced (symbolic mode, preferred fractions) unless an operand is a
-     float, so radicals stand without m s — the draft depended on the ambient mode.
    - [ ] calcFunc-hypot advice — symbolic args: sqrt(abssqr(a) + abssqr(b));
      still open, f h alone. maf--cath needs none of it: squaring under a
      structural math-normalize already reduces sqrt(2)^2 to 2.
