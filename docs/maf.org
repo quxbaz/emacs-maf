@@ -78,20 +78,24 @@
    sub-formula, selection, region run, whole entry, top at home — and
    drops the copy below the entry the subject came from.
 ** TODO Organize entry movement and entry command bindings
-   - Navigation
-     + TAB: move entry up
-     + C-M-i: roll up top 3 entries
-     + S-<backspace>: Move entry to top of stack
-     + C-M-<backspace>: move entry to bottom of stack
+   All current. SPC C-RET S-RET "(" are edit-module only.
+   - Moving
+     + TAB: swap with entry above; C-u N rolls top N ~maf-swap-up~
+     + C-M-i: roll top 3 up ~calc-roll-up~ (calc's, not maf's)
+     + S-<backspace>: to top, point rides ~maf-roll-to-top~
+     + C-M-<backspace>: to deepest level ~maf-roll-to-bottom~
    - Editing
-     + SPC: edit current entry
-     + RET: duplicate item, contextually (and move point to home);
-       clears the selections instead when one is active
-     + C-u RET: same duplicate, but point stays on the item (no mark)
-     + S-RET: open & edit new entry below point
-     + C-RET: edit new entry at home (then return point)
-     + (: same, pre-filled with [] for a vector entry
-     + M-RET: duplicate item, contextually; copy directly beneath it
+     + SPC: toggle stack edit ~maf-edit~
+     + RET: dup to top, point homes; clears selections when active
+       ~maf-dup-or-clear-selections~
+     + C-u RET: same, point stays, no mark ~maf-dup-here~
+     + M-RET: same, copy lands beneath ~maf-dup-below~
+     + S-RET: new entry below point ~maf-edit-add-entry-below~
+     + C-RET: new entry at home, point returns ~maf-edit-add-entry~
+     + (: C-RET pre-filled [] ~maf-edit-add-vector~
+   Terminal: C-M-h, S-DEL, C-j.
+   Odd one out: C-M-i is calc's, count-based not point-based, and
+   overlaps TAB's C-u N the other way.
 ** TODO Find out why maf-preview doesn't work on up/down movement
    - Debounce it for perf and don't show unless point is over entry for N ms
    - Or, generate previews ahead of time
