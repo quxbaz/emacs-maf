@@ -164,6 +164,7 @@ shadow later ones:
 2. *Declaration options* — the defcmd's OPTS merged in verbatim. Known
    keys are =:arity= (the symbol =unary= or =binary=), =:prefix= (the
    trail label string), =:map= (=-1= opts out of relation mapping),
+   =:pair= (=-1= keeps a relation argument whole at an equation target),
    and the I/H variant links (command symbols); any other keyword
    passes through untouched, so resolve/commit extensions can define
    their own.
@@ -300,7 +301,12 @@ replaces exactly what the base target would have replaced.
 
 Commands whose body consumes or produces relations whole (solve,
 mapeq, the relation builders) opt out with =:map -1=, which also
-disables the direct equation branch of the cascade.
+disables the direct equation branch of the cascade. At a mapped equation
+target, a relation argument ordinarily pairs its two sides with the
+subject's sides — and signals unless both relations are =. =:pair -1=
+keeps that argument whole without disabling per-side mapping of the
+subject, and the pairing check goes with it: =mafcmd-let='s assignment
+x = 2 binds across a < subject as readily as an = one.
 
 Synthesized region contexts are exempt by construction — a run of
 chain terms is never a relation. Degenerate regions resolve /as/
