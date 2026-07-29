@@ -117,8 +117,21 @@
 
 * PORT:stack.el
 ** Modes and session
-   - [ ] my/calc-reset (C-M-k) — calc-reset + clear history (was: trail) + reload settings
-   - [ ] my/calc-reset-settings (C-M-l) — reset display/modes only, keep the stack
+   - [X] my/calc-reset (C-M-k) — ported as maf-reset, keeping C-M-k: clears the
+     stack, undo/redo, the trail, and the timeline (the history the trail used to
+     be), then re-reads calc-settings-file for what calc-reset itself skips —
+     stored variables, macros, user units. C-u now means "factory defaults" and
+     suppresses the file reload; the legacy version forwarded calc-reset's whole
+     overloaded prefix and then loaded the file regardless, which put the saved
+     modes straight back and made C-u 0 a no-op. Also restores maf-mode across
+     the reset (calc-reset re-runs calc-mode, killing the buffer-local), so the
+     command no longer depends on the calc-mode-hook in project-init.el.
+   - [X] my/calc-reset-settings (C-M-l) — ported as maf-reset-settings, keeping
+     C-M-l: modes and display only, stack and selections kept. Now preserves
+     undo/redo as well — calc-reset clears both whatever its argument, which only
+     makes sense when the stack goes too — and keeps point. C-u is the
+     factory-defaults variant here too. Timeline clearing landed alongside as
+     maf-timeline-clear (M-x; deliberately unbound in the browser).
 ** Motion
    - [ ] my/calc-forward-noun / my/calc-backward-noun (M-f/M-b) — next/previous number or
      variable, skipping function names; fix the line-prefix bug while at it (see Bugs)
