@@ -60,17 +60,41 @@ list back does not re-trigger `maf-modules-apply'."
          (when (symbol-value (cadr entry))
            (push (car entry) active)))))))
 
+(defun maf-module--custom-type ()
+  "Build a Customize `:type' for `maf-modules' from `maf-module-registry'.
+A checkbox per registered module, labelled with the name to set from
+Lisp and the description the module gives for itself. Sorted by name:
+`maf-module-registry' is in reverse registration order, an artifact of
+the load order in maf.el that should not decide how the option reads."
+  `(set ,@(mapcar (lambda (entry)
+                    (let ((name (car entry))
+                          (desc (caddr entry)))
+                      `(const :tag ,(if desc
+                                        (format "%s — %s" name desc)
+                                      (symbol-name name))
+                              ,name)))
+                  (sort (copy-sequence maf-module-registry)
+                        (lambda (a b) (string< (car a) (car b)))))))
+
 (defun maf-register-module (name mode &optional description)
   "Register module NAME with its global minor mode MODE.
 DESCRIPTION is a one-line string the module gives for itself, shown in
-the module menu (see `maf-list-modules').
+the module menu (see `maf-list-modules') and on the module's checkbox
+in Customize.
 
 Records the entry in `maf-module-registry' and adds
 `maf-module--reconcile' to MODE's hook, so toggling MODE keeps
 `maf-modules' current. Re-registering a NAME replaces the earlier
 entry, and re-adding the shared reconcile function to the hook is
-idempotent, so reloading a module file re-registers it cleanly."
+idempotent, so reloading a module file re-registers it cleanly.
+
+Also refreshes `maf-modules' Customize type from the registry, so the
+option offers exactly the modules that have registered — see
+`maf-module--custom-type'. Registering is the only thing that changes
+the registry, so recomputing here keeps the type current without
+conf.el naming a single module."
   (setf (alist-get name maf-module-registry) (list mode description))
+  (put 'maf-modules 'custom-type (maf-module--custom-type))
   (add-hook (intern (concat (symbol-name mode) "-hook"))
             #'maf-module--reconcile))
 
