@@ -450,6 +450,57 @@ home.
   :prefix "comp"
   (commit (maf--turn-complement expr '(frac 1 4))))
 
+(maf-defcmd mafcmd-cath (expr arg commit)
+  "Take the remaining leg of a right triangle with the top-of-stack leg.
+
+  5 with 3  =>  4
+
+The resolved expression is the hypotenuse and the argument the known
+leg; the result is the other leg, sqrt(hyp^2 - leg^2). The operands
+read in the same order as `mafcmd-hypot' (f h), whose inverse this is:
+hypot builds the hypotenuse from two legs, cath recovers a leg from the
+hypotenuse and the other one, and each routes to the other under the
+Inverse flag. Exact operands keep an exact answer — the radical stands
+rather than floating — while a float in either operand evaluates
+numerically; see `maf--cath'. A leg longer than the hypotenuse gives an
+imaginary result rather than an error, which is calc's own answer for
+the negative radicand. Point picks the target as usual: a sub-formula
+at point, each side of an equation, stack level 2 at home; the top
+entry is always the argument, popped on commit.
+
+  13 with 5       =>  12
+  2 with 1        =>  sqrt(3)
+  sqrt(2) with 1  =>  1
+  2.5 with 1.5    =>  2.
+  h with a        =>  sqrt(h^2 - a^2)
+  1 with 2        =>  sqrt(3) i    (leg past the hypotenuse)"
+  :arity binary
+  :prefix "cath"
+  :inverse mafcmd-hypot
+  (commit (maf--cath expr arg)))
+
+(maf-defcmd mafcmd-unit-cath (expr _arg commit)
+  "Take the remaining leg of a right triangle whose hypotenuse is 1.
+
+  3:5  =>  4:5
+
+`mafcmd-cath' with the hypotenuse fixed at one, so the resolved
+expression is the known leg and nothing is taken from the stack:
+sqrt(1 - leg^2), the unit-circle companion of a sine or cosine.
+Exactness and imaginary results work as in `mafcmd-cath'. Point picks
+the target as usual: a sub-formula at point, each side of an equation,
+the top entry at home.
+
+  0     =>  1
+  1     =>  0
+  1:2   =>  sqrt(3) / 2
+  0.6   =>  0.8
+  x     =>  sqrt(1 - x^2)
+  2     =>  sqrt(3) i    (leg past the hypotenuse)"
+  :arity unary
+  :prefix "ucth"
+  (commit (maf--cath 1 expr)))
+
 (maf-defcmd mafcmd-commute (expr _arg commit)
   "Swap the first two operands of the resolved expression.
 

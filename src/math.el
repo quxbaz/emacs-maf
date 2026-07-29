@@ -306,6 +306,33 @@ which quadrant such an X lies in. This is the transformation behind
                    ((not (math-lessp h '(frac 1 2))) (math-sub half-turn r))
                    (t r)))))))))
 
+(defun maf--cath (hyp leg)
+  "Return the remaining leg of a right triangle with HYP and LEG.
+The cathetus opposite LEG, by Pythagoras: sqrt(HYP^2 - LEG^2). This is
+`calcFunc-hypot' run backwards — hypot builds the hypotenuse from two
+legs, this recovers a leg from the hypotenuse and the other one.
+
+Exact operands keep an exact answer: the root is taken in symbolic
+mode, so 5 and 3 give 4, 2 and 1 give sqrt(3) rather than
+1.73205080757, and sqrt(2) and 1 give 1 — the squaring undoes the
+radical before the subtraction. A float in either operand has already
+forfeited exactness, so the root evaluates numerically instead, as in
+`mafcmd-to-degrees'. Symbolic operands stay written out:
+sqrt(h^2 - a^2).
+
+A LEG longer than HYP leaves a negative radicand, and calc's own sqrt
+answers with the imaginary root rather than an error — the honest
+reading of a triangle that does not close.
+
+This is the transformation behind `mafcmd-cath' and `mafcmd-unit-cath';
+to change it, change this function."
+  (let* ((exact (not (or (maf--contains-float-p hyp)
+                         (maf--contains-float-p leg))))
+         (calc-symbolic-mode exact)
+         (calc-prefer-frac exact))
+    (math-normalize
+     (list 'calcFunc-sqrt (list '- (list '^ hyp 2) (list '^ leg 2))))))
+
 (defun maf--terms-gcd (terms)
   "Return the GCD of TERMS via `calcFunc-pgcd', iterated to a fixpoint.
 A single reduce can overshoot when both arguments carry variables the
