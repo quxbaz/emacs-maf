@@ -44,8 +44,14 @@
    keys beside the existing ~maf-digit-colon~. (PORT:minibuffer.el)
 ** TODO Port j c, clear selections point-preserving (PORT:selection.el)
    A short command: clear every selection without moving point.
-** TODO Port N, negate in place (PORT:selection.el)
-   Contextual negate, unselect after — a plain ~maf-defcmd~ row.
+** DONE Port N, negate in place (PORT:selection.el)
+   ~mafcmd-negate~. The rule: the minus goes to the operator in front
+   of the target if there is one, and stays inside the target's own
+   slot if there is not — nothing wider than the target's parent is
+   rewritten. Not a plain ~maf-defcmd~ row after all, because that
+   first case reaches the node *above* the target, which no
+   sub-formula target can: the command resolves the path to the target
+   from point and hands it to a ~:scope entry~ worker.
 ** TODO Port the edit-mode insertions (modules/maf-edit.el)
    Independent one-liners, portable one at a time: P → pi, M-2..M-9 /
    M-' → ^n and ^(), and the \ L | wrap helpers around the preceding
@@ -148,7 +154,10 @@
 * PORT:selection.el
   - [ ] my/calc-sel-jump-equals (j e) — move term across =, unselect after; includes
     the JumpRules advice extending every rule to !=
-  - [ ] my/calc-sel-negate (N) — negate in place, contextual, unselect after
+  - [X] my/calc-sel-negate (N) — negate in place, contextual, unselect after
+    → ~mafcmd-negate~, rebuilt structurally rather than through calc's
+    NegateRules (which normalizes, and so reorders the terms around the
+    target; its two integer-power rules are also broken upstream)
   - [ ] my/calc-sel-distribute (j D) — contextual, no-simplify, frac→division fix (see BACKLOG)
   - [ ] my/calc-sel-merge (j M) — contextual, unselect after
   - [ ] my/calc-clear-selections (j c) — point-preserving clear
