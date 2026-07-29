@@ -36,9 +36,19 @@
    above removed. The defcustom is evaluated before any module file
    loads, so the list cannot simply be read from ~maf-module-registry~
    at definition time; needs a deferred :type or a re-put on register.
-** TODO Port the digit-map shortcuts (src/minibuffer.el)
-   n/P → push × pi, e → equal-to from the entry, o → mod-360. Three
-   keys beside the existing ~maf-digit-colon~. (PORT:minibuffer.el)
+** DONE Port the digit-map shortcuts (src/minibuffer.el)
+   ~maf-digit-pi~ (n/P) and ~maf-digit-equal-to~ (e), beside the
+   existing ~maf-digit-colon~; o → mod-360 deliberately not ported.
+   The pi key hands its product out of the entry in
+   ~calc-digit-value~ (calc's own ~calcDigit-algebraic~ route), so the
+   entry completes as a RET does — pushed at a margin, committed
+   contextually on a sub-formula. The e key is nothing but a
+   command-key termination: the entry ends and the e re-dispatches to
+   ~mafcmd-equal-to~, exactly as the + of 1 + does. Both step aside
+   inside a radix-prefixed entry, where the letters are calc's digits
+   (16#3e, 30#1P); e steps aside for an incomplete object too, where
+   there is no entry to equate. The cost is decimal e-notation, which
+   now goes in through algebraic entry. (PORT:minibuffer.el)
 ** DONE Port j c, clear selections point-preserving (PORT:selection.el)
    ~maf-clear-selections~: clears every selection without moving point.
    It sits on RET rather than j c — ~maf-dup-or-clear-selections~
@@ -239,9 +249,10 @@
   maf-edit-insert-colon, with the literal ; moved to M-;.
 
 * PORT:minibuffer.el
-  - [ ] Digit-map shortcuts: n/P → push × pi, e → equal-to from entry, o → mod-360
-  Already covered: ; → : (maf-digit-colon, re-dispatching calcDigit-key);
-  no-align on command-key termination and C-g quit (src/minibuffer.el).
+  Nothing left to port. Already covered: ; → : (maf-digit-colon,
+  re-dispatching calcDigit-key); n/P → × pi (maf-digit-pi); e → equal-to from
+  the entry (maf-digit-equal-to); no-align on command-key termination and C-g
+  quit (src/minibuffer.el). Dropped: o → mod-360.
 
 * PORT:plot.el
   - [ ] my/calc-graph-quick / -with-range (g l / g i) — plot the top entry straight to
