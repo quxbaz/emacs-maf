@@ -33,11 +33,6 @@
 # NOW
 ** TODO Move tests out of sandbox/ and into tests/
 ** TODO In docker/tmux fix C-RET, C-., C-M-<backspace>, S-<backspace>
-** DONE Bind quick-substitute to C-c C-c (formerly C-RET)
-** DONE M-RET should be contextual
-   ~maf-dup-below~ resolves like every other contextual command —
-   sub-formula, selection, region run, whole entry, top at home — and
-   drops the copy below the entry the subject came from.
 ** TODO Organize entry movement and entry command bindings
    All current. SPC C-RET S-RET "(" are edit-module only.
    - Moving
