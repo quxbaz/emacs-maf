@@ -491,11 +491,14 @@ entry at home.
                     (nthcdr 3 expr)))
            (t expr))))
 
-(defun maf--commute-anchor (m node)
+(defun maf--anchor-on-node (m node)
   "Put point on NODE within the entry at stack level M; nil if not found.
-NODE is matched by identity in the freshly rewritten entry, so it works
-only while calc reuses the same cons — true for + and * chains, false
-once a - or / crossing wraps the term in a fresh neg/reciprocal."
+For the commands that hand a rewrite to calc and then want point to
+follow the term it moved. NODE is matched by identity in the freshly
+rewritten entry, so it lands only where the rewrite reused the same
+cons — true of an associative shift within a + or * chain, false once
+a - or / crossing wraps the term in a fresh neg/reciprocal. Callers
+fall back to a positional restore on nil."
   (ignore-errors
     (calc-prepare-selection m)
     (when-let ((pos (maf--comp-node-start-pos node)))
@@ -544,7 +547,7 @@ rather than signaling calc's \"No term is selected\"."
                     (calc-commute-right arg))
                 ;; "Term is already leftmost/rightmost" — nothing to do.
                 (error nil))
-              (or (maf--commute-anchor m sel)
+              (or (maf--anchor-on-node m sel)
                   (maf--point-restore snapshot))
               ;; A single undo reverts point along with the stack.
               (maf--undo-record-cmd-point snapshot))))))))
