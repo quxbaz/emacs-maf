@@ -115,9 +115,12 @@
 (define-key maf-mode-map (kbd "S-DEL") #'maf-roll-to-top)
 ;; Contextual duplicate, shadowing calc-enter. At home it dups the top
 ;; as calc-enter does; elsewhere it pushes a copy of the resolved item.
+;; With a selection active the same key clears the selections instead —
+;; the way back out of the sub-formula it drilled into — so the
+;; duplicate is one step away rather than the escape being a prefix key.
 ;; During digit/algebraic entry RET stays calc's own (the entry
 ;; minibuffer terminates), as with e / = / @.
-(define-key maf-mode-map (kbd "RET") #'maf-dup)
+(define-key maf-mode-map (kbd "RET") #'maf-dup-or-clear-selections)
 ;; M-RET duplicates the whole entry into the slot just below it, the
 ;; in-place counterpart of RET's copy onto the top. Bind the GUI event
 ;; and the terminal form both, as calc has no M-RET.

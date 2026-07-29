@@ -25,6 +25,7 @@
 (declare-function calc-roll-down "calc-misc")
 (declare-function calc-locate-cursor-element "calc-yank")
 (declare-function calc-del-selection "calc-sel")
+(declare-function calc-clear-selections "calc-sel")
 (declare-function calc-change-mode "calc-mode")
 (declare-function calc-normal-language "calc-lang")
 (declare-function calc-big-language "calc-lang")
@@ -1564,6 +1565,33 @@ error on an empty stack.
       ;; Record the resolve-time point so a single `maf-undo' reverts
       ;; point along with the copy.
       (maf--undo-record-cmd-point snapshot))))
+
+;;; Selections
+
+(defun maf-clear-selections ()
+  "Clear every active selection, leaving point where it is.
+
+Selections on every entry go, not just the one under point. The stack
+itself is untouched — nothing is pushed, popped, or rewritten, so
+there is nothing to undo either. Point keeps its line and column
+instead of parking on the home line, leaving the entry under the
+cursor for the next command. With nothing selected this does nothing."
+  (interactive)
+  (maf--with-calc-buffer
+    (maf--preserve-point
+      (calc-clear-selections))))
+
+(defun maf-dup-or-clear-selections ()
+  "Clear active selections, or duplicate the item at point.
+
+With any selection active the selections are cleared and the stack is
+left alone (`maf-clear-selections'); the key that narrows down to a
+sub-formula is also the one that steps back out. With none active the
+item at point is duplicated onto the top of the stack (`maf-dup')."
+  (interactive)
+  (if (maf--sel-any-p)
+      (maf-clear-selections)
+    (maf-dup)))
 
 ;;; Coordinates
 
