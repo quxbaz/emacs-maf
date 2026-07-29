@@ -50,6 +50,13 @@
 ;; j l / j r (calc binds the shifts to capital j L / j R, left reachable).
 (define-key maf-mode-map (kbd "j l") #'maf-commute-left)
 (define-key maf-mode-map (kbd "j r") #'maf-commute-right)
+;; Move the term under point across the = (or !=) it sits in. Lowercase
+;; j e, beside the shifts above, for the same reason: calc keeps the
+;; jump on the capital j E, which stays reachable and unshadowed for
+;; the plain = -only behavior that leaves its selection standing.
+;; Shadows calc-enable-selections, whose toggle maf has no use for —
+;; every maf command resolves its subject from point.
+(define-key maf-mode-map (kbd "j e") #'maf-jump-equals)
 ;; Shadows calc-call-last-kbd-macro.
 (define-key maf-mode-map (kbd "X") #'mafcmd-log-exp)
 ;; A single-key alias for expand, which also keeps its table key a x.

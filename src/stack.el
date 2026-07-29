@@ -46,6 +46,13 @@
 (declare-function calc-commute-right "calcsel2")
 (declare-function calc-auto-selection "calc-sel")
 (declare-function calc-find-assoc-parent-formula "calc-sel")
+(declare-function calc-find-parent-formula "calc-sel")
+(declare-function calc-unselect "calc-sel")
+(declare-function calc-sel-jump-equals "calcsel2")
+(declare-function calc-var-value "calc-ext")
+;; Calc's JumpRules holder: the symbol `calc-JumpRules' until first use,
+;; then the parsed rule set cached in its place by `calc-var-value'.
+(defvar var-JumpRules)
 (declare-function calcFunc-factor "calc-poly")
 (declare-function calcFunc-roots "calcalg2")
 (declare-function calcFunc-sub "calc-arith")
@@ -555,11 +562,14 @@ entry at home.
                     (nthcdr 3 expr)))
            (t expr))))
 
-(defun maf--commute-anchor (m node)
+(defun maf--anchor-on-node (m node)
   "Put point on NODE within the entry at stack level M; nil if not found.
-NODE is matched by identity in the freshly rewritten entry, so it works
-only while calc reuses the same cons — true for + and * chains, false
-once a - or / crossing wraps the term in a fresh neg/reciprocal."
+For the commands that hand a rewrite to calc and then want point to
+follow the term it moved. NODE is matched by identity in the freshly
+rewritten entry, so it lands only where the rewrite reused the same
+cons — true of an associative shift within a + or * chain, false once
+a - or / crossing wraps the term in a fresh neg/reciprocal. Callers
+fall back to a positional restore on nil."
   (ignore-errors
     (calc-prepare-selection m)
     (when-let ((pos (maf--comp-node-start-pos node)))
@@ -608,7 +618,7 @@ rather than signaling calc's \"No term is selected\"."
                     (calc-commute-right arg))
                 ;; "Term is already leftmost/rightmost" — nothing to do.
                 (error nil))
-              (or (maf--commute-anchor m sel)
+              (or (maf--anchor-on-node m sel)
                   (maf--point-restore snapshot))
               ;; A single undo reverts point along with the stack.
               (maf--undo-record-cmd-point snapshot))))))))
@@ -2034,6 +2044,134 @@ moves point nowhere to begin with, so the prefix does not vary it."
   (if (maf--sel-any-p)
       (maf-clear-selections)
     (maf-dup keep-point)))
+
+;; Calc's JumpRules are written for = alone: all 24 rules match
+;; plain(... = ...) and nothing else. The same moves hold across a !=
+;; — a != b exactly when a - c != b - c, and when a/c != b/c for a
+;; nonzero c, the same latitude calc already takes with = — so maf
+;; extends the set with an != twin of every rule. The twins are derived
+;; from calc's own rules rather than kept as a second hand-written
+;; copy, which would drift the moment calc edits the set upstream.
+;;
+;; The ordered relations stay out on purpose: crossing a < with a
+;; division flips its direction, and a rewrite rule has no way to know
+;; the divisor's sign. Those need `mafcmd-solve-for' / `calc-sel-isolate',
+;; which reason about the solution rather than shuffling terms.
+
+(defvar maf--jump-rules-cache nil
+  "Memo cell for `maf--jump-rules': a cons of (SOURCE . EXTENDED).
+SOURCE is the `var-JumpRules' value EXTENDED was derived from, compared
+by identity — so a user who re-stores JumpRules gets a fresh derivation
+instead of a stale extension.")
+
+(defun maf--jump-subst-neq (expr)
+  "Return EXPR with every = relation in it rewritten to !=."
+  (if (Math-primp expr)
+      expr
+    (cons (if (eq (car expr) 'calcFunc-eq) 'calcFunc-neq (car expr))
+          (mapcar #'maf--jump-subst-neq (cdr expr)))))
+
+(defun maf--jump-rules ()
+  "Return calc's JumpRules extended with an != twin of every = rule.
+Reads whatever `var-JumpRules' currently holds — calc's own accessor
+compiles the rule text on first use — and appends the substituted
+copies, memoized so repeated jumps reuse one rule object and calc's
+rewrite-compiler cache stays valid. Entries with no = in them, such as
+the leading iterations(1) that caps the rule set at a single pass, are
+not doubled."
+  (let ((base (calc-var-value 'var-JumpRules)))
+    (unless (eq base (car maf--jump-rules-cache))
+      (setq maf--jump-rules-cache
+            (cons base
+                  (if (eq (car-safe base) 'vec)
+                      (append base
+                              (delq nil
+                                    (mapcar
+                                     (lambda (rule)
+                                       (let ((neq (maf--jump-subst-neq rule)))
+                                         (unless (equal neq rule) neq)))
+                                     (cdr base))))
+                    base))))
+    (cdr maf--jump-rules-cache)))
+
+(defun maf--jump-relation (expr node)
+  "Return the innermost = or != in EXPR that contains NODE, or nil.
+NODE itself does not count: a whole relation has no side to move a term
+to. Ordered relations are not matched — see the commentary above."
+  (let ((n node))
+    (while (and (consp (setq n (calc-find-parent-formula expr n)))
+                (not (memq (car n) '(calcFunc-eq calcFunc-neq)))))
+    (and (consp n) n)))
+
+(defun maf-jump-equals ()
+  "Move the term under point across the = it sits in.
+
+  x + a| = y  =>  x = -a| + y
+
+Point picks the term as usual — the sub-formula under the cursor, or
+the active selection when there is one — and calc's JumpRules perform
+the move, inverting the operation the term crosses: a sum becomes a
+negation, a product a quotient, a power a root. The result is calc's,
+committed unsimplified. The term keeps its place under point on the
+far side, so the next command still resolves there, and no selection
+is left behind for the next keystroke to trip over.
+
+  a x| = y    =>  a = y / x|
+  a ^ 2| = y  =>  a = sqrt(y)|
+  y = a + b|  =>  y - b| = a
+
+A != is handled alongside =, on rules maf derives from calc's own. The
+ordered relations (<, <=, >, >=) are not: moving a term across one can
+flip its direction, which no rewrite rule can decide. Use M-i
+\(`mafcmd-auto-solve') on those.
+
+At home, where point names no entry, a selection standing anywhere is
+the term to move and the jump goes to it.
+
+With no term to move — at home with nothing selected, on a whole entry,
+on a term outside any = or !=, or on one the rules do not reach — the
+command does nothing rather than signaling."
+  (interactive)
+  (maf--with-calc-buffer
+    (let* ((at-point (calc-locate-cursor-element (point)))
+           ;; At home point names no entry, but a selection standing
+           ;; anywhere still names one, so the jump reaches it — the
+           ;; fallback `maf--sel-effective-m' makes for the selection
+           ;; commands.
+           (m (if (> at-point 0) at-point (maf--sel-topmost-m))))
+      (when m
+        (let* ((entry (calc-top m 'entry))
+               ;; On an entry this resolves the sub-formula under the
+               ;; cursor, as the subexpr target does. Reached from home,
+               ;; the entry carries an explicit selection — that is how
+               ;; it was found — which this returns without consulting
+               ;; point, so nothing has to move to read it.
+               (sel (ignore-errors (calc-auto-selection entry))))
+          ;; Only jump a term that has a relation above it. Handing calc
+          ;; a selection the rules cannot match would still pop and push
+          ;; the entry — an undo step, and a re-normalization — for a
+          ;; result identical to what was there.
+          (when (and (consp sel) (maf--jump-relation (car entry) sel))
+            (let ((snapshot (maf--point-snapshot))
+                  (var-JumpRules (maf--jump-rules)))
+              ;; Calc's rewrite locates its entry from point, not from an
+              ;; index, so from home point travels to the one the
+              ;; selection named before the rewrite runs.
+              (unless (> at-point 0) (calc-cursor-stack-index m))
+              (condition-case nil
+                  ;; nil: no repeat count. Repeating a jump only walks
+                  ;; the term back where it came from.
+                  (calc-sel-jump-equals nil)
+                (error nil))
+              ;; The rewrite reselects the moved term. maf resolves from
+              ;; point instead, so read where the term landed, drop the
+              ;; selection, and send point after it.
+              (let ((moved (calc-top m 'sel)))
+                (calc-unselect m)
+                (or (and moved (maf--anchor-on-node m moved))
+                    (maf--point-restore snapshot)))
+              ;; A single undo reverts point along with the stack.
+              (maf--undo-record-cmd-point snapshot))))))))
 
 ;;; Coordinates
 
