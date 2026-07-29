@@ -454,6 +454,36 @@ restore."
       (message "Stack restored (%d %s)" (length values)
                (if (= (length values) 1) "entry" "entries")))))
 
+(defun maf-timeline-clear ()
+  "Discard every recorded stack state, keeping the live stack.
+The timeline is a log of what happened rather than part of the calc
+state, so nothing here is undoable and the stack is untouched — the
+next change starts a fresh log, baselined against the stack as it
+stands. Recording carries on if it was on; this only empties what was
+recorded. `maf-reset' calls it as part of wiping a session.
+
+Deliberately unbound in the browser: every other key there is a
+reversible move, and a destructive one a fingerslip away from
+\\`r' would not be. Reach it as \\[maf-timeline-clear]."
+  (interactive)
+  (let ((n (length maf-timeline--states)))
+    (setq maf-timeline--states nil
+          maf-timeline--record-prefix nil)
+    ;; Rebaseline on the live stack rather than on nil: with the stack
+    ;; left standing, a nil baseline would make the next capture record
+    ;; the whole stack as if it had just been built.
+    (setq maf-timeline--last-raw
+          (let ((buf (maf--find-calc-buffer)))
+            (and buf (with-current-buffer buf
+                       (mapcar #'car (nthcdr calc-stack-top calc-stack))))))
+    (when-let ((buf (get-buffer "*maf-timeline*")))
+      (with-current-buffer buf
+        (setq maf-timeline--index 0)
+        (maf-timeline--render)))
+    (when (called-interactively-p 'interactive)
+      (message "Timeline cleared (%d %s)" n (if (= n 1) "state" "states")))
+    n))
+
 ;;; The module
 
 ;;;###autoload
