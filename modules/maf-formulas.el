@@ -30,6 +30,7 @@
 (require 'calc)
 (require 'maf-lib)
 (require 'cl-lib)
+(require 'maf-conf "conf")  ; the `maf' customize group
 
 ;; Defined in lazily-loaded calc modules; declared for the byte compiler.
 (declare-function math-format-value "calc-ext")

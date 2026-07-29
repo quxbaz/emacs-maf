@@ -41,6 +41,7 @@
 (require 'seq)
 (require 'mule-util)         ; truncate-string-to-width, truncate-string-ellipsis
 (require 'posframe nil t)    ; optional; the child-frame backend needs it
+(require 'maf-conf "conf")   ; the `maf' customize group
 
 ;; Rendered on demand; the byte compiler needs the declarations.
 (declare-function math-format-value "calc-ext")

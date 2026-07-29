@@ -17,6 +17,7 @@
 (require 'calc-yank)  ; calc-locate-cursor-element
 (require 'maf-comp)   ; maf--comp-find-bounds
 (require 'maf-lib)    ; maf--at-line-margin-p
+(require 'maf-conf "conf")  ; the `maf' customize group
 
 ;; Set by `calc-prepare-selection'; declared for the dynamic reads below.
 (defvar calc-selection-cache-num)

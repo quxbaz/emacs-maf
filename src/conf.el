@@ -2,9 +2,18 @@
 ;;
 ;; conf.el
 ;;
-;; maf's configurable settings, collected in one place: the customize
-;; group and every user option. Feature code requires this and reads
-;; the options; nothing here has any effect on its own.
+;; maf's customize group and the user options belonging to the core:
+;; the contextual commands, and the module list itself. Feature code
+;; requires this and reads the options; nothing here has any effect on
+;; its own.
+;;
+;; A module's own options do NOT live here — they sit beside the code
+;; they configure, in the module file under modules/, so a module stays
+;; self-contained and usable on its own. Nothing is lost by the split:
+;; maf.el loads every module file unconditionally (loading only
+;; registers the module's toggle; `maf-modules' decides what is
+;; *enabled*), so the customize group is always complete. A module file
+;; requires this one for the group.
 
 (defgroup maf nil
   "Math-Algebra-Formulas: an alternative UX for Emacs Calc."
@@ -70,47 +79,6 @@ Set from Lisp, call `maf-modules-apply' to take effect."
   :set (lambda (sym val)
          (set-default sym val)
          (when (fboundp 'maf-modules-apply) (maf-modules-apply)))
-  :group 'maf)
-
-;;; Stack timeline (modules/maf-timeline.el)
-
-(defcustom maf-timeline-size 100
-  "Maximum number of stack states kept in the timeline.
-Recording past the limit drops the oldest states. A state shares all
-formula structure with the stack it was taken from, so even a large
-timeline stays cheap."
-  :type 'natnum
-  :group 'maf)
-
-(defcustom maf-timeline-strip-radius 3
-  "Operations shown on each side of the current one in the timeline strip.
-The `*maf-timeline*' buffer shows a horizontal strip of nearby operation
-labels beneath its header; this is how many appear on each side of the
-current item."
-  :type 'natnum
-  :group 'maf)
-
-;;; Stack persistence (modules/maf-persist.el)
-
-(defcustom maf-stack-directory (locate-user-emacs-file "maf-stacks/")
-  "Directory holding the per-session calc stack save files."
-  :type 'directory
-  :group 'maf)
-
-(defcustom maf-stack-save-interval 60
-  "Idle seconds between stack autosaves.
-Takes effect when `maf-persist-mode' turns on; after
-changing it, toggle the mode to restart the timer on the new
-interval."
-  :type 'natnum
-  :group 'maf)
-
-(defcustom maf-stack-session-name nil
-  "Explicit session name for stack persistence, a string.
-Nil derives one: `server-name' when this session runs a server, else
-\"default\". Either way the name uniquifies when a live session
-already holds it."
-  :type '(choice (const :tag "Derive from server-name" nil) string)
   :group 'maf)
 
 (provide 'maf-conf)

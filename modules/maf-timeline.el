@@ -22,7 +22,7 @@
 
 (require 'calc)
 (require 'maf-lib)
-(require 'maf-conf "conf")
+(require 'maf-conf "conf")  ; the `maf' customize group
 
 ;; Defined in lazily-loaded calc modules; calc-ext's autoload registry
 ;; resolves them at runtime, but the byte compiler needs declarations.
@@ -40,6 +40,22 @@
 (defface maf-timeline-strip-current
   '((t :inherit warning :weight bold))
   "Face for the current operation in the timeline strip."
+  :group 'maf)
+
+(defcustom maf-timeline-size 100
+  "Maximum number of stack states kept in the timeline.
+Recording past the limit drops the oldest states. A state shares all
+formula structure with the stack it was taken from, so even a large
+timeline stays cheap."
+  :type 'natnum
+  :group 'maf)
+
+(defcustom maf-timeline-strip-radius 3
+  "Operations shown on each side of the current one in the timeline strip.
+The `*maf-timeline*' buffer shows a horizontal strip of nearby operation
+labels beneath its header; this is how many appear on each side of the
+current item."
+  :type 'natnum
   :group 'maf)
 
 (defvar maf-timeline--states nil
