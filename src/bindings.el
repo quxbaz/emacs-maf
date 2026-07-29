@@ -166,6 +166,12 @@
 ;; table in maf-cmds.el.
 (define-key maf-mode-map (kbd "G") #'maf-toggle-big-language)
 
+;; Put the modes and settings back the way they were saved, keeping the
+;; stack. C-M-l is unbound in calc itself; it shadows the global
+;; `reposition-window', which has nothing to reposition in a buffer
+;; whose display calc redraws itself.
+(define-key maf-mode-map (kbd "C-M-l") #'maf-reset-settings)
+
 ;; Auto-solve: solve or isolate at point, cycling through the variables
 ;; on repeat. M-i is unbound in calc itself.
 (define-key maf-mode-map (kbd "M-i") #'mafcmd-auto-solve)

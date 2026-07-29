@@ -27,6 +27,8 @@
 (declare-function calc-del-selection "calc-sel")
 (declare-function calc-clear-selections "calc-sel")
 (declare-function calc-change-mode "calc-mode")
+(declare-function calc-reset "calc-ext")
+(declare-function calc-mode-var-list-restore-default-values "calc")
 (declare-function calc-normal-language "calc-lang")
 (declare-function calc-big-language "calc-lang")
 (declare-function math-solve-eqn "calcalg2")
@@ -53,6 +55,10 @@
 (declare-function math-num-integerp "calc-ext")
 (declare-function math-trunc "calc-misc")
 (defvar calc-unpack-with-type)
+;; Defined in maf.el, which cannot be required from here — it loads
+;; this file. `maf-reset-settings' restores the mode calc-reset kills.
+(defvar maf-mode)
+(declare-function maf-mode "maf")
 
 (maf-defcmd mafcmd-factor-by (expr arg commit)
   "Factor the resolved expression by the top-of-stack argument.
@@ -833,6 +839,78 @@ reports the switch."
       (if (eq calc-language 'big)
           (calc-normal-language)
         (calc-big-language)))))
+
+(defun maf-reset-settings ()
+  "Put calc's modes and settings back the way they were saved.
+
+Every mode variable — the display language, angular mode, precision,
+simplification, fraction and symbolic modes, and the rest — goes back
+to the value stored in `calc-settings-file', and the file itself is
+reloaded, so permanent variables and units saved there return as saved
+and this session's changes to them are dropped. What the file has
+nothing to say about keeps its default.
+
+The stack is not touched, and neither are the trail, the undo history,
+or point: this resets how calc is set up, not what is on it. That is
+the difference from `calc-reset', which clears the stack as well.
+
+maf's own state is re-established afterwards, since calc reaches this
+result by re-running `calc-mode': `maf-mode' is restored to whichever
+way it stood, and the feature modules named by `maf-modules' are
+re-applied, so their registrations survive the settings reload.
+
+A settings file that signals part way through is reported as the error
+it is, and the modes fall back to their defaults rather than the buffer
+being left half-reset. The stack stands either way."
+  (interactive)
+  (maf--with-calc-buffer
+    (maf--preserve-point
+      ;; A positive argument is calc's keep-the-stack reset: mode
+      ;; variables return to their saved values and the stack stays.
+      ;; (Zero or negative restores the factory defaults *and* empties
+      ;; the stack, which is plain `calc-reset'.)
+      (let ((mode (and (boundp 'maf-mode) maf-mode))
+            ;; calc-reset drops the undo and redo lists even when told
+            ;; to keep the stack. The stack it hands back is the one
+            ;; those lists describe, so putting them back leaves the
+            ;; history valid rather than throwing it away for a change
+            ;; that never touched the stack.
+            (undo calc-undo-list)
+            (redo calc-redo-list))
+        (unwind-protect
+            (calc-reset 1)
+          ;; calc-reset empties every buffer-local calc variable before
+          ;; refilling them from the settings file, and only once the
+          ;; refill is through does it run `calc-mode' to rebuild them
+          ;; — killing maf-mode with the rest of the buffer's local
+          ;; state as it goes. So a settings file that signals on the
+          ;; way through, a stray paren in a hand-edited one, would
+          ;; leave the buffer holding no display precision, no line
+          ;; breaking, no stack top: not a calc buffer that can render
+          ;; its own stack, let alone take a command. Falling back to
+          ;; the defaults and re-running calc-mode gives the session a
+          ;; coherent state to carry on in, and the stack survives with
+          ;; it — calc-reset shields that behind a let, so the abort
+          ;; never reached it. A bad settings file costs the settings,
+          ;; not the session. On the ordinary path calc-reset has
+          ;; already run calc-mode, and the guard makes this a no-op.
+          (unless calc-stack-top
+            (calc-mode-var-list-restore-default-values)
+            (calc-mode)
+            (calc-refresh))
+          (setq calc-undo-list undo
+                calc-redo-list redo)
+          (maf-mode (if mode 1 -1)))
+        ;; calc-reset restores only the mode block calc itself writes
+        ;; to the settings file. Loading the file runs everything else
+        ;; in it — stored variables, units, parse tables — which calc
+        ;; leaves at whatever this session made of them. Quietly, and
+        ;; without complaint when the file does not exist yet: then
+        ;; there is simply nothing more to restore.
+        (when calc-settings-file
+          (load (substitute-in-file-name calc-settings-file) t t))
+        (when (fboundp 'maf-modules-apply) (maf-modules-apply))
+        (message "Calc settings reset")))))
 
 (defun maf-beginning-of-entry ()
   "Move point to the beginning of the stack entry on the current line.
