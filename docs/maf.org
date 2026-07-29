@@ -70,6 +70,7 @@
 
 * Todo
 # NOW
+** TODO Move tests out of sandbox/ and into tests/
 ** TODO In docker/tmux fix C-RET, C-., C-M-<backspace>, S-<backspace>
 ** TODO Bind quick-substitute (formerly C-RET)
 ** DONE M-RET should be contextual
