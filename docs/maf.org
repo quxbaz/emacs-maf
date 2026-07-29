@@ -24,64 +24,10 @@
   - [ ] Discovery document for useful features, behaviors, modules, etc
 
 * Low-hanging fruit
-** DONE Bind the formulas menu (modules/maf-formulas.el)
-   ~s o~, installed by the module's own toggle and ceded when it is
-   off, as maf-timeline does with ~t d~. It sits on calc's store and
-   recall prefix (s s, s r): a formula is registered as a calc
-   variable, so the menu belongs where saved things already live. The
-   menu itself still works with the module off — only the key and the
-   variable registration follow it.
-** DONE Bind the modules manager (core/maf-module.el)
-   ~m l~, in bindings.el rather than a module toggle: ~maf-list-modules~
-   is core, and the buffer that toggles the modules cannot be gated on
-   one. m is calc's mode prefix, where turning maf's features on and
-   off belongs — and a first piece of the unified configuration view
-   the option TODO below wants there.
-** TODO Derive maf-modules' :type from the registry (src/conf.el)
-   Its ~:type '(set (const ...))~ hardcodes every module name, so adding
-   a module means editing conf.el — the same coupling the option move
-   above removed. The defcustom is evaluated before any module file
-   loads, so the list cannot simply be read from ~maf-module-registry~
-   at definition time; needs a deferred :type or a re-put on register.
-** DONE Port the digit-map shortcuts (src/minibuffer.el)
-   ~maf-digit-pi~ (n/P) and ~maf-digit-equal-to~ (e), beside the
-   existing ~maf-digit-colon~; o → mod-360 deliberately not ported.
-   The pi key hands its product out of the entry in
-   ~calc-digit-value~ (calc's own ~calcDigit-algebraic~ route), so the
-   entry completes as a RET does — pushed at a margin, committed
-   contextually on a sub-formula. The e key is nothing but a
-   command-key termination: the entry ends and the e re-dispatches to
-   ~mafcmd-equal-to~, exactly as the + of 1 + does. Both step aside
-   inside a radix-prefixed entry, where the letters are calc's digits
-   (16#3e, 30#1P); e steps aside for an incomplete object too, where
-   there is no entry to equate. The cost is decimal e-notation, which
-   now goes in through algebraic entry. (PORT:minibuffer.el)
-** DONE Port j c, clear selections point-preserving (PORT:selection.el)
-   ~maf-clear-selections~: clears every selection without moving point.
-   It sits on RET rather than j c — ~maf-dup-or-clear-selections~
-   dispatches, clearing when a selection is active and duplicating
-   otherwise.
-** DONE Port N, negate in place (PORT:selection.el)
-   ~mafcmd-negate~. The rule: the minus goes to the operator in front
-   of the target if there is one, and stays inside the target's own
-   slot if there is not — nothing wider than the target's parent is
-   rewritten. Not a plain ~maf-defcmd~ row after all, because that
-   first case reaches the node *above* the target, which no
-   sub-formula target can: the command resolves the path to the target
-   from point and hands it to a ~:scope entry~ worker.
 ** TODO Port the edit-mode insertions (modules/maf-edit.el)
    Independent one-liners, portable one at a time: P → pi, M-2..M-9 /
    M-' → ^n and ^(), and the \ L | wrap helpers around the preceding
    expression or region. (PORT:edit.el)
-** DONE Port "(" to start a bracketed vector entry (modules/maf-edit.el)
-   ~maf-edit-add-vector~: the edit module's fourth entry key, on "("
-   (shadowing calc-begin-complex). It opens ~maf-edit-add-entry~'s
-   blank line at home pre-filled with ~[]~, point between the
-   brackets, and returns point where it was when the session ends.
-   Unlike the original it needs no minibuffer guard — maf-mode-map is
-   not live during algebraic or digit entry — and it does not drop an
-   untouched ~[]~: maf-edit commits text as written, and the empty
-   vector is a value worth having. (PORT:edit.el)
 
 * Todo
 # NOW
