@@ -27,6 +27,10 @@
 ;; untouched keep their value objects (display text can be lossy, so
 ;; they are never reparsed) and their selections. C-c C-k discards.
 ;;
+;; None of the entry gestures run while a calc selection is active: a
+;; selected entry is displayed as a dotted mask of itself, so there is
+;; no full text to edit. Clear the selection (RET) and edit then.
+;;
 ;; The editing state is the minor mode `maf-edit-mode': turning it on
 ;; is entering, turning it off is leaving (with discard semantics —
 ;; `maf-edit-commit' parses first, then turns it off). Customize via
@@ -40,6 +44,7 @@
 (require 'subr-x)
 (require 'cursor-sensor)  ; cursor-intangible-mode
 (require 'maf-lib)
+(require 'maf-sel)
 
 ;; Defined in lazily-loaded calc modules; calc-ext's autoload registry
 ;; resolves them at runtime, but the byte compiler needs declarations.
@@ -615,8 +620,9 @@ The mode variable is the editing state: turning it on makes the stack
 plain editable text (entries tracked by overlays, prefixes machine-
 owned and renumbered live); turning it off restores the calc buffer
 with the stack untouched — discard semantics. It is unavailable under
-the Big display language, whose multi-line entries it cannot edit. To
-keep the edits, use
+the Big display language, whose multi-line entries it cannot edit, and
+while any selection is active, since calc renders a selected entry as a
+dotted mask of itself rather than in full. To keep the edits, use
 \\<maf-edit-mode-map>\\[maf-edit-commit] (`maf-edit-commit'), which
 parses the buffer, then turns the mode off, then replaces the stack.
 
@@ -653,6 +659,29 @@ Built with `substitute-command-keys' so rebinding the gestures in
   ;; which maf-edit's one-entry-per-line model cannot handle.
   (when (eq calc-language 'big)
     (user-error "maf-edit does not work in the Big display language"))
+  ;; A selected entry is not rendered in full: calc replaces every
+  ;; unselected character with a dot (`math-comp-highlight-string'), so
+  ;; the text maf-edit would hand over for editing is a mask, and
+  ;; editing it into something parsable commits the selected part alone
+  ;; — the rest of the formula silently dropped. Refusing is also the
+  ;; right answer for the common case: SPC pressed while drilled into a
+  ;; sub-formula is a fumble, not a request to edit.
+  ;;
+  ;; Keyed to the display (`maf--sel-any-shown-p'), not to whether the
+  ;; selection has any effect: with `calc-use-selections' nil calc masks
+  ;; the entry all the same, and drops the * marker that would have
+  ;; warned about it.
+  (when (maf--sel-any-shown-p)
+    (user-error
+     "%s" (substitute-command-keys
+           (concat
+            "maf-edit does not run with a selection active — "
+            ;; RET only clears while the selection is effective;
+            ;; otherwise it is the duplicate, and naming it here would
+            ;; send the user off to grow their stack.
+            (if (maf--sel-any-p)
+                "\\<maf-mode-map>\\[maf-dup-or-clear-selections] clears it"
+              "\\[maf-clear-selections] clears it")))))
   (let ((snapshot (maf--point-snapshot)))
       ;; Render without width-based line breaking: any multi-line entry
       ;; left is structural (matrix/vector row layout), which the
