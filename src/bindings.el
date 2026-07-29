@@ -176,6 +176,10 @@
 ;; Invert the function at point, beside the two solve commands. l v is
 ;; unbound in calc itself (its l prefix is the logarithmic units).
 (define-key maf-mode-map (kbd "l v") #'mafcmd-inverse-function)
+;; Split an absolute-value inequality into a compound one — a solve of
+;; sorts, so it sits with the solving keys. a k is unbound in calc
+;; itself (a is its algebra prefix).
+(define-key maf-mode-map (kbd "a k") #'mafcmd-abs-ineq)
 ;; Substitution, on calc's own key for it: mafcmd-substitute shadows
 ;; calc-substitute, keeping the two prompts and adding a default for
 ;; the first, a contextual subject, and $ for the stack.
