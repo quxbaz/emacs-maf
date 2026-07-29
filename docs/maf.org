@@ -175,8 +175,14 @@
 ** Polynomials
    - [ ] Polynomial term ordering — math-normalize advice keeping sums in descending degree
 ** Triangles
-   - [ ] my/calc-cath / my/calc-unit-cath (f l / f L) — right-triangle leg from hyp+leg / unit hyp
-   - [ ] calcFunc-hypot advice — symbolic args: sqrt(abssqr(a) + abssqr(b))
+   - [X] my/calc-cath / my/calc-unit-cath (f l / f L) — ported as mafcmd-cath and
+     mafcmd-unit-cath over maf--cath, on the same keys; f L taken from mafcmd-lnp1,
+     which cedes it and keeps I f E. cath and hypot are each other's Inverse variant.
+     Exactness is forced (symbolic mode, preferred fractions) unless an operand is a
+     float, so radicals stand without m s — the draft depended on the ambient mode.
+   - [ ] calcFunc-hypot advice — symbolic args: sqrt(abssqr(a) + abssqr(b));
+     still open, f h alone. maf--cath needs none of it: squaring under a
+     structural math-normalize already reduces sqrt(2)^2 to 2.
 
 * PORT:ineq.el
   - [ ] my/calc-abs-ineq (a k) — |a| < b → compound inequality, each part solved for the variable
