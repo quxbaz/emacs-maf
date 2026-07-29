@@ -58,8 +58,15 @@
    Independent one-liners, portable one at a time: P → pi, M-2..M-9 /
    M-' → ^n and ^(), and the \ L | wrap helpers around the preceding
    expression or region. (PORT:edit.el)
-** TODO Port "(" to start a bracketed vector entry (modules/maf-edit.el)
-   ~my/calc-vector-edit~: one key, one insertion. (PORT:edit.el)
+** DONE Port "(" to start a bracketed vector entry (modules/maf-edit.el)
+   ~maf-edit-add-vector~: the edit module's fourth entry key, on "("
+   (shadowing calc-begin-complex). It opens ~maf-edit-add-entry~'s
+   blank line at home pre-filled with ~[]~, point between the
+   brackets, and returns point where it was when the session ends.
+   Unlike the original it needs no minibuffer guard — maf-mode-map is
+   not live during algebraic or digit entry — and it does not drop an
+   untouched ~[]~: maf-edit commits text as written, and the empty
+   vector is a value worth having. (PORT:edit.el)
 
 * Todo
 # NOW
@@ -82,6 +89,7 @@
      + C-u RET: same duplicate, but point stays on the item (no mark)
      + S-RET: open & edit new entry below point
      + C-RET: edit new entry at home (then return point)
+     + (: same, pre-filled with [] for a vector entry
      + M-RET: duplicate item, contextually; copy directly beneath it
 ** TODO Find out why maf-preview doesn't work on up/down movement
    - Debounce it for perf and don't show unless point is over entry for N ms
@@ -189,7 +197,8 @@
   maf-edit replaces the calc-edit buffer workflow itself; these are the
   in-entry conveniences worth recreating in maf-edit / digit entry:
   - [ ] Entry history (M-p / M-n) — recall previous entries (see Todo)
-  - [ ] my/calc-vector-edit \"(\" — start a bracketed vector entry
+  - [X] my/calc-vector-edit \"(\" — start a bracketed vector entry —
+    ported as maf-edit-add-vector
   - [ ] Wrap helpers (\\ L |) — sqrt/ln/abs around the preceding expression or region
   - [ ] my/calc-edit-square-dwim / -cube-dwim (: W \") — insert ^2/^3; repeats increment
   - [ ] Power shortcuts (M-2..M-9, M-') — insert ^n / ^()

@@ -4,9 +4,9 @@
 ;;
 ;; maf-edit: wdired-style in-place editing of the calc stack, packaged
 ;; as the `edit' module. The module toggle only installs the entry
-;; bindings (SPC / C-<return> / S-<return>) into `maf-mode-map'; the
-;; editing itself is the on-demand `maf-edit-mode' session below. See
-;; `maf-modules'.
+;; bindings (SPC / C-<return> / S-<return> / "(") into `maf-mode-map';
+;; the editing itself is the on-demand `maf-edit-mode' session below.
+;; See `maf-modules'.
 ;;
 ;; `maf-edit' (SPC in maf-mode) turns the calc buffer into editable
 ;; plain text; the same key commits, so RET toggles edit/commit.
@@ -860,6 +860,31 @@ was before this command ran."
                                      (point))))
       (maf-edit-newline))))
 
+(defun maf-edit-add-vector ()
+  "Enter maf-edit with a fresh vector entry started at the bottom.
+
+  1:  a + b        1:  a + b
+      .        =>  1+  [|]
+                       .
+
+`maf-edit-add-entry's blank line at home, pre-filled with an empty
+pair of brackets and point between them, so the elements are all that
+is left to type. One key for a shape whose closing bracket is a
+nuisance to reach — and unlike typing the bracket into an edit
+session, it also opens the session.
+
+Committed untouched it pushes the empty vector []; \\<maf-edit-mode-map>\\[maf-edit-discard] backs out
+instead. As with `maf-edit-add-entry', point returns to where it was
+before the command when the session ends."
+  (interactive)
+  (maf-edit-add-entry)
+  ;; Inserted as one literal string rather than typed through
+  ;; `electric-pair-mode': the pair is what is wanted, and going
+  ;; through the electric path would depend on the user's own
+  ;; `electric-pair-inhibit-predicate'.
+  (insert "[]")
+  (backward-char))
+
 (defun maf-edit-commit ()
   "Parse the edited buffer and commit it to the stack, leaving maf-edit.
 Entries whose text is untouched keep their value objects and
@@ -945,13 +970,16 @@ undo group."
 
 (define-minor-mode maf-use-edit-mode
   "Global minor mode making maf-edit's entry keys live in `maf-mode-map'.
-Enabled, SPC / C-<return> / S-<return> run the maf-edit entry commands;
-disabled, they cede back to calc. SPC shadows one of calc-enter's two
-keys (RET still runs it) and enters editing, where `maf-edit-mode-map's
-RET commits; the other two are the quick-add gestures. S-<return>
-opens an entry below point, and C-j doubles for it on terminals, which
-cannot deliver it; C-j shadows calc-over, whose level-2 duplicate is
-`maf-dup' at point.
+Enabled, SPC / C-<return> / S-<return> / ( run the maf-edit entry
+commands; disabled, they cede back to calc. SPC shadows one of
+calc-enter's two keys (RET still runs it) and enters editing, where
+`maf-edit-mode-map's RET commits; the rest are the quick-add gestures.
+S-<return> opens an entry below point, and C-j doubles for it on
+terminals, which cannot deliver it; C-j shadows calc-over, whose
+level-2 duplicate is `maf-dup' at point. ( opens a bracketed vector
+entry at the bottom, shadowing calc-begin-complex — a complex number
+is still one entry away as (a, b) typed into any of these gestures,
+while [ keeps calc-begin-vector for the digit-entry route.
 
 S-<return> means newline inside `maf-edit-mode-map', so the key that
 opens an entry below point also breaks the line once the session is
@@ -968,11 +996,13 @@ on-demand `maf-edit-mode' editing session they lead into."
         (define-key maf-mode-map (kbd "SPC") #'maf-edit)
         (define-key maf-mode-map (kbd "C-<return>") #'maf-edit-add-entry)
         (define-key maf-mode-map (kbd "S-<return>") #'maf-edit-add-entry-below)
-        (define-key maf-mode-map (kbd "C-j") #'maf-edit-add-entry-below))
+        (define-key maf-mode-map (kbd "C-j") #'maf-edit-add-entry-below)
+        (define-key maf-mode-map (kbd "(") #'maf-edit-add-vector))
     (define-key maf-mode-map (kbd "SPC") nil)
     (define-key maf-mode-map (kbd "C-<return>") nil)
     (define-key maf-mode-map (kbd "S-<return>") nil)
-    (define-key maf-mode-map (kbd "C-j") nil)))
+    (define-key maf-mode-map (kbd "C-j") nil)
+    (define-key maf-mode-map (kbd "(") nil)))
 
 ;; Register with the module system when it is present; the mode above
 ;; works on its own without it.

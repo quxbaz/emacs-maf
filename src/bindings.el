@@ -65,8 +65,9 @@
 (define-key maf-mode-map (kbd "S-<up>") #'mafcmd-toggle-op)
 (define-key maf-mode-map (kbd "S-<down>") #'mafcmd-toggle-op)
 (define-key maf-mode-map (kbd ",") #'maf-quick-variable)
-;; The in-place editing entry keys (SPC / C-RET / S-RET) are installed
-;; by the edit module when it is enabled (see modules/edit.el), not here.
+;; The in-place editing entry keys (SPC / C-RET / S-RET / "(") are
+;; installed by the edit module when it is enabled (see
+;; modules/edit.el), not here.
 (define-key maf-mode-map (kbd "U") #'maf-undo)
 (define-key maf-mode-map (kbd "D") #'maf-redo)
 ;; Catch every key that dispatches to undo/redo, so point handling
