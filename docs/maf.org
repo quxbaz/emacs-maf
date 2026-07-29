@@ -136,8 +136,15 @@
      non-character key; on a character key calc's K prefix survives on its own and
      maf's resolve snapshot handles it. Key still to pick — s SPC is the obvious one.
 ** Equation arithmetic
-   - [ ] my/calc-plus / my/calc-minus (+/-) — eq + eq adds/subtracts both sides;
-     layer onto mafcmd-add/sub
+   - [X] my/calc-plus / my/calc-minus (+/-) — eq + eq adds/subtracts both sides.
+     Ported one level lower than the legacy pair: at an equation target resolve
+     now splits an equation :arg into :arg-lhs/:arg-rhs and the defcmd macro
+     binds one per side, so every binary contextual command pairs two equations,
+     not just + and - (* and / included). Only = pairs with =; a non-matching
+     relation on either side signals rather than produce an unsound result.
+     Open: a relation arg against a *non*-relation target (2 then x = 5 then *)
+     still gives 2 (x = 5) — the pairing keys off the target, and mapping the
+     arg alone is a separate decision.
 ** Polynomials
    - [ ] Polynomial term ordering — math-normalize advice keeping sums in descending degree
 ** Triangles
