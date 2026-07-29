@@ -273,8 +273,17 @@
 ;; sequences (M-m t, M-m M-t) stay reachable as m t and m M-t.
 (define-key maf-mode-map (kbd "M-m") #'maf-beginning-of-entry)
 
+;; The module toggle buffer. m is calc's mode prefix (m m saves the
+;; modes, m d is degrees mode), which is where turning maf's own
+;; features on and off belongs; m l is unbound in calc itself, and l
+;; names the command. This one lives here rather than in a module's
+;; toggle body — `maf-list-modules' is core (core/maf-module.el), and
+;; the buffer that toggles the modules cannot be a module itself.
+(define-key maf-mode-map (kbd "m l") #'maf-list-modules)
+
 ;; The `t d' stack-timeline binding is installed by the maf-timeline
-;; module when it is enabled (see modules/maf-timeline.el), not here.
+;; module when it is enabled (see modules/maf-timeline.el), and the
+;; `s o' formula menu by maf-formulas the same way — not here.
 
 ;; A terminal cannot say "backspace with a modifier" as a character:
 ;; backspace is ASCII 127 and the modifiers have nowhere to go. One

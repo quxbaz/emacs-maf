@@ -16,20 +16,27 @@
   - [ ] Graphing module
   - [ ] Omni-options menu buffer
   - [X] Formulas module. Support categories, docs, examples
-    - [ ] Set default binding
-  - [-] Modules manager: Buffer where you can toggle modules
+    - [X] Set default binding
+  - [X] Modules manager: Buffer where you can toggle modules
     - [X] Create manager
-    - [ ] Set default binding
+    - [X] Set default binding
   - [X] Use module architecture (maf-timeline, maf-edit)
   - [ ] Discovery document for useful features, behaviors, modules, etc
 
 * Low-hanging fruit
-** TODO Bind the formulas menu (modules/maf-formulas.el)
-   ~maf-formulas~ is autoloaded and complete, but no key reaches it;
-   the menu is M-x only. Same "Set default binding" item as under
-   Major features.
-** TODO Bind the modules manager (core/maf-module.el)
-   ~maf-list-modules~ has the same gap: buffer works, no key.
+** DONE Bind the formulas menu (modules/maf-formulas.el)
+   ~s o~, installed by the module's own toggle and ceded when it is
+   off, as maf-timeline does with ~t d~. It sits on calc's store and
+   recall prefix (s s, s r): a formula is registered as a calc
+   variable, so the menu belongs where saved things already live. The
+   menu itself still works with the module off — only the key and the
+   variable registration follow it.
+** DONE Bind the modules manager (core/maf-module.el)
+   ~m l~, in bindings.el rather than a module toggle: ~maf-list-modules~
+   is core, and the buffer that toggles the modules cannot be gated on
+   one. m is calc's mode prefix, where turning maf's features on and
+   off belongs — and a first piece of the unified configuration view
+   the option TODO below wants there.
 ** TODO Derive maf-modules' :type from the registry (src/conf.el)
    Its ~:type '(set (const ...))~ hardcodes every module name, so adding
    a module means editing conf.el — the same coupling the option move

@@ -32,6 +32,10 @@
 (require 'cl-lib)
 (require 'maf-conf "conf")  ; the `maf' customize group
 
+;; The module installs its `s o' binding into this map, defined in
+;; maf.el / bindings.el and current by the time the module is enabled.
+(defvar maf-mode-map)
+
 ;; Defined in lazily-loaded calc modules; declared for the byte compiler.
 (declare-function math-format-value "calc-ext")
 (declare-function calc-pop-push-record-list "calc-ext")
@@ -373,14 +377,25 @@ filters, \\[maf-formulas-clear-filter] clears the filter, \\[maf-formulas-quit] 
   "Global minor mode making the saved formulas available.
 Enabled, every formula is registered as a calc `var-eq-<name>' variable
 so calc's own recall and rewrite see them (`maf-formulas-user',
-populated from `maf-formulas-file', is the single source).
-The `maf-formulas' menu works whenever this file is loaded; see
-`maf-modules'."
+populated from `maf-formulas-file', is the single source), and the menu
+gets its key.
+
+The key is `s o', beside calc's own store and recall on the same prefix
+\(s s, s r): a formula is registered as a calc variable, so the menu
+belongs where saved things already live. It is unbound in calc itself,
+so nothing is shadowed and there is nothing to cede back.
+
+The `maf-formulas' menu is written to work whenever this file is
+loaded, so it stays reachable by name with the mode off; only the key
+and the variable registration follow the mode. See `maf-modules'."
   :global t
   :group 'maf
   (if maf-use-formulas-mode
-      (maf-formulas--register-vars)
-    (maf-formulas--unregister-vars)))
+      (progn
+        (maf-formulas--register-vars)
+        (define-key maf-mode-map (kbd "s o") #'maf-formulas))
+    (maf-formulas--unregister-vars)
+    (define-key maf-mode-map (kbd "s o") nil)))
 
 (when (require 'maf-module nil t)
   (maf-register-module 'maf-formulas #'maf-use-formulas-mode
