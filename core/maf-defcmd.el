@@ -163,13 +163,21 @@ ARG, runs the body, and commits its result to the right stack location."
                                 ;; (expr bound to the LHS, then the RHS),
                                 ;; capturing each side's committed result. Then
                                 ;; reassemble into a new relation and commit
-                                ;; once. arg is bound once above, so both sides
-                                ;; share it.
+                                ;; once. Both sides share the arg bound above,
+                                ;; unless the arg is an equation too, in which
+                                ;; case resolve split it and each side gets its
+                                ;; own half — the two relations pair up rather
+                                ;; than each side taking the whole arg as a
+                                ;; term (see `maf--resolve-pair-arg').
                                 (let (,lhs ,rhs)
-                                  (let ((,expr (alist-get :lhs ,context)))
+                                  (let ((,expr (alist-get :lhs ,context))
+                                        (,arg (or (alist-get :arg-lhs ,context)
+                                                  ,arg)))
                                     (cl-flet ((,commit (val) (setq ,lhs val)))
                                       ,@body))
-                                  (let ((,expr (alist-get :rhs ,context)))
+                                  (let ((,expr (alist-get :rhs ,context))
+                                        (,arg (or (alist-get :arg-rhs ,context)
+                                                  ,arg)))
                                     (cl-flet ((,commit (val) (setq ,rhs val)))
                                       ,@body))
                                   (setq ,landed

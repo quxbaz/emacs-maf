@@ -332,10 +332,12 @@ The stack entry under point is a relation. The body runs once per side (the
 macro binds :expr to :lhs, then to :rhs), and the per-side results are
 reassembled into a new relation under :rel-op.
 
-For binary commands, :arg is the top of the stack, shared across both sides.
+For binary commands, :arg is the top of the stack, shared across both sides —
+or split per side when it is an equation too (see `maf--resolve-pair-arg').
 Binary commands require the relation below the top (:m > 1); otherwise the arg
-would be the relation itself. Unlike entry, equation cannot shift the target
-down — the target must remain a relation — so it errors instead."
+would be the relation itself. `maf--resolve-context' routes that case to the
+entry target instead, which shifts down and maps the entry below back to an
+equation when it is a relation; the guard here is a backstop for direct calls."
   (maf--with-calc-buffer
     (let* ((arity (alist-get :arity opts))
            (m     (calc-locate-cursor-element (point)))
@@ -411,6 +413,32 @@ target would have replaced."
                 (:rhs    . ,(nth 2 expr)))
               context))))
 
+(defun maf--resolve-pair-arg (context)
+  "Pair a relation :arg with the equation target's sides in CONTEXT.
+At an equation target the body runs once per side against a single
+shared :arg. That is right for a scalar — x = y then + 1 gives
+x+1 = y+1 — but wrong when the arg is itself an equation: each side
+would take the whole relation as a term, and calc's simplifier then
+cancels that common term from both sides, silently discarding the arg.
+Adding two equations means pairing them side by side, so :arg-lhs and
+:arg-rhs carry the arg's own sides and the macro binds one per pass.
+
+Only = pairs with =. Every other relation is operator-specific — a + b
+respects < on both operands, a - b does not, and multiplication depends
+on sign — and the command table has no spelling for which operators are
+monotone in a relation. Rather than produce an unsound result or fall
+back to the cancelling behavior above, those signal."
+  (let ((arg (alist-get :arg context)))
+    (if (or (not (eq (alist-get :target context) 'equation))
+            (not (maf--relation-p arg)))
+        context
+      (unless (and (eq (alist-get :rel-op context) 'calcFunc-eq)
+                   (eq (car arg) 'calcFunc-eq))
+        (error "Relation arg pairs with a relation target only when both are `='"))
+      (append `((:arg-lhs . ,(nth 1 arg))
+                (:arg-rhs . ,(nth 2 arg)))
+              context))))
+
 (defun maf--resolve-context (opts)
   "Inspect point and calc state; return a context descriptor alist.
 
@@ -434,6 +462,11 @@ node under point — the context is converted to the equation target so the
 body runs once per side. Commands opt out with :map -1 in OPTS, keeping
 the whole relation as :expr.
 
+At an equation target whose :arg is itself an equation, :arg-lhs and
+:arg-rhs split the arg so the two relations pair side by side rather
+than each side taking the whole arg as a term — see
+`maf--resolve-pair-arg'.
+
 With `:scope entry' in OPTS the sub-formula/selection/region targets are
 bypassed entirely: the command always operates on the whole entry at
 point (or the top at home). For commands with no sub-formula meaning —
@@ -442,26 +475,39 @@ solving an equation, finding a polynomial's roots."
     ;; Snapshot point before target resolution: the target functions probe
     ;; calc state and must not perturb what restore later reproduces.
     (let ((point-snapshot (maf--point-snapshot)))
-      (append (maf--resolve-map-relation
-               (cond
-                ;; Whole-entry commands take the entry at point (or the
-                ;; top at home) regardless of where point sits within it.
-                ((eq (alist-get :scope opts) 'entry)
-                 (if (maf--at-home-p)
-                     (maf--resolve-target-home opts)
-                   (maf--resolve-target-entry opts)))
-                ;; The region is the most deliberate gesture there is;
-                ;; it outranks even an explicit calc selection.
-                ((use-region-p)          (maf--resolve-target-region opts))
-                ((maf--sel-any-p)        (maf--resolve-target-selection opts))
-                ((maf--at-home-p)        (maf--resolve-target-home opts))
-                ((maf--at-subexpr-p)     (maf--resolve-target-subexpr opts))
-                ((and (maf--at-equation-p)
-                      (not (eql (alist-get :map opts) -1)))
-                                         (maf--resolve-target-equation opts))
-                ((maf--at-line-margin-p) (maf--resolve-target-entry opts))
-                (t (error "Could not resolve target at point")))
-               opts)
+      (append (maf--resolve-pair-arg
+               (maf--resolve-map-relation
+                (cond
+                 ;; Whole-entry commands take the entry at point (or the
+                 ;; top at home) regardless of where point sits within it.
+                 ((eq (alist-get :scope opts) 'entry)
+                  (if (maf--at-home-p)
+                      (maf--resolve-target-home opts)
+                    (maf--resolve-target-entry opts)))
+                 ;; The region is the most deliberate gesture there is;
+                 ;; it outranks even an explicit calc selection.
+                 ((use-region-p)          (maf--resolve-target-region opts))
+                 ((maf--sel-any-p)        (maf--resolve-target-selection opts))
+                 ((maf--at-home-p)        (maf--resolve-target-home opts))
+                 ((maf--at-subexpr-p)     (maf--resolve-target-subexpr opts))
+                 ;; A binary command at the top relation has nowhere to take
+                 ;; its arg from — it would be the relation itself. When the
+                 ;; entry below is a relation too, fall through to the entry
+                 ;; target, which shifts down to it; map-relation converts
+                 ;; that back to an equation, so two stacked equations
+                 ;; combine from the top entry as they do at home. With a
+                 ;; non-relation below there is no coherent shift, so stay
+                 ;; here and let the equation target reject it.
+                 ((and (maf--at-equation-p)
+                       (not (eql (alist-get :map opts) -1))
+                       (not (and (eq (alist-get :arity opts) 'binary)
+                                 (= (calc-locate-cursor-element (point)) 1)
+                                 (> (calc-stack-size) 1)
+                                 (maf--relation-p (calc-top 2 'full)))))
+                                          (maf--resolve-target-equation opts))
+                 ((maf--at-line-margin-p) (maf--resolve-target-entry opts))
+                 (t (error "Could not resolve target at point")))
+                opts))
               ;; Also include options declared in the defcmd body like :arity, :prefix, etc
               opts
               ;; Include some useful properties as well like calc flag states
