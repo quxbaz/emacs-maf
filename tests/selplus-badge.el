@@ -60,14 +60,17 @@
   (progn (let ((calc-show-banner t)) (calc-refresh)) (maf-selplus--update))
   (cl-assert (maf-selplus-test--badge-p))
 
-  ;; maf-edit flies its own banner in the same place. The badge stays
-  ;; away for as long as that session is up, and comes back after it —
-  ;; the selection outlives the edit, so the state is still worth
-  ;; showing.
-  (progn (maf-edit-mode 1) (maf-selplus--update))
-  (cl-assert (not (maf-selplus-test--badge-p)))
-  (cl-assert (string-match-p "maf-edit" (maf-selplus-test--text)))
-  (progn (maf-edit-discard) (maf-selplus--update))
+  ;; maf-edit would fly its own banner in the same place, but the two
+  ;; never come to share the line: it refuses to start while a selection
+  ;; is shown, since the masked display would hand it a mask of the
+  ;; formula instead of the formula (see `maf-edit--enter'). The badge is
+  ;; left standing by the refusal, banner and all.
+  (cl-assert (eq :refused
+                 (condition-case nil
+                     (progn (maf-edit-mode 1) :entered)
+                   (error :refused))))
+  (maf-selplus--update)
+  (cl-assert (not (bound-and-true-p maf-edit-mode)))
   (cl-assert (maf--sel-any-p))
   (cl-assert (maf-selplus-test--badge-p))
 
