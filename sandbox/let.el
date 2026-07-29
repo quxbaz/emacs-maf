@@ -1,14 +1,16 @@
 ;; mafcmd-let: the top entry is a temporary assignment (or a vector of
-;; them) and the entry point names is evaluated under it. Unbound for
-;; now, so every case calls the command directly.
+;; them) and the entry point names is evaluated under it. The first case
+;; goes through the C-c C-c binding; the rest call the command directly
+;; to isolate its behavior from key lookup.
 
 (maf-step
   ;; Home: the top entry is the argument, level 2 the subject. The value
-  ;; is evaluated in, so the formula folds around it.
+  ;; is evaluated in, so the formula folds around it. Run from the key,
+  ;; so the binding itself is covered.
   (maf-push "2 x + 1")
   (maf-push "x := 3")
   (goto-char (point-max))
-  (call-interactively 'mafcmd-let)
+  (execute-kbd-macro (kbd "C-c C-c"))
   (cl-assert (= (calc-stack-size) 1))
   (cl-assert (equal (calc-top 1 'full) 7))
   ;; The binding was temporary: nothing is stored afterwards.

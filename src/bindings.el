@@ -206,11 +206,10 @@
 ;; calc-substitute, keeping the two prompts and adding a default for
 ;; the first, a contextual subject, and $ for the stack.
 (define-key maf-mode-map (kbd "a b") #'mafcmd-substitute)
-;; mafcmd-let — apply an assignment from the stack — is deliberately
-;; unbound for now; reachable as M-x mafcmd-let. The natural key is
-;; s SPC, beside the s : that builds the assignment (mafcmd-assign, in
-;; the table in maf-cmds.el); it is unbound in calc itself, and the
-;; command it generalizes, calc-let, keeps its own s l either way.
+;; Quick substitution: apply an assignment from the stack to the
+;; contextual subject. C-c C-c is the conventional mode-specific
+;; "apply this" gesture; calc leaves it unbound.
+(define-key maf-mode-map (kbd "C-c C-c") #'mafcmd-let)
 ;; Polynomial roots by factoring, with multiplicity. M-r is unbound in
 ;; calc itself.
 (define-key maf-mode-map (kbd "M-r") #'mafcmd-poly-roots)
