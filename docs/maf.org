@@ -32,9 +32,6 @@
    Major features.
 ** TODO Bind the modules manager (core/maf-module.el)
    ~maf-list-modules~ has the same gap: buffer works, no key.
-** TODO Give maf-dup-here a key, or drop it (src/bindings.el)
-   It lost M-<return> to ~maf-dup-below~ and is currently unbound —
-   reachable only as M-x. Decide which.
 ** TODO Move the formulas options into conf.el (src/conf.el)
    ~maf-formulas-file~ and ~maf-formulas-user~ are defcustoms living in
    modules/maf-formulas.el, against conf.el's "every user option in one
@@ -66,6 +63,7 @@
    - Editing
      + SPC: edit current entry
      + RET: duplicate item, contextually (and move point to home)
+     + C-u RET: same duplicate, but point stays on the item (no mark)
      + S-RET: open & edit new entry below point
      + C-RET: edit new entry at home (then return point)
      + M-RET: duplicate entry at point, copy directly beneath it
@@ -75,6 +73,11 @@
 ** DONE Add command to duplicate current entry below it
    maf-dup-below (M-RET). Whole entry, copy into the slot just below;
    point travels to the copy, keeping its place inside the entry.
+** DONE Give maf-dup-here a key
+   It rides RET's prefix argument (C-u RET) rather than a key of its
+   own: the RET family is full and W is the only unbound single key
+   left, too scarce to spend on where point lands. ~maf-dup-here~ stays
+   as the named entry point.
 ** IN-PROGRESS formulas module
    - [X] categories
    - [X] docs per formula

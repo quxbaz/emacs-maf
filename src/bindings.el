@@ -117,14 +117,23 @@
 ;; as calc-enter does; elsewhere it pushes a copy of the resolved item.
 ;; During digit/algebraic entry RET stays calc's own (the entry
 ;; minibuffer terminates), as with e / = / @.
+;;
+;; C-u RET is the keep-point variant (`maf-dup-here'): same push, point
+;; stays on the target instead of homing, so the next command still
+;; resolves there. It rides RET's prefix argument rather than a key of
+;; its own — the RET family is full (M-RET below, C-RET and S-RET in the
+;; edit module) and W is the only unbound single key left in the buffer,
+;; too scarce to spend on where point lands. Contextual dup has no
+;; numeric reading to conflict with; cf. `maf-swap-up', whose prefix
+;; likewise switches mode rather than counting.
 (define-key maf-mode-map (kbd "RET") #'maf-dup)
 ;; M-RET duplicates the whole entry into the slot just below it, the
 ;; in-place counterpart of RET's copy onto the top. Bind the GUI event
 ;; and the terminal form both, as calc has no M-RET.
 ;;
 ;; `maf-dup-here' — the keep-point variant of RET's duplicate — held
-;; this key until the entry-duplicate took it, and is currently unbound.
-;; Reachable via M-x maf-dup-here.
+;; this key until the entry-duplicate took it; it now rides RET's prefix
+;; argument (C-u RET), and stays reachable by name.
 (define-key maf-mode-map (kbd "M-<return>") #'maf-dup-below)
 (define-key maf-mode-map (kbd "M-RET") #'maf-dup-below)
 ;; S-<return> is the edit module's add-entry-below (see

@@ -1,7 +1,8 @@
 ;; `maf-dup' is a real command (src/stack.el), so these steps drive it
 ;; directly across every resolver target. A step passes when it raises
 ;; no error. The contract: a copy is pushed on top, originals untouched,
-;; verbatim, point parks home; keep-args makes no difference.
+;; verbatim, point parks home (unless a prefix argument keeps it);
+;; keep-args makes no difference.
 
 (maf-step
   ;; home: point at home duplicates the top entry, stack grows by one,
@@ -93,6 +94,20 @@
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "a + b"))
   (cl-assert (eq (char-after) ?+))
   (cl-assert (not (maf--at-home-p)))
+  (calc-pop (calc-stack-size))
+
+  ;; the prefix argument is the key route to that same path: C-u RET runs
+  ;; maf-dup with keep-point set, landing exactly where maf-dup-here does.
+  (maf-push "(a + b) c")
+  (progn (goto-char (point-min)) (search-forward "+") (backward-char 1)
+         (setq mark-ring nil) (set-mark nil))
+  (let ((current-prefix-arg '(4)))
+    (call-interactively 'maf-dup))
+  (cl-assert (= (calc-stack-size) 2))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "a + b"))
+  (cl-assert (eq (char-after) ?+))
+  (cl-assert (not (maf--at-home-p)))
+  (cl-assert (null (mark t)))           ; keep-point leaves no mark
   (calc-pop (calc-stack-size))
 
   ;; verbatim: nothing simplifies. With point on the + of an unsimplified

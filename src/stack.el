@@ -1468,10 +1468,14 @@ within it.
                         1:  x = y        (whole relation, from the margin)
 
 Point moves home to the copy, leaving a mark where it was so a single
-`pop-to-mark-command' returns there. With KEEP-POINT non-nil point stays
-put instead and no mark is left — `maf-dup-here' is the keep-point entry
-point."
-  (interactive)
+`pop-to-mark-command' returns there. With a prefix argument (KEEP-POINT
+non-nil) point stays put instead and no mark is left, so the next
+command still targets what point was on — C-u RET, with `maf-dup-here'
+as the named entry point.
+
+  1:  (a +| b) c   C-u RET  =>   2:  (a +| b) c
+                                 1:  b            (point stays on b)"
+  (interactive "P")
   (maf--with-calc-buffer
     (when (zerop (calc-stack-size))
       (user-error "Stack is empty"))
@@ -1500,7 +1504,8 @@ point."
 (defun maf-dup-here ()
   "Duplicate the item at point like `maf-dup', but keep point in place.
 The copy is still pushed on top; point stays where it was instead of
-moving home to the copy."
+moving home to the copy. The named entry point for RET's prefix
+argument, C-u RET."
   (interactive)
   (maf-dup t))
 
