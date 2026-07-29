@@ -148,8 +148,10 @@
   - [ ] my/calc-abs-ineq (a k) — |a| < b → compound inequality, each part solved for the variable
 
 * PORT:rewrite.el
-  - [ ] my/calc-collect-fractions (l t) — combine additive terms over their LCD;
-    flatten (frac p q)/e stacked division
+  - [X] my/calc-collect-fractions (l t) → mafcmd-collect-fractions, keeping
+    the key: additive terms over their LCD, stacked divisions flattened.
+    Denominators are no longer integer-only — variables, polynomials and
+    opaque factors take part, sharing repeated factors via maf--poly-lcm.
   Already covered: to-degrees/to-radians, mod-360/180, log-exp identities,
   complete-square, factor-powers — all reimplemented structurally in maf.
 
