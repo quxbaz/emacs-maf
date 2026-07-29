@@ -56,9 +56,6 @@
 * Todo
 # NOW
 ** TODO Bind quick-substitute (formerly C-RET)
-   s-SPC
-   s-RET
-   S-SPC
 ** TODO M-RET should be contextual
 ** TODO Organize entry movement and entry command bindings
    - Navigation
