@@ -31,6 +31,11 @@
 ;; The timeline is a feature module, optional by design; `maf-reset'
 ;; calls this only when it is loaded.
 (declare-function maf-timeline-clear "maf-timeline")
+;; The module system is optional; `maf--reset-calc' calls this only when
+;; it is loaded, to re-apply the module list across a reset.
+(declare-function maf-modules-apply "maf-module")
+;; Calc's own, for the recovery path in `maf--reset-calc'.
+(declare-function calc-mode-var-list-restore-default-values "calc")
 ;; Defined in maf.el, which loads this file; the reset commands read
 ;; and restore it around `calc-reset'.
 (defvar maf-mode)
@@ -1213,12 +1218,36 @@ ARG is `calc-reset''s, and picks both axes at once: nil clears the
 stack and restores the mode settings saved in `calc-settings-file', 0
 clears the stack and restores calc's factory defaults, a positive
 number keeps the stack with the saved settings, a negative one keeps
-the stack with the defaults."
+the stack with the defaults.
+
+A settings file that signals part way through — a stray paren in a
+hand-edited one — is survivable. `calc-reset' empties every
+buffer-local calc variable before refilling them from the file, and
+only once the refill is through does it run `calc-mode' to rebuild
+them. An abort in between leaves the buffer with no display precision,
+no line breaking, no stack top: not a calc buffer that can render its
+own stack, let alone take the next command. Restoring the factory
+defaults and re-running `calc-mode' there gives the session something
+coherent to carry on in, and the stack rides it out — `calc-reset'
+shields that behind a let, so the abort never reached it. A bad
+settings file costs the settings, not the session. On the ordinary
+path `calc-reset' has already run `calc-mode', so the guard is a
+no-op."
   (let ((was (and (bound-and-true-p maf-mode) t)))
-    (calc-reset arg)
-    (when (and (fboundp 'maf-mode)
-               (not (eq (and (bound-and-true-p maf-mode) t) was)))
-      (maf-mode (if was 1 -1)))))
+    (unwind-protect
+        (calc-reset arg)
+      (unless calc-stack-top
+        (calc-mode-var-list-restore-default-values)
+        (calc-mode)
+        (calc-refresh))
+      (when (and (fboundp 'maf-mode)
+                 (not (eq (and (bound-and-true-p maf-mode) t) was)))
+        (maf-mode (if was 1 -1)))
+      ;; The modules register their state through `maf-mode', which the
+      ;; re-run of `calc-mode' just killed and put back; re-applying the
+      ;; list keeps an enabled module enabled across a reset.
+      (when (fboundp 'maf-modules-apply)
+        (maf-modules-apply)))))
 
 (defun maf--reset-clear-trail ()
   "Empty calc's trail buffer, if one exists.
