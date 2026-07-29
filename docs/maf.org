@@ -24,8 +24,6 @@
   - [ ] Discovery document for useful features, behaviors, modules, etc
 
 * Low-hanging fruit
-  Small, self-contained items — one command, one binding, or one move.
-  Each names where the work lands.
 ** TODO Bind the formulas menu (modules/maf-formulas.el)
    ~maf-formulas~ is autoloaded and complete, but no key reaches it;
    the menu is M-x only. Same "Set default binding" item as under
