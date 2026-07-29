@@ -721,9 +721,14 @@ of a sum.
 A binary relation negates both sides at once and reverses its direction,
 which leaves it saying the same thing. Anything else becomes the
 negation of its negation: the expression is shown negated behind a
-leading minus, with the same value as before. Where negating does not
-reach inside EXPR — an atom, a symbolic product, a function call — that
-would only stack a second minus sign on the first, so EXPR stands."
+leading minus, with the same value as before.
+
+That holds whatever EXPR is. `math-neg' distributes over a sum, so
+a + b comes back as -(-a - b) with the signs moved inside, while an
+atom, a product or a function call gives a plain leading minus and so
+reads -(-x). Declining the second kind — on the grounds that it only
+stacks one minus sign on another — would leave the same slot answering
+two ways depending on the shape that filled it."
   (cond
    ((maf--relation-p expr)
     ;; Chained relations (a < b < c) have no single direction to
@@ -733,8 +738,7 @@ would only stack a second minus sign on the first, so EXPR stands."
               (math-neg (nth 1 expr))
               (math-neg (nth 2 expr)))
       expr))
-   (t (let ((negated (math-neg expr)))
-        (if (eq (car-safe negated) 'neg) expr (list 'neg negated))))))
+   (t (list 'neg (math-neg expr)))))
 
 (defun maf--negate-binary (op a b i)
   "Return the binary OP node on A and B with its Ith operand negated.
@@ -923,18 +927,20 @@ the front — an entry is a slot with no operator in front of it.
 
 Nothing simplifies: the result is built structurally, so the doubled
 signs stay visible rather than cancelling, and everything off the path
-to the target keeps the form it had. Where the sign has nowhere to go
-at all — negating does not reach inside the target and its parent has
-no operator to flip — the expression commits unchanged rather than
-changing value. This is the balanced negation; `mafcmd-neg' is the
-plain one, which does change the value.
+to the target keeps the form it had. Where the parent has no operator
+to flip, the minus stays in the target's own slot as a doubled sign —
+the same in-slot answer the whole entry gets, whatever shape fills the
+slot. This is the balanced negation; `mafcmd-neg' is the plain one,
+which does change the value.
 
-  x           =>  x             (nothing to balance against: unchanged)
+  x           =>  --x           (in slot: nothing in front to flip)
+  a b         =>  --(a b)
   |x^2        =>  (-x)^2        (even power swallows the sign)
   |x^3        =>  -(-x)^3       (odd power passes it out front)
   sin(|x)     =>  -sin(-x)      (odd function)
   cos(|x)     =>  cos(-x)       (even function)
-  |x^y        =>  x^y           (symbolic power: nowhere to go)
+  |x^y        =>  (--x)^y       (symbolic power: the slot holds it)
+  f(|x, y)    =>  f(--x, y)     (generic call: likewise)
   a + |x + b  =>  a - -x + b    (the rest of the entry is untouched)"
   (interactive)
   (maf--negate-follow-selection)

@@ -37,11 +37,12 @@
   (cl-assert (string= (math-format-value (calc-top 1 'full))
                       "-(-6 x) + 12 = 18 y + 6"))
   (calc-pop (calc-stack-size))
-  ;; A leading term the minus cannot reach inside commits unchanged.
+  ;; A leading term has no operator in front of it, so the minus stays
+  ;; in its slot as a doubled sign rather than reaching further out.
   (maf-push "a x + b")
   (progn (goto-char (point-min)) (search-forward "a"))
   (call-interactively 'mafcmd-negate)
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "a x + b"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "--(a x) + b"))
   (calc-pop (calc-stack-size))
 
   ;; Product and quotient: the other operand takes the sign, so the two
@@ -67,7 +68,7 @@
 
   ;; Powers: an integer exponent absorbs the base's sign, an even one
   ;; swallowing it and an odd one passing it out front. A symbolic
-  ;; exponent has nowhere to put it, so the entry stands.
+  ;; exponent cannot absorb it, so the base's own slot holds it.
   (maf-push "x^2")
   (progn (goto-char (point-min)) (search-forward "x") (backward-char 1))
   (call-interactively 'mafcmd-negate)
@@ -81,10 +82,11 @@
   (maf-push "x^y")
   (progn (goto-char (point-min)) (search-forward "x") (backward-char 1))
   (call-interactively 'mafcmd-negate)
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "x^y"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "(--x)^y"))
   (calc-pop (calc-stack-size))
 
-  ;; Odd and even functions; one that is neither commits unchanged.
+  ;; Odd and even functions; one that is neither leaves the sign in the
+  ;; argument's slot.
   (maf-push "sin(x)")
   (progn (goto-char (point-min)) (search-forward "(x") (backward-char 1))
   (call-interactively 'mafcmd-negate)
@@ -98,7 +100,7 @@
   (maf-push "floor(x)")
   (progn (goto-char (point-min)) (search-forward "(x") (backward-char 1))
   (call-interactively 'mafcmd-negate)
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "floor(x)"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "floor(--x)"))
   (calc-pop (calc-stack-size))
 
   ;; A relation negates both sides at once, so it keeps saying the same
@@ -136,12 +138,20 @@
   (call-interactively 'mafcmd-negate)
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "-(-a - b)"))
   (calc-pop (calc-stack-size))
-  ;; Where negating does not reach inside the expression, a second
-  ;; minus sign would be all it added, so the entry commits unchanged.
+  ;; An atom gets the same in-slot answer as a sum does: `math-neg'
+  ;; distributes over a + b and gives a plain leading minus here, but
+  ;; the rule does not vary with the shape that fills the slot.
   (maf-push "x")
   (goto-char (point-max))
   (call-interactively 'mafcmd-negate)
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "x"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "--x"))
+  (cl-assert (equal (calc-top 1 'full) '(neg (neg (var x var-x)))))
+  (calc-pop (calc-stack-size))
+  ;; Its own inverse there too: negating the doubled sign puts it back.
+  (maf-push "a b")
+  (goto-char (point-max))
+  (call-interactively 'mafcmd-negate)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "--(a b)"))
   (calc-pop (calc-stack-size))
 
   ;; An explicit selection is the target, and is cleared afterwards as
