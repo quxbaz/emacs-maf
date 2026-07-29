@@ -73,14 +73,6 @@
 ** TODO Find out why maf-preview doesn't work on up/down movement
    - Debounce it for perf and don't show unless point is over entry for N ms
    - Or, generate previews ahead of time
-** DONE Add command to duplicate current entry below it
-   maf-dup-below (M-RET). Whole entry, copy into the slot just below;
-   point travels to the copy, keeping its place inside the entry.
-** DONE Give maf-dup-here a key
-   It rides RET's prefix argument (C-u RET) rather than a key of its
-   own: the RET family is full and W is the only unbound single key
-   left, too scarce to spend on where point lands. ~maf-dup-here~ stays
-   as the named entry point.
 ** IN-PROGRESS formulas module
    - [X] categories
    - [X] docs per formula
