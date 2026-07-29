@@ -817,8 +817,10 @@ rest of the entry cannot be reordered or re-simplified on the way."
 (defun maf--negate-tree-path (tree node)
   "Return the list of `nth' indices leading from TREE down to NODE.
 NODE is matched by `eq', so it must be a cons taken from TREE itself —
-the encased node `calc-find-selected-part' returns, not a copy. Nil when
-NODE is TREE, or is absent from it; both mean the whole of TREE."
+resolve's `:expr-ref', not the stripped `:expr' copy. Nil when NODE is
+TREE itself, which means the whole of TREE. Callers reach here only
+once resolve has named a target, so a NODE absent from TREE — which
+also gives nil — no longer stands for \"point named nothing\"."
   (catch 'maf--negate-tree-path
     (cl-labels ((walk (cur path)
                   (when (eq cur node)
@@ -833,20 +835,41 @@ NODE is TREE, or is absent from it; both mean the whole of TREE."
 (defun maf--negate-target-path ()
   "Path from the entry at point down to the sub-formula to negate.
 Nil — the whole entry — at home, at an entry's margin, and wherever
-point names the entry's whole formula (its relation operator, say). An
-explicit calc selection on the entry outranks point, as it does
-everywhere else in maf."
+point names the entry's whole formula (its relation operator, say).
+
+The target is classified by `maf--resolve-context', the same resolver
+every other contextual command uses, so negate agrees with the rest of
+maf about what point names. That matters twice over: a point naming
+nothing signals there rather than reaching here, where a nil path is
+indistinguishable from the whole entry and would silently negate it;
+and an active region is recognized as the region target it is instead
+of decaying to the single node under point.
+
+Resolve is asked in the ordinary scope — the worker takes the entry
+whole, but only the path says which part of it to negate — and probes
+calc state, so point is restored around it."
   (maf--with-calc-buffer
     (save-excursion
-      (let ((m (calc-locate-cursor-element (point))))
-        (when (> m 0)
-          (let* ((entry (calc-top m 'entry))
-                 (node (or (and calc-use-selections (nth 2 entry))
-                           (and (maf--at-subexpr-p)
-                                (ignore-errors
-                                  (calc-prepare-selection m)
-                                  (calc-find-selected-part))))))
-            (and node (maf--negate-tree-path (car entry) node))))))))
+      (let* ((context (maf--resolve-context '((:arity . unary) (:map . -1))))
+             (target (alist-get :target context)))
+        (pcase target
+          ;; The whole formula is the target: no path to walk.
+          ((or 'home 'entry 'equation) nil)
+          ;; A run of chain terms is not a node, so no path leads to it:
+          ;; the sign it gives up would have to be paid for by the chain
+          ;; it was cut out of, which the path rewrite cannot express.
+          ;; Refusing beats negating whichever single term point happens
+          ;; to rest in and passing it off as the region's answer.
+          ('region
+           (user-error "Negate takes a whole term, not a region of one"))
+          (_
+           ;; `:expr-ref' is the original encased cons, the identity
+           ;; `maf--negate-tree-path' matches on — the stripped `:expr'
+           ;; is a copy and would never be found. Nil here now means
+           ;; only that the sub-formula spans its whole entry.
+           (maf--negate-tree-path
+            (car (calc-top (alist-get :m context) 'entry))
+            (alist-get :expr-ref context))))))))
 
 (defun maf--negate-follow-selection ()
   "Put point on the entry maf's selection target would pick, if elsewhere.

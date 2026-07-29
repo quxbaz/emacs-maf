@@ -172,4 +172,47 @@
   (cl-assert (= (calc-stack-size) 2))
   (cl-assert (string= (math-format-value (calc-top 2 'full)) "a + x"))
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "a - -x"))
+  (calc-pop (calc-stack-size))
+
+  ;; --- point must name a target, as it must everywhere else in maf ---
+
+  ;; A point inside the entry that resolves to nothing signals, rather
+  ;; than falling through to the whole entry. The path walk reports the
+  ;; whole formula and an unfindable node the same way — as nil — so
+  ;; without the resolver's verdict this negated the entry instead.
+  (maf-push "2 / (e f)")
+  (progn (goto-char (point-min)) (search-forward "f") (backward-char 1))
+  (cl-assert (eq :signaled
+                 (condition-case nil
+                     (progn (call-interactively 'mafcmd-negate) :committed)
+                   (error :signaled))))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "2 / (e f)"))
+  (cl-assert (= (calc-stack-size) 1))
+  (calc-pop (calc-stack-size))
+
+  ;; A region names a run of chain terms, which is not a node and so has
+  ;; no path leading to it. Negate says so instead of quietly negating
+  ;; whichever single term point rests in and calling that the region's
+  ;; answer. The mark is set and the command fired in one form, as the
+  ;; harness deactivates the mark around every form.
+  (maf-push "a + b + c + d")
+  (cl-assert (eq :signaled
+                 (condition-case nil
+                     (progn (calc-cursor-stack-index 1)
+                            (search-forward "b + c" (line-end-position))
+                            (goto-char (match-beginning 0))
+                            (push-mark (match-end 0) t t)
+                            (call-interactively 'mafcmd-negate)
+                            :committed)
+                   (error :signaled))))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "a + b + c + d"))
+  (calc-pop (calc-stack-size))
+
+  ;; A sub-formula spanning its whole entry still resolves to the entry,
+  ;; the other way a nil path arises — that one is legitimate and must
+  ;; keep working.
+  (maf-push "a + b")
+  (progn (goto-char (point-min)) (search-forward "+") (backward-char 1))
+  (call-interactively 'mafcmd-negate)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "-(-a - b)"))
   (calc-pop (calc-stack-size)))
