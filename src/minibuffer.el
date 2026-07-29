@@ -3,9 +3,10 @@
 ;; minibuffer.el
 ;;
 ;; Digit-entry integration: contextual digit entry (`maf-digit-start'),
-;; and keeping point in place when a command key or C-g terminates
-;; minibuffer digit entry, so the command still resolves the position
-;; the user was on.
+;; the shortcuts maf takes in the entry minibuffer (`;' for the fraction
+;; colon, `n'/`P' for a multiple of pi, `e' to equate), and keeping point
+;; in place when a command key or C-g terminates minibuffer digit entry,
+;; so the command still resolves the position the user was on.
 
 (require 'calc)
 (require 'seq)
@@ -23,6 +24,8 @@
 (declare-function calc-cursor-stack-index "calc")
 (declare-function calc-record "calc")
 (declare-function calc-push-list "calc")
+(declare-function calcDigit-letter "calc-misc")
+(declare-function calc-temp-minibuffer-message "calc-misc")
 
 (defvar maf-mode)  ; defined in maf.el; declared for the byte compiler
 
@@ -151,6 +154,136 @@ on `:'."
 
 (define-key calc-digit-map ";" #'maf-digit-colon)
 
+(defun maf--digit-shortcuts-live-p ()
+  "Non-nil when maf's shortcuts in the digit-entry map apply.
+The map they live in is calc's own — `calc-digit-map' has no maf state
+and belongs to no buffer — so a key installed there fires during every
+calc digit entry, `maf-mode' on or off. Gate on the mode in the buffer
+the entry belongs to: `calc-buffer', which calc's `calcDigit-start' and
+`maf-digit-start' both bind around the read, names that buffer exactly,
+where `maf--with-calc-buffer' would only guess at it from the buffer
+list. With the mode off the keys stay calc's and digit entry behaves as
+it does in plain calc."
+  (and (buffer-live-p calc-buffer)
+       (with-current-buffer calc-buffer maf-mode)))
+
+(defun maf--digit-radix-entry-p ()
+  "Non-nil when the digit entry carries an explicit radix prefix.
+Inside 16#ff a letter is a digit, and which letters count — and whether
+`e' and `n' still mean exponent and sign flip — depends on the radix;
+calc's own digit keys decide all of it. maf's letter shortcuts in the
+entry step aside there, so radix numbers stay typeable. The test is
+calc's, the regexp `calcDigit-key' uses for the same question."
+  (calc-minibuffer-contains ".*#.*"))
+
+(defun maf-digit-pi ()
+  "Commit the digit entry multiplied by pi, on `n' and `P'.
+Angles and periods are entered as multiples of pi often enough to be
+worth a key inside digit entry: 2 n commits 2 pi, and 1:3 n the third
+of it. Calc's leading-1 rule applies as it does to `:' and `e' — with
+nothing but a sign typed, `_ n' commits -pi.
+
+The multiplication is `math-mul', so a multiple of 1 is pi alone, and
+pi stays the symbolic constant either way: nothing is evaluated to a
+float.
+
+Where the product lands is not this key's business. It hands the value
+out of the entry in `calc-digit-value', as calc's own
+`calcDigit-algebraic' (') hands out its string, so the entry completes
+by its normal route: the completion counts as a RET. From home or a
+margin the product is pushed (and the push homes point, leaving a mark
+to pop back to, as RET's does); on a sub-formula it commits
+contextually, where 2 n on the 3 of 3 x gives (2 pi) x — the product
+goes in as one factor, built as literally as any other contextual
+commit. Inside an incomplete object the element being typed is the
+multiple, so a vector or matrix can be filled with multiples of pi.
+
+Both keys are calc's elsewhere: `n' is the entry's own sign flip, which
+stays on the `_' beside it, and `P' is `calc-pi' out in the stack. They
+are calc's here too inside a radix-prefixed entry, and with `maf-mode'
+off in the calc buffer the entry belongs to."
+  (interactive)
+  (if (or (not (maf--digit-shortcuts-live-p))
+          (maf--digit-radix-entry-p))
+      ;; Calc's own key: maf-mode is off, or this is a digit and only
+      ;; calc knows which — `calcDigit-letter' upcases P for the radices
+      ;; that have a P digit, `calcDigit-key' does the same for n and
+      ;; flips the sign for the radices that do not. Naming the function
+      ;; as `this-command' keeps the run of digit keys unbroken for the
+      ;; next key's `last-command' test, as `maf-digit-colon' does.
+      (let ((fn (if (eq last-command-event ?n)
+                    'calcDigit-key
+                  'calcDigit-letter)))
+        (setq this-command fn)
+        (funcall fn))
+    ;; Calc's leading-1 rule, on calc's own test for it: with only a
+    ;; sign or a separator typed, the multiple is 1.
+    (when (calc-minibuffer-contains "\\([-+]?\\|.* \\)\\'")
+      (insert "1"))
+    ;; Read the entry in the calc buffer, whose radix and format
+    ;; settings decide what it means — `calcDigit-nondigit' takes the
+    ;; string out of the minibuffer and reads it there in the same way.
+    (let* ((str (minibuffer-contents))
+           (n (with-current-buffer calc-buffer (math-read-number str))))
+      (if (null n)
+          ;; `calcDigit-nondigit's answer to an entry it cannot read:
+          ;; refuse it and stay in the minibuffer.
+          (progn (beep) (calc-temp-minibuffer-message " [Bad format]"))
+        (setq calc-digit-value (math-mul n '(var pi var-pi)))
+        ;; Exiting directly bypasses `calcDigit-nondigit', where the
+        ;; advice that does maf's point bookkeeping lives — so run it
+        ;; for the RET this completion stands for.
+        (let ((last-command-event ?\r))
+          (maf--digit-entry-keep-point))
+        (exit-minibuffer)))))
+
+(define-key calc-digit-map "n" #'maf-digit-pi)
+(define-key calc-digit-map "P" #'maf-digit-pi)
+
+(defun maf-digit-equal-to ()
+  "End the digit entry on `e' and equate with the number entered.
+`e' is `mafcmd-equal-to' out in the stack (see src/bindings.el); this
+gives the entry minibuffer the same key, so an equation can be built
+without stopping to push its right side:
+
+  1:  x|    5 e  =>   1:  x = 5
+
+It is calc's own command-key termination and nothing more — the entry
+ends and the `e' re-dispatches, exactly as the `+' of 1 + does: the
+number becomes the command's argument, point stays on the entry the
+command resolves, and the push folds into the command's undo group. So
+the command's routes come with it: the entry at point equates with the
+number whatever its depth, and at home the top two join.
+
+Its Inverse route is the one thing out of reach this way — calc's I
+flag does not survive a digit entry, so I 5 e fails exactly as I 5 +
+does. A != wants the number pushed first: 5 RET I e.
+
+The cost is the e-notation this key was: 1e6 goes in through algebraic
+entry (' 1e6) instead — except where the key is still calc's own, and
+there e-notation is untouched."
+  (interactive)
+  (if (or (not (maf--digit-shortcuts-live-p))
+          (maf--digit-radix-entry-p)
+          (maf--incomplete-entry-p))
+      ;; The key is calc's own here — e-notation, and no equation. With
+      ;; maf-mode off there is no command to dispatch to in the first
+      ;; place. In a radix-prefixed entry the key is a digit (16#3e) or
+      ;; that radix's exponent marker (8#1.2e5). And while an incomplete
+      ;; object is being entered there is nothing to equate — the vector
+      ;; or matrix under construction is not an entry yet — so
+      ;; terminating would equate the incomplete object itself.
+      (progn (setq this-command 'calcDigit-key)
+             (calcDigit-key))
+    ;; Named as calc's own terminator, which is what this key is: the
+    ;; undo amalgamation of the arg push tests `last-command' for the
+    ;; digit-entry commands (`maf--undo-amalgamate-digit-entry'), and
+    ;; without the name the push would survive an undo of the equation.
+    (setq this-command 'calcDigit-nondigit)
+    (calcDigit-nondigit)))
+
+(define-key calc-digit-map "e" #'maf-digit-equal-to)
+
 (defun maf-digit-commit-here ()
   "Commit the digit entry like RET, but keep point instead of homing.
 The keep-point sibling of RET in the digit-entry minibuffer, on
@@ -258,9 +391,11 @@ onto the stack, exactly as in plain calc — as it is in algebraic
 mode, for entries that escape to algebraic, and for interval entry
 (..), whose incomplete-object flow is inseparable from the stack.
 
-The entry minibuffer is calc's own (`calc-digit-map'), so the
-in-entry keys — e, _, :, n, @ — work unchanged; only where the result
-lands differs."
+The entry minibuffer is calc's own (`calc-digit-map'), so the in-entry
+keys — _, :, @, #, .. — work unchanged; only where the result lands
+differs. The exceptions are the keys maf takes in that map: `;' as the
+fraction colon, `n' and `P' for a multiple of pi, `e' to equate with
+the number entered."
   (interactive)
   (if (or calc-algebraic-mode
           (and (> calc-number-radix 14) (eq last-command-event ?e))
