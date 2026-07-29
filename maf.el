@@ -54,6 +54,7 @@
 (require 'maf-edit)
 (require 'maf-preview)
 (require 'maf-formulas)
+(require 'maf-selplus)
 
 ;;;###autoload
 (defun maf-calc ()
