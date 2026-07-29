@@ -1,8 +1,9 @@
 ;; `maf-dup-below' is a real command (src/stack.el), so these steps drive
 ;; it directly. A step passes when it raises no error. The contract: the
-;; whole entry at point is copied into the slot directly below it, the
-;; copy is verbatim, point travels to the copy keeping its place inside
-;; the entry, and the push and the roll are one undoable gesture.
+;; subject point names — sub-formula, selection, region run, whole entry
+;; — is copied verbatim into the slot directly below the entry it came
+;; from, point travels to the copy, and the push and the roll are one
+;; undoable gesture.
 
 (maf-step
   ;; mid-stack: the copy takes the level point was on and the original
@@ -26,31 +27,76 @@
   (cl-assert (equal (calc-top 2 'full) (calc-top 3 'full)))
   (calc-pop (calc-stack-size))
 
-  ;; --- the whole entry is the subject, whatever point sits on ---
+  ;; --- point picks the subject, as it does everywhere else in maf ---
 
-  ;; subexpr: point inside the formula still copies the entry, unlike
-  ;; `maf-dup', which would lift the sub-formula out.
+  ;; subexpr: the sub-formula under point is lifted out into the slot
+  ;; below its entry, as `maf-dup' would lift it onto the top.
   (maf-push "(a + b) c") (maf-push "z")
   (progn (goto-char (point-min)) (beginning-of-line)
          (search-forward "a") (backward-char 1))
   (call-interactively 'maf-dup-below)
   (cl-assert (equal (mapcar (lambda (i) (math-format-value (calc-top i 'full)))
                             (number-sequence 1 3))
-                    '("z" "(a + b) c" "(a + b) c")))
-  ;; point rode along to the copy, keeping its place inside the entry:
-  ;; the two render alike, so it sits on the copy's own "a"
+                    '("z" "a" "(a + b) c")))
+  ;; the copy stands on its own, so there is no place within the entry
+  ;; to keep: point lands at the start of the copy's formula text
   (cl-assert (= (calc-locate-cursor-element (point)) 2))
-  (cl-assert (= (current-column) 5))
+  (cl-assert (= (current-column) 4))
   (cl-assert (looking-at "a"))
   (calc-pop (calc-stack-size))
 
-  ;; a calc selection is likewise not the subject
+  ;; a sub-formula that spans its whole entry renders exactly like it,
+  ;; so point keeps its place rather than dropping to the start
+  (maf-push "a + b") (maf-push "z")
+  (progn (goto-char (point-min)) (beginning-of-line)
+         (search-forward "+") (backward-char 1))
+  (call-interactively 'maf-dup-below)
+  (cl-assert (equal (mapcar (lambda (i) (math-format-value (calc-top i 'full)))
+                            (number-sequence 1 3))
+                    '("z" "a + b" "a + b")))
+  (cl-assert (= (calc-locate-cursor-element (point)) 2))
+  (cl-assert (looking-at "\\+"))
+  (calc-pop (calc-stack-size))
+
+  ;; a calc selection is the subject when there is one
   (maf-push "(a + b) c") (maf-push "z")
   (progn (goto-char (point-min)) (beginning-of-line)
-         (search-forward "a") (backward-char 1) (calc-select-here nil))
+         (search-forward "+") (backward-char 1) (calc-select-here nil))
   (call-interactively 'maf-dup-below)
   (cl-assert (string= (math-format-value (maf--strip-encasing (calc-top 2 'full)))
-                      "(a + b) c"))
+                      "a + b"))
+  (cl-assert (= (calc-locate-cursor-element (point)) 2))
+  (calc-clear-selections)
+  (calc-pop (calc-stack-size))
+
+  ;; a region's run of chain terms, copied as one entry. The harness
+  ;; deactivates the mark around every form, so the region is set and
+  ;; the command fired in a single form, as in real use.
+  (maf-push "a + b + c") (maf-push "z")
+  (progn (calc-cursor-stack-index 2)
+         (search-forward "b + c" (line-end-position))
+         (goto-char (match-beginning 0))
+         (push-mark (match-end 0) t t)
+         (call-interactively 'maf-dup-below))
+  (cl-assert (equal (mapcar (lambda (i) (math-format-value (calc-top i 'full)))
+                            (number-sequence 1 3))
+                    '("z" "b + c" "a + b + c")))
+  (cl-assert (= (calc-locate-cursor-element (point)) 2))
+  (calc-pop (calc-stack-size))
+
+  ;; the copy goes below the entry the subject came from, not below
+  ;; point: a selection names its own entry, wherever point rests
+  (maf-push "(a + b) c") (maf-push "z")
+  (progn (goto-char (point-min)) (beginning-of-line)
+         (search-forward "+") (backward-char 1) (calc-select-here nil)
+         (goto-char (point-max)) (forward-line 0))
+  (call-interactively 'maf-dup-below)
+  (cl-assert (equal (mapcar (lambda (i) (math-format-value
+                                         (maf--strip-encasing (calc-top i 'full))))
+                            (number-sequence 1 3))
+                    '("z" "a + b" "(a + b) c")))
+  ;; point was at home, never on the entry that was copied, so it stays
+  (cl-assert (maf--at-home-p))
   (calc-clear-selections)
   (calc-pop (calc-stack-size))
 
@@ -63,8 +109,9 @@
                     '("z" "x = y" "x = y")))
   (calc-pop (calc-stack-size))
 
-  ;; A multi-line rendering: point keeps its row within the entry, so it
-  ;; lands on the copy's fraction bar, not the copy's first line.
+  ;; A multi-line rendering: the fraction bar is the whole entry's own
+  ;; glyph, so the copy renders alike and point keeps its row within it,
+  ;; landing on the copy's fraction bar rather than its first line.
   (calc-big-language)
   (maf-push "(a + b) / (c + d)") (maf-push "z")
   (progn (goto-char (point-min)) (forward-line 1)

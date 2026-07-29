@@ -56,7 +56,10 @@
 # NOW
 ** TODO In docker/tmux fix C-RET, C-., C-M-<backspace>, S-<backspace>
 ** TODO Bind quick-substitute (formerly C-RET)
-** TODO M-RET should be contextual
+** DONE M-RET should be contextual
+   ~maf-dup-below~ resolves like every other contextual command —
+   sub-formula, selection, region run, whole entry, top at home — and
+   drops the copy below the entry the subject came from.
 ** TODO Organize entry movement and entry command bindings
    - Navigation
      + TAB: move entry up
@@ -69,7 +72,7 @@
      + C-u RET: same duplicate, but point stays on the item (no mark)
      + S-RET: open & edit new entry below point
      + C-RET: edit new entry at home (then return point)
-     + M-RET: duplicate entry at point, copy directly beneath it
+     + M-RET: duplicate item, contextually; copy directly beneath it
 ** TODO Find out why maf-preview doesn't work on up/down movement
    - Debounce it for perf and don't show unless point is over entry for N ms
    - Or, generate previews ahead of time

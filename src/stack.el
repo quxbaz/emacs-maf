@@ -1511,23 +1511,34 @@ argument, C-u RET."
   (maf-dup t))
 
 (defun maf-dup-below ()
-  "Duplicate the entry at point, placing the copy directly below it.
+  "Duplicate the item at point, placing the copy directly below it.
 
   3:  a + b       4:  a + b
   2:  c|      =>  3:  c
   1:  d           2:  c|
                   1:  d
 
-The whole entry is copied, wherever point sits inside it — a sub-formula
-or a selection under point is not the subject here, unlike `maf-dup'.
-The copy is verbatim: nothing simplifies or evaluates. Point travels to
-the copy, keeping its place within the entry: the two render alike, so
-it lands on the same character one entry down.
+Point picks the subject as usual — a sub-formula at point, a calc
+selection or an active region's run when either is present, the whole
+entry from its margin, the top entry at home. What sets this apart from
+`maf-dup' is only where the copy goes: the slot directly below the entry
+the subject came from, rather than the top of the stack. The copy is
+verbatim: nothing simplifies or evaluates, and keep-args makes no
+difference.
 
-On the top entry, or at home, there is nothing between point and the
-home line, so the copy lands on top as `maf-dup' would. At home point
-stays home, having never been on the entry that was copied. Signals an
-error on an empty stack.
+  2:  (a +| b) c   =>   3:  (a + b) c
+  1:  z                 2:  a + b        (sub-formula at point)
+                        1:  z
+
+Point travels to the copy. A whole entry renders exactly like its
+source, so point keeps its place within it and lands on the same
+character one entry down; a sub-formula renders on its own, with no such
+place to keep, so point lands at the start of the copy.
+
+On the top entry there is nothing between point and the home line, so
+the copy lands on top as `maf-dup' would. At home point stays home,
+having never been on the entry that was copied. Signals an error on an
+empty stack.
 
   1:  x = y|  =>  2:  x = y     (relations copy whole, not per side)
                   1:  x = y|"
@@ -1539,34 +1550,48 @@ error on an empty stack.
     ;; Home (0) and the top entry both give 1, which needs no roll.
     (let* ((snapshot (maf--point-snapshot))
            (home (maf--at-home-p))
-           (m (max 1 (calc-locate-cursor-element (point))))
+           (at (max 1 (calc-locate-cursor-element (point))))
            ;; Which screen line of the entry point is on, for a multi-line
-           ;; rendering; the copy is laid out identically.
+           ;; rendering; a whole-entry copy is laid out identically.
            (row (unless home
                   (- (line-number-at-pos)
-                     (save-excursion (calc-cursor-stack-index m)
+                     (save-excursion (calc-cursor-stack-index at)
                                      (line-number-at-pos)))))
-           ;; `:scope entry' takes the whole entry regardless of what is
-           ;; under point; `:map -1' keeps a relation whole rather than
-           ;; running per side. We only read :expr and push it.
-           (context (maf--resolve-context
-                     '((:arity . unary) (:map . -1) (:scope . entry))))
-           (expr (alist-get :expr context)))
+           ;; Contextual resolution: whatever point names is the subject.
+           ;; `:map -1' keeps a relation whole rather than copying it per
+           ;; side. We only read :expr and push it.
+           (context (maf--resolve-context '((:arity . unary) (:map . -1))))
+           (expr (alist-get :expr context))
+           ;; The copy goes below the entry the subject came from, which
+           ;; is point's own entry except when a selection or a region
+           ;; named another one (:m).
+           (m (or (alist-get :m context) at))
+           ;; Whether the copy renders exactly like what point was looking
+           ;; at: it does when the subject is point's own entry whole —
+           ;; from the margin, or as the sub-formula that spans it — and
+           ;; not when a part was lifted out to stand on its own.
+           (whole (and (= m at)
+                       (equal expr (maf--strip-encasing (calc-top at 'full))))))
       ;; calc-wrapper's epilogue parks point home; restoring the snapshot
       ;; puts it back on the original, whose screen line the insertion
-      ;; below did not disturb, and the step down then lands on the copy.
+      ;; below did not disturb, and the step to the copy starts there.
       (maf--preserve-point
         (calc-wrapper (calc-push expr))
         (maf--roll-top-below m))
       ;; The copy sits at level M, the original having moved up to M+1.
-      ;; Step by row and column rather than a buffer offset: the push can
-      ;; widen every line-number prefix (a stack crossing 9 entries), which
-      ;; a raw offset would carry into the formula text.
-      (unless home
+      (cond
+       ;; At home point was never on the entry that was copied, so it
+       ;; has nowhere to travel from; calc left it home already.
+       (home)
+       ;; Step by row and column rather than a buffer offset: the push can
+       ;; widen every line-number prefix (a stack crossing 9 entries), which
+       ;; a raw offset would carry into the formula text.
+       (whole
         (let ((col (current-column)))
           (calc-cursor-stack-index m)
           (forward-line row)
           (move-to-column col)))
+       (t (maf--goto-entry-text m)))
       ;; Record the resolve-time point so a single `maf-undo' reverts
       ;; point along with the copy.
       (maf--undo-record-cmd-point snapshot))))

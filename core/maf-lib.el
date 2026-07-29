@@ -18,6 +18,10 @@
 (declare-function maf--comp-node-start-pos "maf-comp")
 (declare-function math-read-expr "calc-aent")
 
+;; calc-sel declares this with a valueless defvar, which marks it
+;; special only within its own file; redeclare so our read is dynamic.
+(defvar calc-selection-cache-offset)
+
 (defun maf--find-calc-buffer ()
   "Find the calc buffer.
 Prefers the current buffer if it is in calc-mode, then the buffer named
@@ -160,6 +164,15 @@ no longer carries a prefix at all."
   (beginning-of-line)
   (when (and col (looking-at " *[0-9]+: +"))
     (move-to-column (min col (- (match-end 0) (point) 1)))))
+
+(defun maf--goto-entry-text (m)
+  "Put point on the first character of entry M's formula text.
+The formula starts past the line-number prefix, whose width the stack's
+own numbering controls; the selection cache's offset measures it for the
+entry as it now stands, multi-line renderings included. Returns point."
+  (calc-prepare-selection m)
+  (calc-cursor-stack-index m)
+  (goto-char (+ (point) calc-selection-cache-offset)))
 
 (defun maf--point-restore (snapshot &optional anchor landed)
   "Restore point from SNAPSHOT (see `maf--point-snapshot').
