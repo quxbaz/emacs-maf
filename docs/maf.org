@@ -154,8 +154,13 @@
   complete-square, factor-powers — all reimplemented structurally in maf.
 
 * PORT:selection.el
-  - [ ] my/calc-sel-jump-equals (j e) — move term across =, unselect after; includes
-    the JumpRules advice extending every rule to !=
+  - [X] my/calc-sel-jump-equals (j e) → maf-jump-equals, on j e: moves the term
+    under point across an = or !=, unselects, and sends point after it. The !=
+    rules are derived from calc's JumpRules instead of hand-copied, and are
+    let-bound over the jump instead of advising calc-JumpRules — the advice only
+    fired before calc cached the rule set, so it lost whenever calc's j E ran
+    first. Point lands on the moved term via the composition, dropping the
+    legacy show-selections/"#" search hack.
   - [ ] my/calc-sel-negate (N) — negate in place, contextual, unselect after
   - [ ] my/calc-sel-distribute (j D) — contextual, no-simplify, frac→division fix (see BACKLOG)
   - [ ] my/calc-sel-merge (j M) — contextual, unselect after
