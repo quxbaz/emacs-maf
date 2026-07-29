@@ -27,6 +27,14 @@
 (declare-function calc-del-selection "calc-sel")
 (declare-function calc-clear-selections "calc-sel")
 (declare-function calc-change-mode "calc-mode")
+(declare-function calc-reset "calc-ext")
+;; The timeline is a feature module, optional by design; `maf-reset'
+;; calls this only when it is loaded.
+(declare-function maf-timeline-clear "maf-timeline")
+;; Defined in maf.el, which loads this file; the reset commands read
+;; and restore it around `calc-reset'.
+(defvar maf-mode)
+(declare-function maf-mode "maf")
 (declare-function calc-normal-language "calc-lang")
 (declare-function calc-big-language "calc-lang")
 (declare-function math-solve-eqn "calcalg2")
@@ -833,6 +841,121 @@ reports the switch."
       (if (eq calc-language 'big)
           (calc-normal-language)
         (calc-big-language)))))
+
+
+;;; Session
+
+(defun maf--reset-calc (arg)
+  "Run `calc-reset' with ARG, leaving `maf-mode' as it found it.
+`calc-reset' re-runs `calc-mode', and starting a major mode kills
+every buffer-local variable — `maf-mode' among them, which takes maf's
+whole keymap out of the buffer with it, C-M-k included. A
+`calc-mode-hook' entry turns the mode back on for anyone who has one;
+putting it back here means a reset never depends on that.
+
+ARG is `calc-reset''s, and picks both axes at once: nil clears the
+stack and restores the mode settings saved in `calc-settings-file', 0
+clears the stack and restores calc's factory defaults, a positive
+number keeps the stack with the saved settings, a negative one keeps
+the stack with the defaults."
+  (let ((was (and (bound-and-true-p maf-mode) t)))
+    (calc-reset arg)
+    (when (and (fboundp 'maf-mode)
+               (not (eq (and (bound-and-true-p maf-mode) t) was)))
+      (maf-mode (if was 1 -1)))))
+
+(defun maf--reset-clear-trail ()
+  "Empty calc's trail buffer, if one exists.
+Erases the text rather than killing the buffer, so a window showing
+the trail keeps showing it — the \"Emacs Calculator Trail\" banner is
+a header line, not buffer text, and survives. Calc has no command for
+this: \\`t k' kills one line and the trail otherwise grows for the
+life of the session.
+
+The overlay arrow marking `calc-trail-pointer' goes too. Calc only
+drops it from `calc-trail-here', so left alone it would sit parked on
+the first line of an empty trail; it is cleared in the calc buffer
+only when it really points into the trail, since there the variable
+may be the global one that a debugger is also using."
+  (when-let ((buf (get-buffer "*Calc Trail*")))
+    (with-current-buffer buf
+      (let ((inhibit-read-only t))
+        (erase-buffer))
+      (setq overlay-arrow-position nil))
+    (maf--with-calc-buffer
+      (when (and (markerp overlay-arrow-position)
+                 (eq (marker-buffer overlay-arrow-position) buf))
+        (setq overlay-arrow-position nil)))))
+
+(defun maf--reset-load-settings ()
+  "Re-read `calc-settings-file' whole, if it names a readable file.
+`calc-reset' already restores the mode settings from that file, but
+only the block calc maintains between its own two marker comments.
+Everything else the file holds — stored variables (\\`s p'), permanent
+keyboard macros (\\`Z K'), user-defined units and functions — it never
+looks at. Loading the file picks those up as well, so edits made to it
+since the session started take effect without restarting Emacs.
+
+Returns non-nil if the file was loaded."
+  (let ((file (and calc-settings-file
+                   (substitute-in-file-name calc-settings-file))))
+    (and file (file-readable-p file) (load file t t))))
+
+(defun maf-reset (&optional defaults)
+  "Reset calc to a clean slate: empty stack, empty history, fresh settings.
+
+Clears the stack, calc's undo and redo lists, the trail, and the maf
+stack timeline, restores the mode settings saved in
+`calc-settings-file', then re-reads the rest of that file (see
+`maf--reset-load-settings'). What survives is what lives outside the
+calc buffer: stored variables, the formula library, the kill ring.
+
+With a prefix argument DEFAULTS, restore calc's factory default modes
+instead of the saved ones — and then leave the settings file alone,
+since loading it would immediately put the saved modes back and make
+the prefix do nothing.
+
+Nothing here is undoable: the undo list is one of the things cleared."
+  (interactive "P")
+  (maf--with-calc-buffer
+    (maf--reset-calc (if defaults 0 nil))
+    (maf--reset-clear-trail)
+    ;; The timeline is a module and may not be loaded; it is also what
+    ;; the trail used to be for, so a reset that left it standing would
+    ;; leave the whole session recoverable from it.
+    (when (fboundp 'maf-timeline-clear)
+      (maf-timeline-clear))
+    (message (if (and (not defaults) (maf--reset-load-settings))
+                 "Calc reset; settings reloaded"
+               "Calc reset"))))
+
+(defun maf-reset-settings (&optional defaults)
+  "Reset calc's modes and display settings, keeping the stack.
+
+The other half of `maf-reset': restores the mode settings saved in
+`calc-settings-file' and re-reads the rest of that file, but leaves
+the stack, its selections, and the timeline exactly as they are. The
+command for when a mode got toggled by accident and the session is
+worth keeping.
+
+With a prefix argument DEFAULTS, restore calc's factory default modes
+instead of the saved ones, and leave the settings file unread — as in
+`maf-reset'.
+
+Undo and redo survive as well. `calc-reset' clears both whatever its
+argument, which makes sense when it also clears the stack; with the
+stack kept, the undo list still describes it exactly, so this command
+puts the two lists back afterward. Point stays put."
+  (interactive "P")
+  (maf--with-calc-buffer
+    (let ((undo calc-undo-list)
+          (redo calc-redo-list))
+      (maf--preserve-point
+        (maf--reset-calc (if defaults -1 1))
+        (setq calc-undo-list undo
+              calc-redo-list redo)
+        (unless defaults (maf--reset-load-settings))))
+    (message (if defaults "Calc settings reset to defaults" "Calc settings reset"))))
 
 (defun maf-beginning-of-entry ()
   "Move point to the beginning of the stack entry on the current line.

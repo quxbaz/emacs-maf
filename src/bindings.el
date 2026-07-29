@@ -166,6 +166,14 @@
 ;; table in maf-cmds.el.
 (define-key maf-mode-map (kbd "G") #'maf-toggle-big-language)
 
+;; Session reset, and the modes-only half beside it. Both keys are
+;; unbound in calc itself; whatever the global map puts there
+;; (erase-buffer, a magit command) has no business in a stack buffer,
+;; and C-M-k is exactly the destructive global these shadow — one
+;; fingerslip away from wiping the wrong buffer.
+(define-key maf-mode-map (kbd "C-M-k") #'maf-reset)
+(define-key maf-mode-map (kbd "C-M-l") #'maf-reset-settings)
+
 ;; Auto-solve: solve or isolate at point, cycling through the variables
 ;; on repeat. M-i is unbound in calc itself.
 (define-key maf-mode-map (kbd "M-i") #'mafcmd-auto-solve)
