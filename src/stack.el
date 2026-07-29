@@ -41,6 +41,7 @@
 (declare-function calcFunc-roots "calcalg2")
 (declare-function calcFunc-sub "calc-arith")
 (declare-function math-evaluate-expr "calc-ext")
+(declare-function calc-is-assignments "calc-store")
 (declare-function math-compose-expr "calccomp")
 (declare-function math-vectorp "calc-ext")
 (declare-function math-flatten-vector "calc-vec")
@@ -2224,6 +2225,89 @@ is committed, rather than rewritten to an unchanged copy."
       (call-interactively (if stack-arg
                               #'maf--substitute-arg-run
                             #'maf--substitute-run)))))
+
+(defun maf--let-bindings (arg)
+  "Return ARG's assignments as an alist of (SYMBOL . VALUE), or nil.
+ARG is an assignment — x := 3, or the plain equation x = 3 — or a
+vector of nothing but assignments; SYMBOL is calc's storage symbol for
+the variable (var-x) and VALUE the expression assigned to it.
+
+Calc's own `calc-is-assignments' does the reading, so the shapes
+accepted are exactly the ones `calc-let' takes. It builds its list back
+to front; reversing puts the bindings in written order, so a vector
+naming the same variable twice ends with the later assignment standing."
+  ;; calc-ext's autoload registry covers most of calc-store but not this
+  ;; function, so the module has to be pulled in by hand.
+  (require 'calc-store)
+  (nreverse (calc-is-assignments arg)))
+
+(defun maf--let-evaluate (expr bindings)
+  "Return EXPR evaluated with BINDINGS in force.
+BINDINGS is an alist as `maf--let-bindings' returns. Each variable is
+stored for the evaluation and restored afterwards — to its previous
+value, or to unbound when it had none — even if the evaluation signals.
+
+Evaluation is calc's, so every stored variable is substituted, not only
+the ones bound here, and the result normalizes as the current
+simplification mode says.
+
+`calc-refresh-evaltos' is deliberately not called around the stores:
+the bindings are gone again before the command commits, so no => entry's
+value ends up changed, and refreshing would only rewrite stack entries
+underneath the commit that is about to run."
+  (let ((saved (mapcar (lambda (b)
+                         (list (car b)
+                               (boundp (car b))
+                               (and (boundp (car b)) (symbol-value (car b)))))
+                       bindings)))
+    (unwind-protect
+        (progn
+          (dolist (b bindings)
+            (set (car b) (calc-normalize (cdr b))))
+          (math-evaluate-expr expr))
+      (dolist (s saved)
+        (if (nth 1 s)
+            (set (car s) (nth 2 s))
+          (makunbound (car s)))))))
+
+(maf-defcmd mafcmd-let (expr arg commit)
+  "Evaluate the resolved expression under the top-of-stack assignments.
+
+  2 x + 1 with x := 3  =>  7
+
+The argument is an assignment — `mafcmd-assign's x := 3, or the plain
+equation x = 3 — or a vector of nothing but assignments, and it binds
+its variables for this one evaluation: nothing is stored, and a
+variable that already had a value has it back by the time the command
+returns.
+
+The value is evaluated in rather than pasted in, so the formula folds
+around it as if the number had been there all along — that is the
+difference from `mafcmd-substitute', which rewrites structurally. With
+simplification off (@) nothing folds and the value simply lands in
+place. Being an evaluation, it also brings in whatever other variables
+are stored, exactly as calc's own `s l' does; a variable with no value
+anywhere stands.
+
+  a x with [x := 3, a := 2]  =>  6
+  2 x + 1 with x := 3        =>  2 3 + 1    (the same, simplification off)
+  x + y with x := 3          =>  y + 3      (y unbound: stands)
+
+Like any binary command, the entry at point is the subject and the top
+of the stack is the argument, consumed on commit; point picks the
+subject as usual — a sub-formula at point, each side of an equation,
+stack level 2 at home. With keep-args both operands stay and the result
+is pushed on top. A top entry that is not an assignment signals, with
+the stack untouched.
+
+  y = x^2 + 1 with x := 3  =>  y = 10
+  x^2 + x| with x := 3     =>  x^2 + 3    (sub-formula at point)"
+  :arity binary
+  :prefix "let"
+  (let ((bindings (maf--let-bindings arg)))
+    (unless bindings
+      (user-error "Top of stack is not an assignment, or a vector of them"))
+    (commit (maf--let-evaluate expr bindings))))
 
 ;;; Roots
 
