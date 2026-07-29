@@ -1,8 +1,9 @@
 # maf dev box — a complete development environment in a container.
 #
-# The image holds the environment: shell, Emacs, git, and the Claude
-# Code agent. The code is not baked in; a checkout is bind-mounted at
-# /work when you run the container, so edits land on the host.
+# The image holds the environment: shell, Emacs, git, and the agents
+# (Claude Code and codex). The code is not baked in; a checkout is
+# bind-mounted at /work when you run the container, so edits land on
+# the host.
 
 FROM debian:trixie-slim
 
@@ -10,11 +11,14 @@ FROM debian:trixie-slim
 #   gets a real tty frame, so windows exist and execute-kbd-macro works.
 # tmux: keeps Emacs on a pty while you use the shell.
 # ripgrep: the agent's search tool.
+# bubblewrap: codex's sandbox. It ships one bundled and falls back to it
+#   with a warning on every run; the packaged binary silences that.
 RUN apt-get update && apt-get install -y --no-install-recommends \
         emacs-nox \
         git \
         tmux \
         ripgrep \
+        bubblewrap \
         ca-certificates \
         curl \
         gnupg \
@@ -32,7 +36,10 @@ RUN curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
     && apt-get update && apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/*
 
-RUN npm install -g @anthropic-ai/claude-code \
+# Both agents, from npm. The host installs codex standalone, into
+# ~/.codex/packages; npm is the same binary by another route, and keeps
+# the two agents on one line of install here.
+RUN npm install -g @anthropic-ai/claude-code @openai/codex \
     && npm cache clean --force
 
 # Run as a non-root user whose uid matches the host's, so files written

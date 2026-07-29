@@ -1,7 +1,8 @@
 # Dev boxes
 
 A container holding the development environment — shell, Emacs with maf
-loaded, git, and the Claude Code agent — for working a feature branch.
+loaded, git, and the agents (Claude Code and codex) — for working a
+feature branch.
 One box per feature, several at once.
 
 The code is *not* in the image. A worktree is bind-mounted at `/work`,
@@ -44,10 +45,12 @@ Spelled `docker/box` until `dev.sh` is sourced.
    `docker/box --help` for usage.
 
 3. You land in tmux: a shell at `/work` on the left, Emacs on the right.
-   Start the agent in the shell and instruct it:
+   Start an agent in the shell and instruct it — either one, both
+   already authed:
 
    ```sh
    claude
+   codex
    ```
 
    tmux is yours: `~/conf/tmux/tmux.conf` is mounted, so the box answers
@@ -111,6 +114,7 @@ sudo docker run -it --name maf-my-feature \
   -v ~/lab/emacs-maf/.worktrees/my-feature:/work \
   -v ~/lab/emacs-maf/.git:/home/david/lab/emacs-maf/.git \
   -v ~/.claude/.credentials.json:/seed/credentials.json:ro \
+  -v ~/.codex/auth.json:/seed/codex-auth.json:ro \
   -v ~/.gitconfig:/home/dev/.gitconfig:ro \
   -v ~/conf/claude/CLAUDE.md:/home/dev/.claude/CLAUDE.md:ro \
   -v ~/conf/claude/keybindings.json:/home/dev/.claude/keybindings.json:ro \
@@ -128,7 +132,8 @@ sudo docker run -it --name maf-my-feature \
 | no `--rm` | the box outlives the shell, so you can come back to it; `docker rm maf-<feature>` when done |
 | `-v ...worktrees/my-feature:/work` | the worktree this box works on — the one line that assigns the branch |
 | `-v ...emacs-maf/.git:<same path>` | the main `.git`, at its *host path*: a worktree's `.git` file names that path absolutely, so git inside only resolves if the path matches exactly |
-| `-v ...credentials.json:/seed/...:ro` | agent auth; copied in at startup, read-only so the container can't touch your host token |
+| `-v ...credentials.json:/seed/...:ro` | Claude auth; copied in at startup, read-only so the container can't touch your host token |
+| `-v ~/.codex/auth.json:/seed/...:ro` | codex auth, the same way. Optional, unlike Claude's: without it a box still starts and codex asks you to sign in there |
 | `-v ~/.gitconfig:...:ro` | your name/email, so commits from inside are attributed |
 | `-v ~/conf/claude/...:ro` (×6) | your agent config, each file where its agent reads it — on the host these paths are symlinks into `~/conf`, a box takes the real files. `AGENTS.md` appears twice: for codex, and at the path `CLAUDE.md` imports. Any that is missing is skipped; `$MAF_CONF` names another `conf` |
 | `-v ~/.emacs.d:/seed/emacs.d:ro` | my Emacs config, copied in at startup by the entrypoint rather than mounted, since Emacs writes into it. `--bare` swaps this for `-v ~/.emacs.d/my/calc:...:ro` alone — the legacy Calc config the `port` skill reads, at the path that skill names |
@@ -138,6 +143,7 @@ sudo docker run -it --name maf-my-feature \
 
 ```sh
 claude                      # agent, already authed — instruct it from here
+codex                       # the other one, likewise (cc / cx are aliases)
 tmux attach -t emacs        # back to Emacs beside a shell (C-t d to detach)
 emacsclient -s '#emacs' --eval '(calc-stack-size)'
 git commit -am '...'        # lands on the host branch
@@ -162,10 +168,19 @@ the repo's `CLAUDE.md` keys off.
   model, and permission prompts off (`defaultMode: bypassPermissions`) —
   the container is the sandbox. Change that file and rebuild to alter
   either.
-- Auth is a copy: a token refresh inside the box updates only the
-  container's copy, and is lost when it exits. Re-seeded from the host
-  file on every start. To run a box on a different account, mount that
-  account's credentials file instead.
+- Auth is a copy, for both agents: a token refresh inside the box
+  updates only the container's copy, and is lost when it exits.
+  Re-seeded from the host files on every start. To run a box on a
+  different account, mount that account's credentials file instead.
+- Agent config is brought over two different ways. Claude's is layered:
+  the box bakes its own `claude.json` and `settings.json` (onboarding
+  done, `/work` trusted, permissions bypassed) and mounts only
+  `CLAUDE.md` and `keybindings.json` from `~/conf` — your host
+  `settings.json` is deliberately *not* mounted, so a box does not
+  inherit its permission rules or hooks. Codex has no baked box config
+  at all: `config.toml` is mounted from `~/conf` verbatim, so a box gets
+  your host settings whole. That file needs a `[projects."/work"]`
+  trust entry, since none of its host paths exist in a container.
 - Which box is this? The feature is the container's hostname, so it is
   in the shell prompt (`dev@my-feature:/work$`) and at both ends of
   tmux's status bar — the session is called `emacs` in every box, so the

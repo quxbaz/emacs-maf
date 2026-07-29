@@ -258,6 +258,13 @@ mount_ro "$conf/agents/AGENTS.md"  /home/dev/.codex/AGENTS.md
 mount_ro "$conf/codex/config.toml" /home/dev/.codex/config.toml
 mount_ro "$conf/tmux/tmux.conf"   /home/dev/.config/tmux/tmux.conf
 
+# Codex auth, beside the Claude credentials in the run below: mounted
+# read-only at /seed and copied in by the entrypoint, so a token refresh
+# inside the box writes to the container's copy and never the host file.
+# Optional, unlike Claude's — a box without it still starts, and codex
+# asks you to sign in there.
+mount_ro "$HOME/.codex/auth.json" /seed/codex-auth.json
+
 # My whole Emacs config, seeded rather than mounted, since Emacs writes
 # into it — the entrypoint copies it in. That carries my/calc along, so
 # the narrow mount is only for --bare: the legacy Calc config the port

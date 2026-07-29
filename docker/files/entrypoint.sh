@@ -13,6 +13,14 @@ if [ -f /seed/credentials.json ]; then
     chmod 600 "$HOME/.claude/.credentials.json"
 fi
 
+# Codex keeps its own auth in a separate file, seeded the same way and
+# for the same reason. Absent when the host has never signed in to
+# codex; the box still runs, and codex asks you to sign in there.
+if [ -f /seed/codex-auth.json ]; then
+    cp /seed/codex-auth.json "$HOME/.codex/auth.json"
+    chmod 600 "$HOME/.codex/auth.json"
+fi
+
 # The user's Emacs config, when the box was started with --emacsd: it is
 # mounted read-only at /seed and copied in, so everything Emacs writes
 # from here on — elpa, eln-cache, custom.el — stays in the container.

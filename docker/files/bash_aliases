@@ -48,7 +48,7 @@ wo () {
     fi
 }
 
-## Agents — cx waits on codex, which is not in the image yet.
+## Agents
 alias cc='claude'
 alias ca='claude agents'
 alias cu='claude --continue'
