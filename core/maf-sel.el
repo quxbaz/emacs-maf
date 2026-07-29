@@ -11,13 +11,20 @@
 (declare-function calc-top "calc-ext")
 (declare-function calc-locate-cursor-element "calc-yank")
 
+(defun maf--sel-any-shown-p ()
+  "Return t if any stack entry carries a selection, effective or not.
+Blind to `calc-use-selections', unlike `maf--sel-any-p': a selection
+that commands ignore still changes how calc renders its entry — the
+unselected characters come out as dots — so callers that care about the
+displayed text, not about what commands will operate on, want this one."
+  (maf--with-calc-buffer
+    ;; stack entries are (formula lines selection); selection is non-nil when active.
+    (and (seq-some (lambda (elt) (nth 2 elt)) calc-stack) t)))
+
 (defun maf--sel-any-p ()
   "Return t if any stack entry has an active selection."
   (maf--with-calc-buffer
-    (and calc-use-selections
-         ;; stack entries are (formula lines selection); selection is non-nil when active.
-         (seq-some (lambda (elt) (nth 2 elt)) calc-stack)
-         t)))
+    (and calc-use-selections (maf--sel-any-shown-p))))
 
 (defun maf--sel-at-point-p ()
   "Return t if the stack entry at point has an active selection."
