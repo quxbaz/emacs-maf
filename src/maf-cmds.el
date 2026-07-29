@@ -155,14 +155,18 @@ are set, making the I and H prefixes route to the variant contextually.
   (apart unary calcFunc-apart "a a")
   (collect binary calcFunc-collect "a c")
   (deriv binary calcFunc-deriv "a d" :hyp tderiv)
-  (esimplify unary calcFunc-esimplify "a s")
+  ;; Simplifying a relation is a whole-relation job: calc divides both
+  ;; sides through and moves terms across the operator. Mapped per side
+  ;; each side is already as simple as it gets alone, so the command
+  ;; would do nothing at all on an equation.
+  (esimplify unary calcFunc-esimplify "a s" :map -1)
   (factor binary calcFunc-factor "a f" :hyp factors)
   (pgcd binary calcFunc-pgcd "a g")
   (integ binary calcFunc-integ "a i")
   (match binary calcFunc-match "a m" :inv matchnot :map -1)
   (nrat unary calcFunc-nrat "a n")
   (rewrite binary calcFunc-rewrite "a r" :map -1)
-  (simplify unary calcFunc-simplify "a e")
+  (simplify unary calcFunc-simplify "a e" :map -1)   ; see esimplify above
   (expand unary calcFunc-expand "a x")
   (mapeq binary calcFunc-mapeq "a M" :inv mapeqr :hyp mapeqp :map -1)
   (roots binary calcFunc-roots "a P" :map -1)
