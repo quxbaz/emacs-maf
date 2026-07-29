@@ -32,13 +32,6 @@
    Major features.
 ** TODO Bind the modules manager (core/maf-module.el)
    ~maf-list-modules~ has the same gap: buffer works, no key.
-** DONE Move the module options out of conf.el (src/conf.el)
-   Self-containment beats "every user option in one place": a module
-   keeps its own options, like it keeps its own faces. The timeline and
-   persist options moved to their module files, joining the formulas
-   ones already there; conf.el now holds the group and the core options
-   only. Cheap because maf.el loads every module file unconditionally,
-   so the customize group is complete regardless of ~maf-modules~.
 ** TODO Derive maf-modules' :type from the registry (src/conf.el)
    Its ~:type '(set (const ...))~ hardcodes every module name, so adding
    a module means editing conf.el — the same coupling the option move
