@@ -549,6 +549,115 @@ change this function."
                     (maf--poly-lcm-merge least 1))))
         merged)))
 
+(defun maf--fraction-parts (expr)
+  "Return EXPR as a cons (NUMERATOR . DENOMINATOR).
+The denominator is whatever EXPR divides by, however it is spelled: a
+literal rational (Calc stores 8:3 as `(frac 8 3)'), an explicit
+division, a negated one, or a product of any of those — 2 (x / 3)
+gives (2 x . 3) and (x / 2) / (y / 3) gives (3 x . 2 y). Anything
+else is its own numerator over a denominator of 1, so a term with
+nothing to divide comes back untouched rather than restructured.
+
+Nothing is simplified along the way: the parts are built literally so
+the caller decides what to fold, and a numerator built here is not
+expanded against its own factors."
+  (pcase (car-safe expr)
+    ('frac (cons (nth 1 expr) (nth 2 expr)))
+    ('/ (let ((a (maf--fraction-parts (nth 1 expr)))
+              (b (maf--fraction-parts (nth 2 expr))))
+          (cons (math-mul (car a) (cdr b))
+                (math-mul (cdr a) (car b)))))
+    ('neg (let ((a (maf--fraction-parts (nth 1 expr))))
+            (cons (math-neg (car a)) (cdr a))))
+    ;; A negative integer power is a division calc has already folded:
+    ;; the terms of 1 / x^2 + 1 / x^3 reach here as x^-2 and x^-3.
+    ('^ (if (and (math-integerp (nth 2 expr)) (math-negp (nth 2 expr)))
+            (cons 1 (list '^ (nth 1 expr) (math-neg (nth 2 expr))))
+          (cons expr 1)))
+    ('* (let ((parts (mapcar #'maf--fraction-parts (cdr expr))))
+          ;; A product with no divisor anywhere keeps its original
+          ;; shape: rebuilding it from the factors would reassociate
+          ;; a b c for no gain.
+          (if (cl-every (lambda (p) (equal (cdr p) 1)) parts)
+              (cons expr 1)
+            (cons (cl-reduce #'math-mul (mapcar #'car parts))
+                  (cl-reduce #'math-mul (mapcar #'cdr parts))))))
+    (_ (cons expr 1))))
+
+(defun maf--stacked-division-p (expr)
+  "Non-nil when EXPR is a division with a division inside it.
+The shape one term can still collect: a numerator or divisor that
+divides by something of its own, so the two stacked divisions fold
+into one. Calc's literal rationals count — (8:3) / x^2 is 8 / (3 x^2)
+— which is how an integer ratio over a symbolic divisor arises."
+  (and (eq (car-safe expr) '/)
+       (not (and (equal (cdr (maf--fraction-parts (nth 1 expr))) 1)
+                 (equal (cdr (maf--fraction-parts (nth 2 expr))) 1)))))
+
+(defun maf--collectible-fractions-p (expr)
+  "Non-nil when EXPR has fractions to collect over a common denominator.
+A sum qualifies once any of its terms divides by something; a lone
+term only when its divisions are stacked
+\(`maf--stacked-division-p'), so a fraction that is already single —
+x / 2, or the literal 1:3 — is left as it is.
+
+The `:widen' predicate for `mafcmd-collect-fractions', and the same
+test `maf--collect-fractions' applies before transforming: point on
+the y of 2^(y/3 - 1:3) names a node with nothing to collect, and the
+command acts on the enclosing sum that has."
+  (let ((terms (maf--sum-terms expr)))
+    (if (cdr terms)
+        (cl-some (lambda (term)
+                   (not (equal (cdr (maf--fraction-parts term)) 1)))
+                 terms)
+      (maf--stacked-division-p expr))))
+
+(defun maf--collect-fractions (expr)
+  "Return EXPR's additive terms combined over their least common denominator.
+Each term contributes its denominator (`maf--fraction-parts'), the LCD
+is their LCM (`maf--poly-lcm', so numbers, variables, polynomials and
+opaque factors like sqrt(2) all take part), and each numerator is
+rescaled by the LCD over its own denominator before the sum is formed.
+The sum is simplified — like denominators collect — but the result is
+divided literally, so it commits as one fraction instead of being
+distributed back over its terms.
+
+Nil when there is nothing to do: nothing to collect in the first place
+\(`maf--collectible-fractions-p'), or some term's denominator does not
+divide the LCD exactly, which is the signal to leave EXPR alone rather
+than commit a rearrangement that does not hold."
+  (let* (;; Default simplify mode and exact fractions throughout, as in
+         ;; `mafcmd-factor-gcd': the terms have to fold and the scaling
+         ;; has to stay exact even with simplification switched off.
+         ;; Symbolic too, so collecting over a sqrt(2) denominator does
+         ;; not evaluate it into a float on the way past.
+         (calc-simplify-mode nil)
+         (calc-prefer-frac t)
+         (calc-symbolic-mode t)
+         (parts (mapcar #'maf--fraction-parts (maf--sum-terms expr)))
+         (denoms (mapcar #'cdr parts)))
+    (when (maf--collectible-fractions-p expr)
+      (let ((lcd (ignore-errors (cl-reduce #'maf--poly-lcm denoms))))
+        (when (and lcd (not (math-zerop lcd)))
+          (let ((nums (cl-loop
+                       for (num . den) in parts
+                       for scale = (if (math-equal den lcd)
+                                       1
+                                     (maf--poly-exact-quotient lcd den))
+                       ;; A denominator the LCD is not a multiple of
+                       ;; means the LCD is not one: give up whole.
+                       unless scale return nil
+                       collect (math-mul num scale))))
+            (when nums
+              (let ((num (math-simplify (cl-reduce #'math-add nums)))
+                    ;; Build the division literally; commit pushes
+                    ;; structurally, so the single fraction survives
+                    ;; without calc-normalize spreading the numerator
+                    ;; back over the denominator.
+                    (calc-simplify-mode 'none))
+                ;; Terms that cancel give 0, not 0 over the LCD.
+                (if (math-zerop num) 0 (calcFunc-div num lcd))))))))))
+
 (defun maf--float-fracs (expr)
   "Float the fractions in EXPR, leaving integers exact.
 Unlike `calcFunc-pfloat', which pervasively floats every number

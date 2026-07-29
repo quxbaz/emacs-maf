@@ -289,6 +289,40 @@ point, each side of an equation, the top entry at home.
     (commit (let ((calc-simplify-mode 'none))
               (math-rewrite expr rules)))))
 
+(maf-defcmd mafcmd-collect-fractions (expr _arg commit)
+  "Combine the resolved expression's terms into a single fraction.
+
+  a / 2 + b / 3  =>  (3 a + 2 b) / 6
+
+Every additive term is put over the least common denominator of them
+all and the numerators added, so the result is one fraction rather
+than a sum of them. Denominators are taken however they are spelled —
+a literal fraction, an explicit division, one buried in a product —
+and they need not be numbers: variables and polynomial denominators
+take part too, sharing repeated factors instead of stacking them.
+The numerator collects like terms; the fraction itself is left
+undistributed, so it stays a single fraction rather than being spread
+back over its terms. A single term flattens when its divisions are
+stacked: an integer ratio divided by something becomes one division.
+With no denominator to collect over, the expression commits
+unchanged, so equation sides with nothing to combine pass through
+quietly. Point picks the target as usual: a sub-formula at point,
+each side of an equation, the top entry at home — and a sub-formula
+with nothing to collect widens to the innermost one that has, so
+point on the y of 2^(y/3 - 1:3) collects the exponent.
+
+  x / 2 + x / 3        =>  5 x / 6
+  pi / 2 - 1:2         =>  (pi - 1) / 2
+  8:3 / x^2            =>  8 / (3 x^2)
+  1 / x + 1 / y        =>  (y + x) / (x y)
+  x / 2 + 3 / a^3      =>  (x a^3 + 6) / (2 a^3)
+  1/(x+1) + 1/(x^2-1)  =>  x / ((x + 1) (x - 1))
+  x + 1                =>  x + 1    (no denominator: unchanged)"
+  :arity unary
+  :prefix "cfrc"
+  :widen maf--collectible-fractions-p
+  (commit (or (maf--collect-fractions expr) expr)))
+
 (maf-defcmd mafcmd-to-degrees (expr _arg commit)
   "Convert the resolved expression from radians to degrees.
 
