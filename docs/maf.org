@@ -46,8 +46,14 @@
    It sits on RET rather than j c — ~maf-dup-or-clear-selections~
    dispatches, clearing when a selection is active and duplicating
    otherwise.
-** TODO Port N, negate in place (PORT:selection.el)
-   Contextual negate, unselect after — a plain ~maf-defcmd~ row.
+** DONE Port N, negate in place (PORT:selection.el)
+   ~mafcmd-negate~. The rule: the minus goes to the operator in front
+   of the target if there is one, and stays inside the target's own
+   slot if there is not — nothing wider than the target's parent is
+   rewritten. Not a plain ~maf-defcmd~ row after all, because that
+   first case reaches the node *above* the target, which no
+   sub-formula target can: the command resolves the path to the target
+   from point and hands it to a ~:scope entry~ worker.
 ** TODO Port the edit-mode insertions (modules/maf-edit.el)
    Independent one-liners, portable one at a time: P → pi, M-2..M-9 /
    M-' → ^n and ^(), and the \ L | wrap helpers around the preceding
@@ -117,8 +123,21 @@
 
 * PORT:stack.el
 ** Modes and session
-   - [ ] my/calc-reset (C-M-k) — calc-reset + clear history (was: trail) + reload settings
-   - [ ] my/calc-reset-settings (C-M-l) — reset display/modes only, keep the stack
+   - [X] my/calc-reset (C-M-k) — ported as maf-reset, keeping C-M-k: clears the
+     stack, undo/redo, the trail, and the timeline (the history the trail used to
+     be), then re-reads calc-settings-file for what calc-reset itself skips —
+     stored variables, macros, user units. C-u now means "factory defaults" and
+     suppresses the file reload; the legacy version forwarded calc-reset's whole
+     overloaded prefix and then loaded the file regardless, which put the saved
+     modes straight back and made C-u 0 a no-op. Also restores maf-mode across
+     the reset (calc-reset re-runs calc-mode, killing the buffer-local), so the
+     command no longer depends on the calc-mode-hook in project-init.el.
+   - [X] my/calc-reset-settings (C-M-l) — ported as maf-reset-settings, keeping
+     C-M-l: modes and display only, stack and selections kept. Now preserves
+     undo/redo as well — calc-reset clears both whatever its argument, which only
+     makes sense when the stack goes too — and keeps point. C-u is the
+     factory-defaults variant here too. Timeline clearing landed alongside as
+     maf-timeline-clear (M-x; deliberately unbound in the browser).
 ** Motion
    - [ ] my/calc-forward-noun / my/calc-backward-noun (M-f/M-b) — next/previous number or
      variable, skipping function names; fix the line-prefix bug while at it (see Bugs)
@@ -156,7 +175,10 @@
 * PORT:selection.el
   - [ ] my/calc-sel-jump-equals (j e) — move term across =, unselect after; includes
     the JumpRules advice extending every rule to !=
-  - [ ] my/calc-sel-negate (N) — negate in place, contextual, unselect after
+  - [X] my/calc-sel-negate (N) — negate in place, contextual, unselect after
+    → ~mafcmd-negate~, rebuilt structurally rather than through calc's
+    NegateRules (which normalizes, and so reorders the terms around the
+    target; its two integer-power rules are also broken upstream)
   - [ ] my/calc-sel-distribute (j D) — contextual, no-simplify, frac→division fix (see BACKLOG)
   - [ ] my/calc-sel-merge (j M) — contextual, unselect after
   - [X] my/calc-clear-selections (j c) → maf-clear-selections, on RET when

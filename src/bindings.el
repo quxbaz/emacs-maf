@@ -41,6 +41,11 @@
 ;; global `capitalize-dwim', which has no place in the stack buffer.
 (define-key maf-mode-map (kbd "M-c") #'mafcmd-complement)
 (define-key maf-mode-map (kbd "O") #'mafcmd-commute)
+;; Balanced negation, beside calc's own n (mafcmd-neg in the table,
+;; which flips the sign and lets the value change with it). Shadows
+;; calc-eval-num; N is also one of the two V M operator codes that are
+;; not real keys, so nothing contextual claims it — see maf-cmds.el.
+(define-key maf-mode-map (kbd "N") #'mafcmd-negate)
 ;; Shift the term under point through its associative chain. Lowercase
 ;; j l / j r (calc binds the shifts to capital j L / j R, left reachable).
 (define-key maf-mode-map (kbd "j l") #'maf-commute-left)
