@@ -1009,4 +1009,11 @@ Symmetric operators (eq, neq) return unchanged."
                       (calcFunc-geq . calcFunc-leq))))
       op))
 
+(defun maf--flip-relation (rel)
+  "Return relation REL read from the other side: a < b becomes b > a.
+Both the operands and the direction turn, so the statement is the same
+one — only which side its subject stands on changes. A symmetric
+relation (eq, neq) keeps its operator and just swaps sides."
+  (list (maf--flip-relation-op (car rel)) (nth 2 rel) (nth 1 rel)))
+
 (provide 'maf-math)

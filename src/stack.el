@@ -2563,6 +2563,171 @@ Inverse prefix (I i), which gives the bare inverse expression.
   :scope entry
   (commit (or (maf--function-inverse expr) expr)))
 
+;;; Absolute-value inequalities
+
+(defconst maf--abs-ineq-ops
+  '(calcFunc-lt calcFunc-leq calcFunc-gt calcFunc-geq)
+  "The ordering relations `mafcmd-abs-ineq' reads and produces.
+Only these four bound a magnitude. An = or != says nothing about which
+side of the bound the body falls on, so neither states an absolute-value
+inequality nor comes out of splitting one.")
+
+(defun maf--abs-ineq-p (expr)
+  "Non-nil when EXPR is an ordering relation with abs() alone on one side.
+The `:widen' predicate for `mafcmd-abs-ineq', and the same test its body
+uses to decide there is work to do. The abs may stand on either side —
+5 > abs(x) states the same bound as abs(x) < 5 — but it has to be the
+whole side: 2 abs(x) < 5 carries a coefficient to divide out first,
+which this command does not do."
+  (and (consp expr)
+       (memq (car expr) maf--abs-ineq-ops)
+       (or (eq (car-safe (nth 1 expr)) 'calcFunc-abs)
+           (eq (car-safe (nth 2 expr)) 'calcFunc-abs))
+       t))
+
+(defun maf--abs-ineq-parts (expr)
+  "Return EXPR read as the list (OP BODY BOUND), or nil if it is not one.
+BODY is what the abs() wraps and BOUND the other side, with OP oriented
+so the three read as \"magnitude of BODY, OP, BOUND\" — an abs on the
+right is flipped rather than left in place, so 5 > abs(x) takes the same
+route as abs(x) < 5. With an abs on both sides the left one is the body,
+the right one an ordinary bound."
+  (when (maf--abs-ineq-p expr)
+    (let ((lhs (nth 1 expr)) (rhs (nth 2 expr)))
+      (if (eq (car-safe lhs) 'calcFunc-abs)
+          (list (car expr) (nth 1 lhs) rhs)
+        (list (maf--flip-relation-op (car expr)) (nth 1 rhs) lhs)))))
+
+(defun maf--abs-ineq-solve (part var)
+  "Solve the ordering relation PART for VAR, or return PART unchanged.
+PART stands as it is when there is no VAR to solve for, when VAR already
+stands alone on one side, and when calc's solver declines.
+
+It also stands when the solver answers with something that is not an
+ordering relation. Calc rearranges an inequality only where it can settle
+the sign of what it divides by; where it cannot, it falls back to solving
+the corresponding equation and reports the boundary as a !=, which states
+something quite different from the bound asked about — x^2 < 5 comes back
+as x != sqrt(5). Leaving the part as written is the honest answer there.
+
+Symbolic and prefer-frac, as `maf--auto-solve-run' is, so a non-integer
+bound stays exact: abs(2 x) < 5 bounds x by 5:2 rather than 2.5."
+  (if (or (null var)
+          (equal (nth 1 part) var)
+          (equal (nth 2 part) var))
+      part
+    (let* ((calc-symbolic-mode t)
+           (calc-prefer-frac t)
+           (soln (ignore-errors (math-solve-eqn part var nil))))
+      (if (memq (car-safe soln) maf--abs-ineq-ops) soln part))))
+
+(defun maf--abs-ineq-band (lower upper var)
+  "Join LOWER && UPPER as a band, VAR standing between its two bounds.
+The band reads lower < VAR && VAR < upper. The parts arrive in that
+order and calc's solver leaves the solved-for side where it found it, so
+they need swapping only when it moved VAR across — which it does to both
+parts together, the coefficient it divides by being the same one."
+  (if (and var (equal (nth 1 lower) var))
+      (list 'calcFunc-land upper lower)
+    (list 'calcFunc-land lower upper)))
+
+(defun maf--abs-ineq-tails (left right var)
+  "Join LEFT || RIGHT as two tails, VAR leading each of them.
+The tails read VAR < lower || VAR > upper: VAR on the near side of both
+parts, and the < or <= one first, so the two tails run left to right
+along the number line. A part the solver moved VAR across is flipped
+back rather than reordered, since with the two bounds pointing opposite
+ways only one of them can lead."
+  (let* ((l (if (and var (equal (nth 2 left) var))
+                (maf--flip-relation left) left))
+         (r (if (and var (equal (nth 2 right) var))
+                (maf--flip-relation right) right)))
+    (if (memq (car l) '(calcFunc-lt calcFunc-leq))
+        (list 'calcFunc-lor l r)
+      (list 'calcFunc-lor r l))))
+
+(defun maf--abs-ineq-split (expr)
+  "Return EXPR's absolute-value inequality as a compound one, or nil.
+A magnitude held below a bound is a band — both tails cut off, joined by
+&& — and a magnitude held above one is the two tails themselves, joined
+by ||. Each part is then solved for EXPR's first variable in
+`maf--solve-sorted-vars' order, so the variable comes to stand alone
+against each bound where calc can put it there."
+  (pcase-let ((`(,op ,body ,bound) (maf--abs-ineq-parts expr)))
+    (when op
+      (let ((neg (math-neg bound))
+            (var (car (maf--solve-sorted-vars body))))
+        (pcase op
+          ((or 'calcFunc-lt 'calcFunc-leq)
+           (maf--abs-ineq-band
+            (maf--abs-ineq-solve (list op neg body) var)
+            (maf--abs-ineq-solve (list op body bound) var)
+            var))
+          ((or 'calcFunc-gt 'calcFunc-geq)
+           ;; The lower tail points the other way: abs(a) > b holds when
+           ;; a runs past -b downward, not up to it.
+           (let ((down (if (eq op 'calcFunc-gt) 'calcFunc-lt 'calcFunc-leq)))
+             (maf--abs-ineq-tails
+              (maf--abs-ineq-solve (list down body neg) var)
+              (maf--abs-ineq-solve (list op body bound) var)
+              var))))))))
+
+(maf-defcmd mafcmd-abs-ineq (expr _arg commit)
+  "Split the absolute-value inequality at point into a compound one.
+
+  abs(x) < 5   =>  -5 < x && x < 5
+  abs(x) > 5   =>  x < -5 || x > 5
+
+A magnitude held below a bound is a band: both tails are cut off, and
+the two halves join with &&, the variable standing between its bounds.
+A magnitude held above one is those tails themselves, joined with ||,
+the variable leading each. <= and >= carry through to both halves, so a
+closed bound stays closed.
+
+  abs(x) <= b  =>  -b <= x && x <= b
+  abs(x) >= b  =>  x <= -b || x >= b
+
+Each half is then solved for the body's first variable in solve order —
+x, y, z, t, then the alphabet — so the bounds come out as bounds on that
+variable rather than on the expression around it. The arithmetic stays
+exact, a halved bound giving 5:2 rather than 2.5, and a negative
+coefficient turns both halves together, keeping the band and the tails
+reading the right way round.
+
+  abs(2 x) < 5      =>  -5:2 < x && x < 5:2
+  abs(x - 1) <= 3   =>  -2 <= x && x <= 4
+  abs(-2 x) > 5     =>  x < -5:2 || x > 5:2
+  abs(x + y) < 5    =>  -y - 5 < x && x < 5 - y   (y is a parameter)
+
+The abs may stand on either side — 5 > abs(x) is the same bound as
+abs(x) < 5 — and a half calc cannot rearrange is kept as written rather
+than forced, so the split itself is never lost.
+
+  5 > abs(x)        =>  -5 < x && x < 5
+  abs(x^2) < 5      =>  -5 < x^2 && x^2 < 5      (calc cannot isolate x)
+
+Within a formula, point widens outward to the innermost abs inequality
+around it, so the command means the same thing from anywhere inside one,
+including inside a compound that holds it. Anything that is not an abs
+inequality commits unchanged rather than signaling — an ordinary
+relation, an equality, or an abs under a coefficient, which would have
+to be divided out first.
+
+  abs(x)| < 5 && y > 0  =>  (-5 < x && x < 5) && y > 0
+  abs(x) = 5            =>  abs(x) = 5           (not an ordering)
+  2 abs(x) < 5          =>  2 abs(x) < 5         (coefficient in the way)
+  x < 5                 =>  x < 5                (no abs)"
+  :arity unary
+  :prefix "aineq"
+  ;; The subject is the relation whole — its two sides are the bound and
+  ;; the magnitude, and the split consumes both at once.
+  :map -1
+  ;; Point inside an abs inequality usually names the body or the bound,
+  ;; neither of which can be split on its own; widening to the relation
+  ;; that can is what keeps the key from doing nothing there.
+  :widen maf--abs-ineq-p
+  (commit (or (maf--abs-ineq-split expr) expr)))
+
 ;;; Substitution
 
 (defvar maf--subst-old nil

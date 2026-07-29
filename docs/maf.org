@@ -185,7 +185,15 @@
      structural math-normalize already reduces sqrt(2)^2 to 2.
 
 * PORT:ineq.el
-  - [ ] my/calc-abs-ineq (a k) — |a| < b → compound inequality, each part solved for the variable
+  - [X] my/calc-abs-ineq (a k) — ported as mafcmd-abs-ineq, still on a k:
+    |a| < b splits into a band (&&), |a| > b into two tails (||), each half
+    solved for the body's first variable in maf's solve order. Contextual and
+    widening, so it also splits an abs inequality nested in a compound.
+    Fixed on the way over: the bounds stay exact instead of turning into
+    floats; an abs on the right (5 > |x|) is flipped rather than ignored;
+    constant vars (pi, e) are no longer mistaken for the unknown; and a half
+    calc answers with a != boundary — which states something else entirely —
+    is kept as written rather than committed.
 
 * PORT:rewrite.el
   - [ ] my/calc-collect-fractions (l t) — combine additive terms over their LCD;
