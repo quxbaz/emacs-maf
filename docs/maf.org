@@ -59,7 +59,10 @@
    s-SPC
    s-RET
    S-SPC
-** TODO M-RET should be contextual
+** DONE M-RET should be contextual
+   ~maf-dup-below~ resolves like every other contextual command —
+   sub-formula, selection, region run, whole entry, top at home — and
+   drops the copy below the entry the subject came from.
 ** TODO Organize entry movement and entry command bindings
    - Navigation
      + TAB: move entry up
@@ -71,13 +74,14 @@
      + RET: duplicate item, contextually (and move point to home)
      + S-RET: open & edit new entry below point
      + C-RET: edit new entry at home (then return point)
-     + M-RET: duplicate entry at point, copy directly beneath it
+     + M-RET: duplicate item, contextually; copy directly beneath it
 ** TODO Find out why maf-preview doesn't work on up/down movement
    - Debounce it for perf and don't show unless point is over entry for N ms
    - Or, generate previews ahead of time
 ** DONE Add command to duplicate current entry below it
-   maf-dup-below (M-RET). Whole entry, copy into the slot just below;
-   point travels to the copy, keeping its place inside the entry.
+   maf-dup-below (M-RET). The item at point, copy into the slot just
+   below its entry; point travels to the copy — keeping its place
+   inside the entry when the copy renders alike, else at its start.
 ** IN-PROGRESS formulas module
    - [X] categories
    - [X] docs per formula
