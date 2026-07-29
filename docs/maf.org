@@ -60,7 +60,7 @@
    - [X] docs per formula
    - [X] examples
    - [ ] quick menu
-   - [ ] add binding
+   - [X] add binding
 # LATER
 ** TODO g i (my/calc-graph-quick-with-range) interval form a:b should work with spaces 'a b'
 ** TODO Full formula buffer should have "recents" section.
