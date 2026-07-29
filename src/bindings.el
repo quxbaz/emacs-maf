@@ -22,6 +22,7 @@
 (define-key maf-mode-map (kbd "k d") #'mafcmd-factor-powers)
 (define-key maf-mode-map (kbd "l f") #'mafcmd-factor-by)
 (define-key maf-mode-map (kbd "l F") #'mafcmd-factor-gcd)
+(define-key maf-mode-map (kbd "l t") #'mafcmd-collect-fractions)
 (define-key maf-mode-map (kbd "l l") #'mafcmd-float)
 (define-key maf-mode-map (kbd "l c") #'mafcmd-frac)
 ;; Numeric evaluation; k k is unbound in calc itself. I k k routes to
