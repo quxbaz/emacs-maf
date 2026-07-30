@@ -69,10 +69,14 @@
 ;; (h i) and as M-x calc-info.
 (define-key maf-mode-map (kbd "i") #'mafcmd-inv)
 ;; Send point home, the one motion the buffer needs a key for: every
-;; other command already leaves it there. Takes calc-realign's own key,
-;; whose home job this is — but only with a numeric prefix argument
-;; (calc-realign 0); pressed bare it merely undoes horizontal scrolling.
-;; M-x calc-realign still reaches both of those.
+;; other command already leaves it there. Pressed at home it returns to
+;; the mark instead — its own trip out left one, as every maf command
+;; that homes point does — so the key is the whole round trip: out for
+;; a command that wants the entry, back for one that wants the term.
+;; Takes calc-realign's own key, whose home job this is — but only with
+;; a numeric prefix argument (calc-realign 0); pressed bare it merely
+;; undoes horizontal scrolling. M-x calc-realign still reaches both of
+;; those.
 (define-key maf-mode-map (kbd "o") #'maf-go-home)
 ;; A toggle between pair members is its own inverse, so both directions
 ;; run the same command.
