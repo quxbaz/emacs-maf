@@ -33,9 +33,6 @@
 # NOW
 ** IN-PROGRESS Move tests out of sandbox/ and into tests/
 ** TODO In docker/tmux fix C-RET, C-., C-M-<backspace>, S-<backspace>
-** TODO Find out why maf-preview doesn't work on up/down movement
-   - Debounce it for perf and don't show unless point is over entry for N ms
-   - Or, generate previews ahead of time
 ** IN-PROGRESS formulas module
    - [X] categories
    - [X] docs per formula
