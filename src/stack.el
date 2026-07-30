@@ -1356,6 +1356,96 @@ indentation."
       (goto-char (match-end 0))
     (skip-chars-forward " ")))
 
+(defun maf--home-drop-mark (pos)
+  "Drop the mark at POS that `maf-go-home' just returned to.
+The mark the trip out pushed is spent once point is back on it, so it
+comes off rather than staying where point already is. The one it
+displaced is restored from the ring (`push-mark' put it there), leaving
+the ring as deep as it was before the round trip — unlike `pop-mark',
+which rotates the spent mark to the ring's tail instead. A no-op when
+the mark has moved on since, POS then being none of its business."
+  (when (and (mark t) (= (mark t) pos))
+    (if mark-ring
+        (let ((prev (car mark-ring)))
+          (set-marker (mark-marker) (marker-position prev) (current-buffer))
+          (move-marker prev nil)
+          (setq mark-ring (cdr mark-ring)))
+      (set-marker (mark-marker) nil))))
+
+(defun maf--home-mark-position ()
+  "Return the mark `maf-go-home' should bounce back to, or nil.
+Nil when the buffer has no mark, and when the mark is itself at home:
+the trip out never marks home, so a mark that sits there is either the
+user's own or a leftover from a stack rewrite that consumed the entry
+it tracked — either way there is nothing to go back to."
+  (let ((mark (mark t)))
+    (and mark
+         (<= mark (point-max))
+         (save-excursion (goto-char mark) (not (maf--at-home-p)))
+         mark)))
+
+(defun maf-go-home ()
+  "Move point home, to the . line past the last stack entry.
+
+  1:  6 x| + 12  =>  1:  6 x + 12
+      .              |  .
+
+Point lands on the . itself, where calc parks it after every command,
+so the next key resolves at home rather than on an entry.
+
+The trip out marks the place point left (`maf--mark-before-home', as
+every maf command that homes point does), so C-u C-SPC returns to it.
+
+Pressed at home the key makes the return trip itself: point goes back
+to that mark, and the mark is dropped — the ring is left as it was
+before the round trip (`maf--home-drop-mark'), older marks and all, so
+C-u C-SPC still walks the ones the trip found there. The trip itself
+always returns to where it last left, never further back. One key
+covers both legs of it: out
+to home for a command that wants the whole entry, back to the
+sub-formula for one that wants the term. The stack may be rewritten in
+between; a mark is a marker and rides the rewrite.
+
+The mark it returns to is whichever one is current, so a homing push —
+a dup, an algebraic entry — is bounced back from just as this command's
+own trip out is. Home itself is never marked, on the way out or back:
+it is one keystroke away, and the ring is for places that are not. That
+also makes a mark sitting at home meaningless here, so a press finding
+one (or finding no mark at all) just tidies point onto the dot. The
+marking is silent throughout: the motion is common enough that a \"Mark
+set\" on every press would be noise.
+
+With a region up the marks are left alone in both directions, as in
+`beginning-of-buffer' — the mark is the selection's anchor, and moving
+or dropping it would lose the region, which is a target here
+\(`maf-copy' takes it, and resolve reads it). The test is
+`use-region-p', the same one resolve uses, so an empty active mark —
+which `calc-refresh' leaves behind on every redraw — counts as no
+region and does not block the trip.
+
+Calc has no plain command for this: `calc-realign' goes to a stack
+element only when given a numeric prefix argument (0 being home), and
+with none it just undoes horizontal scrolling."
+  (interactive)
+  (let* ((from (point))
+         (home (maf--at-home-p))
+         (back (and home
+                    (not (use-region-p))
+                    (maf--home-mark-position))))
+    (cond
+     (back
+      (goto-char back)
+      (maf--home-drop-mark back))
+     (t
+      (calc-cursor-stack-index 0)
+      ;; The dot sits past the line-number margin when numbering is on,
+      ;; at the line's start when it is off.
+      (skip-chars-forward " ")
+      ;; A press that started at home moved point at most from the tail
+      ;; of the line onto the dot: no journey, nothing to mark.
+      (unless (or home (use-region-p))
+        (maf--mark-before-home from))))))
+
 (defun maf--swap-target-with-top ()
   "Swap the resolved sub-formula at point with the level-1 entry.
 Resolve picks the target: an explicit calc selection, else the
