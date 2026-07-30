@@ -33,6 +33,10 @@
     - simplify
     - factor
     - target-line
+  - formulas
+    - [ ] start in filter mode
+    - [ ] q to quit filtered results mode
+    - [ ] filter as search string changes
 
 * Low-hanging fruit
 ** TODO Port the edit-mode insertions (modules/maf-edit.el)
