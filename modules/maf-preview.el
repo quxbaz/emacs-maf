@@ -348,10 +348,19 @@ or replaced — none of which is a command in the calc buffer.
 Both hooks are taken globally rather than buffer-locally on purpose: the
 buffer-local form of the configuration hook runs once per window showing
 the buffer, each time with that window selected, which would leave the
-single panel over whichever window happened to come last."
-  (if (bound-and-true-p maf-preview-mode)
-      (maf-preview--update)
-    (maf-preview--hide)))
+single panel over whichever window happened to come last.
+
+The panel's own arrival is itself a window change, and these hooks then
+run with the child frame's buffer current, where the buffer-local
+`maf-preview-mode' is nil — so reading the mode from whatever buffer
+happens to be current had the panel hide itself the moment it was drawn.
+The frame's buffer is passed over for that reason. Only redisplay runs
+these hooks, so a keyboard macro never saw it and a real keypress
+always did."
+  (unless (eq (current-buffer) (get-buffer maf-preview--buffer))
+    (if (bound-and-true-p maf-preview-mode)
+        (maf-preview--update)
+      (maf-preview--hide))))
 
 ;;;###autoload
 (define-minor-mode maf-preview-mode
