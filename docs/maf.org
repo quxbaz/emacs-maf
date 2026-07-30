@@ -42,6 +42,7 @@
 
 * Todo
 # NOW
+** TODO Bind list formulas to `m o` for now
 ** TODO selection mode indicator should clear the "Emacs Calculator Mode" text just like maf-edit does
 ** TODO In docker/tmux fix C-RET, C-., C-M-<backspace>, S-<backspace>
 ** TODO g i (my/calc-graph-quick-with-range) interval form a:b should work with spaces 'a b'
