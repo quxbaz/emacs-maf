@@ -33,7 +33,6 @@
     - simplify
     - factor
     - target-line
-    - keep
 
 * Low-hanging fruit
 ** TODO Port the edit-mode insertions (modules/maf-edit.el)
