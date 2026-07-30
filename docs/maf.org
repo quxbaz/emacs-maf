@@ -23,6 +23,12 @@
   - [X] Use module architecture (maf-timeline, maf-edit)
   - [ ] Discovery document for useful features, behaviors, modules, etc
 
+* Feedback
+  - [ ] Command to isolate current subexpr (and delete rest of entry)
+  - [ ] Single-key (no modifiers) to force next cmd to target line
+  - [ ] Convenient binding to duplicate subexpr and keep point
+    - [ ] Make RET work with keep-args flag - it should keep point
+
 * Low-hanging fruit
 ** TODO Port the edit-mode insertions (modules/maf-edit.el)
    Independent one-liners, portable one at a time: P → pi, M-2..M-9 /
