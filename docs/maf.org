@@ -72,12 +72,8 @@
 ** TODO Set place/point after (maf--commit)
    - If possible, when (eq :target 'subexpr), stick point to the same symbol
      prior to the operation.
-** TODO Implement options
 ** TODO simplification
-** TODO support-mapping
 ** TODO force-line
-** TODO defcmd may sometimes need the full entry and may also need to write
-   to the full entry, not just its expr. How to handle this elegantly?
 
 * Port
   - [ ] Port my/calc/* features one-by-one.
