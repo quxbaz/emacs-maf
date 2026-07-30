@@ -42,32 +42,8 @@
 
 * Todo
 # NOW
-** DONE Move tests out of sandbox/ and into tests/
-   29 of the 32 drafts passed against current main and covered commands
-   the suite did not reach at all — cath, abs-ineq, jump-equals, let,
-   evaluate, swap-vars and the rest — so they moved. The suite went from
-   78 files to 107.
-   Left in sandbox/: ~edit-mode.el~ and ~equal-to.el~, both stale.
-   equal-to drives ~maf-equal-to~, a name that no longer exists
-   (~mafcmd-equal-to~ now, covered by tests/equal-to.el); edit-mode
-   asserts a value the command no longer gives.
-   Two names collided with existing tests and turned out to be
-   complementary rather than superseded: sandbox/del.el is about what
-   each target removes (now tests/del-targets.el) where tests/del.el is
-   about where point lands, and sandbox/reset.el was the richer of the
-   two resets, so it became tests/reset.el with the bad-settings-file
-   recovery case carried over from the old one.
-   The purpose of each directory is written down now — tests/README.md
-   has the split, sandbox/README.md says what a draft is, and CLAUDE.md
-   points agents at both.
+** TODO selection mode indicator should clear the "Emacs Calculator Mode" text just like maf-edit does
 ** TODO In docker/tmux fix C-RET, C-., C-M-<backspace>, S-<backspace>
-** IN-PROGRESS formulas module
-   - [X] categories
-   - [X] docs per formula
-   - [X] examples
-   - [ ] quick menu
-   - [X] add binding
-# LATER
 ** TODO g i (my/calc-graph-quick-with-range) interval form a:b should work with spaces 'a b'
 ** TODO Full formula buffer should have "recents" section.
 ** TODO Add command to move to parent expression.
@@ -158,6 +134,10 @@
   Alternative trail. Should support time travel and finding old single entries.
   Use transient mode for prefix commands
   Swap _ and -
+
+* Saved for later
+  - Rebind formula manager
+  - Rebind module manager
 
 * Cleanup
   - [ ] Delete my/calc
