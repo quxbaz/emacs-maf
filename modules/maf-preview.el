@@ -129,7 +129,9 @@ False on a text terminal, and whenever posframe is not installed."
     ;; posframe-show can leave a previously-hidden child frame
     ;; iconified rather than visible on some window managers; force it
     ;; visible.
-    (when (frame-live-p frame) (make-frame-visible frame))))
+    (when (frame-live-p frame)
+      (setq maf-preview--frame frame)
+      (make-frame-visible frame))))
 
 (defun maf-preview--posframe-hide ()
   "Hide the preview child frame, if it exists."
@@ -148,6 +150,12 @@ False on a text terminal, and whenever posframe is not installed."
   "Overlays drawing the in-window panel, or nil when no panel is shown.
 Global, like the single child frame of the other backend: the panel
 exists in at most one window at a time.")
+
+(defvar maf-preview--frame nil
+  "The child frame `posframe-show' last handed back, or nil.
+Kept so `maf-preview--on-screen-p' can ask the panel whether it is
+really displayed without searching `frame-list' or reaching into
+posframe's own variables.")
 
 (defun maf-preview--border-row (left right inner &optional label)
   "Return a horizontal panel border INNER columns wide between LEFT and RIGHT.
@@ -288,6 +296,24 @@ START is where WIN begins its display; see `maf-preview--overlay-show'."
   (maf-preview--posframe-hide)
   (maf-preview--overlay-hide))
 
+(defun maf-preview--on-screen-p ()
+  "Non-nil when the panel is really displayed, not merely drawn once.
+
+The child frame can be taken down without the module hearing of it — a
+window manager iconifying it, or another posframe user hiding the whole
+set — and `maf-preview--state' would still describe it as drawn. Asking
+the panel itself is what tells the two apart.
+
+`frame-visible-p' answers `icon' for an iconified frame, which is
+non-nil, so nothing short of an `eq' to t distinguishes on screen from
+merely existing. The in-window backend's equivalent is whether its
+overlays are still attached to a buffer."
+  (if (maf-preview--posframe-p)
+      (and (frame-live-p maf-preview--frame)
+           (eq (frame-visible-p maf-preview--frame) t))
+    (and maf-preview--overlays
+         (seq-every-p #'overlay-buffer maf-preview--overlays))))
+
 (defun maf-preview--update (&optional window start)
   "Refresh the preview from the entry at point; on `post-command-hook'.
 WINDOW and START name the window to draw over and the position it starts
@@ -311,7 +337,12 @@ session."
              (state (list str win start
                           (window-body-width win) (window-body-height win)
                           (buffer-chars-modified-tick))))
-        (unless (equal state maf-preview--state)
+        ;; An unchanged panel is left alone — unless it is not actually
+        ;; up, where the cache would go on suppressing the one call that
+        ;; puts it back. Nothing outside reports the child frame being
+        ;; iconified, so the panel is asked on every update instead.
+        (unless (and (equal state maf-preview--state)
+                     (maf-preview--on-screen-p))
           (setq maf-preview--state state)
           (with-demoted-errors "maf-preview: %S"
             (maf-preview--show str win start)))))))

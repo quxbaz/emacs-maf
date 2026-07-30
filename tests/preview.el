@@ -90,4 +90,32 @@
 
   ;; Nothing to preview on an empty stack.
   (calc-pop (calc-stack-size))
-  (cl-assert (null (maf-preview--render))))
+  (cl-assert (null (maf-preview--render)))
+
+  ;; --- a panel taken down from outside comes back ---
+
+  ;; The redraw cache describes what the panel was drawn from, not
+  ;; whether it is still up. A window manager iconifying the child frame,
+  ;; or anything deleting the overlays, leaves the cache matching while
+  ;; the screen is empty — and the update that would put the panel back
+  ;; is the one the cache suppresses. `maf-preview--on-screen-p' is what
+  ;; breaks that tie, so an unchanged entry recovers on the next command.
+  ;; Driven on the in-window backend, whose panel is inspectable either
+  ;; way (a child frame is not, on a terminal).
+  (maf-push "a + b")
+  (progn (calc-cursor-stack-index 1) (end-of-line))
+  (cl-letf (((symbol-function 'maf-preview--posframe-p) (lambda () nil)))
+    (maf-preview--hide)
+    (maf-preview--update)
+    (cl-assert maf-preview--overlays)
+    (cl-assert (maf-preview--on-screen-p))
+    ;; Taken down behind the module's back: the cache still stands.
+    (mapc #'delete-overlay maf-preview--overlays)
+    (cl-assert (not (maf-preview--on-screen-p)))
+    (cl-assert maf-preview--state)
+    ;; Same entry, so every cached input matches — it is the missing
+    ;; panel alone that has to force the redraw.
+    (maf-preview--update)
+    (cl-assert (maf-preview--on-screen-p))
+    (maf-preview--hide))
+  (calc-pop (calc-stack-size)))
