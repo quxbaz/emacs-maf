@@ -44,6 +44,7 @@
     - [ ] filter as search string changes
     - [ ] tab to move between filter and results
     - [ ] add recents (first group)
+  - bind `# m` to go to entry #
 
 * Low-hanging fruit
 ** TODO Port the edit-mode insertions (modules/maf-edit.el)
