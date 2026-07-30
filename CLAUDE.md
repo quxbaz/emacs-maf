@@ -43,3 +43,10 @@ General techniques for piloting a live Emacs: `docs/memory/piloting-emacs.md`.
   processes only by exact PID — `pkill -f` self-matches your own shell.
 - Known upstream calc behavior maf deliberately mirrors:
   `docs/memory/calc-selection-quirks.md`.
+- `tests/` is the suite — every file is expected to pass against current
+  `main`, and a landing feature puts its step test there. `sandbox/` is
+  scratch: same `maf-step` form, but nothing sweeps it, so a file there
+  may drive a renamed command or assert an answer that is no longer
+  given. Never cite a sandbox file as evidence of current behavior
+  without running it. Details, and when a draft has earned a move into
+  `tests/`: `tests/README.md`.
