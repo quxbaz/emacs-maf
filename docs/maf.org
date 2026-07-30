@@ -31,7 +31,7 @@
   - maf-edit
     - [ ] change text: "C-j newline" -> "S-RET newline"
   - [ ] following cmds should be boudn to single keys (no modifiers):
-    - home
+    - home (make sure to set mark)
     - expand
     - simplify
     - factor
