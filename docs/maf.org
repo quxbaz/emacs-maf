@@ -140,13 +140,12 @@
 * BACKLOG
 ** Issue: j D (my/calc-sel-distribute)
    Doesn't work contextually. Should work like 'j M'. Work on stack item when at home.
-** Instead of having to use the default bindings 'a m &', can you make 'a m o' work?
+** Instead of having to use the default bindings 'a m &', can you make 'a m i' work?
    This should invert both sides of an equation. Normally the binding would use
-   '&' instead of 'o', but 'o' is more convenient and I have that bound to
+   '&' instead of 'i', but 'i' is more convenient and I have that bound to
    'calc-inv' The issue is that the 'a m' sequence expects standard keybindings.
 
 * Package
-  Binding for "home"
   Config file with all config settings and default values
   Alternative graphing
   Alternative trail. Should support time travel and finding old single entries.
