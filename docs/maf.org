@@ -24,11 +24,13 @@
   - [ ] Discovery document for useful features, behaviors, modules, etc
 
 * Feedback
-  - [ ] Command to isolate current subexpr (and delete rest of entry)
-  - [ ] Single-key (no modifiers) to force next cmd to target line
-  - [ ] Convenient binding to duplicate subexpr and keep point
+  - [ ] command to isolate current subexpr (and delete rest of entry)
+  - [ ] single-key (no modifiers) to force next cmd to target line
+  - [ ] convenient binding to duplicate subexpr and keep point
     - [ ] Make RET work with keep-args flag - it should keep point
-  - [ ] Following cmds should be boudn to single keys (no modifiers):
+  - maf-edit
+    - [ ] change text: "C-j newline" -> "S-RET newline"
+  - [ ] following cmds should be boudn to single keys (no modifiers):
     - expand
     - simplify
     - factor
