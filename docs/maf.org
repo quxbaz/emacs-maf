@@ -58,27 +58,29 @@
 
 * Todo
 # NOW
-** TODO Bind list formulas to `m o` for now
-** TODO Possible to float preview pane at top?
+** TODO bind list formulas to 'm o' for now
+** TODO possible to float preview pane at top?
 ** TODO selection mode indicator should clear the "Emacs Calculator Mode" text just like maf-edit does
-** TODO In docker/tmux fix C-RET, C-., C-M-<backspace>, S-<backspace>
+** TODO in docker/tmux fix C-RET, C-., C-M-<backspace>, S-<backspace>
 ** TODO g i (my/calc-graph-quick-with-range) interval form a:b should work with spaces 'a b'
-** TODO Full formula buffer should have "recents" section.
-** TODO Add command to move to parent expression.
+** TODO full formula buffer should have "recents" section.
+** TODO add command to move to parent expression.
    1:  y = 2 (x| + 3)^2 - 12
    ->  y = 2 (x + 3)|^2 - 12
-** TODO Distribute and merge should operate contextually.
-** TODO Move all options to unified configuration view.
+** TODO distribute and merge should operate contextually.
+** TODO move all options to unified configuration view.
    - Free up option prefix bindings (eg, m).
-** TODO Quick recall command, bind to M-[n/p] to recall previous/next bare
+** TODO quick recall command, bind to M-[n/p] to recall previous/next bare
    (starting from empty) edit-mode entries. The purpose of this is to avoid the
    pattern of having to duplicate or store an entry that you might want to reuse
    or recall in case you screw up a calculation.
-** TODO Set place/point after (maf--commit)
+** TODO set place/point after (maf--commit)
    - If possible, when (eq :target 'subexpr), stick point to the same symbol
      prior to the operation.
 ** TODO simplification
 ** TODO force-line
+# LATER
+** TODO bind (mafcmd-solve-for) <- formerly bound to 'i'
 
 * Port
   - [ ] Port my/calc/* features one-by-one.
