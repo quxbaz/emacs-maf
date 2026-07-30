@@ -1356,6 +1356,41 @@ indentation."
       (goto-char (match-end 0))
     (skip-chars-forward " ")))
 
+(defun maf-go-home ()
+  "Move point home, to the . line past the last stack entry.
+
+  1:  6 x| + 12  =>  1:  6 x + 12
+      .              |  .
+
+Point lands on the . itself, where calc parks it after every command,
+so the next key resolves at home rather than on an entry.
+
+The place point left is pushed onto the mark ring, so C-u C-SPC comes
+back to it — the sub-formula stays one keystroke away after a trip home
+to run a command that needs it. A press that goes nowhere (point
+already home) pushes nothing, keeping the ring's older marks reachable.
+The push is silent: the motion is common enough that a \"Mark set\" on
+every press would be noise.
+
+With a region up nothing is pushed either, as in `beginning-of-buffer' —
+moving the mark to where point left would re-anchor the selection and
+lose it, and a region is a target here (`maf-copy' takes it, and resolve
+reads it). The test is `use-region-p', the same one resolve uses, so an
+empty active mark — which `calc-refresh' leaves behind on every redraw
+— counts as no region and still gets its push.
+
+Calc has no plain command for this: `calc-realign' goes to a stack
+element only when given a numeric prefix argument (0 being home), and
+with none it just undoes horizontal scrolling."
+  (interactive)
+  (let ((from (point)))
+    (calc-cursor-stack-index 0)
+    ;; The dot sits past the line-number margin when numbering is on, at
+    ;; the line's start when it is off.
+    (skip-chars-forward " ")
+    (unless (or (use-region-p) (= (point) from))
+      (push-mark from t))))
+
 (defun maf--swap-target-with-top ()
   "Swap the resolved sub-formula at point with the level-1 entry.
 Resolve picks the target: an explicit calc selection, else the

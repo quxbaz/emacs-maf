@@ -64,10 +64,16 @@
 ;; Shadows calc-execute-extended-command.
 (define-key maf-mode-map (kbd "x") #'mafcmd-expand)
 ;; A single-key alias for the reciprocal, which also keeps its table
-;; key &. Shadows calc-realign: point already returns home after every
-;; command, and M-x calc-realign still reaches its other two jobs
-;; (undo horizontal scrolling, prefix-arg jump to a stack element).
-(define-key maf-mode-map (kbd "o") #'mafcmd-inv)
+;; key &. It sat on o until the home motion below took that key.
+;; Shadows calc-info, which stays reachable on calc's own help prefix
+;; (h i) and as M-x calc-info.
+(define-key maf-mode-map (kbd "i") #'mafcmd-inv)
+;; Send point home, the one motion the buffer needs a key for: every
+;; other command already leaves it there. Takes calc-realign's own key,
+;; whose home job this is — but only with a numeric prefix argument
+;; (calc-realign 0); pressed bare it merely undoes horizontal scrolling.
+;; M-x calc-realign still reaches both of those.
+(define-key maf-mode-map (kbd "o") #'maf-go-home)
 ;; A toggle between pair members is its own inverse, so both directions
 ;; run the same command.
 (define-key maf-mode-map (kbd "S-<up>") #'mafcmd-toggle-op)
@@ -193,11 +199,11 @@
 ;; Auto-solve: solve or isolate at point, cycling through the variables
 ;; on repeat. M-i is unbound in calc itself.
 (define-key maf-mode-map (kbd "M-i") #'mafcmd-auto-solve)
-;; Solve for a variable read from the minibuffer, beside the automatic
-;; solve on M-i. Shadows calc-info, which stays reachable on calc's own
-;; help prefix (h i) and as M-x calc-info.
-(define-key maf-mode-map (kbd "i") #'mafcmd-solve-for)
-;; Invert the function at point, beside the two solve commands. l v is
+;; `mafcmd-solve-for' — the solve that prompts for its variable — held
+;; i, and yielded it to the reciprocal above. It has no key now: M-i
+;; solves automatically, and the prompted form stays reachable by name.
+;;
+;; Invert the function at point, beside the solve commands. l v is
 ;; unbound in calc itself (its l prefix is the logarithmic units).
 (define-key maf-mode-map (kbd "l v") #'mafcmd-inverse-function)
 ;; Split an absolute-value inequality into a compound one — a solve of
