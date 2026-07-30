@@ -1,78 +1,159 @@
-;; `maf-reset' and `maf-reset-settings' are real commands (src/stack.el),
-;; so these steps drive them directly. A step passes when it raises no
-;; error. The contract: reset clears the stack, the trail and the
-;; timeline and restores the saved modes; reset-settings restores the
-;; modes alone, keeping the stack, its undo history and point; and a
-;; settings file that signals costs the settings, not the session.
+;; `maf-reset' and `maf-reset-settings' (src/stack.el). The contract:
+;; reset empties the session — stack, undo/redo, trail, timeline — and
+;; re-reads `calc-settings-file'; reset-settings restores the modes
+;; from that file and leaves the session standing. A prefix argument
+;; means "calc's factory defaults" for both, and then the settings file
+;; is deliberately not read, since loading it would put the saved modes
+;; straight back.
+;;
+;; The settings file is a temporary one the test writes, so the
+;; assertions never depend on what is in the user's own ~/.emacs.d/calc.el.
+;; Steps run in the calc buffer, so the `setq' below is buffer-local for
+;; the mode variables and global for `calc-settings-file' — restored at
+;; the end.
+
+(defvar maf-test--settings-file nil)
+(defvar maf-test--settings-orig nil)
 
 (maf-step
-  ;; --- maf-reset: the whole session goes ---
+  ;; A settings file in calc's own shape: the marker block `calc-reset'
+  ;; re-evaluates, plus a stored variable outside it that only a full
+  ;; `load' picks up.
+  (progn
+    (setq maf-test--settings-orig calc-settings-file
+          maf-test--settings-file (make-temp-file "maf-reset-test" nil ".el"))
+    (with-temp-file maf-test--settings-file
+      (insert ";;; Mode settings stored by Calc\n"
+              "(setq calc-symbolic-mode t)\n"
+              "(setq calc-prefer-frac t)\n"
+              ";;; End of mode settings\n"
+              "(setq var-maf-test-canary 99)\n"))
+    (setq calc-settings-file maf-test--settings-file)
+    (makunbound 'var-maf-test-canary)
+    maf-test--settings-file)
 
-  ;; The stack is emptied and the modes come back to their saved values.
+  ;; --- maf-reset: everything in the session goes ---
+
+  ;; Build a session worth losing: two entries, a selection, an undo
+  ;; record, a trail line, and modes knocked off their saved values.
+  (maf-push "6 x + 12")
   (maf-push "a + b")
-  (maf-push "7")
+  (progn (calc-cursor-stack-index 2) (search-forward "x"))
+  (call-interactively 'calc-select-here)
+  (progn (calc-record 42 "test") (calc-cursor-stack-index 1) nil)
+  (progn (setq calc-symbolic-mode nil calc-prefer-frac nil) nil)
   (cl-assert (= (calc-stack-size) 2))
-  (call-interactively 'maf-reset)
-  (cl-assert (zerop (calc-stack-size)))
-  ;; maf-mode survives: calc-reset re-runs calc-mode, which kills every
-  ;; buffer-local, and maf's keymap goes with it if nothing puts it back.
-  (cl-assert (bound-and-true-p maf-mode))
+  (cl-assert (maf--sel-any-p))
+  (cl-assert calc-undo-list)
+  (cl-assert (> (buffer-size (get-buffer "*Calc Trail*")) 0))
 
-  ;; Undo and redo go with the stack — nothing is left to undo into.
-  (maf-push "x + 1")
+  ;; One command clears the lot.
   (call-interactively 'maf-reset)
+  (cl-assert (= (calc-stack-size) 0))
   (cl-assert (null calc-undo-list))
   (cl-assert (null calc-redo-list))
+  (cl-assert (= (buffer-size (get-buffer "*Calc Trail*")) 0))
 
-  ;; The trail is emptied rather than killed, so a window showing it
-  ;; keeps showing it. `calc-record' is how calc itself files a value
-  ;; there, and does not need the trail buffer to be current.
-  (maf-push "2 + 3")
-  (calc-record (calc-top 1 'full) "test")
+  ;; The saved modes are back — from the marker block, which
+  ;; `calc-reset' handles — and so is the stored variable outside it,
+  ;; which only the full re-read of the file reaches.
+  (cl-assert (eq calc-symbolic-mode t))
+  (cl-assert (eq calc-prefer-frac t))
+  (cl-assert (equal (bound-and-true-p var-maf-test-canary) 99))
+
+  ;; maf-mode survives its own command: `calc-reset' re-runs `calc-mode',
+  ;; which kills the buffer-local that keeps maf's keymap alive.
+  (cl-assert (bound-and-true-p maf-mode))
+  (cl-assert (eq (key-binding (kbd "C-M-k")) 'maf-reset))
+  (cl-assert (eq (key-binding (kbd "C-M-l")) 'maf-reset-settings))
+
+  ;; The timeline is emptied too — it is what the trail used to be, so a
+  ;; reset that left it standing would leave the session recoverable.
+  (cl-assert (or (not (fboundp 'maf-timeline-clear))
+                 (null maf-timeline--states)))
+
+  ;; --- maf-reset with a prefix: factory defaults ---
+
+  ;; C-u picks calc's defaults over the saved settings, and then leaves
+  ;; the file unread — the legacy version loaded it either way, which
+  ;; put the saved modes straight back and made the prefix a no-op.
+  (maf-push "1")
+  (let ((current-prefix-arg '(4)))
+    (call-interactively 'maf-reset))
+  (cl-assert (= (calc-stack-size) 0))
+  (cl-assert (null calc-symbolic-mode))
+  (cl-assert (null calc-prefer-frac))
+
+  ;; --- maf-reset-settings: modes only, session kept ---
+
+  ;; Back to the saved modes, then knock them off again with a stack,
+  ;; a selection, and undo history in place.
   (call-interactively 'maf-reset)
-  (cl-assert (or (null (get-buffer "*Calc Trail*"))
-                 (with-current-buffer "*Calc Trail*"
-                   (zerop (buffer-size)))))
-
-  ;; --- maf-reset-settings: the stack stays ---
-
-  ;; The stack, its size and its contents are untouched.
+  (maf-push "6 x + 12")
   (maf-push "a + b")
-  (maf-push "c d")
-  (call-interactively 'maf-reset-settings)
+  (progn (calc-cursor-stack-index 2) (search-forward "x"))
+  (call-interactively 'calc-select-here)
+  (progn (setq calc-symbolic-mode nil calc-prefer-frac nil) nil)
+  (progn (calc-cursor-stack-index 2) (search-forward "+") (backward-char 1))
+
+  ;; The modes come back; the stack, the selection, undo/redo, and point
+  ;; all stay. Undo is the one `calc-reset' clears regardless of its
+  ;; argument — with the stack kept, the list still describes it, so the
+  ;; command puts it back.
+  (let ((undo calc-undo-list) (line (line-number-at-pos)) (col (current-column)))
+    (call-interactively 'maf-reset-settings)
+    (cl-assert (eq calc-undo-list undo))
+    (cl-assert (= (line-number-at-pos) line))
+    (cl-assert (= (current-column) col)))
   (cl-assert (= (calc-stack-size) 2))
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "c d"))
-  (cl-assert (string= (math-format-value (calc-top 2 'full)) "a + b"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "a + b"))
+  (cl-assert (string= (math-format-value (calc-top 2 'full)) "6 x + 12"))
+  (cl-assert (maf--sel-any-p))
+  (cl-assert (eq calc-symbolic-mode t))
+  (cl-assert (eq calc-prefer-frac t))
   (cl-assert (bound-and-true-p maf-mode))
 
-  ;; Undo survives too: the stack it describes is still there, so the
-  ;; history is still valid. calc-reset drops both lists whatever its
-  ;; argument, and the command puts them back. What matters is that an
-  ;; undo still reaches the stack afterwards; how much it takes back
-  ;; depends on how calc batched the pushes above, so the check is that
-  ;; the stack shrank at all rather than by an exact count.
-  (cl-assert (consp calc-undo-list))
-  (progn (setq maf--test-size (calc-stack-size))
-         (setq last-command nil)
-         (call-interactively 'maf-undo))
-  (cl-assert (< (calc-stack-size) maf--test-size))
-  (calc-pop (calc-stack-size))
+  ;; Its own prefix form: defaults, stack still kept.
+  (let ((current-prefix-arg '(4)))
+    (call-interactively 'maf-reset-settings))
+  (cl-assert (= (calc-stack-size) 2))
+  (cl-assert (null calc-symbolic-mode))
+  (cl-assert (null calc-prefer-frac))
 
-  ;; A display mode toggled by hand goes back to where it was saved.
-  (maf-push "1 / 3")
-  (progn (calc-frac-mode 1) (setq calc-prefer-frac t))
-  (call-interactively 'maf-reset-settings)
-  (cl-assert (= (calc-stack-size) 1))
-  (calc-pop (calc-stack-size))
+  ;; --- The trail helper on its own ---
+
+  ;; No trail buffer at all is a no-op, not an error.
+  (progn
+    (let ((kill-buffer-query-functions nil))
+      (when (get-buffer "*Calc Trail*") (kill-buffer "*Calc Trail*")))
+    (maf--reset-clear-trail)
+    (cl-assert (null (get-buffer "*Calc Trail*")))
+    :no-trail-ok)
+
+  ;; A missing settings file is a no-op too: `load' would signal, so the
+  ;; helper checks first and reports that it read nothing.
+  (let ((calc-settings-file "/nonexistent/maf/calc.el"))
+    (cl-assert (null (maf--reset-load-settings)))
+    :missing-file-ok)
+
+  ;; Restore the real settings file and put calc back on its saved modes.
+  (progn
+    (setq calc-settings-file maf-test--settings-orig)
+    (delete-file maf-test--settings-file)
+    (makunbound 'var-maf-test-canary)
+    (call-interactively 'maf-reset)
+    (cl-assert (equal calc-settings-file maf-test--settings-orig))
+    :restored)
 
   ;; --- a settings file that signals costs the settings, not the session ---
 
   ;; `calc-reset' nils every buffer-local in `calc-local-var-list', then
   ;; evaluates the settings file's mode block, and only then re-runs
-  ;; `calc-mode' to rebuild them. A form that signals in between leaves
-  ;; the buffer with no stack top and no display precision — unable to
-  ;; render its own stack, let alone take a command. The error still
-  ;; reaches the user; what must not happen is losing the session with it.
+  ;; `calc-mode' to rebuild them. A form that signals in between skips
+  ;; the rebuild and leaves the buffer with no stack top and no display
+  ;; precision — unable to render its own stack, let alone take the next
+  ;; command. The error still reaches the user; what must not happen is
+  ;; losing the session with it.
   (maf-push "a + b")
   (progn
     (setq maf--test-bad-settings (make-temp-file "maf-bad-settings" nil ".el"))
@@ -89,7 +170,7 @@
   ;; The buffer is coherent again: locals rebuilt, maf-mode back on.
   (cl-assert calc-stack-top)
   (cl-assert (bound-and-true-p maf-mode))
-  ;; And the stack rode it out — calc-reset shields it behind a let, so
+  ;; And the stack rode it out — `calc-reset' shields it behind a let, so
   ;; the abort never reached it — and still renders.
   (cl-assert (= (calc-stack-size) 1))
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "a + b"))
