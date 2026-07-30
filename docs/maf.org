@@ -106,6 +106,7 @@
 * PORT:edit.el
   maf-edit replaces the calc-edit buffer workflow itself; these are the
   in-entry conveniences worth recreating in maf-edit / digit entry:
+  - [ ] Make this a module
   - [ ] Entry history (M-p / M-n) — recall previous entries (see Todo)
   - [X] my/calc-vector-edit \"(\" — start a bracketed vector entry —
     ported as maf-edit-add-vector
