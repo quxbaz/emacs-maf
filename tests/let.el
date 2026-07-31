@@ -61,12 +61,34 @@
                       "24 = 18 y + 6"))
   (calc-pop (calc-stack-size))
 
-  ;; Sub-formula at point: only the term point names takes the value,
-  ;; the other x stands.
+  ;; Point inside the subject's formula does not narrow it: the entry is
+  ;; evaluated whole, both x's taking the value.
   (maf-push "x^2 + x")
   (maf-push "x := 3")
   (progn (calc-cursor-stack-index 2) (end-of-line) (backward-char 1))
   (call-interactively 'mafcmd-let)
+  (cl-assert (equal (calc-top 1 'full) 12))
+  (calc-pop (calc-stack-size))
+
+  ;; Point inside the argument itself is the same gesture: the entry
+  ;; below is the subject, so the assignment just typed can be used
+  ;; without moving back to the formula it binds.
+  (maf-push "x^2 + x")
+  (maf-push "x := 3")
+  (progn (calc-cursor-stack-index 1) (end-of-line) (backward-char 1))
+  (call-interactively 'mafcmd-let)
+  (cl-assert (equal (calc-top 1 'full) 12))
+  (calc-pop (calc-stack-size))
+
+  ;; A region does narrow the subject: only the term it covers takes the
+  ;; value, the other x stands. (Set and fired in one form — the harness
+  ;; deactivates the mark around every form.)
+  (maf-push "x^2 + x")
+  (maf-push "x := 3")
+  (progn (calc-cursor-stack-index 2)
+         (search-forward "x^2 + " (line-end-position))
+         (push-mark (line-end-position) t t)
+         (call-interactively 'mafcmd-let))
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "x^2 + 3"))
   (calc-pop (calc-stack-size))
 

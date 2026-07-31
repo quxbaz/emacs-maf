@@ -3248,22 +3248,30 @@ anywhere stands.
   x + y with x := 3          =>  y + 3      (y unbound: stands)
 
 Like any binary command, the entry at point is the subject and the top
-of the stack is the argument, consumed on commit; point picks the
-subject as usual — a sub-formula at point, each side of an equation,
-stack level 2 at home. With keep-args both operands stay and the result
-is pushed on top. A top entry that is not an assignment signals, with
-the stack untouched. An assignment written as a plain equation stays one
-argument even when the subject is a relation: each side is evaluated
-under it, rather than its two sides pairing with the subject's as they
-would in equation arithmetic — so the subject's operator does not have
-to be = either.
+of the stack is the argument, consumed on commit; at home the subject
+is stack level 2. Point inside a formula does not narrow the subject
+\(`:scope explicit'): the entry is evaluated whole, each side of a
+relation in turn, wherever point rests on it — including on the
+argument, which resolves to the entry below, so an assignment can be
+typed and used without moving back to the formula it binds. A region or
+a calc selection does narrow the subject to what it covers: evaluating
+one part of an entry is asked for rather than fallen into.
 
-  y = x^2 + 1 with x := 3  =>  y = 10
-  3 x < 15 with x = 2      =>  6 < 15
-  x^2 + x| with x := 3     =>  x^2 + 3    (sub-formula at point)"
+With keep-args both operands stay and the result is pushed on top. A
+top entry that is not an assignment signals, with the stack untouched.
+An assignment written as a plain equation stays one argument even when
+the subject is a relation: each side is evaluated under it, rather than
+its two sides pairing with the subject's as they would in equation
+arithmetic — so the subject's operator does not have to be = either.
+
+  y = x^2 + 1 with x := 3   =>  y = 10
+  3 x < 15 with x = 2       =>  6 < 15
+  x^2 + x| with x := 3      =>  12         (point within: the entry whole)
+  x^2 + x  with x := 3|     =>  12         (point on the argument: likewise)"
   :arity binary
   :prefix "let"
   :pair -1
+  :scope explicit
   (let ((bindings (maf--let-bindings arg)))
     (unless bindings
       (user-error "Top of stack is not an assignment, or a vector of them"))
