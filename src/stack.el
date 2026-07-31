@@ -1723,6 +1723,117 @@ staying at their end). Selections travel with their entries."
           ;; A single undo reverts point along with the stack.
           (maf--undo-record-cmd-point snapshot))))))
 
+(defun maf--carry-entry (count up)
+  "Move the entry at point COUNT levels, UP the screen when UP, else down.
+Point travels with the entry. COUNT is clamped to the room the entry
+has left in that direction; with no room at all, or with point at home
+or on an empty stack, nothing happens — no rewrite, no undo group."
+  (maf--with-calc-buffer
+    (let* ((n (calc-stack-size))
+           (m (calc-locate-cursor-element (point)))
+           ;; m of 0 is home or an empty stack: no entry at point.
+           (room (cond ((<= m 0) 0)
+                       (up (- n m))
+                       (t (1- m))))
+           (k (min count room)))
+      (when (> k 0)
+        (let ((snapshot (maf--point-snapshot))
+              ;; Point as an offset into the entry's own text. The entry
+              ;; travels unchanged and the stack keeps its size, so the
+              ;; line-number prefixes keep their width too: the offset
+              ;; lands on the same character at the level the entry
+              ;; reaches, multi-line renderings included. This is what
+              ;; makes point ride the entry — the line-and-column
+              ;; restore `maf--swap-adjacent-entries' uses instead is
+              ;; how point stays put while an entry moves under it.
+              (offset (- (point) (save-excursion
+                                   (calc-cursor-stack-index m)
+                                   (point)))))
+          (calc-wrapper
+           ;; Rotate the window of levels the entry travels through.
+           ;; Both lists run deepest-first, so carrying up (level M to
+           ;; M+K) moves the window's last element to its front, and
+           ;; carrying down (M to M-K) its first element to the end;
+           ;; either way the entries passed each shift one level the
+           ;; other way, keeping their order.
+           ;;
+           ;; Passing `sels' explicitly keeps the selections with their
+           ;; entries and keeps `calc-pop-push-list' off its
+           ;; `calc-replace-selections' path — see `maf-roll-to-bottom'
+           ;; for what that path does to a stack carrying a selection.
+           ;; `full' is required on the value list: with sel-mode nil,
+           ;; `calc-get-stack-element' hands back the *selection* of a
+           ;; selected entry rather than the entry itself.
+           (let* ((base (if up m (- m k)))
+                  (size (1+ k))
+                  (vals (calc-top-list size base 'full))
+                  (sels (calc-top-list size base 'sel))
+                  (roll (if up
+                            (lambda (l) (cons (car (last l)) (butlast l)))
+                          (lambda (l) (append (cdr l) (list (car l)))))))
+             (calc-pop-push-list size (funcall roll vals)
+                                 base (funcall roll sels))))
+          ;; Calc parks point at home after the rewrite; follow the
+          ;; entry to the level it landed on instead.
+          (calc-cursor-stack-index (if up (+ m k) (- m k)))
+          (goto-char (min (+ (point) offset) (point-max)))
+          ;; A single undo reverts point along with the stack.
+          (maf--undo-record-cmd-point snapshot))))))
+
+(defun maf-carry-up (n)
+  "Carry the stack entry at point one line up the screen, point riding along.
+
+  3:  a          3:  a
+  2:  b     =>   2:  c|
+  1:  c|         1:  b
+
+The entry at point and the one above it exchange levels, and point
+travels with the entry it started on, keeping its place inside it: on a
+sub-formula it stays on that sub-formula, at end of line it stays at
+end of line, in the line-number margin it stays in the margin. Nothing
+is evaluated and no entry is added or dropped; selections travel with
+their entries.
+
+The whole entry moves whatever point sits on — a sub-formula under
+point is carried along rather than traded away, which is what
+`maf-swap-up' does with it. With the entry at point already the
+deepest, or with point at home or on an empty stack, there is nothing
+to carry and the command does nothing.
+
+A prefix argument N carries the entry N lines at once, stopping at the
+deepest entry rather than erroring; a negative N carries it down
+instead, as `maf-carry-down' does.
+
+  C-u 3  4:  a       4:  d|
+         3:  b   =>  3:  a
+         2:  c       2:  b
+         1:  d|      1:  c"
+  (interactive "p")
+  (maf--carry-entry (abs n) (>= n 0)))
+
+(defun maf-carry-down (n)
+  "Carry the stack entry at point one line down the screen, point riding along.
+
+  3:  a          3:  a
+  2:  b|    =>   2:  c
+  1:  c          1:  b|
+
+The mirror of `maf-carry-up': the entry at point and the one below it
+exchange levels, point travelling with the entry it started on and
+keeping its place inside it. With the entry at point already on top —
+level 1, the bottom line — or with point at home or on an empty stack,
+there is nothing to carry and the command does nothing.
+
+A prefix argument N carries the entry N lines at once, stopping at
+level 1 rather than erroring; a negative N carries it up instead.
+
+  C-u 3  4:  a|      4:  b
+         3:  b   =>  3:  c
+         2:  c       2:  d
+         1:  d       1:  a|"
+  (interactive "p")
+  (maf--carry-entry (abs n) (< n 0)))
+
 (maf-defcmd mafcmd-equal-to (expr arg commit)
   "Equate the entry at point with the top-of-stack argument.
 
