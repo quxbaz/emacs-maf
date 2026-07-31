@@ -185,7 +185,7 @@
 ;; The simplification toggle takes @ from the digit-entry starters
 ;; below; inside digit entry @ still means degrees, since the entry
 ;; minibuffer is calc's own but for the keys src/minibuffer.el takes
-;; there (; : and n P e).
+;; there (; : and n P e SPC).
 (define-key maf-mode-map (kbd "@") #'maf-toggle-simplify)
 
 ;; Big-language display toggle. mafcmd-arg cedes calc's G — see the

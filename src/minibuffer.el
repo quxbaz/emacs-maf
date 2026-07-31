@@ -4,9 +4,10 @@
 ;;
 ;; Digit-entry integration: contextual digit entry (`maf-digit-start'),
 ;; the shortcuts maf takes in the entry minibuffer (`;' for the fraction
-;; colon, `n'/`P' for a multiple of pi, `e' to equate), and keeping point
-;; in place when a command key or C-g terminates minibuffer digit entry,
-;; so the command still resolves the position the user was on.
+;; colon, `n'/`P' for a multiple of pi, `e' to equate, SPC to jump to the
+;; entry the number names), and keeping point in place when a command key
+;; or C-g terminates minibuffer digit entry, so the command still
+;; resolves the position the user was on.
 
 (require 'calc)
 (require 'seq)
@@ -54,10 +55,11 @@ number changes — and the command that follows targets that position. A
 sub-formula RET commits contextually and keeps point too; C-<return> is
 the explicit keep-point commit.
 
-A plain RET or SPC at a margin, though, does park point home. Before it
-does, drop a mark where the user was, so a single `pop-to-mark-command'
-brings them back from the home line. The mark's marker rides the push,
-tracking the entry as it renumbers.
+A plain RET at a margin, though, does park point home — as does the SPC
+that reaches here, in the cases where `maf-digit-jump' steps aside for
+it. Before it does, drop a mark where the user was, so a single
+`pop-to-mark-command' brings them back from the home line. The mark's
+marker rides the push, tracking the entry as it renumbers.
 
 Point already at home, or `maf-mode' off in the calc buffer, is a no-op
 \(plain calc behavior, no maf state touched)."
@@ -284,6 +286,108 @@ there e-notation is untouched."
 
 (define-key calc-digit-map "e" #'maf-digit-equal-to)
 
+(defvar maf--digit-jump-level nil
+  "Stack level a finished digit entry should send point to, or nil.
+Set by `maf-digit-jump' (SPC) to the level the entry named; read by
+`maf-digit-start' once the entry has completed with nothing committed,
+which then moves point there. nil for every other completion.")
+
+(defvar maf--digit-jump-origin nil
+  "Buffer position point stood at when the current digit entry began.
+Set by `maf-digit-start' before the read; where a SPC completion jumps
+from and leaves its mark. Point itself cannot serve — the calc-side
+completion parks it at home before the jump runs — and the position
+stays valid because a jump commits nothing, so the buffer is unchanged.")
+
+(defun maf-digit-jump ()
+  "Send point to the stack entry the digit entry names, on SPC.
+Reaching a distant entry is otherwise a run of C-p; this makes the
+level number the address, typed as a number because a number is what
+the digit keys already start:
+
+  3:  c              3 SPC  =>  3:  c|
+  2:  b                         2:  b
+  1:  a|                        1:  a
+
+Nothing is entered or pushed — the number is a destination, not a
+value. Point lands at the entry's end, its margin, so the next command
+takes the whole entry; level 0 is home. A level past the top of the
+stack lands on the top entry, as a jump past the end of a buffer lands
+on its last line. The place point left is marked, so C-u C-SPC returns
+to it — home excepted, being one keystroke away already.
+
+An entry that is not a whole number names no level: it is refused and
+left standing to be corrected, as an unreadable entry is.
+
+The cost is the push SPC was, calc's unshifted twin of RET in the
+entry: RET still pushes, and is now the only key that does.
+
+SPC stays calc's own terminator where the number is plainly a value
+and not an address: inside a radix-prefixed entry, where a stack level
+would be written in base 16; while an incomplete object is being
+entered, where SPC separates a vector's elements and half a vector is
+no place to leave from; and with `maf-mode' off in the calc buffer."
+  (interactive)
+  (if (or (not (maf--digit-shortcuts-live-p))
+          (maf--digit-radix-entry-p)
+          (maf--incomplete-entry-p))
+      ;; The stock binding: SPC is one of the nondigit keys that end the
+      ;; entry, and one of the two (with RET) that end it without
+      ;; re-dispatching. Named as itself for the same reason
+      ;; `maf-digit-equal-to' names it — `last-command' after the entry
+      ;; must still be one of the digit-entry commands.
+      (progn (setq this-command 'calcDigit-nondigit)
+             (calcDigit-nondigit))
+    (let* ((str (minibuffer-contents))
+           ;; Read in the calc buffer, whose radix and format settings
+           ;; decide what the string means, as `calcDigit-nondigit' does.
+           (n (with-current-buffer calc-buffer (math-read-number str))))
+      (cond
+       ;; `calcDigit-nondigit's answer to an entry it cannot read, and
+       ;; the same one for an entry that reads but names no level (1:2,
+       ;; -3): refuse it and stay in the minibuffer.
+       ((null n) (beep) (calc-temp-minibuffer-message " [Bad format]"))
+       ((not (natnump n)) (beep) (calc-temp-minibuffer-message " [Bad level]"))
+       (t
+        (setq maf--digit-jump-level n
+              ;; Nothing is committed, so there is no arg push for a
+              ;; following command to fold into its undo group.
+              maf--digit-entry-handoff nil)
+        ;; Leave the entry empty: neither `calcDigit-start' nor
+        ;; `maf-digit-start' then finds a value to commit, and the jump
+        ;; happens back in the calc buffer once the read returns.
+        (delete-minibuffer-contents)
+        (exit-minibuffer))))))
+
+(define-key calc-digit-map " " #'maf-digit-jump)
+
+(defun maf--digit-take-jump ()
+  "Send point to the level `maf-digit-jump' asked for, if it asked.
+Runs in the calc buffer once a digit entry has finished, jumping from
+`maf--digit-jump-origin'. Level 0 is home; a level past the top of the
+stack lands on the top entry. Point rests at the entry's EOL, its
+margin, so the next command takes the whole entry."
+  (when-let ((n (prog1 maf--digit-jump-level
+                  (setq maf--digit-jump-level nil))))
+    (let ((from maf--digit-jump-origin)
+          (m (min n (calc-stack-size))))
+      (if (zerop m)
+          (progn (calc-cursor-stack-index 0)
+                 ;; The dot sits past the line-number margin when
+                 ;; numbering is on, at the line's start when it is off.
+                 (skip-chars-forward " "))
+        (calc-cursor-stack-index m)
+        (end-of-line))
+      ;; Mark the place the jump left so a single `pop-to-mark-command'
+      ;; returns to it, as every maf command that moves point off an
+      ;; entry does. Home is never marked (`maf-go-home' reaches it in
+      ;; one key), and with a region up the marks are left alone — the
+      ;; mark is the selection's anchor, and a target here.
+      (unless (or (= (point) from)
+                  (use-region-p)
+                  (save-excursion (goto-char from) (maf--at-home-p)))
+        (maf--mark-before-home from)))))
+
 (defun maf-digit-commit-here ()
   "Commit the digit entry like RET, but keep point instead of homing.
 The keep-point sibling of RET in the digit-entry minibuffer, on
@@ -395,8 +499,16 @@ The entry minibuffer is calc's own (`calc-digit-map'), so the in-entry
 keys — _, :, @, #, .. — work unchanged; only where the result lands
 differs. The exceptions are the keys maf takes in that map: `;' as the
 fraction colon, `n' and `P' for a multiple of pi, `e' to equate with
-the number entered."
+the number entered, and SPC to jump to the entry it names."
   (interactive)
+  ;; Where point stands now, for a SPC completion to mark and to jump
+  ;; from; the calc-side completion parks point at home before the jump
+  ;; runs. Nothing is committed on that path, so the buffer — and this
+  ;; position with it — is unchanged when it is used.
+  (setq maf--digit-jump-origin (point)
+        ;; Cleared before the read, so a level left over from an entry
+        ;; that never finished cannot carry into this one.
+        maf--digit-jump-level nil)
   (if (or calc-algebraic-mode
           (and (> calc-number-radix 14) (eq last-command-event ?e))
           (not (maf--at-subexpr-p)))
@@ -467,6 +579,9 @@ the number entered."
             ;; The contextual commit is a complete edit of its own, not
             ;; an arg push: a command key that terminated the entry
             ;; must not fold this edit into its undo group.
-            (setq maf--digit-entry-handoff nil)))))))
+            (setq maf--digit-entry-handoff nil))))))
+  ;; A SPC completion committed nothing on either path above; all it
+  ;; left is the level to travel to.
+  (maf--digit-take-jump))
 
 (provide 'maf-minibuffer)
