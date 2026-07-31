@@ -159,7 +159,7 @@ Groups are separated by a blank line."
     (setq header-line-format
           (if (string-empty-p maf-formulas--query)
               "maf-formulas — RET inserts · / filters · q quits"
-            (format "maf-formulas — filter: %s  (g clears)" maf-formulas--query)))
+            (format "maf-formulas — filter: %s  (q clears)" maf-formulas--query)))
     (let ((w (apply #'max 0 (mapcar (lambda (f) (length (maf-formulas--title f))) fs))))
       (dolist (f fs)
         (unless (equal (maf-formulas--category f) cat)
@@ -333,6 +333,16 @@ untouched either way."
   ;; when it borrowed one. Either way the frame returns as it was.
   (quit-window))
 
+(defun maf-formulas-quit-or-clear-filter ()
+  "Clear the filter while the menu is narrowed, else quit the menu.
+`q' out of a filtered view backs out of the filter first, so the key
+that leaves never discards a narrowing you meant to keep looking at; a
+second `q' then leaves. `maf-formulas-quit' always quits outright."
+  (interactive)
+  (if (string-empty-p maf-formulas--query)
+      (maf-formulas-quit)
+    (maf-formulas-clear-filter)))
+
 (defvar maf-formulas-mode-map (make-sparse-keymap)
   "Keymap for `maf-formulas-mode'.")
 
@@ -340,7 +350,7 @@ untouched either way."
 (define-key maf-formulas-mode-map (kbd "RET") #'maf-formulas-insert)
 (define-key maf-formulas-mode-map (kbd "/")   #'maf-formulas-filter)
 (define-key maf-formulas-mode-map (kbd "g")   #'maf-formulas-clear-filter)
-(define-key maf-formulas-mode-map (kbd "q")   #'maf-formulas-quit)
+(define-key maf-formulas-mode-map (kbd "q")   #'maf-formulas-quit-or-clear-filter)
 (define-key maf-formulas-mode-map (kbd "n")   #'next-line)
 (define-key maf-formulas-mode-map (kbd "p")   #'previous-line)
 (define-key maf-formulas-mode-map (kbd "j")   #'next-line)
@@ -355,7 +365,8 @@ untouched either way."
 Formulas are grouped by category, each shown beside its form; the
 detail pane follows point. \\<maf-formulas-mode-map>\\[maf-formulas-insert]
 pushes the formula at point onto the stack, \\[maf-formulas-filter]
-filters, \\[maf-formulas-clear-filter] clears the filter, \\[maf-formulas-quit] quits."
+filters, \\[maf-formulas-clear-filter] clears the filter, \\[maf-formulas-quit-or-clear-filter] clears the
+filter when narrowed and quits otherwise."
   (setq truncate-lines t)
   (add-hook 'post-command-hook #'maf-formulas--update-detail nil t))
 
