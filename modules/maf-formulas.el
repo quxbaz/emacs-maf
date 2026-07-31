@@ -19,6 +19,9 @@
 ;;    :examples ("..." ...)             ; optional worked examples
 ;;    :vars ((A . "area") ...))         ; optional variable meanings
 ;;
+;; Formulas you insert are remembered in a "Recent" group at the top of
+;; the menu for the rest of the session; it is not written anywhere.
+;;
 ;; The formulas live in `maf-formulas-file' (a file in your Emacs config
 ;; by default); it is loaded on first use and sets `maf-formulas-user'.
 ;; Set that variable directly in your init to skip the file. Enabling
@@ -84,8 +87,18 @@ in your init to add formulas without a file. Only :expr is required."
   :type '(repeat plist)
   :group 'maf)
 
+(defcustom maf-formulas-recent-max 5
+  "How many recently-inserted formulas the \"Recent\" group holds.
+Zero drops the group entirely. The list is per-session; nothing is
+written to disk."
+  :type 'integer
+  :group 'maf)
+
 (defconst maf-formulas--detail-buffer " *maf-formulas-detail*"
   "Name of the buffer showing detail for the formula at point.")
+
+(defconst maf-formulas--recent-category "Recent"
+  "Category header for the recently-inserted group, shown first.")
 
 (defvar maf-formulas--loaded nil
   "Non-nil once `maf-formulas-file' has been consulted this session.")
@@ -129,6 +142,18 @@ variable is the single source, so runtime additions to it persist."
 (defvar-local maf-formulas--query ""
   "Current filter string narrowing the formula menu, or empty.")
 
+(defvar maf-formulas--recent nil
+  "Formulas inserted this session, most recent first.
+A plain variable, so the list dies with the session — recency is a
+convenience for the sitting, not something to carry between them.")
+
+(defun maf-formulas--record-recent (f)
+  "Remember F as the most recently inserted formula."
+  (when (> maf-formulas-recent-max 0)
+    (setq maf-formulas--recent
+          (cons f (seq-take (delq f maf-formulas--recent)
+                            (1- maf-formulas-recent-max))))))
+
 (defun maf-formulas--matches-p (f query)
   "Non-nil if formula F matches QUERY (title, category, or a variable)."
   (or (string-empty-p query)
@@ -138,12 +163,31 @@ variable is the single source, so runtime additions to it persist."
             (cl-some (lambda (v) (string-search q (downcase (format "%s %s" (car v) (cdr v)))))
                      (plist-get f :vars))))))
 
-(defun maf-formulas--filtered ()
-  "Formulas matching the current query, grouped by category."
-  (let ((fs (cl-remove-if-not (lambda (f) (maf-formulas--matches-p f maf-formulas--query))
-                              (maf-formulas--all))))
-    (sort fs (lambda (a b) (string< (maf-formulas--category a)
-                                    (maf-formulas--category b))))))
+(defun maf-formulas--groups ()
+  "The menu's groups, an alist of (CATEGORY . FORMULAS).
+Categories come alphabetically, each holding the formulas matching the
+current query; the recently-inserted group leads when it has any, so
+what you reached for last is where the cursor already is. A recent
+formula also stays listed under its own category — the group is a
+shortcut, not a move."
+  (let* ((all (maf-formulas--all))
+         (match (lambda (f) (maf-formulas--matches-p f maf-formulas--query)))
+         ;; Recents are held by identity, so formulas dropped from
+         ;; `maf-formulas-user' since (a reloaded file, say) fall out.
+         (recent (seq-filter (lambda (f) (and (memq f all) (funcall match f)))
+                             maf-formulas--recent))
+         (groups nil))
+    (dolist (f (seq-filter match all))
+      (let* ((cat (maf-formulas--category f))
+             (cell (assoc cat groups)))
+        (if cell
+            (setcdr cell (cons f (cdr cell)))
+          (push (list cat f) groups))))
+    (setq groups (sort (mapcar (lambda (g) (cons (car g) (nreverse (cdr g)))) groups)
+                       (lambda (a b) (string< (car a) (car b)))))
+    (if recent
+        (cons (cons maf-formulas--recent-category recent) groups)
+      groups)))
 
 (defun maf-formulas--oneline (expr)
   "Render EXPR as a single normal-language line, for the list column."
@@ -153,30 +197,30 @@ variable is the single source, so runtime additions to it persist."
 (defun maf-formulas--render ()
   "Render the categorized list: each formula beside its one-line form.
 Groups are separated by a blank line."
-  (let ((inhibit-read-only t) (cat nil) (first t)
-        (fs (maf-formulas--filtered)))
+  (let* ((inhibit-read-only t) (first t)
+         (groups (maf-formulas--groups))
+         (fs (apply #'append (mapcar #'cdr groups))))
     (erase-buffer)
     (setq header-line-format
           (if (string-empty-p maf-formulas--query)
-              "maf-formulas — RET inserts · / filters · q quits"
+              "maf-formulas — RET inserts · / filters · TAB next group · q quits"
             (format "maf-formulas — filter: %s  (q clears)" maf-formulas--query)))
     (let ((w (apply #'max 0 (mapcar (lambda (f) (length (maf-formulas--title f))) fs))))
-      (dolist (f fs)
-        (unless (equal (maf-formulas--category f) cat)
-          (setq cat (maf-formulas--category f))
-          (unless first (insert "\n"))    ; blank line above each group
-          (setq first nil)
-          (insert (propertize cat 'face 'maf-formulas-category) "\n"))
-        (let* ((start (point))
-               (title (maf-formulas--title f))
-               ;; A dotted leader bridges the gap to the aligned formula
-               ;; column so the eye can track a short title across.
-               (leader (make-string (+ 1 (- w (length title))) ?.)))
-          (insert "  " (propertize title 'face 'maf-formulas-title) " "
-                  (propertize leader 'face 'maf-formulas-leader) " "
-                  (propertize (maf-formulas--oneline (plist-get f :expr)) 'face 'maf-formulas-form)
-                  "\n")
-          (put-text-property start (point) 'maf-formula f))))
+      (dolist (g groups)
+        (unless first (insert "\n"))    ; blank line above each group
+        (setq first nil)
+        (insert (propertize (car g) 'face 'maf-formulas-category) "\n")
+        (dolist (f (cdr g))
+          (let* ((start (point))
+                 (title (maf-formulas--title f))
+                 ;; A dotted leader bridges the gap to the aligned formula
+                 ;; column so the eye can track a short title across.
+                 (leader (make-string (+ 1 (- w (length title))) ?.)))
+            (insert "  " (propertize title 'face 'maf-formulas-title) " "
+                    (propertize leader 'face 'maf-formulas-leader) " "
+                    (propertize (maf-formulas--oneline (plist-get f :expr)) 'face 'maf-formulas-form)
+                    "\n")
+            (put-text-property start (point) 'maf-formula f)))))
     (goto-char (point-min))
     (while (and (not (eobp)) (not (get-text-property (point) 'maf-formula)))
       (forward-line 1))
@@ -246,14 +290,54 @@ the list's own layout."
         (calc-wrapper
          (calc-pop-push-record-list 0 "frml" (list (copy-tree (plist-get f :expr)))
                                     1 (list nil))))
+      (maf-formulas--record-recent f)
       (message "Inserted: %s" (maf-formulas--title f))
       (maf-formulas-quit))))
 
-(defun maf-formulas-filter (query)
-  "Narrow the formula menu to QUERY (title, category, or variable)."
-  (interactive (list (read-string "Filter formulas: " maf-formulas--query)))
-  (setq maf-formulas--query query)
-  (maf-formulas--render))
+(defvar maf-formulas--filter-buffer nil
+  "Menu buffer being narrowed while the minibuffer reads a filter.
+Bound for the dynamic extent of `maf-formulas-filter' only.")
+
+(defun maf-formulas--set-query (buf query)
+  "Narrow menu buffer BUF to QUERY, re-rendering when it changed.
+Rendering happens with BUF's window selected so point and the window's
+view move together, as they would if the user had navigated there."
+  (when (buffer-live-p buf)
+    (with-current-buffer buf
+      (unless (equal query maf-formulas--query)
+        (setq maf-formulas--query query)
+        (let ((win (get-buffer-window buf)))
+          (if win
+              (with-selected-window win (maf-formulas--render))
+            (maf-formulas--render)))))))
+
+(defun maf-formulas--filter-update ()
+  "Narrow the menu to what is typed so far.
+Runs on the minibuffer's own `post-command-hook'."
+  (maf-formulas--set-query maf-formulas--filter-buffer
+                           (minibuffer-contents-no-properties)))
+
+(defun maf-formulas-filter (&optional query)
+  "Narrow the formula menu to QUERY (title, category, or variable).
+Called interactively, the list narrows as each character is typed, so
+the match is visible before the filter is committed; RET keeps the
+narrowing and \\[keyboard-quit] restores the one in effect before."
+  (interactive)
+  (if query
+      (maf-formulas--set-query (current-buffer) query)
+    (let* ((buf (current-buffer))
+           (prev maf-formulas--query)
+           (maf-formulas--filter-buffer buf))
+      (condition-case nil
+          ;; The live narrowing has already applied what was typed; the
+          ;; returned string settles anything a final command changed.
+          (maf-formulas--set-query
+           buf (minibuffer-with-setup-hook
+                   (lambda ()
+                     (add-hook 'post-command-hook #'maf-formulas--filter-update nil t))
+                 (read-string "Filter formulas: " prev)))
+        (quit (maf-formulas--set-query buf prev)
+              (signal 'quit nil))))))
 
 (defun maf-formulas-clear-filter ()
   "Clear the formula menu filter."
@@ -300,16 +384,20 @@ the list's own layout."
       (user-error "No previous formula"))))
 
 (defun maf-formulas-next-group ()
-  "Move to the next category header."
+  "Move to the next category header, wrapping past the last one.
+TAB walks the groups, so it cycles rather than stopping dead at the
+end: repeated presses tour the categories."
   (interactive)
   (let* ((p (line-beginning-position))
-         (next (seq-find (lambda (s) (> s p)) (maf-formulas--group-starts))))
-    (if next (goto-char next) (user-error "No next group"))))
+         (starts (maf-formulas--group-starts))
+         (next (or (seq-find (lambda (s) (> s p)) starts) (car starts))))
+    (if next (goto-char next) (user-error "No groups"))))
 
 (defun maf-formulas-prev-group ()
-  "Move to this category's header, or the previous one.
+  "Move to this category's header, or the previous one, wrapping around.
 Like paragraph motion: the first press jumps to the current category
-header, a second to the header before it."
+header, a second to the header before it; from the first header it
+wraps to the last."
   (interactive)
   (let* ((p (line-beginning-position))
          (starts (maf-formulas--group-starts))
@@ -317,7 +405,8 @@ header, a second to the header before it."
          (before (car (last (seq-filter (lambda (s) (< s p)) starts)))))
     (cond ((and cur (< cur p)) (goto-char cur))
           (before (goto-char before))
-          (t (user-error "No previous group")))))
+          (starts (goto-char (car (last starts))))
+          (t (user-error "No groups")))))
 
 (defun maf-formulas-quit ()
   "Quit the formula menu, closing the detail pane too.
@@ -351,21 +440,26 @@ second `q' then leaves. `maf-formulas-quit' always quits outright."
 (define-key maf-formulas-mode-map (kbd "/")   #'maf-formulas-filter)
 (define-key maf-formulas-mode-map (kbd "g")   #'maf-formulas-clear-filter)
 (define-key maf-formulas-mode-map (kbd "q")   #'maf-formulas-quit-or-clear-filter)
-(define-key maf-formulas-mode-map (kbd "n")   #'next-line)
-(define-key maf-formulas-mode-map (kbd "p")   #'previous-line)
-(define-key maf-formulas-mode-map (kbd "j")   #'next-line)
-(define-key maf-formulas-mode-map (kbd "k")   #'previous-line)
-(define-key maf-formulas-mode-map (kbd "TAB")       #'maf-formulas-next-item)
-(define-key maf-formulas-mode-map (kbd "<backtab>") #'maf-formulas-prev-item)
+;; Two levels of motion: n/p/j/k step formula to formula (headers and
+;; the blank lines between groups are skipped), TAB steps group to
+;; group. M-n/M-p keep the group motion on the Emacs-shaped key too.
+(define-key maf-formulas-mode-map (kbd "n")   #'maf-formulas-next-item)
+(define-key maf-formulas-mode-map (kbd "p")   #'maf-formulas-prev-item)
+(define-key maf-formulas-mode-map (kbd "j")   #'maf-formulas-next-item)
+(define-key maf-formulas-mode-map (kbd "k")   #'maf-formulas-prev-item)
+(define-key maf-formulas-mode-map (kbd "TAB")       #'maf-formulas-next-group)
+(define-key maf-formulas-mode-map (kbd "<backtab>") #'maf-formulas-prev-group)
 (define-key maf-formulas-mode-map (kbd "M-n") #'maf-formulas-next-group)
 (define-key maf-formulas-mode-map (kbd "M-p") #'maf-formulas-prev-group)
 
 (define-derived-mode maf-formulas-mode special-mode "maf-formulas"
   "Major mode for the saved-formula list (the master pane).
-Formulas are grouped by category, each shown beside its form; the
-detail pane follows point. \\<maf-formulas-mode-map>\\[maf-formulas-insert]
-pushes the formula at point onto the stack, \\[maf-formulas-filter]
-filters, \\[maf-formulas-clear-filter] clears the filter, \\[maf-formulas-quit-or-clear-filter] clears the
+Formulas are grouped by category, the ones inserted this session
+repeated in a \"Recent\" group at the top, each shown beside its form;
+the detail pane follows point. \\<maf-formulas-mode-map>\\[maf-formulas-insert]
+pushes the formula at point onto the stack, \\[maf-formulas-next-item] and \\[maf-formulas-prev-item] step
+between formulas, \\[maf-formulas-next-group] between groups, \\[maf-formulas-filter]
+filters as you type, \\[maf-formulas-clear-filter] clears the filter, \\[maf-formulas-quit-or-clear-filter] clears the
 filter when narrowed and quits otherwise."
   (setq truncate-lines t)
   (add-hook 'post-command-hook #'maf-formulas--update-detail nil t))

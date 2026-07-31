@@ -37,11 +37,11 @@
     - [ ] make s-tab work also to move backward
   - formulas
     - [X] q to quit filtered results mode
-    - [ ] bind tab to move between groups
-    - [ ] add recents group (should be the first group)
+    - [X] bind tab to move between groups
+    - [X] add recents group (should be the first group)
       - shows recently used formulas from current session (don't persist across
         sessions)
-    - [ ] filter in real-time as search string changes
+    - [X] filter in real-time as search string changes
 
 * Low-hanging fruit
 ** TODO Port the edit-mode insertions (modules/maf-edit.el)

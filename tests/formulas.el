@@ -4,8 +4,10 @@
 ;; on disk is read. The last form restores the session state.
 
 (maf-step
-  (setq maf--formulas-stash (list maf-formulas-user maf-formulas--loaded)
+  (setq maf--formulas-stash (list maf-formulas-user maf-formulas--loaded
+                                  maf-formulas--recent maf-use-formulas-mode)
         maf-formulas--loaded t          ; skip loading maf-formulas-file
+        maf-formulas--recent nil        ; a clean session's recents
         maf-formulas-user
         '((:name "volume-of-sphere" :title "Volume of sphere"
            :category "Geometry — 3D: Sphere"
@@ -49,7 +51,35 @@
     (cl-assert (string-match-p "Volume of sphere" (buffer-string)))
     (cl-assert (not (string-match-p "triangle" (buffer-string))))
     (setq maf-formulas--query "")
-    (maf-formulas--render))
+    (maf-formulas--render)
+
+    ;; TAB walks the groups and cycles: from the first formula line to
+    ;; the second category header, and past the last back to the first.
+    (cl-assert (eq (key-binding (kbd "TAB")) #'maf-formulas-next-group))
+    (goto-char (point-min))
+    (maf-formulas-next-item)
+    (maf-formulas-next-group)
+    (cl-assert (not (get-text-property (point) 'maf-formula)))   ; a header
+    (cl-assert (equal (buffer-substring-no-properties
+                       (line-beginning-position) (line-end-position))
+                      "Geometry — 3D: Cylinder"))
+    (maf-formulas-next-group)
+    (maf-formulas-next-group)
+    (cl-assert (= (point) (point-min)))
+
+    ;; Typing into the filter narrows live: the hook the reader installs
+    ;; on the minibuffer pushes whatever has been typed so far.
+    (let ((maf-formulas--filter-buffer (current-buffer)))
+      (cl-letf (((symbol-function 'minibuffer-contents-no-properties)
+                 (lambda () "triangle")))
+        (maf-formulas--filter-update))
+      (cl-assert (equal maf-formulas--query "triangle"))
+      (cl-assert (string-match-p "Area of triangle" (buffer-string)))
+      (cl-assert (not (string-match-p "sphere" (buffer-string))))
+      (cl-letf (((symbol-function 'minibuffer-contents-no-properties)
+                 (lambda () "")))
+        (maf-formulas--filter-update))
+      (cl-assert (string-match-p "sphere" (buffer-string)))))
 
   ;; Every formula is registered as a calc var-eq-<name>.
   (cl-assert (boundp 'var-eq-volume-of-sphere))
@@ -65,8 +95,45 @@
   (cl-assert (string-match-p "V = " (math-format-value (calc-top-n 1))))
   (calc-pop (calc-stack-size))
 
-  ;; Restore the session state the fixture displaced.
+  ;; That insert seeded the Recent group: it heads the list, point lands
+  ;; on it, and the formula still appears under its own category too.
+  (with-current-buffer "*maf-formulas*"
+    (maf-formulas--render)
+    (cl-assert (equal (buffer-substring-no-properties (point-min)
+                                                      (save-excursion
+                                                        (goto-char (point-min))
+                                                        (line-end-position)))
+                      "Recent"))
+    (cl-assert (equal (maf-formulas--title (get-text-property (point) 'maf-formula))
+                      "Volume of sphere"))
+    (cl-assert (= 2 (let ((n 0) (i 0) (s (buffer-string)))
+                      (while (setq i (string-search "Volume of sphere" s i))
+                        (setq n (1+ n) i (1+ i)))
+                      n))))
+
+  ;; A second insert takes the head of the group, most recent first.
+  (with-current-buffer "*maf-formulas*"
+    (goto-char (point-min))
+    (search-forward "Area of triangle")
+    (beginning-of-line)
+    (cl-letf (((symbol-function 'maf-formulas-quit) (lambda (&rest _) nil)))
+      (maf-formulas-insert))
+    (maf-formulas--render)
+    (cl-assert (equal (mapcar #'maf-formulas--title maf-formulas--recent)
+                      '("Area of triangle" "Volume of sphere")))
+    (cl-assert (equal (maf-formulas--title (get-text-property (point) 'maf-formula))
+                      "Area of triangle")))
+  (calc-pop (calc-stack-size))
+
+  ;; Restore the session state the fixture displaced. Turning the mode
+  ;; off first unregisters the fixture's var-eq-* variables; the real
+  ;; formulas are then back in place, so re-enabling (when the session
+  ;; had it on) registers those and hands `s o' back — a test run must
+  ;; not leave the live instance without the module it borrowed.
   (progn
     (maf-use-formulas-mode -1)
     (setq maf-formulas-user (nth 0 maf--formulas-stash)
-          maf-formulas--loaded (nth 1 maf--formulas-stash))))
+          maf-formulas--loaded (nth 1 maf--formulas-stash)
+          maf-formulas--recent (nth 2 maf--formulas-stash))
+    (when (nth 3 maf--formulas-stash)
+      (maf-use-formulas-mode 1))))
