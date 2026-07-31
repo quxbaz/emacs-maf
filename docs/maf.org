@@ -37,7 +37,7 @@
     - [ ] factor
     - [ ] target-line
   - maf-editplus module
-    - [ ] tab to break out of parens
+    - [-] tab to break out of parens
   - formulas
     - [ ] start in filter mode
     - [ ] q to quit filtered results mode
