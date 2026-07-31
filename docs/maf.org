@@ -26,8 +26,8 @@
 * Feedback
   - [ ] command to isolate current subexpr (and delete rest of entry)
   - [ ] single-key (no modifiers) to force next cmd to target line
-  - [-] convenient binding to duplicate subexpr and keep point
-    - [ ] Make RET work with keep-args flag - it should keep point
+  - [X] convenient binding to duplicate subexpr and keep point
+    - [X] Make RET work with keep-args flag - it should keep point
   - maf-edit
     - [ ] change text: "C-j newline" -> "S-RET newline"
   - following cmds should be boudn to single keys (no modifiers):
