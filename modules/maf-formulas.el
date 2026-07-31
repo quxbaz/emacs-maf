@@ -320,11 +320,17 @@ header, a second to the header before it."
           (t (user-error "No previous group")))))
 
 (defun maf-formulas-quit ()
-  "Quit the formula menu, closing the detail pane too."
+  "Quit the formula menu, closing the detail pane too.
+The menu's window is deleted if `maf-formulas' made one, or goes back to
+the buffer it displaced if it borrowed one; the rest of the frame is
+untouched either way."
   (interactive)
   (let ((dwin (get-buffer-window maf-formulas--detail-buffer)))
     (when (and dwin (not (eq dwin (selected-window))))
       (delete-window dwin)))
+  ;; `quit-window' is `pop-to-buffer''s counterpart: it deletes the
+  ;; window when the menu made one, and puts the displaced buffer back
+  ;; when it borrowed one. Either way the frame returns as it was.
   (quit-window))
 
 (defvar maf-formulas-mode-map (make-sparse-keymap)
@@ -365,9 +371,19 @@ filters, \\[maf-formulas-clear-filter] clears the filter, \\[maf-formulas-quit] 
     (with-current-buffer buf
       (maf-formulas-mode)
       (maf-formulas--render))
+    ;; Ordinary `pop-to-buffer' display: Emacs picks the window by the
+    ;; usual rules, so `display-buffer-alist' can route the menu, and
+    ;; `maf-formulas-quit' undoes exactly what was done. Only the menu's
+    ;; own window is split, for the detail pane.
     (pop-to-buffer buf)
-    (delete-other-windows)
-    (display-buffer dbuf '((display-buffer-below-selected) (window-height . 0.4)))
+    ;; A float `window-height' is a fraction of the frame, which starves
+    ;; the list when the menu got half a frame to begin with: size the
+    ;; detail against the menu's own window, and leave the list usable.
+    (let* ((avail (window-body-height))
+           (h (max 4 (min (round (* 0.4 avail)) (- avail 6)))))
+      (display-buffer dbuf `((display-buffer-below-selected)
+                             (window-height . ,h)
+                             (inhibit-same-window . t))))
     (maf-formulas--update-detail)))
 
 ;;; The module
