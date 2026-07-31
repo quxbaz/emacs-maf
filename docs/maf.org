@@ -29,7 +29,7 @@
   - [X] convenient binding to duplicate subexpr and keep point
     - [X] Make RET work with keep-args flag - it should keep point
   - maf-edit
-    - [-] change text: "C-j newline" -> "S-RET newline"
+    - [X] change text: "C-j newline" -> "S-RET newline"
   - following cmds should be bound to single keys (no modifiers):
     - [ ] home (make sure to set mark)
     - [ ] expand
