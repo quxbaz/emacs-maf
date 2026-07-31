@@ -533,13 +533,13 @@ distributes; on a relation node it multiplies both sides. At home, in
 the line prefix, or at EOL the number is pushed onto the stack exactly
 as in plain calc — as it is in algebraic mode, for entries that escape
 to algebraic, and for interval entry (=..=). The entry minibuffer is
-calc's own (=calc-digit-map=), so the in-entry keys — =e=, =_=, =:=,
-=n= — are unchanged.
+calc's own (=calc-digit-map=), so the in-entry keys — =_=, =:=, =@=,
+=#=, =..= — are unchanged but for the handful maf takes there, below.
 
-One key is added there: =;= is the fraction colon (=maf-digit-colon=),
-so 3 ; 4 enters 3:4 without a modifier. It is an alias, not an
-insertion — it re-dispatches calc's own =calcDigit-key= with the event
-spoofed to =:=, so calc's colon handling (the leading 1 for a bare
+=;= is the fraction colon (=maf-digit-colon=), so 3 ; 4 enters 3:4
+without a modifier. It is an alias, not an insertion — it re-dispatches
+calc's own =calcDigit-key= with the event spoofed to =:=, so calc's
+colon handling (the leading 1 for a bare
 =;=, mixed numbers, format validation) applies unchanged. During a
 maf-edit session =;= types =:= too (=maf-edit-insert-colon=); the
 literal semicolon — calc's row separator in matrix notation — moves to
@@ -548,6 +548,40 @@ is on the stack — a vector, matrix, complex number, or interval being
 entered — the digit-entry =;= steps aside for calc's own: it is the
 row separator of matrix entry, typed from inside digit entry, and a
 fraction there still goes in on =:=.
+
+=n= and =P= commit the entry multiplied by pi (=maf-digit-pi=), so 2 n
+gives 2 pi and 1:3 n a third of it, symbolic either way — the commit is
+the contextual one above. =e= ends the entry and equates with the
+number typed (=maf-digit-equal-to=), the in-entry twin of =e= out in
+the stack: on =x= the entry 5 e gives =x = 5=. It is calc's own
+command-key termination, so the number becomes the command's argument
+and the push folds into the command's undo group; the cost is the
+e-notation the key was, which goes in through algebraic entry
+(=' 1e6=) instead.
+
+SPC is a jump, not a value: the number names a stack level and point
+travels there (=maf-digit-jump=), landing at the entry's EOL — its
+margin — so the next command takes the whole entry. Level 0 is home; a
+level past the top of the stack lands on the top entry, as a jump past
+the end of a buffer lands on its last line. Nothing is entered or
+pushed, and the place point left is marked, so C-u C-SPC returns to it
+(home excepted, being one key away on =maf-go-home=). An entry that is
+not a whole number names no level and is refused, left standing in the
+minibuffer to be corrected. The cost is the push SPC was — calc's
+unshifted twin of RET in the entry — which leaves RET the only key
+that pushes. The gesture pairs with SPC out in the stack, where the
+edit module opens the entry at point (=maf-edit=): both keys are about
+the entry, one naming it, the other opening it.
+
+=n=, =P=, =e=, and SPC step aside where the key is calc's own: inside
+a radix-prefixed entry — where a letter is a digit and which letters
+count depends on the radix (=20#J= is 19), and where a number is
+plainly a value, since no one writes a stack level in base 16 — and
+with =maf-mode= off in the calc buffer the entry belongs to. =e= and
+SPC stand aside for an incomplete object too: half a vector is no
+entry to equate with or jump from, and SPC is calc's own element
+separator there, so =[ 1 SPC 2 ]= stays typeable. =n= and =P= work
+inside one, so a vector can be filled with multiples of pi.
 
 * Files
 
