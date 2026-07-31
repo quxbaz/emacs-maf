@@ -1728,17 +1728,26 @@ staying at their end). Selections travel with their entries."
 
 (defun maf--carry-entry (count up)
   "Move the entry at point COUNT levels, UP the screen when UP, else down.
-Point travels with the entry. COUNT is clamped to the room the entry
-has left in that direction; with no room at all, or with point at home
-or on an empty stack, nothing happens — no rewrite, no undo group."
+Point travels with the entry. The travel wraps around the stack: an
+entry carried past the deepest level reappears at level 1, and one
+carried past level 1 reappears at the deepest. With point at home or on
+an empty stack — and on a stack of one entry, or with a COUNT that laps
+it exactly — nothing happens: no rewrite, no undo group."
   (maf--with-calc-buffer
     (let* ((n (calc-stack-size))
            (m (calc-locate-cursor-element (point)))
            ;; m of 0 is home or an empty stack: no entry at point.
-           (room (cond ((<= m 0) 0)
-                       (up (- n m))
-                       (t (1- m))))
-           (k (min count room)))
+           ;; Otherwise the levels are a ring of size N and the entry
+           ;; travels COUNT places round it, so any count is in range.
+           (target (and (> m 0)
+                        (1+ (mod (+ (1- m) (if up count (- count))) n))))
+           ;; A wrapped travel is the same rewrite as the unwrapped one
+           ;; going the other way: carrying up from level N to level 1
+           ;; lifts every other entry one level, exactly as carrying the
+           ;; same entry down from N to 1 would. So the direction that
+           ;; matters below is the target's side of M, not UP.
+           (up (and target (> target m)))
+           (k (if target (abs (- target m)) 0)))
       (when (> k 0)
         (let ((snapshot (maf--point-snapshot))
               ;; Point as an offset into the entry's own text. The entry
@@ -1778,7 +1787,7 @@ or on an empty stack, nothing happens — no rewrite, no undo group."
                                  base (funcall roll sels))))
           ;; Calc parks point at home after the rewrite; follow the
           ;; entry to the level it landed on instead.
-          (calc-cursor-stack-index (if up (+ m k) (- m k)))
+          (calc-cursor-stack-index target)
           (goto-char (min (+ (point) offset) (point-max)))
           ;; A single undo reverts point along with the stack.
           (maf--undo-record-cmd-point snapshot))))))
@@ -1799,13 +1808,22 @@ their entries.
 
 The whole entry moves whatever point sits on — a sub-formula under
 point is carried along rather than traded away, which is what
-`maf-swap-up' does with it. With the entry at point already the
-deepest, or with point at home or on an empty stack, there is nothing
-to carry and the command does nothing.
+`maf-swap-up' does with it.
 
-A prefix argument N carries the entry N lines at once, stopping at the
-deepest entry rather than erroring; a negative N carries it down
-instead, as `maf-carry-down' does.
+The stack is a ring: an entry already the deepest is carried round to
+level 1, every other entry rising a level to make room.
+
+  3:  a|         3:  b
+  2:  b     =>   2:  c
+  1:  c          1:  a|
+
+With point at home or on an empty stack there is no entry to carry, and
+the command does nothing; on a stack of one entry there is nowhere to
+carry it to.
+
+A prefix argument N carries the entry N lines at once, wrapping as
+often as it takes; a negative N carries it down instead, as
+`maf-carry-down' does.
 
   C-u 3  4:  a       4:  d|
          3:  b   =>  3:  a
@@ -1823,12 +1841,18 @@ instead, as `maf-carry-down' does.
 
 The mirror of `maf-carry-up': the entry at point and the one below it
 exchange levels, point travelling with the entry it started on and
-keeping its place inside it. With the entry at point already on top —
-level 1, the bottom line — or with point at home or on an empty stack,
-there is nothing to carry and the command does nothing.
+keeping its place inside it. The stack is a ring here too — an entry
+already on top, at level 1, is carried round to the deepest level:
 
-A prefix argument N carries the entry N lines at once, stopping at
-level 1 rather than erroring; a negative N carries it up instead.
+  3:  a          3:  c|
+  2:  b     =>   2:  a
+  1:  c|         1:  b
+
+With point at home or on an empty stack there is no entry to carry, and
+the command does nothing.
+
+A prefix argument N carries the entry N lines at once, wrapping as
+often as it takes; a negative N carries it up instead.
 
   C-u 3  4:  a|      4:  b
          3:  b   =>  3:  c

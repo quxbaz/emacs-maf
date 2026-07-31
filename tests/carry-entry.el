@@ -41,10 +41,23 @@
   (cl-assert (= (calc-locate-cursor-element (point)) 1))
   (cl-assert (looking-at "11"))
 
-  ;; Already on top: carrying down is a no-op, and point does not move
-  ;; home.
+  ;; Already on top: the stack is a ring, so carrying down wraps to the
+  ;; deepest level, the entries below each dropping one to make room.
   (call-interactively 'maf-carry-down)
+  (cl-assert (string= (math-format-value (calc-top 4 'full)) "11"))
+  (cl-assert (string= (math-format-value (calc-top 3 'full)) "5"))
+  (cl-assert (string= (math-format-value (calc-top 2 'full)) "7"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "9"))
+  (cl-assert (= (calc-locate-cursor-element (point)) 4))
+  (cl-assert (looking-at "11"))
+
+  ;; And from the deepest, carrying up wraps back round to level 1 —
+  ;; undoing the wrap above.
+  (call-interactively 'maf-carry-up)
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "11"))
+  (cl-assert (string= (math-format-value (calc-top 2 'full)) "9"))
+  (cl-assert (string= (math-format-value (calc-top 3 'full)) "7"))
+  (cl-assert (string= (math-format-value (calc-top 4 'full)) "5"))
   (cl-assert (= (calc-locate-cursor-element (point)) 1))
   (cl-assert (looking-at "11"))
 
@@ -58,25 +71,40 @@
   (cl-assert (= (calc-locate-cursor-element (point)) 4))
   (cl-assert (looking-at "11"))
 
-  ;; The count clamps at the deepest entry rather than erroring — and
-  ;; with no room left at all, nothing happens.
+  ;; The count wraps rather than clamping: nine lines up a four-entry
+  ;; stack laps it twice over and lands one further, at level 1.
   (let ((current-prefix-arg 9)) (call-interactively 'maf-carry-up))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "11"))
+  (cl-assert (string= (math-format-value (calc-top 2 'full)) "9"))
+  (cl-assert (string= (math-format-value (calc-top 3 'full)) "7"))
+  (cl-assert (string= (math-format-value (calc-top 4 'full)) "5"))
+  (cl-assert (= (calc-locate-cursor-element (point)) 1))
+  (cl-assert (looking-at "11"))
+
+  ;; A count that laps the stack exactly brings the entry home again:
+  ;; nothing happens at all, not even a redraw that moves point.
+  (let ((current-prefix-arg 4)) (call-interactively 'maf-carry-up))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "11"))
+  (cl-assert (= (calc-locate-cursor-element (point)) 1))
+  (cl-assert (looking-at "11"))
+
+  ;; A negative count reverses the direction — and wraps the same way.
+  (let ((current-prefix-arg -2)) (call-interactively 'maf-carry-up))
+  (cl-assert (string= (math-format-value (calc-top 3 'full)) "11"))
+  (cl-assert (string= (math-format-value (calc-top 4 'full)) "5"))
+  (cl-assert (string= (math-format-value (calc-top 2 'full)) "7"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "9"))
+  (cl-assert (= (calc-locate-cursor-element (point)) 3))
+  (let ((current-prefix-arg -1)) (call-interactively 'maf-carry-down))
   (cl-assert (string= (math-format-value (calc-top 4 'full)) "11"))
   (cl-assert (= (calc-locate-cursor-element (point)) 4))
 
-  ;; A negative count reverses the direction.
-  (let ((current-prefix-arg -2)) (call-interactively 'maf-carry-up))
-  (cl-assert (string= (math-format-value (calc-top 2 'full)) "11"))
-  (cl-assert (string= (math-format-value (calc-top 4 'full)) "5"))
-  (cl-assert (string= (math-format-value (calc-top 3 'full)) "7"))
-  (cl-assert (= (calc-locate-cursor-element (point)) 2))
-  (let ((current-prefix-arg -1)) (call-interactively 'maf-carry-down))
-  (cl-assert (string= (math-format-value (calc-top 3 'full)) "11"))
-  (cl-assert (= (calc-locate-cursor-element (point)) 3))
-
   ;; A whole prefixed carry is one undo group.
   (progn (setq last-command nil) (call-interactively 'maf-undo))
-  (cl-assert (string= (math-format-value (calc-top 2 'full)) "11"))
+  (cl-assert (string= (math-format-value (calc-top 3 'full)) "11"))
+  (progn (setq last-command nil) (call-interactively 'maf-undo))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "11"))
+  (cl-assert (string= (math-format-value (calc-top 2 'full)) "9"))
 
   ;; Point inside a formula carries the whole entry — the sub-formula
   ;; travels with it rather than being traded away, which is what
@@ -137,7 +165,8 @@
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "7"))
   (cl-assert (maf--at-home-p))
 
-  ;; A single entry has nothing to carry, either way: no-op, no error.
+  ;; A single entry is a ring of one: it wraps onto itself, so both
+  ;; directions are no-ops rather than errors.
   (calc-pop (calc-stack-size))
   (calc-push 7)
   (calc-refresh)
