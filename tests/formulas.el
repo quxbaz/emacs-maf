@@ -5,7 +5,7 @@
 
 (maf-step
   (setq maf--formulas-stash (list maf-formulas-user maf-formulas--loaded
-                                  maf-formulas--recent)
+                                  maf-formulas--recent maf-use-formulas-mode)
         maf-formulas--loaded t          ; skip loading maf-formulas-file
         maf-formulas--recent nil        ; a clean session's recents
         maf-formulas-user
@@ -125,9 +125,15 @@
                       "Area of triangle")))
   (calc-pop (calc-stack-size))
 
-  ;; Restore the session state the fixture displaced.
+  ;; Restore the session state the fixture displaced. Turning the mode
+  ;; off first unregisters the fixture's var-eq-* variables; the real
+  ;; formulas are then back in place, so re-enabling (when the session
+  ;; had it on) registers those and hands `s o' back — a test run must
+  ;; not leave the live instance without the module it borrowed.
   (progn
     (maf-use-formulas-mode -1)
     (setq maf-formulas-user (nth 0 maf--formulas-stash)
           maf-formulas--loaded (nth 1 maf--formulas-stash)
-          maf-formulas--recent (nth 2 maf--formulas-stash))))
+          maf-formulas--recent (nth 2 maf--formulas-stash))
+    (when (nth 3 maf--formulas-stash)
+      (maf-use-formulas-mode 1))))
