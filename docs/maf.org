@@ -10,7 +10,7 @@
   2) [ ] Harden through using w/ anki math
 
 * Major features [4/9]
-  - [ ] Vim bindings module (noun, verb, char)
+  - [ ] Vim bindings module (move by noun, verb, char)
   - [X] Persistent sub-formula highlighting
   - [X] Timeline module
   - [ ] Graphing module
