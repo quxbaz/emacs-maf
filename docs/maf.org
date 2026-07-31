@@ -25,7 +25,7 @@
 
 * Feedback
   - [X] command to isolate current subexpr (and delete rest of entry)
-  - [ ] single-key (no modifiers) to force next cmd to target line
+  - [-] single-key (no modifiers) to force next cmd to target line
   - following cmds should be bound to single keys (no modifiers):
     - [ ] home (make sure to set mark)
     - [ ] expand
