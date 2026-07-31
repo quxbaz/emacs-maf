@@ -159,7 +159,7 @@ Groups are separated by a blank line."
     (setq header-line-format
           (if (string-empty-p maf-formulas--query)
               "maf-formulas — RET inserts · / filters · q quits"
-            (format "maf-formulas — filter: %s  (g clears)" maf-formulas--query)))
+            (format "maf-formulas — filter: %s  (q clears)" maf-formulas--query)))
     (let ((w (apply #'max 0 (mapcar (lambda (f) (length (maf-formulas--title f))) fs))))
       (dolist (f fs)
         (unless (equal (maf-formulas--category f) cat)
@@ -320,12 +320,28 @@ header, a second to the header before it."
           (t (user-error "No previous group")))))
 
 (defun maf-formulas-quit ()
-  "Quit the formula menu, closing the detail pane too."
+  "Quit the formula menu, closing the detail pane too.
+The menu's window is deleted if `maf-formulas' made one, or goes back to
+the buffer it displaced if it borrowed one; the rest of the frame is
+untouched either way."
   (interactive)
   (let ((dwin (get-buffer-window maf-formulas--detail-buffer)))
     (when (and dwin (not (eq dwin (selected-window))))
       (delete-window dwin)))
+  ;; `quit-window' is `pop-to-buffer''s counterpart: it deletes the
+  ;; window when the menu made one, and puts the displaced buffer back
+  ;; when it borrowed one. Either way the frame returns as it was.
   (quit-window))
+
+(defun maf-formulas-quit-or-clear-filter ()
+  "Clear the filter while the menu is narrowed, else quit the menu.
+`q' out of a filtered view backs out of the filter first, so the key
+that leaves never discards a narrowing you meant to keep looking at; a
+second `q' then leaves. `maf-formulas-quit' always quits outright."
+  (interactive)
+  (if (string-empty-p maf-formulas--query)
+      (maf-formulas-quit)
+    (maf-formulas-clear-filter)))
 
 (defvar maf-formulas-mode-map (make-sparse-keymap)
   "Keymap for `maf-formulas-mode'.")
@@ -334,7 +350,7 @@ header, a second to the header before it."
 (define-key maf-formulas-mode-map (kbd "RET") #'maf-formulas-insert)
 (define-key maf-formulas-mode-map (kbd "/")   #'maf-formulas-filter)
 (define-key maf-formulas-mode-map (kbd "g")   #'maf-formulas-clear-filter)
-(define-key maf-formulas-mode-map (kbd "q")   #'maf-formulas-quit)
+(define-key maf-formulas-mode-map (kbd "q")   #'maf-formulas-quit-or-clear-filter)
 (define-key maf-formulas-mode-map (kbd "n")   #'next-line)
 (define-key maf-formulas-mode-map (kbd "p")   #'previous-line)
 (define-key maf-formulas-mode-map (kbd "j")   #'next-line)
@@ -349,7 +365,8 @@ header, a second to the header before it."
 Formulas are grouped by category, each shown beside its form; the
 detail pane follows point. \\<maf-formulas-mode-map>\\[maf-formulas-insert]
 pushes the formula at point onto the stack, \\[maf-formulas-filter]
-filters, \\[maf-formulas-clear-filter] clears the filter, \\[maf-formulas-quit] quits."
+filters, \\[maf-formulas-clear-filter] clears the filter, \\[maf-formulas-quit-or-clear-filter] clears the
+filter when narrowed and quits otherwise."
   (setq truncate-lines t)
   (add-hook 'post-command-hook #'maf-formulas--update-detail nil t))
 
@@ -365,9 +382,19 @@ filters, \\[maf-formulas-clear-filter] clears the filter, \\[maf-formulas-quit] 
     (with-current-buffer buf
       (maf-formulas-mode)
       (maf-formulas--render))
+    ;; Ordinary `pop-to-buffer' display: Emacs picks the window by the
+    ;; usual rules, so `display-buffer-alist' can route the menu, and
+    ;; `maf-formulas-quit' undoes exactly what was done. Only the menu's
+    ;; own window is split, for the detail pane.
     (pop-to-buffer buf)
-    (delete-other-windows)
-    (display-buffer dbuf '((display-buffer-below-selected) (window-height . 0.4)))
+    ;; A float `window-height' is a fraction of the frame, which starves
+    ;; the list when the menu got half a frame to begin with: size the
+    ;; detail against the menu's own window, and leave the list usable.
+    (let* ((avail (window-body-height))
+           (h (max 4 (min (round (* 0.4 avail)) (- avail 6)))))
+      (display-buffer dbuf `((display-buffer-below-selected)
+                             (window-height . ,h)
+                             (inhibit-same-window . t))))
     (maf-formulas--update-detail)))
 
 ;;; The module
