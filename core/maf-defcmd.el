@@ -123,6 +123,13 @@ OPTS configure context resolution and commit:
           instead of pairing its two sides with the subject's sides. For
           commands that consume a relation argument as one operand.
 
+  :scope  Narrows which targets resolve. `entry' takes the whole entry
+          at point (the top at home) whatever the gesture, for commands
+          with no sub-formula meaning; `explicit' takes it whole only
+          when the narrowing was implicit, so a region or a calc
+          selection still picks out a part. Absent, every target
+          resolves as usual. See `maf--resolve-context'.
+
   :widen  A predicate (named as a bare symbol) deciding which
           sub-formulas the command can act on. At the subexpr target the
           node under point is widened outward to the innermost ancestor
