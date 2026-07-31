@@ -90,6 +90,27 @@ Commit honors the same intent: an entry-scoped push binds
 into an active sub-formula selection, and the replacement entry
 carries no selection.
 
+** Entry-scoped commit
+
+=:commit-scope entry= is the other half of the same idea, and
+independent of =:scope=: where =:scope= decides what the body
+/receives/, =:commit-scope= decides where its value /lands/. With it,
+the value replaces the whole entry at the target's stack level instead
+of being spliced back into the sub-formula slot the target named. The
+cascade still runs in full — point narrows to a sub-formula, a region,
+a selection, as ever — and what changes is that the part it picked out
+stands as the entry afterwards, the formula around it discarded.
+
+=mafcmd-raise= is the whole use: resolve a part, keep only it. Its
+body is one call, =(commit expr)=, and every bit of the behavior is in
+where that value goes.
+
+Such a push needs the =calc-use-selections= bypass above for the
+opposite reason an entry-scoped command does: its target may well /be/
+a selection, and letting calc redirect the push into that selection
+would splice the value back into the very formula the command exists
+to throw away.
+
 * The region target
 
 Calc stores a sum as a left-nested binary tree and a product as a
@@ -165,7 +186,9 @@ shadow later ones:
    keys are =:arity= (the symbol =unary= or =binary=), =:prefix= (the
    trail label string), =:map= (=-1= opts out of relation mapping),
    =:pair= (=-1= keeps a relation argument whole at an equation target),
-   and the I/H variant links (command symbols); any other keyword
+   =:commit-scope= (=entry= lands the value as the whole entry — see
+   [[*Entry-scoped commit][Entry-scoped commit]]), and the I/H variant links (command symbols);
+   any other keyword
    passes through untouched, so resolve/commit extensions can define
    their own.
 3. *Ambient state* — snapshots taken at resolve time: =:keep= (the

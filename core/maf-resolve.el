@@ -51,6 +51,9 @@
 ;;                 entries popped at :commit-m before pushing.
 ;;   :post-pop     Number of entries popped from the top *after* the push,
 ;;                 to consume extra inputs (e.g. the binary arg on selection).
+;;   :commit-scope From OPTS: when `entry', commit replaces the whole entry
+;;                 with the value instead of splicing it into the
+;;                 sub-formula slot the target named (see `maf--commit').
 ;;   :reselect     If non-nil, commit carries the result as the new selection
 ;;                 on the pushed entry. Set for targets with an explicit
 ;;                 user-set selection (selection); nil for implicit ones

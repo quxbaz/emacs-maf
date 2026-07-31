@@ -256,6 +256,16 @@
 (define-key maf-mode-map (kbd "j U") #'mafcmd-unpack)
 (define-key maf-mode-map (kbd "j M-U") #'mafcmd-unpack)
 
+;; Keep only the part point names: it becomes the whole entry, the
+;; formula around it discarded. j j is unbound in calc itself — its j
+;; prefix is the selection commands, which have no j of their own — and
+;; the command belongs with them, working as it does on the part point
+;; picks out. "Raise" is `raise-sexp's operation, the form at point
+;; replacing the form around it; the word "isolate" is spoken for here
+;; by `mafcmd-auto-solve', which isolates a sub-expression by solving
+;; the relation for it.
+(define-key maf-mode-map (kbd "j j") #'mafcmd-raise)
+
 ;; Group a vector's elements N at a time, N from the stack. l g is
 ;; unbound in calc itself — its l prefix is the logarithmic units,
 ;; which has no g — and it joins maf's other l bindings above.

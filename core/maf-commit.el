@@ -46,10 +46,19 @@ formula otherwise) and :m is that entry's stack level after the pops."
            (commit-n (alist-get :commit-n context))
            (post-pop (alist-get :post-pop context))
            (m        (alist-get :m context))
+           ;; Which commit shape applies: a sub-formula slot splices the
+           ;; value back into the entry that held it, a whole entry
+           ;; replaces the entry outright. `:commit-scope entry' asks for
+           ;; the entry shape from a target that named only a part — the
+           ;; part stands as the whole entry, the formula around it gone
+           ;; (`mafcmd-raise').
+           (shape    (if (eq (alist-get :commit-scope context) 'entry)
+                         'entry
+                       target))
            ;; The target entry's level once post-pop consumes entries at
            ;; the top: every pop below it renumbers it down by one.
            (landed-m (- commit-m post-pop)))
-      (pcase target
+      (pcase shape
         ((or 'selection 'subexpr)
          ;; Body received the clean :expr and produced a clean val. Splice
          ;; val back into the entry by matching the encased :expr-ref against
@@ -94,8 +103,13 @@ formula otherwise) and :m is that entry's stack level after the pops."
          ;; into any active sub-formula selection.  Entry-scoped commands
          ;; deliberately bypass selections, so disable that redirection for
          ;; this operation; the replacement entry carries no selection.
+         ;; A `:commit-scope entry' command needs the same bypass for the
+         ;; opposite reason: its target may well *be* a selection, and
+         ;; redirecting the push into it would splice the value back into
+         ;; the formula this command exists to discard.
          (let* ((entry-scoped-p
-                 (eq (alist-get :scope context) 'entry))
+                 (or (eq (alist-get :scope context) 'entry)
+                     (eq (alist-get :commit-scope context) 'entry)))
                 (calc-use-selections
                  (and (not entry-scoped-p) calc-use-selections)))
            (maf--commit-push commit-n prefix val commit-m nil post-pop)

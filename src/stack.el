@@ -3719,6 +3719,43 @@ An explicit calc selection is taken as it stands and never widened.
       ((null (cdr parts)) (car parts))
       (t expr)))))
 
+;;; Raising
+
+(maf-defcmd mafcmd-raise (expr _arg commit)
+  "Discard everything in the entry but the resolved expression.
+
+  x + sin|(2 y)  =>  sin(2 y)
+
+The part point names becomes the whole stack entry. Nothing is
+computed and nothing is simplified: the formula that held the part is
+thrown away and the part arrives exactly as it stood.
+
+  a + |b + c  =>  b
+  x = 3| y    =>  3 y     (a relation's side)
+
+Point picks the target as usual — the sub-formula at point, the run of
+terms a region covers, an explicit calc selection. Where the target
+already is the whole entry, at home or on the entry's margin, there is
+nothing around it to discard and the entry commits unchanged. With
+calc's keep-args flag the entry stays as it stands and the raised part
+arrives as a new entry on top of it.
+
+  (a + b|) (2 c - d)  =>  a + b
+  [1, |2, 3]          =>  2
+  a| + b + c          =>  a + b   (a sum groups leftward: (a + b) + c)
+  x + y|              =>  x + y   (the margin names the whole entry)"
+  :arity unary
+  :prefix "rais"
+  ;; The value replaces the entry that held it — that is the whole
+  ;; command. Without this, commit would splice the part back into the
+  ;; slot it came from, which is exactly the no-op it is not.
+  :commit-scope entry
+  ;; A relation under point is raised whole, like any other node: there
+  ;; is no per-side reading of \"keep only this\", and mapping would
+  ;; rebuild a relation the command means to leave untouched.
+  :map -1
+  (commit expr))
+
 (defvar maf-undo--chain-point nil
   "Point snapshot saved by the last `maf-undo'/`maf-redo' in a chain.
 Holds where point stood just before that command changed the buffer —

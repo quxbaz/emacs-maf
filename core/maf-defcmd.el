@@ -130,6 +130,15 @@ OPTS configure context resolution and commit:
           selection still picks out a part. Absent, every target
           resolves as usual. See `maf--resolve-context'.
 
+  :commit-scope
+          When `entry', the body's value replaces the whole entry at
+          the target's stack level rather than being spliced back into
+          the sub-formula slot the target named. The command still
+          resolves a part from point; what differs is that the part
+          stands as the entry afterwards, the formula around it gone
+          (`mafcmd-raise'). Independent of `:scope', which decides what
+          the body receives, not where the result lands.
+
   :widen  A predicate (named as a bare symbol) deciding which
           sub-formulas the command can act on. At the subexpr target the
           node under point is widened outward to the innermost ancestor
