@@ -35,11 +35,12 @@
 (require 'maf-conf "conf")   ; the `maf' customize group
 
 (defface maf-selplus-badge
-  '((t :inherit success :inverse-video t))
+  '((t :inherit warning :inverse-video t))
   "Face for the selection badge in the calc header line.
-Inverse video makes it a filled box, as maf-edit's banner badge is;
-`success' rather than that badge's `warning' so the two states are
-told apart at a glance."
+The same colors as maf-edit's banner badge — `warning' under inverse
+video, a filled box — so the two mode indicators read as one thing in
+two states rather than as two unrelated decorations. The badge's text
+says which state it is."
   :group 'maf)
 
 (defcustom maf-selplus-badge-label " selection "
