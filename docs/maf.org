@@ -29,8 +29,8 @@
   - [-] convenient binding to duplicate subexpr and keep point
     - [-] Make RET work with keep-args flag - it should keep point
   - maf-edit
-    - [ ] change text: "C-j newline" -> "S-RET newline"
-  - following cmds should be boudn to single keys (no modifiers):
+    - [-] change text: "C-j newline" -> "S-RET newline"
+  - following cmds should be bound to single keys (no modifiers):
     - [ ] home (make sure to set mark)
     - [ ] expand
     - [ ] simplify
@@ -44,7 +44,7 @@
     - [ ] filter as search string changes
     - [ ] tab to move between filter and results
     - [ ] add recents (first group)
-  - [ ] bind `# m` to go to entry #
+  - [ ] bind `# j` to jump to entry #
   - [ ] C-c C-c should target entire entry
     2:  p(x) = 16 x^4 - 8 x^3 + 4 x^2 - 2 x + 1
     1:  x = 1:2
