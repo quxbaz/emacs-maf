@@ -26,6 +26,9 @@
 (declare-function calc-locate-cursor-element "calc-yank")
 (declare-function calc-del-selection "calc-sel")
 (declare-function calc-clear-selections "calc-sel")
+;; Calc's fancy-prefix dispatch (K, I, H, O), advised below.
+(declare-function calc-fancy-prefix-other-key "calc-ext")
+(declare-function calc-unread-command "calc")
 (declare-function calc-change-mode "calc-mode")
 (declare-function calc-reset "calc-ext")
 ;; The timeline is a feature module, optional by design; `maf-reset'
@@ -2052,8 +2055,9 @@ Signals an error on an empty stack when there is no region."
 
 The copy is pushed on top and the originals are untouched, so the
 stack grows by one. Like calc's own duplicate the copy is verbatim:
-nothing simplifies or evaluates, and keep-args makes no difference.
-Signals an error on an empty stack.
+nothing simplifies or evaluates, and keep-args changes nothing about
+what lands on the stack — it only holds point (see below). Signals an
+error on an empty stack.
 
 Point picks the target as usual — a sub-formula at point, a calc
 selection or an active region's run when either is present, the whole
@@ -2074,21 +2078,32 @@ command still targets what point was on — C-u RET, with `maf-dup-here'
 as the named entry point.
 
   1:  (a +| b) c   C-u RET  =>   2:  (a +| b) c
-                                 1:  b            (point stays on b)"
+                                 1:  b            (point stays on b)
+
+Calc's keep-args prefix asks for the same hold: K RET duplicates and
+keeps point, the modifier route to what C-u RET does. The flag reads as
+it always does, as \"consume nothing\" — and a duplicate consumes
+nothing on the stack to begin with, so what it spares here is point."
   (interactive "P")
   (maf--with-calc-buffer
     (when (zerop (calc-stack-size))
       (user-error "Stack is empty"))
-    ;; The origin to mark before point homes: nil when point is already
-    ;; home or keep-point will hold it. Captured now, before resolve
-    ;; probes calc state and may move point; the buffer is unedited until
-    ;; the push, so the position stays valid.
-    (let* ((origin (unless (or keep-point (maf--at-home-p)) (point)))
+    ;; The origin to mark before point homes, captured now, before
+    ;; resolve probes calc state and may move point; the buffer is
+    ;; unedited until the push, so the position stays valid. Unused when
+    ;; point turns out to be held (keep-args is only known after
+    ;; resolve), and nil when point is already home.
+    (let* ((origin (unless (maf--at-home-p) (point)))
            ;; Unary resolution (no arg, so no below-top restriction) with
            ;; :map -1 so a relation stays whole in :expr rather than mapping
            ;; per side. We only read :expr and push it.
            (context (maf--resolve-context '((:arity . unary) (:map . -1))))
-           (expr (alist-get :expr context)))
+           (expr (alist-get :expr context))
+           ;; K RET holds point just as C-u RET does. The flag is read
+           ;; from resolve's snapshot: calc-wrapper's epilogue clears it
+           ;; below, and `maf--fancy-prefix-keep-ret' is what got it here
+           ;; through RET at all.
+           (keep-point (or keep-point (alist-get :keep context))))
       ;; calc-wrapper's epilogue parks point home; keep-point puts it back.
       (if keep-point
           (maf--preserve-point (calc-wrapper (calc-push expr)))
@@ -2221,11 +2236,44 @@ item at point is duplicated onto the top of the stack (`maf-dup').
 A prefix argument (KEEP-POINT non-nil) passes through to the duplicate,
 which then keeps point instead of homing — RET's prefix must reach
 `maf-dup' through this dispatcher, since RET is bound here. The clear
-moves point nowhere to begin with, so the prefix does not vary it."
+moves point nowhere to begin with, so the prefix does not vary it.
+Calc's keep-args flag (K RET) holds point the same way; `maf-dup' reads
+it, and `maf--fancy-prefix-keep-ret' is what lets it survive the key."
   (interactive "P")
   (if (maf--sel-any-p)
       (maf-clear-selections)
     (maf-dup keep-point)))
+
+(defun maf--fancy-prefix-keep-ret (orig arg)
+  "Let RET through calc's fancy prefix without clearing its flags.
+A fancy prefix (K, I, H, O) sets its flag and installs
+`calc-fancy-prefix-map' as the overriding map, so the next key runs
+`calc-fancy-prefix-other-key' (ORIG, with prefix argument ARG) instead
+of its own binding. That function decides whether the key was a calc
+command: anything below SPC — every control character, RET among them —
+counts as \"not a Calc command\" and gets the flags cleared before the
+key is unread and dispatched for real. On a graphical frame the event is
+the symbol `return', not an integer, which fails the same test.
+
+RET is a maf command (`maf-dup-or-clear-selections'), and K RET is
+meant to reach it with keep-args still standing, so keep the flags for
+that one key and do only what ORIG does for a calc command: pass the
+prefix argument along, unread the key, and drop the overriding map. The
+flag then clears where every other command's does, in the epilogue of
+the `calc-wrapper' that runs inside `maf-dup'.
+
+Only for a keep-args RET in a maf buffer — plain calc, and I/H/O whose
+flags RET has no meaning for, keep calc's own behavior."
+  (if (and calc-keep-args-flag
+           (memq last-command-event '(?\r return))
+           (maf--with-calc-buffer maf-mode))
+      (progn
+        (setq prefix-arg arg)
+        (calc-unread-command)
+        (setq overriding-terminal-local-map nil))
+    (funcall orig arg)))
+
+(advice-add 'calc-fancy-prefix-other-key :around #'maf--fancy-prefix-keep-ret)
 
 ;; Calc's JumpRules are written for = alone: all 24 rules match
 ;; plain(... = ...) and nothing else. The same moves hold across a !=
