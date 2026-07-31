@@ -58,6 +58,10 @@
 
 * Todo
 # NOW
+** TODO Custom map function, consolidate mapping operations across different
+   contracts into a single command. Equations and vectors, anything else?
+   - map against stack function
+   - map against given entry
 ** TODO bind list formulas to 'm o' for now
 ** TODO possible to float preview pane at top?
 ** TODO selection mode indicator should clear the "Emacs Calculator Mode" text just like maf-edit does
