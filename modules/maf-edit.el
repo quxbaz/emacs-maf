@@ -638,16 +638,29 @@ editing state go on `maf-edit-mode-map'."
                (signal (car err) (cdr err))))
     (maf-edit--exit)))
 
+(defun maf-edit--newline-key ()
+  "Key label for the newline gesture, faced as `substitute-command-keys' does.
+That function would name C-j: bound last, it comes first in the
+keymap, and it is only the terminal stand-in for the S-RET the
+banner is there to teach.  RET is spelled the short way, so the
+gesture built on it is too."
+  (let* ((keys (where-is-internal #'maf-edit-newline maf-edit-mode-map))
+         (desc (cond ((member [S-return] keys) "S-RET")
+                     (keys (key-description (car keys)))
+                     (t "M-x maf-edit-newline"))))
+    (propertize desc 'face 'help-key-binding 'font-lock-face 'help-key-binding)))
+
 (defun maf-edit--header-line ()
   "Header line shown while editing: a badge plus the exit gestures.
 Built with `substitute-command-keys' so rebinding the gestures in
-`maf-edit-mode-map' keeps the banner accurate."
+`maf-edit-mode-map' keeps the banner accurate; the newline gesture
+goes through `maf-edit--newline-key' for the same reason."
   (concat
    (propertize " maf-edit " 'face '(:inherit warning :inverse-video t))
+   (substitute-command-keys " \\<maf-edit-mode-map>\\[maf-edit-commit] commit")
+   " · " (maf-edit--newline-key) " newline"
    (substitute-command-keys
-    (concat " \\<maf-edit-mode-map>\\[maf-edit-commit] commit"
-            " · \\[maf-edit-newline] newline"
-            " · \\[maf-edit-discard] discard"))))
+    " · \\<maf-edit-mode-map>\\[maf-edit-discard] discard")))
 
 (defun maf-edit--enter ()
   "Make the calc buffer editable: the body of turning `maf-edit-mode' on."
