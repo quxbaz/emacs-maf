@@ -1016,9 +1016,9 @@ Enabled, SPC / C-<return> / S-<return> / ( run the maf-edit entry
 commands; disabled, they cede back to calc. SPC shadows one of
 calc-enter's two keys (RET still runs it) and enters editing, where
 `maf-edit-mode-map's RET commits; the rest are the quick-add gestures.
-S-<return> opens an entry below point, and C-j doubles for it on
-terminals, which cannot deliver it; C-j shadows calc-over, whose
-level-2 duplicate is `maf-dup' at point. ( opens a bracketed vector
+S-<return> opens an entry below point; a terminal that cannot deliver
+the key reaches the command by name, C-j being left to calc-over.
+( opens a bracketed vector
 entry at the bottom, shadowing calc-begin-complex — a complex number
 is still one entry away as (a, b) typed into any of these gestures,
 while [ keeps calc-begin-vector for the digit-entry route.
@@ -1038,12 +1038,10 @@ on-demand `maf-edit-mode' editing session they lead into."
         (define-key maf-mode-map (kbd "SPC") #'maf-edit)
         (define-key maf-mode-map (kbd "C-<return>") #'maf-edit-add-entry)
         (define-key maf-mode-map (kbd "S-<return>") #'maf-edit-add-entry-below)
-        (define-key maf-mode-map (kbd "C-j") #'maf-edit-add-entry-below)
         (define-key maf-mode-map (kbd "(") #'maf-edit-add-vector))
     (define-key maf-mode-map (kbd "SPC") nil)
     (define-key maf-mode-map (kbd "C-<return>") nil)
     (define-key maf-mode-map (kbd "S-<return>") nil)
-    (define-key maf-mode-map (kbd "C-j") nil)
     (define-key maf-mode-map (kbd "(") nil)))
 
 ;; Register with the module system when it is present; the mode above

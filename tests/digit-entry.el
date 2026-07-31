@@ -177,14 +177,4 @@
   (cl-assert (equal (mapcar (lambda (i) (math-format-value (calc-top i 'full)))
                             (number-sequence 1 4))
                     '("z" "y" "x" "w")))
-  (calc-pop (calc-stack-size))
-
-  ;; C-j is the terminal stand-in for the same gesture, S-<return> being
-  ;; an event no terminal can deliver.
-  (maf-push "w") (maf-push "x") (maf-push "y") (maf-push "z")
-  (progn (goto-char (point-min)) (forward-line 1) (end-of-line))
-  (execute-kbd-macro (kbd "9 C-j"))
-  (cl-assert (equal (mapcar (lambda (i) (math-format-value (calc-top i 'full)))
-                            (number-sequence 1 5))
-                    '("z" "y" "9" "x" "w")))
   (calc-pop (calc-stack-size)))

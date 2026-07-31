@@ -120,10 +120,9 @@
 ;; needs the decode entry installed at the end of this file, and a
 ;; terminal that sends the sequence — see docs/memory/dev-instance.md.
 ;; A terminal that does not send it falls back to ESC 0x08, which
-;; arrives as C-M-h; bind that as the terminal stand-in, as the edit
-;; module does with C-j for S-<return>. It shadows only mark-defun,
-;; which has no use in a calc buffer, at the cost of Ctrl+Alt+h
-;; rolling too.
+;; arrives as C-M-h; bind that as the terminal stand-in. It shadows
+;; only mark-defun, which has no use in a calc buffer, at the cost of
+;; Ctrl+Alt+h rolling too.
 (define-key maf-mode-map (kbd "C-M-<backspace>") #'maf-roll-to-bottom)
 (define-key maf-mode-map (kbd "C-M-h") #'maf-roll-to-bottom)
 ;; Restack: the entry at point travels to the top, point riding along.
