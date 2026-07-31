@@ -137,6 +137,14 @@
 ;; Terminals need the decode entry installed at the end of this file.
 (define-key maf-mode-map (kbd "S-<backspace>") #'maf-roll-to-top)
 (define-key maf-mode-map (kbd "S-DEL") #'maf-roll-to-top)
+;; Carry the entry at point one line up or down the screen, point
+;; riding along — the stack's version of moving a line in a text
+;; buffer, and the one-step counterpart of the backspace pair above,
+;; which sends an entry to either end. Calc binds neither key, and the
+;; arrows are already the buffer's motion keys; S-<up>/S-<down> next to
+;; them toggle the operator at point. A prefix argument counts lines.
+(define-key maf-mode-map (kbd "M-<up>") #'maf-carry-up)
+(define-key maf-mode-map (kbd "M-<down>") #'maf-carry-down)
 ;; Contextual duplicate, shadowing calc-enter. At home it dups the top
 ;; as calc-enter does; elsewhere it pushes a copy of the resolved item.
 ;; With a selection active the same key clears the selections instead —
