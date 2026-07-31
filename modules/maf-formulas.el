@@ -48,6 +48,17 @@
   "Face for category headers and the detail title in the formula menu."
   :group 'maf)
 
+(defface maf-formulas-recent
+  '((t :inherit warning :weight bold))
+  "Face for the \"Recent\" header in the formula menu.
+Gold rather than the category color the other headers take: the group
+is not a category at all, but what this session reached for last, and
+it leads the buffer where the eye starts. The gold is `warning's,
+which is where maf-edit's header badge takes its own from — one gold
+across maf's buffers, and it follows the theme rather than pinning a
+color that only suits some."
+  :group 'maf)
+
 (defface maf-formulas-var
   '((t :inherit font-lock-variable-name-face))
   "Face for variable names in the formula detail."
@@ -209,7 +220,11 @@ Groups are separated by a blank line."
       (dolist (g groups)
         (unless first (insert "\n"))    ; blank line above each group
         (setq first nil)
-        (insert (propertize (car g) 'face 'maf-formulas-category) "\n")
+        (insert (propertize (car g) 'face
+                            (if (equal (car g) maf-formulas--recent-category)
+                                'maf-formulas-recent
+                              'maf-formulas-category))
+                "\n")
         (dolist (f (cdr g))
           (let* ((start (point))
                  (title (maf-formulas--title f))

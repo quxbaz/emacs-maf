@@ -104,6 +104,14 @@
                                                         (goto-char (point-min))
                                                         (line-end-position)))
                       "Recent"))
+    ;; It is set apart in its own face — the group is not a category, so
+    ;; it does not take the category color the headers below it keep.
+    (cl-assert (eq (get-text-property (point-min) 'face) 'maf-formulas-recent))
+    (cl-assert (eq (save-excursion
+                     (goto-char (point-min))
+                     (search-forward "Geometry — 3D: Sphere")
+                     (get-text-property (line-beginning-position) 'face))
+                   'maf-formulas-category))
     (cl-assert (equal (maf-formulas--title (get-text-property (point) 'maf-formula))
                       "Volume of sphere"))
     (cl-assert (= 2 (let ((n 0) (i 0) (s (buffer-string)))
