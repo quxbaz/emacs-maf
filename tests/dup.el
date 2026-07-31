@@ -1,8 +1,8 @@
 ;; `maf-dup' is a real command (src/stack.el), so these steps drive it
 ;; directly across every resolver target. A step passes when it raises
 ;; no error. The contract: a copy is pushed on top, originals untouched,
-;; verbatim, point parks home (unless a prefix argument keeps it);
-;; keep-args makes no difference.
+;; verbatim, point parks home (unless a prefix argument, or calc's
+;; keep-args flag, keeps it); keep-args changes nothing on the stack.
 
 (maf-step
   ;; home: point at home duplicates the top entry, stack grows by one,
@@ -119,7 +119,34 @@
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "1 + 2"))
   (calc-pop (calc-stack-size))
 
-  ;; keep-args makes no difference: still exactly one copy pushed.
+  ;; keep-args holds point exactly as the prefix argument does: the same
+  ;; copy is pushed, point stays on the +, and no mark is left.
+  (maf-push "(a + b) c")
+  (progn (goto-char (point-min)) (search-forward "+") (backward-char 1)
+         (setq mark-ring nil) (set-mark nil))
+  (let ((calc-keep-args-flag t))
+    (call-interactively 'maf-dup))
+  (cl-assert (= (calc-stack-size) 2))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "a + b"))
+  (cl-assert (eq (char-after) ?+))
+  (cl-assert (not (maf--at-home-p)))
+  (cl-assert (null (mark t)))           ; the hold leaves no mark either
+  (calc-pop (calc-stack-size))
+
+  ;; K RET is the key route to that hold, and it takes real keys to test:
+  ;; calc's fancy prefix clears its flags before any control character,
+  ;; RET among them, until `maf--fancy-prefix-keep-ret' spares this one.
+  (maf-push "(a + b) c")
+  (progn (goto-char (point-min)) (search-forward "+") (backward-char 1)
+         (execute-kbd-macro (kbd "K RET")) nil)
+  (cl-assert (= (calc-stack-size) 2))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "a + b"))
+  (cl-assert (eq (char-after) ?+))       ; point held, as C-u RET holds it
+  (cl-assert (not calc-keep-args-flag))  ; and the flag consumed, not leaked
+  (calc-pop (calc-stack-size))
+
+  ;; The stack is calc's own either way: still exactly one copy pushed,
+  ;; nothing kept back, flag or no flag.
   (maf-push "a + b c")
   (let ((calc-keep-args-flag t))
     (goto-char (point-max))

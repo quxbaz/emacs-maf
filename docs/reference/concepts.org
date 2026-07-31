@@ -403,6 +403,14 @@ accordingly:
 In schema terms, =:commit-m=, =:commit-n=, and =:post-pop= encode the
 recipe; commit just executes it.
 
+A hand-written command may read =:keep= for something else. =maf-dup=
+(RET) does: a duplicate consumes nothing to begin with, so the flag
+cannot change what lands on the stack, and it spends it on point
+instead — =K RET= duplicates and holds point where it was, exactly as
+=C-u RET= does. RET only sees the flag at all through
+=maf--fancy-prefix-keep-ret=; calc's fancy-prefix dispatch clears its
+flags before any control character.
+
 * The commit recipe
 
 Three context keys describe what commit should do:
