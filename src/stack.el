@@ -2463,8 +2463,8 @@ is left behind for the next keystroke to trip over.
 
 A != is handled alongside =, on rules maf derives from calc's own. The
 ordered relations (<, <=, >, >=) are not: moving a term across one can
-flip its direction, which no rewrite rule can decide. Use M-i
-\(`mafcmd-auto-solve') on those.
+flip its direction, which no rewrite rule can decide. Use
+`mafcmd-isolate' on those.
 
 At home, where point names no entry, a selection standing anywhere is
 the term to move and the jump goes to it.
@@ -2744,8 +2744,14 @@ Nil means solve for a variable instead; read by `maf--auto-solve-run'.")
 
 (defvar maf--solve-target-isolated nil
   "Non-nil when `maf--auto-solve-run' isolated `maf--solve-target'.
-Bound per `mafcmd-auto-solve' call so its point handling can distinguish
+Bound per `mafcmd-isolate' call so its point handling can distinguish
 a successful isolation from the fallback variable solve.")
+
+(defvar maf--solve-solved-var nil
+  "Variable `maf--auto-solve-run' solved the relation for, or nil.
+Set only when the solve produced a relation, so a subject that came
+back unchanged leaves it nil. Bound per call by `maf--auto-solve',
+which reads it to land point on the variable the solve isolated.")
 
 (defun maf--auto-solve-target ()
   "Return the sub-expression under point to isolate, or nil.
@@ -2765,7 +2771,10 @@ solves for a variable instead."
 
 (maf-defcmd maf--auto-solve-run (expr _arg commit)
   "Solve the whole relation for `maf--solve-target', else for a variable.
-The worker behind `mafcmd-auto-solve' — see there. Takes the whole entry
+The worker behind `mafcmd-auto-solve' and `mafcmd-isolate' — see there.
+Which of the two ran is invisible here: the difference is only whether
+the caller found a sub-expression to put in `maf--solve-target', and
+`mafcmd-auto-solve' never looks for one. Takes the whole entry
 \(`:scope entry') and solves it: for `maf--solve-target' (the
 sub-expression under point) when that is set and solvable, otherwise for
 a variable — the first of x, y, z, t then alphabetical, cycling to the
@@ -2800,8 +2809,14 @@ bare expression is treated as = 0; nothing solvable commits unchanged."
                               (if pos
                                   (nth (mod (1+ pos) n) vars)
                                 (car vars))))
+                        (setq maf--solve-solved-var var)
                         (math-solve-eqn rel var nil)))))))))
-    (commit (if (maf--relation-p result) result expr))))
+    ;; Nothing solvable: the subject commits unchanged, so no variable
+    ;; was isolated after all and point has nothing to land on.
+    (if (maf--relation-p result)
+        (commit result)
+      (setq maf--solve-solved-var nil)
+      (commit expr))))
 
 (defun maf--auto-solve-point-offset ()
   "Point's offset within the sub-expression under point, or nil.
@@ -2819,8 +2834,84 @@ do not shift the offset."
             (skip-chars-forward "(")
             (max 0 (- pt (point)))))))))
 
+(defun maf--auto-solve-land-on-var (var)
+  "Put point on VAR where the solve left it in the entry at point.
+The solved-for variable stands alone on one side of the result, but
+which side is calc's call: solving 5 - x > 2 for x gives 3 > x, the
+variable on the right. So the side is found rather than assumed, and
+point goes to the start of its rendering. A result that does not carry
+VAR as a bare side — an unchanged subject, a partial solve — leaves
+point where it was."
+  (let ((m (maf--with-calc-buffer (calc-locate-cursor-element (point)))))
+    (when (> m 0)
+      (let* ((formula (maf--with-calc-buffer (calc-top m 'full)))
+             ;; The matched cons comes from the formula itself, which is
+             ;; what the composition machinery can locate on screen.
+             (side (and (maf--relation-p formula)
+                        (cl-find var (list (nth 1 formula) (nth 2 formula))
+                                 :test #'equal))))
+        (when side
+          (maf--point-restore-start `((:node . ,side) (:m . ,m))))))))
+
+(defun maf--auto-solve (isolate)
+  "Solve the entry at point, isolating the sub-expression when ISOLATE.
+The shared body of `mafcmd-auto-solve' and `mafcmd-isolate': the two
+differ only in whether point is read for a sub-expression to isolate,
+which is what ISOLATE decides. Without it the worker sees no target and
+solves for a variable, so the whole entry is the subject however deep
+in the formula point rests.
+
+Either way point lands on what the solve isolated — the sub-expression
+when that was the target, otherwise the variable solved for. The undo
+point is re-recorded afterwards, so one `maf-undo' still returns point
+to where the command ran."
+  (let* ((maf--solve-target (and isolate (maf--auto-solve-target)))
+         (maf--solve-target-isolated nil)
+         (maf--solve-solved-var nil)
+         (snapshot (maf--point-snapshot))
+         (offset (and maf--solve-target (maf--auto-solve-point-offset))))
+    (call-interactively #'maf--auto-solve-run)
+    (cond
+     (maf--solve-target-isolated
+      ;; Point follows the isolated sub-expression: it now leads the
+      ;; entry, so return to the same offset within it.
+      (maf-beginning-of-entry)
+      (skip-chars-forward "(")
+      (when (and offset (> offset 0)) (forward-char offset))
+      (maf--undo-record-cmd-point snapshot))
+     (maf--solve-solved-var
+      (when (maf--auto-solve-land-on-var maf--solve-solved-var)
+        (maf--undo-record-cmd-point snapshot))))))
+
 (defun mafcmd-auto-solve ()
-  "Isolate the sub-expression under point, else solve the relation at point.
+  "Solve the relation at point for a variable, cycling on repeat.
+
+  x + 3 = 7  =>  x = 4
+
+The whole entry is the subject wherever point rests within it: a
+sub-formula under point never narrows it. The variable solved for is
+the first of x, y, z, t, else alphabetical; running the command again
+on a relation already solved for one moves on to the next.
+
+  x + y = 5    =>  x = 5 - y   (again: y = 5 - x)
+  2 x - 3 < 7  =>  x < 5
+  x + 3 != 7   =>  x != 4
+  3 = 3        =>  3 = 3       (no variable: unchanged)
+
+Equations and inequalities alike, the relation kept — calc flips an
+inequality's sense when it must. A bare expression is treated as = 0.
+The result stays exact: a root gives sqrt(2), a ratio 1:2.
+
+Point lands on the variable that ended up isolated, whichever side calc
+put it on — solving 5 - x > 2 gives 3 > x, and point goes to the x on
+the right. An entry that comes back unchanged leaves point where it
+was, and a command invoked from home stays there. To solve for the
+sub-expression under point instead, use `mafcmd-isolate'."
+  (interactive)
+  (maf--auto-solve nil))
+
+(defun mafcmd-isolate ()
+  "Isolate the sub-expression under point, else solve for a variable.
 
 With point on a sub-expression, isolate it: solve the relation for that
 sub-expression, standing it alone on the left. Any sub-expression works
@@ -2828,39 +2919,27 @@ sub-expression, standing it alone on the left. Any sub-expression works
 under a nonlinear operator (x + 1 in sqrt(x + 1) = 3 y), even a bare
 constant (the 1 in x + 1 = 3 y). The result stays exact: a root gives
 sqrt(2), a ratio 1:2. If Calc cannot isolate the target, the command
-falls back to its normal variable solve.
+falls back to the variable solve.
 
   a = b| c        =>  b = a / c        (isolate the factor at point)
   y = 30 x| + 12  =>  x = y / 30 - 2:5 (isolate x)
   x + 1| = 3 y    =>  1 = 3 y - x      (isolate the constant)
 
-With no sub-expression to isolate — the line prefix or end of line, the
-relation operator, or point at home — it solves the whole relation for a
-variable instead: the first of x, y, z, t, else alphabetical, cycling to
-the next on repeat when already solved for one. Equations and
-inequalities alike, the relation kept (calc flips an inequality's sense
-when it must); a bare expression is treated as = 0, one with no variable
-is unchanged.
+Point rides along with the isolated sub-expression, keeping its spot
+within it as it moves to the head of the entry.
 
-  x + 3 = 7|      =>  x = 4
-  x + y = 5       =>  x = 5 - y        (again: y = 5 - x)
-  2 x - 3 < 7     =>  x < 5
-  x + 3 != 7      =>  x != 4
-  3 = 3           =>  3 = 3            (no variable: unchanged)"
+With no sub-expression to isolate — the line prefix or end of line, the
+relation operator, or point at home — it solves the whole relation for
+a variable, exactly as `mafcmd-auto-solve' does, point landing on that
+variable; that command is this one with the sub-expression targeting
+left out, for when the entry is the subject however point happens to
+sit on it.
+
+  x + 3 = 7|  =>  x = 4
+  x + y = 5   =>  x = 5 - y   (again: y = 5 - x)
+  3 = 3       =>  3 = 3       (no variable: unchanged)"
   (interactive)
-  (let* ((maf--solve-target (maf--auto-solve-target))
-         (maf--solve-target-isolated nil)
-         (snapshot (maf--point-snapshot))
-         (offset (and maf--solve-target (maf--auto-solve-point-offset))))
-    (call-interactively #'maf--auto-solve-run)
-    (when maf--solve-target-isolated
-      ;; Point follows the isolated sub-expression: it now leads the
-      ;; entry, so return to the same offset within it. Re-record the
-      ;; undo point so one `maf-undo' still returns to where it ran.
-      (maf-beginning-of-entry)
-      (skip-chars-forward "(")
-      (when (and offset (> offset 0)) (forward-char offset))
-      (maf--undo-record-cmd-point snapshot))))
+  (maf--auto-solve t))
 
 (defvar maf--solve-for-vars nil
   "Variable (or vector of them) `maf--solve-for-run' should solve for.
@@ -2960,7 +3039,7 @@ It acts on the whole entry — the relation at point, wherever point sits
 on its line, or the top entry at home; solving has no sub-formula
 meaning, so point within the formula is not used to narrow it. To solve
 for something Calc cannot solve for directly — a compound
-sub-expression, under a nonlinear operator — use `mafcmd-auto-solve',
+sub-expression, under a nonlinear operator — use `mafcmd-isolate',
 which isolates the sub-expression under point. A bare expression is
 treated as = 0, inequalities keep their relation, and an input Calc
 cannot solve for the named variable commits unchanged.

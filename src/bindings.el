@@ -207,9 +207,18 @@
 (define-key maf-mode-map (kbd "C-M-k") #'maf-reset)
 (define-key maf-mode-map (kbd "C-M-l") #'maf-reset-settings)
 
-;; Auto-solve: solve or isolate at point, cycling through the variables
-;; on repeat. M-i is unbound in calc itself.
+;; Auto-solve: solve the entry for a variable, cycling through them on
+;; repeat. The entry is the subject wherever point sits within it — the
+;; sub-formula targeting lives on j i below, so this key means the same
+;; thing from anywhere on the line. M-i is unbound in calc itself.
 (define-key maf-mode-map (kbd "M-i") #'mafcmd-auto-solve)
+;; The same solve, targeting the sub-expression under point: isolate it,
+;; falling back to the variable solve when there is nothing to isolate.
+;; Lowercase j i, where calc keeps the operation on the capital j I
+;; (calc-sel-isolate) — the same trade maf makes for the commute shifts
+;; (j l / j r) and the equals jump (j e), leaving calc's own command
+;; unshadowed and its key reachable.
+(define-key maf-mode-map (kbd "j i") #'mafcmd-isolate)
 ;; `mafcmd-solve-for' — the solve that prompts for its variable — held
 ;; i, and yielded it to the reciprocal above. It has no key now: M-i
 ;; solves automatically, and the prompted form stays reachable by name.

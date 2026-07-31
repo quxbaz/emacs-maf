@@ -90,6 +90,15 @@ Commit honors the same intent: an entry-scoped push binds
 into an active sub-formula selection, and the replacement entry
 carries no selection.
 
+A caller can still put sub-formula targeting back on top of an
+entry-scoped worker, without resolve knowing anything about it: read
+point yourself before invoking the worker and pass what you found in a
+dynamic variable. =mafcmd-isolate= does exactly that — it hands
+=maf--solve-target= the sub-expression under point, which the worker
+solves the entry for — while =mafcmd-auto-solve= runs the same worker
+without looking at point at all. Two commands, one solver, and the
+targeting difference is the whole of what separates them.
+
 ** Entry-scoped commit
 
 =:commit-scope entry= is the other half of the same idea, and
