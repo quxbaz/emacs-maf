@@ -16,15 +16,14 @@
 ;;
 ;; The calc buffer's header line is not free — calc keeps its own
 ;; centered "Emacs Calculator Mode" banner there, rebuilt from scratch
-;; on every `calc-refresh'. So the badge is laid over the left end of
-;; whatever line is already up rather than replacing it: it takes the
-;; leading columns, the same number come off the banner's leading
-;; dashes, and the banner's text stays in the column it was in as the
-;; badge comes and goes. Only where those dashes run out — a window too
-;; narrow to give the badge room — does it displace the line outright.
-;; Either way the displaced line is kept and put back when the
-;; selection clears. During a maf-edit session the header line is that
-;; mode's banner, and this module keeps its hands off it entirely.
+;; on every `calc-refresh'. The badge takes the line outright for as
+;; long as the selection stands, as maf-edit's banner does: a mode
+;; indicator that shares its line with a decorative banner reads as
+;; part of the decoration, and the banner says nothing that matters
+;; while a selection is redirecting every key. The displaced line is
+;; kept and put back when the selection clears. During a maf-edit
+;; session the header line is that mode's banner, and this module keeps
+;; its hands off it entirely.
 ;;
 ;; The module toggle is `maf-use-selplus-mode', which turns the
 ;; buffer-local mode on in every calc buffer and registers with the
@@ -57,7 +56,7 @@ ours from one that arrived some other way — notably calc's own banner,
 which `calc-refresh' rebuilds as a fresh string every time.")
 
 (defvar-local maf-selplus--base nil
-  "The header line the badge is laid over, put back when it comes down.
+  "The header line the badge displaced, put back when it comes down.
 Calc's banner, normally; nil in a buffer that has no header line of its
 own.")
 
@@ -78,44 +77,15 @@ command — as when maf-mode is off in this buffer."
                        maf-selplus--clear-commands)))
     (and key (key-description key))))
 
-(defun maf-selplus--badge ()
-  "Return the badge to fly while a selection is active.
-Ends in a space: the badge butts straight up against the header line it
-is laid over, and calc's banner starts in dashes."
+(defun maf-selplus--header-line ()
+  "Header line to fly while a selection is active: badge plus the way out.
+The shape maf-edit's own banner uses — a filled box naming the state,
+then the gesture that leaves it."
   (let ((key (maf-selplus--clear-key)))
     (concat (propertize maf-selplus-badge-label 'face 'maf-selplus-badge)
             (when key
-              (concat " " (propertize key 'face 'help-key-binding) " clear"))
-            " ")))
-
-(defconst maf-selplus--fill-re "\\`[- ]*"
-  "Matches the leading fill of calc's banner: its dashes and the space after.
-The room the badge can take without displacing anything that reads.")
-
-(defun maf-selplus--compose (badge base)
-  "Return the header line showing BADGE laid over the left end of BASE.
-BASE is the line the buffer already had — calc's banner, normally,
-which centers its text between two runs of dashes sized to the window.
-The badge is cut into the leading run, not prepended to it, so the
-banner's text stays in the column it was in as the badge comes and
-goes.
-
-When the leading run is too short to swallow the badge — a narrow
-window, where calc leaves the banner barely any padding — there is no
-way to keep that text where it was, so the badge stands alone and the
-whole base is displaced until the selection clears. Same for a base
-that is not a string at all (a header line built as a mode-line
-construct), which has no leading fill to measure.
-
-The cut is by characters against a width in columns: the fill is
-dashes and spaces, one column each, so the two agree there."
-  (let ((w (string-width badge))
-        (fill (when (stringp base)
-                (string-match maf-selplus--fill-re base)
-                (match-end 0))))
-    (if (and fill (>= fill w))
-        (concat badge (substring base w))
-      badge)))
+              (concat " " (propertize key 'face 'help-key-binding)
+                      " clear")))))
 
 (defun maf-selplus--update ()
   "Put the selection badge up or take it down, to match calc's state.
@@ -124,9 +94,9 @@ command. Errors are swallowed so a bad calc state cannot get the hook
 function disabled.
 
 A header line that is not the one this module last installed is taken
-to be the buffer's own and remembered as the base to lay the badge over
-— which is how the badge survives `calc-refresh' rebuilding the banner
-under it, and follows the banner when the window is resized.
+to be the buffer's own and remembered as the line to put back — which
+is how the badge survives `calc-refresh' rebuilding the banner under
+it, and still hands back a current banner when the selection clears.
 
 Does nothing at all while `maf-edit-mode' is on: that mode flies its own
 banner in the header line, saving and restoring what was there, and a
@@ -139,19 +109,18 @@ badge written over it would be both a nuisance and short-lived."
           (setq maf-selplus--base header-line-format
                 maf-selplus--header nil))
         (if (maf--sel-any-p)
-            (let ((composed (maf-selplus--compose (maf-selplus--badge)
-                                                  maf-selplus--base)))
+            (let ((line (maf-selplus--header-line)))
               ;; Re-installing an equal line would be a no-op on screen
               ;; but still mark the line for redisplay, every command.
-              (unless (and ours (equal composed maf-selplus--header))
-                (setq maf-selplus--header composed
-                      header-line-format composed)))
+              (unless (and ours (equal line maf-selplus--header))
+                (setq maf-selplus--header line
+                      header-line-format line)))
           (when ours
             (setq header-line-format maf-selplus--base
                   maf-selplus--header nil)))))))
 
 (defun maf-selplus--hide ()
-  "Take the badge down, restoring the header line it was laid over."
+  "Take the badge down, restoring the header line it displaced."
   (when (and maf-selplus--header
              (eq header-line-format maf-selplus--header))
     (setq header-line-format maf-selplus--base))
@@ -166,8 +135,8 @@ says so, along with the key that clears it — calc itself gives the
 state no indicator, and a forgotten selection quietly redirects every
 command that follows onto the selected sub-formula.
 
-The badge is laid over the left end of the header line the buffer
-already has — calc's own banner — and that line comes back when the
+The badge takes the header line for itself, displacing the line the
+buffer already has — calc's own banner — which comes back when the
 selection clears. While a maf-edit session is up the header line is
 that mode's banner, and the badge stays away."
   :lighter " sel+"

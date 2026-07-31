@@ -1,6 +1,7 @@
 ;; The selection badge (modules/maf-selplus.el): a box in the calc
-;; header line for as long as any entry carries a selection, laid over
-;; the left end of calc's own banner rather than replacing it.
+;; header line for as long as any entry carries a selection, taking the
+;; line from calc's own banner for the duration and handing it back
+;; when the selection clears.
 ;;
 ;; `maf-selplus--update' rides `post-command-hook' in the real buffer;
 ;; these steps call it directly, as the maf-hl tests do, so each state
@@ -21,7 +22,7 @@
 
 (maf-step
   ;; Calc's banner is what the header line holds to begin with; the
-  ;; badge has to share the line with it, not take it.
+  ;; badge takes the line from it and gives it back.
   (maf-selplus-mode 1)
   (let ((calc-show-banner t)) (calc-refresh))
   (maf-selplus--update)
@@ -41,18 +42,12 @@
                  'maf-selplus-badge))
   (cl-assert (string-match-p "RET clear" (maf-selplus-test--text)))
 
-  ;; In a window wide enough for the badge to fit in the banner's
-  ;; leading dashes it eats into them rather than pushing the banner
-  ;; along: same total width, and "Emacs Calc" in the column it was in
-  ;; before, so nothing slides sideways as the badge comes and goes.
-  ;; The cockpit's calc window can be too narrow for that, in which
-  ;; case the badge stands alone — checked directly on
-  ;; `maf-selplus--compose' below, where the width is ours to set.
-  (when (string-match-p "Emacs Calc" (maf-selplus-test--text))
-    (cl-assert (= (length (maf-selplus-test--text))
-                  (length maf-selplus-test--banner)))
-    (cl-assert (= (string-match "Emacs Calc" (maf-selplus-test--text))
-                  (string-match "Emacs Calc" maf-selplus-test--banner))))
+  ;; The badge is the whole line while it is up: calc's banner is out
+  ;; of the way, so the indicator reads as a state and not as part of
+  ;; the decoration it would otherwise sit in.
+  (cl-assert (not (string-match-p "Emacs Calc" (maf-selplus-test--text))))
+  (cl-assert (equal (maf-selplus-test--text)
+                    (substring-no-properties (maf-selplus--header-line))))
 
   ;; `calc-refresh' rebuilds the banner from scratch, wiping the badge
   ;; out of `header-line-format'; the next update puts it back over the
@@ -91,17 +86,11 @@
          (call-interactively 'maf-clear-selections)
          (calc-pop (calc-stack-size)))
 
-  ;; The overlay arithmetic on its own, at widths the cockpit window
-  ;; cannot be made to hold. A leading fill big enough for the badge is
-  ;; cut into, keeping the banner's text put and the line's width with
-  ;; it; too small a fill, or no header line to speak of, and the badge
-  ;; stands alone rather than shoving the text sideways or eating into
-  ;; it.
-  (cl-assert (equal (maf-selplus--compose "[X] " "------ Calc ------")
-                    "[X] -- Calc ------"))
-  (cl-assert (equal (maf-selplus--compose "[X] " "-- Calc ------") "[X] "))
-  (cl-assert (equal (maf-selplus--compose "[X] " nil) "[X] "))
-  (cl-assert (equal (maf-selplus--compose "[X] " '("%b")) "[X] "))
+  ;; The line is the badge and the way out of the state, nothing else —
+  ;; the shape maf-edit's banner has.
+  (cl-assert (string-prefix-p maf-selplus-badge-label
+                              (maf-selplus--header-line)))
+  (cl-assert (string-suffix-p "clear" (maf-selplus--header-line)))
 
   ;; The badge names the key that is really bound, so a rebinding
   ;; carries into it rather than being hardcoded.
