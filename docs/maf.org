@@ -152,7 +152,7 @@
   - Rebind formula manager
   - Rebind module manager
   - Figure out bindings
-    - Record most used bindings
+    - Record which bindings/commands are most used
 
 * Cleanup
   - [ ] Delete my/calc
