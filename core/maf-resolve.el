@@ -474,17 +474,34 @@ than each side taking the whole arg as a term. Commands opt out with
 With `:scope entry' in OPTS the sub-formula/selection/region targets are
 bypassed entirely: the command always operates on the whole entry at
 point (or the top at home). For commands with no sub-formula meaning —
-solving an equation, finding a polynomial's roots."
+solving an equation, finding a polynomial's roots.
+
+With `:scope explicit' only the implicit one is bypassed: point inside a
+formula no longer narrows the subject — the entry it sits on is taken
+whole — but a region or a calc selection narrows as ever. For commands
+whose everyday subject is the whole entry, yet which still mean
+something on a part the user marked out. It also spares the argument
+entry of a binary command: point resting there resolves through the
+entry target, which shifts down to the entry below."
   (maf--with-calc-buffer
     ;; Snapshot point before target resolution: the target functions probe
     ;; calc state and must not perturb what restore later reproduces.
-    (let ((point-snapshot (maf--point-snapshot)))
+    (let ((point-snapshot (maf--point-snapshot))
+          (scope (alist-get :scope opts)))
       (append (maf--resolve-pair-arg
                (maf--resolve-map-relation
                 (cond
+                 ;; `:scope explicit' says of point alone what `entry'
+                 ;; says of every gesture: the entry is taken whole
+                 ;; wherever point sits on it. The two gestures the user
+                 ;; makes deliberately still narrow, so they come first.
+                 ((and (eq scope 'explicit) (use-region-p))
+                  (maf--resolve-target-region opts))
+                 ((and (eq scope 'explicit) (maf--sel-any-p))
+                  (maf--resolve-target-selection opts))
                  ;; Whole-entry commands take the entry at point (or the
                  ;; top at home) regardless of where point sits within it.
-                 ((eq (alist-get :scope opts) 'entry)
+                 ((memq scope '(entry explicit))
                   (if (maf--at-home-p)
                       (maf--resolve-target-home opts)
                     (maf--resolve-target-entry opts)))
