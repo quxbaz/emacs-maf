@@ -51,10 +51,10 @@
 
 * Todo
 # NOW
-** TODO Custom map function, consolidate mapping operations across different
-   contracts into a single command. Equations and vectors, anything else?
-   - map against stack function
-   - map against given entry
+** TODO new map command
+   avoid having separate map commands for vectors and equations
+   bind `M` to map from algebraic entry input (normally `a M '`)
+   bind `$` to map from stack, m=1 (normally `a M $`)
 ** IN-PROGRESS possible to float preview pane at top?
 ** TODO stack/edit add command to move to parent expression.
    1:  y = 2 (x| + 3)^2 - 12
