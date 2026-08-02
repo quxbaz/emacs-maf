@@ -47,7 +47,7 @@
 ** TODO Port the edit-mode insertions (modules/maf-edit.el)
    - P → pi
    - M-2..M-9
-   - sqrt
+   - backslash → sqrt
    - M-' → ^n and ^()
    - \ L | wrap helpers around the preceding expression or region.
 
