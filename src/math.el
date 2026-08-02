@@ -8,6 +8,7 @@
 (require 'calc)
 (require 'cl-lib)
 (require 'maf-conf "conf")
+(require 'maf-lib)    ; maf--literal
 
 ;; Defined in lazily-loaded calc modules; calc-ext's autoload registry
 ;; resolves them at runtime, but the byte compiler needs declarations.
@@ -448,11 +449,10 @@ instead of stacking both orientations. The coefficient always comes
 out positive, as calc's own lcm does; float coefficients, which have
 no lcm, multiply instead. A zero operand gives 0.
 
-The result is built as a literal product under `calc-simplify-mode'
-`none', so committing it keeps the factored form rather than
-distributing the coefficient back in. Merging is only as good as
-calc's factoring, so `maf--poly-lcm' checks the result for minimality
-before returning it."
+The result is built as a literal product (`maf--literal'), so
+committing it keeps the factored form rather than distributing the
+coefficient back in. Merging is only as good as calc's factoring, so
+`maf--poly-lcm' checks the result for minimality before returning it."
   (let ((calc-simplify-mode nil)
         (calc-prefer-frac t))
     (if (or (math-zerop a) (math-zerop b))
@@ -503,19 +503,16 @@ before returning it."
                   (cl-loop for row in table
                            for e = (max (nth 1 row) (nth 2 row))
                            unless (zerop e)
-                           collect (if (= e 1) (car row) (list '^ (car row) e))))
-                 ;; Build the product literally; commit pushes
-                 ;; structurally, so the factored form survives without
-                 ;; calc-normalize distributing the coefficient. Nest it
-                 ;; to the right, as calc's own canonical products are,
-                 ;; so it prints as one flat juxtaposition rather than a
-                 ;; left-leaning pile of parentheses.
-                 (calc-simplify-mode 'none))
-            (if (null factors)
-                coeff
-              (cl-reduce #'calcFunc-mul
-                         (if (equal coeff 1) factors (cons coeff factors))
-                         :from-end t))))))))
+                           collect (if (= e 1) (car row) (list '^ (car row) e)))))
+            ;; Nest the product to the right, as calc's own canonical
+            ;; products are, so it prints as one flat juxtaposition
+            ;; rather than a left-leaning pile of parentheses.
+            (maf--literal
+              (if (null factors)
+                  coeff
+                (cl-reduce #'calcFunc-mul
+                           (if (equal coeff 1) factors (cons coeff factors))
+                           :from-end t)))))))))
 
 (defun maf--poly-exact-quotient (a b)
   "Return A / B when B divides A exactly, else nil.
@@ -676,14 +673,10 @@ than commit a rearrangement that does not hold."
                        unless scale return nil
                        collect (math-mul num scale))))
             (when nums
-              (let ((num (math-simplify (cl-reduce #'math-add nums)))
-                    ;; Build the division literally; commit pushes
-                    ;; structurally, so the single fraction survives
-                    ;; without calc-normalize spreading the numerator
-                    ;; back over the denominator.
-                    (calc-simplify-mode 'none))
+              (let ((num (math-simplify (cl-reduce #'math-add nums))))
                 ;; Terms that cancel give 0, not 0 over the LCD.
-                (if (math-zerop num) 0 (calcFunc-div num lcd))))))))))
+                (maf--literal
+                  (if (math-zerop num) 0 (calcFunc-div num lcd)))))))))))
 
 (defun maf--float-fracs (expr)
   "Float the fractions in EXPR, leaving integers exact.
