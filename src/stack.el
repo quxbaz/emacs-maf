@@ -2373,42 +2373,84 @@ which then keeps point instead of homing — RET's prefix must reach
 `maf-dup' through this dispatcher, since RET is bound here. The clear
 moves point nowhere to begin with, so the prefix does not vary it.
 Calc's keep-args flag (K RET) holds point the same way; `maf-dup' reads
-it, and `maf--fancy-prefix-keep-ret' is what lets it survive the key."
+it, and `maf--fancy-prefix-keep' is what lets it survive the key."
   (interactive "P")
   (if (maf--sel-any-p)
       (maf-clear-selections)
     (maf-dup keep-point)))
 
-(defun maf--fancy-prefix-keep-ret (orig arg)
-  "Let RET through calc's fancy prefix without clearing its flags.
+;; RET is bound to a hand-written command rather than a `maf-defcmd' one,
+;; so nothing stamps the property for it. It reads `calc-keep-args-flag'
+;; deliberately (see the docstring above), which is exactly what the mark
+;; means, so set it here.
+(put 'maf-dup-or-clear-selections 'maf-command t)
+
+(defun maf--fancy-prefix-binding (event)
+  "The command or keymap EVENT would run, ignoring calc's fancy prefix.
+`overriding-terminal-local-map' is unbound for the lookup: the fancy
+prefix installs itself there, so it would otherwise answer for every key.
+An event with no binding of its own is retried through
+`local-function-key-map'. That retry is load-bearing for RET — it is
+bound as the character 13, a graphical frame delivers the symbol
+`return', and only the translation connects the two."
+  (maf--with-calc-buffer
+    (let ((overriding-terminal-local-map nil))
+      (or (key-binding (vector event))
+          (let ((translated (lookup-key local-function-key-map (vector event))))
+            (and (vectorp translated) (key-binding translated)))))))
+
+(defun maf--fancy-prefix-decide ()
+  "Clear calc's flags unless the command that just resolved accepts them.
+Runs once, from `pre-command-hook', after Emacs has read a whole key
+sequence that began with a prefix `maf--fancy-prefix-keep' let through.
+Only the leaf can say whether the flags were meant for it: a prefix like
+C-c is shared, holding maf commands and ordinary global ones side by
+side, so deciding at the prefix would hand the flag to whatever followed.
+Removing the hook is the first thing done, so an aborted or undefined
+sequence cannot strand it — `this-command' is nil for a quit under a
+keyboard macro, which is why the test is \"keep only if marked\" rather
+than \"clear if quit\"."
+  (remove-hook 'pre-command-hook #'maf--fancy-prefix-decide)
+  (unless (and (symbolp this-command) (get this-command 'maf-command))
+    (calc-wrapper)))
+
+(defun maf--fancy-prefix-keep (orig arg)
+  "Let a maf command through calc's fancy prefix without clearing its flags.
 A fancy prefix (K, I, H, O) sets its flag and installs
 `calc-fancy-prefix-map' as the overriding map, so the next key runs
-`calc-fancy-prefix-other-key' (ORIG, with prefix argument ARG) instead
-of its own binding. That function decides whether the key was a calc
-command: anything below SPC — every control character, RET among them —
-counts as \"not a Calc command\" and gets the flags cleared before the
-key is unread and dispatched for real. On a graphical frame the event is
-the symbol `return', not an integer, which fails the same test.
+`calc-fancy-prefix-other-key' (ORIG, with prefix argument ARG) instead of
+its own binding. That function decides whether the key was a calc
+command, and its test excludes most of what maf binds: every control
+character below SPC, and every event that is not an integer at all, which
+is every function key. The flags are cleared before the key is unread and
+dispatched for real, so the command runs without them.
 
-RET is a maf command (`maf-dup-or-clear-selections'), and K RET is
-meant to reach it with keep-args still standing, so keep the flags for
-that one key and do only what ORIG does for a calc command: pass the
-prefix argument along, unread the key, and drop the overriding map. The
-flag then clears where every other command's does, in the epilogue of
-the `calc-wrapper' that runs inside `maf-dup'.
+Keep the flags when the key opens a command marked `maf-command' — the
+commands whose commit path reads the resolve-time `:keep' snapshot, so
+keep-args means something to them. Otherwise do exactly what ORIG does.
+When the key is a prefix the leaf is not known yet, so let it through
+provisionally and let `maf--fancy-prefix-decide' settle it once the whole
+sequence has resolved.
 
-Only for a keep-args RET in a maf buffer — plain calc, and I/H/O whose
-flags RET has no meaning for, keep calc's own behavior."
-  (if (and calc-keep-args-flag
-           (memq last-command-event '(?\r return))
-           (maf--with-calc-buffer maf-mode))
-      (progn
-        (setq prefix-arg arg)
-        (calc-unread-command)
-        (setq overriding-terminal-local-map nil))
-    (funcall orig arg)))
+Either way the flag clears where every command's does, in the epilogue of
+the `calc-wrapper' the command itself runs.
 
-(advice-add 'calc-fancy-prefix-other-key :around #'maf--fancy-prefix-keep-ret)
+Only for keep-args in a maf buffer — plain calc, and I/H/O, keep calc's
+own behavior."
+  (let ((def (and calc-keep-args-flag
+                  (maf--with-calc-buffer maf-mode)
+                  (maf--fancy-prefix-binding last-command-event))))
+    (if (or (and (symbolp def) (get def 'maf-command))
+            (keymapp def))
+        (progn
+          (when (keymapp def)
+            (add-hook 'pre-command-hook #'maf--fancy-prefix-decide))
+          (setq prefix-arg arg)
+          (calc-unread-command)
+          (setq overriding-terminal-local-map nil))
+      (funcall orig arg))))
+
+(advice-add 'calc-fancy-prefix-other-key :around #'maf--fancy-prefix-keep)
 
 ;; Calc's JumpRules are written for = alone: all 24 rules match
 ;; plain(... = ...) and nothing else. The same moves hold across a !=

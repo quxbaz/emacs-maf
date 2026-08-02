@@ -240,21 +240,30 @@ ARG, runs the body, and commits its result to the right stack location."
                                             ,landed))
                       (signal (car ,err) (cdr ,err)))))))
     (maf--defcmd-validate-opts opts)
-    `(defun ,name ()
-       ,@(when docstring (list docstring))
-       (interactive)
-       ,(if (or inv hyp invhyp)
-            ;; Calc's I/H flags reroute to the declared variant command
-            ;; before any context is resolved (and before calc-wrapper, so
-            ;; the variant's own wrapper is the only one that runs).
-            `(cond ((and calc-inverse-flag calc-hyperbolic-flag)
-                    (maf--defcmd-dispatch ,(and invhyp `#',invhyp)
-                                          "inverse hyperbolic"))
-                   (calc-inverse-flag
-                    (maf--defcmd-dispatch ,(and inv `#',inv) "inverse"))
-                   (calc-hyperbolic-flag
-                    (maf--defcmd-dispatch ,(and hyp `#',hyp) "hyperbolic"))
-                   (t ,main))
-          main))))
+    `(progn
+       ;; Mark the command as one that accepts calc's prefix flags. The
+       ;; commit path reads the resolve-time `:keep' snapshot, so keep-args
+       ;; means something here in a way it does not for a hand-written stack
+       ;; command. `maf--fancy-prefix-keep' reads the property to decide
+       ;; which keys may carry a flag past calc's fancy prefix; a plain
+       ;; `defun' that wants the same treatment sets it by hand (see
+       ;; `maf-dup-or-clear-selections').
+       (put ',name 'maf-command t)
+       (defun ,name ()
+         ,@(when docstring (list docstring))
+         (interactive)
+         ,(if (or inv hyp invhyp)
+              ;; Calc's I/H flags reroute to the declared variant command
+              ;; before any context is resolved (and before calc-wrapper, so
+              ;; the variant's own wrapper is the only one that runs).
+              `(cond ((and calc-inverse-flag calc-hyperbolic-flag)
+                      (maf--defcmd-dispatch ,(and invhyp `#',invhyp)
+                                            "inverse hyperbolic"))
+                     (calc-inverse-flag
+                      (maf--defcmd-dispatch ,(and inv `#',inv) "inverse"))
+                     (calc-hyperbolic-flag
+                      (maf--defcmd-dispatch ,(and hyp `#',hyp) "hyperbolic"))
+                     (t ,main))
+            main)))))
 
 (provide 'maf-defcmd)
