@@ -93,6 +93,22 @@ undoes it structurally, without re-normalizing the formula — unlike
     (cons (car expr) (mapcar #'maf--strip-encasing (cdr expr))))
    (t expr)))
 
+(defmacro maf--literal (&rest body)
+  "Evaluate BODY with simplification off: it builds the shape that commits.
+`maf--commit' pushes structurally — it hands the value to
+`calc-pop-push-record-list', which does not run `calc-normalize' on
+the way out — so whatever the body produces lands verbatim. Building
+under `calc-simplify-mode' `none' is what keeps a deliberately
+literal form intact: a factored product stays factored instead of
+being distributed back out, a single fraction stays one fraction
+instead of spreading over its terms.
+
+Wraps only the construction of the result. The algebra that computes
+the parts runs outside, in whatever mode is in effect, since that
+stage does need to simplify."
+  (declare (indent 0) (debug t))
+  `(let ((calc-simplify-mode 'none)) ,@body))
+
 (defun maf--relation-p (expr)
   "Return t if EXPR is a relation (=, !=, <, <=, >, >=)."
   (and (consp expr)

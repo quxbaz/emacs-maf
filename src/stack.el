@@ -101,10 +101,7 @@ home; the top entry is always the argument, popped on commit.
                    (calcFunc-expand
                     (calcFunc-nrat
                      (calcFunc-expand (calcFunc-div expr arg)))))))
-    ;; Build the product literally; commit pushes structurally, so the
-    ;; factored form survives without calc-normalize distributing it.
-    (commit (let ((calc-simplify-mode 'none))
-              (calcFunc-mul arg quotient)))))
+    (commit (maf--literal (calcFunc-mul arg quotient)))))
 
 (maf-defcmd mafcmd-factor-gcd (expr _arg commit)
   "Factor the resolved expression by the GCD of its additive terms.
@@ -150,10 +147,7 @@ equation, the top entry at home.
                          (calcFunc-expand
                           (calcFunc-nrat
                            (calcFunc-expand (calcFunc-div expr factor))))))))
-        ;; Build the product literally; commit pushes structurally, so the
-        ;; factored form survives without calc-normalize distributing it.
-        (commit (let ((calc-simplify-mode 'none))
-                  (calcFunc-mul factor quotient)))))))
+        (commit (maf--literal (calcFunc-mul factor quotient)))))))
 
 (maf-defcmd mafcmd-factor-powers (expr _arg commit)
   "Factor the resolved binomial by a square or cube product identity.
