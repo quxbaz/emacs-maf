@@ -45,11 +45,12 @@
 
 * Low-hanging fruit
 ** TODO Port the edit-mode insertions (modules/maf-edit.el)
-   - P → pi
-   - M-2..M-9
-   - backslash → sqrt
-   - M-' → ^n and ^()
-   - \ L | wrap helpers around the preceding expression or region.
+   - [ ] P → pi
+   - [ ] M-2..M-9
+   - [ ] backslash → sqrt
+   - [ ] M-' → ^n and ^()
+   - [ ] \ L | wrap helpers around the preceding expression or region.
+   - [-] my/calc-edit-wrap-parens
 
 * Todo
 # NOW
