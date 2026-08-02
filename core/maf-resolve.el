@@ -31,6 +31,9 @@
 ;;                 function name), or nil when point is inside an operand.
 ;;                 Subexpr target only — used to re-anchor point on the
 ;;                 committed node after the rewrite.
+;;   :widened      Non-nil when `:widen' moved the target off the node point
+;;                 was in, out to an ancestor. Subexpr target only — read by
+;;                 `maf--point-stick-p', which then leaves point alone.
 ;;   :rel-op       Relation operator symbol (calcFunc-eq/neq/lt/...). Equation
 ;;                 target only — the macro uses it to reassemble the relation
 ;;                 after running the body once per side.
@@ -326,8 +329,14 @@ untouched."
   (maf--with-calc-buffer
     (let ((m (calc-locate-cursor-element (point))))
       (calc-prepare-selection m)
-      (maf--resolve-subexpr-context
-       (maf--resolve-widen (calc-find-selected-part) m opts) m opts))))
+      (let* ((part (calc-find-selected-part))
+             (node (maf--resolve-widen part m opts)))
+        (append
+         ;; Point named PART but the command acts on an ancestor: the
+         ;; slot the result lands in is not the one point was in, so the
+         ;; placement that sticks point to it does not apply.
+         (unless (eq node part) '((:widened . t)))
+         (maf--resolve-subexpr-context node m opts))))))
 
 (defun maf--resolve-target-equation (opts)
   "Return the equation target's context alist.
