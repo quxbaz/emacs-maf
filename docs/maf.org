@@ -63,7 +63,7 @@
 ** TODO distribute and merge should operate contextually.
 ** TODO move all options to unified configuration view.
    - Free up option prefix bindings (eg, m).
-** TODO quick recall command, bind to M-[n/p] to recall previous/next bare
+** IN-PROGRESS quick recall command, bind to M-[n/p] to recall previous/next bare
    (starting from empty) edit-mode entries. The purpose of this is to avoid the
    pattern of having to duplicate or store an entry that you might want to reuse
    or recall in case you screw up a calculation.
