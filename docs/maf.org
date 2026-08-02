@@ -59,7 +59,7 @@
 ** TODO add command to move to parent expression.
    1:  y = 2 (x| + 3)^2 - 12
    ->  y = 2 (x + 3)|^2 - 12
-** TODO add config to automatically restore session
+** TODO bind maf-restore
 ** TODO distribute and merge should operate contextually.
 ** TODO move all options to unified configuration view.
    - Free up option prefix bindings (eg, m).
