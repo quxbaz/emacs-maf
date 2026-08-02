@@ -70,10 +70,9 @@
 ** IN-PROGRESS set place/point after (maf--commit)
    - If possible, when (eq :target 'subexpr), stick point to the same symbol
      prior to the operation.
-** TODO simplification
-** TODO force-line
+** IN-PROGRESS simplification, force-line
 # LATER
-** TODO bind (mafcmd-solve-for) <- formerly bound to 'i'
+** IN-PROGRESS bind (mafcmd-solve-for) <- formerly bound to 'i'
 
 * Port
   - [ ] Port my/calc/* features one-by-one.
