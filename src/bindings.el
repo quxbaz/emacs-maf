@@ -222,9 +222,13 @@
 ;; (j l / j r) and the equals jump (j e), leaving calc's own command
 ;; unshadowed and its key reachable.
 (define-key maf-mode-map (kbd "j i") #'mafcmd-isolate)
-;; `mafcmd-solve-for' — the solve that prompts for its variable — held
-;; i, and yielded it to the reciprocal above. It has no key now: M-i
-;; solves automatically, and the prompted form stays reachable by name.
+;; The same solve again, with the variable named rather than picked:
+;; the shift on the auto-solve key, where shift reads as "ask me".
+;; `mafcmd-solve-for' held i before, and yielded it to the reciprocal
+;; above. M-I is unbound in calc itself; calc's own key for the
+;; operation, a S, stays with `mafcmd-solve' (see the table in
+;; maf-cmds.el), which takes its variable from the stack.
+(define-key maf-mode-map (kbd "M-I") #'mafcmd-solve-for)
 ;;
 ;; Invert the function at point, beside the solve commands. l v is
 ;; unbound in calc itself (its l prefix is the logarithmic units).

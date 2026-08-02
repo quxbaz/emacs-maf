@@ -73,7 +73,8 @@
 ** TODO simplification
 ** TODO force-line
 # LATER
-** TODO bind (mafcmd-solve-for) <- formerly bound to 'i'
+** DONE bind (mafcmd-solve-for) <- formerly bound to 'i'
+   Now on M-I, the shift of M-i (mafcmd-auto-solve).
 
 * Port
   - [ ] Port my/calc/* features one-by-one.
