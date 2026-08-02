@@ -28,6 +28,8 @@
 (require 'maf-lib)
 (require 'maf-conf "conf")  ; the `maf' customize group
 
+(defvar maf-mode-map)
+
 (defcustom maf-stack-directory (locate-user-emacs-file "maf-stacks/")
   "Directory holding the per-session calc stack save files."
   :type 'directory
@@ -245,7 +247,8 @@ Each session saves its stack under its own name — at Emacs exit, and
 after every `maf-stack-save-interval' idle seconds when it changed —
 and restores it when its first calc buffer opens. Sessions never
 write each other's files, so running several at once loses nothing;
-`maf-restore-stack-from' loads another session's stack explicitly.
+`\\[maf-restore-stack-from]' — bound to \\`t l' in `maf-mode' buffers
+while this mode is on — loads another session's stack explicitly.
 See `maf-stack-session-name' for how sessions are named, and
 `maf-stack-directory' for where the files live."
   :global t
@@ -254,6 +257,13 @@ See `maf-stack-session-name' for how sessions are named, and
       (progn
         (add-hook 'kill-emacs-hook #'maf--stack-shutdown)
         (add-hook 'calc-mode-hook #'maf-restore-stack)
+        ;; "Load a saved stack", beside the stack timeline on t d: both
+        ;; keys bring back an earlier stack, the timeline's from this
+        ;; session and this one's from any session. t l is unbound in
+        ;; calc itself — its t prefix is the trail (t b d f h i k m n o
+        ;; p r s y) and the date/time commands on the capitals — so
+        ;; nothing is shadowed and there is nothing to cede back.
+        (define-key maf-mode-map (kbd "t l") #'maf-restore-stack-from)
         (when maf--stack-save-timer (cancel-timer maf--stack-save-timer))
         (setq maf--stack-save-timer
               (run-with-idle-timer maf-stack-save-interval t #'maf-save-stack))
@@ -262,6 +272,7 @@ See `maf-stack-session-name' for how sessions are named, and
           (with-current-buffer buf (maf-restore-stack))))
     (remove-hook 'kill-emacs-hook #'maf--stack-shutdown)
     (remove-hook 'calc-mode-hook #'maf-restore-stack)
+    (define-key maf-mode-map (kbd "t l") nil)
     (when maf--stack-save-timer
       (cancel-timer maf--stack-save-timer)
       (setq maf--stack-save-timer nil))

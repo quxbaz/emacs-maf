@@ -738,7 +738,12 @@ Two module shapes have appeared, matching the feature's state:
   horizontal strip of the operations around the current one (older
   left, newer right, current highlighted), for context while stepping.
   Persistence
-  (=maf-persist-mode=) is the same shape. The edit module too
+  (=maf-persist-mode=) is the same shape: enabling installs the save
+  timer and the restore hook and binds =t l= to
+  =maf-restore-stack-from= (a key calc leaves free, beside the
+  timeline's =t d= — both bring back an earlier stack, the timeline's
+  from this session and =t l='s from any session); disabling removes
+  them. The edit module too
   (=modules/maf-edit.el=): =maf-use-edit-mode= installs SPC /
   C-<return> / S-<return> in =maf-mode-map= when enabled and cedes them
   back when disabled — its body is just those bindings, the on-demand
