@@ -58,6 +58,9 @@
 ;; Shadows calc-enable-selections, whose toggle maf has no use for —
 ;; every maf command resolves its subject from point.
 (define-key maf-mode-map (kbd "j e") #'maf-jump-equals)
+;; Inside digit entry j is a jump of its own: `maf-digit-jump'
+;; (src/minibuffer.el) ends the entry and sends point to the stack
+;; level the number named, the prefix's reading one level out.
 ;; Shadows calc-call-last-kbd-macro.
 (define-key maf-mode-map (kbd "X") #'mafcmd-log-exp)
 ;; A single-key alias for expand, which also keeps its table key a x.
@@ -195,7 +198,7 @@
 ;; The simplification toggle takes @ from the digit-entry starters
 ;; below; inside digit entry @ still means degrees, since the entry
 ;; minibuffer is calc's own but for the keys src/minibuffer.el takes
-;; there (; : and n P e SPC).
+;; there (; : and n P e SPC j).
 (define-key maf-mode-map (kbd "@") #'maf-toggle-simplify)
 
 ;; Big-language display toggle. mafcmd-arg cedes calc's G — see the
