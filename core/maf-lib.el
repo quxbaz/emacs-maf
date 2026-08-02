@@ -174,7 +174,7 @@ entry as it now stands, multi-line renderings included. Returns point."
   (calc-cursor-stack-index m)
   (goto-char (+ (point) calc-selection-cache-offset)))
 
-(defun maf--point-restore (snapshot &optional anchor landed)
+(defun maf--point-restore (snapshot)
   "Restore point from SNAPSHOT (see `maf--point-snapshot').
 Calc commands that rewrite the stack buffer park point at home; this
 puts it back where the user had it. A `home' snapshot is a no-op —
@@ -185,29 +185,63 @@ than at the exact position, since the line's end moves with the
 formula; BOL affinity keeps its column within the line-number margin
 \(see `maf--point-restore-margin').
 
-When ANCHOR (the :point-anchor glyph index from resolve) and LANDED
-\(`maf--commit's return) are given, point re-anchors on the committed
-node's own glyphs instead: invoked on the = of an equation, point is
-back on the = after the sides swap, wherever it moved. Falls back to
-the positional restore when the anchor can't be located."
-  (or (and anchor landed (maf--point-restore-anchor anchor landed))
-      (let ((affinity (alist-get :affinity snapshot)))
-        (unless (eq affinity 'home)
-          (goto-char (alist-get :pos snapshot))
-          (let ((line (alist-get :line snapshot)))
-            (when (/= (line-number-at-pos) line)
-              (goto-char (point-min))
-              (forward-line (1- line))
-              ;; The raw position spilled onto another line — the
-              ;; rewrite changed the text before it — so the position
-              ;; is meaningless; recover the column instead (clamped
-              ;; to the line's end when it shrank).
-              (when-let ((col (alist-get :col snapshot)))
-                (move-to-column col))))
-          (pcase affinity
-            ('eol (end-of-line))
-            ('bol (maf--point-restore-margin
-                   (alist-get :col snapshot))))))))
+This is the placement of last resort: it reproduces a column, which
+survives a rewrite only by luck. A command that knows where its result
+landed restores through `maf--point-restore-commit' instead."
+  (let ((affinity (alist-get :affinity snapshot)))
+    (unless (eq affinity 'home)
+      (goto-char (alist-get :pos snapshot))
+      (let ((line (alist-get :line snapshot)))
+        (when (/= (line-number-at-pos) line)
+          (goto-char (point-min))
+          (forward-line (1- line))
+          ;; The raw position spilled onto another line — the
+          ;; rewrite changed the text before it — so the position
+          ;; is meaningless; recover the column instead (clamped
+          ;; to the line's end when it shrank).
+          (when-let ((col (alist-get :col snapshot)))
+            (move-to-column col))))
+      (pcase affinity
+        ('eol (end-of-line))
+        ('bol (maf--point-restore-margin
+               (alist-get :col snapshot)))))))
+
+(defun maf--point-stick-p (context)
+  "Return non-nil when point should follow the node CONTEXT's command committed.
+On the part targets point is the gesture that named the sub-formula, so
+after the rewrite it belongs on whatever took that slot: a command
+chained onto the same node (2 / then 1 +) must still resolve that node,
+which a column restored across a formula that changed width does not
+promise. The whole-entry targets — home, entry, equation — are not
+selected by point this way, and keep the placement their margin or EOL
+affinity asks for.
+
+Two part-target cases opt out. `:keep' left the originals alone and
+pushed the result as a new entry, so the entry under point is still the
+one the user was reading. `:widened' means the command acted on an
+ancestor of the node point was in (see `maf--resolve-widen'), whose
+rendering can start far from where the user was looking."
+  (and (memq (alist-get :target context) '(subexpr selection region))
+       (not (alist-get :keep context))
+       (not (alist-get :widened context))))
+
+(defun maf--point-restore-commit (context landed)
+  "Place point after a command resolved CONTEXT and committed LANDED.
+LANDED is `maf--commit's return (:node, :m), or nil when the command
+signalled before committing.
+
+Three placements, in order. The glyph anchor keeps point on a
+structural glyph of the target it was already on — invoked on the = of
+an equation, point is back on the = after the sides swap, wherever it
+moved. Failing that, point sticks to the start of the committed node
+when it was inside the part the command replaced
+\(`maf--point-stick-p'). Failing both, the positional restore from the
+resolve-time snapshot stands."
+  (let ((anchor (alist-get :point-anchor context)))
+    (or (and landed anchor (maf--point-restore-anchor anchor landed))
+        (and landed (maf--point-stick-p context)
+             (maf--point-restore-start landed))
+        (maf--point-restore (alist-get :point context)))))
 
 (defmacro maf--preserve-point (&rest forms)
   "Evaluate FORMS, then restore point's line, position, and affinity.

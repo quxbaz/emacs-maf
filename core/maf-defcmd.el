@@ -216,13 +216,11 @@ ARG, runs the body, and commits its result to the right stack location."
                          ;; reverts both instead of stranding the arg.
                          ,@(when (eq (alist-get :arity opts) 'binary)
                              '((maf--undo-amalgamate-digit-entry)))
-                         ;; The epilogue parks point at home; put it back where
-                         ;; resolve found it — re-anchored on the committed
-                         ;; node's glyphs when point was on one (see
-                         ;; `maf--point-restore').
-                         (maf--point-restore (alist-get :point ,context)
-                                             (alist-get :point-anchor ,context)
-                                             ,landed)
+                         ;; The epilogue parks point at home; put it back on
+                         ;; what the command acted on — the committed node's
+                         ;; glyph or its start, else where resolve found it
+                         ;; (see `maf--point-restore-commit').
+                         (maf--point-restore-commit ,context ,landed)
                          ;; Keep the resolve-time snapshot for undo: a single
                          ;; `maf-undo' of this command puts point back where it
                          ;; was before the command ran.
@@ -235,9 +233,7 @@ ARG, runs the body, and commits its result to the right stack location."
                      ;; reaches the echo area.
                      (error
                       (when ,context
-                        (maf--point-restore (alist-get :point ,context)
-                                            (alist-get :point-anchor ,context)
-                                            ,landed))
+                        (maf--point-restore-commit ,context ,landed))
                       (signal (car ,err) (cdr ,err)))))))
     (maf--defcmd-validate-opts opts)
     `(progn
