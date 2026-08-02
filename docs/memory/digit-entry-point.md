@@ -38,8 +38,12 @@ resolves the same formula the user was standing on.
 Point still goes home when:
 
 - it already was at home (normal RPN flow unchanged), or
-- RET or SPC completed the entry (a deliberate "push at home"), or
+- RET completed the entry, or SPC did where SPC pushes rather than
+  committing contextually (a deliberate "push at home"), or
 - `maf-mode` is off in the calc buffer (stock calc untouched).
+
+SPC's contextual commit is the other exemption: it edits the
+sub-formula under point, pushing nothing, so point has nowhere to go.
 
 Ported from the user's pre-maf config (`~/.emacs.d/my/calc/`
 minibuffer.el), which carried the same advice unconditionally; the
