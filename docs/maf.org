@@ -56,8 +56,6 @@
    - map against stack function
    - map against given entry
 ** TODO possible to float preview pane at top?
-** TODO in docker/tmux fix C-RET, C-., C-M-<backspace>, S-<backspace>
-** TODO full formula buffer should have "recents" section.
 ** TODO add command to move to parent expression.
    1:  y = 2 (x| + 3)^2 - 12
    ->  y = 2 (x + 3)|^2 - 12
