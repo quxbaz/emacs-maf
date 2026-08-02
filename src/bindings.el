@@ -122,8 +122,11 @@
 ;; A terminal that does not send it falls back to ESC 0x08, which
 ;; arrives as C-M-h; bind that as the terminal stand-in. It shadows
 ;; only mark-defun, which has no use in a calc buffer, at the cost of
-;; Ctrl+Alt+h rolling too.
+;; Ctrl+Alt+h rolling too. Bind the DEL form as well, for the same
+;; reason as the restack below: on a terminal the key arrives as a
+;; modified ASCII 127 rather than as the <backspace> function key.
 (define-key maf-mode-map (kbd "C-M-<backspace>") #'maf-roll-to-bottom)
+(define-key maf-mode-map (kbd "C-M-DEL") #'maf-roll-to-bottom)
 (define-key maf-mode-map (kbd "C-M-h") #'maf-roll-to-bottom)
 ;; Restack: the entry at point travels to the top, point riding along.
 ;; The long-range move up, sharing the backspace key with the bury
