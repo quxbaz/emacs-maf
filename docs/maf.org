@@ -45,9 +45,11 @@
 
 * Low-hanging fruit
 ** TODO Port the edit-mode insertions (modules/maf-edit.el)
-   Independent one-liners, portable one at a time: P → pi, M-2..M-9 /
-   M-' → ^n and ^(), and the \ L | wrap helpers around the preceding
-   expression or region. (PORT:edit.el)
+   - P → pi
+   - M-2..M-9
+   - sqrt
+   - M-' → ^n and ^()
+   - \ L | wrap helpers around the preceding expression or region.
 
 * Todo
 # NOW
