@@ -440,8 +440,15 @@ A hand-written command may read =:keep= for something else. =maf-dup=
 cannot change what lands on the stack, and it spends it on point
 instead — =K RET= duplicates and holds point where it was, exactly as
 =C-u RET= does. RET only sees the flag at all through
-=maf--fancy-prefix-keep-ret=; calc's fancy-prefix dispatch clears its
-flags before any control character.
+=maf--fancy-prefix-keep=; calc's fancy-prefix dispatch clears its flags
+before any control character, and before any function key too.
+
+That guard reads the =maf-command= property. =maf-defcmd= stamps it on
+every command it defines, since their commit path reads =:keep=; a
+hand-written command that wants the same treatment sets it itself, as
+=maf-dup-or-clear-selections= does. A key with no marked command behind
+it keeps calc's own behavior, which matters because the flag is not
+inert — =maf-dup= branches on it.
 
 * The commit recipe
 

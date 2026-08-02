@@ -135,7 +135,9 @@
 
   ;; K RET is the key route to that hold, and it takes real keys to test:
   ;; calc's fancy prefix clears its flags before any control character,
-  ;; RET among them, until `maf--fancy-prefix-keep-ret' spares this one.
+  ;; RET among them, until `maf--fancy-prefix-keep' spares the keys that
+  ;; open a command marked `maf-command'. tests/let-keep.el covers that
+  ;; rule across the other keys it applies to.
   (maf-push "(a + b) c")
   (progn (goto-char (point-min)) (search-forward "+") (backward-char 1)
          (execute-kbd-macro (kbd "K RET")) nil)

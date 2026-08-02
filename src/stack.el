@@ -2230,8 +2230,9 @@ nothing on the stack to begin with, so what it spares here is point."
            (expr (alist-get :expr context))
            ;; K RET holds point just as C-u RET does. The flag is read
            ;; from resolve's snapshot: calc-wrapper's epilogue clears it
-           ;; below, and `maf--fancy-prefix-keep-ret' is what got it here
-           ;; through RET at all.
+           ;; below, and `maf--fancy-prefix-keep' is what got it here
+           ;; through RET at all — this command carries the `maf-command'
+           ;; mark by hand for exactly that.
            (keep-point (or keep-point (alist-get :keep context))))
       ;; calc-wrapper's epilogue parks point home; keep-point puts it back.
       (if keep-point
