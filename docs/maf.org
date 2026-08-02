@@ -67,15 +67,9 @@
    (starting from empty) edit-mode entries. The purpose of this is to avoid the
    pattern of having to duplicate or store an entry that you might want to reuse
    or recall in case you screw up a calculation.
-** IN-PROGRESS set place/point after (maf--commit)
-   - If possible, when (eq :target 'subexpr), stick point to the same symbol
-     prior to the operation.
-** IN-PROGRESS simplification, force-line
-# LATER
-** IN-PROGRESS bind (mafcmd-solve-for) <- formerly bound to 'i'
 
 * Port
-  - [ ] Port my/calc/* features one-by-one.
+  - [-] Port my/calc/* features one-by-one.
   Full inventory of ~/.emacs.d/my/calc below; legacy bindings in parens
   are reference only, maf rebinds at port time. Ported or superseded
   features are summarized at the end of each section.
