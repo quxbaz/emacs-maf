@@ -55,8 +55,8 @@
    contracts into a single command. Equations and vectors, anything else?
    - map against stack function
    - map against given entry
-** TODO possible to float preview pane at top?
-** TODO add command to move to parent expression.
+** IN-PROGRESS possible to float preview pane at top?
+** TODO stack/edit add command to move to parent expression.
    1:  y = 2 (x| + 3)^2 - 12
    ->  y = 2 (x + 3)|^2 - 12
 ** IN-PROGRESS bind maf-restore-stack-from
