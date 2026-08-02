@@ -67,7 +67,7 @@
    (starting from empty) edit-mode entries. The purpose of this is to avoid the
    pattern of having to duplicate or store an entry that you might want to reuse
    or recall in case you screw up a calculation.
-** TODO set place/point after (maf--commit)
+** IN-PROGRESS set place/point after (maf--commit)
    - If possible, when (eq :target 'subexpr), stick point to the same symbol
      prior to the operation.
 ** TODO simplification
@@ -85,10 +85,6 @@
 ** Motion
    - [ ] my/calc-forward-noun / my/calc-backward-noun (M-f/M-b) — next/previous number or
      variable, skipping function names; fix the line-prefix bug while at it (see Bugs)
-** Stack shuffling and duplication
-   - [ ] my/calc-duplicate-stack (C-M-RET) — duplicate the whole stack
-   - [ ] my/calc-store-stack / my/calc-recall-stack (s RET / r RET) — in-memory stack
-     save/restore; possibly superseded by maf-timeline r — decide before porting
 ** Variables
    - [ ] my/calc-recall-browse (p) — completing-read recall, values as annotations
      (drop the ivy-specific TAB cycling)
