@@ -52,6 +52,7 @@
 (require 'maf-timeline)
 (require 'maf-persist)
 (require 'maf-edit)
+(require 'maf-editplus)
 (require 'maf-preview)
 (require 'maf-formulas)
 (require 'maf-selplus)
