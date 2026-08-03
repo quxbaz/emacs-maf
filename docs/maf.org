@@ -51,15 +51,15 @@
 
 * Todo
 # NOW
-** TODO Custom map function, consolidate mapping operations across different
-   contracts into a single command. Equations and vectors, anything else?
-   - map against stack function
-   - map against given entry
 ** IN-PROGRESS possible to float preview pane at top?
 ** TODO stack/edit add command to move to parent expression.
    1:  y = 2 (x| + 3)^2 - 12
    ->  y = 2 (x + 3)|^2 - 12
 ** IN-PROGRESS bind maf-restore-stack-from
+** TODO mapping (M / $) over a matrix by rows, on the prefix argument.
+   The commands map a matrix over its individual elements; calc's V M
+   also offers the by-row reading, which the subject alone cannot
+   choose between. The prefix arg is reserved for it and unused.
 ** TODO distribute and merge should operate contextually.
 ** TODO move all options to unified configuration view.
    - Free up option prefix bindings (eg, m).
