@@ -56,9 +56,15 @@
    - map against stack function
    - map against given entry
 ** IN-PROGRESS possible to float preview pane at top?
-** TODO stack/edit add command to move to parent expression.
+** IN-PROGRESS stack/edit add command to move to parent expression.
    1:  y = 2 (x| + 3)^2 - 12
    ->  y = 2 (x + 3)|^2 - 12
+   - [X] stack: =maf-up-expression= (C-M-u), walking the formula's own
+     ancestors, so the levels calc prints without parens are reached
+     too — the example above is two presses, x + 3 coming first.
+   - [ ] edit: the same motion over the edit buffer's text. maf-mode is
+     off during a maf-edit session, so C-M-u there is still the global
+     =backward-up-list=, which only sees printed parens.
 ** IN-PROGRESS bind maf-restore-stack-from
 ** TODO distribute and merge should operate contextually.
 ** TODO move all options to unified configuration view.
