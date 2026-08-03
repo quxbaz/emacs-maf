@@ -109,7 +109,16 @@
   - [X] my/calc-edit-escape-parens (TAB) — ported as
     maf-editplus-escape-group; scans maf-edit's own way (any closer
     matches any opener, bounded to the entry) instead of syntax-ppss
-  - [ ] my/calc-edit-wrap-parens (M-o) / -toggle-brackets (S-up/down)
+  - [X] my/calc-edit-wrap-parens (M-o) — ported as
+    maf-editplus-wrap-parens; same scan discipline as the escape key,
+    and a repeat widens the pair it placed instead of unwrapping and
+    re-wrapping. Fixes over the draft: a vector or argument list is
+    never widened (it deleted the bracket), a first press never
+    changes the value (a/b*c wraps c, not b*c), an atom is never split
+    (point at 1|2 wraps the number 12), a leading sign comes inside
+    the parens, a two-character relation is one boundary, and a
+    dangling operator wraps nothing instead of an empty pair.
+  - [ ] my/calc-edit-toggle-brackets (S-up/down)
   - [ ] my/calc-edit-jump-sides — jump between the sides of =, inserting \" = \" if absent
   - [ ] my/calc-edit-insert-pi (P); J → *
   - [ ] my/calc-edit-duplicate (M-RET) — duplicate line, comma-aware (vector entry)
