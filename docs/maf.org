@@ -54,10 +54,6 @@
 
 * Todo
 # NOW
-** IN-PROGRESS dwim map commands
-   avoid having separate map commands for vectors and equations
-   bind `M` to map from algebraic entry input (normally `a M '`)
-   bind `$` to map from stack, m=1 (normally `a M $`)*
 ** IN-PROGRESS stack/edit add command to move to parent expression.
     1:  y = 2 (x| + 3)^2 - 12
     ->  y = 2 (x + 3)|^2 - 12
@@ -69,6 +65,10 @@
       =backward-up-list=, which only sees printed parens.
 ** TODO are module settings persistent?
 ** TODO rebind jump from `j` -> `tab`
+** TODO mapping (M / $) over a matrix by rows, on the prefix argument.
+   The commands map a matrix over its individual elements; calc's V M
+   also offers the by-row reading, which the subject alone cannot
+   choose between. The prefix arg is reserved for it and unused.
 ** TODO distribute and merge should operate contextually.
 ** TODO move all options to unified configuration view.
    - Free up option prefix bindings (eg, m).
