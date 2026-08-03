@@ -40,11 +40,17 @@
 ;; dedupes by text. Running off either end stops with a message rather
 ;; than wrapping.
 ;;
-;; In an edit session the keys replace the text of the new entry point
-;; is in, minibuffer-style, with whatever you had typed stashed as slot
-;; 0 so M-n brings it back. Out on the stack they push the item at home
-;; as a real entry, and repeated presses replace that entry in place —
-;; yank/yank-pop, the whole cycle collapsing into a single undo step.
+;; In an edit session the keys replace the text of the entry point is
+;; in, minibuffer-style, with whatever was there stashed as slot 0 so
+;; M-n brings it back; at home, where there is no entry to fill, one
+;; opens at the bottom to hold what is recalled. An entry that came off
+;; the stack may be overwritten like any other, and then the value it
+;; held goes into the ring as the newest item — the one place something
+;; the stack held does belong there, since getting it back is what
+;; makes overwriting it safe. Out on the stack the keys push the item
+;; at home as a real entry, and repeated presses replace that entry in
+;; place — yank/yank-pop, the whole cycle collapsing into a single undo
+;; step.
 ;;
 ;; A ring item is a (TEXT . VALUE) pair. The entry commands know the
 ;; value they left behind, so the stack path pushes it back losslessly;
@@ -240,8 +246,9 @@ text no longer parses — input modes can have moved under it."
 (defvar-local maf-recall--edit-stash nil
   "Entry text displaced by the first recall of the current cycle.
 Slot 0 of the cycle: \\[maf-recall-next] past the newest ring item
-puts it back, so a recall started over half-typed text never costs the
-user that text.")
+puts it back, so a recall started over half-typed text — or over an
+entry the session took off the stack — never costs the user that
+text.")
 
 (defvar-local maf-recall--edit-text nil
   "Entry text this feature last inserted, for detecting outside edits.
@@ -277,19 +284,52 @@ take the overlay with it before the insert could refill it."
       (maf-edit--repair))
     (maf-edit--snap-point-out-of-run)))
 
+(defun maf-recall--edit-displace (o)
+  "Put entry O's text at the front of the ring, if it came from the stack.
+Returns non-nil when it did. Recall over an existing entry overwrites
+a value the user has — the one case where something the stack held
+belongs in the ring, since being able to get it back is the whole
+point of overwriting it deliberately. It goes in as the newest item,
+so it is one \\[maf-recall-next] away for the rest of the session and
+recallable anywhere after.
+
+The value rides along when the entry is untouched — `maf-edit-val' is
+what the session took off the stack, and what a commit would have put
+back — so recalling it later restores the object rather than a reading
+of its text. An entry edited before the recall carries text alone."
+  (let ((text (maf-edit--entry-text o)))
+    (when (and (overlay-get o 'maf-edit-val) (not (string-blank-p text)))
+      (maf-recall--record text
+                          (and (equal text (overlay-get o 'maf-edit-text))
+                               (overlay-get o 'maf-edit-val)))
+      t)))
+
 (defun maf-recall--edit-move (n)
   "Move N steps back through the ring in the running edit session."
   (let ((o (or (maf-recall--entry-at-point)
-               (user-error "maf-recall: point is not on an entry"))))
-    (when (overlay-get o 'maf-edit-val)
-      (user-error "maf-recall: recall fills new entries only"))
+               ;; At home there is no entry to fill, so recall makes
+               ;; one: a blank entry opens at the bottom and the cycle
+               ;; runs in it, which is what recalling from home means
+               ;; out on the stack too. Only a backward step opens it —
+               ;; a forward one from nothing has nowhere to go, and an
+               ;; empty entry left behind would be a surprise.
+               (and (> n 0) (maf-edit--open-at-dot))
+               (user-error "maf-recall: no later entry"))))
     ;; A cycle continues only in the entry it started in, and only
     ;; while that entry still holds what recall last put there.
     (unless (and (eq o maf-recall--edit-overlay)
                  (equal (maf-edit--entry-text o) maf-recall--edit-text))
       (setq maf-recall--edit-overlay o
             maf-recall--edit-index nil
-            maf-recall--edit-stash (maf-edit--entry-text o)))
+            maf-recall--edit-stash (maf-edit--entry-text o))
+      ;; Displacing an existing entry banks it as the ring's newest
+      ;; first, which is then what the entry is showing — so the cycle
+      ;; starts standing on item 0 and the first step moves off it,
+      ;; instead of replacing the entry with what it already holds.
+      ;; Only going backwards displaces anything: a forward step from a
+      ;; fresh cycle has nowhere to go and says so.
+      (when (and (> n 0) (maf-recall--edit-displace o))
+        (setq maf-recall--edit-index 0)))
     (let ((i (+ (or maf-recall--edit-index -1) n)))
       (cond
        ((< i -1) (user-error "maf-recall: no later entry"))
@@ -298,7 +338,7 @@ take the overlay with it before the insert could refill it."
        ((= i -1)
         (setq maf-recall--edit-index nil)
         (maf-recall--edit-replace o maf-recall--edit-stash)
-        (message "maf-recall: back to what you typed"))
+        (message "maf-recall: back to the entry you started from"))
        (t
         (setq maf-recall--edit-index i)
         (maf-recall--edit-replace o (car (nth i maf-recall--ring)))
@@ -377,11 +417,13 @@ so a cycle leaves exactly one entry behind however long it ran."
 
 (defun maf-recall-previous ()
   "Recall the previous entry you typed.
-In a maf-edit session, fills the new entry point is in with it — the
-text it displaces comes back with \\[maf-recall-next] past the newest
-item. Out on the stack, pushes it as a new entry at home; pressing
-again replaces that entry with the item before it, so a cycle leaves
-one entry behind and a single undo removes it.
+In a maf-edit session, fills the entry point is in with it — the text
+it displaces comes back with \\[maf-recall-next], and when that text
+was an entry off the stack it also enters the ring as its newest item.
+At home in a session there is no entry to fill, so one opens at the
+bottom to hold it. Out on the stack, pushes it as a new entry at home;
+pressing again replaces that entry with the item before it, so a cycle
+leaves one entry behind and a single undo removes it.
 
 The ring holds entries you typed from nothing, on both the maf-edit
 and digit-entry paths — never a result a command computed, which is
