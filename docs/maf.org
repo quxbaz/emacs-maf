@@ -50,7 +50,7 @@
    - [ ] backslash → sqrt
    - [ ] M-' → ^n and ^()
    - [ ] \ L | wrap helpers around the preceding expression or region.
-   - [-] my/calc-edit-wrap-parens
+   - [X] my/calc-edit-wrap-parens
 
 * Todo
 # NOW
