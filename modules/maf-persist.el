@@ -248,7 +248,9 @@ after every `maf-stack-save-interval' idle seconds when it changed —
 and restores it when its first calc buffer opens. Sessions never
 write each other's files, so running several at once loses nothing;
 `\\[maf-restore-stack-from]' — bound to \\`t l' in `maf-mode' buffers
-while this mode is on — loads another session's stack explicitly.
+while this mode is on — loads another session's stack explicitly, and
+`\\[maf-save-stack]' (\\`t u') saves this one's on demand rather than
+waiting for the timer.
 See `maf-stack-session-name' for how sessions are named, and
 `maf-stack-directory' for where the files live."
   :global t
@@ -264,6 +266,12 @@ See `maf-stack-session-name' for how sessions are named, and
         ;; p r s y) and the date/time commands on the capitals — so
         ;; nothing is shadowed and there is nothing to cede back.
         (define-key maf-mode-map (kbd "t l") #'maf-restore-stack-from)
+        ;; The load key's companion: update this session's save file now,
+        ;; for a checkpoint the idle timer has not reached yet. t u is
+        ;; free in calc too, and the right hand takes it without leaving
+        ;; the prefix's own hand — t s, the mnemonic key, is calc's
+        ;; trail isearch, whose t r twin would be left behind.
+        (define-key maf-mode-map (kbd "t u") #'maf-save-stack)
         (when maf--stack-save-timer (cancel-timer maf--stack-save-timer))
         (setq maf--stack-save-timer
               (run-with-idle-timer maf-stack-save-interval t #'maf-save-stack))
@@ -273,6 +281,7 @@ See `maf-stack-session-name' for how sessions are named, and
     (remove-hook 'kill-emacs-hook #'maf--stack-shutdown)
     (remove-hook 'calc-mode-hook #'maf-restore-stack)
     (define-key maf-mode-map (kbd "t l") nil)
+    (define-key maf-mode-map (kbd "t u") nil)
     (when maf--stack-save-timer
       (cancel-timer maf--stack-save-timer)
       (setq maf--stack-save-timer nil))

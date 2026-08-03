@@ -110,14 +110,16 @@
   (cl-assert (memq 'maf-restore-stack calc-mode-hook))
   (cl-assert (= 1 (seq-count (lambda (tm) (eq (timer--function tm) 'maf-save-stack))
                              timer-idle-list)))
-  ;; ...and the chooser's key, which is the mode's only binding.
+  ;; ...and the two keys: load a session's stack, save this one's.
   (cl-assert (eq (lookup-key maf-mode-map (kbd "t l"))
                  'maf-restore-stack-from))
+  (cl-assert (eq (lookup-key maf-mode-map (kbd "t u")) 'maf-save-stack))
   (maf-persist-mode -1)
   (cl-assert (not (memq 'maf--stack-shutdown kill-emacs-hook)))
   (cl-assert (not (memq 'maf-restore-stack calc-mode-hook)))
-  ;; Off, t l is maf's no more; calc's t prefix has nothing there.
+  ;; Off, both keys are maf's no more; calc's t prefix has nothing there.
   (cl-assert (null (lookup-key maf-mode-map (kbd "t l"))))
+  (cl-assert (null (lookup-key maf-mode-map (kbd "t u"))))
   (cl-assert (not (seq-some (lambda (tm) (eq (timer--function tm) 'maf-save-stack))
                             timer-idle-list)))
   (cl-assert (not (file-exists-p (maf--stack-file "test-e" ".lock"))))
