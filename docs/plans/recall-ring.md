@@ -5,10 +5,13 @@ M-[n/p]"). Written up rather than left in conversation because the design turns
 on one distinction that is easy to lose: **this ring holds what you *typed*; the
 timeline holds what the stack *held*.**
 
-**Status: landed** as `modules/maf-recall.el`, with the four step tests below.
-Two things this document got wrong before the code was written are corrected in
-place, each marked *(corrected)* — the digit-entry hook point, and a guard the
-stack cycle needs.
+**Status: landed** as `modules/maf-recall.el`, with the step tests below. Where
+the code and this document disagreed, the document is fixed in place rather than
+quietly rewritten: *(corrected)* marks what it had simply got wrong before the
+code was written — the digit-entry hook point, and a guard the stack cycle needs
+— and *(revised)* marks a decision that was right as stated and later changed
+on purpose: algebraic entry now feeds the ring, and recall may overwrite an
+entry that came from the stack.
 
 ## Goal
 
@@ -111,13 +114,34 @@ offers the canonical form of a number rather than your literal keystrokes:
 
 `M-p` / `M-n` in `maf-edit-mode-map` replace the text of the entry point is in.
 
-- Only on a **bare** entry (no `maf-edit-val`). On an entry that came from the
-  stack, refuse with a message — recall authors new entries, it does not
-  overwrite existing ones.
+- *(revised after landing)* Any entry, not only a bare one. The first version
+  refused on an entry that came from the stack, on the grounds that recall
+  authors new entries rather than overwriting existing ones; overwriting one is
+  in fact a thing worth doing, so it is allowed and the entry it displaces is
+  **banked as the ring's newest item**.
+- That banking is the one place something the stack held enters the ring, and it
+  does not blur the rule the design rests on: it is there because *you* chose to
+  overwrite that entry, and being able to get it back is what makes choosing to
+  safe. It carries the entry's value along when the session had not touched it,
+  so a later recall restores the object rather than a reading of its text.
+  Nothing is banked for a bare entry — half-typed fragments stay out of the ring
+  and the stash alone covers them.
+- Banking happens at the start of the cycle, before the first replacement, so
+  the entry is then showing ring item 0 and the cycle starts standing on it —
+  otherwise the first `M-p` would replace the entry with what it already holds.
 - Text typed before the first `M-p` is stashed as slot 0, so `M-n` back past the
   newest item restores work in flight (comint's rule).
 - The replacement is one undo step.
 - The cycle index resets when the entry text changes by anything but a recall.
+- *(revised after landing)* **At home in a session** there is no entry to fill,
+  so `M-p` opens a blank one at the bottom and the cycle runs in it — the same
+  thing `M-p` means at home out on the stack. It reuses maf-edit's own opening
+  gesture (`maf-edit--open-at-dot`, extracted from `maf-edit-add-entry` for the
+  purpose) rather than a second copy of it. `M-n` at home opens nothing: there
+  is no cycle to walk back through, and an empty entry left behind would be a
+  surprise. Slot 0 for such a cycle is the empty text the entry started as, so
+  walking back past the newest item empties it again and a commit then drops
+  it — the stack ends up as it was.
 
 ### At home, in stack mode
 
@@ -221,8 +245,8 @@ carrying across all of them.
    that a failed commit and a discard both leave it alone.
 3. Digit-path recording advice. Check the table above branch by branch: RET and
    S-RET record, SPC / `2 +` / `5 e` / `'` / `..` do not.
-4. Edit-session recall (`M-p` / `M-n`), slot-0 stash, refusal on non-bare
-   entries.
+4. Edit-session recall (`M-p` / `M-n`), slot-0 stash, and banking the entry a
+   recall displaces.
 5. Stack-mode recall: first push, then in-place cycling, then undo
    amalgamation.
 6. `savehist` hookup.
@@ -238,8 +262,8 @@ Step tests in `tests/`, per [tests/README.md](../../tests/README.md):
 - `recall-algebraic.el` — the `'` path: an expression typed from nothing in,
   one that consumes the stack top (`' 2+$`) out.
 - `recall-edit.el` — cycling inside a session: replacement, slot-0 stash,
-  typing over a recall starting a fresh cycle, refusal on a stack-backed entry,
-  ends of the ring.
+  typing over a recall starting a fresh cycle, overwriting a stack-backed entry
+  and banking what it displaced, opening an entry at home, ends of the ring.
 - `recall-stack.el` — home cycling: push at home from a mid-stack point,
   in-place replacement, one undo removes the whole cycle, mark left behind.
 
