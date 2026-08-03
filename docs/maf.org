@@ -57,16 +57,18 @@
 ** IN-PROGRESS dwim map commands
    avoid having separate map commands for vectors and equations
    bind `M` to map from algebraic entry input (normally `a M '`)
-   bind `$` to map from stack, m=1 (normally `a M $`)
+   bind `$` to map from stack, m=1 (normally `a M $`)*
 ** IN-PROGRESS stack/edit add command to move to parent expression.
-   1:  y = 2 (x| + 3)^2 - 12
-   ->  y = 2 (x + 3)|^2 - 12
-   - [X] stack: =maf-up-expression= (C-M-u), walking the formula's own
-     ancestors, so the levels calc prints without parens are reached
-     too — the example above is two presses, x + 3 coming first.
-   - [ ] edit: the same motion over the edit buffer's text. maf-mode is
-     off during a maf-edit session, so C-M-u there is still the global
-     =backward-up-list=, which only sees printed parens.
+    1:  y = 2 (x| + 3)^2 - 12
+    ->  y = 2 (x + 3)|^2 - 12
+    - [X] stack: =maf-up-expression= (C-M-u), walking the formula's own
+      ancestors, so the levels calc prints without parens are reached
+      too — the example above is two presses, x + 3 coming first.
+    - [ ] edit: the same motion over the edit buffer's text. maf-mode is
+      off during a maf-edit session, so C-M-u there is still the global
+      =backward-up-list=, which only sees printed parens.
+** TODO are module settings persistent?
+** TODO rebind jump from `j` -> `tab`
 ** TODO distribute and merge should operate contextually.
 ** TODO move all options to unified configuration view.
    - Free up option prefix bindings (eg, m).
