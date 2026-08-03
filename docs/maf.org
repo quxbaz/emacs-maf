@@ -9,7 +9,7 @@
   1) [ ] Move all of relevant my/calc config into project
   2) [ ] Harden through using w/ anki math
 
-* Major features [4/9]
+* Major features [6/10]
   - [ ] Vim bindings module (move by noun, verb, char)
   - [X] Persistent sub-formula highlighting
   - [X] Timeline module
@@ -21,6 +21,7 @@
     - [X] Create manager
     - [X] Set default binding
   - [X] Use module architecture (maf-timeline, maf-edit)
+  - [X] Recall ring for typed entries (maf-recall)
   - [ ] Discovery document for useful features, behaviors, modules, etc
 
 * Feedback
@@ -63,10 +64,13 @@
 ** TODO distribute and merge should operate contextually.
 ** TODO move all options to unified configuration view.
    - Free up option prefix bindings (eg, m).
-** TODO quick recall command, bind to M-[n/p] to recall previous/next bare
+** DONE quick recall command, bind to M-[n/p] to recall previous/next bare
    (starting from empty) edit-mode entries. The purpose of this is to avoid the
    pattern of having to duplicate or store an entry that you might want to reuse
    or recall in case you screw up a calculation.
+   Landed as the =maf-recall= module (modules/maf-recall.el); digit and
+   algebraic entries feed the ring too. Design and decisions:
+   docs/plans/recall-ring.md.
 
 * Port
   - [-] Port my/calc/* features one-by-one.
