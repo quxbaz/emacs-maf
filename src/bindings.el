@@ -320,6 +320,16 @@
 ;; sequences (M-m t, M-m M-t) stay reachable as m t and m M-t.
 (define-key maf-mode-map (kbd "M-m") #'maf-beginning-of-entry)
 
+;; Step out to the enclosing sub-formula, taking the key the global map
+;; gives `backward-up-list' — the same gesture, over the formula rather
+;; than over the printed parens. Calc leaves C-M-u unbound, so nothing
+;; of its own is shadowed. `backward-up-list' itself only reaches the
+;; ancestors calc prints parens for, which leaves out the ones its
+;; precedence rules let it drop (from b in sin(a b + c)^2 it lands on
+;; the sin call, and never on a b or a b + c), and it reads the buffer
+;; text, so a Big-language rendering leaves it nothing to walk.
+(define-key maf-mode-map (kbd "C-M-u") #'maf-up-expression)
+
 ;; The module toggle buffer. m is calc's mode prefix (m m saves the
 ;; modes, m d is degrees mode), which is where turning maf's own
 ;; features on and off belongs; m z is unbound in calc itself. This one

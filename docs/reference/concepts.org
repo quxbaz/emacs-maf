@@ -538,6 +538,16 @@ deliberate gesture, and the selection target does not route through
 =maf--resolve-widen=. That also keeps =j U= faithful to
 =calc-sel-unpack=, which acts on the selection exactly as given.
 
+The user reaches the same walk by hand: =maf-up-expression= (C-M-u)
+moves point out to the enclosing sub-formula over the same ancestors
+(=maf--resolve-ancestors=), so where =:widen= fixes one command's reach
+from a declaration, the motion re-aims every command by putting point
+where it names the parent. It lands only where resolve agrees — an
+ancestor the rendering gives point no way to name, such as a matrix
+row, is walked past rather than landed on — and it carries an active
+selection along with it, that being what a command would resolve to
+instead of point.
+
 * Binary on selection-like targets
 
 Selection, subexpr, entry: each can support binary commands, but the

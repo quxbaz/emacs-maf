@@ -50,6 +50,7 @@
 (declare-function math-expr-contains "calc-alg")
 (declare-function calc-find-selected-part "calc-sel")
 (declare-function calc-prepare-selection "calc-sel")
+(declare-function calc-change-current-selection "calc-sel")
 (declare-function calc-commute-left "calcsel2")
 (declare-function calc-commute-right "calcsel2")
 (declare-function calc-auto-selection "calc-sel")
@@ -1442,6 +1443,123 @@ with none it just undoes horizontal scrolling."
       ;; of the line onto the dot: no journey, nothing to mark.
       (unless (or home (use-region-p))
         (maf--mark-before-home from))))))
+
+(defun maf--up-entry-region (m)
+  "Return (BEG . END), the buffer span the entry at stack level M renders into.
+END is where the entry below begins, so a rendering taller than one line
+— a matrix, a Big-language fraction, an entry wrapped over several
+lines — is covered whole."
+  (cons (save-excursion (calc-cursor-stack-index m) (point))
+        (save-excursion (calc-cursor-stack-index (1- m)) (point))))
+
+(defun maf--up-node-position (node region)
+  "Return the position in REGION where point names NODE, or nil.
+Asks calc which sub-formula point would resolve to — the question
+`maf--resolve-target-subexpr' asks — at each position in turn, rather
+than computing NODE's place from the composition
+\(`maf--comp-node-start-pos'), which is defined for flat renderings
+only. Reading the rendering back through the resolver is what keeps the
+landing honest in every rendering: Big language, a matrix's own lines, a
+wrapped entry. It also means a node the rendering gives point no way to
+name — a matrix row, whose brackets calc tags to the matrix itself —
+comes back nil rather than a position that would resolve to something
+else.
+
+Of the positions that name NODE, the first non-blank one wins: those
+are the glyphs NODE renders itself, and landing on the operator or
+paren reads better than landing on the space before it. A juxtaposed
+product renders its multiplication as nothing but a space, so blank is
+all it has; then the first position stands.
+
+`calc-prepare-selection' must have run for the entry REGION covers."
+  (save-excursion
+    (let ((blank nil))
+      (goto-char (car region))
+      (catch 'found
+        (while (< (point) (cdr region))
+          (when (eq (ignore-errors (calc-find-selected-part)) node)
+            (if (memq (char-after) '(?\s ?\t ?\n))
+                (unless blank (setq blank (point)))
+              (throw 'found (point))))
+          (forward-char 1))
+        blank))))
+
+(defun maf--up-step (node m)
+  "Return (ANCESTOR . POSITION) one step out from NODE, or nil at the root.
+The step goes to NODE's nearest ancestor in the entry at stack level M
+that point can name. An ancestor the rendering leaves unnameable is
+walked past rather than landed on: point is the whole of maf's
+targeting, so a landing where resolve would name something other than
+the node the motion advertised is worse than a longer step."
+  (let ((region (maf--up-entry-region m)))
+    (cl-loop for anc in (maf--resolve-ancestors (calc-top m 'full) node)
+             for pos = (maf--up-node-position anc region)
+             when pos return (cons anc pos))))
+
+(defun maf-up-expression (&optional n)
+  "Move point out to the sub-formula enclosing the one it is on.
+
+  y = 2 (|x + 3)^2 - 12  =>  y = 2 |(x + 3)^2 - 12
+
+Point lands on the enclosing formula's own first glyph — its operator,
+the parens calc printed around it, its function name — which is where
+resolve names that formula, so the next command acts on it. Repeat to
+climb, ending at the whole entry.
+
+A numeric prefix climbs that many levels at once.
+
+The climb follows the formula, not the printed parentheses, so it steps
+through the levels calc renders without any: out of x below, the term
+x + 3 comes first, then the power, then the product. It works in every
+rendering — Big language, a matrix, an entry wrapped over several lines
+— since each landing is checked by asking calc what point would resolve
+to there. A level the rendering gives point no way to name is skipped:
+a matrix's rows are drawn with brackets calc tags to the matrix itself,
+so a climb from an element lands on the whole matrix.
+
+At the outermost formula the motion signals rather than moving: the
+entry is already the subject there. So does a press at home, or at the
+line prefix or end of line, where point names the whole entry to begin
+with.
+
+With a selection up on the entry, the selection is the subject rather
+than point, so it climbs along with the motion and stays what the next
+command acts on.
+
+  y = 2 |(x + 3)^2 - 12  =>  y = 2 (x + 3)|^2 - 12
+  y = 2 (x + 3)|^2 - 12  =>  y = 2| (x + 3)^2 - 12   (the product, whose
+                                                      glyph is a space)
+  y = 2| (x + 3)^2 - 12  =>  y = 2 (x + 3)^2 |- 12
+  y = 2 (x + 3)^2 |- 12  =>  y |= 2 (x + 3)^2 - 12   (the whole entry)"
+  (interactive "p")
+  (let ((m (calc-locate-cursor-element (point))))
+    (when (<= m 0)
+      (user-error "No expression at point"))
+    (calc-prepare-selection m)
+    (let ((node (calc-find-selected-part))
+          (pos nil))
+      (unless node
+        (user-error "Already at the whole entry"))
+      (dotimes (_ (or n 1))
+        (when-let* ((step (maf--up-step node m)))
+          (setq node (car step)
+                pos (cdr step))))
+      (unless pos
+        (user-error "Already at the whole entry"))
+      ;; A selection outranks point when a command resolves its subject
+      ;; (see `maf--resolve-context'), so a motion that left it behind
+      ;; would move the cursor and change nothing. Carrying it along
+      ;; keeps the one promise the command makes: what point names now
+      ;; is what the next command acts on. The re-render this does
+      ;; rewrites the entry's lines, so point is placed after it.
+      (when (calc-top m 'sel)
+        (calc-wrapper
+         (calc-prepare-selection m)
+         (calc-change-current-selection node))
+        (calc-prepare-selection m)
+        (setq pos (or (maf--up-node-position node (maf--up-entry-region m))
+                      pos)))
+      (goto-char pos))))
 
 (defun maf--swap-target-with-top ()
   "Swap the resolved sub-formula at point with the level-1 entry.
