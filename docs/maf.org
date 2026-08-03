@@ -58,7 +58,6 @@
    avoid having separate map commands for vectors and equations
    bind `M` to map from algebraic entry input (normally `a M '`)
    bind `$` to map from stack, m=1 (normally `a M $`)
-** IN-PROGRESS possible to float preview pane at top?
 ** IN-PROGRESS stack/edit add command to move to parent expression.
    1:  y = 2 (x| + 3)^2 - 12
    ->  y = 2 (x + 3)|^2 - 12
