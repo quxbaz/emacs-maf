@@ -3576,6 +3576,261 @@ arithmetic — so the subject's operator does not have to be = either.
       (user-error "Top of stack is not an assignment, or a vector of them"))
     (commit (maf--let-evaluate expr bindings))))
 
+;;; Mapping
+
+(defconst maf--map-param '(var $ var-$)
+  "The variable standing for the element a mapping formula applies to.
+A $ in the formula is read as this variable (see `maf--map-read'), and
+applying the mapper substitutes the element for it. The name is
+unforgeable: $ is a token in calc's syntax, never an identifier, so no
+formula the user types can name this variable by accident.")
+
+(defun maf--map-function-symbol (var)
+  "Return the calc function symbol the variable node VAR names.
+sin gives `calcFunc-sin' — a symbol whether or not calc defines it, so
+the caller tests it with `fboundp'."
+  (intern (concat "calcFunc-" (symbol-name (nth 1 var)))))
+
+(defun maf--map-from-expr (expr)
+  "Return the mapper EXPR describes, as a cons of (PARAM . BODY).
+Applying it substitutes the mapped element for PARAM in BODY. EXPR is a
+parsed formula, from the stack or from the prompt, in one of three
+shapes:
+
+  <x : x^2>   a nameless function — its own parameter and body
+  sin         a bare name calc knows as a function — the call it names
+  x^2         a formula with one free variable — that variable
+
+A name calc knows is read as the function, so a variable of the same
+name cannot be mapped bare; write it as a formula ($ sin) to mean the
+variable. A formula with no variable has nothing to map over, and one
+with several does not say which of them is the element — both signal,
+pointing at the $ that names the element outright."
+  (cond
+   ((eq (car-safe expr) 'calcFunc-lambda)
+    ;; An element is one thing, so only the one-argument form maps.
+    (if (= (length expr) 3)
+        (cons (nth 1 expr) (nth 2 expr))
+      (user-error "Mapping takes a one-argument function")))
+   ((and (eq (car-safe expr) 'var)
+         (fboundp (maf--map-function-symbol expr)))
+    (cons maf--map-param
+          (list (maf--map-function-symbol expr) maf--map-param)))
+   (t
+    (let ((vars (maf--solve-sorted-vars expr)))
+      (pcase (length vars)
+        (1 (cons (car vars) expr))
+        (0 (user-error "Nothing to map: %s has no variable in it"
+                       (math-format-value expr)))
+        (_ (user-error "Several variables: mark the element with $")))))))
+
+(defun maf--map-read ()
+  "Read the mapping formula from the minibuffer; return a mapper.
+A lone $ returns the symbol `stack' instead: the formula then comes
+from the stack, exactly as answering $ at `mafcmd-substitute's
+replacement prompt takes the replacement from there.
+
+Anywhere else in the formula a $ stands for the element being mapped —
+the one thing calc's own operator prompt uses it for — so 2 $ + 1 and
+2 x + 1 say the same thing. The two readings never collide: a $ that
+means the stack is the whole answer, a $ that means the element is part
+of a larger formula."
+  (let ((input (string-trim (read-string "Map: "))))
+    (when (string-empty-p input)
+      (user-error "No formula given"))
+    (if (string= input "$")
+        'stack
+      ;; Calc's reader refuses $ unless `calc-dollar-values' offers it
+      ;; something to stand for; the placeholder is that something, and
+      ;; `calc-dollar-used' comes back non-zero when the formula spent it.
+      (let* ((calc-dollar-values (list maf--map-param))
+             (calc-dollar-used 0)
+             (expr (math-read-expr input)))
+        ;; A parse failure comes back as (error POSITION MESSAGE).
+        (when (eq (car-safe expr) 'error)
+          (user-error "Bad format in formula: %s" (nth 2 expr)))
+        (if (> calc-dollar-used 0)
+            (cons maf--map-param expr)
+          (maf--map-from-expr expr))))))
+
+(defun maf--map-apply (mapper expr)
+  "Return EXPR with MAPPER applied to it.
+A vector is mapped elementwise, and nested vectors recurse, so a matrix
+maps over its individual elements rather than its rows. Anything else
+is one element and takes the formula whole.
+
+The result is normalized, as a substituted formula is: putting a value
+in collapses what it makes constant, under the current simplification
+mode."
+  (if (eq (car-safe expr) 'vec)
+      (cons 'vec (mapcar (lambda (e) (maf--map-apply mapper e)) (cdr expr)))
+    (math-normalize (math-expr-subst (cdr mapper) (car mapper) expr))))
+
+(defun maf--map-relation (mapper rel reverse)
+  "Return relation REL with MAPPER applied to both of its sides.
+REVERSE reverses the relation's direction, which is what makes mapping
+a decreasing formula over an inequality come out true.
+
+An = maps unconditionally: equality survives any function. An
+inequality does not — mapping -2 x over a < b gives -2 a > -2 b, not
+-2 a < -2 b — and nothing here can tell whether the formula the user
+typed increases or decreases. Rather than pick a direction and be
+silently wrong half the time, the plain command refuses an inequality
+and REVERSE is how the user states that the formula decreases.
+
+Calc's own `a M' takes the other choice: it knows a handful of named
+functions reverse, and keeps the direction for everything else — so
+mapping the nameless <x : -2 x> over a < b returns the false
+-2 a < -2 b. maf reverses by hand where it can already tell (see
+`maf--negate-whole'), and asks here where it cannot.
+
+A != is refused either way: a != b says nothing about f(a) and f(b)
+unless f is one-to-one, and reversing has no meaning for it."
+  (unless (= (length rel) 3)
+    ;; Chained relations (a < b < c) have no single direction, the same
+    ;; reason `maf--negate-whole' leaves them alone.
+    (user-error "A chained relation has no single direction to map over"))
+  (let ((op (car rel))
+        (lhs (maf--map-apply mapper (nth 1 rel)))
+        (rhs (maf--map-apply mapper (nth 2 rel))))
+    (cond
+     ((eq op 'calcFunc-eq) (list op lhs rhs))
+     ((eq op 'calcFunc-neq)
+      (user-error "Mapping over != needs a one-to-one formula, which this may not be"))
+     (reverse (list (maf--flip-relation-op op) lhs rhs))
+     (t (user-error
+         "Mapping an inequality keeps its direction only for an increasing formula: use I to map and reverse it")))))
+
+(defun maf--map-subject (mapper expr reverse)
+  "Return EXPR mapped through MAPPER, REVERSE reversing a relation.
+A relation is mapped side by side (see `maf--map-relation'); anything
+else goes to `maf--map-apply', which spreads over a vector's elements
+and takes a plain expression whole."
+  (if (maf--relation-p expr)
+      (maf--map-relation mapper expr reverse)
+    (maf--map-apply mapper expr)))
+
+(defvar maf--map-mapper nil
+  "The mapper `maf--map-run' applies; bound per `mafcmd-map' call.
+Nil for the $ form, whose formula is the stack arg `maf--map-arg-run'
+receives.")
+
+(defvar maf--map-reverse nil
+  "Non-nil while a mapping command should reverse the relation it maps.
+Bound per call from calc's Inverse flag — see `maf--map-relation'.")
+
+(maf-defcmd maf--map-run (expr _arg commit)
+  "Apply `maf--map-mapper' to the resolved expression.
+The worker behind `mafcmd-map' — see there. Relations are consumed
+whole (`:map -1') because mapping decides for itself what to do with
+one: an = maps side by side, an inequality only under I."
+  :arity unary
+  :prefix "map"
+  :map -1
+  (commit (maf--map-subject maf--map-mapper expr maf--map-reverse)))
+
+(maf-defcmd maf--map-arg-run (expr arg commit)
+  "Like `maf--map-run', with the stack supplying the formula.
+The $ form: the entry above the subject is the formula, read by
+`maf--map-from-expr' and consumed as the binary arg it is."
+  :arity binary
+  :prefix "map"
+  :map -1
+  (commit (maf--map-subject (maf--map-from-expr arg) expr maf--map-reverse)))
+
+(defun maf--map-dispatch (mapper)
+  "Run the mapping worker MAPPER calls for, consuming calc's I flag.
+MAPPER is what `maf--map-read' returns — a mapper, or `stack' for the
+form that takes its formula from the stack. Shared by `mafcmd-map' and
+`mafcmd-map-stack', which differ only in where the formula comes from."
+  (let ((maf--map-reverse calc-inverse-flag))
+    ;; Consumed here rather than left for the worker: the worker is a
+    ;; plain defcmd with no variants of its own, and a flag still set
+    ;; when it returns would carry into the next command.
+    (setq calc-inverse-flag nil
+          calc-hyperbolic-flag nil)
+    (if (eq mapper 'stack)
+        (call-interactively #'maf--map-arg-run)
+      (let ((maf--map-mapper mapper))
+        (call-interactively #'maf--map-run)))))
+
+(defun maf--map-refuse-hyperbolic ()
+  "Signal if calc's Hyperbolic flag is set, consuming it first.
+Mapping has an inverse variant (reverse the relation) and no hyperbolic
+one. A plain defun gets no flag checking from `maf-defcmd', so it makes
+the macro's answer by hand rather than ignoring the prefix silently."
+  (when calc-hyperbolic-flag
+    (setq calc-inverse-flag nil
+          calc-hyperbolic-flag nil)
+    (calc-set-mode-line)
+    (user-error "No hyperbolic variant for this command")))
+
+(defun mafcmd-map ()
+  "Map a formula you type over the target, contextually.
+
+  [1, 2, 3]  =>  [1, 4, 9]        (typed: x^2)
+
+Reads the formula in algebraic notation. It may name the element three
+ways: a formula with one free variable (x^2), a $ in place of the
+element (2 $ + 1), or a bare function name (sin). A lone $ is the
+exception — it means the formula is on the stack, and is the same
+gesture as `mafcmd-map-stack' ($).
+
+Point picks the subject as usual: the selection or sub-formula at
+point, the whole entry from its margin, the top entry at home. A vector
+is mapped elementwise, and a matrix over its individual elements; a
+sub-formula that is itself a vector maps in place, leaving what
+surrounds it alone.
+
+  [1, 2] + k          =>  [1, 4] + k      (subject is the vector at point)
+  sqrt(x)             =>  sqrt(2 x)       (typed: 2 x; the part at point)
+
+An equation maps side by side — both sides through the same formula,
+which is what keeps the equation saying something true.
+
+  y = x + 1           =>  y^2 = (x + 1)^2
+
+An inequality is refused: whether the direction survives depends on
+the formula increasing or decreasing, and a formula typed at a prompt
+cannot be asked. I maps it and reverses the direction, which is the way
+to say the formula decreases.
+
+  a < b               =>  -2 a > -2 b     (I, typed: -2 x)
+
+The result is normalized under the current simplification mode. A
+prefix argument is reserved for choosing rows over elements on a
+matrix, which is not implemented yet."
+  (interactive)
+  (maf--map-refuse-hyperbolic)
+  ;; Read the prompt before any calc state is touched, so C-g aborts
+  ;; with nothing done.
+  (maf--map-dispatch (maf--map-read)))
+(put 'mafcmd-map 'maf-command t)
+
+(defun mafcmd-map-stack ()
+  "Map the formula on the stack over the target, contextually.
+
+  x^2                                     (the formula, on top)
+  [1, 2, 3]  =>  [1, 4, 9]
+
+The same command as `mafcmd-map' (M) with the formula taken from the
+stack instead of a prompt — the shortcut for a formula already built
+there, and the same thing a lone $ at M's prompt does. As for any
+binary command, the formula is the entry above the subject (the top
+entry at home) and is consumed on commit, so the subject must lie below
+the top.
+
+The formula names its element as at M's prompt: one free variable, or a
+bare function name. A nameless function (<x : x^2>) works too, its own
+parameter being the element.
+
+Everything else — how the subject is picked, vectors elementwise,
+equations side by side, inequalities only under I — is `mafcmd-map's."
+  (interactive)
+  (maf--map-refuse-hyperbolic)
+  (maf--map-dispatch 'stack))
+(put 'mafcmd-map-stack 'maf-command t)
+
 ;;; Roots
 
 (defun maf--poly-factors (expr)

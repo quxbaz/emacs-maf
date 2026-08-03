@@ -47,6 +47,14 @@
 ;; calc-eval-num; N is also one of the two V M operator codes that are
 ;; not real keys, so nothing contextual claims it — see maf-cmds.el.
 (define-key maf-mode-map (kbd "N") #'mafcmd-negate)
+;; Map a formula over the target: each element of a vector, both sides
+;; of an equation, the sub-formula at point. M shadows
+;; calc-more-recursion-depth, $ calc-auto-algebraic-entry — starting an
+;; algebraic entry with the stack top is rare enough to give up, and
+;; maf's own entry reaches it other ways. Calc's a M keeps the operator
+;; prompt (mafcmd-mapeq in the table), which stays the escape hatch.
+(define-key maf-mode-map (kbd "M") #'mafcmd-map)
+(define-key maf-mode-map (kbd "$") #'mafcmd-map-stack)
 ;; Shift the term under point through its associative chain. Lowercase
 ;; j l / j r (calc binds the shifts to capital j L / j R, left reachable).
 (define-key maf-mode-map (kbd "j l") #'maf-commute-left)
