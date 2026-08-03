@@ -841,15 +841,11 @@ and discard alike return point to where it was before the gesture."
     (maf-edit-mode 1)
     (setq maf-edit--return snapshot)))
 
-(defun maf-edit-add-entry ()
-  "Enter maf-edit with a fresh entry started at the bottom of the stack.
-The new entry opens as a blank numbered line just above the dot, point
-on its content column, ready to type — from anywhere, including an
-empty stack. When the session ends, commit and discard alike, point
-returns to where it was before this command ran instead of staying in
-the edited text."
-  (interactive)
-  (maf-edit--enter-for-add)
+(defun maf-edit--open-at-dot ()
+  "Open a blank entry at the bottom of a running session; return its overlay.
+Point lands on the new entry's content column, ready to type. The
+opening gesture of `maf-edit-add-entry', separated from entering the
+session so a command already inside one can add an entry at home too."
   (goto-char (overlay-start maf-edit--dot))
   (let ((maf-edit--inhibit t)
         (inhibit-modification-hooks t)
@@ -865,9 +861,20 @@ the edited text."
     (insert "\n")
     (goto-char bol)
     (insert maf-edit--pad-string)
-    (maf-edit--make-entry bol (+ bol maf-edit--prefix-width))
-    (maf-edit--repair)
-    (goto-char (+ bol (maf-edit--leading-prefix-run bol)))))
+    (prog1 (maf-edit--make-entry bol (+ bol maf-edit--prefix-width))
+      (maf-edit--repair)
+      (goto-char (+ bol (maf-edit--leading-prefix-run bol))))))
+
+(defun maf-edit-add-entry ()
+  "Enter maf-edit with a fresh entry started at the bottom of the stack.
+The new entry opens as a blank numbered line just above the dot, point
+on its content column, ready to type — from anywhere, including an
+empty stack. When the session ends, commit and discard alike, point
+returns to where it was before this command ran instead of staying in
+the edited text."
+  (interactive)
+  (maf-edit--enter-for-add)
+  (maf-edit--open-at-dot))
 
 (defun maf-edit-add-entry-below ()
   "Enter maf-edit with a fresh entry opened below the entry at point.
