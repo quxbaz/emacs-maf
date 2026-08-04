@@ -62,7 +62,6 @@
       off during a maf-edit session, so C-M-u there is still the global
       =backward-up-list=, which only sees printed parens.
 ** TODO are module settings persistent?
-** TODO rebind jump from `j` -> `tab`
 ** TODO mapping (M / $) over a matrix by rows, on the prefix argument.
    The commands map a matrix over its individual elements; calc's V M
    also offers the by-row reading, which the subject alone cannot
