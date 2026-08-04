@@ -2880,20 +2880,48 @@ widening carries on past it (see `maf--sel-sign-peel-p')."
                 (maf--sel-sign-peel-p normalized rewritten))
       rewritten)))
 
+(defun maf--sel-rewrite-site (expr site preferred rules as-division)
+  "Rewrite EXPR under RULES marking a part of SITE; nil when none fired.
+Every rule matches the formula around its marker, so the candidates at
+SITE are its immediate parts, not SITE itself. PREFERRED is tried
+first when it is one of them — that is the part point is in, and where
+two parts of one site both fire, the gesture decides. Returns nil when
+SITE has no parts, an atom having none."
+  (let (result)
+    (unless (Math-primp site)
+      (let ((parts (if (memq preferred (cdr site))
+                       (cons preferred (remq preferred (cdr site)))
+                     (cdr site))))
+        (while (and parts (not result))
+          (setq result (maf--sel-rewrite-try expr (car parts) rules
+                                             as-division)
+                parts (cdr parts)))))
+    result))
+
 (defun maf--sel-rewrite-widen (expr sel rules as-division)
   "Rewrite EXPR under RULES at SEL, widening outward until a rule fires.
 Every rule in these sets matches the formula *around* the marker, so
-the node point names is often one level too deep to be the target: on
-the a of x (a + b) the rule that fires is the one reading the product,
-whose marked part is the sum. Widening walks from SEL out through its
-ancestors and takes the innermost one at which some rule matches —
-maf's `:widen' idea, applied here to the marker rather than to the
-operand. Returns nil when no ancestor works, SEL included."
-  (let ((node sel) result)
-    (while (and node (not result))
-      (setq result (maf--sel-rewrite-try expr node rules as-division))
+the marker is always a part of the formula being rewritten, never that
+formula itself. Two things follow, and the walk has to allow for both:
+the node point names may be one level too deep to be the marker — on
+the a of x (a + b) the rule that fires reads the product, and marks the
+sum — or it may already be the formula to rewrite, on the ln of
+ln(x^2), where the marker is its argument one level in.
+
+So the walk is over rewrite *sites*, from the node under point out
+through its ancestors, trying each site's own parts as the marker (see
+`maf--sel-rewrite-site'). The node under point is itself the first
+site, which is what lets point stand on a function or an operator and
+name the formula there; it comes up again as a candidate marker when
+the walk reaches its parent, so standing on a term still marks that
+term. Innermost site wins, and within a site the part point is in.
+Returns nil when nothing fires out to the whole entry."
+  (let ((site sel) (inner sel) result)
+    (while (and site (not result))
+      (setq result (maf--sel-rewrite-site expr site inner rules as-division))
       (unless result
-        (setq node (let ((up (calc-find-parent-formula expr node)))
+        (setq inner site
+              site (let ((up (calc-find-parent-formula expr site)))
                      (and (consp up) up)))))
     result))
 
@@ -2990,11 +3018,13 @@ popped and pushed for a value that only normalization changed."
 
 Point picks the target as usual — the sub-formula under the cursor, or
 the active selection when there is one — and calc's DistribRules do
-the spreading. Each rule reads the operation *around* the target, so
-the target is often one level out from the term point names: on the a
-above it is the product that distributes. Point widens outward to the
-innermost formula some rule reaches, which is what lets a bare term
-name the operation over it.
+the spreading. Each rule reads the operation *around* what it marks,
+so the marked part is often not the term point names: on the a above
+it is the product that distributes. maf looks outward from point for
+the innermost formula some rule reaches, and marks the part of it the
+rule wants, preferring the part point is in. So any position on the
+entry works — on a term, on the operator joining them, or on the name
+of the function being distributed.
 
   (a + b) / x  =>  b / x + a / x
   sqrt(a b)    =>  sqrt(b) sqrt(a)
@@ -3059,9 +3089,11 @@ The reverse of `maf-distribute', on calc's own MergeRules: a common
 factor comes out of a sum, a shared denominator collects, powers of
 one base add, two logarithms or roots combine into one. Point picks
 the target as usual — the sub-formula under the cursor, or the active
-selection when there is one — widening outward to the innermost
-formula some rule reaches, so a bare term names the term it belongs
-to. Nothing is left selected, and point follows the merged part.
+selection when there is one — looking outward for the innermost
+formula some rule reaches and marking the part of it the rule wants,
+so any position on the entry works. Where two parts of one formula
+would both serve, the one point is in decides which is marked.
+Nothing is left selected, and point follows the merged part.
 
   a / x + b / x    =>  (a + b) / x
   x^a x^b          =>  x^(a + b)

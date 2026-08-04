@@ -277,6 +277,39 @@
   (cl-assert (string= (dm-top 1) "1 + 2"))
   (calc-pop (calc-stack-size))
 
+  ;; --- targets: anywhere on the entry -----------------------------
+
+  ;; A marker is always a part of the formula being rewritten, never
+  ;; that formula itself, so point standing on a function name or an
+  ;; operator names the site and the marker is one level in. Every
+  ;; position on the entry reaches the same rewrite.
+  (maf-push "ln(x^2)")
+  (dm-at "l" 1)
+  (call-interactively 'maf-distribute)
+  (cl-assert (string= (dm-top) "2 ln(x)"))
+  (calc-pop (calc-stack-size))
+
+  (maf-push "ln(x^2)")
+  (progn (goto-char (point-min)) (search-forward ")") (backward-char 1))
+  (call-interactively 'maf-distribute)
+  (cl-assert (string= (dm-top) "2 ln(x)"))
+  (calc-pop (calc-stack-size))
+
+  ;; The other way round: the node under point is a part, but not the
+  ;; part the rule marks. On the x of x*(a + b) it is the sum that the
+  ;; product rule marks, so the walk tries the siblings at that site.
+  (maf-push "x*(a + b)")
+  (dm-at "x" 1)
+  (call-interactively 'maf-distribute)
+  (cl-assert (string= (dm-top) "x b + x a"))
+  (calc-pop (calc-stack-size))
+
+  (maf-push "x*(a + b)")
+  (dm-at "*" 1)
+  (call-interactively 'maf-distribute)
+  (cl-assert (string= (dm-top) "x b + x a"))
+  (calc-pop (calc-stack-size))
+
   ;; Point widens outward to the innermost formula a rule reaches, but
   ;; an active selection does not: the mark stays where it was put. On
   ;; the bare a of x*(a + b) the product distributes; with that same a

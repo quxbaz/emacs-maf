@@ -567,12 +567,31 @@ point names is therefore usually one level too deep to be the marker:
 on the =a= of =x (a + b)=, the rule that fires is the one reading the
 product, whose marked part is the sum.
 
-So =maf--sel-rewrite-widen= walks from the node under point outward and
-takes the innermost ancestor at which /some rule matches/, where
-=:widen= takes the innermost one a declared predicate accepts. The
-test is the rewrite itself rather than a predicate, since "does a rule
-reach this" is not a property of the node alone. Nothing matching out
-to the whole entry means the entry is left untouched.
+A marker is therefore always a /part/ of the formula being rewritten,
+never that formula itself, and the node under point can miss in either
+direction: it may be too deep to be the marker (the =a= above), or it
+may already be the formula to rewrite, with the marker one level in —
+point on the =ln= of =ln(x^2)=.
+
+So =maf--sel-rewrite-widen= walks rewrite *sites*, from the node under
+point out through its ancestors, trying each site's own parts as the
+marker. The node under point is itself the first site, which is what
+lets point stand on a function name or an operator; it comes up again
+as a candidate marker when the walk reaches its parent, so standing on
+a term still marks that term. Innermost site wins, and within a site
+the part point is in. The upshot is that every column of an entry
+reaches the same rewrite:
+
+#+begin_example
+ln|(x^2)  ln(x|^2)  ln(x^2|)   =>  2 ln(x)      ; all of them
+x|*(a+b)  x*|(a+b)  x*(a|+b)   =>  x b + x a    ; all of them
+#+end_example
+
+Where =:widen= takes the innermost ancestor a declared predicate
+accepts, this takes the innermost site at which /some rule matches/.
+The test is the rewrite itself rather than a predicate, since "does a
+rule reach this" is not a property of the node alone. Nothing matching
+out to the whole entry means the entry is left untouched.
 
 One family of rules has to be held off for the walk to get anywhere.
 Two DistribRules mark a bare negation (=select(- a) ^ x=,
