@@ -46,18 +46,23 @@
     - [ ] filter such be visible in a persistent input field
 
 * Low-hanging fruit
-** TODO Port the edit-mode insertions (modules/maf-editplus.el)
+** DONE Port the edit-mode insertions (modules/maf-editplus.el)
    In-session keys live in maf-editplus, not maf-edit: maf-edit's own map
    stays thin so plain typing works.
    - [X] P → pi
-   - [ ] M-2..M-9
-   - [ ] backslash → sqrt
-   - [ ] M-' → ^n and ^()
-   - [-] \ L | wrap helpers around the preceding expression or region.
+   - [X] M-2..M-9 → =maf-editplus-insert-power=; the digit comes off the
+     key, so one command sits behind all eight.
+   - [X] : → ^n (increments) → =maf-editplus-raise-power=. Costs the
+     literal =:= its key for the length of a session; =;= still types it
+     (=maf-edit-insert-colon=), which is how fractions were typed anyway.
+   - [X] Q L | wrap helpers around the preceding expression or region.
      - [X] L → =maf-editplus-wrap-ln=, over the same term scan M-o uses.
-     - [ ] \ → sqrt, | → abs, on that same helper
+     - [X] Q → sqrt, | → abs, on that same helper
        (=maf-editplus--apply-function=).
    - [X] my/calc-edit-wrap-parens
+   Left behind deliberately: legacy's W and =\"= (duplicates of =:=), its
+   =\= for sqrt (Q instead, calc's own letter for the root), and M-'
+   (=^()=).
 
 * Todo
 # NOW
@@ -97,12 +102,14 @@
 * PORT:edit.el
   maf-edit replaces the calc-edit buffer workflow itself; these are the
   in-entry conveniences worth recreating in maf-edit / digit entry:
-  - [ ] Wrap helpers (\\ L |) — sqrt/ln/abs around the preceding expression or region
-  - [ ] my/calc-edit-square-dwim / -cube-dwim (: W \") — insert ^2/^3; repeats increment
-  - [ ] Power shortcuts (M-2..M-9, M-') — insert ^n / ^()
+  - [X] Wrap helpers (Q L |) — sqrt/ln/abs around the preceding expression or region
+  - [X] my/calc-edit-square-dwim / -cube-dwim (:) — insert ^2; repeats increment.
+    One key, not three: W and \" were the same command twice over, and
+    ^3 is M-3.
+  - [-] Power shortcuts (M-2..M-9) — insert ^n. M-' (^()) not ported.
   - [ ] my/calc-edit-toggle-brackets (S-up/down)
   - [ ] my/calc-edit-jump-sides — jump between the sides of =, inserting \" = \" if absent
-  - [ ] my/calc-edit-insert-pi (P); J → *
+  - [-] my/calc-edit-insert-pi (P) done; J → * not
   - [ ] my/calc-edit-duplicate (M-RET) — duplicate line, comma-aware (vector entry)
   - [ ] my/calc-duplicate-paren-expr (C-RET) — duplicate innermost paren group
   Already covered: edit-dwim/edit-selection → maf-edit (SPC); no-simplify
