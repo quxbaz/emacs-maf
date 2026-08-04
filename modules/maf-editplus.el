@@ -10,7 +10,8 @@
 ;; stack is editable text, installed into `maf-edit-mode-map' and taken
 ;; back out when the module is off.
 ;;
-;; What is here now are the two paren gestures, TAB and M-o.
+;; What is here now are the two paren gestures, TAB and M-o, and the
+;; first of the function keys, L.
 ;;
 ;; TAB escapes. Typing a formula runs forward past closing delimiters
 ;; constantly — sqrt(x^2+1), f(g(x)) — and reaching the far side of one
@@ -25,6 +26,12 @@
 ;; to find where the term starts. M-o puts them around the term before
 ;; point, and pressing it again widens that pair one operator at a time
 ;; — the paren pair walks outward instead of being placed by hand.
+;;
+;; L applies a function. The term M-o would have put parens around is
+;; also the term a function should be applied to, so L reuses that scan
+;; and writes ln in front of the pair — an expression already typed
+;; becomes ln of itself without going back to find where it starts.
+;; \, | and the rest belong beside it as they land.
 ;;
 ;; The scan is maf-edit's own: any closer matches any opener (calc's
 ;; interval notation mixes them — (1 .. 2]), machine-owned prefix
@@ -312,14 +319,17 @@ deleting a delimiter the entry needs."
                (char-before (maf-editplus--skip-fill-back open limit))))
          open)))
 
-(defun maf-editplus--wrap (start end)
+(defun maf-editplus--wrap (start end &optional name)
   "Put parentheses around START..END, leaving point after the closer.
+With NAME, the pair is the argument list of a call to it — NAME(...)
+rather than (...).
+
 Point lands where the next press expects it, so wrapping and widening
 are the same key pressed again."
   (let ((m (copy-marker end t)))
     (save-excursion
       (goto-char m) (insert ")")
-      (goto-char start) (insert "("))
+      (goto-char start) (insert (concat name "(")))
     (goto-char m)
     (set-marker m nil)
     nil))
@@ -412,6 +422,67 @@ home line and a blank pending line have no term to wrap."
                 (user-error "Nothing to wrap"))
               (maf-editplus--wrap start end))))))))
 
+;;; Applying a function
+
+(defun maf-editplus--apply-function (name)
+  "Wrap the term before point, or the active region, in a call to NAME.
+The same scan `maf-editplus-wrap-parens' uses decides what the term is,
+so the two gestures always take hold of the same text — this one just
+writes a name in front of the pair.
+
+With no term behind point — the head of an entry, or just after an
+operator — an empty call is inserted instead and point goes inside it,
+so the argument can be typed next. That is the one place this differs
+from wrapping in bare parens, which refuses there: an empty pair means
+nothing, while NAME() is a call waiting for its argument."
+  (unless maf-edit-mode
+    (user-error "maf-edit is not active"))
+  (let* ((entry (or (maf-editplus--entry-at-point)
+                    (user-error "Point is not in a stack entry")))
+         (limit (+ (overlay-start entry)
+                   (maf-edit--leading-prefix-run (overlay-start entry)))))
+    (if (use-region-p)
+        (let ((beg (max (region-beginning) limit))
+              (end (region-end)))
+          (when (> end (overlay-end entry))
+            (user-error "Region reaches past the entry"))
+          (when (>= beg end)
+            (user-error "Nothing to wrap"))
+          (deactivate-mark)
+          (maf-editplus--wrap beg end name))
+      (let* ((end (maf-editplus--atom-end
+                   (maf-editplus--skip-fill-back (point) limit)
+                   (overlay-end entry)))
+             (start (unless (memq (char-before end) maf-editplus--wrap-ops)
+                      (maf-editplus--skip-fill-forward
+                       (maf-editplus--term-start end limit) end))))
+        (if (and start (< start end))
+            (maf-editplus--wrap start end name)
+          ;; No term: open an empty call at point rather than at END,
+          ;; which the scan has already pulled back over any trailing
+          ;; whitespace — `2 + ' should become `2 + ln()', not `2 +ln() '.
+          (insert name "()")
+          (backward-char))))))
+
+(defun maf-editplus-wrap-ln ()
+  "Apply ln to the term before point.
+The term is what `maf-editplus-wrap-parens' would wrap — a number or
+name, a function call or bracketed group taken whole, a product — and
+point ends up just after the closing paren:
+
+  x+2|       =>  x+ln(2)
+  27/x^2|    =>  27/ln(x^2)
+  ln(x)|     =>  ln(ln(x))
+  x = |      =>  x = ln(|)
+
+An active region becomes the argument exactly as marked. With nothing
+behind point an empty ln() is opened instead, point inside it.
+
+Bound to `L' in `maf-edit-mode-map', so a capital L is no longer
+self-inserting during a session; \\[quoted-insert] L still types one."
+  (interactive)
+  (maf-editplus--apply-function "ln"))
+
 ;;; The module
 
 (define-minor-mode maf-use-editplus-mode
@@ -422,12 +493,20 @@ Enabled, and while a maf-edit session is up:
        that closes the group it is in, one level per press
   M-o  `maf-editplus-wrap-parens' — parentheses go around the term
        before point, and a further press widens that pair
+  L    `maf-editplus-wrap-ln' — the same term becomes the argument of
+       an ln call
 
 Disabled, the keys cede back to whatever the global map does with them
 \(`indent-for-tab-command', which has nothing to indent in an edited
-stack, and nothing at all for M-o, which Emacs 30 leaves free). M-o
-runs `mafcmd-mod-360' in `maf-mode-map', which is not competition:
-maf-mode is off for the duration of an edit session.
+stack, `self-insert-command' for L, and nothing at all for M-o, which
+Emacs 30 leaves free). M-o runs `mafcmd-mod-360' in `maf-mode-map',
+which is not competition: maf-mode is off for the duration of an edit
+session.
+
+L is an unmodified printable key, as `maf-edit-insert-colon' already
+is: a capital L costs its self-insertion for the length of a session,
+and \\[quoted-insert] L is how one is typed meanwhile. The trade is
+the legacy config's, where the wrap helpers were plain capitals too.
 
 This is the `maf-editplus' module (see `maf-modules'). The keys only
 live in maf-edit's own map, so they are inert unless a session is
@@ -437,14 +516,16 @@ running, and the module is a no-op for anyone not using maf-edit."
   (if maf-use-editplus-mode
       (progn
         (define-key maf-edit-mode-map (kbd "TAB") #'maf-editplus-escape-group)
-        (define-key maf-edit-mode-map (kbd "M-o") #'maf-editplus-wrap-parens))
+        (define-key maf-edit-mode-map (kbd "M-o") #'maf-editplus-wrap-parens)
+        (define-key maf-edit-mode-map (kbd "L") #'maf-editplus-wrap-ln))
     (define-key maf-edit-mode-map (kbd "TAB") nil)
-    (define-key maf-edit-mode-map (kbd "M-o") nil)))
+    (define-key maf-edit-mode-map (kbd "M-o") nil)
+    (define-key maf-edit-mode-map (kbd "L") nil)))
 
 ;; Register with the module system when it is present; the mode above
 ;; works on its own without it.
 (when (require 'maf-module nil t)
   (maf-register-module 'maf-editplus #'maf-use-editplus-mode
-                       "In-session keys for maf-edit (TAB escapes a group, M-o wraps one)."))
+                       "In-session keys for maf-edit (TAB escapes a group, M-o wraps one, L applies ln)."))
 
 (provide 'maf-editplus)
