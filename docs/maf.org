@@ -75,15 +75,6 @@
      still open, f h alone. maf--cath needs none of it: squaring under a
      structural math-normalize already reduces sqrt(2)^2 to 2.
 
-* PORT:selection.el
-  - [X] my/calc-sel-distribute (j D) — maf-distribute: contextual, no-simplify,
-    frac→division fix
-  - [X] my/calc-sel-merge (j M) — maf-merge: contextual, unselect after
-  Both widen the marker outward to the innermost formula a rule reaches,
-  which is what makes them contextual — calc's own commands act only on a
-  selection made by hand, and every rule in the two sets matches the
-  formula around the marker rather than the marker itself.
-
 * PORT:edit.el
   maf-edit replaces the calc-edit buffer workflow itself; these are the
   in-entry conveniences worth recreating in maf-edit / digit entry:
