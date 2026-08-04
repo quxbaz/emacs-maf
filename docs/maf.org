@@ -38,8 +38,10 @@
     - [X] M-n/p shouldn't cycle from start/end position. it should not be
       allowed to move past these endpoints.
     - [ ] C-n/p should still work from filter minibuffer
-    - [ ] start in filter mode
-    - [ ] filter such be visible in a persistent input field
+    - [ ] filter should exist a persistent input field at the top of the buffer
+    - [ ] should start focused on filter field/box so when you type, it should start filtering immediately
+    - [ ] tab moves by entry, so tabbing moves you out of filter field
+    - [ ] / to re-focus on filter field
 
 * Todo
 # NOW
