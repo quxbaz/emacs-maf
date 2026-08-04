@@ -109,9 +109,10 @@
 ;; once and then left alone, reachable by name afterwards, giving up
 ;; its key to something pressed while working.
 (define-key maf-mode-map (kbd "p") #'maf-browse-variables)
-;; The in-place editing entry keys (SPC / C-RET / S-RET / "(") are
+;; The in-place editing entry keys (SPC / ` / C-RET / S-RET / "(") are
 ;; installed by the edit module when it is enabled (see
-;; modules/edit.el), not here.
+;; modules/edit.el), not here. ` shadows calc-edit, the command the
+;; whole module replaces.
 (define-key maf-mode-map (kbd "U") #'maf-undo)
 (define-key maf-mode-map (kbd "D") #'maf-redo)
 ;; Catch every key that dispatches to undo/redo, so point handling
