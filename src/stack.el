@@ -2604,6 +2604,12 @@ SOURCE is the `var-JumpRules' value EXTENDED was derived from, compared
 by identity — so a user who re-stores JumpRules gets a fresh derivation
 instead of a stale extension.")
 
+;; The identity key catches a re-stored JumpRules but not a reload that
+;; changes the derivation itself: `defvar' leaves the cell alone, so a
+;; live session would keep serving twins built by the code just
+;; replaced. Reset it on every load — the next jump re-derives.
+(setq maf--jump-rules-cache nil)
+
 (defun maf--jump-subst-rel (expr op)
   "Return EXPR with every = relation in it rewritten to OP."
   (if (Math-primp expr)
