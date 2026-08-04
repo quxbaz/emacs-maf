@@ -2,11 +2,12 @@
 ;;
 ;; modules/maf-formulas.el
 ;;
-;; Saved-formula library. `maf-formulas' opens a two-pane menu: a list
-;; of formulas grouped by category, each shown beside its form, and a
-;; detail pane that follows point to show the formula in Big display, a
-;; description, and what each variable means. RET pushes the formula at
-;; point onto the calc stack.
+;; Saved-formula library. `maf-formulas' opens a menu of formulas
+;; grouped by category, each shown beside its form. `o' (or `d', `?') pops
+;; up a detail pane for the formula at point — the formula in Big
+;; display, a description, and what each variable means — without
+;; taking focus; it closes again as soon as point moves. RET pushes
+;; the formula at point onto the calc stack.
 ;;
 ;; A formula is a plist. Only :expr is required; the rest are optional
 ;; and the detail pane renders just what is present:
@@ -214,7 +215,7 @@ Groups are separated by a blank line."
     (erase-buffer)
     (setq header-line-format
           (if (string-empty-p maf-formulas--query)
-              "maf-formulas — RET inserts · / filters · q quits"
+              "maf-formulas — RET inserts · / filters · o details · q quits"
             (format "maf-formulas — filter: %s  (q clears)" maf-formulas--query)))
     (let ((w (apply #'max 0 (mapcar (lambda (f) (length (maf-formulas--title f))) fs))))
       (dolist (g groups)
@@ -239,12 +240,34 @@ Groups are separated by a blank line."
     (goto-char (point-min))
     (while (and (not (eobp)) (not (get-text-property (point) 'maf-formula)))
       (forward-line 1))
-    (maf-formulas--update-detail)))
+    ;; A re-render changes what every line means; a detail pane left up
+    ;; would be describing the old view, so it closes with it.
+    (maf-formulas--close-detail)))
 
 ;;; The detail pane
 
-(defun maf-formulas--detail-string (f)
-  "Detail text for F: title, Big rendering, description, variable meanings."
+(defvar-local maf-formulas--detail-line nil
+  "Beginning of the line the detail pane was shown for, or nil.
+Set by `maf-formulas-show-detail'; `maf-formulas--detail-on-move'
+compares point against it to close the pane once point leaves.")
+
+(defun maf-formulas--fill (text width)
+  "TEXT filled to WIDTH and indented two spaces, for the description.
+Only the description wraps: the Big rendering and the variable lines
+keep their exact layout, but prose should bend to the pane."
+  (with-temp-buffer
+    (insert text)
+    ;; Two columns for the indent, and one more spare: on a tty the
+    ;; window's last column holds the truncation glyph, so a line of
+    ;; exactly the pane's width still shows as `$'-truncated.
+    (let ((fill-column (max 20 (- width 3))))
+      (fill-region (point-min) (point-max)))
+    (mapconcat (lambda (l) (concat "  " l))
+               (split-string (buffer-string) "\n") "\n")))
+
+(defun maf-formulas--detail-string (f width)
+  "Detail text for F: title, Big rendering, description, variable meanings.
+WIDTH is the pane's width in columns; the description fills to it."
   (let* ((expr (plist-get f :expr))
          (doc (plist-get f :doc))
          (examples (plist-get f :examples))
@@ -256,7 +279,10 @@ Groups are separated by a blank line."
       (mapconcat (lambda (l) (concat "  " l)) (split-string (or big "") "\n") "\n")
       'face 'maf-formulas-form)
      "\n"
-     (when doc (concat "\n  " (propertize doc 'face 'maf-formulas-title) "\n"))
+     (when doc
+       (concat "\n"
+               (propertize (maf-formulas--fill doc width) 'face 'maf-formulas-title)
+               "\n"))
      (when vars
        (concat "\n"
                (mapconcat (lambda (v)
@@ -272,9 +298,9 @@ Groups are separated by a blank line."
                "\n")))))
 
 (defun maf-formulas--update-detail ()
-  "Render the formula at point into the detail buffer; on `post-command-hook'.
-The detail lives in its own pane, so navigating the list never shifts
-the list's own layout."
+  "Render the formula at point into the detail buffer.
+The detail lives in its own buffer, so showing it never shifts the
+list's own layout."
   (let ((f (or (get-text-property (line-beginning-position) 'maf-formula)
                ;; On a category header, preview that group's first formula.
                (save-excursion
@@ -286,11 +312,63 @@ the list's own layout."
                  (get-text-property (line-beginning-position) 'maf-formula))))
         (dbuf (get-buffer maf-formulas--detail-buffer)))
     (when dbuf
-      (with-current-buffer dbuf
-        (let ((inhibit-read-only t))
-          (erase-buffer)
-          (when f (insert (maf-formulas--detail-string f)))
-          (goto-char (point-min)))))))
+      ;; The pane's real width when it is showing, else a stock fill.
+      ;; `window-body-width' counts the columns line numbers occupy, so
+      ;; subtract those or the fill overshoots by their width.
+      (let ((width (let ((win (get-buffer-window dbuf)))
+                     (if win
+                         (- (window-body-width win)
+                            (with-selected-window win
+                              (ceiling (line-number-display-width 'columns))))
+                       fill-column))))
+        (with-current-buffer dbuf
+          (let ((inhibit-read-only t))
+            (erase-buffer)
+            (when f (insert (maf-formulas--detail-string f width)))
+            (goto-char (point-min))))))))
+
+(defun maf-formulas--close-detail ()
+  "Delete the detail pane's window, when one is showing."
+  (let ((win (get-buffer-window maf-formulas--detail-buffer)))
+    (when (and win (not (eq win (selected-window))))
+      (delete-window win))))
+
+(defun maf-formulas--detail-on-move ()
+  "Close the detail pane once point leaves its line; on `post-command-hook'.
+The pane is a glance, not a layout: it appears on request
+\(`maf-formulas-show-detail') and any movement dismisses it."
+  (when (and maf-formulas--detail-line
+             (/= (line-beginning-position) maf-formulas--detail-line))
+    (setq maf-formulas--detail-line nil)
+    (maf-formulas--close-detail)))
+
+(defun maf-formulas-keyboard-quit ()
+  "Close the detail pane, then quit as \\[keyboard-quit] does.
+On the menu's \\`C-g': the pane is a glance, and the quit gesture
+should dismiss it without having to move point."
+  (interactive)
+  (setq maf-formulas--detail-line nil)
+  (maf-formulas--close-detail)
+  (keyboard-quit))
+
+(defun maf-formulas-show-detail ()
+  "Pop up the detail pane for the formula at point, without selecting it.
+The pane closes again as soon as point moves off the line. On a
+category header it previews the group's first formula."
+  (interactive)
+  (let ((dbuf (get-buffer-create maf-formulas--detail-buffer)))
+    (with-current-buffer dbuf
+      (unless (derived-mode-p 'special-mode) (special-mode))
+      (setq buffer-read-only t))
+    ;; A vertical split beside the menu's own window: the list keeps its
+    ;; full height, and the Big rendering gets a tall column to breathe.
+    ;; Displayed before rendering, so the description fills to the
+    ;; pane's real width.
+    (display-buffer dbuf '((display-buffer-in-direction)
+                           (direction . right)
+                           (inhibit-same-window . t)))
+    (maf-formulas--update-detail)
+    (setq maf-formulas--detail-line (line-beginning-position))))
 
 ;;; Commands
 
@@ -425,9 +503,7 @@ The menu's window is deleted if `maf-formulas' made one, or goes back to
 the buffer it displaced if it borrowed one; the rest of the frame is
 untouched either way."
   (interactive)
-  (let ((dwin (get-buffer-window maf-formulas--detail-buffer)))
-    (when (and dwin (not (eq dwin (selected-window))))
-      (delete-window dwin)))
+  (maf-formulas--close-detail)
   ;; `quit-window' is `pop-to-buffer''s counterpart: it deletes the
   ;; window when the menu made one, and puts the displaced buffer back
   ;; when it borrowed one. Either way the frame returns as it was.
@@ -451,6 +527,10 @@ second `q' then leaves. `maf-formulas-quit' always quits outright."
 (define-key maf-formulas-mode-map (kbd "/")   #'maf-formulas-filter)
 (define-key maf-formulas-mode-map (kbd "g")   #'maf-formulas-clear-filter)
 (define-key maf-formulas-mode-map (kbd "q")   #'maf-formulas-quit-or-clear-filter)
+(define-key maf-formulas-mode-map (kbd "o")   #'maf-formulas-show-detail)
+(define-key maf-formulas-mode-map (kbd "d")   #'maf-formulas-show-detail)
+(define-key maf-formulas-mode-map (kbd "?")   #'maf-formulas-show-detail)
+(define-key maf-formulas-mode-map (kbd "C-g") #'maf-formulas-keyboard-quit)
 ;; Two levels of motion: n/p/j/k and TAB/S-TAB step formula to formula
 ;; (headers and the blank lines between groups are skipped), M-n/M-p
 ;; step group to group.
@@ -464,43 +544,31 @@ second `q' then leaves. `maf-formulas-quit' always quits outright."
 (define-key maf-formulas-mode-map (kbd "M-p") #'maf-formulas-prev-group)
 
 (define-derived-mode maf-formulas-mode special-mode "maf-formulas"
-  "Major mode for the saved-formula list (the master pane).
+  "Major mode for the saved-formula list.
 Formulas are grouped by category, the ones inserted this session
-repeated in a \"Recent\" group at the top, each shown beside its form;
-the detail pane follows point. \\<maf-formulas-mode-map>\\[maf-formulas-insert]
+repeated in a \"Recent\" group at the top, each shown beside its
+form. \\<maf-formulas-mode-map>\\[maf-formulas-insert]
 pushes the formula at point onto the stack, \\[maf-formulas-next-item] and \\[maf-formulas-prev-item] step
-between formulas, \\[maf-formulas-next-group] between groups, \\[maf-formulas-filter]
+between formulas, \\[maf-formulas-next-group] between groups, \\[maf-formulas-show-detail] pops up the detail
+pane (movement dismisses it), \\[maf-formulas-filter]
 filters as you type, \\[maf-formulas-clear-filter] clears the filter, \\[maf-formulas-quit-or-clear-filter] clears the
 filter when narrowed and quits otherwise."
   (setq truncate-lines t)
-  (add-hook 'post-command-hook #'maf-formulas--update-detail nil t))
+  (add-hook 'post-command-hook #'maf-formulas--detail-on-move nil t))
 
 ;;;###autoload
 (defun maf-formulas ()
-  "Open the saved-formula menu: a list pane with a detail pane below."
+  "Open the saved-formula menu.
+\\<maf-formulas-mode-map>\\[maf-formulas-show-detail] pops up the detail pane for the formula at point."
   (interactive)
-  (let ((buf (get-buffer-create "*maf-formulas*"))
-        (dbuf (get-buffer-create maf-formulas--detail-buffer)))
-    (with-current-buffer dbuf
-      (unless (derived-mode-p 'special-mode) (special-mode))
-      (setq buffer-read-only t))
+  (let ((buf (get-buffer-create "*maf-formulas*")))
     (with-current-buffer buf
       (maf-formulas-mode)
       (maf-formulas--render))
     ;; Ordinary `pop-to-buffer' display: Emacs picks the window by the
     ;; usual rules, so `display-buffer-alist' can route the menu, and
-    ;; `maf-formulas-quit' undoes exactly what was done. Only the menu's
-    ;; own window is split, for the detail pane.
-    (pop-to-buffer buf)
-    ;; A float `window-height' is a fraction of the frame, which starves
-    ;; the list when the menu got half a frame to begin with: size the
-    ;; detail against the menu's own window, and leave the list usable.
-    (let* ((avail (window-body-height))
-           (h (max 4 (min (round (* 0.4 avail)) (- avail 6)))))
-      (display-buffer dbuf `((display-buffer-below-selected)
-                             (window-height . ,h)
-                             (inhibit-same-window . t))))
-    (maf-formulas--update-detail)))
+    ;; `maf-formulas-quit' undoes exactly what was done.
+    (pop-to-buffer buf)))
 
 ;;; The module
 

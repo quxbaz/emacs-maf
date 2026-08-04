@@ -36,7 +36,12 @@
     (cl-assert (string-match-p "=" (buffer-substring (line-beginning-position)
                                                      (line-end-position))))
 
-    ;; The detail pane (a separate buffer) follows point.
+    ;; The detail renderer (behind `o' / `d' / `?', i.e.
+    ;; `maf-formulas-show-detail') fills the detail buffer for the
+    ;; formula at point.
+    (cl-assert (eq (key-binding (kbd "o")) #'maf-formulas-show-detail))
+    (cl-assert (eq (key-binding (kbd "d")) #'maf-formulas-show-detail))
+    (cl-assert (eq (key-binding (kbd "?")) #'maf-formulas-show-detail))
     (maf-formulas--update-detail)
     (with-current-buffer maf-formulas--detail-buffer
       (cl-assert (> (buffer-size) 0)))
