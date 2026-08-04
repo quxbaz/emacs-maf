@@ -53,6 +53,7 @@
 (require 'maf-persist)
 (require 'maf-edit)
 (require 'maf-editplus)
+(require 'maf-editvars)
 (require 'maf-recall)
 (require 'maf-preview)
 (require 'maf-formulas)

@@ -78,6 +78,21 @@ before the edit began instead of keeping its in-edit position.")
 (defvar maf-edit--inhibit nil
   "Non-nil while maf-edit's own repair edits run, to skip the hooks.")
 
+(defvar maf-edit-parse-text-function #'identity
+  "Function mapping an entry's text to the text handed to the parser.
+Called by `maf-edit-commit' on each entry whose text has changed, and
+on nothing else: an untouched entry keeps its value object and is
+never reparsed, so this never sees it. The default is `identity' —
+the buffer text is calc's own input syntax.
+
+The extension point for an input dialect: a module that lets entries
+be typed in a syntax calc does not read sets this to the function
+that translates it. Such a module owns both directions, and the other
+one is `maf-edit-mode-on-hook', where the text a session starts with
+is rewritten into the dialect. The two must agree, or an entry left
+untouched will not compare equal to what a changed one parses back
+to. See modules/maf-editvars.el, which does exactly this.")
+
 (defvar maf-edit-mode-map
   (let ((map (make-sparse-keymap)))
     ;; RET confirms; the newline gesture (split/continue) moves to
@@ -960,7 +975,8 @@ undo group."
           (push (overlay-get o 'maf-edit-val) vals)
           (push (overlay-get o 'maf-edit-sel) sels))
          (t
-          (let ((v (math-read-expr text)))
+          (let ((v (math-read-expr
+                    (funcall maf-edit-parse-text-function text))))
             (if (eq (car-safe v) 'error)
                 (push (cons o (if (zerop (maf-edit--string-net-depth text))
                                   (nth 2 v)
