@@ -77,7 +77,11 @@
 ** TODO (mafcmd-solve-for) should also prefer to write the isolated variable on LHS
 ** TODO bind ` to open new entry at home. also set point
 ** TODO rebind C-RET to existing C-c C-c
-** TODO P edit command should insert \pi (if module is active)
+** DONE P edit command should insert \pi (if editvars module is active)
+   Not cosmetic: under the dialect a bare =pi= is the product p i, so
+   =P= was committing =2 pi= as =2*p*i=. The quoting is editvars' call
+   (=maf-editvars-quote-name=), asked for by name so the mark follows
+   =maf-editvars-quote-char=.
 
 * Port
   - [-] Port my/calc/* features one-by-one.
