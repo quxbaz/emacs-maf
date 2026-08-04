@@ -2099,6 +2099,18 @@ entry at point equates with the top regardless of the entries between.
   2:  b     =>   1:  b
   1:  c
 
+One case overrides the subject-left rule: when exactly one side is a
+bare variable, that side is written on the left, so an equation about x
+reads x = ... however the pair happened to sit on the stack. Only that
+clear case turns — two variables say nothing about which leads, and two
+objects have no subject to prefer.
+
+  2:  5          1:  x = 5|     (the variable leads)
+  1:  x|
+
+  2:  x          1:  x = y|     (both variables: as they stand)
+  1:  y|
+
 With the Inverse flag, `mafcmd-not-equal-to' builds != instead. With
 keep-args the operands stay and the equation is pushed on top. Both
 sides commit structurally intact — nothing simplifies or evaluates, so
@@ -2109,18 +2121,19 @@ with fewer than two entries."
   :scope entry
   :map -1
   :inverse mafcmd-not-equal-to
-  (commit (list 'calcFunc-eq expr arg)))
+  (commit (maf--relation-var-left (list 'calcFunc-eq expr arg))))
 
 (maf-defcmd mafcmd-not-equal-to (expr arg commit)
   "Build != between the entry at point and the top-of-stack argument.
 
 The Inverse route of `mafcmd-equal-to' — identical in every way but the
-relation it forms: subject != argument, structural, no simplification."
+relation it forms: subject != argument, structural, no simplification,
+and a lone bare variable written on the left."
   :arity binary
   :prefix "neq"
   :scope entry
   :map -1
-  (commit (list 'calcFunc-neq expr arg)))
+  (commit (maf--relation-var-left (list 'calcFunc-neq expr arg))))
 
 (maf-defcmd mafcmd-remove-equal (expr _arg commit)
   "Drop the relation from the entry at point, keeping the side that matters.
@@ -4105,9 +4118,11 @@ once. Anything calc cannot parse is a `user-error'."
 The worker behind `mafcmd-solve-for' — see there. Takes the whole entry
 \(`:scope entry'), so point within the formula never narrows the
 subject. Symbolic and prefer-frac, so a non-integer solution stays
-exact. Calc leaves an unsolvable input as an unevaluated call to the
+exact. A solution calc leaves with its variable on the right is turned
+round (see `maf--relation-var-left'), element-wise through a vector of
+them. Calc leaves an unsolvable input as an unevaluated call to the
 solver; that, and a calc signal raised along the way, both commit the
-entry unchanged instead."
+entry unchanged instead — unchanged means as written, so nothing turns."
   :arity unary
   :prefix "solv"
   :map -1
@@ -4119,7 +4134,7 @@ entry unchanged instead."
     (commit (if (or (null result)
                     (eq (car-safe result) maf--solve-for-func))
                 expr
-              result))))
+              (maf--relation-var-left result)))))
 
 (defun mafcmd-solve-for ()
   "Solve the relation at point for a variable read from the minibuffer.
@@ -4156,10 +4171,15 @@ which isolates the sub-expression under point. A bare expression is
 treated as = 0, inequalities keep their relation, and an input Calc
 cannot solve for the named variable commits unchanged.
 
+The solution is written with its variable on the left. Calc leaves an
+inequality whose sign flipped reading the other way round (-2 < x); it
+is turned back, direction and all, so every solved form leads with the
+variable that was solved for.
+
   x + y = 5                     =>  y = 5 - x       (typed: y)
   [x + y = 3, x - y = 1]        =>  [x = 2, y = 1]  (typed: x,y)
   2 x - 3 < 7                   =>  x < 5
-  -2 x < 4                      =>  -2 < x          (sides swap, sense kept)
+  -2 x < 4                      =>  x > -2          (turned, sense kept)
   x^2 + y^2 = r^2               =>  y = sqrt(r^2 - x^2)
   x + 3                         =>  x = -3          (bare: solved = 0)
   2 x = 1                       =>  x = 1:2         (exact, not 0.5)

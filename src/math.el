@@ -1118,4 +1118,27 @@ one — only which side its subject stands on changes. A symmetric
 relation (eq, neq) keeps its operator and just swaps sides."
   (list (maf--flip-relation-op (car rel)) (nth 2 rel) (nth 1 rel)))
 
+(defun maf--relation-var-left (expr)
+  "Return relation EXPR with a lone variable side turned to the left.
+A relation whose right side is a bare variable and whose left side is
+not comes back flipped, direction and all, so the variable the relation
+is about leads: 5 = x reads x = 5, and -2 < x reads x > -2. The
+statement is unchanged — only which side its subject stands on.
+
+Only that one clear case turns. Two bare variables (x = y) say nothing
+about which of them leads, a variable already on the left is where it
+belongs, and a relation between two objects has no subject to prefer;
+all three come back as written. A vector maps element-wise, so a system
+of solutions is turned one equation at a time, and anything that is not
+a relation comes back unchanged."
+  (cond
+   ((eq (car-safe expr) 'vec)
+    (cons 'vec (mapcar #'maf--relation-var-left (cdr expr))))
+   ((and (maf--relation-p expr)
+         (= (length expr) 3)
+         (eq (car-safe (nth 2 expr)) 'var)
+         (not (eq (car-safe (nth 1 expr)) 'var)))
+    (maf--flip-relation expr))
+   (t expr)))
+
 (provide 'maf-math)
