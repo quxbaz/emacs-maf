@@ -17,7 +17,7 @@
   ;; The gesture as it is actually used: type a term, then wrap it.
   ;; Driven by the real key, so the binding is exercised too. Point
   ;; lands after the closer, which is where the next press expects it.
-  (call-interactively 'maf-edit-add-entry)
+  (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "pi+2") nil)
   (progn (execute-kbd-macro (kbd "M-o")) nil)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
@@ -39,7 +39,7 @@
 
   ;; A product is the innermost term worth wrapping: the scan crosses
   ;; `*' and stops at the `+'.
-  (call-interactively 'maf-edit-add-entry)
+  (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "a+b*c") nil)
   (call-interactively 'maf-editplus-wrap-parens)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
@@ -49,7 +49,7 @@
   ;; But not when a `/' is what stops it: a/(b*c) is not a/b*c, and a
   ;; first press must never change what the entry means. The term is
   ;; cut back to the `*'; the press after that regroups deliberately.
-  (call-interactively 'maf-edit-add-entry)
+  (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "a/b*c") nil)
   (call-interactively 'maf-editplus-wrap-parens)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
@@ -60,7 +60,7 @@
   (call-interactively 'maf-edit-discard)
 
   ;; Same for a `^', which binds tighter still.
-  (call-interactively 'maf-edit-add-entry)
+  (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "a^b*c") nil)
   (call-interactively 'maf-editplus-wrap-parens)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
@@ -69,7 +69,7 @@
 
   ;; An atom is never split. Point between two digits stands inside
   ;; one number, not between two terms, so both digits go in.
-  (call-interactively 'maf-edit-add-entry)
+  (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "6 x + 12 = 18 y") nil)
   (progn (goto-char (line-beginning-position))
          (search-forward "12" (line-end-position))
@@ -81,7 +81,7 @@
 
   ;; The dot of a decimal and the colon of a fraction are inside the
   ;; number too, from either side of them.
-  (call-interactively 'maf-edit-add-entry)
+  (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "1+2.5") nil)
   (progn (backward-char 2) nil)
   (call-interactively 'maf-editplus-wrap-parens)
@@ -89,7 +89,7 @@
                     "1+(2.5)"))
   (call-interactively 'maf-edit-discard)
 
-  (call-interactively 'maf-edit-add-entry)
+  (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "1+3:4") nil)
   (progn (backward-char 1) nil)
   (call-interactively 'maf-editplus-wrap-parens)
@@ -99,7 +99,7 @@
 
   ;; A name is an atom as well, and its argument list comes with it —
   ;; a press inside sqrt must not cut the head off the call.
-  (call-interactively 'maf-edit-add-entry)
+  (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "27/sqrt(3") nil)
   (progn (goto-char (line-beginning-position))
          (search-forward "sq" (line-end-position)) nil)
@@ -111,7 +111,7 @@
   ;; Standing just before an atom is standing just after whatever
   ;; precedes it: that is not inside anything, and the operator there
   ;; has no term behind it.
-  (call-interactively 'maf-edit-add-entry)
+  (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "a+12") nil)
   (progn (backward-char 2) nil)
   (cl-assert (string-match-p
@@ -123,7 +123,7 @@
 
   ;; Point beside an operator is not inside an atom either: the term
   ;; behind it is wrapped and nothing ahead is drawn in.
-  (call-interactively 'maf-edit-add-entry)
+  (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "a+b*c") nil)
   (progn (backward-char 2) nil)
   (call-interactively 'maf-editplus-wrap-parens)
@@ -133,7 +133,7 @@
 
   ;; A leading sign belongs to the term it signs — nothing to its left
   ;; can join that term — so it comes inside the parens, not outside.
-  (call-interactively 'maf-edit-add-entry)
+  (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "2*-3") nil)
   (call-interactively 'maf-editplus-wrap-parens)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
@@ -142,7 +142,7 @@
 
   ;; Which is also what keeps widening honest: -(x+y) is not -x+y, so
   ;; the sign at the head of the entry is taken in, not left behind.
-  (call-interactively 'maf-edit-add-entry)
+  (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "-x+y") nil)
   (call-interactively 'maf-editplus-wrap-parens)
   (call-interactively 'maf-editplus-wrap-parens)
@@ -152,7 +152,7 @@
 
   ;; A binary minus is still a boundary, and the sign rule does not
   ;; blur the two.
-  (call-interactively 'maf-edit-add-entry)
+  (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "a-b") nil)
   (call-interactively 'maf-editplus-wrap-parens)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
@@ -162,7 +162,7 @@
   ;; A function call is one unit — the name comes along with its
   ;; argument list — and a denominator is a term of its own, so the
   ;; root is what the first press wraps.
-  (call-interactively 'maf-edit-add-entry)
+  (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "27/sqrt(3)") nil)
   (cl-assert (eolp))
   (call-interactively 'maf-editplus-wrap-parens)
@@ -176,7 +176,7 @@
   ;; An argument list is structure, not a pair this command placed:
   ;; beside one, the press wraps the call instead of widening it — the
   ;; parens sqrt needs are never the ones that travel.
-  (call-interactively 'maf-edit-add-entry)
+  (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "sqrt(3)") nil)
   (call-interactively 'maf-editplus-wrap-parens)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
@@ -185,7 +185,7 @@
 
   ;; A vector is structure too. Widening it would delete a bracket the
   ;; entry needs, turning [1,2] into the wrong object entirely.
-  (call-interactively 'maf-edit-add-entry)
+  (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "[1,2") nil)
   (call-interactively 'maf-editplus-escape-group)
   (cl-assert (eolp))
@@ -197,7 +197,7 @@
   ;; The opener of the group point is inside is the one boundary
   ;; widening never crosses: the pair stays where it is rather than
   ;; taking a bracket the entry needs along with it.
-  (call-interactively 'maf-edit-add-entry)
+  (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "[(a+b") nil)
   (call-interactively 'maf-editplus-escape-group)
   (cl-assert (string-match-p
@@ -211,7 +211,7 @@
 
   ;; A two-character relation is one boundary, crossed in one go: the
   ;; opening paren can never land between its halves.
-  (call-interactively 'maf-edit-add-entry)
+  (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "a <= b+c") nil)
   (call-interactively 'maf-editplus-wrap-parens)
   (call-interactively 'maf-editplus-wrap-parens)
@@ -225,7 +225,7 @@
   ;; An equation: the scan stops at the `=' with the space left
   ;; outside the parens, and the press after that takes the whole
   ;; relation in.
-  (call-interactively 'maf-edit-add-entry)
+  (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "x = pi+2") nil)
   (call-interactively 'maf-editplus-wrap-parens)
   (call-interactively 'maf-editplus-wrap-parens)
@@ -239,7 +239,7 @@
   ;; An entry continued on a second line is still one expression: the
   ;; machine-owned pad and the line break are whitespace to the scan,
   ;; so widening reaches back across them.
-  (call-interactively 'maf-edit-add-entry)
+  (call-interactively 'maf-edit-add-entry-below)
   (progn (insert "(a+b") nil)
   (call-interactively 'maf-edit-newline)
   (progn (insert "+c") nil)
@@ -253,7 +253,7 @@
 
   ;; An active region is wrapped exactly as marked, and point still
   ;; ends after the closer, so widening can carry on from there.
-  (call-interactively 'maf-edit-add-entry)
+  (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "pi+2") nil)
   (progn (maf-edit-move-beginning-of-line 1)
          (set-mark (point))
@@ -268,7 +268,7 @@
   ;; Nothing before point in the entry is nothing to wrap — the
   ;; machine-owned prefix is not text, and the entry above is not this
   ;; entry.
-  (call-interactively 'maf-edit-add-entry)
+  (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "a+b") nil)
   (maf-edit-move-beginning-of-line 1)
   (cl-assert (string-match-p

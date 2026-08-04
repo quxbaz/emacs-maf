@@ -109,9 +109,8 @@
 ;; once and then left alone, reachable by name afterwards, giving up
 ;; its key to something pressed while working.
 (define-key maf-mode-map (kbd "p") #'maf-browse-variables)
-;; The in-place editing entry keys (SPC / C-RET / S-RET / "(") are
-;; installed by the edit module when it is enabled (see
-;; modules/edit.el), not here.
+;; The in-place editing entry keys (SPC / S-RET / "(") are installed by
+;; the edit module when it is enabled (see modules/edit.el), not here.
 (define-key maf-mode-map (kbd "U") #'maf-undo)
 (define-key maf-mode-map (kbd "D") #'maf-redo)
 ;; Catch every key that dispatches to undo/redo, so point handling
@@ -184,9 +183,10 @@
 ;; C-u RET is the keep-point variant (`maf-dup-here'): same push, point
 ;; stays on the target instead of homing, so the next command still
 ;; resolves there. It rides RET's prefix argument rather than a key of
-;; its own — the RET family is full (M-RET below, C-RET and S-RET in the
-;; edit module) and W is the only unbound single key left in the buffer,
-;; too scarce to spend on where point lands. Contextual dup has no
+;; its own — the RET family is full (M-RET below, C-RET on
+;; `mafcmd-let', S-RET in the edit module) and W is the only unbound
+;; single key left in the buffer, too scarce to spend on where point
+;; lands. Contextual dup has no
 ;; numeric reading to conflict with; cf. `maf-swap-up', whose prefix
 ;; likewise switches mode rather than counting. The prefix reaches the
 ;; duplicate only: with a selection active the key clears, which has
@@ -267,8 +267,14 @@
 (define-key maf-mode-map (kbd "a b") #'mafcmd-substitute)
 ;; Quick substitution: apply an assignment from the stack to the
 ;; contextual subject. C-c C-c is the conventional mode-specific
-;; "apply this" gesture; calc leaves it unbound.
+;; "apply this" gesture; calc leaves it unbound. C-<return> is the
+;; one-hand key for the same command — a substitution is worth a
+;; single chord, and the edit module's quick-add gave the key up for
+;; it (S-RET and "(" remain, and S-RET at home opens the same bottom
+;; entry C-RET used to). During digit entry the key is calc's own map,
+;; where it stays `maf-digit-commit-here' (src/minibuffer.el).
 (define-key maf-mode-map (kbd "C-c C-c") #'mafcmd-let)
+(define-key maf-mode-map (kbd "C-<return>") #'mafcmd-let)
 ;; Polynomial roots by factoring, with multiplicity. M-r is unbound in
 ;; calc itself.
 (define-key maf-mode-map (kbd "M-r") #'mafcmd-poly-roots)
