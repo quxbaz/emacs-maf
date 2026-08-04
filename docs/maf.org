@@ -62,6 +62,7 @@
    - Free up option prefix bindings (eg, m).
 ** TODO (:map calc-mode-map (">" . calc-scroll-left))
         (:map calc-mode-map ("<" . calc-scroll-right))
+** TODO export entry as latex
 
 * Port
   - [-] Port my/calc/* features one-by-one.
