@@ -44,6 +44,25 @@
                       "[1, 2, 3]"))
   (calc-pop (calc-stack-size))
 
+  ;; A known function must be callable with one argument. Merely having
+  ;; a calcFunc definition is not enough: gcd requires two operands and
+  ;; must not leave malformed unary calls in the mapped vector.
+  (maf-push "[6, 9]")
+  (goto-char (point-max))
+  (let ((message
+         (condition-case err
+             (progn
+               (setq unread-command-events (listify-key-sequence "gcd\r"))
+               (call-interactively 'mafcmd-map)
+               nil)
+           (user-error (error-message-string err)))))
+    (cl-assert (string-match-p "does not take one argument" message)))
+  (cl-assert (string= (math-format-value
+                       (maf--strip-encasing (calc-top 1 'full)))
+                      "[6, 9]"))
+  (cl-assert (= (calc-stack-size) 1))
+  (calc-pop (calc-stack-size))
+
   ;; A plain expression is one element: the formula takes it whole.
   (maf-push "a + b")
   (goto-char (point-max))
@@ -181,6 +200,19 @@
   (cl-assert (string= (math-format-value
                        (maf--strip-encasing (calc-top 1 'full)))
                       "[11, 12, 13]"))
+  (calc-pop (calc-stack-size))
+
+  ;; Applying a nameless function respects parameters bound by a nested
+  ;; one. The inner x shadows the mapper's x and stays a variable rather
+  ;; than being replaced with the mapped element.
+  (maf-push "2")
+  (maf-push "<x : <x : x + 1>>")
+  (goto-char (point-max))
+  (call-interactively 'mafcmd-map-stack)
+  (cl-assert (string= (math-format-value
+                       (maf--strip-encasing (calc-top 1 'full)))
+                      "<x : x + 1>"))
+  (cl-assert (= (calc-stack-size) 1))
   (calc-pop (calc-stack-size))
 
   ;; The stack form keeps the subject's own resolution: point on the

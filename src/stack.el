@@ -68,6 +68,7 @@
 (declare-function math-evaluate-expr "calc-ext")
 (declare-function calc-is-assignments "calc-store")
 (declare-function math-compose-expr "calccomp")
+(declare-function math-build-call "calc-map")
 (declare-function math-vectorp "calc-ext")
 (declare-function math-flatten-vector "calc-vec")
 (declare-function calc-set-language "calc-lang")
@@ -3706,8 +3707,15 @@ formula the user types can name this variable by accident.")
 (defun maf--map-function-symbol (var)
   "Return the calc function symbol the variable node VAR names.
 sin gives `calcFunc-sin' — a symbol whether or not calc defines it, so
-the caller tests it with `fboundp'."
+the caller can validate its definition and arity."
   (intern (concat "calcFunc-" (symbol-name (nth 1 var)))))
+
+(defun maf--map-function-accepts-one-p (func)
+  "Return non-nil when Calc function FUNC accepts one argument."
+  (pcase-let ((`(,min . ,max) (func-arity func)))
+    (and (<= min 1)
+         (or (eq max 'many)
+             (and (integerp max) (>= max 1))))))
 
 (defun maf--map-from-expr (expr)
   "Return the mapper EXPR describes, as a cons of (PARAM . BODY).
@@ -3716,7 +3724,7 @@ parsed formula, from the stack or from the prompt, in one of three
 shapes:
 
   <x : x^2>   a nameless function — its own parameter and body
-  sin         a bare name calc knows as a function — the call it names
+  sin         a bare one-argument function name — the call it names
   x^2         a formula with one free variable — that variable
 
 A name calc knows is read as the function, so a variable of the same
@@ -3732,8 +3740,11 @@ pointing at the $ that names the element outright."
       (user-error "Mapping takes a one-argument function")))
    ((and (eq (car-safe expr) 'var)
          (fboundp (maf--map-function-symbol expr)))
-    (cons maf--map-param
-          (list (maf--map-function-symbol expr) maf--map-param)))
+    (let ((func (maf--map-function-symbol expr)))
+      (unless (maf--map-function-accepts-one-p func)
+        (user-error "Mapping function %s does not take one argument"
+                    (nth 1 expr)))
+      (cons maf--map-param (list func maf--map-param))))
    (t
     (let ((vars (maf--solve-sorted-vars expr)))
       (pcase (length vars)
@@ -3782,7 +3793,12 @@ in collapses what it makes constant, under the current simplification
 mode."
   (if (eq (car-safe expr) 'vec)
       (cons 'vec (mapcar (lambda (e) (maf--map-apply mapper e)) (cdr expr)))
-    (math-normalize (math-expr-subst (cdr mapper) (car mapper) expr))))
+    ;; Apply through Calc's lambda path rather than substituting directly:
+    ;; `math-build-call' protects parameters bound by a nested lambda from
+    ;; replacement when they shadow this mapper's parameter.
+    (math-normalize
+     (math-build-call (list 'calcFunc-lambda (car mapper) (cdr mapper))
+                      (list expr)))))
 
 (defun maf--map-relation (mapper rel reverse)
   "Return relation REL with MAPPER applied to both of its sides.
@@ -3890,8 +3906,8 @@ the macro's answer by hand rather than ignoring the prefix silently."
 
 Reads the formula in algebraic notation. It may name the element three
 ways: a formula with one free variable (x^2), a $ in place of the
-element (2 $ + 1), or a bare function name (sin). A lone $ is the
-exception — it means the formula is on the stack, and is the same
+element (2 $ + 1), or a bare one-argument function name (sin). A lone
+$ is the exception — it means the formula is on the stack, and is the same
 gesture as `mafcmd-map-stack' ($).
 
 Point picks the subject as usual: the selection or sub-formula at
@@ -3939,8 +3955,8 @@ entry at home) and is consumed on commit, so the subject must lie below
 the top.
 
 The formula names its element as at M's prompt: one free variable, or a
-bare function name. A nameless function (<x : x^2>) works too, its own
-parameter being the element.
+bare one-argument function name. A nameless function (<x : x^2>) works
+too, its own parameter being the element.
 
 Everything else — how the subject is picked, vectors elementwise,
 equations side by side, inequalities only under I — is `mafcmd-map's."
