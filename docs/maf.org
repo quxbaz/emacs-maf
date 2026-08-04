@@ -71,6 +71,7 @@
 ** TODO (mafcmd-solve-for) should also prefer to write the isolated variable on LHS
 ** TODO bind ` to open new entry at home. also set point
 ** TODO rebind C-RET to existing C-c C-c
+** TODO P edit command should insert \pi
 
 * Port
   - [-] Port my/calc/* features one-by-one.
