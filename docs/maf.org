@@ -55,7 +55,7 @@
 ** IN-PROGRESS distribute and merge should operate contextually.
 ** TODO move all options to unified configuration view.
    - Free up option prefix bindings (eg, m).
-** TODO \ char as word suggestion should be configurable
+** TODO \ char as variable indicator should be configurable
 
 * Port
   - [-] Port my/calc/* features one-by-one.
