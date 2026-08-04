@@ -593,6 +593,23 @@ The test is the rewrite itself rather than a predicate, since "does a
 rule reach this" is not a property of the node alone. Nothing matching
 out to the whole entry means the entry is left untouched.
 
+At home, where point names no part, the same walk runs over the whole
+entry outermost-first (=maf--sel-rewrite-entry=). Calc's own reading of
+an unmarked entry — let =select( )= match wherever it can — is not
+usable, for two reasons that pull in opposite directions:
+
+- It matches *too much*. The sign rules below match every expression
+  there is, so a bare =sqrt(x)= rewrites to =sqrt(-1) sqrt(-x)=, with
+  no marker relationship to test and so nothing for the sign guard to
+  catch.
+- It reaches *too little*. The rewriter normalizes its input, which can
+  fold away the very thing a rule was about to match: =x^a x^b= becomes
+  =x^(a + b)= before MergeRules ever sees it, and =j M= at home did
+  nothing on an entry it plainly should merge.
+
+Walking marked candidates fixes both, and puts home on the same footing
+as every other position — one code path, sign guard included.
+
 One family of rules has to be held off for the walk to get anywhere.
 Two DistribRules mark a bare negation (=select(- a) ^ x=,
 =sqrt(select(- a))=), and calc's matcher reads *any* expression as

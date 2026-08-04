@@ -254,6 +254,53 @@
   (cl-assert (string= (dm-top) "ln(b) + ln(a) + ln(c d)"))
   (calc-pop (calc-stack-size))
 
+  ;; Home walks marked candidates like everywhere else, rather than
+  ;; handing calc a bare entry to match where it can. That reading
+  ;; cannot be used: the sign rules match every expression there is, so
+  ;; an unmarked sqrt(x) comes back as sqrt(-1) sqrt(-x). Nothing to
+  ;; distribute means the entry stands.
+  (maf-push "sqrt(x)")
+  (goto-char (point-max))
+  (call-interactively 'maf-distribute)
+  (cl-assert (string= (dm-top) "sqrt(x)"))
+  (cl-assert (= (calc-stack-size) 1))
+  (calc-pop (calc-stack-size))
+
+  (maf-push "sqrt(9)")
+  (goto-char (point-max))
+  (call-interactively 'maf-distribute)
+  (cl-assert (string= (dm-top) "sqrt(9)"))
+  (calc-pop (calc-stack-size))
+
+  (maf-push "exp(x)^2")
+  (goto-char (point-max))
+  (call-interactively 'maf-distribute)
+  (cl-assert (string= (dm-top) "exp(x)^2"))
+  (calc-pop (calc-stack-size))
+
+  ;; The walk also reaches what a bare entry misses: normalizing on the
+  ;; way into the rewriter folds x^a x^b to x^(a + b) before MergeRules
+  ;; ever sees it, so the unmarked reading found nothing to do here.
+  (maf-push "x^a x^b")
+  (goto-char (point-max))
+  (call-interactively 'maf-merge)
+  (cl-assert (string= (dm-top) "x^(b + a)"))
+  (calc-pop (calc-stack-size))
+
+  (maf-push "exp(a) exp(b)")
+  (goto-char (point-max))
+  (call-interactively 'maf-merge)
+  (cl-assert (string= (dm-top) "exp(b + a)"))
+  (calc-pop (calc-stack-size))
+
+  ;; A fraction distributes at home too, on the same substitution the
+  ;; on-entry path uses.
+  (maf-push "sqrt(3:4)")
+  (goto-char (point-max))
+  (call-interactively 'maf-distribute)
+  (cl-assert (string= (dm-top) "sqrt(1 / 4) sqrt(3)"))
+  (calc-pop (calc-stack-size))
+
   ;; At home with a selection standing, the rewrite goes to it and
   ;; clears it, rather than acting on stack level 1. The product is
   ;; selected, not one factor: a selection is taken as given, so it has

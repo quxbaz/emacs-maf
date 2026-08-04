@@ -2854,26 +2854,30 @@ with nothing numeric in it, comes back untouched."
 
 (defun maf--sel-rewrite-try (expr node rules as-division)
   "Rewrite EXPR under RULES with NODE marked; nil when no rule fired.
-NODE nil leaves EXPR unmarked, which lets select( ) in a pattern match
-anywhere rather than only at a marker — calc's own reading of an entry
-with no selection. AS-DIVISION marks a literal fraction as a division
-\(see `maf--sel-as-division').
+AS-DIVISION marks a literal fraction as a division (see
+`maf--sel-as-division').
+
+The rewrite always runs with a marker, never on a bare entry. Calc
+reads an unmarked entry by letting select( ) in a pattern match
+anywhere, which sounds like the right thing for a whole-entry subject
+and is not: the sign rules below match every expression there is, so
+an unmarked sqrt(x) rewrites to sqrt(-1) sqrt(-x). Marking a candidate
+and asking about that one place keeps every rewrite answerable, which
+is why home walks sites too (see `maf--sel-rewrite-entry').
 
 The result is compared against the rewriter's own input, not against
-EXPR, so the answer is exactly \"did a rule fire\": normalizing the
-entry on the way in reorders sums and products, and that reordering
-alone must not read as a change worth committing. A rule that only
-peels off a sign the marker does not have counts as not firing, so
-widening carries on past it (see `maf--sel-sign-peel-p')."
-  (let* ((math-rewrite-selections (and node t))
+EXPR, so the answer is exactly \"did a rule fire\": normalizing on the
+way in reorders sums and products, and that reordering alone must not
+read as a change worth committing. A rule that only peels off a sign
+the marker does not have counts as not firing, so the walk carries on
+past it (see `maf--sel-sign-peel-p')."
+  (let* ((math-rewrite-selections t)
          (math-rewrite-default-iters 1)
-         (marked-node (and node (if as-division
-                                    (maf--sel-as-division node)
-                                  node)))
-         (marked (if node
-                     (maf--sel-mark expr node
-                                    (list 'calcFunc-select marked-node))
-                   expr))
+         (marked (maf--sel-mark expr node
+                                (list 'calcFunc-select
+                                      (if as-division
+                                          (maf--sel-as-division node)
+                                        node))))
          (normalized (calc-normalize marked))
          (rewritten (math-rewrite normalized rules nil)))
     (unless (or (equal rewritten normalized)
@@ -2897,6 +2901,27 @@ SITE has no parts, an atom having none."
                                              as-division)
                 parts (cdr parts)))))
     result))
+
+(defun maf--sel-rewrite-entry (expr site rules as-division)
+  "Rewrite EXPR under RULES at the first site within SITE that fires.
+For home, where point names no part and the whole entry is the
+subject. Walks SITE outermost first, trying each site's parts as the
+marker, and takes the first rewrite that comes of it — \"the first
+site in the entry the rules reach\".
+
+Calc would read an unmarked entry instead, letting select( ) match
+wherever it can, and that is not usable here: the sign rules match
+every expression there is, so a bare sqrt(x) comes back as
+sqrt(-1) sqrt(-x). Walking marked candidates puts home on the same
+footing as the rest of the command, sign guard included — and reaches
+what the unmarked reading misses, since normalizing an entry on the
+way into the rewriter can fold the very thing a rule was going to
+match (x^a x^b becomes x^(a + b) before MergeRules ever sees it)."
+  (unless (Math-primp site)
+    (or (maf--sel-rewrite-site expr site nil rules as-division)
+        (seq-some (lambda (part)
+                    (maf--sel-rewrite-entry expr part rules as-division))
+                  (cdr site)))))
 
 (defun maf--sel-rewrite-widen (expr sel rules as-division)
   "Rewrite EXPR under RULES at SEL, widening outward until a rule fires.
@@ -2938,8 +2963,8 @@ sub-formula under the cursor, widened outward to the innermost
 ancestor some rule reaches (see `maf--sel-rewrite-widen'). An active
 selection is the target instead when there is one, and is never
 widened. At home a selection standing anywhere names its entry; with
-none, the top entry is taken whole and the rules apply wherever they
-match in it.
+none, the whole entry is the subject and its own sites are walked for
+the first one a rule reaches (see `maf--sel-rewrite-entry').
 
 Nothing is left selected: point names the target on the next
 keystroke, and point follows the marker the rules carried into the
@@ -2970,9 +2995,10 @@ popped and pushed for a value that only normalization changed."
                (calc-simplify-mode (if no-simplify 'none calc-simplify-mode))
                (rewritten
                 (cond
-                 ;; Nothing named: the whole entry, rules matching
-                 ;; wherever they can.
-                 ((not (consp sel)) (maf--sel-rewrite-try expr nil rules nil))
+                 ;; Nothing named: the whole entry is the subject, and
+                 ;; the walk finds the first site in it a rule reaches.
+                 ((not (consp sel))
+                  (maf--sel-rewrite-entry expr expr rules as-division))
                  ;; An active selection is a deliberate gesture and is
                  ;; never widened, as everywhere else in maf — the mark
                  ;; goes exactly where the user put it, which is also
