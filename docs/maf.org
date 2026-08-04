@@ -58,6 +58,7 @@
 
 * Todo
 # NOW
+** TODO if entry was opened at home, it should land at home
 ** TODO move all options to unified configuration view
    - Free up option prefix bindings (eg, m).
 ** TODO (:map calc-mode-map (">" . calc-scroll-left))
