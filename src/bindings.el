@@ -66,6 +66,14 @@
 ;; Shadows calc-enable-selections, whose toggle maf has no use for —
 ;; every maf command resolves its subject from point.
 (define-key maf-mode-map (kbd "j e") #'maf-jump-equals)
+;; Spread the formula around the target inward over its parts, and the
+;; reverse. These take calc's own keys rather than a lowercase twin:
+;; unlike the jump and the shifts above, the contextual versions have
+;; no behavior worth reaching past them for — calc's differ only in
+;; requiring the selection to be made first and leaving it standing,
+;; both of which maf supplies from point instead.
+(define-key maf-mode-map (kbd "j D") #'maf-distribute)
+(define-key maf-mode-map (kbd "j M") #'maf-merge)
 ;; Inside digit entry j is a jump of its own: `maf-digit-jump'
 ;; (src/minibuffer.el) ends the entry and sends point to the stack
 ;; level the number named, the prefix's reading one level out.

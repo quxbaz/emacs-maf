@@ -184,6 +184,22 @@
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "1 + 2"))
   (calc-pop (calc-stack-size))
 
+  ;; A selection outranks point wherever point happens to be, not only
+  ;; at home: it is the deliberate gesture, and the rest of maf takes
+  ;; its subject the same way (`maf--resolve-context'). With a term
+  ;; selected on entry 2 and point resting on entry 1, the jump goes to
+  ;; the selection and clears it. Taking point instead found no
+  ;; relation on entry 1 and did nothing at all, leaving the selection
+  ;; standing — the same gesture worked or not by where point sat.
+  (maf-push "x + a = y")
+  (maf-push "1 + 2")
+  (progn (jump-at "+ a") (calc-select-here nil) (jump-at "1 + 2" 3))
+  (call-interactively 'maf-jump-equals)
+  (cl-assert (string= (math-format-value (calc-top 2 'full)) "x = -a + y"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "1 + 2"))
+  (cl-assert (null (calc-top 2 'sel)))
+  (calc-pop (calc-stack-size))
+
   ;; A single undo reverts the jump, stack and point together.
   (maf-push "x + a = y")
   (jump-at "+ a")
