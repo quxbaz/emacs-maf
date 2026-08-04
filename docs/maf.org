@@ -46,11 +46,6 @@
 
 * Todo
 # NOW
-** IN-PROGRESS if entry was opened at home, it should land at home
-   - currently if (maf-edit) at home and create an entry, point lands at the end
-     of entry instead of home.
-   - this makes it slightly more awkward to enter multiple entries at a time,
-     which is a common scenario.
 ** TODO move all options to unified configuration view
    - Free up option prefix bindings (eg, m).
 ** TODO (:map calc-mode-map (">" . calc-scroll-left))
