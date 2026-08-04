@@ -10,9 +10,9 @@
 ;; stack is editable text, installed into `maf-edit-mode-map' and taken
 ;; back out when the module is off.
 ;;
-;; What is here now are the two paren gestures, TAB and M-o, the
-;; function keys L, Q and |, the exponent keys M-2 through M-9 and :,
-;; and P for the constant pi.
+;; What is here now are the three delimiter gestures, TAB, M-o and the
+;; shifted arrows, the function keys L, Q and |, the exponent keys M-2
+;; through M-9 and :, and P for the constant pi.
 ;;
 ;; TAB escapes. Typing a formula runs forward past closing delimiters
 ;; constantly — sqrt(x^2+1), f(g(x)) — and reaching the far side of one
@@ -27,6 +27,12 @@
 ;; to find where the term starts. M-o puts them around the term before
 ;; point, and pressing it again widens that pair one operator at a time
 ;; — the paren pair walks outward instead of being placed by hand.
+;;
+;; S-up and S-down retype a pair. The third thing wanted of a group
+;; already typed, after escaping it and widening it: the parens around
+;; it turning out to have been meant as the brackets of a vector. Both
+;; ends move at once, which is what the character typed by hand cannot
+;; do.
 ;;
 ;; L, Q and | apply a function. The term M-o would have put parens
 ;; around is also the term a function should be applied to, so these
@@ -429,6 +435,97 @@ home line and a blank pending line have no term to wrap."
                 (user-error "Nothing to wrap"))
               (maf-editplus--wrap start end))))))))
 
+;;; Toggling a group's delimiters
+
+(defconst maf-editplus--bracket-toggle
+  '((?\( . ?\[) (?\) . ?\])
+    (?\[ . ?\() (?\] . ?\))
+    (?\{ . ?\() (?\} . ?\)))
+  "What each delimiter becomes when the group it belongs to is toggled.
+Parens and brackets trade places. Braces are calc's third spelling of
+a vector — it reads {1,2} as [1,2] and renders it back with brackets —
+so they have no state of their own to hold: a brace group becomes a
+paren group, and toggles between the two thereafter.")
+
+(defun maf-editplus--enclosing-open (from limit)
+  "Position of the opener of the group enclosing FROM, or nil.
+Scans back to LIMIT for the first opener not closed again before FROM
+— the mirror of `maf-editplus--group-end', and unlike
+`maf-editplus--group-start' it starts from a point inside the group
+rather than from just after its closer."
+  (let ((depth 0)
+        (pos from)
+        (found nil))
+    (while (and (not found) (> pos limit))
+      (setq pos (1- pos))
+      (unless (get-text-property pos 'maf-edit-prefix)
+        (let ((c (char-after pos)))
+          (cond
+           ((memq c maf-editplus--closers) (setq depth (1+ depth)))
+           ((memq c maf-editplus--openers)
+            (if (zerop depth) (setq found pos) (setq depth (1- depth))))))))
+    found))
+
+(defun maf-editplus--group-at-point (limit bound)
+  "The group point is at, as a cons of its opener and closer positions.
+Nil when there is none within LIMIT..BOUND, and nil too when only one
+half of one is in range — a group still being typed has no pair to
+toggle.
+
+Point sitting on an opener takes the group that opens there, so a
+press with point before `(' reads forward as the eye does. Failing
+that, a closer just behind point takes the group that ends there, and
+otherwise the group point stands inside."
+  (let* ((open (cond
+                ((memq (char-after) maf-editplus--openers) (point))
+                ((memq (char-before) maf-editplus--closers)
+                 (maf-editplus--group-start (point) limit))
+                (t (maf-editplus--enclosing-open (point) limit))))
+         (close (and open
+                     (let ((end (maf-editplus--group-end (1+ open) bound)))
+                       (and end (1- end))))))
+    (and open close (cons open close))))
+
+(defun maf-editplus-toggle-brackets ()
+  "Toggle the delimiters of the group at point between ( ) and [ ].
+Both ends move together, so a group typed as parens becomes the vector
+it was meant to be without the pair ever being mismatched:
+
+  (1,2|)     =>  [1,2]
+  |(a+b)     =>  [a+b]
+  [1,2]|     =>  (1,2)
+
+The group is the one point stands on or inside, so the gesture works
+from where the typing left off rather than only with point parked on a
+delimiter. A brace group becomes a paren group, calc reading {1,2} as
+the same vector [1,2] denotes.
+
+Both ends together is the whole point of it. Calc does read a group
+whose delimiters differ — that is its interval notation, [1 .. 2) —
+but arriving at one by flipping a single character is how an entry
+silently stops meaning what it did, so an interval toggles as a pair
+too and a half-open one is typed by hand.
+
+With no complete group in the entry — none at point, or one whose
+other half has not been typed yet — nothing is changed. Runs only
+during a maf-edit session, and only inside an entry."
+  (interactive)
+  (unless maf-edit-mode
+    (user-error "maf-edit is not active"))
+  (let* ((entry (or (maf-editplus--entry-at-point)
+                    (user-error "Point is not in a stack entry")))
+         (limit (+ (overlay-start entry)
+                   (maf-edit--leading-prefix-run (overlay-start entry))))
+         (pair (or (maf-editplus--group-at-point limit (overlay-end entry))
+                   (user-error "No complete group at point"))))
+    ;; Replaced in place rather than deleted and reinserted: the entry
+    ;; overlay keeps its bounds, and point keeps its position even when
+    ;; it is sitting on one of the two characters.
+    (dolist (pos (list (cdr pair) (car pair)))
+      (subst-char-in-region
+       pos (1+ pos) (char-after pos)
+       (cdr (assq (char-after pos) maf-editplus--bracket-toggle))))))
+
 ;;; Applying a function
 
 (defun maf-editplus--apply-function (name)
@@ -606,6 +703,9 @@ Enabled, and while a maf-edit session is up:
        that closes the group it is in, one level per press
   M-o  `maf-editplus-wrap-parens' — parentheses go around the term
        before point, and a further press widens that pair
+  S-up, S-down
+       `maf-editplus-toggle-brackets' — the group at point trades its
+       parens for brackets, or back
   L    `maf-editplus-wrap-ln' — the same term becomes the argument of
        an ln call
   Q    `maf-editplus-wrap-sqrt' — and of a sqrt call
@@ -618,9 +718,13 @@ Enabled, and while a maf-edit session is up:
 Disabled, the keys cede back to whatever the global map does with them
 \(`indent-for-tab-command', which has nothing to indent in an edited
 stack, `self-insert-command' for the printable ones, `digit-argument'
-for the meta-digits, and nothing at all for M-o, which Emacs 30 leaves
-free). M-o runs `mafcmd-mod-360' in `maf-mode-map', which is not
-competition: maf-mode is off for the duration of an edit session.
+for the meta-digits, the shifted arrows' selection motion, and nothing
+at all for M-o, which Emacs 30 leaves free). M-o and the shifted arrows
+run `mafcmd-mod-360' and `mafcmd-toggle-op' in `maf-mode-map', which is
+not competition: maf-mode is off for the duration of an edit session.
+The arrows are the same gesture on the stack as here, a toggle between
+two spellings of one thing, and as there both directions run it — a
+toggle is its own inverse, so there is no second direction to give.
 
 L, Q, |, : and P are unmodified printable keys, as
 `maf-edit-insert-colon' already is: each costs its self-insertion for
@@ -641,6 +745,8 @@ running, and the module is a no-op for anyone not using maf-edit."
   (let ((on maf-use-editplus-mode))
     (dolist (b '(("TAB" . maf-editplus-escape-group)
                  ("M-o" . maf-editplus-wrap-parens)
+                 ("S-<up>"   . maf-editplus-toggle-brackets)
+                 ("S-<down>" . maf-editplus-toggle-brackets)
                  ("L"   . maf-editplus-wrap-ln)
                  ("Q"   . maf-editplus-wrap-sqrt)
                  ("|"   . maf-editplus-wrap-abs)
@@ -657,6 +763,6 @@ running, and the module is a no-op for anyone not using maf-edit."
 ;; works on its own without it.
 (when (require 'maf-module nil t)
   (maf-register-module 'maf-editplus #'maf-use-editplus-mode
-                       "In-session keys for maf-edit (TAB escapes a group, M-o wraps one, L/Q/| apply ln/sqrt/abs, M-2..M-9 and : raise to a power, P types pi)."))
+                       "In-session keys for maf-edit (TAB escapes a group, M-o wraps one, S-up/S-down retype its delimiters, L/Q/| apply ln/sqrt/abs, M-2..M-9 and : raise to a power, P types pi)."))
 
 (provide 'maf-editplus)
