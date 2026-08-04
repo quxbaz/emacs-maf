@@ -70,15 +70,6 @@
    name is a stop — the name lands point on the call it heads — and the
    operators and the line-number prefix are what the motion crosses, the
    latter the line-prefix bug, fixed with the port.
-** Variables
-   - [X] my/calc-recall-browse (p) — completing-read recall, values as annotations
-     (drop the ivy-specific TAB cycling)
-     Landed as maf-browse-variables (p). Your variables first, then a rule,
-     then calc's constants (grouped by maf--calc-own-variables). The formula
-     library, the rewrite-rule sets and calc's settings are filtered out via
-     maf-browse-variables-exclude (regexps, so the filter is the user's).
-     The annotation is what recalling would land (calc-var-value +
-     calc-normalize), Flat language, lazily computed.
 ** Polynomials
    - [ ] Polynomial term ordering — math-normalize advice keeping sums in descending degree
 ** Triangles
