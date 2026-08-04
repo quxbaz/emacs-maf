@@ -61,6 +61,40 @@ name to every set."
   :type '(repeat (repeat sexp))
   :group 'maf)
 
+;;; Variable browsing (stack.el)
+
+(defcustom maf-browse-variables-exclude
+  '("\\`eq-" "Rules\\'" "\\`\\(Decls\\|Holidays\\|Modes\\)\\'")
+  "Regexps for the calc variables `maf-browse-variables' leaves out.
+A variable whose name matches any of these is not offered. Names are
+matched without their `var-' prefix. Set this to nil to be offered
+every variable that holds a value.
+
+What the three defaults name is not a value anyone recalls onto a
+stack. They leave a list of things worth pushing: the constants, and
+whatever you have stored yourself.
+
+  eq-*     the formula library. Dozens of entries against a handful of
+           everything else, and modules/maf-formulas.el already has a
+           browser built for picking one of them out — listing them
+           here would be the same choice offered twice, once badly.
+
+  *Rules   calc's rewrite-rule sets. A rule set is read by calc where
+           it sits: \\`a r' and the selection commands take it from
+           the variable, so a copy on the stack is not what wanting
+           one means.
+
+  Decls, Holidays, Modes
+           calc's settings, kept in variables because that is how they
+           are edited (\\`s D', \\`s H'). Recalling one is reading a
+           setting, not doing arithmetic — and calc already has \\`m g'
+           for the one case where the settings do belong on the stack.
+
+This only decides what the prompt offers. Calc's own \\`s r' reaches
+any variable by name, whatever is excluded here."
+  :type '(repeat regexp)
+  :group 'maf)
+
 ;;; Modules (maf-module.el)
 
 (defcustom maf-modules '(maf-timeline maf-hl maf-edit maf-editplus maf-recall

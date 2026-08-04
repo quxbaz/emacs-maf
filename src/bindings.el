@@ -96,6 +96,11 @@
 (define-key maf-mode-map (kbd "S-<up>") #'mafcmd-toggle-op)
 (define-key maf-mode-map (kbd "S-<down>") #'mafcmd-toggle-op)
 (define-key maf-mode-map (kbd ",") #'maf-quick-variable)
+;; Recall a variable by picking it off a list of values. Shadows
+;; calc-precision, whose only key this is: a mode setting that is set
+;; once and then left alone, reachable by name afterwards, giving up
+;; its key to something pressed while working.
+(define-key maf-mode-map (kbd "p") #'maf-browse-variables)
 ;; The in-place editing entry keys (SPC / C-RET / S-RET / "(") are
 ;; installed by the edit module when it is enabled (see
 ;; modules/edit.el), not here.
