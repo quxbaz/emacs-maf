@@ -148,7 +148,7 @@ own `completing-read' would have returned it."
     (cl-assert (maf--calc-own-variable-p (nth (1+ i) mafstep--candidates)))
     ;; The divider is labelled, not annotated with a value, and
     ;; choosing it is refused rather than recalled.
-    (cl-assert (string= (mafstep--annotation rule) "calc's own"))
+    (cl-assert (string= (mafstep--annotation rule) "calc vars"))
     (cl-assert (eq 'error (condition-case nil
                               (maf-with-choice rule (maf-browse-variables))
                             (error 'error)))))

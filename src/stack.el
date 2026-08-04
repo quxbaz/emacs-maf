@@ -3044,7 +3044,7 @@ contain, so typing anything at all filters it away, and
 
   Recall variable: height   9.8 t + 3
                    mass     70
-                   ──────   calc's own
+                   ──────   calc vars
                    e        2.71828182846
                    pi       3.14159265359
 
@@ -3106,7 +3106,7 @@ for one that is never scrolled to."
           (list :annotation-function
                 (lambda (name)
                   (let ((str (if (equal name rule)
-                                 "calc's own"
+                                 "calc vars"
                                ;; A variable with no readable value
                                ;; caches "", a hit like any other — the
                                ;; cost of finding that out is paid once.
