@@ -2573,10 +2573,29 @@ own behavior."
 ;; from calc's own rules rather than kept as a second hand-written
 ;; copy, which would drift the moment calc edits the set upstream.
 ;;
-;; The ordered relations stay out on purpose: crossing a < with a
-;; division flips its direction, and a rewrite rule has no way to know
-;; the divisor's sign. Those need `mafcmd-solve-for' / `calc-sel-isolate',
-;; which reason about the solution rather than shuffling terms.
+;; The ordered relations take the same treatment, but only the additive
+;; rules earn a twin. Crossing a < with a division flips its direction
+;; and a rewrite rule has no way to know the divisor's sign; crossing
+;; one with a power is not a term move at all (a^2 <= y says nothing
+;; about a <= sqrt(y)). Adding and subtracting are the moves that hold
+;; whatever the sign, so the rules built from + and - alone carry over
+;; unchanged, and a term standing anywhere else under a < stays put —
+;; `mafcmd-isolate' handles those, reasoning about the solution rather
+;; than shuffling terms.
+
+(defconst maf--jump-relations
+  '(calcFunc-eq calcFunc-neq calcFunc-lt calcFunc-leq calcFunc-gt calcFunc-geq)
+  "The relations `maf-jump-equals' will move a term across.")
+
+(defconst maf--jump-ordered-relations
+  '(calcFunc-lt calcFunc-leq calcFunc-gt calcFunc-geq)
+  "The subset of `maf--jump-relations' that only the additive rules serve.")
+
+(defconst maf--jump-additive-heads
+  '(calcFunc-assign calcFunc-plain calcFunc-eq calcFunc-select + - neg)
+  "Heads a JumpRule may be built from and still hold for an ordered relation.
+Everything outside this set — *, /, ^, log, sqrt — makes the move depend
+on a sign or a monotonicity the rule cannot check.")
 
 (defvar maf--jump-rules-cache nil
   "Memo cell for `maf--jump-rules': a cons of (SOURCE . EXTENDED).
@@ -2584,47 +2603,73 @@ SOURCE is the `var-JumpRules' value EXTENDED was derived from, compared
 by identity — so a user who re-stores JumpRules gets a fresh derivation
 instead of a stale extension.")
 
-(defun maf--jump-subst-neq (expr)
-  "Return EXPR with every = relation in it rewritten to !=."
+(defun maf--jump-subst-rel (expr op)
+  "Return EXPR with every = relation in it rewritten to OP."
   (if (Math-primp expr)
       expr
-    (cons (if (eq (car expr) 'calcFunc-eq) 'calcFunc-neq (car expr))
-          (mapcar #'maf--jump-subst-neq (cdr expr)))))
+    (cons (if (eq (car expr) 'calcFunc-eq) op (car expr))
+          (mapcar (lambda (sub) (maf--jump-subst-rel sub op)) (cdr expr)))))
+
+(defun maf--jump-additive-rule-p (rule)
+  "Non-nil when RULE is built from addition and subtraction alone.
+Read off the rule itself rather than listed by hand, so a rule calc adds
+upstream is classified the moment it appears."
+  (or (Math-primp rule)
+      (and (memq (car rule) maf--jump-additive-heads)
+           (seq-every-p #'maf--jump-additive-rule-p (cdr rule)))))
 
 (defun maf--jump-rules ()
-  "Return calc's JumpRules extended with an != twin of every = rule.
-Reads whatever `var-JumpRules' currently holds — calc's own accessor
-compiles the rule text on first use — and appends the substituted
-copies, memoized so repeated jumps reuse one rule object and calc's
-rewrite-compiler cache stays valid. Entries with no = in them, such as
-the leading iterations(1) that caps the rule set at a single pass, are
-not doubled."
+  "Return calc's JumpRules extended with twins for maf's other relations.
+Every = rule gets a != twin; the additive ones (`maf--jump-additive-rule-p')
+also get a twin per ordered relation. Reads whatever `var-JumpRules'
+currently holds — calc's own accessor compiles the rule text on first use
+— and appends the substituted copies, memoized so repeated jumps reuse one
+rule object and calc's rewrite-compiler cache stays valid. Entries with no
+= in them, such as the leading iterations(1) that caps the rule set at a
+single pass, are not doubled."
   (let ((base (calc-var-value 'var-JumpRules)))
     (unless (eq base (car maf--jump-rules-cache))
       (setq maf--jump-rules-cache
             (cons base
                   (if (eq (car-safe base) 'vec)
-                      (append base
-                              (delq nil
-                                    (mapcar
-                                     (lambda (rule)
-                                       (let ((neq (maf--jump-subst-neq rule)))
-                                         (unless (equal neq rule) neq)))
-                                     (cdr base))))
+                      (append
+                       base
+                       (delq nil
+                             (mapcan
+                              (lambda (rule)
+                                (mapcar
+                                 (lambda (op)
+                                   (let ((twin (maf--jump-subst-rel rule op)))
+                                     (unless (equal twin rule) twin)))
+                                 (if (maf--jump-additive-rule-p rule)
+                                     (cons 'calcFunc-neq
+                                           maf--jump-ordered-relations)
+                                   '(calcFunc-neq))))
+                              (cdr base))))
                     base))))
     (cdr maf--jump-rules-cache)))
 
 (defun maf--jump-relation (expr node)
-  "Return the innermost = or != in EXPR that contains NODE, or nil.
+  "Return the innermost relation in EXPR that contains NODE, or nil.
 NODE itself does not count: a whole relation has no side to move a term
-to. Ordered relations are not matched — see the commentary above."
-  (let ((n node))
+to.
+
+Under an ordered relation the term must also stand in an additive
+position — every node between it and the relation a + or a - — which is
+the only shape the ordered twins match. Anywhere else under a <, a
+factor or an exponent or a log argument, no twin rule exists, so letting
+the jump run would pop and push the entry for an unchanged result;
+refusing here keeps it a clean no-op."
+  (let ((n node) (additive t))
     (while (and (consp (setq n (calc-find-parent-formula expr n)))
-                (not (memq (car n) '(calcFunc-eq calcFunc-neq)))))
-    (and (consp n) n)))
+                (not (memq (car n) maf--jump-relations)))
+      (unless (memq (car n) '(+ -)) (setq additive nil)))
+    (and (consp n)
+         (or additive (not (memq (car n) maf--jump-ordered-relations)))
+         n)))
 
 (defun maf-jump-equals ()
-  "Move the term under point across the = it sits in.
+  "Move the term under point across the relation it sits in.
 
   x + a| = y  =>  x = -a| + y
 
@@ -2641,16 +2686,23 @@ is left behind for the next keystroke to trip over.
   y = a + b|  =>  y - b| = a
 
 A != is handled alongside =, on rules maf derives from calc's own. The
-ordered relations (<, <=, >, >=) are not: moving a term across one can
-flip its direction, which no rewrite rule can decide. Use
-`mafcmd-isolate' on those.
+ordered relations (<, <=, >, >=) take added and subtracted terms only,
+which cross without disturbing the direction:
+
+  x + a| <= y  =>  x <= -a| + y
+  y > a - b|   =>  y + b| > a
+
+A term anywhere else under an ordered relation — a factor, an exponent,
+a log argument — stays put, since crossing it can flip the direction on
+a sign no rewrite rule can determine. Use `mafcmd-isolate' on those.
 
 At home, where point names no entry, a selection standing anywhere is
 the term to move and the jump goes to it.
 
 With no term to move — at home with nothing selected, on a whole entry,
-on a term outside any = or !=, or on one the rules do not reach — the
-command does nothing rather than signaling."
+on a term outside any relation, on a non-additive term under an ordered
+one, or on one the rules do not reach — the command does nothing rather
+than signaling."
   (interactive)
   (maf--with-calc-buffer
     (let* ((at-point (calc-locate-cursor-element (point)))
