@@ -52,15 +52,6 @@
 
 * Todo
 # NOW
-** IN-PROGRESS stack/edit add command to move to parent expression.
-    1:  y = 2 (x| + 3)^2 - 12
-    ->  y = 2 (x + 3)|^2 - 12
-    - [X] stack: =maf-up-expression= (C-M-u), walking the formula's own
-      ancestors, so the levels calc prints without parens are reached
-      too — the example above is two presses, x + 3 coming first.
-    - [ ] edit: the same motion over the edit buffer's text. maf-mode is
-      off during a maf-edit session, so C-M-u there is still the global
-      =backward-up-list=, which only sees printed parens.
 ** IN-PROGRESS distribute and merge should operate contextually.
 ** TODO move all options to unified configuration view.
    - Free up option prefix bindings (eg, m).
@@ -115,14 +106,6 @@
 
 * Bugs
 ** BUG (my/calc-backward-noun) and (my/calc-forward-noun) should ignore line prefix.
-
-* BACKLOG
-** Issue: j D (my/calc-sel-distribute)
-   Doesn't work contextually. Should work like 'j M'. Work on stack item when at home.
-** Instead of having to use the default bindings 'a m &', can you make 'a m i' work?
-   This should invert both sides of an equation. Normally the binding would use
-   '&' instead of 'i', but 'i' is more convenient and I have that bound to
-   'calc-inv' The issue is that the 'a m' sequence expects standard keybindings.
 
 * Package
   Config file with all config settings and default values
