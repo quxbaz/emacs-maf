@@ -35,6 +35,11 @@
   - maf-editplus module
     - [X] tab to break out of parens
   - formulas
+    - [ ] tab to nav between items not groups
+    - [ ] don't show detail pane by default
+    - [ ] binding to display detail pane (in vertical split window)
+    - [ ] binding to show detail pane
+    - [ ] M-n/p shouldn't cycle
 
 * Low-hanging fruit
 ** TODO Port the edit-mode insertions (modules/maf-editplus.el)
