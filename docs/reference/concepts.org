@@ -860,7 +860,7 @@ object, so a vector can be filled with multiples of pi.
 | [[file:../../modules/maf-hl.el][modules/maf-hl.el]]       | Highlight module: =maf-hl-mode= per-buffer, =maf-use-hl-mode= toggle |
 | [[file:../../modules/maf-timeline.el][modules/maf-timeline.el]]  | Timeline module: =maf-use-timeline-mode= records stack snapshots, browse in =*maf-timeline*= |
 | [[file:../../modules/maf-persist.el][modules/maf-persist.el]]   | Persist module: =maf-persist-mode= saves/restores the stack across sessions |
-| [[file:../../modules/maf-edit.el][modules/maf-edit.el]]      | Edit module: =maf-use-edit-mode= binds SPC/C-RET/S-RET to =maf-edit= in-place stack editing (=maf-edit-mode= session) |
+| [[file:../../modules/maf-edit.el][modules/maf-edit.el]]      | Edit module: =maf-use-edit-mode= binds SPC/S-RET/"(" to =maf-edit= in-place stack editing (=maf-edit-mode= session) |
 | [[file:../../modules/maf-preview.el][modules/maf-preview.el]]   | Preview module: =maf-use-preview-mode= shows the entry at point in Big display in a floating panel (posframe child frame, else in-window) |
 | [[file:../../modules/maf-formulas.el][modules/maf-formulas.el]]  | Formulas module: =maf-formulas= menu of saved formulas by category (detail + RET-insert); data in maf-formulas-data.el |
 | [[file:../../debug/maf-step.el][debug/maf-step.el]]       | Step-through harness (cockpit) that drives the tests        |
@@ -937,7 +937,7 @@ Two module shapes have appeared, matching the feature's state:
   =maf-save-stack=, its on-demand companion; disabling removes them.
   The edit module too
   (=modules/maf-edit.el=): =maf-use-edit-mode= installs SPC /
-  C-<return> / S-<return> in =maf-mode-map= when enabled and cedes them
+  S-<return> / =(= in =maf-mode-map= when enabled and cedes them
   back when disabled — its body is just those bindings, the on-demand
   editing session (=maf-edit-mode=, turned on per gesture, not a
   feature switch) being separate.
