@@ -41,6 +41,8 @@
     - [ ] binding to show detail pane
     - [ ] M-n/p shouldn't cycle
     - [ ] C-n/p should still work from filter minibuffer
+    - [ ] start in filter mode
+    - [ ] filter such be visible in a persistent input field
 
 * Low-hanging fruit
 ** TODO Port the edit-mode insertions (modules/maf-editplus.el)
