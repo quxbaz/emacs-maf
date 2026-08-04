@@ -40,6 +40,7 @@
     - [ ] binding to display detail pane (in vertical split window)
     - [ ] binding to show detail pane
     - [ ] M-n/p shouldn't cycle
+    - [ ] C-n/p should still work inside filter minibuffer
 
 * Low-hanging fruit
 ** TODO Port the edit-mode insertions (modules/maf-editplus.el)
