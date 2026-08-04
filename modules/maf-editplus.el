@@ -32,7 +32,9 @@
 ;; already typed, after escaping it and widening it: the parens around
 ;; it turning out to have been meant as the brackets of a vector. Both
 ;; ends move at once, which is what the character typed by hand cannot
-;; do.
+;; do — except on an interval, where `[' and `(' say included and
+;; excluded rather than merely opening the group, and the end point is
+;; at moves alone.
 ;;
 ;; L, Q and | apply a function. The term M-o would have put parens
 ;; around is also the term a function should be applied to, so these
@@ -486,6 +488,25 @@ otherwise the group point stands inside."
                        (and end (1- end))))))
     (and open close (cons open close))))
 
+(defun maf-editplus--interval-dots (open close)
+  "Position of the `..' making OPEN..CLOSE an interval, or nil.
+Only at the group's own level: the dots of a nested interval belong to
+that one, and the `.' of a decimal is never doubled. Prefix and pad
+characters are skipped, as in the other scans."
+  (let ((pos (1+ open))
+        (depth 0)
+        (found nil))
+    (while (and (not found) (< pos close))
+      (unless (get-text-property pos 'maf-edit-prefix)
+        (let ((c (char-after pos)))
+          (cond
+           ((memq c maf-editplus--openers) (setq depth (1+ depth)))
+           ((memq c maf-editplus--closers) (setq depth (1- depth)))
+           ((and (zerop depth) (eq c ?.) (eq (char-after (1+ pos)) ?.))
+            (setq found pos)))))
+      (setq pos (1+ pos)))
+    found))
+
 (defun maf-editplus-toggle-brackets ()
   "Toggle the delimiters of the group at point between ( ) and [ ].
 Both ends move together, so a group typed as parens becomes the vector
@@ -500,11 +521,17 @@ from where the typing left off rather than only with point parked on a
 delimiter. A brace group becomes a paren group, calc reading {1,2} as
 the same vector [1,2] denotes.
 
-Both ends together is the whole point of it. Calc does read a group
-whose delimiters differ — that is its interval notation, [1 .. 2) —
-but arriving at one by flipping a single character is how an entry
-silently stops meaning what it did, so an interval toggles as a pair
-too and a half-open one is typed by hand.
+An interval is the exception, and moves one end only:
+
+  [1 .. 3|)  =>  [1 .. 3]
+  [|1 .. 3)  =>  (1 .. 3)
+
+There a delimiter is not punctuation around a group but a value in its
+own right — `[' saying the bound is included and `(' that it is not —
+so the two ends are independent and a mixed pair is the notation
+working, not a group left broken. The end that moves is the end point
+is at: before the `..' the lower one, after it the upper. To move both,
+press once on each side.
 
 With no complete group in the entry — none at point, or one whose
 other half has not been typed yet — nothing is changed. Runs only
@@ -517,11 +544,21 @@ during a maf-edit session, and only inside an entry."
          (limit (+ (overlay-start entry)
                    (maf-edit--leading-prefix-run (overlay-start entry))))
          (pair (or (maf-editplus--group-at-point limit (overlay-end entry))
-                   (user-error "No complete group at point"))))
+                   (user-error "No complete group at point")))
+         (open (car pair))
+         (close (cdr pair))
+         (dots (maf-editplus--interval-dots open close)))
     ;; Replaced in place rather than deleted and reinserted: the entry
     ;; overlay keeps its bounds, and point keeps its position even when
-    ;; it is sitting on one of the two characters.
-    (dolist (pos (list (cdr pair) (car pair)))
+    ;; it is sitting on one of the characters. Closer first, so that a
+    ;; group edited whole is edited from the far end inwards.
+    (dolist (pos (cond
+                  ((null dots) (list close open))
+                  ;; Point on the opener is at or before the dots; point
+                  ;; past the closer is after them. The one comparison
+                  ;; covers standing on an end and working inside one.
+                  ((<= (point) dots) (list open))
+                  (t (list close))))
       (subst-char-in-region
        pos (1+ pos) (char-after pos)
        (cdr (assq (char-after pos) maf-editplus--bracket-toggle))))))
@@ -705,7 +742,7 @@ Enabled, and while a maf-edit session is up:
        before point, and a further press widens that pair
   S-up, S-down
        `maf-editplus-toggle-brackets' — the group at point trades its
-       parens for brackets, or back
+       parens for brackets, or back; one end only on an interval
   L    `maf-editplus-wrap-ln' — the same term becomes the argument of
        an ln call
   Q    `maf-editplus-wrap-sqrt' — and of a sqrt call

@@ -104,19 +104,69 @@
                     "[1,2]"))
   (call-interactively 'maf-edit-discard)
 
-  ;; Both ends move together, so an interval stays an interval of the
-  ;; same shape rather than being flipped half open by one character.
-  ;; This is where the legacy version left the entry meaning something
-  ;; else without saying so.
+  ;; An interval is the exception: there a delimiter is a value, `['
+  ;; saying the bound is included and `(' that it is not, so the ends
+  ;; are independent and only the one point is at moves. Point after
+  ;; the `..' is at the upper end.
   (call-interactively 'maf-edit-add-entry)
   (progn (insert "[1 .. 2)") nil)
   (progn (backward-char 1) nil)
   (call-interactively 'maf-editplus-toggle-brackets)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
-                    "(1 .. 2]"))
+                    "[1 .. 2]"))
+  ;; Both bounds included: calc's mask counts 2 for the lower end and
+  ;; 1 for the upper.
   (call-interactively 'maf-edit-commit)
-  (cl-assert (equal (calc-top 1) '(intv 1 1 2)))
+  (cl-assert (equal (calc-top 1) '(intv 3 1 2)))
   (calc-pop (calc-stack-size))
+
+  ;; Before the `..' it is the lower end, and each press moves that
+  ;; end alone — pressing on both sides is how a whole interval turns
+  ;; over.
+  (call-interactively 'maf-edit-add-entry)
+  (progn (insert "[1 .. 2]") nil)
+  (progn (goto-char (- (line-end-position) 6)) nil)
+  (cl-assert (eq (char-before) ?1))
+  (call-interactively 'maf-editplus-toggle-brackets)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "(1 .. 2]"))
+  (progn (goto-char (line-end-position)) nil)
+  (call-interactively 'maf-editplus-toggle-brackets)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "(1 .. 2)"))
+  (call-interactively 'maf-edit-commit)
+  (cl-assert (equal (calc-top 1) '(intv 0 1 2)))
+  (calc-pop (calc-stack-size))
+
+  ;; Standing on an end is the same rule, not a second one: the opener
+  ;; is before the dots and the closer past them.
+  (call-interactively 'maf-edit-add-entry)
+  (progn (insert "[1 .. 2)") nil)
+  (maf-edit-move-beginning-of-line 1)
+  (call-interactively 'maf-editplus-toggle-brackets)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "(1 .. 2)"))
+  (call-interactively 'maf-edit-discard)
+
+  ;; A decimal point is not a `..', so a plain group full of them
+  ;; still moves as a pair.
+  (call-interactively 'maf-edit-add-entry)
+  (progn (insert "(1.5,2.5)") nil)
+  (progn (backward-char 1) nil)
+  (call-interactively 'maf-editplus-toggle-brackets)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "[1.5,2.5]"))
+  (call-interactively 'maf-edit-discard)
+
+  ;; Nor do a nested interval's dots make the group around it one: they
+  ;; belong to the group they are in.
+  (call-interactively 'maf-edit-add-entry)
+  (progn (insert "([1 .. 2],3)") nil)
+  (progn (goto-char (line-end-position)) nil)
+  (call-interactively 'maf-editplus-toggle-brackets)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "[[1 .. 2],3]"))
+  (call-interactively 'maf-edit-discard)
 
   ;; A group whose other half has not been typed yet has no pair to
   ;; toggle, and the entry is left exactly as it stands.
