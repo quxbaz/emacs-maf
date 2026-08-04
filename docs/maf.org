@@ -15,11 +15,8 @@
   - [X] Timeline module
   - [ ] Graphing module
   - [ ] Omni-options menu buffer
-  - [X] Formulas module. Support categories, docs, examples
-    - [X] Set default binding
-  - [X] Modules manager: Buffer where you can toggle modules
-    - [X] Create manager
-    - [X] Set default binding
+  - [X] Formulas module
+  - [X] Modules manager
   - [X] Use module architecture (maf-timeline, maf-edit)
   - [X] Recall ring for typed entries (maf-recall)
   - [ ] Discovery document for useful features, behaviors, modules, etc
