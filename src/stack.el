@@ -59,6 +59,8 @@
 (declare-function calc-unselect "calc-sel")
 (declare-function calc-sel-jump-equals "calcsel2")
 (declare-function calc-var-value "calc-ext")
+(declare-function calc-recall "calc-store")
+(declare-function math-format-value "calc")
 ;; Calc's JumpRules holder: the symbol `calc-JumpRules' until first use,
 ;; then the parsed rule set cached in its place by `calc-var-value'.
 (defvar var-JumpRules)
@@ -2940,6 +2942,189 @@ the sides still swaps.
   ;; nothing done.
   (let ((maf--swap-vars-pair (maf--swap-vars-read (maf--swap-vars-default))))
     (call-interactively #'maf--swap-vars-run)))
+
+(defconst maf--calc-own-variables
+  '("AlgSimpRules" "CommuteRules" "Decls" "DistribRules" "EvalRules"
+    "ExtSimpRules" "FactorRules" "FitRules" "GenCount" "Holidays"
+    "IntegAfterRules" "IntegLimit" "IntegRules" "IntegSimpRules"
+    "InvertRules" "JumpRules" "LineStyles" "MergeRules" "Modes"
+    "NegateRules" "PlotRejects" "PointStyles" "RandSeed" "TimeZone"
+    "UnitSimpRules" "Units"
+    "e" "gamma" "i" "phi" "pi" "γ" "π" "φ")
+  "Names of the variables calc owns, without the `var-' prefix.
+Its constants, the rewrite-rule sets it consults by name, and the
+settings and hooks it documents as belonging to it — everything it
+either defines itself or reads if the user defines it.
+
+`maf-browse-variables' groups by this list: a name on it is calc's,
+anything else is the user's, and the two are listed apart. The quick
+registers (q0-q9) are deliberately absent — calc defines them, but
+what they hold is the user's, which is the distinction the grouping
+is about.
+
+A name calc introduces that is missing here is simply listed as the
+user's. That is the failure worth having: the list is a claim about
+calc, and an unlisted name lands in the group the user is looking
+at rather than being hidden among the constants.")
+
+(defun maf--calc-own-variable-p (name)
+  "Return non-nil if NAME is one of calc's own variables.
+See `maf--calc-own-variables'."
+  (and (member name maf--calc-own-variables) t))
+
+(defun maf--variable-names ()
+  "Names of the calc variables `maf-browse-variables' offers.
+Without the `var-' prefix, the user's own first and calc's after,
+each group alphabetical. Yours is the group you came for — calc's
+constants are a handful of fixed values that never change and never
+need looking up, so they sit below rather than alphabetically among
+what you stored.
+
+Every variable that holds a value, less the ones
+`maf-browse-variables-exclude' matches — by default the formula
+library, calc's rewrite-rule sets, and its settings, none of them a
+value anyone recalls onto a stack. The exclusion is only about the
+list: `maf--variable-value-string' still renders whatever name it is
+handed.
+
+A variable bound to nil is unset as far as calc is concerned —
+`calc-recall' refuses one — so it is left out, which is also what
+keeps the `var-' symbols that are only declared off the list."
+  (let (names)
+    (mapatoms
+     (lambda (sym)
+       (let ((name (symbol-name sym)))
+         (when (and (string-prefix-p "var-" name)
+                    (boundp sym)
+                    (symbol-value sym))
+           (let ((name (substring name 4)))
+             (unless (seq-some (lambda (re) (string-match-p re name))
+                               maf-browse-variables-exclude)
+               (push name names)))))))
+    (append (sort (seq-remove #'maf--calc-own-variable-p names) #'string<)
+            (sort (seq-filter #'maf--calc-own-variable-p names) #'string<))))
+
+(defun maf--variable-value-string (name)
+  "One-line rendering of calc variable NAME's value, or nil.
+What recalling it would land, not what the symbol holds: the value
+goes through `calc-var-value' and `calc-normalize', the two steps
+`calc-recall' takes, so a rewrite-rule set shows as the parsed set
+rather than as the function symbol standing in for it until first use,
+and pi as its number rather than as the (special-const (math-pi)) form
+it is stored as.
+
+Formatted in calc's Flat language whatever the display language is —
+an annotation has one line to work with, and both `big' notation and
+an ordinary matrix are laid out across several — and with
+simplification off, matching the recall itself. Unreadable contents (a
+string-valued variable that no longer parses) give nil rather than
+signal: the browser still lists the variable, and recalling it is what
+should report the problem."
+  (maf--with-calc-buffer
+    (when-let* ((val (ignore-errors (calc-var-value (intern (concat "var-" name)))))
+                (str (ignore-errors
+                       (let ((calc-language 'flat))
+                         (math-format-value (maf--literal (calc-normalize val)))))))
+      ;; Flat lays out on one line by construction; this is the guard
+      ;; for a value that breaks the rule anyway (an embedded string),
+      ;; and it collapses the padding along with the newlines.
+      (string-join (split-string str) " "))))
+
+(defun maf--variable-separator (width)
+  "A rule WIDTH wide, the divider between the two variable groups.
+It goes in as a candidate of its own rather than as completion
+`group-function' metadata, which only some UIs render; a candidate is
+a line in every one of them. Made of a character no variable name can
+contain, so typing anything at all filters it away, and
+`maf-browse-variables' refuses it if it is somehow chosen."
+  (make-string width ?─))
+
+(defun maf-browse-variables ()
+  "Recall a calc variable picked off a list of what they hold.
+
+  Recall variable: height   9.8 t + 3
+                   mass     70
+                   ──────   calc's own
+                   e        2.71828182846
+                   pi       3.14159265359
+
+Completing-read over the names, each annotated with the value it would
+push, so the variable is chosen by looking at the values rather than by
+remembering which name holds what. Offered are the ones you stored
+\(\\`s s') and calc's constants — everything holding a value except
+what `maf-browse-variables-exclude' filters out, which by default is
+everything that is not arithmetic: the formula library, the
+rewrite-rule sets, and calc's settings.
+
+Yours come first and calc's follow, under a rule dividing them: the
+constants are a handful of fixed values that never change, and mixing
+them alphabetically through what you stored would be the list you did
+not come for. The rule is inert — typing anything filters it away, and
+choosing it is refused.
+
+The chosen variable is pushed as a new stack entry with simplification
+off, so what was stored is what lands — a stored x + x stays x + x.
+Calc's own \\`s r' is the unannotated version of the same recall,
+reaches the excluded names too, and keeps its key. The push parks
+point at home, as calc's own does; a mark is left where point was, so
+\\[maf-go-home] (or \\[pop-to-mark-command]) goes back to it.
+
+An annotation is computed when it is first shown and remembered for
+the rest of the prompt: rendering a value is unbounded work — a stored
+matrix or a long vector is one entry on this list — and nothing pays
+for one that is never scrolled to."
+  (interactive)
+  (require 'calc-ext)
+  (let* ((names (or (maf--variable-names)
+                    (user-error "No calc variable to recall")))
+         (width (apply #'max (mapcar #'length names)))
+         ;; What is left of the line once the name column and its
+         ;; gutters are spoken for; a long vector would otherwise run
+         ;; off the frame and take the candidate with it.
+         (limit (max 20 (- (frame-width) width 8)))
+         ;; Where the user's names end and calc's begin. Both groups
+         ;; have to be non-empty for there to be a boundary worth
+         ;; drawing.
+         (split (seq-count (lambda (n) (not (maf--calc-own-variable-p n)))
+                           names))
+         (rule (and (> split 0) (< split (length names))
+                    (maf--variable-separator width)))
+         (candidates (if rule
+                         (append (seq-take names split) (list rule)
+                                 (seq-drop names split))
+                       names))
+         (cache (make-hash-table :test #'equal))
+         (table (lambda (string pred action)
+                  (if (eq action 'metadata)
+                      ;; Yours, the rule, then calc's is the whole point
+                      ;; of the list; a UI that sorts would alphabetize
+                      ;; the groups back together and strand the rule.
+                      '(metadata (display-sort-function . identity)
+                                 (cycle-sort-function . identity))
+                    (complete-with-action action candidates string pred))))
+         (completion-extra-properties
+          (list :annotation-function
+                (lambda (name)
+                  (let ((str (if (equal name rule)
+                                 "calc's own"
+                               ;; A variable with no readable value
+                               ;; caches "", a hit like any other — the
+                               ;; cost of finding that out is paid once.
+                               (or (gethash name cache)
+                                   (puthash name
+                                            (or (maf--variable-value-string name)
+                                                "")
+                                            cache)))))
+                    (concat (make-string (max 1 (- (+ width 2) (length name))) ?\s)
+                            (truncate-string-to-width str limit 0 nil t))))))
+         (name (completing-read "Recall variable: " table nil t)))
+    (when (equal name rule)
+      (user-error "That is the divider, not a variable"))
+    ;; The push parks point at home; mark where the user was first, so a
+    ;; single `pop-to-mark-command' returns there, as every maf command
+    ;; that homes point does.
+    (unless (maf--at-home-p) (maf--mark-before-home))
+    (maf--literal (calc-recall (intern (concat "var-" name))))))
 
 ;;; Solving
 
