@@ -10,8 +10,8 @@
 ;; stack is editable text, installed into `maf-edit-mode-map' and taken
 ;; back out when the module is off.
 ;;
-;; What is here now are the two paren gestures, TAB and M-o, and the
-;; first of the function keys, L.
+;; What is here now are the two paren gestures, TAB and M-o, the first
+;; of the function keys, L, and P for the constant pi.
 ;;
 ;; TAB escapes. Typing a formula runs forward past closing delimiters
 ;; constantly — sqrt(x^2+1), f(g(x)) — and reaching the far side of one
@@ -483,6 +483,23 @@ self-inserting during a session; \\[quoted-insert] L still types one."
   (interactive)
   (maf-editplus--apply-function "ln"))
 
+(defun maf-editplus-insert-pi (n)
+  "Insert the constant pi, N times, on the unmodified `P' key.
+Two characters for the price of one keypress; a capital P is no
+longer self-inserting during a session, and \\[quoted-insert] P
+still types one.
+
+After a name character a space goes in first, so `x' becomes the
+product `x pi' and not the unrelated variable `xpi'. Digits get the
+space too: `2pi' would read back fine, but `x2' would not, and the
+spaced form parses the same either way."
+  (interactive "p")
+  (dotimes (_ n)
+    (when (and (char-before)
+               (string-match-p "[[:alnum:]]" (string (char-before))))
+      (insert " "))
+    (insert "pi")))
+
 ;;; The module
 
 (define-minor-mode maf-use-editplus-mode
@@ -495,18 +512,20 @@ Enabled, and while a maf-edit session is up:
        before point, and a further press widens that pair
   L    `maf-editplus-wrap-ln' — the same term becomes the argument of
        an ln call
+  P    `maf-editplus-insert-pi' — the constant pi, typed as one key
 
 Disabled, the keys cede back to whatever the global map does with them
 \(`indent-for-tab-command', which has nothing to indent in an edited
-stack, `self-insert-command' for L, and nothing at all for M-o, which
+stack, `self-insert-command' for L and P, and nothing at all for M-o, which
 Emacs 30 leaves free). M-o runs `mafcmd-mod-360' in `maf-mode-map',
 which is not competition: maf-mode is off for the duration of an edit
 session.
 
-L is an unmodified printable key, as `maf-edit-insert-colon' already
-is: a capital L costs its self-insertion for the length of a session,
-and \\[quoted-insert] L is how one is typed meanwhile. The trade is
-the legacy config's, where the wrap helpers were plain capitals too.
+L and P are unmodified printable keys, as `maf-edit-insert-colon'
+already is: a capital costs its self-insertion for the length of a
+session, and \\[quoted-insert] is how one is typed meanwhile. The
+trade is the legacy config's, where the wrap helpers were plain
+capitals too.
 
 This is the `maf-editplus' module (see `maf-modules'). The keys only
 live in maf-edit's own map, so they are inert unless a session is
@@ -517,15 +536,17 @@ running, and the module is a no-op for anyone not using maf-edit."
       (progn
         (define-key maf-edit-mode-map (kbd "TAB") #'maf-editplus-escape-group)
         (define-key maf-edit-mode-map (kbd "M-o") #'maf-editplus-wrap-parens)
-        (define-key maf-edit-mode-map (kbd "L") #'maf-editplus-wrap-ln))
+        (define-key maf-edit-mode-map (kbd "L") #'maf-editplus-wrap-ln)
+        (define-key maf-edit-mode-map (kbd "P") #'maf-editplus-insert-pi))
     (define-key maf-edit-mode-map (kbd "TAB") nil)
     (define-key maf-edit-mode-map (kbd "M-o") nil)
-    (define-key maf-edit-mode-map (kbd "L") nil)))
+    (define-key maf-edit-mode-map (kbd "L") nil)
+    (define-key maf-edit-mode-map (kbd "P") nil)))
 
 ;; Register with the module system when it is present; the mode above
 ;; works on its own without it.
 (when (require 'maf-module nil t)
   (maf-register-module 'maf-editplus #'maf-use-editplus-mode
-                       "In-session keys for maf-edit (TAB escapes a group, M-o wraps one, L applies ln)."))
+                       "In-session keys for maf-edit (TAB escapes a group, M-o wraps one, L applies ln, P types pi)."))
 
 (provide 'maf-editplus)
