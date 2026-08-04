@@ -65,6 +65,7 @@
         (:map calc-mode-map ("<" . calc-scroll-right))
 ** TODO export entry as latex
 ** TODO issue with map, mapping actual commands
+** TODO (mafcmd-equal-to), prefer to write the variable on the LHS in easy, simple, unambiguous cases
 
 * Port
   - [-] Port my/calc/* features one-by-one.
