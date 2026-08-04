@@ -1,5 +1,7 @@
-;; maf-jump-equals (j e): move the term under point across the = or !=
-;; it sits in, unselecting after and sending point along with it.
+;; maf-jump-equals (j e): move the term under point across the relation
+;; it sits in, unselecting after and sending point along with it. An
+;; ordered relation (<, <=, >, >=) takes added and subtracted terms
+;; only — see the ordered block below.
 ;;
 ;; Expected results are calc's own, unsimplified: JumpRules produce
 ;; -a + y and y x, and maf commits what the rewrite gives rather than
@@ -68,13 +70,65 @@
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "y / x != a"))
   (calc-pop (calc-stack-size))
 
-  ;; An ordered relation is left alone: crossing a < can flip its
-  ;; direction, which no rewrite rule can decide.
-  (maf-push "x + a < y")
-  (jump-at "+ a")
+  ;; Ordered relations, additive: an added term crosses without
+  ;; disturbing the direction, so all four relations take the move and
+  ;; each keeps its own sense.
+  (dolist (case '(("x + a < y"  . "x < -a + y")
+                  ("x + a <= y" . "x <= -a + y")
+                  ("x + a > y"  . "x > -a + y")
+                  ("x + a >= y" . "x >= -a + y")))
+    (maf-push (car case))
+    (jump-at "+ a")
+    (call-interactively 'maf-jump-equals)
+    (cl-assert (string= (math-format-value (calc-top 1 'full)) (cdr case)))
+    (cl-assert (null (calc-top 1 'sel)))
+    (calc-pop (calc-stack-size)))
+
+  ;; Subtraction crosses the other way, and right to left.
+  (maf-push "y > a - b")
+  (jump-at "- b")
   (call-interactively 'maf-jump-equals)
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "x + a < y"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "y + b > a"))
+  (calc-pop (calc-stack-size))
+
+  ;; A whole side under an ordered relation is additive too: it crosses,
+  ;; leaving 0 behind.
+  (maf-push "x <= y")
+  (jump-at "x " 2)
+  (call-interactively 'maf-jump-equals)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "0 <= -x + y"))
+  (calc-pop (calc-stack-size))
+
+  ;; A factor under an ordered relation stays put: crossing it flips the
+  ;; direction on the factor's sign, which no rewrite rule can decide.
+  ;; Nothing is pushed or popped — the entry is not even re-normalized.
+  (maf-push "a x <= y")
+  (jump-at " x <" 3)
+  (call-interactively 'maf-jump-equals)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "a x <= y"))
   (cl-assert (= (calc-stack-size) 1))
+  (calc-pop (calc-stack-size))
+
+  ;; Nor an exponent: a^2 <= y says nothing about a <= sqrt(y).
+  (maf-push "a^2 <= y")
+  (jump-at "2 <" 3)
+  (call-interactively 'maf-jump-equals)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "a^2 <= y"))
+  (calc-pop (calc-stack-size))
+
+  ;; The additive test is on the path to the relation, not the whole
+  ;; entry: a x is a factor even though the sum above it is additive.
+  (maf-push "b + a x <= y")
+  (jump-at " x <" 3)
+  (call-interactively 'maf-jump-equals)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "b + a x <= y"))
+  (calc-pop (calc-stack-size))
+
+  ;; A multiplicative jump under = is untouched by that restriction.
+  (maf-push "a x = y")
+  (jump-at " x =" 3)
+  (call-interactively 'maf-jump-equals)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "a = y / x"))
   (calc-pop (calc-stack-size))
 
   ;; No relation at all: nothing to move, and nothing pushed or popped.
