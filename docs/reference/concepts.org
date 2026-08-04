@@ -333,7 +333,12 @@ replaces exactly what the base target would have replaced.
 
 Commands whose body consumes or produces relations whole (solve,
 mapeq, the relation builders) opt out with =:map -1=, which also
-disables the direct equation branch of the cascade. At a mapped equation
+disables the direct equation branch of the cascade. So do the
+concatenators (the =|= family), for a different reason: they take a
+relation as one /element/ of the vector they build, so two stacked
+equations give =[x = 1, y = 2]= — calc's own spelling of a system —
+where mapping would pair them into the single equation =[x, y] = [1,
+2]=. At a mapped equation
 target, a relation argument ordinarily pairs its two sides with the
 subject's sides — and signals unless both relations are =. =:pair -1=
 keeps that argument whole without disabling per-side mapping of the
