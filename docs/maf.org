@@ -111,7 +111,10 @@
     One key, not three: W and \" were the same command twice over, and
     ^3 is M-3.
   - [-] Power shortcuts (M-2..M-9) — insert ^n. M-' (^()) not ported.
-  - [ ] my/calc-edit-toggle-brackets (S-up/down)
+  - [X] my/calc-edit-toggle-brackets (S-up/down) — =maf-editplus-toggle-brackets=.
+    Both ends move together; the legacy retyped the one character under
+    point and left the pair mismatched. Works from inside the group too,
+    not only with point parked on a delimiter.
   - [ ] my/calc-edit-jump-sides — jump between the sides of =, inserting \" = \" if absent
   - [-] my/calc-edit-insert-pi (P) done; J → * not
   - [ ] my/calc-edit-duplicate (M-RET) — duplicate line, comma-aware (vector entry)
