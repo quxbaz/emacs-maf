@@ -51,11 +51,10 @@
    stays thin so plain typing works.
    - [X] P → pi
    - [ ] M-2..M-9
-   - [ ] Q → sqrt
-   - [ ] M-' → ^n and ^()
+   - [ ] : → ^n (increments)
    - [-] \ L | wrap helpers around the preceding expression or region.
      - [X] L → =maf-editplus-wrap-ln=, over the same term scan M-o uses.
-     - [ ] \ → sqrt, | → abs, on that same helper
+     - [ ] Q → sqrt, | → abs, on that same helper
        (=maf-editplus--apply-function=).
    - [X] my/calc-edit-wrap-parens
 
