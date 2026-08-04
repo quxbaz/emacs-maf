@@ -59,9 +59,9 @@
 ** TODO export entry as latex
 ** TODO issue with map, mapping actual commands
    eg, can't map command against vector
-** TODO (mafcmd-equal-to), prefer to write the variable on the LHS in easy, simple, unambiguous cases
-** TODO (mafcmd-solve-for) should also prefer to write the isolated variable on LHS
-** TODO bind ` to open new entry at home. also set point
+** IN-PROGRESS (mafcmd-equal-to), prefer to write the variable on the LHS in easy, simple, unambiguous cases
+** IN-PROGRESS (mafcmd-solve-for) should also prefer to write the isolated variable on LHS
+** IN-PROGRESS bind ` to open new entry at home. also set point
 ** IN-PROGRESS rebind C-RET to existing C-c C-c
 
 * Port
