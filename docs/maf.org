@@ -33,15 +33,8 @@
     - [ ] factor
     - [ ] target-line
   - maf-editplus module
-    - [-] tab to break out of parens
-    - [ ] make s-tab work also to move backward
+    - [X] tab to break out of parens
   - formulas
-    - [X] q to quit filtered results mode
-    - [X] bind tab to move between groups
-    - [X] add recents group (should be the first group)
-      - shows recently used formulas from current session (don't persist across
-        sessions)
-    - [X] filter in real-time as search string changes
 
 * Low-hanging fruit
 ** TODO Port the edit-mode insertions (modules/maf-editplus.el)
