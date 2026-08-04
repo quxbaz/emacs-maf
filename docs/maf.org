@@ -57,7 +57,6 @@
 ** TODO (mafcmd-equal-to), prefer to write the variable on the LHS in easy, simple, unambiguous cases
 ** TODO (mafcmd-solve-for) should also prefer to write the isolated variable on LHS
 ** TODO bind ` to open new entry at home. also set point
-** TODO rebind C-RET to existing C-c C-c
 
 * Port
   - [-] Port my/calc/* features one-by-one.
