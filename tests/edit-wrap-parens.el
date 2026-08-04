@@ -90,7 +90,9 @@
   (call-interactively 'maf-edit-discard)
 
   (call-interactively 'maf-edit-add-entry-below)
-  (progn (execute-kbd-macro "1+3:4") nil)
+  ;; Typed as a fraction actually is: `;' is the colon key here, `:'
+  ;; itself having gone to `maf-editplus-raise-power'.
+  (progn (execute-kbd-macro "1+3;4") nil)
   (progn (backward-char 1) nil)
   (call-interactively 'maf-editplus-wrap-parens)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
