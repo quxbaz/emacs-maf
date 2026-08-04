@@ -18,7 +18,10 @@
 ;;   joining two entries' lines       merge them into one entry
 ;;
 ;; Deleting delimiters never restructures — an unbalanced entry just
-;; fails to parse at commit. Level-number prefixes are machine-owned:
+;; fails to parse at commit. An entry whose commas are its own is the
+;; one shape commit completes rather than rejects: 1,2,3 becomes the
+;; vector [1, 2, 3], calc having no other reading for a comma at the
+;; top level. Level-number prefixes are machine-owned:
 ;; the cursor skips them, and a repair pass renumbers and re-stamps
 ;; them after every change; an entry whose text differs from what is
 ;; on the stack shows N* instead of N:, and a new entry not on the
@@ -312,6 +315,49 @@ negative."
         ((or ?\( ?\[ ?\{) (setq d (1+ d)))
         ((or ?\) ?\] ?\}) (setq d (1- d)))))
     d))
+
+;;; Implicit vectors
+
+(defun maf-edit--top-level-comma-p (text)
+  "Non-nil when TEXT holds a comma with nothing enclosing it.
+A comma inside delimiters belongs to whatever encloses it — an
+argument list, a vector already written out, calc's complex pair
+\(1,2) — and a comma inside a string literal is just text. Only a
+comma at the top level is one nothing has claimed.
+
+Any closer matches any opener, as everywhere else in maf-edit."
+  (let ((i 0) (n (length text)) (d 0) (found nil))
+    (while (and (not found) (< i n))
+      (let ((c (aref text i)))
+        (cond
+         ;; A string's contents are not syntax. An unclosed quote eats
+         ;; the rest of the text, which is the safe way to be wrong:
+         ;; the entry is left alone and calc reports on it.
+         ((eq c ?\")
+          (setq i (1+ i))
+          (while (and (< i n) (not (eq (aref text i) ?\")))
+            (setq i (if (eq (aref text i) ?\\) (+ i 2) (1+ i)))))
+         ((memq c '(?\( ?\[ ?\{)) (setq d (1+ d)))
+         ((memq c '(?\) ?\] ?\})) (setq d (max 0 (1- d))))
+         ((and (eq c ?,) (zerop d)) (setq found t))))
+      (setq i (1+ i)))
+    found))
+
+(defun maf-edit--implicit-vector (text)
+  "TEXT wrapped in brackets when a top-level comma makes it a vector.
+Typing 1,2,3 means the vector — the brackets are punctuation calc
+needs and the writer does not — so commit supplies them.
+
+Never a change of meaning, only of outcome: calc has no reading for a
+comma at the top level, so every text this touches is one that would
+otherwise have failed to parse. Text that already parses is text this
+leaves alone.
+
+Whatever the commas separate comes along: [1,2],[3,4] is the matrix,
+and x=1,y=2 the vector of both equations."
+  (if (maf-edit--top-level-comma-p text)
+      (concat "[" text "]")
+    text))
 
 ;;; Structural newline classification
 
@@ -954,11 +1000,19 @@ before the command when the session ends."
 Entries whose text is untouched keep their value objects and
 selections; changed or new text is parsed in the current input modes
 and committed exactly as written, never simplified — 1 + 2 + x stays
-1 + 2 + x. If any entry fails to parse the commit is blocked: the
-offenders are underlined and editing continues, with point sent to the
-first offender — unless it is already inside one, where it stays put
-and that entry's error is the one reported. The whole commit is one
-undo group."
+1 + 2 + x.
+
+An entry whose commas are its own — 1,2,3 — commits as the vector
+[1, 2, 3]: the brackets are punctuation calc wants and the writer does
+not, so commit supplies them (`maf-edit--implicit-vector'). Only a
+comma at the top level counts, so an argument list and a vector
+already written out are untouched.
+
+If any entry fails to parse the commit is blocked: the offenders are
+underlined and editing continues, with point sent to the first
+offender — unless it is already inside one, where it stays put and
+that entry's error is the one reported. The whole commit is one undo
+group."
   (interactive)
   (unless maf-edit-mode (user-error "maf-edit is not active"))
   (let ((maf-edit--inhibit t)
@@ -976,7 +1030,8 @@ undo group."
           (push (overlay-get o 'maf-edit-sel) sels))
          (t
           (let ((v (math-read-expr
-                    (funcall maf-edit-parse-text-function text))))
+                    (maf-edit--implicit-vector
+                     (funcall maf-edit-parse-text-function text)))))
             (if (eq (car-safe v) 'error)
                 (push (cons o (if (zerop (maf-edit--string-net-depth text))
                                   (nth 2 v)
