@@ -64,10 +64,10 @@
 
 * PORT:stack.el
 ** Motion
-   - [ ] my/calc-forward-noun / my/calc-backward-noun (M-f/M-b) — next/previous number or
+   - [-] my/calc-forward-noun / my/calc-backward-noun (M-f/M-b) — next/previous number or
      variable, skipping function names; fix the line-prefix bug while at it (see Bugs)
 ** Variables
-   - [ ] my/calc-recall-browse (p) — completing-read recall, values as annotations
+   - [-] my/calc-recall-browse (p) — completing-read recall, values as annotations
      (drop the ivy-specific TAB cycling)
 ** Polynomials
    - [ ] Polynomial term ordering — math-normalize advice keeping sums in descending degree
@@ -75,10 +75,6 @@
    - [ ] calcFunc-hypot advice — symbolic args: sqrt(abssqr(a) + abssqr(b));
      still open, f h alone. maf--cath needs none of it: squaring under a
      structural math-normalize already reduces sqrt(2)^2 to 2.
-
-* PORT:selection.el
-  - [ ] my/calc-sel-distribute (j D) — contextual, no-simplify, frac→division fix (see BACKLOG)
-  - [ ] my/calc-sel-merge (j M) — contextual, unselect after
 
 * PORT:edit.el
   maf-edit replaces the calc-edit buffer workflow itself; these are the
@@ -107,13 +103,6 @@
 * Bugs
 ** BUG (my/calc-backward-noun) and (my/calc-forward-noun) should ignore line prefix.
 
-* Package
-  Config file with all config settings and default values
-  Alternative graphing
-  Alternative trail. Should support time travel and finding old single entries.
-  Use transient mode for prefix commands
-  Swap _ and -
-
 * Saved for later
   - Rebind formula manager
   - Rebind module manager
@@ -123,7 +112,6 @@
 * Cleanup
   - [ ] Delete my/calc
   - [ ] Use stock bindings
-  - [ ] Generate tests to cover maf. Step tests when testing end-to-end. Unit
-    tests for basic stuff.
+  - [ ] Generate tests full coverage
   - [ ] Remove seed entries
   - [ ] Remove project-init.el
