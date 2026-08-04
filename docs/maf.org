@@ -52,7 +52,7 @@
 
 * Todo
 # NOW
-** TODO move all options to unified configuration view.
+** TODO move all options to unified configuration view
    - Free up option prefix bindings (eg, m).
 
 * Port
