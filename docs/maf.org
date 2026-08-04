@@ -34,11 +34,11 @@
     - [ ] target-line
   - maf-editplus module
   - formulas module
-    - [-] tab to nav between items not groups
-    - [-] don't show details pane by default
-      - [-] bind details window to `d` and `?`
+    - [X] tab to nav between items not groups
+    - [X] don't show details pane by default
+      - [X] bind details window to `d` and `?`
       - doesn't focus, disappears on movement
-    - [-] M-n/p shouldn't cycle from start/end position. it should not be
+    - [X] M-n/p shouldn't cycle from start/end position. it should not be
       allowed to move past these endpoints.
     - [ ] C-n/p should still work from filter minibuffer
     - [ ] start in filter mode
@@ -53,7 +53,6 @@
 ** TODO export entry as latex
 ** TODO issue with map, mapping actual commands
    eg, can't map command against vector
-** IN-PROGRESS bind ` to open new entry at home. also set point
 ** IN-PROGRESS rebind C-RET to existing C-c C-c
 
 * Port

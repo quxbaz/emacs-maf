@@ -4,7 +4,7 @@
 ;;
 ;; maf-edit: wdired-style in-place editing of the calc stack, packaged
 ;; as the `edit' module. The module toggle only installs the entry
-;; bindings (SPC / C-<return> / S-<return> / "(") into `maf-mode-map';
+;; bindings (SPC / ` / C-<return> / S-<return> / "(") into `maf-mode-map';
 ;; the editing itself is the on-demand `maf-edit-mode' session below.
 ;; See `maf-modules'.
 ;;
@@ -76,7 +76,23 @@
   "Point snapshot to restore when this edit session ends, or nil.
 Set by `maf-edit-add-entry' (the quick-add gesture) before entering;
 commit and discard both consult it, returning point to where it was
-before the edit began instead of keeping its in-edit position.")
+before the edit began instead of keeping its in-edit position.
+`maf-edit-add-entry-at-home' stores a home snapshot here instead,
+whose restore is a no-op: that gesture's landing is
+`maf-edit--home-return's, not this one's.")
+
+(defvar-local maf-edit--return-home nil
+  "Non-nil when this edit session ends with point parked home.
+Set by `maf-edit-add-entry-at-home', whose gesture is a trip home: the
+session ends on the dot, commit and discard alike, rather than on the
+entry that was typed or back where point started. A point snapshot
+here rather than t names the place the gesture left, which is marked
+once the session ends — the mark being what returns there.
+
+The mark goes down at the end rather than before the session because
+nothing set earlier survives to mean anything: the exit's
+`calc-refresh' and the commit's pop-push both rewrite the entry lines
+out from under a marker.")
 
 (defvar-local maf-edit--from-home nil
   "Non-nil when `maf-edit' opened this session with point at home.
@@ -901,16 +917,38 @@ from."
              (skip-chars-forward " "))
     (maf--point-restore placement)))
 
+(defun maf-edit--home-return (spec)
+  "Finish a home-landing quick-add gesture, SPEC as `maf-edit--return-home'.
+Point is parked on the dot — where calc parks it after every command,
+and where `maf-go-home' lands — rather than left wherever the
+re-render put it. A SPEC that is a point snapshot also gets a silent
+mark at the place the gesture left, so a single `pop-to-mark-command'
+\(or `maf-go-home' pressed at home) returns there. Call this on the
+re-rendered stack, never before; nil is a no-op."
+  (when spec
+    (when (consp spec)
+      (save-excursion
+        (maf--point-restore spec)
+        (maf--mark-before-home)))
+    (calc-cursor-stack-index 0)
+    ;; The dot sits past the line-number margin when numbering is on,
+    ;; at the line's start when it is off — as in `maf-go-home'.
+    (skip-chars-forward " ")))
+
 (defun maf-edit--exit ()
   "Restore the calc buffer: the body of turning `maf-edit-mode' off.
 Drops all editing state and re-renders from the (untouched) stack —
 discard semantics; `maf-edit-commit' parses before getting here and
 pushes after. Point lands where `maf-edit--exit-placement' says: the
 in-edit position, the pre-edit one a quick-add session stashed, or
-home for a session opened there."
-  (let ((placement (maf-edit--exit-placement)))
+home for a session opened there; a home-landing quick-add
+\(`maf-edit--return-home') then parks it on the dot and marks where it
+left."
+  (let ((placement (maf-edit--exit-placement))
+        (homespec maf-edit--return-home))
     (setq maf-edit--return nil
-          maf-edit--from-home nil)
+          maf-edit--from-home nil
+          maf-edit--return-home nil)
     (remove-hook 'after-change-functions #'maf-edit--after-change t)
     (remove-hook 'post-command-hook #'maf-edit--post-command t)
     (setq maf-edit--pending-repair nil)
@@ -936,7 +974,8 @@ home for a session opened there."
     ;; positions no longer match calc-stack.
     (maf-hl-mode (if (plist-get maf-edit--saved :hl) 1 -1))
     (setq maf-edit--saved nil)
-    (maf-edit--place-point placement)))
+    (maf-edit--place-point placement)
+    (maf-edit--home-return homespec)))
 
 (defun maf-edit ()
   "Toggle in-place editing of the calc stack.
@@ -999,6 +1038,39 @@ returns to where it was before this command ran instead of staying in
 the edited text."
   (interactive)
   (maf-edit--enter-for-add)
+  (maf-edit--open-at-dot))
+
+(defun maf-edit-add-entry-at-home ()
+  "Enter maf-edit with a fresh entry at the bottom, landing point home.
+
+  2:  a + b|        3:  a + b
+  1:  c        =>   2:  c
+                    1:  z
+                        .|
+
+`maf-edit-add-entry's blank line just above the dot, point on its
+content column ready to type — from anywhere, including an empty
+stack. Where the two commands differ is where point is left when the
+session ends: this one is a trip home, so point stays there, below the
+committed entry, and the place it left is marked. A single
+\\[pop-to-mark-command] returns to it, as does \\[maf-go-home], which
+bounces back to the mark when pressed at home. Pressed at home there
+is nothing to mark and nothing to return from.
+
+Discarding lands home too — the trip out happened either way, and the
+mark is still the way back."
+  (interactive)
+  (when maf-edit-mode
+    (user-error "maf-edit is already active"))
+  ;; t rather than nil at home: the session still lands on the dot,
+  ;; there is just no journey to mark.
+  (let ((origin (if (maf--at-home-p) t (maf--point-snapshot))))
+    (maf-edit-mode 1)
+    ;; A home snapshot makes the exit's point restore a no-op, leaving
+    ;; the landing to `maf-edit--home-return' rather than to the
+    ;; position point held inside the edited text.
+    (setq maf-edit--return (list (cons :affinity 'home))
+          maf-edit--return-home origin))
   (maf-edit--open-at-dot))
 
 (defun maf-edit-add-entry-below ()
@@ -1134,8 +1206,15 @@ session `maf-edit' opened there."
       (setq vals (nreverse vals)
             sels (nreverse sels))
       ;; Where point lands, read before the mode exit consumes the
-      ;; session state it rests on.
-      (let ((placement (maf-edit--exit-placement)))
+      ;; session state it rests on. A home-landing quick-add is taken
+      ;; away from the exit rather than read alongside: the pop-push
+      ;; below replaces every entry line, so both the dot the exit
+      ;; would park on and the marker it would set are stale by the
+      ;; time the user sees the stack. It happens down here instead,
+      ;; once the stack they are left looking at is drawn.
+      (let ((placement (maf-edit--exit-placement))
+            (homespec maf-edit--return-home))
+        (setq maf-edit--return-home nil)
         ;; Turning the mode off restores the buffer and re-renders from
         ;; the unchanged stack — required before the pop-push, which
         ;; edits the buffer by entry heights the edited text no longer
@@ -1144,6 +1223,7 @@ session `maf-edit' opened there."
         (calc-wrapper
          (calc-pop-push-record-list (calc-stack-size) "edit" vals 1 sels))
         (maf-edit--place-point placement)
+        (maf-edit--home-return homespec)
         (message "maf-edit: committed %d entr%s"
                  (length vals) (if (= 1 (length vals)) "y" "ies"))))))
 
@@ -1158,10 +1238,15 @@ session `maf-edit' opened there."
 
 (define-minor-mode maf-use-edit-mode
   "Global minor mode making maf-edit's entry keys live in `maf-mode-map'.
-Enabled, SPC / C-<return> / S-<return> / ( run the maf-edit entry
+Enabled, SPC / ` / C-<return> / S-<return> / ( run the maf-edit entry
 commands; disabled, they cede back to calc. SPC shadows one of
 calc-enter's two keys (RET still runs it) and enters editing, where
 `maf-edit-mode-map's RET commits; the rest are the quick-add gestures.
+C-<return> opens an entry at the bottom of the stack and returns point
+to where it was; ` is the same opening taken as a trip home — point
+lands home and a mark holds the place it left. It shadows calc-edit,
+whose whole job the module takes over: SPC edits the stack in place
+instead of in a separate buffer.
 S-<return> opens an entry below point; a terminal that cannot deliver
 the key reaches the command by name, C-j being left to calc-over.
 ( opens a bracketed vector
@@ -1182,10 +1267,12 @@ on-demand `maf-edit-mode' editing session they lead into."
   (if maf-use-edit-mode
       (progn
         (define-key maf-mode-map (kbd "SPC") #'maf-edit)
+        (define-key maf-mode-map (kbd "`") #'maf-edit-add-entry-at-home)
         (define-key maf-mode-map (kbd "C-<return>") #'maf-edit-add-entry)
         (define-key maf-mode-map (kbd "S-<return>") #'maf-edit-add-entry-below)
         (define-key maf-mode-map (kbd "(") #'maf-edit-add-vector))
     (define-key maf-mode-map (kbd "SPC") nil)
+    (define-key maf-mode-map (kbd "`") nil)
     (define-key maf-mode-map (kbd "C-<return>") nil)
     (define-key maf-mode-map (kbd "S-<return>") nil)
     (define-key maf-mode-map (kbd "(") nil)))
@@ -1194,6 +1281,6 @@ on-demand `maf-edit-mode' editing session they lead into."
 ;; works on its own without it.
 (when (require 'maf-module nil t)
   (maf-register-module 'maf-edit #'maf-use-edit-mode
-                       "Edit the stack in place as plain text (SPC / C-RET / S-RET)."))
+                       "Edit the stack in place as plain text (SPC / ` / C-RET / S-RET)."))
 
 (provide 'maf-edit)
