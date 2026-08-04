@@ -71,9 +71,10 @@
 ;; read them.
 ;;
 ;; The module toggle is `maf-use-editvars-mode', registered as
-;; `maf-editvars' (see `maf-modules'). It is deliberately not enabled
-;; by default: this changes what typed text means, and that should be
-;; asked for.
+;; `maf-editvars' (see `maf-modules') and enabled by default. It does
+;; change what typed text means, but only inside maf-edit sessions and
+;; only in the Normal language; a session that wants calc's plain
+;; reading back drops it from `maf-modules'.
 
 (require 'cl-lib)
 (require 'seq)
@@ -502,10 +503,9 @@ session opens, so an expression loaded from the stack survives being
 edited and committed. Disabled, and in every language but Normal,
 entries are read as plain calc input and nothing here applies.
 
-This is the `maf-editvars' module (see `maf-modules'), and it is not
-one of the defaults: it changes what typed text means, so it is opt
-in. It affects maf-edit sessions only — the stack, the trail, and
-algebraic entry at calc's own prompt are untouched."
+This is the `maf-editvars' module (see `maf-modules'), one of the
+defaults. It affects maf-edit sessions only — the stack, the trail,
+and algebraic entry at calc's own prompt are untouched."
   :global t
   :group 'maf
   (if maf-use-editvars-mode
