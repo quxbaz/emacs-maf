@@ -33,8 +33,7 @@
     - [ ] factor
     - [ ] target-line
   - maf-editplus module
-    - [X] tab to break out of parens
-  - formulas
+  - formulas module
     - [-] tab to nav between items not groups
     - [-] don't show details pane by default
       - [-] bind details window to `d` and `?`
@@ -59,7 +58,6 @@
 ** TODO (mafcmd-solve-for) should also prefer to write the isolated variable on LHS
 ** TODO bind ` to open new entry at home. also set point
 ** TODO rebind C-RET to existing C-c C-c
-** TODO P edit command should insert \pi (if module is active)
 
 * Port
   - [-] Port my/calc/* features one-by-one.
@@ -82,19 +80,8 @@
      structural math-normalize already reduces sqrt(2)^2 to 2.
 
 * PORT:edit.el
-  maf-edit replaces the calc-edit buffer workflow itself; these are the
-  in-entry conveniences worth recreating in maf-edit / digit entry:
-  - [ ] Wrap helpers (\\ L |) — sqrt/ln/abs around the preceding expression or region
-  - [ ] my/calc-edit-square-dwim / -cube-dwim (: W \") — insert ^2/^3; repeats increment
-  - [ ] Power shortcuts (M-2..M-9, M-') — insert ^n / ^()
-  - [ ] my/calc-edit-toggle-brackets (S-up/down)
-  - [ ] my/calc-edit-jump-sides — jump between the sides of =, inserting \" = \" if absent
-  - [ ] my/calc-edit-insert-pi (P); J → *
-  - [ ] my/calc-edit-duplicate (M-RET) — duplicate line, comma-aware (vector entry)
+  - [-] my/calc-edit-toggle-brackets (S-up/down)
   - [ ] my/calc-duplicate-paren-expr (C-RET) — duplicate innermost paren group
-  Already covered: edit-dwim/edit-selection → maf-edit (SPC); no-simplify
-  commit is maf-edit's default commit path; ; → : is
-  maf-edit-insert-colon, with the literal ; moved to M-;.
 
 * PORT:plot.el
   - [ ] my/calc-graph-quick / -with-range (g l / g i) — plot the top entry straight to
