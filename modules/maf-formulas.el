@@ -214,7 +214,7 @@ Groups are separated by a blank line."
     (erase-buffer)
     (setq header-line-format
           (if (string-empty-p maf-formulas--query)
-              "maf-formulas — RET inserts · / filters · TAB next group · q quits"
+              "maf-formulas — RET inserts · / filters · q quits"
             (format "maf-formulas — filter: %s  (q clears)" maf-formulas--query)))
     (let ((w (apply #'max 0 (mapcar (lambda (f) (length (maf-formulas--title f))) fs))))
       (dolist (g groups)
@@ -399,20 +399,17 @@ narrowing and \\[keyboard-quit] restores the one in effect before."
       (user-error "No previous formula"))))
 
 (defun maf-formulas-next-group ()
-  "Move to the next category header, wrapping past the last one.
-TAB walks the groups, so it cycles rather than stopping dead at the
-end: repeated presses tour the categories."
+  "Move to the next category header, stopping at the last one."
   (interactive)
   (let* ((p (line-beginning-position))
          (starts (maf-formulas--group-starts))
-         (next (or (seq-find (lambda (s) (> s p)) starts) (car starts))))
-    (if next (goto-char next) (user-error "No groups"))))
+         (next (seq-find (lambda (s) (> s p)) starts)))
+    (if next (goto-char next) (user-error "No next group"))))
 
 (defun maf-formulas-prev-group ()
-  "Move to this category's header, or the previous one, wrapping around.
+  "Move to this category's header, or the previous one, stopping at the first.
 Like paragraph motion: the first press jumps to the current category
-header, a second to the header before it; from the first header it
-wraps to the last."
+header, a second to the header before it."
   (interactive)
   (let* ((p (line-beginning-position))
          (starts (maf-formulas--group-starts))
@@ -420,8 +417,7 @@ wraps to the last."
          (before (car (last (seq-filter (lambda (s) (< s p)) starts)))))
     (cond ((and cur (< cur p)) (goto-char cur))
           (before (goto-char before))
-          (starts (goto-char (car (last starts))))
-          (t (user-error "No groups")))))
+          (t (user-error "No previous group")))))
 
 (defun maf-formulas-quit ()
   "Quit the formula menu, closing the detail pane too.
@@ -455,15 +451,15 @@ second `q' then leaves. `maf-formulas-quit' always quits outright."
 (define-key maf-formulas-mode-map (kbd "/")   #'maf-formulas-filter)
 (define-key maf-formulas-mode-map (kbd "g")   #'maf-formulas-clear-filter)
 (define-key maf-formulas-mode-map (kbd "q")   #'maf-formulas-quit-or-clear-filter)
-;; Two levels of motion: n/p/j/k step formula to formula (headers and
-;; the blank lines between groups are skipped), TAB steps group to
-;; group. M-n/M-p keep the group motion on the Emacs-shaped key too.
+;; Two levels of motion: n/p/j/k and TAB/S-TAB step formula to formula
+;; (headers and the blank lines between groups are skipped), M-n/M-p
+;; step group to group.
 (define-key maf-formulas-mode-map (kbd "n")   #'maf-formulas-next-item)
 (define-key maf-formulas-mode-map (kbd "p")   #'maf-formulas-prev-item)
 (define-key maf-formulas-mode-map (kbd "j")   #'maf-formulas-next-item)
 (define-key maf-formulas-mode-map (kbd "k")   #'maf-formulas-prev-item)
-(define-key maf-formulas-mode-map (kbd "TAB")       #'maf-formulas-next-group)
-(define-key maf-formulas-mode-map (kbd "<backtab>") #'maf-formulas-prev-group)
+(define-key maf-formulas-mode-map (kbd "TAB")       #'maf-formulas-next-item)
+(define-key maf-formulas-mode-map (kbd "<backtab>") #'maf-formulas-prev-item)
 (define-key maf-formulas-mode-map (kbd "M-n") #'maf-formulas-next-group)
 (define-key maf-formulas-mode-map (kbd "M-p") #'maf-formulas-prev-group)
 
