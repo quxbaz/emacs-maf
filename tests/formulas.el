@@ -42,6 +42,9 @@
     (cl-assert (eq (key-binding (kbd "o")) #'maf-formulas-show-detail))
     (cl-assert (eq (key-binding (kbd "d")) #'maf-formulas-show-detail))
     (cl-assert (eq (key-binding (kbd "?")) #'maf-formulas-show-detail))
+    ;; The shifted keys pin the pane open.
+    (cl-assert (eq (key-binding (kbd "O")) #'maf-formulas-toggle-detail))
+    (cl-assert (eq (key-binding (kbd "D")) #'maf-formulas-toggle-detail))
     (maf-formulas--update-detail)
     (with-current-buffer maf-formulas--detail-buffer
       (cl-assert (> (buffer-size) 0)))

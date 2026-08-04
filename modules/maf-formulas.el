@@ -6,8 +6,9 @@
 ;; grouped by category, each shown beside its form. `o' (or `d', `?') pops
 ;; up a detail pane for the formula at point — the formula in Big
 ;; display, a description, and what each variable means — without
-;; taking focus; it closes again as soon as point moves. RET pushes
-;; the formula at point onto the calc stack.
+;; taking focus; it closes again as soon as point moves. `O' (or `D')
+;; pins the pane instead: it stays up and follows point until toggled
+;; off. RET pushes the formula at point onto the calc stack.
 ;;
 ;; A formula is a plist. Only :expr is required; the rest are optional
 ;; and the detail pane renders just what is present:
@@ -215,7 +216,7 @@ Groups are separated by a blank line."
     (erase-buffer)
     (setq header-line-format
           (if (string-empty-p maf-formulas--query)
-              "maf-formulas — RET inserts · / filters · o details · q quits"
+              "maf-formulas — RET inserts · / filters · o details · O pins · q quits"
             (format "maf-formulas — filter: %s  (q clears)" maf-formulas--query)))
     (let ((w (apply #'max 0 (mapcar (lambda (f) (length (maf-formulas--title f))) fs))))
       (dolist (g groups)
@@ -240,9 +241,13 @@ Groups are separated by a blank line."
     (goto-char (point-min))
     (while (and (not (eobp)) (not (get-text-property (point) 'maf-formula)))
       (forward-line 1))
-    ;; A re-render changes what every line means; a detail pane left up
-    ;; would be describing the old view, so it closes with it.
-    (maf-formulas--close-detail)))
+    ;; A re-render changes what every line means; a glance pane left up
+    ;; would be describing the old view, so it closes with it. A pinned
+    ;; pane instead re-renders for where point landed.
+    (if maf-formulas--detail-pinned
+        (progn (setq maf-formulas--detail-line (line-beginning-position))
+               (maf-formulas--update-detail))
+      (maf-formulas--close-detail))))
 
 ;;; The detail pane
 
@@ -250,6 +255,11 @@ Groups are separated by a blank line."
   "Beginning of the line the detail pane was shown for, or nil.
 Set by `maf-formulas-show-detail'; `maf-formulas--detail-on-move'
 compares point against it to close the pane once point leaves.")
+
+(defvar-local maf-formulas--detail-pinned nil
+  "Non-nil while the detail pane is pinned open.
+Toggled by `maf-formulas-toggle-detail'. Pinned, the pane follows
+point as it moves instead of closing, and survives re-renders.")
 
 (defun maf-formulas--fill (text width)
   "TEXT filled to WIDTH and indented two spaces, for the description.
@@ -334,20 +344,28 @@ list's own layout."
       (delete-window win))))
 
 (defun maf-formulas--detail-on-move ()
-  "Close the detail pane once point leaves its line; on `post-command-hook'.
-The pane is a glance, not a layout: it appears on request
-\(`maf-formulas-show-detail') and any movement dismisses it."
-  (when (and maf-formulas--detail-line
-             (/= (line-beginning-position) maf-formulas--detail-line))
+  "Track point for the detail pane; on `post-command-hook'.
+Unpinned, the pane is a glance, not a layout: it appears on request
+\(`maf-formulas-show-detail') and any movement dismisses it. Pinned
+\(`maf-formulas-toggle-detail'), it re-renders for the new line
+instead."
+  (cond
+   (maf-formulas--detail-pinned
+    (unless (eq (line-beginning-position) maf-formulas--detail-line)
+      (setq maf-formulas--detail-line (line-beginning-position))
+      (maf-formulas--update-detail)))
+   ((and maf-formulas--detail-line
+         (/= (line-beginning-position) maf-formulas--detail-line))
     (setq maf-formulas--detail-line nil)
-    (maf-formulas--close-detail)))
+    (maf-formulas--close-detail))))
 
 (defun maf-formulas-keyboard-quit ()
-  "Close the detail pane, then quit as \\[keyboard-quit] does.
-On the menu's \\`C-g': the pane is a glance, and the quit gesture
-should dismiss it without having to move point."
+  "Close the detail pane (pinned or not), then quit as \\[keyboard-quit] does.
+On the menu's \\`C-g': the quit gesture dismisses the pane without
+having to move point, and unpins it if it was pinned."
   (interactive)
-  (setq maf-formulas--detail-line nil)
+  (setq maf-formulas--detail-line nil
+        maf-formulas--detail-pinned nil)
   (maf-formulas--close-detail)
   (keyboard-quit))
 
@@ -369,6 +387,19 @@ category header it previews the group's first formula."
                            (inhibit-same-window . t)))
     (maf-formulas--update-detail)
     (setq maf-formulas--detail-line (line-beginning-position))))
+
+(defun maf-formulas-toggle-detail ()
+  "Toggle keeping the detail pane open.
+Pinned, the pane stays up and follows point from formula to formula;
+toggled off, it closes. The glance keys (\\<maf-formulas-mode-map>\\[maf-formulas-show-detail]) are untouched: they
+still show a pane that closes on the next move."
+  (interactive)
+  (if maf-formulas--detail-pinned
+      (progn (setq maf-formulas--detail-pinned nil
+                   maf-formulas--detail-line nil)
+             (maf-formulas--close-detail))
+    (setq maf-formulas--detail-pinned t)
+    (maf-formulas-show-detail)))
 
 ;;; Commands
 
@@ -530,6 +561,9 @@ second `q' then leaves. `maf-formulas-quit' always quits outright."
 (define-key maf-formulas-mode-map (kbd "o")   #'maf-formulas-show-detail)
 (define-key maf-formulas-mode-map (kbd "d")   #'maf-formulas-show-detail)
 (define-key maf-formulas-mode-map (kbd "?")   #'maf-formulas-show-detail)
+;; The shifted keys pin what the unshifted ones glance at.
+(define-key maf-formulas-mode-map (kbd "O")   #'maf-formulas-toggle-detail)
+(define-key maf-formulas-mode-map (kbd "D")   #'maf-formulas-toggle-detail)
 (define-key maf-formulas-mode-map (kbd "C-g") #'maf-formulas-keyboard-quit)
 ;; Two levels of motion: n/p/j/k and TAB/S-TAB step formula to formula
 ;; (headers and the blank lines between groups are skipped), M-n/M-p
@@ -550,7 +584,7 @@ repeated in a \"Recent\" group at the top, each shown beside its
 form. \\<maf-formulas-mode-map>\\[maf-formulas-insert]
 pushes the formula at point onto the stack, \\[maf-formulas-next-item] and \\[maf-formulas-prev-item] step
 between formulas, \\[maf-formulas-next-group] between groups, \\[maf-formulas-show-detail] pops up the detail
-pane (movement dismisses it), \\[maf-formulas-filter]
+pane (movement dismisses it), \\[maf-formulas-toggle-detail] pins it open following point, \\[maf-formulas-filter]
 filters as you type, \\[maf-formulas-clear-filter] clears the filter, \\[maf-formulas-quit-or-clear-filter] clears the
 filter when narrowed and quits otherwise."
   (setq truncate-lines t)
