@@ -78,7 +78,6 @@
 * PORT:edit.el
   maf-edit replaces the calc-edit buffer workflow itself; these are the
   in-entry conveniences worth recreating in maf-edit / digit entry:
-  - [ ] Entry history (M-p / M-n) — recall previous entries (see Todo)
   - [ ] Wrap helpers (\\ L |) — sqrt/ln/abs around the preceding expression or region
   - [ ] my/calc-edit-square-dwim / -cube-dwim (: W \") — insert ^2/^3; repeats increment
   - [ ] Power shortcuts (M-2..M-9, M-') — insert ^n / ^()
