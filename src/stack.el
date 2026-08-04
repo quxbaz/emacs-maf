@@ -1355,6 +1355,111 @@ indentation."
       (goto-char (match-end 0))
     (skip-chars-forward " ")))
 
+(defconst maf--noun-regexp
+  (concat
+   ;; A radix number, whose # would otherwise split it in two: 16#ff.
+   "[0-9]+#[0-9a-zA-Z]+"
+   ;; A plain number: digits, an optional fractional part (calc prints
+   ;; the float 1.0 as \"1.\", so the digits after the point are
+   ;; optional too), an optional exponent, and the : parts a fraction
+   ;; is printed with — 3:4, and 1:3:4 in mixed format.
+   "\\|[0-9]+\\(?:\\.[0-9]*\\)?\\(?:e[-+]?[0-9]+\\)?\\(?::[0-9]+\\)*"
+   ;; An identifier: a variable, or a function's name. A subscripted
+   ;; name carries its _ along (b_1 is one noun), but no noun starts
+   ;; with one — calc prints no such name, and Big language draws a
+   ;; radical's overbar as a run of underscores that would otherwise
+   ;; read as a variable.
+   "\\|[a-zA-Z][a-zA-Z0-9_]*")
+  "Regexp matching one noun in the calc display.
+A noun is what a term is named or valued by: a number, a variable, or a
+function's name. Operators and punctuation are what is left over, and
+what the motions step across.
+
+Matched against the rendering rather than the formula, so it is what the
+motion commands can see in every language calc prints in.")
+
+(defun maf--noun-line-positions ()
+  "Return the start position of every noun on the current line, in order.
+The line-number prefix is not scanned: the level number in \"2:  6 x\"
+is part of the margin, not of the formula, and it is the only place a
+motion by noun could stop where no term is."
+  (save-excursion
+    (let ((end (line-end-position))
+          (found nil))
+      (beginning-of-line)
+      (when (looking-at " *[0-9]+: +")
+        (goto-char (match-end 0)))
+      (while (re-search-forward maf--noun-regexp end t)
+        (push (match-beginning 0) found))
+      (nreverse found))))
+
+(defun maf--noun-position (dir)
+  "Return the position of the nearest noun start in direction DIR, or nil.
+DIR is 1 forward, -1 back. Strictly past point, so the noun point already
+sits on is never its own answer; from inside one, the step back lands on
+its start, as `backward-word' does. The scan crosses lines, over the
+whole stack."
+  (save-excursion
+    (let ((from (point)))
+      (catch 'done
+        (while t
+          (let* ((positions (maf--noun-line-positions))
+                 (hit (if (> dir 0)
+                          (seq-find (lambda (p) (> p from)) positions)
+                        (seq-find (lambda (p) (< p from)) (nreverse positions)))))
+            (when hit (throw 'done hit))
+            (if (> dir 0)
+                (progn
+                  (when (>= (line-end-position) (point-max))
+                    (throw 'done nil))
+                  (forward-line 1)
+                  ;; Every noun on the line just reached starts past this.
+                  (setq from (1- (point))))
+              (when (<= (line-beginning-position) (point-min))
+                (throw 'done nil))
+              (forward-line -1)
+              (setq from (1+ (line-end-position))))))))))
+
+(defun maf--noun-move (n)
+  "Move point over N nouns, backward when N is negative.
+Signals at the end of the stack, having taken the steps it could."
+  (let ((dir (if (< n 0) -1 1)))
+    (dotimes (_ (abs n))
+      (let ((pos (maf--noun-position dir)))
+        (unless pos
+          (user-error "No noun %s point" (if (> dir 0) "after" "before")))
+        (goto-char pos)))))
+
+(defun maf-forward-noun (&optional n)
+  "Move point to the start of the next number, variable, or function name.
+
+  2:  |6 x + 12  =>  2:  6 |x + 12
+
+Every stop is a place resolve names something: a function name lands
+point on the call it heads, so the motion reaches the sub-formulas whose
+operator is a word, not only the leaves.
+
+  1:  |1 + sqrt(x)  =>  1:  1 + |sqrt(x)  =>  1:  1 + sqrt(|x)
+
+What is left over is what the motion crosses: the operators and the
+punctuation between the terms, and the line-number prefix — the level
+number is the margin, not a term — so the walk runs from the last noun
+of one entry to the first of the next. A numeric prefix N moves that
+many nouns, backward when negative."
+  (interactive "p")
+  (maf--noun-move (or n 1)))
+
+(defun maf-backward-noun (&optional n)
+  "Move point to the start of the previous number, variable, or function name.
+
+  2:  6 x + |12  =>  2:  6 |x + 12
+
+The mirror of `maf-forward-noun', over the same stops. From inside a
+noun the step lands on its own start, as `backward-word' does, so the
+two motions retrace each other."
+  (interactive "p")
+  (maf--noun-move (- (or n 1))))
+
 (defun maf--home-drop-mark (pos)
   "Drop the mark at POS that `maf-go-home' just returned to.
 The mark the trip out pushed is spent once point is back on it, so it

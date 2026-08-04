@@ -328,6 +328,16 @@
 ;; sequences (M-m t, M-m M-t) stay reachable as m t and m M-t.
 (define-key maf-mode-map (kbd "M-m") #'maf-beginning-of-entry)
 
+;; Motion by noun — the next or previous number, variable, or function
+;; name — on the keys the global map gives `forward-word' and
+;; `backward-word', which calc leaves alone. The same gesture over the
+;; formula rather than over prose: word motion stops on the level number
+;; in the line prefix, which is margin rather than term, and it lands
+;; past the word rather than on it — where point names nothing to
+;; resolve.
+(define-key maf-mode-map (kbd "M-f") #'maf-forward-noun)
+(define-key maf-mode-map (kbd "M-b") #'maf-backward-noun)
+
 ;; Step out to the enclosing sub-formula, taking the key the global map
 ;; gives `backward-up-list' — the same gesture, over the formula rather
 ;; than over the printed parens. Calc leaves C-M-u unbound, so nothing

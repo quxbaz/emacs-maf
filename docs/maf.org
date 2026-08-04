@@ -64,8 +64,11 @@
 
 * PORT:stack.el
 ** Motion
-   - [-] my/calc-forward-noun / my/calc-backward-noun (M-f/M-b) — next/previous number or
-     variable, skipping function names; fix the line-prefix bug while at it (see Bugs)
+   Already covered: forward/backward noun → =maf-forward-noun= /
+   =maf-backward-noun= (M-f/M-b). Every number, variable and function
+   name is a stop — the name lands point on the call it heads — and the
+   operators and the line-number prefix are what the motion crosses, the
+   latter the line-prefix bug, fixed with the port.
 ** Variables
    - [-] my/calc-recall-browse (p) — completing-read recall, values as annotations
      (drop the ivy-specific TAB cycling)
@@ -99,9 +102,6 @@
   - [ ] gnuplot session defaults (index.el) — resolution 1000, qt device, seeded
     \"set grid / set nokey\"
   - [ ] g i (my/calc-graph-quick-with-range) interval form a:b should work with spaces 'a b'
-
-* Bugs
-** BUG (my/calc-backward-noun) and (my/calc-forward-noun) should ignore line prefix.
 
 * Saved for later
   - Rebind formula manager
