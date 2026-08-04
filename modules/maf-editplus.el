@@ -578,13 +578,23 @@ on what that costs.
 After a name character a space goes in first, so `x' becomes the
 product `x pi' and not the unrelated variable `xpi'. Digits get the
 space too: `2pi' would read back fine, but `x2' would not, and the
-spaced form parses the same either way."
+spaced form parses the same either way.
+
+Under the maf-editvars dialect the name goes in quoted — `\\pi' with
+the default mark — because there a run of letters is a run of factors
+and a bare pi would commit as the product p i. The quoting is that
+module's to decide (`maf-editvars-quote-name'), and with it absent or
+standing down the plain name is what goes in. The space rule is
+unaffected: `x \\pi' is the product either way."
   (interactive "p")
-  (dotimes (_ n)
-    (when (and (char-before)
-               (string-match-p "[[:alnum:]]" (string (char-before))))
-      (insert " "))
-    (insert "pi")))
+  (let ((name (if (fboundp 'maf-editvars-quote-name)
+                  (maf-editvars-quote-name "pi")
+                "pi")))
+    (dotimes (_ n)
+      (when (and (char-before)
+                 (string-match-p "[[:alnum:]]" (string (char-before))))
+        (insert " "))
+      (insert name))))
 
 ;;; The module
 

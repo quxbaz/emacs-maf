@@ -388,6 +388,22 @@ Passes TEXT through untouched wherever the dialect does not apply, so
 that the same global setting is harmless in a TeX-language buffer."
   (if (maf-editvars--applicable-p) (maf-editvars--split text) text))
 
+(defun maf-editvars-quote-name (name)
+  "NAME written so that an entry reads it as the one identifier it is.
+Marked with `maf-editvars-quote-char' where the dialect applies and a
+run of letters would otherwise split, and returned untouched
+everywhere else — the dialect off, another language, a name calc and
+the dialect already spell alike.
+
+For anything that types a name into an entry on the user's behalf.
+Text a person types they can quote themselves, and text loaded from
+the stack goes through `maf-editvars--quote'; a key that writes `pi'
+has neither route, and unquoted it would mean the product p i."
+  (if (and (maf-editvars--applicable-p)
+           (maf-editvars--pure-letters-p name))
+      (concat (maf-editvars--quote-string) name)
+    name))
+
 ;;; Rewriting a session's text on entry
 
 (defun maf-editvars--quote-entry (o)
