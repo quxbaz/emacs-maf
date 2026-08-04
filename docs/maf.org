@@ -61,7 +61,6 @@
     - [ ] edit: the same motion over the edit buffer's text. maf-mode is
       off during a maf-edit session, so C-M-u there is still the global
       =backward-up-list=, which only sees printed parens.
-** TODO are module settings persistent?
 ** IN-PROGRESS distribute and merge should operate contextually.
 ** TODO move all options to unified configuration view.
    - Free up option prefix bindings (eg, m).
