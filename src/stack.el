@@ -2645,8 +2645,9 @@ ordered relations (<, <=, >, >=) are not: moving a term across one can
 flip its direction, which no rewrite rule can decide. Use
 `mafcmd-isolate' on those.
 
-At home, where point names no entry, a selection standing anywhere is
-the term to move and the jump goes to it.
+A selection standing anywhere is the term to move, whatever entry point
+is on — it is the more deliberate gesture, and this is where the rest
+of maf takes its subject too. With none, the term under point.
 
 With no term to move — at home with nothing selected, on a whole entry,
 on a term outside any = or !=, or on one the rules do not reach — the
@@ -2654,11 +2655,15 @@ command does nothing rather than signaling."
   (interactive)
   (maf--with-calc-buffer
     (let* ((at-point (calc-locate-cursor-element (point)))
-           ;; At home point names no entry, but a selection standing
-           ;; anywhere still names one, so the jump reaches it — the
-           ;; fallback `maf--sel-effective-m' makes for the selection
-           ;; commands.
-           (m (if (> at-point 0) at-point (maf--sel-topmost-m))))
+           ;; An active selection anywhere outranks point, as it does in
+           ;; `maf--resolve-context' — it is the more deliberate gesture,
+           ;; and the entry it sits on is the subject even when point has
+           ;; wandered to another. `maf--sel-effective-m' picks the one
+           ;; under point when that entry is the selected one. Failing
+           ;; any selection, the entry at point; at home there is then
+           ;; nothing to name, and the command has nothing to do.
+           (m (or (and calc-use-selections (maf--sel-effective-m))
+                  (and (> at-point 0) at-point))))
       (when m
         (let* ((entry (calc-top m 'entry))
                ;; On an entry this resolves the sub-formula under the
@@ -2675,9 +2680,10 @@ command does nothing rather than signaling."
             (let ((snapshot (maf--point-snapshot))
                   (var-JumpRules (maf--jump-rules)))
               ;; Calc's rewrite locates its entry from point, not from an
-              ;; index, so from home point travels to the one the
-              ;; selection named before the rewrite runs.
-              (unless (> at-point 0) (calc-cursor-stack-index m))
+              ;; index, so point travels to the entry this resolved to
+              ;; before the rewrite runs — from home, and from any other
+              ;; entry a selection outranked.
+              (unless (= m at-point) (calc-cursor-stack-index m))
               (condition-case nil
                   ;; nil: no repeat count. Repeating a jump only walks
                   ;; the term back where it came from.
