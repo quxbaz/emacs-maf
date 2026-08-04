@@ -266,14 +266,17 @@
 ;; the first, a contextual subject, and $ for the stack.
 (define-key maf-mode-map (kbd "a b") #'mafcmd-substitute)
 ;; Quick substitution: apply an assignment from the stack to the
-;; contextual subject. C-c C-c is the conventional mode-specific
-;; "apply this" gesture; calc leaves it unbound. C-<return> is the
-;; one-hand key for the same command — a substitution is worth a
-;; single chord, and the edit module's quick-add gave the key up for
-;; it (S-RET and "(" remain, and S-RET at home opens the same bottom
-;; entry C-RET used to). During digit entry the key is calc's own map,
-;; where it stays `maf-digit-commit-here' (src/minibuffer.el).
-(define-key maf-mode-map (kbd "C-c C-c") #'mafcmd-let)
+;; contextual subject. C-<return> is the one-hand chord a substitution
+;; is worth, and the edit module's quick-add gave the key up for it
+;; (S-RET and "(" remain, and S-RET at home opens the same bottom entry
+;; C-RET used to). It replaces C-c C-c, the conventional mode-specific
+;; "apply this" gesture, which had been the command's only key and is
+;; unbound again — two hands and four keys for something reached this
+;; often, where the leaf is a control character calc's fancy prefix
+;; would rather not carry (K C-c C-c is what `maf--fancy-prefix-keep's
+;; provisional path was written for; see src/stack.el). During digit
+;; entry C-<return> is calc's own map, where it stays
+;; `maf-digit-commit-here' (src/minibuffer.el).
 (define-key maf-mode-map (kbd "C-<return>") #'mafcmd-let)
 ;; Polynomial roots by factoring, with multiplicity. M-r is unbound in
 ;; calc itself.
