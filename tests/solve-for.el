@@ -103,11 +103,35 @@
   (calc-pop (calc-stack-size))
 
   ;; Dividing through by a negative does not flip the operator: calc
-  ;; swaps the sides instead, so the solved variable lands on the right.
+  ;; swaps the sides instead, leaving the solved variable on the right
+  ;; (-2 < x). The solution is turned back so the variable leads, the
+  ;; direction turning with it, which says the same thing.
   (maf-push "-2 x < 4")
   (goto-char (point-max))
   (maf-with-input nil (call-interactively 'mafcmd-solve-for))
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "-2 < x"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "x > -2"))
+  (calc-pop (calc-stack-size))
+
+  ;; Same the other way round: a > whose sides calc swaps comes back a <.
+  (maf-push "4 > 2 x")
+  (goto-char (point-max))
+  (maf-with-input nil (call-interactively 'mafcmd-solve-for))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "x < 2"))
+  (calc-pop (calc-stack-size))
+
+  ;; >= turns to <= with its sides.
+  (maf-push "-x >= 3")
+  (goto-char (point-max))
+  (maf-with-input nil (call-interactively 'mafcmd-solve-for))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "x <= -3"))
+  (calc-pop (calc-stack-size))
+
+  ;; An unsolvable entry commits as written — "unchanged" means unchanged,
+  ;; so nothing is turned round on the way out.
+  (maf-push "5 = y")
+  (goto-char (point-max))
+  (maf-with-input "x" (call-interactively 'mafcmd-solve-for))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "5 = y"))
   (calc-pop (calc-stack-size))
 
   ;; != is kept as well.
