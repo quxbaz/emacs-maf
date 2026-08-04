@@ -69,7 +69,6 @@
    The commands map a matrix over its individual elements; calc's V M
    also offers the by-row reading, which the subject alone cannot
    choose between. The prefix arg is reserved for it and unused.
-** TODO distribute and merge should operate contextually.
 ** TODO move all options to unified configuration view.
    - Free up option prefix bindings (eg, m).
 
@@ -94,8 +93,13 @@
      structural math-normalize already reduces sqrt(2)^2 to 2.
 
 * PORT:selection.el
-  - [ ] my/calc-sel-distribute (j D) — contextual, no-simplify, frac→division fix (see BACKLOG)
-  - [ ] my/calc-sel-merge (j M) — contextual, unselect after
+  - [X] my/calc-sel-distribute (j D) — maf-distribute: contextual, no-simplify,
+    frac→division fix
+  - [X] my/calc-sel-merge (j M) — maf-merge: contextual, unselect after
+  Both widen the marker outward to the innermost formula a rule reaches,
+  which is what makes them contextual — calc's own commands act only on a
+  selection made by hand, and every rule in the two sets matches the
+  formula around the marker rather than the marker itself.
 
 * PORT:edit.el
   maf-edit replaces the calc-edit buffer workflow itself; these are the
@@ -125,8 +129,6 @@
 ** BUG (my/calc-backward-noun) and (my/calc-forward-noun) should ignore line prefix.
 
 * BACKLOG
-** Issue: j D (my/calc-sel-distribute)
-   Doesn't work contextually. Should work like 'j M'. Work on stack item when at home.
 ** Instead of having to use the default bindings 'a m &', can you make 'a m i' work?
    This should invert both sides of an equation. Normally the binding would use
    '&' instead of 'i', but 'i' is more convenient and I have that bound to
