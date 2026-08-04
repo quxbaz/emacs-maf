@@ -36,9 +36,9 @@
     - [X] tab to break out of parens
   - formulas
     - [ ] tab to nav between items not groups
-    - [ ] don't show detail pane by default
-    - [ ] binding to display detail pane (in vertical split window)
-    - [ ] binding to show detail pane
+    - [ ] don't show details pane by default
+      - [ ] bind details window to `d` and `?`
+      - doesn't focus, disappears on movement
     - [ ] M-n/p shouldn't cycle
     - [ ] C-n/p should still work from filter minibuffer
     - [ ] start in filter mode
