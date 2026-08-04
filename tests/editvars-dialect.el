@@ -130,6 +130,49 @@
                                (overlays-in (point-min) (point-max)))))
   (calc-pop (calc-stack-size))
 
+  ;; The mark is configurable, `\' being only the default — and it has
+  ;; to be, since calc reads `\' as integer division: 5\b is idiv(5, b)
+  ;; to calc and the quoted name b to the dialect. Under `~', which
+  ;; calc does not read at all, the same session leaves that alone.
+  (progn (setq maf-step--editvars-char maf-editvars-quote-char
+               maf-editvars-quote-char ?~)
+         nil)
+  (cl-assert (equal (math-read-expr (maf-editvars--split "2~cm"))
+                    (math-read-expr "2 cm")))
+  (cl-assert (equal (math-read-expr (maf-editvars--split "2xy"))
+                    (math-read-expr "2 x y")))
+  ;; The old mark is now ordinary text, and reaches calc as the
+  ;; operator it is.
+  (cl-assert (equal (math-read-expr (maf-editvars--split "5\\b"))
+                    (math-read-expr "5\\b")))
+  ;; Quoting follows the setting, both as a string and in the buffer.
+  (cl-assert (string= (maf-editvars--quote "foo + 1") "~foo + 1"))
+  (calc-pop (calc-stack-size))
+  (maf-push "foo + 1")
+  (call-interactively 'maf-edit)
+  (cl-assert (string-match-p "~foo \\+ 1"
+                             (buffer-substring-no-properties (point-min) (point-max))))
+  ;; And so does the highlighting, which builds its pattern from it.
+  (cl-assert (= 1 (length (seq-filter (lambda (o) (overlay-get o 'maf-editvars))
+                                      (overlays-in (point-min) (point-max))))))
+  (call-interactively 'maf-edit-commit)
+  (cl-assert (string= (math-format-value (calc-top 1 'full) 1000) "foo + 1"))
+  (calc-pop (calc-stack-size))
+
+  ;; A character the scanner cannot tell from a name, or one that opens
+  ;; a run whose letters are not identifiers, is refused — and the
+  ;; dialect stands down rather than mangling the buffer.
+  (cl-assert (not (maf-editvars-quote-char-valid-p ?x)))
+  (cl-assert (not (maf-editvars-quote-char-valid-p ?5)))
+  (cl-assert (not (maf-editvars-quote-char-valid-p ?\")))
+  (cl-assert (not (maf-editvars-quote-char-valid-p ?<)))
+  (cl-assert (maf-editvars-quote-char-valid-p ?@))
+  (progn (setq maf-editvars-quote-char ?x) nil)
+  (cl-assert (not (maf-editvars--applicable-p)))
+  (cl-assert (string= (maf-editvars-parse-text "2xy") "2xy"))
+  (progn (setq maf-editvars-quote-char maf-step--editvars-char) nil)
+  (cl-assert (maf-editvars--applicable-p))
+
   ;; Backslash is TeX's own escape and calc both reads and prints TeX,
   ;; so the dialect stands down in every language but Normal: the text
   ;; reaches the parser as written.
