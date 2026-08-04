@@ -60,6 +60,8 @@
 # NOW
 ** TODO move all options to unified configuration view
    - Free up option prefix bindings (eg, m).
+** TODO (:map calc-mode-map (">" . calc-scroll-left))
+        (:map calc-mode-map ("<" . calc-scroll-right))
 
 * Port
   - [-] Port my/calc/* features one-by-one.
