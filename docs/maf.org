@@ -35,11 +35,11 @@
   - maf-editplus module
     - [X] tab to break out of parens
   - formulas
-    - [ ] tab to nav between items not groups
-    - [ ] don't show details pane by default
-      - [ ] bind details window to `d` and `?`
+    - [-] tab to nav between items not groups
+    - [-] don't show details pane by default
+      - [-] bind details window to `d` and `?`
       - doesn't focus, disappears on movement
-    - [ ] M-n/p shouldn't cycle from start/end position. it should not be
+    - [-] M-n/p shouldn't cycle from start/end position. it should not be
       allowed to move past these endpoints.
     - [ ] C-n/p should still work from filter minibuffer
     - [ ] start in filter mode
