@@ -10,8 +10,9 @@
 ;; stack is editable text, installed into `maf-edit-mode-map' and taken
 ;; back out when the module is off.
 ;;
-;; What is here now are the two paren gestures, TAB and M-o, the first
-;; of the function keys, L, and P for the constant pi.
+;; What is here now are the two paren gestures, TAB and M-o, the
+;; function keys L, Q and |, the exponent keys M-2 through M-9 and :,
+;; and P for the constant pi.
 ;;
 ;; TAB escapes. Typing a formula runs forward past closing delimiters
 ;; constantly — sqrt(x^2+1), f(g(x)) — and reaching the far side of one
@@ -27,11 +28,17 @@
 ;; point, and pressing it again widens that pair one operator at a time
 ;; — the paren pair walks outward instead of being placed by hand.
 ;;
-;; L applies a function. The term M-o would have put parens around is
-;; also the term a function should be applied to, so L reuses that scan
-;; and writes ln in front of the pair — an expression already typed
-;; becomes ln of itself without going back to find where it starts.
-;; \, | and the rest belong beside it as they land.
+;; L, Q and | apply a function. The term M-o would have put parens
+;; around is also the term a function should be applied to, so these
+;; reuse that scan and write ln, sqrt or abs in front of the pair — an
+;; expression already typed becomes the log, the root or the modulus of
+;; itself without going back to find where it starts.
+;;
+;; M-2..M-9 and : raise to a power. An exponent is two characters that
+;; interrupt a formula being typed, and the digit is nearly always
+;; small: the meta-digits write ^2 through ^9 outright, and : writes ^2
+;; and then counts up, one press per power, for the times the exponent
+;; is easier to reach for than to name.
 ;;
 ;; The scan is maf-edit's own: any closer matches any opener (calc's
 ;; interval notation mixes them — (1 .. 2]), machine-owned prefix
@@ -470,24 +477,103 @@ The term is what `maf-editplus-wrap-parens' would wrap — a number or
 name, a function call or bracketed group taken whole, a product — and
 point ends up just after the closing paren:
 
-  x+2|       =>  x+ln(2)
-  27/x^2|    =>  27/ln(x^2)
-  ln(x)|     =>  ln(ln(x))
-  x = |      =>  x = ln(|)
+  x+2|         =>  x+ln(2)
+  27/sqrt(3)|  =>  27/ln(sqrt(3))
+  ln(x)|       =>  ln(ln(x))
+  x = |        =>  x = ln(|)
 
 An active region becomes the argument exactly as marked. With nothing
 behind point an empty ln() is opened instead, point inside it.
 
 Bound to `L' in `maf-edit-mode-map', so a capital L is no longer
-self-inserting during a session; \\[quoted-insert] L still types one."
+self-inserting during a session — see `maf-use-editplus-mode' on what
+that costs."
   (interactive)
   (maf-editplus--apply-function "ln"))
+
+(defun maf-editplus-wrap-sqrt ()
+  "Apply sqrt to the term before point.
+`maf-editplus-wrap-ln' with a different name written in front of the
+pair — the same scan decides what the term is, and the same rules
+apply to a region and to a press with nothing behind point:
+
+  x+2|       =>  x+sqrt(2)
+  x = |      =>  x = sqrt(|)
+
+Bound to `Q' in `maf-edit-mode-map', the letter calc gives the root on
+the stack, so a capital Q is no longer self-inserting during a session."
+  (interactive)
+  (maf-editplus--apply-function "sqrt"))
+
+(defun maf-editplus-wrap-abs ()
+  "Apply abs to the term before point.
+`maf-editplus-wrap-ln' with a different name written in front of the
+pair — the same scan decides what the term is, and the same rules
+apply to a region and to a press with nothing behind point:
+
+  a+b*c|     =>  a+abs(b*c)
+  x = |      =>  x = abs(|)
+
+Bound to `|' in `maf-edit-mode-map', which costs the character its own
+key for the length of a session — calc reads it as vector
+concatenation, and one wanted literally has to be yanked in."
+  (interactive)
+  (maf-editplus--apply-function "abs"))
+
+;;; Raising to a power
+
+(defun maf-editplus-insert-power ()
+  "Insert `^N' for the digit of the key that invoked this command.
+Bound to M-2 through M-9, so the exponent a formula wants next is one
+keypress rather than two characters typed around the shift key:
+
+  x|         =>  x^3      (M-3)
+
+The digit is taken from the key itself, so the eight bindings are one
+command. Nothing is examined behind point: an exponent already there
+is left alone and this one stacks on it, x^2 M-3 giving the tower
+x^2^3. It is `maf-editplus-raise-power' that edits an exponent in
+place.
+
+The keys are the meta-digits Emacs otherwise reads as a numeric
+prefix, which a maf-edit session therefore takes by \\[universal-argument]
+alone."
+  (interactive)
+  (let ((d (event-basic-type last-command-event)))
+    (unless (and (integerp d) (<= ?2 d) (<= d ?9))
+      (user-error "Not a power key"))
+    (insert ?^ d)))
+
+(defun maf-editplus-raise-power (n)
+  "Insert `^2', or count an exponent already before point up by one.
+N times, from the prefix argument. The second press is the point: an
+exponent reached for rather than named, one power per keypress.
+
+  x|         =>  x^2  =>  x^3  =>  x^4
+
+Only a run of digits immediately behind point, with the caret in front
+of it, counts as that exponent — anything else and a fresh ^2 goes in.
+So x^2 y counts as no exponent at all, and x^2* neither.
+
+Bound to `:' in `maf-edit-mode-map'. The character itself is not lost:
+`;' types it \(`maf-edit-insert-colon'), fractions being the reason it
+has a key with no modifier at all."
+  (interactive "p")
+  (dotimes (_ n)
+    (let* ((limit (line-beginning-position))
+           (start (save-excursion (skip-chars-backward "0-9" limit) (point))))
+      (if (and (< start (point)) (eq (char-before start) ?^))
+          (let ((power (string-to-number
+                        (buffer-substring-no-properties start (point)))))
+            (delete-region start (point))
+            (insert (number-to-string (1+ power))))
+        (insert "^2")))))
 
 (defun maf-editplus-insert-pi (n)
   "Insert the constant pi, N times, on the unmodified `P' key.
 Two characters for the price of one keypress; a capital P is no
-longer self-inserting during a session, and \\[quoted-insert] P
-still types one.
+longer self-inserting during a session — see `maf-use-editplus-mode'
+on what that costs.
 
 After a name character a space goes in first, so `x' becomes the
 product `x pi' and not the unrelated variable `xpi'. Digits get the
@@ -512,41 +598,55 @@ Enabled, and while a maf-edit session is up:
        before point, and a further press widens that pair
   L    `maf-editplus-wrap-ln' — the same term becomes the argument of
        an ln call
+  Q    `maf-editplus-wrap-sqrt' — and of a sqrt call
+  |    `maf-editplus-wrap-abs' — and of an abs call
+  M-2..M-9
+       `maf-editplus-insert-power' — `^' and the digit pressed
+  :    `maf-editplus-raise-power' — `^2', counting up a press at a time
   P    `maf-editplus-insert-pi' — the constant pi, typed as one key
 
 Disabled, the keys cede back to whatever the global map does with them
 \(`indent-for-tab-command', which has nothing to indent in an edited
-stack, `self-insert-command' for L and P, and nothing at all for M-o, which
-Emacs 30 leaves free). M-o runs `mafcmd-mod-360' in `maf-mode-map',
-which is not competition: maf-mode is off for the duration of an edit
-session.
+stack, `self-insert-command' for the printable ones, `digit-argument'
+for the meta-digits, and nothing at all for M-o, which Emacs 30 leaves
+free). M-o runs `mafcmd-mod-360' in `maf-mode-map', which is not
+competition: maf-mode is off for the duration of an edit session.
 
-L and P are unmodified printable keys, as `maf-edit-insert-colon'
-already is: a capital costs its self-insertion for the length of a
-session, and \\[quoted-insert] is how one is typed meanwhile. The
-trade is the legacy config's, where the wrap helpers were plain
-capitals too.
+L, Q, |, : and P are unmodified printable keys, as
+`maf-edit-insert-colon' already is: each costs its self-insertion for
+the length of a session, and there is no cheap way back to the
+character — \\[quoted-insert] is not one, since pausing to read a
+character re-locks the calc buffer under the session and the insert
+that follows fails (`maf-edit-insert-semicolon' exists for that
+reason). Yanking one in is what is left. `:' is the cheapest of them,
+`;' typing it anyway; the rest is the legacy config's trade, where the
+wrap helpers were plain capitals too. The meta-digits cost the numeric
+prefix its short form, leaving \\[universal-argument].
 
 This is the `maf-editplus' module (see `maf-modules'). The keys only
 live in maf-edit's own map, so they are inert unless a session is
 running, and the module is a no-op for anyone not using maf-edit."
   :global t
   :group 'maf
-  (if maf-use-editplus-mode
-      (progn
-        (define-key maf-edit-mode-map (kbd "TAB") #'maf-editplus-escape-group)
-        (define-key maf-edit-mode-map (kbd "M-o") #'maf-editplus-wrap-parens)
-        (define-key maf-edit-mode-map (kbd "L") #'maf-editplus-wrap-ln)
-        (define-key maf-edit-mode-map (kbd "P") #'maf-editplus-insert-pi))
-    (define-key maf-edit-mode-map (kbd "TAB") nil)
-    (define-key maf-edit-mode-map (kbd "M-o") nil)
-    (define-key maf-edit-mode-map (kbd "L") nil)
-    (define-key maf-edit-mode-map (kbd "P") nil)))
+  (let ((on maf-use-editplus-mode))
+    (dolist (b '(("TAB" . maf-editplus-escape-group)
+                 ("M-o" . maf-editplus-wrap-parens)
+                 ("L"   . maf-editplus-wrap-ln)
+                 ("Q"   . maf-editplus-wrap-sqrt)
+                 ("|"   . maf-editplus-wrap-abs)
+                 (":"   . maf-editplus-raise-power)
+                 ("P"   . maf-editplus-insert-pi)))
+      (define-key maf-edit-mode-map (kbd (car b)) (and on (cdr b))))
+    ;; One command behind eight keys — it reads the digit off the key
+    ;; that ran it.
+    (dolist (d '(?2 ?3 ?4 ?5 ?6 ?7 ?8 ?9))
+      (define-key maf-edit-mode-map (kbd (format "M-%c" d))
+                  (and on #'maf-editplus-insert-power)))))
 
 ;; Register with the module system when it is present; the mode above
 ;; works on its own without it.
 (when (require 'maf-module nil t)
   (maf-register-module 'maf-editplus #'maf-use-editplus-mode
-                       "In-session keys for maf-edit (TAB escapes a group, M-o wraps one, L applies ln, P types pi)."))
+                       "In-session keys for maf-edit (TAB escapes a group, M-o wraps one, L/Q/| apply ln/sqrt/abs, M-2..M-9 and : raise to a power, P types pi)."))
 
 (provide 'maf-editplus)
