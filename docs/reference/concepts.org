@@ -548,6 +548,89 @@ row, is walked past rather than landed on — and it carries an active
 selection along with it, that being what a command would resolve to
 instead of point.
 
+** Widening a rewrite marker
+
+=maf-distribute= (j D) and =maf-merge= (j M) widen along the same
+ancestors, but for a different reason, and so outside the =:widen=
+declaration. They are not defcmds: calc's =DistribRules= and
+=MergeRules= are written against a marked sub-formula, and every rule
+in them matches the formula /around/ the marker rather than the marker
+itself —
+
+#+begin_example
+x * select(a + b)   :=  x*select(a) + x*b
+#+end_example
+
+— so the rewrite needs the whole entry with the target marked inside
+it, not an isolated sub-expression spliced back into a slot. The node
+point names is therefore usually one level too deep to be the marker:
+on the =a= of =x (a + b)=, the rule that fires is the one reading the
+product, whose marked part is the sum.
+
+So =maf--sel-rewrite-widen= walks from the node under point outward and
+takes the innermost ancestor at which /some rule matches/, where
+=:widen= takes the innermost one a declared predicate accepts. The
+test is the rewrite itself rather than a predicate, since "does a rule
+reach this" is not a property of the node alone. Nothing matching out
+to the whole entry means the entry is left untouched.
+
+One family of rules has to be held off for the walk to get anywhere.
+Two DistribRules mark a bare negation (=select(- a) ^ x=,
+=sqrt(select(- a))=), and calc's matcher reads *any* expression as
+=-a=, binding =a= to its negation — =-(-a)= is =a=. So they match every
+marker there is, and sitting early in the set they claim the first
+level the walk tries, before the rule the gesture meant:
+
+#+begin_example
+ln(x|^2)   =>  ln((-1)^2 (-x)^2)   ; the sign rule, equal and useless
+ln(x|^2)   =>  2 ln(x)             ; the log-of-a-power rule, one out
+#+end_example
+
+Both rules carry the marker from =n= to =-n=, so =maf--sel-sign-peel-p=
+counts a result marking exactly =math-neg= of what went in as no rule
+having fired, and the walk carries on outward. The test is the sign of
+the marked node itself, not the marker relationship, so a genuinely
+negative operand still splits (=sqrt(-x)= => =sqrt(-1) sqrt(x)=). Both
+nodes compared are read back out of whole expressions the rewriter saw,
+never off the stack entry — an entry's atoms are encased (see
+[[*Encasing][Encasing]]), and =(cplx 4 0)= would never match a plain =4=.
+
+The same rule holds as above: an active selection is never widened, so
+=j D= on a hand-made selection is faithful to =calc-sel-distribute=,
+which marks exactly what was selected.
+
+*** Ordering without folding
+
+A distribution has to commit unsimplified, or calc's simplifier undoes
+it — =x^b x^a= folds straight back to =x^(b + a)=. But calc's canonical
+*ordering* lives in that same pass, so suppressing it also loses the
+convention that a coefficient is written first, and =ln(x^2)= would
+commit as =ln(x) 2=.
+
+The ordering cannot simply be run afterwards. Both ways of asking calc
+for it were measured against the raw result, and both undo the work:
+
+| approach                 | =ln(x^2)=   | =x^(a + b)=   | =sqrt(3:4)=           |
+|--------------------------+-------------+---------------+-----------------------|
+| raw, simplifier off      | =ln(x) 2=   | =x^b x^a=     | =sqrt(1/4) sqrt(3)=   |
+| normalize under ambient  | =2 ln(x)=   | =x^(b + a)=   | =1.73205 sqrt(0.25)=  |
+| ambient, marker still in | =2 ln(x)=   | =x^(b + a)=   | =1.73205 sqrt(0.25)=  |
+
+The marker does not protect here the way it does in a merge: there it
+sits directly on an operand of the sum being folded
+(=x*(3 + select(2))=), while in =x^select(b) * x^a= it is buried in an
+exponent and the outer product folds around it.
+
+So =maf--sel-coefficient-first= applies the one part of the ordering
+that provably cannot undo a rewrite: moving numbers to the front of a
+product. Numbers commute with every operand there is, matrices
+included, so it is a reordering and never a change of value, and it
+folds nothing. A symbolic coefficient is left where the rule put it
+(=log(x^p, b)= => =log(x, b) p=); matching calc there would mean
+reproducing an order that is not a simple total order over
+expressions, calc's own product ordering being decided inside
+=math-mul= and its simplification rules rather than by =math-beforep=.
+
 * Binary on selection-like targets
 
 Selection, subexpr, entry: each can support binary commands, but the
