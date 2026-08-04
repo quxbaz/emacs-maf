@@ -63,8 +63,8 @@ name to every set."
 
 ;;; Modules (maf-module.el)
 
-(defcustom maf-modules '(maf-timeline maf-hl maf-edit maf-editplus maf-preview
-                         maf-formulas maf-selplus)
+(defcustom maf-modules '(maf-timeline maf-hl maf-edit maf-editplus maf-recall
+                         maf-preview maf-formulas maf-selplus)
   "Names of the maf feature modules to enable.
 Each major feature that stands apart from the contextual-command core
 is an optional module (see maf-module.el); this list names the ones

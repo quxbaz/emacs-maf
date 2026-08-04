@@ -9,7 +9,7 @@
   1) [ ] Move all of relevant my/calc config into project
   2) [ ] Harden through using w/ anki math
 
-* Major features [4/9]
+* Major features [6/10]
   - [ ] Vim bindings module (move by noun, verb, char)
   - [X] Persistent sub-formula highlighting
   - [X] Timeline module
@@ -21,6 +21,7 @@
     - [X] Create manager
     - [X] Set default binding
   - [X] Use module architecture (maf-timeline, maf-edit)
+  - [X] Recall ring for typed entries (maf-recall)
   - [ ] Discovery document for useful features, behaviors, modules, etc
 
 * Feedback
