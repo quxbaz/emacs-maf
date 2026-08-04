@@ -17,6 +17,26 @@
 (defun dm-top (&optional n)
   (math-format-value (calc-top (or n 1) 'full)))
 
+(defun dm-value (expr)
+  "Evaluate EXPR at a=2, b=4, x=4, y=2 and format the result.
+For the power-merge rules, where the fault is in the value rather than
+the shape: the merged form has to agree with the entry it came from.
+Both sides are forced to float, so an exact 1 and a computed 1. read
+the same."
+  (math-format-value
+   (math-normalize
+    (list 'calcFunc-float
+          (math-evaluate-expr
+           (seq-reduce (lambda (e pair)
+                         (math-expr-subst e (car pair) (cdr pair)))
+                       '(((var a var-a) . 2) ((var b var-b) . 4)
+                         ((var x var-x) . 4) ((var y var-y) . 2))
+                       expr))))))
+
+(defvar dm-quotient (car (math-read-exprs "a^x / b^x")))
+(defvar dm-quotient2 (car (math-read-exprs "a^x / b^y")))
+(defvar dm-product (car (math-read-exprs "a^x * b^y")))
+
 (maf-step
   ;; --- distribute -------------------------------------------------
 
@@ -73,6 +93,19 @@
   (maf-push "(x + y)^2")
   (dm-at "x" 1)
   (call-interactively 'maf-distribute)
+  (cl-assert (string= (dm-top) "y^2 + 2 x y + x^2"))
+  (cl-assert (not (string-match-p "expandpow"
+                                  (prin1-to-string (calc-top 1 'full)))))
+  (calc-pop (calc-stack-size))
+
+  ;; The helper is finished off whatever mode is in effect outside the
+  ;; command. With simplification turned off — maf binds a key for it —
+  ;; evaluating it under the ambient mode would leave calc's internal
+  ;; expandpow( ) sitting on the stack instead of the polynomial.
+  (maf-push "(x + y)^2")
+  (dm-at "x" 1)
+  (let ((calc-simplify-mode 'none))
+    (call-interactively 'maf-distribute))
   (cl-assert (string= (dm-top) "y^2 + 2 x y + x^2"))
   (cl-assert (not (string-match-p "expandpow"
                                   (prin1-to-string (calc-top 1 'full)))))
@@ -240,7 +273,81 @@
   (maf-push "2 x + 3 x")
   (dm-at "3" 1)
   (call-interactively 'maf-merge)
-  (cl-assert (string= (dm-top) "x*(3 + 2)"))
+  (cl-assert (string= (dm-top) "x*(2 + 3)"))
+  (calc-pop (calc-stack-size))
+
+  ;; --- merge: calc's wrong-base division rules --------------------
+
+  ;; Two of calc's MergeRules read the numerator's base as b where
+  ;; every sibling reads a, so with the denominator marked the answer
+  ;; comes out b/b = 1 — the value gone. maf corrects the two, and both
+  ;; ends of the quotient now agree.
+  (maf-push "a^x / b^x")
+  (dm-at "b" 1)
+  (call-interactively 'maf-merge)
+  (cl-assert (string= (dm-top) "(a / b)^x"))
+  (calc-pop (calc-stack-size))
+
+  (maf-push "a^x / b^x")
+  (dm-at "a" 1)
+  (call-interactively 'maf-merge)
+  (cl-assert (string= (dm-top) "(a / b)^x"))
+  (calc-pop (calc-stack-size))
+
+  ;; The value is the point, so check it rather than the shape: put
+  ;; numbers through the merged form and the original and compare.
+  ;; Numeric bases cannot be used directly — the rewriter normalizes
+  ;; its input, folding 2^3 to 8 before any rule sees a power.
+  (maf-push "a^x / b^x")
+  (dm-at "b" 1)
+  (call-interactively 'maf-merge)
+  (cl-assert (string= (dm-value (calc-top 1 'full)) (dm-value dm-quotient)))
+  (calc-pop (calc-stack-size))
+
+  ;; The differing-exponent rules carry a second upstream fault, in the
+  ;; exponent arithmetic rather than the base: gathering a^x and b^y
+  ;; under one power of x needs b^(y/x), and calc subtracts where it
+  ;; must divide. At a=2 b=4 x=4 y=2 the entry is 1 and calc answers
+  ;; 1048576. maf corrects these alongside the wrong-base pair.
+  (maf-push "a^x / b^y")
+  (dm-at "b^y" 1)
+  (call-interactively 'maf-merge)
+  (cl-assert (string= (dm-value (calc-top 1 'full)) (dm-value dm-quotient2)))
+  (calc-pop (calc-stack-size))
+
+  (maf-push "a^x / b^y")
+  (dm-at "a^x" 1)
+  (call-interactively 'maf-merge)
+  (cl-assert (string= (dm-value (calc-top 1 'full)) (dm-value dm-quotient2)))
+  (calc-pop (calc-stack-size))
+
+  ;; The product rule of the same family.
+  (maf-push "a^x * b^y")
+  (dm-at "b^y" 1)
+  (call-interactively 'maf-merge)
+  (cl-assert (string= (dm-value (calc-top 1 'full)) (dm-value dm-product)))
+  (calc-pop (calc-stack-size))
+
+  ;; --- only the targeted site changes -----------------------------
+
+  ;; The rewrite is scoped to the formula the rule matches, and the
+  ;; rest of the entry is carried over untouched. Merging the two
+  ;; logarithms must not also collapse the unrelated powers, which
+  ;; normalizing the whole entry would do — stock calc-sel-merge
+  ;; answers ln(a b) + x^(p + q) here.
+  (maf-push "ln(a) + ln(b) + x^p x^q")
+  (dm-at "ln(b" 1)
+  (call-interactively 'maf-merge)
+  (cl-assert (string= (dm-top) "ln(a b) + x^p x^q"))
+  (calc-pop (calc-stack-size))
+
+  ;; Likewise the coefficient ordering: it applies to the product the
+  ;; rules built, named by the marker they carried into it, not to a
+  ;; product the user wrote and the command never touched.
+  (maf-push "ln(x^2) + y*3")
+  (dm-at "x" 1)
+  (call-interactively 'maf-distribute)
+  (cl-assert (string= (dm-top) "2 ln(x) + y 3"))
   (calc-pop (calc-stack-size))
 
   ;; --- targets ----------------------------------------------------
@@ -322,6 +429,22 @@
   (call-interactively 'maf-distribute)
   (cl-assert (string= (dm-top 2) "ln(b) + ln(a)"))
   (cl-assert (string= (dm-top 1) "1 + 2"))
+  (calc-pop (calc-stack-size))
+
+  ;; A selection standing anywhere outranks point, as it does in
+  ;; `maf--resolve-context' — it is the more deliberate gesture. With
+  ;; the product of entry 2 selected and point away on entry 1, the
+  ;; rewrite goes to the selection and leaves the entry point sits on
+  ;; alone. Taking point instead would both rewrite the wrong entry and
+  ;; leave the selection standing.
+  (maf-push "ln(a b)")
+  (maf-push "ln(c d)")
+  (progn (dm-at "a" 1) (calc-select-here nil) (calc-select-more nil)
+         (dm-at "c" 1))
+  (call-interactively 'maf-distribute)
+  (cl-assert (string= (dm-top 2) "ln(b) + ln(a)"))
+  (cl-assert (string= (dm-top 1) "ln(c d)"))
+  (cl-assert (null (calc-top 2 'sel)))
   (calc-pop (calc-stack-size))
 
   ;; --- targets: anywhere on the entry -----------------------------

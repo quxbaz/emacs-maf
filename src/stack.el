@@ -2715,6 +2715,77 @@ command does nothing rather than signaling."
 (defvar math-rewrite-selections)
 (defvar math-rewrite-default-iters)
 
+;; Four of calc's MergeRules gather powers of unlike bases wrongly, in
+;; two ways, and both lose the value rather than merely spell it oddly.
+;; Stock `calc-sel-merge' has the same answers; none of this is maf's
+;; doing.
+;;
+;; The first divides by the wrong base. Where every sibling reads the
+;; numerator's base as a, these read b:
+;;
+;;   (a^x) / select(b^x)  :=  select((b / b) ^ x)
+;;   (a^x) / select(b^y)  :=  select((b / b^(y-x)) ^ x)
+;;
+;; so a^x / b^x with the denominator marked answers b/b = 1.
+;;
+;; The second is the exponent arithmetic shared by the whole
+;; differing-exponent family. Gathering a^x and b^y under one power of
+;; x needs (b^(y/x))^x = b^y, but the rules subtract where they must
+;; divide, giving b^(x(y-x)):
+;;
+;;   (a^x) * select(b^y)  :=  select((a * b^(y-x)) ^ x)
+;;   select(a^x) / (b^y)  :=  select((a / b^(y-x)) ^ x)
+;;
+;; so a^4 / b^2 merges to 1048576 where a=2, b=4 rather than 1.
+;;
+;; maf corrects all four rather than mirror a wrong answer, as it
+;; already does for the fraction the negation rule mangles (see
+;; `maf--sel-as-division'). The corrections are swapped into whatever
+;; calc currently holds rather than kept as a second copy of the set,
+;; which would drift the moment calc edits it upstream.
+
+(defconst maf--merge-rule-fixes
+  '("(a^x) * select(b^y) := select((a * b^(y/x)) ^ x)"
+    "(a^x) / select(b^x) := select((a / b) ^ x)"
+    "(a^x) / select(b^y) := select((a / b^(y/x)) ^ x)"
+    "select(a^x) / (b^y) := select((a / b^(y/x)) ^ x)")
+  "Corrected replacements for calc's four faulty power-merge rules.
+Matched against the loaded set by left-hand side, so a rule calc has
+since fixed or reworded is simply not found and nothing is replaced.")
+
+(defvar maf--merge-rules-cache nil
+  "Memo cell for `maf--merge-rules': a cons of (SOURCE . CORRECTED).
+SOURCE is the `var-MergeRules' value CORRECTED was derived from,
+compared by identity — so a user who re-stores MergeRules gets a fresh
+derivation instead of a stale correction.")
+
+(defun maf--merge-rules ()
+  "Return calc's MergeRules with the faulty power-merge rules corrected.
+Reads whatever `var-MergeRules' currently holds — calc's own accessor
+compiles the rule text on first use — and swaps in the corrections,
+memoized so repeated merges reuse one rule object and calc's
+rewrite-compiler cache stays valid."
+  (let ((base (calc-var-value 'var-MergeRules)))
+    (unless (eq base (car maf--merge-rules-cache))
+      (setq maf--merge-rules-cache
+            (cons base
+                  (if (eq (car-safe base) 'vec)
+                      (let ((fixes (math-read-exprs
+                                    (string-join maf--merge-rule-fixes ","))))
+                        (cons 'vec
+                              (mapcar
+                               (lambda (rule)
+                                 (or (seq-find
+                                      (lambda (fix)
+                                        (and (eq (car-safe rule)
+                                                 'calcFunc-assign)
+                                             (equal (nth 1 fix) (nth 1 rule))))
+                                      fixes)
+                                     rule))
+                               (cdr base))))
+                    base))))
+    (cdr maf--merge-rules-cache)))
+
 (defvar maf--sel-marked nil
   "Node the surviving select( ) marker wrapped, set by `maf--sel-unmark'.
 The rules carry a marker through to their result — `x * select(a + b)'
@@ -2759,23 +2830,25 @@ fold the division straight back to a `frac'."
       (list '/ (nth 1 node) (nth 2 node))
     node))
 
-(defun maf--sel-expand-pow (expr simplify)
-  "Return EXPR with any residual expandpow( ) call evaluated under SIMPLIFY.
+(defun maf--sel-expand-pow (expr)
+  "Return EXPR with any residual expandpow( ) call evaluated.
 DistribRules raises a sum to an integer power by calling calc's
 `expandpow' from inside a rule and reading the result back. The helper
-computes a binomial expansion and means nothing on the stack, but under
-no simplification the call is never evaluated, so it would ride into
-the entry as (x + y)^2 => expandpow(y + x, 2). Evaluating just those
-calls, under SIMPLIFY — the mode in effect outside the command —
-restores what the rule meant while leaving the rest of what the rules
-built unsimplified."
+computes a binomial expansion and means nothing on the stack, but the
+rewrite runs unsimplified, so the call is never evaluated and would
+ride into the entry as (x + y)^2 => expandpow(y + x, 2).
+
+The call is evaluated under `alg' rather than whatever mode is in
+effect outside the command, since the point is to finish a computation
+the rule started: a user who has turned simplification off — maf binds
+a key for it — would otherwise get the internal helper on the stack
+instead of the polynomial. Only these calls are evaluated; the rest of
+what the rules built is left as they built it."
   (cond
    ((Math-primp expr) expr)
    ((eq (car expr) 'calcFunc-expandpow)
-    (let ((calc-simplify-mode simplify)) (calc-normalize expr)))
-   (t (cons (car expr)
-            (mapcar (lambda (x) (maf--sel-expand-pow x simplify))
-                    (cdr expr))))))
+    (let ((calc-simplify-mode 'alg)) (calc-normalize expr)))
+   (t (cons (car expr) (mapcar #'maf--sel-expand-pow (cdr expr))))))
 
 (defun maf--sel-marked-node (expr)
   "Return the node EXPR's select( ) marker wraps, or nil.
@@ -2819,8 +2892,14 @@ never match (see `Encasing' in docs/reference/concepts.org)."
               (maf--sel-product-factors (nth 2 expr)))
     (list expr)))
 
+(defun maf--sel-marked-p (expr)
+  "Return t when EXPR contains a select( ) marker."
+  (and (not (Math-primp expr))
+       (or (and (eq (car expr) 'calcFunc-select) (= (length expr) 2))
+           (and (seq-some #'maf--sel-marked-p (cdr expr)) t))))
+
 (defun maf--sel-coefficient-first (expr)
-  "Return EXPR with every product's numeric factors moved to the front.
+  "Return EXPR with the rewritten product's numeric factors moved first.
 Calc writes a coefficient ahead of what it multiplies — 2 ln(x), not
 ln(x) 2 — but that ordering is part of the simplifier, which a
 distribution has to run without (see `maf--sel-rewrite'). The rules
@@ -2835,9 +2914,15 @@ undo a rewrite — moving numbers ahead of the rest of a product.
 Numbers commute with every operand there is, matrices included, so
 this is a reordering and never a change of value. The relative order
 within each group is kept, and a product calc already ordered, or one
-with nothing numeric in it, comes back untouched."
-  (if (Math-primp expr)
-      expr
+with nothing numeric in it, comes back untouched.
+
+Only products holding the marker are touched, the marker being what
+the rules carried through to name their own result. A product the
+command did not produce is left as the user wrote it: distributing the
+logarithm in ln(x^2) + y 3 must not also turn the y 3 into 3 y."
+  (cond
+   ((not (maf--sel-marked-p expr)) expr)
+   (t
     (let ((node (cons (car expr)
                       (mapcar #'maf--sel-coefficient-first (cdr expr)))))
       (if (eq (car node) '*)
@@ -2850,39 +2935,50 @@ with nothing numeric in it, comes back untouched."
                     (dolist (f (cdr ordered) acc)
                       (setq acc (list '* acc f)))))
               node))
-        node))))
+        node)))))
 
-(defun maf--sel-rewrite-try (expr node rules as-division)
-  "Rewrite EXPR under RULES with NODE marked; nil when no rule fired.
-AS-DIVISION marks a literal fraction as a division (see
-`maf--sel-as-division').
+(defun maf--sel-rewrite-try (expr site part rules as-division)
+  "Rewrite SITE under RULES with PART marked, spliced back into EXPR.
+Returns nil when no rule fired. AS-DIVISION marks a literal fraction
+as a division (see `maf--sel-as-division').
 
-The rewrite always runs with a marker, never on a bare entry. Calc
-reads an unmarked entry by letting select( ) in a pattern match
+Only SITE is handed to the rewriter, and the rest of EXPR is carried
+over untouched. Rewriting the whole entry instead would let the
+normalization the rewriter does on the way in fold sites the gesture
+never named: merging the logarithms of ln(a) + ln(b) + x^p x^q would
+also collapse the powers, two structural changes for one keystroke.
+Calc's own `calc-rewrite-selection' normalizes the entry and has that
+behavior; maf's other commands leave what they did not target alone,
+and these follow them. SITE is where the rule matches — it is the
+formula around PART, which is what every rule in these sets reads —
+so scoping the rewrite to it costs no matches.
+
+The rewrite always runs with a marker, never on a bare formula. Calc
+reads an unmarked one by letting select( ) in a pattern match
 anywhere, which sounds like the right thing for a whole-entry subject
 and is not: the sign rules below match every expression there is, so
 an unmarked sqrt(x) rewrites to sqrt(-1) sqrt(-x). Marking a candidate
 and asking about that one place keeps every rewrite answerable, which
 is why home walks sites too (see `maf--sel-rewrite-entry').
 
-The result is compared against the rewriter's own input, not against
-EXPR, so the answer is exactly \"did a rule fire\": normalizing on the
-way in reorders sums and products, and that reordering alone must not
-read as a change worth committing. A rule that only peels off a sign
-the marker does not have counts as not firing, so the walk carries on
-past it (see `maf--sel-sign-peel-p')."
+The result is compared against the rewriter's own input, so the answer
+is exactly \"did a rule fire\": normalizing on the way in reorders sums
+and products, and that reordering alone must not read as a change
+worth committing. A rule that only peels off a sign the marker does
+not have counts as not firing, so the walk carries on past it (see
+`maf--sel-sign-peel-p')."
   (let* ((math-rewrite-selections t)
          (math-rewrite-default-iters 1)
-         (marked (maf--sel-mark expr node
+         (marked (maf--sel-mark site part
                                 (list 'calcFunc-select
                                       (if as-division
-                                          (maf--sel-as-division node)
-                                        node))))
+                                          (maf--sel-as-division part)
+                                        part))))
          (normalized (calc-normalize marked))
          (rewritten (math-rewrite normalized rules nil)))
     (unless (or (equal rewritten normalized)
                 (maf--sel-sign-peel-p normalized rewritten))
-      rewritten)))
+      (maf--sel-mark expr site rewritten))))
 
 (defun maf--sel-rewrite-site (expr site preferred rules as-division)
   "Rewrite EXPR under RULES marking a part of SITE; nil when none fired.
@@ -2897,7 +2993,7 @@ SITE has no parts, an atom having none."
                        (cons preferred (remq preferred (cdr site)))
                      (cdr site))))
         (while (and parts (not result))
-          (setq result (maf--sel-rewrite-try expr (car parts) rules
+          (setq result (maf--sel-rewrite-try expr site (car parts) rules
                                              as-division)
                 parts (cdr parts)))))
     result))
@@ -2973,25 +3069,28 @@ popped and pushed for a value that only normalization changed."
   (maf--with-calc-buffer
     (let ((at-point (calc-locate-cursor-element (point))))
       (when (> (calc-stack-size) 0)
-        ;; At home point names no entry: a selection standing anywhere
-        ;; names one, and failing that the top entry is the subject —
-        ;; the whole of it, since point marked no part.
-        (let* ((m (if (> at-point 0) at-point (or (maf--sel-topmost-m) 1)))
+        ;; An active selection anywhere outranks point, as it does in
+        ;; `maf--resolve-context' — it is the more deliberate gesture,
+        ;; and the entry it sits on is the subject even when point has
+        ;; wandered to another. `maf--sel-effective-m' picks the one
+        ;; under point when that entry is the selected one. Failing any
+        ;; selection, the entry at point, and at home the top.
+        (let* ((m (or (and calc-use-selections (maf--sel-effective-m))
+                      (and (> at-point 0) at-point)
+                      1))
                (entry (calc-top m 'entry))
                (expr (car entry))
                (explicit (and calc-use-selections (nth 2 entry)))
                ;; Only consult point for a sub-formula when point is on
-               ;; the entry; from home the explicit selection is all
-               ;; there is to read, and reading it must not move point.
+               ;; the entry this resolved to; otherwise the selection
+               ;; is all there is to read, and reading it must not move
+               ;; point.
                (sel (and calc-use-selections
-                         (if (> at-point 0)
+                         (if (and (= m at-point) (not explicit))
                              (ignore-errors (calc-auto-selection entry))
                            explicit)))
                (snapshot (maf--point-snapshot))
                (maf--sel-marked nil)
-               ;; Captured before the rebinding below, for the rule
-               ;; helpers that still have to be evaluated.
-               (simplify calc-simplify-mode)
                (calc-simplify-mode (if no-simplify 'none calc-simplify-mode))
                (rewritten
                 (cond
@@ -3002,8 +3101,14 @@ popped and pushed for a value that only normalization changed."
                  ;; An active selection is a deliberate gesture and is
                  ;; never widened, as everywhere else in maf — the mark
                  ;; goes exactly where the user put it, which is also
-                 ;; what calc's own commands do with it.
-                 (explicit (maf--sel-rewrite-try expr sel rules as-division))
+                 ;; what calc's own commands do with it. The site is
+                 ;; then fixed too: the formula holding the selection,
+                 ;; since that is what a rule reads around it.
+                 (explicit
+                  (let ((site (calc-find-parent-formula expr sel)))
+                    (and (consp site)
+                         (maf--sel-rewrite-try expr site sel rules
+                                               as-division))))
                  (t (maf--sel-rewrite-widen expr sel rules as-division)))))
           (when rewritten
             ;; No `calc-encase-atoms' here, deliberately: calc wraps
@@ -3012,14 +3117,25 @@ popped and pushed for a value that only normalization changed."
             ;; reselects nothing, and under no simplification those
             ;; wrappers are never folded away again — they would ride
             ;; into the entry as the value 3 spelled (cplx 3 0).
-            (let* ((normalized (calc-normalize
-                                (maf--sel-expand-pow rewritten simplify)))
-                   ;; Only where the simplifier was held off: with it
-                   ;; running, calc has already ordered the result.
+            ;; No normalizing pass over the whole result, and no
+            ;; `calc-encase-atoms' either. The rewriter already
+            ;; normalized the site it rewrote; running it again over
+            ;; the entry would reach the parts the gesture never named
+            ;; and fold those too — merging the logarithms of
+            ;; ln(a) + ln(b) + x^p x^q would collapse the powers as
+            ;; well. Encasing is calc wrapping every atom as (cplx n 0)
+            ;; so a reselected node has a cons to be identified by; maf
+            ;; reselects nothing, and unsimplified those wrappers are
+            ;; never folded away again, riding into the entry as the
+            ;; value 3 spelled (cplx 3 0).
+            (let* ((expanded (maf--sel-expand-pow rewritten))
+                   ;; Ordering only where the simplifier was held off:
+                   ;; with it running, calc has already ordered what it
+                   ;; built.
                    (new (maf--sel-unmark
                          (if no-simplify
-                             (maf--sel-coefficient-first normalized)
-                           normalized))))
+                             (maf--sel-coefficient-first expanded)
+                           expanded))))
               ;; `calc-wrapper' makes the commit one undoable unit.
               ;; Without it the pop and push join whatever undo group
               ;; is already open, and a single undo takes back more
@@ -3081,13 +3197,18 @@ comes out as i sqrt(-3:4), which is -sqrt(3)/2.
   sqrt(3:4)  =>  sqrt(1/4) sqrt(3)
   ln(3:4)    =>  ln(1/4) + ln(3)
 
-At home, where point names no part, a selection standing anywhere is
-the target; with none, the top entry is the subject and the rules
-apply at the first site in it they reach.
+A selection standing anywhere is the target, whatever entry point is
+on — it is the more deliberate gesture, and this is where the rest of
+maf takes its subject too. With none, the entry at point, or the top
+entry at home, and the rules apply at the first site in it they reach.
 
 An active selection is never widened, as everywhere else in maf: the
 mark goes exactly where it was put, so a selection the rules cannot
 use leaves the entry alone instead of reaching past it.
+
+Only the formula the rule matches is rewritten; the rest of the entry
+is carried over as it was. A second site the gesture never named keeps
+its shape, unsimplified arithmetic included.
 
 Two of calc's rules split a sign off a negation, and its matcher reads
 any expression at all as one, since -(-a) is a. Left to themselves
@@ -3131,18 +3252,24 @@ The merged coefficients are left as the rules built them rather than
 folded together, since the rule marks its result and calc does not
 simplify across the mark:
 
-  2 x + 3 x  =>  x*(3 + 2)
+  2 x + 3 x  =>  x*(2 + 3)
 
-At home, where point names no part, a selection standing anywhere is
-the target; with none, the top entry is the subject and the rules
-apply at the first site in it they reach. An active selection is never
-widened, as everywhere else in maf.
+A selection standing anywhere is the target, whatever entry point is
+on; with none, the entry at point, or the top entry at home. An active
+selection is never widened, as everywhere else in maf, and only the
+formula the rule matches is rewritten — a second site the gesture
+never named keeps its shape.
+
+Two of calc's rules for gathering powers of unlike bases answer with
+the wrong value, and two more get the exponent wrong; maf corrects all
+four, so a^x / b^x gathers to (a / b)^x from either end of the
+quotient rather than to 1.
 
 One rule fires per invocation. With no rule matching — nothing beside
 the target to gather it with — the entry is left untouched, nothing
 pushed or popped, rather than signaling."
   (interactive)
-  (maf--sel-rewrite (calc-var-value 'var-MergeRules) "merg"))
+  (maf--sel-rewrite (maf--merge-rules) "merg"))
 
 ;;; Coordinates
 

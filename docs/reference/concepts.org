@@ -633,7 +633,29 @@ never off the stack entry — an entry's atoms are encased (see
 
 The same rule holds as above: an active selection is never widened, so
 =j D= on a hand-made selection is faithful to =calc-sel-distribute=,
-which marks exactly what was selected.
+which marks exactly what was selected. It is also what picks the
+*entry*, ahead of point, as in =maf--resolve-context=: a selection
+standing on a lower entry is the subject even when point has wandered
+to another.
+
+*** Scoping the rewrite to the site
+
+Only the site is handed to the rewriter, and the rest of the entry is
+carried over untouched. Calc's =calc-rewrite-selection= normalizes the
+whole entry on the way in, which reaches sites the gesture never
+named — merging the logarithms of =ln(a) + ln(b) + x^p x^q= also
+collapses the powers, two structural changes for one keystroke. maf's
+other commands leave what they did not target alone, and these follow
+them rather than upstream. Scoping costs no matches: the site *is*
+where the rule matches, being the formula around the marker.
+
+The same reasoning applies after the rewrite. There is no normalizing
+pass over the finished result and no =calc-encase-atoms= (see
+[[*Encasing][Encasing]]) — the rewriter already normalized the site, and re-running
+either over the whole entry would undo the scoping. The coefficient
+ordering is likewise confined to products carrying the marker, so
+distributing the logarithm in =ln(x^2) + y 3= does not also reorder the
+=y 3= the user wrote.
 
 *** Ordering without folding
 
@@ -656,6 +678,41 @@ The marker does not protect here the way it does in a merge: there it
 sits directly on an operand of the sum being folded
 (=x*(3 + select(2))=), while in =x^select(b) * x^a= it is buried in an
 exponent and the outer product folds around it.
+
+*** Correcting calc's power-merge rules
+
+Four MergeRules gather powers of unlike bases wrongly, and each loses
+the value rather than merely spelling it oddly. Stock =calc-sel-merge=
+gives the same answers — none of it is maf's doing.
+
+Two divide by the wrong base, reading the numerator's base as =b= where
+every sibling reads =a=:
+
+#+begin_example
+(a^x) / select(b^x)  :=  select((b / b) ^ x)     ; b/b = 1
+(a^x) / select(b^y)  :=  select((b / b^(y-x)) ^ x)
+#+end_example
+
+Two more get the exponent arithmetic wrong. Gathering =a^x= and =b^y=
+under a single power of =x= needs =(b^(y/x))^x = b^y=, but the rules
+subtract where they must divide, yielding =b^(x(y-x))=:
+
+#+begin_example
+ (a^x) * select(b^y)  :=  select((a * b^(y-x)) ^ x)
+select(a^x) / (b^y)   :=  select((a / b^(y-x)) ^ x)
+#+end_example
+
+At =a=2, b=4, x=4, y=2= the entry =a^x / b^y= is 1 and calc answers
+1048576.
+
+maf corrects all four rather than mirror a wrong answer, the same call
+it makes for the fraction the negation rule mangles. The corrections
+are swapped into whatever =var-MergeRules= currently holds, matched by
+left-hand side and memoized (=maf--merge-rules=), rather than kept as a
+second copy of the set — the pattern =maf--jump-rules= already uses, and
+for the same reason: a hand-kept copy drifts the moment calc edits the
+set upstream, whereas an unmatched left-hand side simply replaces
+nothing.
 
 So =maf--sel-coefficient-first= applies the one part of the ordering
 that provably cannot undo a rewrite: moving numbers to the front of a
