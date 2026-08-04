@@ -95,4 +95,92 @@
   (call-interactively 'calc-hyperbolic)
   (call-interactively 'mafcmd-vconcat)
   (cl-assert (equal (calc-top 1 'full) '(vec 3 4 1 2)))
+  (calc-pop 1)
+
+  ;; A relation is an element, not a subject to run once per side: the
+  ;; | family takes :map -1 (see the table in maf-cmds.el). Two stacked
+  ;; equations give the vector of equations — calc's own spelling of a
+  ;; system — where the per-side mapping would pair them into the one
+  ;; equation [x, y] = [1, 2].
+  (maf-push "x = 1")
+  (maf-push "y = 2")
+  (goto-char (point-max))
+  (call-interactively 'mafcmd-vconcat)
+  (cl-assert (equal (calc-top 1 'full)
+                    '(vec (calcFunc-eq (var x var-x) 1)
+                          (calcFunc-eq (var y var-y) 2))))
+  (calc-pop 1)
+
+  ;; Same through the real keypress.
+  (maf-push "x = 1")
+  (maf-push "y = 2")
+  (goto-char (point-max))
+  (execute-kbd-macro (kbd "|"))
+  (cl-assert (equal (calc-top 1 'full)
+                    '(vec (calcFunc-eq (var x var-x) 1)
+                          (calcFunc-eq (var y var-y) 2))))
+  (calc-pop 1)
+
+  ;; And from the top equation's own line, not just from home — the
+  ;; margin resolves the entry whole rather than as an equation target.
+  (maf-push "x = 1")
+  (maf-push "y = 2")
+  (goto-char (point-max))
+  (forward-line -1)
+  (end-of-line)
+  (call-interactively 'mafcmd-vconcat)
+  (cl-assert (equal (calc-top 1 'full)
+                    '(vec (calcFunc-eq (var x var-x) 1)
+                          (calcFunc-eq (var y var-y) 2))))
+  (calc-pop 1)
+
+  ;; One equation and a scalar: the equation stays one element.
+  (maf-push "x = 1")
+  (maf-push "2")
+  (goto-char (point-max))
+  (call-interactively 'mafcmd-vconcat)
+  (cl-assert (equal (calc-top 1 'full)
+                    '(vec (calcFunc-eq (var x var-x) 1) 2)))
+  (calc-pop 1)
+
+  ;; A vector operand splices around a relation as around anything else.
+  (maf-push "[a, b]")
+  (maf-push "y = 2")
+  (goto-char (point-max))
+  (call-interactively 'mafcmd-vconcat)
+  (cl-assert (equal (calc-top 1 'full)
+                    '(vec (var a var-a) (var b var-b)
+                          (calcFunc-eq (var y var-y) 2))))
+  (calc-pop 1)
+
+  ;; The variants opt out too: I | reverses, H | appends vectors of
+  ;; equations.
+  (maf-push "x = 1")
+  (maf-push "y = 2")
+  (goto-char (point-max))
+  (call-interactively 'calc-inverse)
+  (call-interactively 'mafcmd-vconcat)
+  (cl-assert (equal (calc-top 1 'full)
+                    '(vec (calcFunc-eq (var y var-y) 2)
+                          (calcFunc-eq (var x var-x) 1))))
+  (calc-pop 1)
+
+  (maf-push "[x = 1]")
+  (maf-push "[y = 2]")
+  (goto-char (point-max))
+  (call-interactively 'calc-hyperbolic)
+  (call-interactively 'mafcmd-vconcat)
+  (cl-assert (equal (calc-top 1 'full)
+                    '(vec (calcFunc-eq (var x var-x) 1)
+                          (calcFunc-eq (var y var-y) 2))))
+  (calc-pop 1)
+
+  ;; The opt-out is the | family's alone — arithmetic still pairs two
+  ;; equations side by side.
+  (maf-push "x = 1")
+  (maf-push "y = 2")
+  (goto-char (point-max))
+  (call-interactively 'mafcmd-add)
+  (cl-assert (equal (calc-top 1 'full)
+                    '(calcFunc-eq (+ (var x var-x) (var y var-y)) 3)))
   (calc-pop 1))

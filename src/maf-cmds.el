@@ -107,7 +107,13 @@ are set, making the I and H prefixes route to the variant contextually.
   ;; calcFunc-vconcat: | here always builds a vector, where calc leaves
   ;; it symbolic whenever an operand is not provably scalar (see
   ;; `maf-vconcat').
-  (vconcat binary maf-vconcat "|" :inv vconcatrev :hyp append :invhyp appendrev)
+  ;;
+  ;; The whole | family takes :map -1: a relation is an element, not a
+  ;; thing to run once per side. Mapped, two stacked equations would
+  ;; pair up into [x, y] = [1, 2] — one equation of vectors — where
+  ;; concatenation means [x = 1, y = 2], the vector of equations that is
+  ;; calc's own spelling of a system (what a S returns and takes).
+  (vconcat binary maf-vconcat "|" :inv vconcatrev :hyp append :invhyp appendrev :map -1)
   (mod binary calcFunc-mod "%")
   (idiv binary calcFunc-idiv "\\")
   (fact unary calcFunc-fact "!")
@@ -136,7 +142,7 @@ are set, making the I and H prefixes route to the variant contextually.
   (arctan unary calcFunc-arctan)
   (alog binary calcFunc-alog)
   (nroot binary calcFunc-nroot)
-  (vconcatrev binary maf-vconcatrev)
+  (vconcatrev binary maf-vconcatrev :map -1)   ; see vconcat above
   (ffloor unary calcFunc-ffloor)
   (fround unary calcFunc-fround)
   (sinh unary calcFunc-sinh)
@@ -144,13 +150,13 @@ are set, making the I and H prefixes route to the variant contextually.
   (tanh unary calcFunc-tanh)
   (log10 unary calcFunc-log10)
   (exp10 unary calcFunc-exp10)
-  (append binary calcFunc-append)
+  (append binary calcFunc-append :map -1)      ; see vconcat above
   (fceil unary calcFunc-fceil)
   (ftrunc unary calcFunc-ftrunc)
   (arcsinh unary calcFunc-arcsinh)
   (arccosh unary calcFunc-arccosh)
   (arctanh unary calcFunc-arctanh)
-  (appendrev binary calcFunc-appendrev)
+  (appendrev binary calcFunc-appendrev :map -1)  ; see vconcat above
   ;; algebra (calc-a-oper-keys)
   (apart unary calcFunc-apart "a a")
   (collect binary calcFunc-collect "a c")
