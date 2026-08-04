@@ -44,7 +44,6 @@
     - [ ] start in filter mode
     - [ ] filter such be visible in a persistent input field
 
-
 * Todo
 # NOW
 ** IN-PROGRESS if entry was opened at home, it should land at home
