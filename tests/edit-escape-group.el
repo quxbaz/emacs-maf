@@ -14,7 +14,7 @@
   ;; The gesture as it is actually used: type up to the closer
   ;; electric-pair already placed, then TAB past it. Driven by the real
   ;; key, so the binding is exercised and not just the command.
-  (call-interactively 'maf-edit-add-entry)
+  (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "sqrt(x^2+1") nil)
   (cl-assert (looking-at-p ")$"))
   (progn (execute-kbd-macro "\t") nil)
@@ -23,7 +23,7 @@
 
   ;; Nested groups peel off one level per press, and a press with
   ;; nothing left to escape leaves point where it is.
-  (call-interactively 'maf-edit-add-entry)
+  (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "f(g(x") nil)
   (cl-assert (looking-at-p "))$"))
   (call-interactively 'maf-editplus-escape-group)
@@ -35,7 +35,7 @@
   (call-interactively 'maf-edit-discard)
 
   ;; Brackets are groups too.
-  (call-interactively 'maf-edit-add-entry)
+  (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "[1,2") nil)
   (cl-assert (looking-at-p "\\]$"))
   (call-interactively 'maf-editplus-escape-group)
@@ -46,7 +46,7 @@
   ;; maf-edit: calc's half-open interval notation mixes them, and the
   ;; `]' closes the group the `(' opened. Inserted rather than typed —
   ;; electric-pair would answer the `(' with its own `)'.
-  (call-interactively 'maf-edit-add-entry)
+  (call-interactively 'maf-edit-add-entry-below)
   (progn (insert "(1 .. 2]") (backward-char 2) nil)
   (call-interactively 'maf-editplus-escape-group)
   (cl-assert (eolp))
@@ -55,13 +55,13 @@
   ;; A group whose closer has not been typed yet has no far side to
   ;; reach, so point goes to the end of the entry instead — the same
   ;; answer as escaping from the entry's top level.
-  (call-interactively 'maf-edit-add-entry)
+  (call-interactively 'maf-edit-add-entry-below)
   (progn (insert "sin(x") nil)
   (call-interactively 'maf-editplus-escape-group)
   (cl-assert (eolp))
   (call-interactively 'maf-edit-discard)
 
-  (call-interactively 'maf-edit-add-entry)
+  (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "a+b") nil)
   (maf-edit-move-beginning-of-line 1)
   (cl-assert (looking-at-p "a"))

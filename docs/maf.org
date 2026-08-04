@@ -53,7 +53,6 @@
 ** TODO export entry as latex
 ** TODO issue with map, mapping actual commands
    eg, can't map command against vector
-** IN-PROGRESS rebind C-RET to existing C-c C-c
 
 * Port
   - [-] Port my/calc/* features one-by-one.

@@ -11,7 +11,7 @@
 
   ;; M-p fills a fresh entry with the newest item; pressing again walks
   ;; back through the ring, replacing rather than accumulating.
-  (call-interactively 'maf-edit-add-entry)
+  (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro (kbd "M-p")) nil)
   (cl-assert (string= (maf-edit--entry-text (maf-recall--entry-at-point))
                       "x + 1"))
@@ -37,7 +37,7 @@
 
   ;; Half-typed text is stashed as slot 0: M-n past the newest item
   ;; puts it back, so a recall never costs the user what they typed.
-  (call-interactively 'maf-edit-add-entry)
+  (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "zz") nil)
   (progn (execute-kbd-macro (kbd "M-p")) nil)
   (cl-assert (string= (maf-edit--entry-text (maf-recall--entry-at-point))
@@ -52,7 +52,7 @@
 
   ;; Typing over a recalled entry starts a fresh cycle: the typed text
   ;; becomes the new stash, and M-p again starts from the newest item.
-  (call-interactively 'maf-edit-add-entry)
+  (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro (kbd "M-p M-p")) nil)
   (cl-assert (string= (maf-edit--entry-text (maf-recall--entry-at-point))
                       "42"))
@@ -97,7 +97,7 @@
   (call-interactively 'maf-edit-commit)
   (cl-assert (= (calc-stack-size) 1))
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "42"))
-  (call-interactively 'maf-edit-add-entry)
+  (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro (kbd "M-p")) nil)
   (cl-assert (string= (maf-edit--entry-text (maf-recall--entry-at-point))
                       "x + 1"))

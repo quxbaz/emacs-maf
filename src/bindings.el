@@ -109,7 +109,7 @@
 ;; once and then left alone, reachable by name afterwards, giving up
 ;; its key to something pressed while working.
 (define-key maf-mode-map (kbd "p") #'maf-browse-variables)
-;; The in-place editing entry keys (SPC / ` / C-RET / S-RET / "(") are
+;; The in-place editing entry keys (SPC / ` / S-RET / "(") are
 ;; installed by the edit module when it is enabled (see
 ;; modules/edit.el), not here. ` shadows calc-edit, the command the
 ;; whole module replaces.
@@ -185,9 +185,10 @@
 ;; C-u RET is the keep-point variant (`maf-dup-here'): same push, point
 ;; stays on the target instead of homing, so the next command still
 ;; resolves there. It rides RET's prefix argument rather than a key of
-;; its own — the RET family is full (M-RET below, C-RET and S-RET in the
-;; edit module) and W is the only unbound single key left in the buffer,
-;; too scarce to spend on where point lands. Contextual dup has no
+;; its own — the RET family is full (M-RET below, C-RET on
+;; `mafcmd-let', S-RET in the edit module) and W is the only unbound
+;; single key left in the buffer, too scarce to spend on where point
+;; lands. Contextual dup has no
 ;; numeric reading to conflict with; cf. `maf-swap-up', whose prefix
 ;; likewise switches mode rather than counting. The prefix reaches the
 ;; duplicate only: with a selection active the key clears, which has
@@ -267,9 +268,19 @@
 ;; the first, a contextual subject, and $ for the stack.
 (define-key maf-mode-map (kbd "a b") #'mafcmd-substitute)
 ;; Quick substitution: apply an assignment from the stack to the
-;; contextual subject. C-c C-c is the conventional mode-specific
-;; "apply this" gesture; calc leaves it unbound.
-(define-key maf-mode-map (kbd "C-c C-c") #'mafcmd-let)
+;; contextual subject. C-<return> is the one-hand chord a substitution
+;; is worth, and the edit module's quick-add gave the key up for it
+;; (`, S-RET and "(" remain, and ` opens the same bottom entry C-RET
+;; used to, as a trip home). It replaces C-c C-c, the conventional
+;; mode-specific
+;; "apply this" gesture, which had been the command's only key and is
+;; unbound again — two hands and four keys for something reached this
+;; often, where the leaf is a control character calc's fancy prefix
+;; would rather not carry (K C-c C-c is what `maf--fancy-prefix-keep's
+;; provisional path was written for; see src/stack.el). During digit
+;; entry C-<return> is calc's own map, where it stays
+;; `maf-digit-commit-here' (src/minibuffer.el).
+(define-key maf-mode-map (kbd "C-<return>") #'mafcmd-let)
 ;; Polynomial roots by factoring, with multiplicity. M-r is unbound in
 ;; calc itself.
 (define-key maf-mode-map (kbd "M-r") #'mafcmd-poly-roots)

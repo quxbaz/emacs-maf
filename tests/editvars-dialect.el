@@ -95,13 +95,13 @@
 
   ;; Freshly typed text takes the dialect: juxtaposed letters are
   ;; factors, and a quoted name is one variable.
-  (call-interactively 'maf-edit-add-entry)
+  (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "5xy") nil)
   (call-interactively 'maf-edit-commit)
   (cl-assert (string= (math-format-value (calc-top 1 'full) 1000) "5 x y"))
   (calc-pop (calc-stack-size))
 
-  (call-interactively 'maf-edit-add-entry)
+  (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "2\\cm") nil)
   (call-interactively 'maf-edit-commit)
   (cl-assert (string= (math-format-value (calc-top 1 'full) 1000) "2 cm"))
@@ -209,7 +209,7 @@
   (progn (maf-use-editvars-mode -1) nil)
   (cl-assert (eq maf-edit-parse-text-function 'identity))
   (cl-assert (string= (maf-editvars-parse-text "2xy") "2xy"))
-  (call-interactively 'maf-edit-add-entry)
+  (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "xy") nil)
   (call-interactively 'maf-edit-commit)
   (cl-assert (string= (math-format-value (calc-top 1 'full) 1000) "xy"))

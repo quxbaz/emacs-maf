@@ -13,7 +13,7 @@
   (calc-pop (calc-stack-size))
 
   ;; The shape asked for.
-  (call-interactively 'maf-edit-add-entry)
+  (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "1,2,3") nil)
   (call-interactively 'maf-edit-commit)
   (cl-assert (equal (calc-top 1) '(vec 1 2 3)))
@@ -21,7 +21,7 @@
 
   ;; Two elements, and spacing around the commas is the parser's
   ;; business rather than this rule's.
-  (call-interactively 'maf-edit-add-entry)
+  (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "1 , 2") nil)
   (call-interactively 'maf-edit-commit)
   (cl-assert (equal (calc-top 1) '(vec 1 2)))
@@ -29,13 +29,13 @@
 
   ;; Whatever the commas separate comes along: a row of vectors is the
   ;; matrix, and a row of equations the vector of both.
-  (call-interactively 'maf-edit-add-entry)
+  (call-interactively 'maf-edit-add-entry-below)
   (progn (insert "[1,2],[3,4]") nil)
   (call-interactively 'maf-edit-commit)
   (cl-assert (equal (calc-top 1) '(vec (vec 1 2) (vec 3 4))))
   (calc-pop (calc-stack-size))
 
-  (call-interactively 'maf-edit-add-entry)
+  (call-interactively 'maf-edit-add-entry-below)
   (progn (insert "x=1,y=2") nil)
   (call-interactively 'maf-edit-commit)
   (cl-assert (string= (math-format-value (calc-top 1) 1000) "[x = 1, y = 2]"))
@@ -45,20 +45,20 @@
   ;; these entries is one the rule may touch. Each already parses —
   ;; which is the whole test, since calc has no reading for a comma at
   ;; the top level and so nothing that parses can have one.
-  (call-interactively 'maf-edit-add-entry)
+  (call-interactively 'maf-edit-add-entry-below)
   (progn (insert "f(1,2)") nil)
   (call-interactively 'maf-edit-commit)
   (cl-assert (equal (calc-top 1) '(calcFunc-f 1 2)))
   (calc-pop (calc-stack-size))
 
-  (call-interactively 'maf-edit-add-entry)
+  (call-interactively 'maf-edit-add-entry-below)
   (progn (insert "[1,2]") nil)
   (call-interactively 'maf-edit-commit)
   (cl-assert (equal (calc-top 1) '(vec 1 2)))
   (calc-pop (calc-stack-size))
 
   ;; Calc's complex pair, whose comma is the parens'.
-  (call-interactively 'maf-edit-add-entry)
+  (call-interactively 'maf-edit-add-entry-below)
   (progn (insert "(1,2)") nil)
   (call-interactively 'maf-edit-commit)
   (cl-assert (equal (calc-top 1) '(cplx 1 2)))
@@ -66,7 +66,7 @@
 
   ;; A comma inside a string is text, not a separator: the entry is the
   ;; string it was written as, three characters long.
-  (call-interactively 'maf-edit-add-entry)
+  (call-interactively 'maf-edit-add-entry-below)
   (progn (insert "\"a,b\"") nil)
   (call-interactively 'maf-edit-commit)
   (cl-assert (equal (calc-top 1) '(vec 97 44 98)))
@@ -85,7 +85,7 @@
 
   ;; Per entry, not per session: the entry with the commas becomes a
   ;; vector and its neighbour is left as it was.
-  (call-interactively 'maf-edit-add-entry)
+  (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "1,2") nil)
   (call-interactively 'maf-edit-newline)
   (progn (execute-kbd-macro "9") nil)
@@ -115,7 +115,7 @@
 
   ;; Text that is broken for some other reason is still refused: the
   ;; rule completes a shape, it does not rescue a parse.
-  (call-interactively 'maf-edit-add-entry)
+  (call-interactively 'maf-edit-add-entry-below)
   (progn (insert "1,2,(") nil)
   (cl-assert (string-match-p "cannot commit"
                              (condition-case e

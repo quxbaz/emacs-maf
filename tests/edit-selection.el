@@ -12,10 +12,9 @@
   (cl-assert (string-match-p "\\." (buffer-substring-no-properties
                                     (point-min) (line-end-position))))
 
-  ;; Every gesture refuses: the toggle and all three quick-adds, plus
-  ;; the mode itself, so `M-x maf-edit-mode' cannot slip past either.
+  ;; Every gesture refuses: the toggle and both quick-adds, plus the
+  ;; mode itself, so `M-x maf-edit-mode' cannot slip past either.
   (cl-assert (not (ignore-errors (call-interactively 'maf-edit) t)))
-  (cl-assert (not (ignore-errors (call-interactively 'maf-edit-add-entry) t)))
   (cl-assert (not (ignore-errors (call-interactively 'maf-edit-add-entry-below) t)))
   (cl-assert (not (ignore-errors (call-interactively 'maf-edit-add-vector) t)))
   (cl-assert (not (ignore-errors (maf-edit-mode 1) t)))
@@ -50,7 +49,7 @@
   (progn (calc-cursor-stack-index 2) (search-forward "a") (backward-char 1))
   (call-interactively 'calc-select-here)
   (progn (calc-cursor-stack-index 1) (end-of-line) nil)
-  (cl-assert (not (ignore-errors (call-interactively 'maf-edit-add-entry) t)))
+  (cl-assert (not (ignore-errors (call-interactively 'maf-edit-add-entry-below) t)))
   (cl-assert (not maf-edit-mode))
   (cl-assert (= (calc-stack-size) 2))
 

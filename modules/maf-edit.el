@@ -4,7 +4,7 @@
 ;;
 ;; maf-edit: wdired-style in-place editing of the calc stack, packaged
 ;; as the `edit' module. The module toggle only installs the entry
-;; bindings (SPC / ` / C-<return> / S-<return> / "(") into `maf-mode-map';
+;; bindings (SPC / ` / S-<return> / "(") into `maf-mode-map';
 ;; the editing itself is the on-demand `maf-edit-mode' session below.
 ;; See `maf-modules'.
 ;;
@@ -74,9 +74,9 @@
 
 (defvar-local maf-edit--return nil
   "Point snapshot to restore when this edit session ends, or nil.
-Set by `maf-edit-add-entry' (the quick-add gesture) before entering;
-commit and discard both consult it, returning point to where it was
-before the edit began instead of keeping its in-edit position.
+Set by `maf-edit--enter-for-add' (the quick-add gestures) before
+entering; commit and discard both consult it, returning point to where
+it was before the edit began instead of keeping its in-edit position.
 `maf-edit-add-entry-at-home' stores a home snapshot here instead,
 whose restore is a no-op: that gesture's landing is
 `maf-edit--home-return's, not this one's.")
@@ -1008,7 +1008,7 @@ and discard alike return point to where it was before the gesture."
 (defun maf-edit--open-at-dot ()
   "Open a blank entry at the bottom of a running session; return its overlay.
 Point lands on the new entry's content column, ready to type. The
-opening gesture of `maf-edit-add-entry', separated from entering the
+opening gesture of the quick-add commands, separated from entering the
 session so a command already inside one can add an entry at home too."
   (goto-char (overlay-start maf-edit--dot))
   (let ((maf-edit--inhibit t)
@@ -1029,17 +1029,6 @@ session so a command already inside one can add an entry at home too."
       (maf-edit--repair)
       (goto-char (+ bol (maf-edit--leading-prefix-run bol))))))
 
-(defun maf-edit-add-entry ()
-  "Enter maf-edit with a fresh entry started at the bottom of the stack.
-The new entry opens as a blank numbered line just above the dot, point
-on its content column, ready to type — from anywhere, including an
-empty stack. When the session ends, commit and discard alike, point
-returns to where it was before this command ran instead of staying in
-the edited text."
-  (interactive)
-  (maf-edit--enter-for-add)
-  (maf-edit--open-at-dot))
-
 (defun maf-edit-add-entry-at-home ()
   "Enter maf-edit with a fresh entry at the bottom, landing point home.
 
@@ -1048,11 +1037,11 @@ the edited text."
                     1:  z
                         .|
 
-`maf-edit-add-entry's blank line just above the dot, point on its
-content column ready to type — from anywhere, including an empty
-stack. Where the two commands differ is where point is left when the
-session ends: this one is a trip home, so point stays there, below the
-committed entry, and the place it left is marked. A single
+The new entry opens as a blank numbered line just above the dot, point
+on its content column ready to type — from anywhere, including an
+empty stack. The session is a trip home: when it ends point stays
+there, below the committed entry, and the place it left is marked. A
+single
 \\[pop-to-mark-command] returns to it, as does \\[maf-go-home], which
 bounces back to the mark when pressed at home. Pressed at home there
 is nothing to mark and nothing to return from.
@@ -1083,21 +1072,19 @@ mark is still the way back."
 The new entry's blank line opens directly below the entry at point's
 line and the levels renumber around it, so typing and committing
 inserts mid-stack. At home, or on an empty stack, it opens at the
-bottom — `maf-edit-add-entry's opening gesture. Unlike that command,
-when the session ends point stays with the edited text — after a
-commit it rests on the new entry — rather than returning to where it
-was before this command ran."
+bottom. Unlike `maf-edit-add-vector', when the session ends point
+stays with the edited text — after a commit it rests on the new
+entry — rather than returning to where it was before this command ran."
   (interactive)
-  (let ((m (max (calc-locate-cursor-element (point)) 1)))
-    (if (zerop (calc-stack-size))
-        (progn
-          (maf-edit-add-entry)
-          ;; This gesture keeps point with the edited text: drop the
-          ;; return snapshot the delegated opener stashed.
-          (setq maf-edit--return nil))
-      (when maf-edit-mode
-        (user-error "maf-edit is already active"))
-      (maf-edit-mode 1)
+  (let ((m (max (calc-locate-cursor-element (point)) 1))
+        (emptyp (zerop (calc-stack-size))))
+    (when maf-edit-mode
+      (user-error "maf-edit is already active"))
+    (maf-edit-mode 1)
+    (if emptyp
+        ;; Nothing to sit below: open the blank entry at the dot, the
+        ;; same place the bottom of the stack would be.
+        (maf-edit--open-at-dot)
       ;; End of entry M's last line: the character before the next
       ;; index line's start. From there the newline gesture opens the
       ;; blank entry through the classify/repair machinery, exactly as
@@ -1113,17 +1100,18 @@ was before this command ran."
       .        =>  1+  [|]
                        .
 
-`maf-edit-add-entry's blank line at home, pre-filled with an empty
-pair of brackets and point between them, so the elements are all that
-is left to type. One key for a shape whose closing bracket is a
-nuisance to reach — and unlike typing the bracket into an edit
-session, it also opens the session.
+A blank entry opened at home, pre-filled with an empty pair of
+brackets and point between them, so the elements are all that is left
+to type. One key for a shape whose closing bracket is a nuisance to
+reach — and unlike typing the bracket into an edit session, it also
+opens the session.
 
 Committed untouched it pushes the empty vector []; \\<maf-edit-mode-map>\\[maf-edit-discard] backs out
-instead. As with `maf-edit-add-entry', point returns to where it was
-before the command when the session ends."
+instead. Unlike `maf-edit-add-entry-below', point returns to where it
+was before the command when the session ends."
   (interactive)
-  (maf-edit-add-entry)
+  (maf-edit--enter-for-add)
+  (maf-edit--open-at-dot)
   ;; Inserted as one literal string rather than typed through
   ;; `electric-pair-mode': the pair is what is wanted, and going
   ;; through the electric path would depend on the user's own
@@ -1238,21 +1226,20 @@ session `maf-edit' opened there."
 
 (define-minor-mode maf-use-edit-mode
   "Global minor mode making maf-edit's entry keys live in `maf-mode-map'.
-Enabled, SPC / ` / C-<return> / S-<return> / ( run the maf-edit entry
-commands; disabled, they cede back to calc. SPC shadows one of
-calc-enter's two keys (RET still runs it) and enters editing, where
-`maf-edit-mode-map's RET commits; the rest are the quick-add gestures.
-C-<return> opens an entry at the bottom of the stack and returns point
-to where it was; ` is the same opening taken as a trip home — point
-lands home and a mark holds the place it left. It shadows calc-edit,
-whose whole job the module takes over: SPC edits the stack in place
-instead of in a separate buffer.
-S-<return> opens an entry below point; a terminal that cannot deliver
-the key reaches the command by name, C-j being left to calc-over.
-( opens a bracketed vector
-entry at the bottom, shadowing calc-begin-complex — a complex number
-is still one entry away as (a, b) typed into any of these gestures,
-while [ keeps calc-begin-vector for the digit-entry route.
+Enabled, SPC / ` / S-<return> / ( run the maf-edit entry commands;
+disabled, they cede back to calc. SPC shadows one of calc-enter's two
+keys (RET still runs it) and enters editing, where `maf-edit-mode-map's
+RET commits; the rest are the quick-add gestures. ` opens an entry at
+the bottom of the stack taken as a trip home — point lands home and a
+mark holds the place it left. It shadows calc-edit, whose whole job
+the module takes over: SPC edits the stack in place instead of in a
+separate buffer. S-<return> opens an entry below point — at home, at
+the bottom of the stack; a terminal that cannot deliver the key
+reaches the command by name, C-j being left to calc-over. ( opens a
+bracketed vector entry at the bottom, shadowing calc-begin-complex — a
+complex number is still one entry away as (a, b) typed into any of
+these gestures, while [ keeps calc-begin-vector for the digit-entry
+route.
 
 S-<return> means newline inside `maf-edit-mode-map', so the key that
 opens an entry below point also breaks the line once the session is
@@ -1268,12 +1255,10 @@ on-demand `maf-edit-mode' editing session they lead into."
       (progn
         (define-key maf-mode-map (kbd "SPC") #'maf-edit)
         (define-key maf-mode-map (kbd "`") #'maf-edit-add-entry-at-home)
-        (define-key maf-mode-map (kbd "C-<return>") #'maf-edit-add-entry)
         (define-key maf-mode-map (kbd "S-<return>") #'maf-edit-add-entry-below)
         (define-key maf-mode-map (kbd "(") #'maf-edit-add-vector))
     (define-key maf-mode-map (kbd "SPC") nil)
     (define-key maf-mode-map (kbd "`") nil)
-    (define-key maf-mode-map (kbd "C-<return>") nil)
     (define-key maf-mode-map (kbd "S-<return>") nil)
     (define-key maf-mode-map (kbd "(") nil)))
 
@@ -1281,6 +1266,6 @@ on-demand `maf-edit-mode' editing session they lead into."
 ;; works on its own without it.
 (when (require 'maf-module nil t)
   (maf-register-module 'maf-edit #'maf-use-edit-mode
-                       "Edit the stack in place as plain text (SPC / ` / C-RET / S-RET)."))
+                       "Edit the stack in place as plain text (SPC / ` / S-RET / \"(\")."))
 
 (provide 'maf-edit)

@@ -136,8 +136,8 @@ offers the canonical form of a number rather than your literal keystrokes:
 - *(revised after landing)* **At home in a session** there is no entry to fill,
   so `M-p` opens a blank one at the bottom and the cycle runs in it — the same
   thing `M-p` means at home out on the stack. It reuses maf-edit's own opening
-  gesture (`maf-edit--open-at-dot`, extracted from `maf-edit-add-entry` for the
-  purpose) rather than a second copy of it. `M-n` at home opens nothing: there
+  gesture (`maf-edit--open-at-dot`, extracted from the quick-add commands for
+  the purpose) rather than a second copy of it. `M-n` at home opens nothing: there
   is no cycle to walk back through, and an empty entry left behind would be a
   surprise. Slot 0 for such a cycle is the empty text the entry started as, so
   walking back past the newest item empties it again and a commit then drops

@@ -48,7 +48,7 @@
   (cl-assert (eq (char-before) ?b))
   (calc-pop (calc-stack-size))
 
-  ;; At home the gesture is maf-edit-add-entry's: bottom of the stack.
+  ;; At home there is no entry to sit below: the bottom of the stack.
   (maf-push "a")
   (progn (goto-char (point-max)) nil)
   (call-interactively 'maf-edit-add-entry-below)

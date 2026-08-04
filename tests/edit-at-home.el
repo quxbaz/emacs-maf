@@ -99,7 +99,7 @@
 
   ;; The quick-add gestures state their own placement and keep it: at
   ;; home, add-entry-below opens at the bottom and stays with the new
-  ;; entry, while add-entry returns to the pre-edit point — which at
+  ;; entry, while add-vector returns to the pre-edit point — which at
   ;; home is home, by its own rule rather than this one.
   (maf-push "a")
   (progn (calc-cursor-stack-index 0) nil)
@@ -110,10 +110,10 @@
   (cl-assert (not (maf--at-home-p)))
   (cl-assert (eq (char-before) ?7))
   (progn (calc-cursor-stack-index 0) nil)
-  (call-interactively 'maf-edit-add-entry)
+  (call-interactively 'maf-edit-add-vector)
   (progn (execute-kbd-macro "8") nil)
   (call-interactively 'maf-edit-commit)
   (cl-assert (= (calc-stack-size) 3))
-  (cl-assert (equal (calc-top 1 'full) 8))
+  (cl-assert (equal (calc-top 1 'full) '(vec 8)))
   (cl-assert (maf--at-home-p))
   (calc-pop (calc-stack-size)))

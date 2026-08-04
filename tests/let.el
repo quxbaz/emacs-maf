@@ -1,16 +1,23 @@
 ;; mafcmd-let: the top entry is a temporary assignment (or a vector of
 ;; them) and the entry point names is evaluated under it. The first case
-;; goes through the C-c C-c binding; the rest call the command directly
-;; to isolate its behavior from key lookup.
+;; goes through the C-<return> binding, the command's only key; the rest
+;; call the command directly to isolate its behavior from key lookup.
 
 (maf-step
+  ;; The key is maf's own, not the edit module's: the module is what
+  ;; used to hold it, so the lookup has to survive the module being
+  ;; toggled off and on.
+  (cl-assert (eq (lookup-key maf-mode-map (kbd "C-<return>")) 'mafcmd-let))
+  (progn (maf-use-edit-mode -1) (maf-use-edit-mode 1) nil)
+  (cl-assert (eq (lookup-key maf-mode-map (kbd "C-<return>")) 'mafcmd-let))
+
   ;; Home: the top entry is the argument, level 2 the subject. The value
   ;; is evaluated in, so the formula folds around it. Run from the key,
   ;; so the binding itself is covered.
   (maf-push "2 x + 1")
   (maf-push "x := 3")
   (goto-char (point-max))
-  (execute-kbd-macro (kbd "C-c C-c"))
+  (execute-kbd-macro (kbd "C-<return>"))
   (cl-assert (= (calc-stack-size) 1))
   (cl-assert (equal (calc-top 1 'full) 7))
   ;; The binding was temporary: nothing is stored afterwards.
