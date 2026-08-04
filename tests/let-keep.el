@@ -53,10 +53,14 @@
   (calc-pop (calc-stack-size))
   (calc-push (math-read-expr "2 x"))
   (calc-push (math-read-expr "x = 3"))
-  (progn (define-key maf-mode-map (kbd "C-c y") #'mafcmd-let)
+  ;; C-c q rather than a letter the surrounding Emacs might own: the
+  ;; user's global C-c bindings sit in higher-priority maps, and a
+  ;; shadowed leaf would leave the sequence dangling with the flag
+  ;; stranded.
+  (progn (define-key maf-mode-map (kbd "C-c q") #'mafcmd-let)
          (goto-char (point-max))
-         (execute-kbd-macro (kbd "K C-c y"))
-         (define-key maf-mode-map (kbd "C-c y") nil)
+         (execute-kbd-macro (kbd "K C-c q"))
+         (define-key maf-mode-map (kbd "C-c q") nil)
          nil)
   (cl-assert (= (calc-stack-size) 3))
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "6"))
