@@ -36,7 +36,15 @@
     (cl-assert (string-match-p "=" (buffer-substring (line-beginning-position)
                                                      (line-end-position))))
 
-    ;; The detail pane (a separate buffer) follows point.
+    ;; The detail renderer (behind `o' / `d' / `?', i.e.
+    ;; `maf-formulas-show-detail') fills the detail buffer for the
+    ;; formula at point.
+    (cl-assert (eq (key-binding (kbd "o")) #'maf-formulas-show-detail))
+    (cl-assert (eq (key-binding (kbd "d")) #'maf-formulas-show-detail))
+    (cl-assert (eq (key-binding (kbd "?")) #'maf-formulas-show-detail))
+    ;; The shifted keys pin the pane open.
+    (cl-assert (eq (key-binding (kbd "O")) #'maf-formulas-toggle-detail))
+    (cl-assert (eq (key-binding (kbd "D")) #'maf-formulas-toggle-detail))
     (maf-formulas--update-detail)
     (with-current-buffer maf-formulas--detail-buffer
       (cl-assert (> (buffer-size) 0)))
@@ -53,9 +61,10 @@
     (setq maf-formulas--query "")
     (maf-formulas--render)
 
-    ;; TAB walks the groups and cycles: from the first formula line to
-    ;; the second category header, and past the last back to the first.
-    (cl-assert (eq (key-binding (kbd "TAB")) #'maf-formulas-next-group))
+    ;; TAB steps formula to formula, like n; M-n walks the groups and
+    ;; stops dead at the last one rather than cycling.
+    (cl-assert (eq (key-binding (kbd "TAB")) #'maf-formulas-next-item))
+    (cl-assert (eq (key-binding (kbd "M-n")) #'maf-formulas-next-group))
     (goto-char (point-min))
     (maf-formulas-next-item)
     (maf-formulas-next-group)
@@ -64,7 +73,16 @@
                        (line-beginning-position) (line-end-position))
                       "Geometry — 3D: Cylinder"))
     (maf-formulas-next-group)
-    (maf-formulas-next-group)
+    (cl-assert (equal (buffer-substring-no-properties
+                       (line-beginning-position) (line-end-position))
+                      "Geometry — 3D: Sphere"))
+    (let ((p (point)))                  ; the last header: M-n stops here
+      (cl-assert (condition-case nil (progn (maf-formulas-next-group) nil)
+                   (user-error t)))
+      (cl-assert (= (point) p)))
+    (goto-char (point-min))             ; the first header: M-p stops here
+    (cl-assert (condition-case nil (progn (maf-formulas-prev-group) nil)
+                 (user-error t)))
     (cl-assert (= (point) (point-min)))
 
     ;; Typing into the filter narrows live: the hook the reader installs
