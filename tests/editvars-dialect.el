@@ -173,12 +173,34 @@
   (progn (setq maf-editvars-quote-char maf-step--editvars-char) nil)
   (cl-assert (maf-editvars--applicable-p))
 
-  ;; Backslash is TeX's own escape and calc both reads and prints TeX,
-  ;; so the dialect stands down in every language but Normal: the text
+  ;; The dialect stands down in every language but Normal: the text
   ;; reaches the parser as written.
   (progn (calc-set-language 'tex) nil)
   (cl-assert (not (maf-editvars--applicable-p)))
   (cl-assert (string= (maf-editvars-parse-text "2xy") "2xy"))
+  (progn (calc-set-language nil) nil)
+
+  ;; Why that restriction is not about the mark, and does not lift when
+  ;; the mark changes. The dialect rests on juxtaposition meaning
+  ;; multiplication, which is a fact about the Normal language: calc's
+  ;; Mathematica mode renders a call as `sin x' and groups 2xy the
+  ;; other way, so the same text means something else there.
+  (progn (calc-set-language 'math) nil)
+  (cl-assert (string= (math-format-value (math-read-expr "sin(x)") 1000) "sin x"))
+  (cl-assert (equal (math-read-expr "2x*y")
+                    (math-read-expr "(2*x)*y")))
+  (progn (calc-set-language nil) nil)
+  (cl-assert (equal (math-read-expr "2x*y")
+                    (math-read-expr "2*(x*y)")))
+  ;; And two more languages calc itself round-trips cleanly, where this
+  ;; module would not: C spells pi with an underscore whose PI would
+  ;; split, and TeX writes a product with a word the default mark reads
+  ;; as a quoted name.
+  (progn (calc-set-language 'c) nil)
+  (cl-assert (string-match-p "M_PI" (math-format-value (math-read-expr "pi") 1000)))
+  (progn (calc-set-language 'tex) nil)
+  (cl-assert (string-match-p "\\\\times"
+                             (math-format-value (math-read-expr "cm*(x+1)") 1000)))
   (progn (calc-set-language nil) nil)
   (cl-assert (maf-editvars--applicable-p))
 

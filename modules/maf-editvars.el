@@ -57,10 +57,18 @@
 ;; session that wants both wants another character. Calc leaves `@',
 ;; `~' and `` ` `` unread, and any of them will serve.
 ;;
-;; Restricted to the Normal language, where the default mark is
-;; concerned: calc reads and prints TeX, whose escape it is. In any
-;; language but Normal this module stands down and entries are read as
-;; calc would read them.
+;; Restricted to the Normal language, and not merely because the
+;; default mark is TeX's escape — changing the mark does not lift the
+;; restriction. What the dialect rests on is that juxtaposition means
+;; multiplication, and that is a fact about the Normal language alone.
+;; Calc's Mathematica mode renders sin(x) as `sin x' and foo(bar) as
+;; `foo bar': there juxtaposition is function application, and 2xy
+;; parses as (2 x) y rather than 2 (x y). Other languages break the
+;; translation in their own ways — C spells pi as M_PI, whose PI this
+;; module would split; TeX writes products with \times, which the
+;; default mark would read as a quoted name. In any language but
+;; Normal the module stands down and entries are read as calc would
+;; read them.
 ;;
 ;; The module toggle is `maf-use-editvars-mode', registered as
 ;; `maf-editvars' (see `maf-modules'). It is deliberately not enabled
@@ -361,10 +369,14 @@ as anything in that entry changes."
 
 (defun maf-editvars--applicable-p ()
   "Non-nil when the dialect applies to the current buffer.
-The Normal language only: the default quoting character is TeX's own
-escape, and calc both reads and prints TeX. A quoting character the
-scanner cannot work with also stands the dialect down, rather than
-letting it mangle the buffer — see `maf-editvars-quote-char-valid-p'."
+The Normal language only, and changing `maf-editvars-quote-char' does
+not lift that: the dialect rests on juxtaposition meaning
+multiplication, which is true of the Normal language and not of the
+others — calc's Mathematica mode reads `sin x' as a function call.
+
+A quoting character the scanner cannot work with also stands the
+dialect down, rather than letting it mangle the buffer — see
+`maf-editvars-quote-char-valid-p'."
   (and maf-use-editvars-mode
        (null calc-language)
        (maf-editvars-quote-char-valid-p)))
