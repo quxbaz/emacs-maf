@@ -66,6 +66,7 @@
 ** TODO export entry as latex
 ** TODO issue with map, mapping actual commands
 ** TODO (mafcmd-equal-to), prefer to write the variable on the LHS in easy, simple, unambiguous cases
+** TODO (mafcmd-solve-for) should also prefer to write the isolated variable on LHS
 
 * Port
   - [-] Port my/calc/* features one-by-one.
