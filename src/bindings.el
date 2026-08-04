@@ -75,20 +75,22 @@
 ;; Shadows calc-execute-extended-command.
 (define-key maf-mode-map (kbd "x") #'mafcmd-expand)
 ;; A single-key alias for the reciprocal, which also keeps its table
-;; key &. It sat on o until the home motion below took that key.
-;; Shadows calc-info, which stays reachable on calc's own help prefix
-;; (h i) and as M-x calc-info.
-(define-key maf-mode-map (kbd "i") #'mafcmd-inv)
+;; key &. It sat on i until the prompted solve took that key back, and
+;; takes o in turn from the home motion below. Shadows calc-realign,
+;; whose bare press only undoes horizontal scrolling; M-x calc-realign
+;; still reaches that and the prefixed home motion both.
+(define-key maf-mode-map (kbd "o") #'mafcmd-inv)
 ;; Send point home, the one motion the buffer needs a key for: every
 ;; other command already leaves it there. Pressed at home it returns to
 ;; the mark instead — its own trip out left one, as every maf command
 ;; that homes point does — so the key is the whole round trip: out for
 ;; a command that wants the entry, back for one that wants the term.
-;; Takes calc-realign's own key, whose home job this is — but only with
-;; a numeric prefix argument (calc-realign 0); pressed bare it merely
-;; undoes horizontal scrolling. M-x calc-realign still reaches both of
-;; those.
-(define-key maf-mode-map (kbd "o") #'maf-go-home)
+;; It sat on o until the reciprocal above took that key. Takes calc's
+;; G, which mafcmd-arg cedes (see the table in maf-cmds.el);
+;; `maf-toggle-big-language' held G before and now has no key of its
+;; own — it stays reachable by name, and calc's own d B / d N switch
+;; the language one way each.
+(define-key maf-mode-map (kbd "G") #'maf-go-home)
 ;; A toggle between pair members is its own inverse, so both directions
 ;; run the same command.
 (define-key maf-mode-map (kbd "S-<up>") #'mafcmd-toggle-op)
@@ -209,10 +211,6 @@
 ;; there (; : and n P e SPC j).
 (define-key maf-mode-map (kbd "@") #'maf-toggle-simplify)
 
-;; Big-language display toggle. mafcmd-arg cedes calc's G — see the
-;; table in maf-cmds.el.
-(define-key maf-mode-map (kbd "G") #'maf-toggle-big-language)
-
 ;; Session reset, and the modes-only half beside it. Both keys are
 ;; unbound in calc itself; whatever the global map puts there
 ;; (erase-buffer, `reposition-window', a magit command) has no business
@@ -233,13 +231,15 @@
 ;; (j l / j r) and the equals jump (j e), leaving calc's own command
 ;; unshadowed and its key reachable.
 (define-key maf-mode-map (kbd "j i") #'mafcmd-isolate)
-;; The same solve again, with the variable named rather than picked:
-;; the shift on the auto-solve key, where shift reads as "ask me".
-;; `mafcmd-solve-for' held i before, and yielded it to the reciprocal
-;; above. M-I is unbound in calc itself; calc's own key for the
+;; The same solve again, with the variable named rather than picked.
+;; It held i before, yielded the key to the reciprocal, and takes it
+;; back now that the reciprocal sits on o — the naming solve is the
+;; everyday one, so it gets the single key while the auto-solve keeps
+;; the meta. Shadows calc-info, which stays reachable on calc's own
+;; help prefix (h i) and as M-x calc-info; calc's own key for the
 ;; operation, a S, stays with `mafcmd-solve' (see the table in
 ;; maf-cmds.el), which takes its variable from the stack.
-(define-key maf-mode-map (kbd "M-I") #'mafcmd-solve-for)
+(define-key maf-mode-map (kbd "i") #'mafcmd-solve-for)
 ;;
 ;; Invert the function at point, beside the solve commands. l v is
 ;; unbound in calc itself (its l prefix is the logarithmic units).
