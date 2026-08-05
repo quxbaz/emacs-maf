@@ -307,32 +307,70 @@ which quadrant such an X lies in. This is the transformation behind
                    ((not (math-lessp h '(frac 1 2))) (math-sub half-turn r))
                    (t r)))))))))
 
-(defun maf--cath (hyp leg)
-  "Return the remaining leg of a right triangle with HYP and LEG.
-The cathetus opposite LEG, by Pythagoras: sqrt(HYP^2 - LEG^2). This is
-`calcFunc-hypot' run backwards — hypot builds the hypotenuse from two
-legs, this recovers a leg from the hypotenuse and the other one.
+(defun maf--pythagoras (op a b)
+  "Return sqrt(A^2 OP B^2) with OP the symbol `+' or `-'.
+The Pythagorean relation in whichever direction OP names: a plus builds
+the hypotenuse from two legs, a minus recovers a leg from the
+hypotenuse and the other one. Both go through the same squaring, so
+both answer the same way, and `maf--hypot' and `maf--cath' are the two
+readings.
+
+The form is handed to `math-normalize' whole rather than to
+`calcFunc-hypot', which gives up on anything `Math-scalarp' rejects and
+hands back an inert hypot(sqrt(3), 1). Squaring under a structural
+normalize reduces sqrt(3)^2 to 3 on its own, so radical operands land
+on a real answer, and operands that stay symbolic stay written out as
+sqrt(a^2 + b^2) — a formula that still composes, where the inert call
+does not.
 
 Exact operands keep an exact answer: the root is taken in symbolic
-mode, so 5 and 3 give 4, 2 and 1 give sqrt(3) rather than
-1.73205080757, and sqrt(2) and 1 give 1 — the squaring undoes the
-radical before the subtraction. A float in either operand has already
-forfeited exactness, so the root evaluates numerically instead, as in
-`mafcmd-to-degrees'. Symbolic operands stay written out:
-sqrt(h^2 - a^2).
+mode, so 3 and 4 give 5, 2 and 1 give sqrt(5) rather than
+2.2360679775, and sqrt(2) with sqrt(2) gives 2. A float in either
+operand has already forfeited exactness, so the root evaluates
+numerically instead, as in `mafcmd-to-degrees'.
 
-A LEG longer than HYP leaves a negative radicand, and calc's own sqrt
-answers with the imaginary root rather than an error — the honest
-reading of a triangle that does not close.
-
-This is the transformation behind `mafcmd-cath' and `mafcmd-unit-cath';
-to change it, change this function."
-  (let* ((exact (not (or (maf--contains-float-p hyp)
-                         (maf--contains-float-p leg))))
+A negative radicand — a leg longer than the hypotenuse, under a
+minus — takes calc's own sqrt, which answers with the imaginary root
+rather than an error: the honest reading of a triangle that does not
+close."
+  (let* ((exact (not (or (maf--contains-float-p a)
+                         (maf--contains-float-p b))))
          (calc-symbolic-mode exact)
          (calc-prefer-frac exact))
     (math-normalize
-     (list 'calcFunc-sqrt (list '- (list '^ hyp 2) (list '^ leg 2))))))
+     (list 'calcFunc-sqrt (list op (list '^ a 2) (list '^ b 2))))))
+
+(defun maf--cath (hyp leg)
+  "Return the remaining leg of a right triangle with HYP and LEG.
+The cathetus opposite LEG, by Pythagoras: sqrt(HYP^2 - LEG^2), the
+minus direction of `maf--pythagoras' and so `maf--hypot' run backwards.
+
+Exactness, symbolic operands, and the imaginary answer for a LEG longer
+than HYP are all `maf--pythagoras'; 5 and 3 give 4, 2 and 1 give
+sqrt(3), sqrt(2) and 1 give 1, and h with a stays sqrt(h^2 - a^2).
+
+This is the transformation behind `mafcmd-cath' and `mafcmd-unit-cath';
+to change it, change this function or `maf--pythagoras'."
+  (maf--pythagoras '- hyp leg))
+
+(defun maf--hypot (a b)
+  "Return the hypotenuse of a right triangle with legs A and B.
+By Pythagoras: sqrt(A^2 + B^2), the plus direction of
+`maf--pythagoras' and so `maf--cath' run forwards.
+
+This is what `mafcmd-hypot' applies instead of `calcFunc-hypot', whose
+`Math-scalarp' test refuses radical and symbolic legs: calc answers
+hypot(sqrt(3), 1) with itself, where this gives 2, and hypot(a, b) with
+itself, where this gives sqrt(a^2 + b^2). Exactness works as in
+`maf--pythagoras' — 3 and 4 give 5, 2 and 1 give sqrt(5).
+
+One thing calc's own does better: `calcFunc-hypot' reads a complex leg
+as its modulus, which squaring does not, so complex operands answer
+differently here.
+
+This is the transformation behind `mafcmd-hypot'; to change it, change
+this function or `maf--pythagoras'."
+  (maf--pythagoras '+ a b))
 
 (defun maf--terms-gcd (terms)
   "Return the GCD of TERMS via `calcFunc-pgcd', iterated to a fixpoint.

@@ -510,6 +510,36 @@ home.
   :prefix "comp"
   (commit (maf--turn-complement expr '(frac 1 4))))
 
+(maf-defcmd mafcmd-hypot (expr arg commit)
+  "Take the hypotenuse of a right triangle with the top-of-stack leg.
+
+  3 with 4  =>  5
+
+The resolved expression and the argument are the two legs; the result is
+the hypotenuse, sqrt(a^2 + b^2). `mafcmd-cath' (f l) is the inverse and
+reads its operands in the same order, and each routes to the other under
+the Inverse flag — calc leaves I f h unbound.
+
+What it applies is maf's own `maf--hypot', not `calcFunc-hypot', which
+answers only when both legs pass `Math-scalarp' and otherwise hands back
+an inert hypot(sqrt(3), 1); here a radical leg reduces and a symbolic one
+stays written out as a formula that still composes. Exact operands keep
+an exact answer while a float in either evaluates numerically; see
+`maf--hypot'. Point picks the target as usual: a sub-formula at point,
+each side of an equation, stack level 2 at home; the top entry is always
+the argument, popped on commit.
+
+  5 with 12       =>  13
+  2 with 1        =>  sqrt(5)
+  sqrt(3) with 1  =>  2
+  1.5 with 2      =>  2.5
+  a with b        =>  sqrt(a^2 + b^2)
+  5 with 0        =>  5            (degenerate: the leg itself)"
+  :arity binary
+  :prefix "hypot"
+  :inverse mafcmd-cath
+  (commit (maf--hypot expr arg)))
+
 (maf-defcmd mafcmd-cath (expr arg commit)
   "Take the remaining leg of a right triangle with the top-of-stack leg.
 
