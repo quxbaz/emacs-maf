@@ -45,7 +45,7 @@
    - Free up option prefix bindings (eg, m).
 ** IN-PROGRESS (:map calc-mode-map (">" . calc-scroll-left))
         (:map calc-mode-map ("<" . calc-scroll-right))
-** TODO export entry as latex
+** TODO preview entry as latex
 ** IN-PROGRESS issue with map, mapping actual commands
    eg, can't map command against vector
 
