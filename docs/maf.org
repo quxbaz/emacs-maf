@@ -46,7 +46,7 @@
 ** TODO preview entry as latex
 ** IN-PROGRESS issue with map, mapping actual commands
    eg, can't map command against vector
-** TODO bind C-o to open above (similar to current S-RET, but above instead of under)
+** IN-PROGRESS bind C-o to open above (similar to current S-RET, but above instead of under)
 ** TODO rebind S-<return> to send to top (current S-<backspace>)
    unbind S-<backspace>
 
