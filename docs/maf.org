@@ -43,8 +43,6 @@
 # NOW
 ** TODO move all options to unified configuration view
    - Free up option prefix bindings (eg, m).
-** DONE (:map calc-mode-map (">" . calc-scroll-left))
-        (:map calc-mode-map ("<" . calc-scroll-right))
 ** TODO preview entry as latex
 ** IN-PROGRESS issue with map, mapping actual commands
    eg, can't map command against vector
