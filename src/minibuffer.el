@@ -512,11 +512,10 @@ rolls it down into that slot. nil for every other completion.")
 (defun maf-digit-commit-below ()
   "Commit the digit entry as a new stack entry just below the one at point.
 The S-<return> sibling of RET in the digit-entry minibuffer, mirroring
-`maf-edit-add-entry-below' (S-<return> in stack mode): where RET pushes
-the number on top, this inserts it at point's own level, so it lands just
-below the entry point was on and bumps that entry up one. On the top
-entry or at home it lands on top, as RET does; point rests on the new
-entry.
+`maf-edit-add-entry-below': where RET pushes the number on top, this
+inserts it at point's own level, so it lands just below the entry point
+was on and bumps that entry up one. On the top entry or at home it lands
+on top, as RET does; point rests on the new entry.
 
 Like `maf-digit-commit-here' it commits through `calcDigit-nondigit's RET
 path (no command re-dispatch); the number pushes on top as usual, and
@@ -528,9 +527,11 @@ path (no command re-dispatch); the number pushes on top as usual, and
         (maf--digit-commit-in-place t))
     (calcDigit-nondigit)))
 
-;; Matching `maf-edit-add-entry-below's key in stack mode: the gesture is
-;; the same one, and which map is live depends only on whether a digit
-;; entry happens to be in progress.
+;; This was `maf-edit-add-entry-below's key in stack mode too — the
+;; gesture is the same one, and which map is live depends only on
+;; whether a digit entry happens to be in progress. The stack key has
+;; since gone to the restack (`maf-roll-to-top'), which a number being
+;; typed has no use for, so the add-below keeps the key here.
 (define-key calc-digit-map (kbd "S-<return>") #'maf-digit-commit-below)
 
 (defun maf--digit-relocate-below (m)

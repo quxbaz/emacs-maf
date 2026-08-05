@@ -9,8 +9,11 @@
   ;; Mid-stack: the entry at point moves to level 1, the entries below
   ;; it rise one level each, the ones above it stay put. Point rides
   ;; along to the bottom line, on the same character of the formula.
+  ;; Driven by its key, S-<return>, rather than by name: the gesture
+  ;; took the key from the edit module's add-entry-below, and pressing
+  ;; it is what says so.
   (progn (goto-char (point-min)) (search-forward "3:  7") (backward-char 1))
-  (call-interactively 'maf-roll-to-top)
+  (progn (execute-kbd-macro (kbd "S-<return>")) nil)
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "7"))
   (cl-assert (string= (math-format-value (calc-top 2 'full)) "11"))
   (cl-assert (string= (math-format-value (calc-top 3 'full)) "9"))
