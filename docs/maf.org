@@ -61,7 +61,7 @@
    operators and the line-number prefix are what the motion crosses, the
    latter the line-prefix bug, fixed with the port.
 ** Triangles
-   - [ ] calcFunc-hypot advice — symbolic args: sqrt(abssqr(a) + abssqr(b));
+   - [-] calcFunc-hypot advice — symbolic args: sqrt(abssqr(a) + abssqr(b));
      still open, f h alone. maf--cath needs none of it: squaring under a
      structural math-normalize already reduces sqrt(2)^2 to 2.
 
@@ -79,8 +79,8 @@
     alone. The legacy always retyped the one character under point,
     which mismatches an ordinary group. Works from inside the group
     too, not only with point parked on a delimiter.
-  - [ ] my/calc-edit-duplicate (M-RET) — duplicate line, comma-aware (vector entry)
-  - [ ] my/calc-duplicate-paren-expr (C-RET) — duplicate innermost paren group
+  - [-] my/calc-edit-duplicate (M-RET) — duplicate line, comma-aware (vector entry)
+  - [-] my/calc-duplicate-paren-expr (C-RET) — duplicate innermost paren group
 
 * PORT:plot.el
   - [ ] my/calc-graph-quick / -with-range (g l / g i) — plot the top entry straight to
