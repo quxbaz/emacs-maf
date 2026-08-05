@@ -785,8 +785,7 @@ C-<return> is RET's keep-point sibling (=maf-digit-commit-here=): the
 same push, but point stays on the entry it was on instead of dropping
 to the home line, so the next command still resolves there. It has no
 SPC counterpart, because SPC keeps point already — the edit happens
-where point stands. S-<return> (=maf-digit-commit-below=) pushes the
-number in as a new entry just below the one at point.
+where point stands.
 
 =;= is the fraction colon (=maf-digit-colon=), so 3 ; 4 enters 3:4
 without a modifier. It is an alias, not an insertion — it re-dispatches

@@ -19,7 +19,7 @@
 ;;   maf-edit         entries started from empty (the N+ lines),
 ;;                    recorded when the commit succeeds
 ;;   digit entry      numbers left on the stack as an entry of their own
-;;                    (RET, C-<return>, S-<return>), by either of
+;;                    (RET, C-<return>), by either of
 ;;                    `maf-digit-start's two routes
 ;;   algebraic entry  expressions the ' key leaves as an entry of their
 ;;                    own
@@ -145,11 +145,10 @@ were added in."
 (defun maf-recall--inserted (old new)
   "The single value NEW holds that OLD does not, or nil.
 Both are top-first stack value lists. Found by comparing the two
-stacks rather than by reading the top, because an entry can be rolled
-into place after its push (S-<return> commits below the entry point
-was on). A change that is not exactly one insertion — the pop-push of
-a command that consumed the number — yields nil, and nothing is
-recorded."
+stacks rather than by reading the top, so an entry rolled into place
+after its push is still found wherever it landed. A change that is not
+exactly one insertion — the pop-push of a command that consumed the
+number — yields nil, and nothing is recorded."
   (when (= (length new) (1+ (length old)))
     (let ((o old) (n new) found)
       (while (and n (not found))
