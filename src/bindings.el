@@ -363,6 +363,16 @@
 (define-key maf-mode-map (kbd "M-f") #'maf-forward-noun)
 (define-key maf-mode-map (kbd "M-b") #'maf-backward-noun)
 
+;; Horizontal scrolling, on calc's own two keys with the commands
+;; swapped. Calc names the direction the text slides — < is
+;; `calc-scroll-left', which slides the line left and so uncovers its
+;; right end — leaving each bracket pointing away from what it brings
+;; into view. Swapped, the bracket points at what it reveals: > walks
+;; out to the right end of an entry too wide for the window, < back
+;; toward its left.
+(define-key maf-mode-map (kbd ">") #'calc-scroll-left)
+(define-key maf-mode-map (kbd "<") #'calc-scroll-right)
+
 ;; Step out to the enclosing sub-formula, taking the key the global map
 ;; gives `backward-up-list' — the same gesture, over the formula rather
 ;; than over the printed parens. Calc leaves C-M-u unbound, so nothing
