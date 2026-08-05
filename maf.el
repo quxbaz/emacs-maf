@@ -58,6 +58,7 @@
 (require 'maf-preview)
 (require 'maf-formulas)
 (require 'maf-selplus)
+(require 'maf-poly-order)
 
 ;;;###autoload
 (defun maf-calc ()
