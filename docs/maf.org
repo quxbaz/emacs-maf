@@ -60,8 +60,6 @@
    name is a stop — the name lands point on the call it heads — and the
    operators and the line-number prefix are what the motion crosses, the
    latter the line-prefix bug, fixed with the port.
-** IN-PROGRESS Polynomials
-   - [ ] Polynomial term ordering — math-normalize advice keeping sums in descending degree
 ** Triangles
    - [ ] calcFunc-hypot advice — symbolic args: sqrt(abssqr(a) + abssqr(b));
      still open, f h alone. maf--cath needs none of it: squaring under a
