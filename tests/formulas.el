@@ -42,12 +42,90 @@
     (cl-assert (eq (key-binding (kbd "o")) #'maf-formulas-show-detail))
     (cl-assert (eq (key-binding (kbd "d")) #'maf-formulas-show-detail))
     (cl-assert (eq (key-binding (kbd "?")) #'maf-formulas-show-detail))
-    ;; The shifted keys pin the pane open.
+    ;; The shifted keys open the pane that follows point.
     (cl-assert (eq (key-binding (kbd "O")) #'maf-formulas-toggle-detail))
     (cl-assert (eq (key-binding (kbd "D")) #'maf-formulas-toggle-detail))
     (maf-formulas--update-detail)
     (with-current-buffer maf-formulas--detail-buffer
       (cl-assert (> (buffer-size) 0)))
+
+    ;; The pane borrows a window before it takes one: shown from a menu
+    ;; that has calc beside it, it lands in calc's window and closing
+    ;; hands that window back with calc in it — a help window's
+    ;; contract, not a third pane in the frame.
+    (save-window-excursion
+      (delete-other-windows)
+      (switch-to-buffer "*maf-formulas*")
+      (let ((cwin (display-buffer (or (maf--find-calc-buffer)
+                                      (get-buffer-create "*Calculator*"))
+                                  '((display-buffer-in-direction)
+                                    (direction . below)))))
+        (maf-formulas-show-detail)
+        (cl-assert (eq cwin (get-buffer-window maf-formulas--detail-buffer)))
+        ;; Borrowed, not created — so its height is left alone.
+        (cl-assert (not (maf-formulas--split-p cwin)))
+        (cl-assert (= 2 (length (window-list))))
+        (maf-formulas--close-detail)
+        (cl-assert (eq (window-buffer cwin) (get-buffer "*Calculator*")))
+        (cl-assert (= 2 (length (window-list)))))
+      ;; Alone in the frame there is nothing to borrow, so the pane is
+      ;; split off and closing deletes it again.
+      (delete-other-windows)
+      (maf-formulas-show-detail)
+      (let ((win (get-buffer-window maf-formulas--detail-buffer)))
+        (cl-assert (maf-formulas--split-p win))
+        (maf-formulas--close-detail)
+        (cl-assert (= 1 (length (window-list)))))
+
+      ;; `o' shows one formula and holds it: movement neither dismisses
+      ;; the pane (it costs the list no room) nor re-aims it, and a
+      ;; re-render leaves it alone too.
+      (delete-other-windows)
+      (goto-char (point-min))
+      (maf-formulas-next-item)
+      (maf-formulas-show-detail)
+      (cl-assert (eq maf-formulas--detail-state 'frozen))
+      (let ((held (with-current-buffer maf-formulas--detail-buffer (buffer-string))))
+        (maf-formulas-next-item)
+        (maf-formulas--detail-on-move)
+        (cl-assert (get-buffer-window maf-formulas--detail-buffer))
+        (cl-assert (equal held (with-current-buffer maf-formulas--detail-buffer
+                                 (buffer-string))))
+        (maf-formulas--render)
+        (cl-assert (equal held (with-current-buffer maf-formulas--detail-buffer
+                                 (buffer-string))))
+        ;; Pressed again it swaps to the formula now at point.
+        (maf-formulas-next-item)
+        (maf-formulas-show-detail)
+        (cl-assert (not (equal held (with-current-buffer maf-formulas--detail-buffer
+                                      (buffer-string))))))
+
+      ;; `O' takes the pane over and follows point from there; pressed
+      ;; again it closes.
+      (maf-formulas-toggle-detail)
+      (cl-assert (eq maf-formulas--detail-state 'follow))
+      (let ((shown (with-current-buffer maf-formulas--detail-buffer (buffer-string))))
+        (maf-formulas-prev-item)
+        (maf-formulas--detail-on-move)
+        (cl-assert (not (equal shown (with-current-buffer maf-formulas--detail-buffer
+                                       (buffer-string))))))
+      (maf-formulas-toggle-detail)
+      (cl-assert (null maf-formulas--detail-state))
+      (cl-assert (not (get-buffer-window maf-formulas--detail-buffer))))
+
+    ;; That split goes where the shape is better: beside the list when
+    ;; halving the menu's window still leaves both halves at least
+    ;; `maf-formulas-detail-min-width', under it when it would not.
+    ;; Bound around the live window's own width, so the check does not
+    ;; depend on the frame the suite happens to run in.
+    (cl-assert (eq 'right (let ((maf-formulas-detail-min-width 1))
+                            (maf-formulas--detail-direction))))
+    (cl-assert (eq 'below (let ((maf-formulas-detail-min-width 1000))
+                            (maf-formulas--detail-direction))))
+    ;; Only a pane split below is fitted to its text — beside the list
+    ;; its height is the menu's, and borrowed it is not the pane's.
+    (let ((maf-formulas--detail-dir 'right))
+      (cl-assert (null (maf-formulas--fit-detail (selected-window)))))
 
     ;; Groups are separated by a blank line (the two volume formulas sit
     ;; in different categories).
