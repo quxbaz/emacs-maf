@@ -87,8 +87,6 @@
     alone. The legacy always retyped the one character under point,
     which mismatches an ordinary group. Works from inside the group
     too, not only with point parked on a delimiter.
-  - [ ] my/calc-edit-jump-sides — jump between the sides of =, inserting \" = \" if absent
-  - [-] my/calc-edit-insert-pi (P) done; J → * not
   - [ ] my/calc-edit-duplicate (M-RET) — duplicate line, comma-aware (vector entry)
   - [ ] my/calc-duplicate-paren-expr (C-RET) — duplicate innermost paren group
 
