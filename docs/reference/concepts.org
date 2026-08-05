@@ -785,8 +785,7 @@ C-<return> is RET's keep-point sibling (=maf-digit-commit-here=): the
 same push, but point stays on the entry it was on instead of dropping
 to the home line, so the next command still resolves there. It has no
 SPC counterpart, because SPC keeps point already — the edit happens
-where point stands. S-<return> (=maf-digit-commit-below=) pushes the
-number in as a new entry just below the one at point.
+where point stands.
 
 =;= is the fraction colon (=maf-digit-colon=), so 3 ; 4 enters 3:4
 without a modifier. It is an alias, not an insertion — it re-dispatches
@@ -860,7 +859,7 @@ object, so a vector can be filled with multiples of pi.
 | [[file:../../modules/maf-hl.el][modules/maf-hl.el]]       | Highlight module: =maf-hl-mode= per-buffer, =maf-use-hl-mode= toggle |
 | [[file:../../modules/maf-timeline.el][modules/maf-timeline.el]]  | Timeline module: =maf-use-timeline-mode= records stack snapshots, browse in =*maf-timeline*= |
 | [[file:../../modules/maf-persist.el][modules/maf-persist.el]]   | Persist module: =maf-persist-mode= saves/restores the stack across sessions |
-| [[file:../../modules/maf-edit.el][modules/maf-edit.el]]      | Edit module: =maf-use-edit-mode= binds SPC/`/S-RET/"(" to =maf-edit= in-place stack editing (=maf-edit-mode= session) |
+| [[file:../../modules/maf-edit.el][modules/maf-edit.el]]      | Edit module: =maf-use-edit-mode= binds SPC/`/C-o/"(" to =maf-edit= in-place stack editing (=maf-edit-mode= session) |
 | [[file:../../modules/maf-preview.el][modules/maf-preview.el]]   | Preview module: =maf-use-preview-mode= shows the entry at point in Big display in a floating panel (posframe child frame, else in-window) |
 | [[file:../../modules/maf-formulas.el][modules/maf-formulas.el]]  | Formulas module: =maf-formulas= menu of saved formulas by category (detail + RET-insert); data in maf-formulas-data.el |
 | [[file:../../debug/maf-step.el][debug/maf-step.el]]       | Step-through harness (cockpit) that drives the tests        |
@@ -936,8 +935,8 @@ Two module shapes have appeared, matching the feature's state:
   from this session and =t l='s from any session) and =t u= to
   =maf-save-stack=, its on-demand companion; disabling removes them.
   The edit module too
-  (=modules/maf-edit.el=): =maf-use-edit-mode= installs SPC / ` /
-  S-<return> / =(= in =maf-mode-map= when enabled and cedes them
+  (=modules/maf-edit.el=): =maf-use-edit-mode= installs SPC / ` / C-o /
+  =(= in =maf-mode-map= when enabled and cedes them
   back when disabled — its body is just those bindings, the on-demand
   editing session (=maf-edit-mode=, turned on per gesture, not a
   feature switch) being separate.

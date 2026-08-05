@@ -1946,19 +1946,31 @@ staying at their end). Selections travel with their entries."
           ;; A single undo reverts point along with the stack.
           (maf--undo-record-cmd-point snapshot))))))
 
-(defun maf--carry-entry (count up)
+(defun maf--carry-entry (count up &optional from-home)
   "Move the entry at point COUNT levels, UP the screen when UP, else down.
 Point travels with the entry. The travel wraps around the stack: an
 entry carried past the deepest level reappears at level 1, and one
 carried past level 1 reappears at the deepest. With point at home or on
 an empty stack — and on a stack of one entry, or with a COUNT that laps
-it exactly — nothing happens: no rewrite, no undo group."
+it exactly — nothing happens: no rewrite, no undo group.
+
+FROM-HOME reads home as level 1 rather than as no entry at all: the
+entry the home line sits under is the one carried, and point rides it
+to the margin of the line it lands on — the offset into the entry that
+point riding along keeps, taken from a point that was never inside it.
+A repeat then carries the same entry on. An empty stack still has
+nothing to carry."
   (maf--with-calc-buffer
     (let* ((n (calc-stack-size))
-           (m (calc-locate-cursor-element (point)))
-           ;; m of 0 is home or an empty stack: no entry at point.
-           ;; Otherwise the levels are a ring of size N and the entry
-           ;; travels COUNT places round it, so any count is in range.
+           (at (calc-locate-cursor-element (point)))
+           ;; 0 and below is home or an empty stack: no entry at point,
+           ;; unless FROM-HOME names level 1 for it. (The dot line reads
+           ;; 0 and the blank line under it -1, as `maf--at-home-p'
+           ;; allows for.)
+           (homed (and from-home (<= at 0) (> n 0)))
+           (m (if homed 1 at))
+           ;; The levels are a ring of size N and the entry travels
+           ;; COUNT places round it, so any count is in range.
            (target (and (> m 0)
                         (1+ (mod (+ (1- m) (if up count (- count))) n))))
            ;; A wrapped travel is the same rewrite as the unwrapped one
@@ -1978,9 +1990,13 @@ it exactly — nothing happens: no rewrite, no undo group."
               ;; makes point ride the entry — the line-and-column
               ;; restore `maf--swap-adjacent-entries' uses instead is
               ;; how point stays put while an entry moves under it.
-              (offset (- (point) (save-excursion
-                                   (calc-cursor-stack-index m)
-                                   (point)))))
+              ;; A carry that read home as level 1 has no offset to
+              ;; keep: 0 is the margin, the entry's own line start.
+              (offset (if homed
+                          0
+                        (- (point) (save-excursion
+                                     (calc-cursor-stack-index m)
+                                     (point))))))
           (calc-wrapper
            ;; Rotate the window of levels the entry travels through.
            ;; Both lists run deepest-first, so carrying up (level M to
@@ -2037,20 +2053,30 @@ level 1, every other entry rising a level to make room.
   2:  b     =>   2:  c
   1:  c          1:  a|
 
-With point at home or on an empty stack there is no entry to carry, and
-the command does nothing; on a stack of one entry there is nowhere to
-carry it to.
+At home the top entry is the one carried, as if point had been on it:
+it rises a line and point rides along, landing in that line's margin,
+so a repeat carries the same entry on rather than the next one up.
+
+  2:  a          2:  |b
+  1:  b     =>   1:  a
+      .|
+
+On an empty stack there is nothing to carry, and on a stack of one
+entry there is nowhere to carry it to.
 
 A prefix argument N carries the entry N lines at once, wrapping as
 often as it takes; a negative N carries it down instead, as
-`maf-carry-down' does.
+`maf-carry-down' does — from home too, where that means the same
+no-op.
 
   C-u 3  4:  a       4:  d|
          3:  b   =>  3:  a
          2:  c       2:  b
          1:  d|      1:  c"
   (interactive "p")
-  (maf--carry-entry (abs n) (>= n 0)))
+  ;; Home reads as level 1 only for the upward carry: negated, the
+  ;; command is a carry-down, and home is a no-op there.
+  (maf--carry-entry (abs n) (>= n 0) (>= n 0)))
 
 (defun maf-carry-down (n)
   "Carry the stack entry at point one line down the screen, point riding along.
@@ -2069,7 +2095,10 @@ already on top, at level 1, is carried round to the deepest level:
   1:  c|         1:  b
 
 With point at home or on an empty stack there is no entry to carry, and
-the command does nothing.
+the command does nothing — unlike `maf-carry-up', which reads home as
+the top entry, since carrying that entry down is a trip round the ring
+to the deepest level rather than the one-line move the gesture asks
+for.
 
 A prefix argument N carries the entry N lines at once, wrapping as
 often as it takes; a negative N carries it up instead.

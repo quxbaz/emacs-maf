@@ -4,7 +4,7 @@
 ;;
 ;; maf-edit: wdired-style in-place editing of the calc stack, packaged
 ;; as the `edit' module. The module toggle only installs the entry
-;; bindings (SPC / ` / S-<return> / "(") into `maf-mode-map';
+;; bindings (SPC / ` / C-o / "(") into `maf-mode-map';
 ;; the editing itself is the on-demand `maf-edit-mode' session below.
 ;; See `maf-modules'.
 ;;
@@ -1029,6 +1029,30 @@ session so a command already inside one can add an entry at home too."
       (maf-edit--repair)
       (goto-char (+ bol (maf-edit--leading-prefix-run bol))))))
 
+(defun maf-edit--open-line-above (bol)
+  "Open a blank entry line just above the entry line starting at BOL.
+Point lands on the new entry's content column, ready to type; the new
+entry's overlay is returned. The counterpart of
+`maf-edit--open-at-dot' for a line that already belongs to an entry:
+the newline lands inside that entry's overlay — entry overlays advance
+at the rear, not the front — so the overlay is re-walled onto the line
+it still owns before the blank line becomes an entry of its own."
+  (let ((maf-edit--inhibit t)
+        (inhibit-modification-hooks t)
+        (below (seq-find (lambda (o) (= (overlay-start o) bol))
+                         (maf-edit--overlays))))
+    (goto-char bol)
+    (insert "\n")
+    (when below (move-overlay below (1+ bol) (overlay-end below)))
+    (goto-char bol)
+    ;; As in `maf-edit--open-at-dot': the machine-owned run keeps the
+    ;; zero-length entry out of `maf-edit--drop-empty's reach until the
+    ;; repair renumbers it.
+    (insert maf-edit--pad-string)
+    (prog1 (maf-edit--make-entry bol (+ bol maf-edit--prefix-width))
+      (maf-edit--repair)
+      (goto-char (+ bol (maf-edit--leading-prefix-run bol))))))
+
 (defun maf-edit-add-entry-at-home ()
   "Enter maf-edit with a fresh entry at the bottom, landing point home.
 
@@ -1092,6 +1116,36 @@ entry — rather than returning to where it was before this command ran."
       (goto-char (1- (save-excursion (calc-cursor-stack-index (1- m))
                                      (point))))
       (maf-edit-newline))))
+
+(defun maf-edit-add-entry-above ()
+  "Enter maf-edit with a fresh entry opened above the entry at point.
+
+  2:  a + b|        3+  |
+  1:  c        =>   2:  a + b
+                    1:  c
+
+The new entry's blank line opens directly above the entry at point's
+line and the levels renumber around it, so typing and committing
+inserts mid-stack. At home, or on an empty stack, it opens at the
+bottom — the dot's line is the one it opens above. Point stays with
+the edited text when the session ends: after a commit it rests on the
+new entry.
+
+The upward twin of `maf-edit-add-entry-below', which opens the blank
+line on the other side of the same entry."
+  (interactive)
+  (when maf-edit-mode
+    (user-error "maf-edit is already active"))
+  ;; The level is read before the session's re-render, which entry
+  ;; positions do not survive; the level index does.
+  (let ((m (calc-locate-cursor-element (point))))
+    (maf-edit-mode 1)
+    (if (or (<= m 0) (zerop (calc-stack-size)))
+        ;; Home, or an empty stack: nothing to sit above but the dot,
+        ;; which is where the bottom of the stack is.
+        (maf-edit--open-at-dot)
+      (maf-edit--open-line-above
+       (save-excursion (calc-cursor-stack-index m) (point))))))
 
 (defun maf-edit-add-vector ()
   "Enter maf-edit with a fresh vector entry started at the bottom.
@@ -1226,25 +1280,26 @@ session `maf-edit' opened there."
 
 (define-minor-mode maf-use-edit-mode
   "Global minor mode making maf-edit's entry keys live in `maf-mode-map'.
-Enabled, SPC / ` / S-<return> / ( run the maf-edit entry commands;
-disabled, they cede back to calc. SPC shadows one of calc-enter's two
-keys (RET still runs it) and enters editing, where `maf-edit-mode-map's
-RET commits; the rest are the quick-add gestures. ` opens an entry at
-the bottom of the stack taken as a trip home — point lands home and a
-mark holds the place it left. It shadows calc-edit, whose whole job
-the module takes over: SPC edits the stack in place instead of in a
-separate buffer. S-<return> opens an entry below point — at home, at
-the bottom of the stack; a terminal that cannot deliver the key
-reaches the command by name, C-j being left to calc-over. ( opens a
-bracketed vector entry at the bottom, shadowing calc-begin-complex — a
-complex number is still one entry away as (a, b) typed into any of
-these gestures, while [ keeps calc-begin-vector for the digit-entry
-route.
+Enabled, SPC / ` / C-o / ( run the maf-edit entry commands; disabled,
+they cede back to calc. SPC shadows one of calc-enter's two keys (RET
+still runs it) and enters editing, where `maf-edit-mode-map's RET
+commits; the rest are the quick-add gestures. ` opens an entry at the
+bottom of the stack taken as a trip home — point lands home and a mark
+holds the place it left. It shadows calc-edit, whose whole job the
+module takes over: SPC edits the stack in place instead of in a
+separate buffer. C-o opens an entry above point — at home, at the
+bottom of the stack — and takes the key open-line holds outside calc.
+( opens a bracketed vector entry at the bottom, shadowing
+calc-begin-complex — a complex number is still one entry away as
+(a, b) typed into any of these gestures, while [ keeps
+calc-begin-vector for the digit-entry route.
 
-S-<return> means newline inside `maf-edit-mode-map', so the key that
-opens an entry below point also breaks the line once the session is
-running — the two never compete, since maf-mode is off for the
-duration of an edit session.
+`maf-edit-add-entry-below', C-o's downward twin, has no key here: it
+held S-<return> until the restack took that key, and above the entry
+below point is where it opened anyway. It stays reachable by name, and
+S-<return> still means newline inside `maf-edit-mode-map' — the two
+never compete, since maf-mode is off for the duration of an edit
+session.
 
 This is the `edit' module (see `maf-modules'). Unlike the other
 modules it installs no hook or advice — just these bindings, plus the
@@ -1255,17 +1310,17 @@ on-demand `maf-edit-mode' editing session they lead into."
       (progn
         (define-key maf-mode-map (kbd "SPC") #'maf-edit)
         (define-key maf-mode-map (kbd "`") #'maf-edit-add-entry-at-home)
-        (define-key maf-mode-map (kbd "S-<return>") #'maf-edit-add-entry-below)
+        (define-key maf-mode-map (kbd "C-o") #'maf-edit-add-entry-above)
         (define-key maf-mode-map (kbd "(") #'maf-edit-add-vector))
     (define-key maf-mode-map (kbd "SPC") nil)
     (define-key maf-mode-map (kbd "`") nil)
-    (define-key maf-mode-map (kbd "S-<return>") nil)
+    (define-key maf-mode-map (kbd "C-o") nil)
     (define-key maf-mode-map (kbd "(") nil)))
 
 ;; Register with the module system when it is present; the mode above
 ;; works on its own without it.
 (when (require 'maf-module nil t)
   (maf-register-module 'maf-edit #'maf-use-edit-mode
-                       "Edit the stack in place as plain text (SPC / ` / S-RET / \"(\")."))
+                       "Edit the stack in place as plain text (SPC / ` / C-o / \"(\")."))
 
 (provide 'maf-edit)

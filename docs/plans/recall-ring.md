@@ -72,7 +72,7 @@ termination already. Mapping decisions 3 and 5 onto it:
 | branch | record? | why |
 |---|---|---|
 | `t` — RET / C-RET push | **yes** | the canonical new entry |
-| `below` — S-RET, new entry mid-stack | **yes** | also a new entry |
+| `below` — S-RET, new entry mid-stack *(revised: the gesture was later removed; S-RET is the restack now)* | **yes** | also a new entry |
 | `maf--digit-contextual` — SPC / `n` | no | edits the sub-formula at point |
 | `maf--digit-entry-handoff` — command key (`2 +`, `5 e`) | no | an argument, consumed immediately |
 | `stringp val` — escaped to algebraic | **yes** | still an entry typed from nothing |
@@ -243,8 +243,9 @@ carrying across all of them.
    toggles cleanly.
 2. Edit-path recording advice. Check the ring fills from bare entries only, and
    that a failed commit and a discard both leave it alone.
-3. Digit-path recording advice. Check the table above branch by branch: RET and
-   S-RET record, SPC / `2 +` / `5 e` / `'` / `..` do not.
+3. Digit-path recording advice. Check the table above branch by branch: RET
+   records (S-RET did too, until the gesture's later removal), SPC / `2 +` /
+   `5 e` / `'` / `..` do not.
 4. Edit-session recall (`M-p` / `M-n`), slot-0 stash, and banking the entry a
    recall displaces.
 5. Stack-mode recall: first push, then in-place cycling, then undo

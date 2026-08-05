@@ -109,7 +109,7 @@
 ;; once and then left alone, reachable by name afterwards, giving up
 ;; its key to something pressed while working.
 (define-key maf-mode-map (kbd "p") #'maf-browse-variables)
-;; The in-place editing entry keys (SPC / ` / S-RET / "(") are
+;; The in-place editing entry keys (SPC / ` / C-o / "(") are
 ;; installed by the edit module when it is enabled (see
 ;; modules/edit.el), not here. ` shadows calc-edit, the command the
 ;; whole module replaces.
@@ -149,23 +149,22 @@
 ;; A terminal that does not send it falls back to ESC 0x08, which
 ;; arrives as C-M-h; bind that as the terminal stand-in. It shadows
 ;; only mark-defun, which has no use in a calc buffer, at the cost of
-;; Ctrl+Alt+h rolling too. Bind the DEL form as well, for the same
-;; reason as the restack below: on a terminal the key arrives as a
-;; modified ASCII 127 rather than as the <backspace> function key.
+;; Ctrl+Alt+h rolling too. Bind the DEL form as well: `function-key-map'
+;; rewrites <backspace> to DEL, and an unbound modified function key
+;; falls back to that translation with the modifier kept, so the key can
+;; arrive either way. Neither shadows anything in calc; plain DEL stays
+;; `maf-del' above.
 (define-key maf-mode-map (kbd "C-M-<backspace>") #'maf-roll-to-bottom)
 (define-key maf-mode-map (kbd "C-M-DEL") #'maf-roll-to-bottom)
 (define-key maf-mode-map (kbd "C-M-h") #'maf-roll-to-bottom)
 ;; Restack: the entry at point travels to the top, point riding along.
-;; The long-range move up, sharing the backspace key with the bury
-;; above — one base key for both ends of the stack, the modifier
-;; picking the end. Bind the GUI event and the DEL form both:
-;; `function-key-map' rewrites <backspace> to DEL, and an unbound
-;; modified function key falls back to that translation with the
-;; modifier kept, so shift-backspace can arrive either way. Neither
-;; shadows anything in calc; plain DEL stays `maf-del' above.
-;; Terminals need the decode entry installed at the end of this file.
-(define-key maf-mode-map (kbd "S-<backspace>") #'maf-roll-to-top)
-(define-key maf-mode-map (kbd "S-DEL") #'maf-roll-to-top)
+;; The long-range move up, beside the bury it mirrors. It sits on
+;; S-<return>, the key the edit module's add-entry-below gave up (see
+;; the RET family below); the shift-backspace it used to share with the
+;; bury is unbound, and the decode entry that made that key reach a
+;; terminal is gone with it. A terminal folds Shift-RET back to plain
+;; RET, so this is a GUI key: on a tty the restack is reachable by name.
+(define-key maf-mode-map (kbd "S-<return>") #'maf-roll-to-top)
 ;; Carry the entry at point one line up or down the screen, point
 ;; riding along — the stack's version of moving a line in a text
 ;; buffer, and the one-step counterpart of the backspace pair above,
@@ -186,7 +185,7 @@
 ;; stays on the target instead of homing, so the next command still
 ;; resolves there. It rides RET's prefix argument rather than a key of
 ;; its own — the RET family is full (M-RET below, C-RET on
-;; `mafcmd-let', S-RET in the edit module) and W is the only unbound
+;; `mafcmd-let', S-RET on the restack) and W is the only unbound
 ;; single key left in the buffer, too scarce to spend on where point
 ;; lands. Contextual dup has no
 ;; numeric reading to conflict with; cf. `maf-swap-up', whose prefix
@@ -203,10 +202,11 @@
 ;; argument (C-u RET), and stays reachable by name.
 (define-key maf-mode-map (kbd "M-<return>") #'maf-dup-below)
 (define-key maf-mode-map (kbd "M-RET") #'maf-dup-below)
-;; S-<return> is the edit module's add-entry-below (see
-;; modules/maf-edit.el), installed there with the rest of its entry
-;; keys. The restack it used to carry now sits on S-<backspace>, beside
-;; the bury it pairs with.
+;; S-<return> is the restack (bound above, beside the bury). It was the
+;; edit module's add-entry-below, which is unbound now and reachable by
+;; name: C-o opens an entry above point, and above the entry below point
+;; is where add-entry-below opened, so the gesture survives one line
+;; down — with ` still opening at the bottom.
 
 ;; Equate gets both = (shadowing calc-evaluate) and e (shadowing the
 ;; e-notation digit start). Inside digit entry e reaches the same
@@ -270,7 +270,7 @@
 ;; Quick substitution: apply an assignment from the stack to the
 ;; contextual subject. C-<return> is the one-hand chord a substitution
 ;; is worth, and the edit module's quick-add gave the key up for it
-;; (`, S-RET and "(" remain, and ` opens the same bottom entry C-RET
+;; (`, C-o and "(" remain, and ` opens the same bottom entry C-RET
 ;; used to, as a trip home). It replaces C-c C-c, the conventional
 ;; mode-specific
 ;; "apply this" gesture, which had been the command's only key and is
@@ -405,13 +405,12 @@
 ;; term/tmux.el defers to the same table and inherits the gap. Supply
 ;; the missing entries in both of the formats xterm.el generates. The
 ;; modifier number is 1 plus the bitmask (shift 1, alt 2, ctrl 4): 7
-;; for the bury's Ctrl+Alt, 2 for the restack's Shift.
+;; for the bury's Ctrl+Alt. The restack's Shift-backspace was decoded
+;; here too until the restack moved to S-<return>.
 (defun maf--tty-setup-keys ()
   "Decode terminal sequences for keys maf binds and `term/xterm.el' omits."
   (define-key input-decode-map "\e[27;7;127~" [C-M-backspace])
-  (define-key input-decode-map "\e[127;7u" [C-M-backspace])
-  (define-key input-decode-map "\e[27;2;127~" [S-backspace])
-  (define-key input-decode-map "\e[127;2u" [S-backspace]))
+  (define-key input-decode-map "\e[127;7u" [C-M-backspace]))
 
 ;; `input-decode-map' is terminal-local, so this runs once per tty
 ;; rather than once at load.
