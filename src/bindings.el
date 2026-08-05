@@ -109,7 +109,7 @@
 ;; once and then left alone, reachable by name afterwards, giving up
 ;; its key to something pressed while working.
 (define-key maf-mode-map (kbd "p") #'maf-browse-variables)
-;; The in-place editing entry keys (SPC / ` / S-RET / "(") are
+;; The in-place editing entry keys (SPC / ` / S-RET / C-o / "(") are
 ;; installed by the edit module when it is enabled (see
 ;; modules/edit.el), not here. ` shadows calc-edit, the command the
 ;; whole module replaces.
@@ -205,8 +205,9 @@
 (define-key maf-mode-map (kbd "M-RET") #'maf-dup-below)
 ;; S-<return> is the edit module's add-entry-below (see
 ;; modules/maf-edit.el), installed there with the rest of its entry
-;; keys. The restack it used to carry now sits on S-<backspace>, beside
-;; the bury it pairs with.
+;; keys, C-o among them for the same gesture upward. The restack
+;; S-<return> used to carry now sits on S-<backspace>, beside the bury
+;; it pairs with.
 
 ;; Equate gets both = (shadowing calc-evaluate) and e (shadowing the
 ;; e-notation digit start). Inside digit entry e reaches the same
