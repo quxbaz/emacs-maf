@@ -3,12 +3,13 @@
 ;; modules/maf-formulas.el
 ;;
 ;; Saved-formula library. `maf-formulas' opens a menu of formulas
-;; grouped by category, each shown beside its form. `o' (or `d', `?') pops
-;; up a detail pane for the formula at point — the formula in Big
+;; grouped by category, each shown beside its form. `o' (or `d', `?')
+;; shows the formula at point in a detail pane — the formula in Big
 ;; display, a description, and what each variable means — without
-;; taking focus; it closes again as soon as point moves. `O' (or `D')
-;; pins the pane instead: it stays up and follows point until toggled
-;; off. RET pushes the formula at point onto the calc stack.
+;; taking focus, and leaves it there however far point moves after.
+;; `O' (or `D') opens a pane that follows point instead, re-rendering
+;; for each formula reached, and closes it again; `C-g' closes either.
+;; RET pushes the formula at point onto the calc stack.
 ;;
 ;; A formula is a plist. Only :expr is required; the rest are optional
 ;; and the detail pane renders just what is present:
@@ -104,6 +105,16 @@ in your init to add formulas without a file. Only :expr is required."
   "How many recently-inserted formulas the \"Recent\" group holds.
 Zero drops the group entirely. The list is per-session; nothing is
 written to disk."
+  :type 'integer
+  :group 'maf)
+
+(defcustom maf-formulas-detail-min-width 64
+  "Narrowest pane, in columns, the detail is worth showing beside the list.
+The pane splits the menu's window, so a side split halves its width
+while a split below halves its height — the two leave the same number
+of cells either way. What differs is the shape: the Big rendering and
+the filled prose need a floor on width but can be scrolled for height,
+so the side split is only taken when both halves clear this width."
   :type 'integer
   :group 'maf)
 
@@ -216,7 +227,7 @@ Groups are separated by a blank line."
     (erase-buffer)
     (setq header-line-format
           (if (string-empty-p maf-formulas--query)
-              "maf-formulas — RET inserts · / filters · o details · O pins · q quits"
+              "maf-formulas — RET inserts · / filters · o details · O follows · q quits"
             (format "maf-formulas — filter: %s  (q clears)" maf-formulas--query)))
     (let ((w (apply #'max 0 (mapcar (lambda (f) (length (maf-formulas--title f))) fs))))
       (dolist (g groups)
@@ -241,25 +252,41 @@ Groups are separated by a blank line."
     (goto-char (point-min))
     (while (and (not (eobp)) (not (get-text-property (point) 'maf-formula)))
       (forward-line 1))
-    ;; A re-render changes what every line means; a glance pane left up
-    ;; would be describing the old view, so it closes with it. A pinned
-    ;; pane instead re-renders for where point landed.
-    (if maf-formulas--detail-pinned
-        (progn (setq maf-formulas--detail-line (line-beginning-position))
-               (maf-formulas--update-detail))
-      (maf-formulas--close-detail))))
+    ;; A re-render changes what every line means, so a following pane
+    ;; re-renders with it, for whatever point landed on. A frozen one
+    ;; holds its formula: the filter it was narrowed by is no reason to
+    ;; drop what the user put up to read.
+    (when (eq maf-formulas--detail-state 'follow)
+      (setq maf-formulas--detail-line (line-beginning-position))
+      (maf-formulas--update-detail))))
 
 ;;; The detail pane
 
 (defvar-local maf-formulas--detail-line nil
-  "Beginning of the line the detail pane was shown for, or nil.
-Set by `maf-formulas-show-detail'; `maf-formulas--detail-on-move'
-compares point against it to close the pane once point leaves.")
+  "Beginning of the line the detail pane is currently rendered for, or nil.
+`maf-formulas--detail-on-move' compares point against it, so the pane
+re-renders when point reaches another formula and not on every command
+that leaves it where it was.")
 
-(defvar-local maf-formulas--detail-pinned nil
-  "Non-nil while the detail pane is pinned open.
-Toggled by `maf-formulas-toggle-detail'. Pinned, the pane follows
-point as it moves instead of closing, and survives re-renders.")
+(defvar-local maf-formulas--detail-dir nil
+  "Direction the detail pane was last split off in, `right' or `below'.
+Chosen by `maf-formulas--detail-direction' when the pane opens; the
+renderer consults it to know whether the pane's height is its own to
+shrink.")
+
+(defvar-local maf-formulas--detail-height nil
+  "Height the detail pane has grown to while open, or nil when closed.
+A floor for `maf-formulas--fit-detail', so the pane never shrinks
+under a following pane's point.")
+
+(defvar-local maf-formulas--detail-state nil
+  "How the detail pane is open: `frozen', `follow', or nil for closed.
+`frozen' is `maf-formulas-show-detail' (\\`o'): the pane holds the one
+formula it was opened on. `follow' is `maf-formulas-toggle-detail'
+(\\`O'): it re-renders for each formula point reaches. Either way it
+stays up until closed — it borrows a window rather than taking room
+from the list, so there is nothing to be won by dismissing it on the
+next keystroke.")
 
 (defun maf-formulas--fill (text width)
   "TEXT filled to WIDTH and indented two spaces, for the description.
@@ -307,6 +334,55 @@ WIDTH is the pane's width in columns; the description fills to it."
                           examples "\n")
                "\n")))))
 
+(defun maf-formulas--detail-direction ()
+  "Where to split the detail pane off when no window can be borrowed.
+`right' when there is width to spare, else `below'. The menu's own
+window is what gets split, so the test is on its width, not the
+frame's: a menu already sharing the frame with calc has less to give
+away than the frame size suggests."
+  (if (>= (window-body-width) (* 2 maf-formulas-detail-min-width))
+      'right
+    'below))
+
+(defun maf-formulas--display-detail-elsewhere (buf alist)
+  "Show BUF in another window on this frame, calc's for choice.
+A `display-buffer' action function, and the pane's first preference:
+the detail borrows a window the way a help buffer does rather than
+carving the frame smaller. Calc's window is picked over the
+least-recently-used one because the menu was called from calc — the
+stack is what the user is least likely to be reading while looking a
+formula up. Returns nil when there is nothing to borrow, so
+`display-buffer' falls through to splitting."
+  (let* ((cbuf (maf--find-calc-buffer))
+         (win (or (and cbuf (get-buffer-window cbuf))
+                  (get-lru-window nil nil t))))
+    (when (and win
+               (not (eq win (selected-window)))
+               (not (window-dedicated-p win)))
+      (window--display-buffer buf win 'reuse alist))))
+
+(defun maf-formulas--split-p (win)
+  "Non-nil when WIN was made for the detail pane rather than borrowed.
+`display-buffer' records that in the window's `quit-restore' parameter:
+a leading `window' means it created the window."
+  (eq (car-safe (window-parameter win 'quit-restore)) 'window))
+
+(defun maf-formulas--fit-detail (win)
+  "Fit the detail pane WIN to the height its text needs.
+Only for a pane split off below: there the height is room taken from
+the list, so the pane asks for no more than it uses — a borrowed
+window keeps whatever size its own buffer had. Capped at half the
+frame so a long description cannot swallow the menu. Once open the
+pane only ever grows: a following pane re-renders formula by formula,
+and shrinking back on the short ones would leave the list jumping
+under the cursor on every move."
+  (when (and (eq maf-formulas--detail-dir 'below)
+             (maf-formulas--split-p win))
+    (let ((max-h (max 6 (/ (frame-height) 2))))
+      (fit-window-to-buffer win max-h
+                            (min max-h (or maf-formulas--detail-height 4)))
+      (setq maf-formulas--detail-height (window-height win)))))
+
 (defun maf-formulas--update-detail ()
   "Render the formula at point into the detail buffer.
 The detail lives in its own buffer, so showing it never shifts the
@@ -335,71 +411,85 @@ list's own layout."
           (let ((inhibit-read-only t))
             (erase-buffer)
             (when f (insert (maf-formulas--detail-string f width)))
-            (goto-char (point-min))))))))
+            (goto-char (point-min))))
+        (when-let ((win (get-buffer-window dbuf)))
+          (maf-formulas--fit-detail win))))))
 
 (defun maf-formulas--close-detail ()
-  "Delete the detail pane's window, when one is showing."
+  "Put the detail pane's window back the way it was, when one is showing.
+`quit-restore-window' undoes exactly what `display-buffer' did: the
+window goes away if the pane made one, and the buffer it borrowed —
+calc, normally — comes back if it did not."
   (let ((win (get-buffer-window maf-formulas--detail-buffer)))
+    (setq maf-formulas--detail-height nil)
     (when (and win (not (eq win (selected-window))))
-      (delete-window win))))
+      (quit-restore-window win 'bury))))
 
 (defun maf-formulas--detail-on-move ()
-  "Track point for the detail pane; on `post-command-hook'.
-Unpinned, the pane is a glance, not a layout: it appears on request
-\(`maf-formulas-show-detail') and any movement dismisses it. Pinned
-\(`maf-formulas-toggle-detail'), it re-renders for the new line
-instead."
-  (cond
-   (maf-formulas--detail-pinned
-    (unless (eq (line-beginning-position) maf-formulas--detail-line)
-      (setq maf-formulas--detail-line (line-beginning-position))
-      (maf-formulas--update-detail)))
-   ((and maf-formulas--detail-line
-         (/= (line-beginning-position) maf-formulas--detail-line))
-    (setq maf-formulas--detail-line nil)
-    (maf-formulas--close-detail))))
+  "Follow point with the detail pane; on `post-command-hook'.
+Only a following pane re-renders, and only for a line other than the
+one already rendered, so the commands that leave point where it was
+cost nothing. A pane opened with \\<maf-formulas-mode-map>\\[maf-formulas-show-detail] holds the formula it was
+opened on and ignores point entirely."
+  (when (and (eq maf-formulas--detail-state 'follow)
+             (not (eq (line-beginning-position) maf-formulas--detail-line)))
+    (setq maf-formulas--detail-line (line-beginning-position))
+    (maf-formulas--update-detail)))
 
 (defun maf-formulas-keyboard-quit ()
-  "Close the detail pane (pinned or not), then quit as \\[keyboard-quit] does.
-On the menu's \\`C-g': the quit gesture dismisses the pane without
-having to move point, and unpins it if it was pinned."
+  "Close the detail pane, then quit as \\[keyboard-quit] does.
+On the menu's \\`C-g': the usual dismiss gesture shuts the pane whichever
+way it was opened, so it takes neither a matching key nor leaving the menu."
   (interactive)
   (setq maf-formulas--detail-line nil
-        maf-formulas--detail-pinned nil)
+        maf-formulas--detail-state nil)
   (maf-formulas--close-detail)
   (keyboard-quit))
 
-(defun maf-formulas-show-detail ()
-  "Pop up the detail pane for the formula at point, without selecting it.
-The pane closes again as soon as point moves off the line. On a
-category header it previews the group's first formula."
-  (interactive)
+(defun maf-formulas--open-detail ()
+  "Display the detail pane and render the formula at point into it."
   (let ((dbuf (get-buffer-create maf-formulas--detail-buffer)))
     (with-current-buffer dbuf
       (unless (derived-mode-p 'special-mode) (special-mode))
       (setq buffer-read-only t))
-    ;; A vertical split beside the menu's own window: the list keeps its
-    ;; full height, and the Big rendering gets a tall column to breathe.
-    ;; Displayed before rendering, so the description fills to the
-    ;; pane's real width.
-    (display-buffer dbuf '((display-buffer-in-direction)
-                           (direction . right)
+    ;; Borrow a window if the frame has one to lend (calc's, usually),
+    ;; keeping it where it already is on a re-show; failing that, split
+    ;; whichever way leaves the detail the better shape. Displayed
+    ;; before rendering, so the description fills to the pane's real
+    ;; width.
+    (setq maf-formulas--detail-dir (maf-formulas--detail-direction))
+    (display-buffer dbuf `((display-buffer-reuse-window
+                            maf-formulas--display-detail-elsewhere
+                            display-buffer-in-direction)
+                           (direction . ,maf-formulas--detail-dir)
                            (inhibit-same-window . t)))
     (maf-formulas--update-detail)
     (setq maf-formulas--detail-line (line-beginning-position))))
 
-(defun maf-formulas-toggle-detail ()
-  "Toggle keeping the detail pane open.
-Pinned, the pane stays up and follows point from formula to formula;
-toggled off, it closes. The glance keys (\\<maf-formulas-mode-map>\\[maf-formulas-show-detail]) are untouched: they
-still show a pane that closes on the next move."
+(defun maf-formulas-show-detail ()
+  "Show the formula at point in the detail pane, and leave it there.
+The pane keeps that formula however far point wanders after: a look at
+one formula while reading down the list, not a running commentary on
+it. Press again on another formula to swap what it holds, \\<maf-formulas-mode-map>\\[maf-formulas-toggle-detail] for a
+pane that follows point instead, \\[maf-formulas-keyboard-quit] to close it. On a category
+header it shows the group's first formula."
   (interactive)
-  (if maf-formulas--detail-pinned
-      (progn (setq maf-formulas--detail-pinned nil
+  (setq maf-formulas--detail-state 'frozen)
+  (maf-formulas--open-detail))
+
+(defun maf-formulas-toggle-detail ()
+  "Open a detail pane that follows point, or close a following one.
+Where \\<maf-formulas-mode-map>\\[maf-formulas-show-detail] holds one formula, this re-renders for each formula
+point reaches — for reading down a group. Pressed while such a pane is
+up it closes it; pressed while \\[maf-formulas-show-detail] holds one, it takes the pane over
+and starts following."
+  (interactive)
+  (if (eq maf-formulas--detail-state 'follow)
+      (progn (setq maf-formulas--detail-state nil
                    maf-formulas--detail-line nil)
              (maf-formulas--close-detail))
-    (setq maf-formulas--detail-pinned t)
-    (maf-formulas-show-detail)))
+    (setq maf-formulas--detail-state 'follow)
+    (maf-formulas--open-detail)))
 
 ;;; Commands
 
@@ -561,7 +651,8 @@ second `q' then leaves. `maf-formulas-quit' always quits outright."
 (define-key maf-formulas-mode-map (kbd "o")   #'maf-formulas-show-detail)
 (define-key maf-formulas-mode-map (kbd "d")   #'maf-formulas-show-detail)
 (define-key maf-formulas-mode-map (kbd "?")   #'maf-formulas-show-detail)
-;; The shifted keys pin what the unshifted ones glance at.
+;; The shifted keys make the pane follow point; the unshifted ones show
+;; one formula and hold it.
 (define-key maf-formulas-mode-map (kbd "O")   #'maf-formulas-toggle-detail)
 (define-key maf-formulas-mode-map (kbd "D")   #'maf-formulas-toggle-detail)
 (define-key maf-formulas-mode-map (kbd "C-g") #'maf-formulas-keyboard-quit)
@@ -583,8 +674,8 @@ Formulas are grouped by category, the ones inserted this session
 repeated in a \"Recent\" group at the top, each shown beside its
 form. \\<maf-formulas-mode-map>\\[maf-formulas-insert]
 pushes the formula at point onto the stack, \\[maf-formulas-next-item] and \\[maf-formulas-prev-item] step
-between formulas, \\[maf-formulas-next-group] between groups, \\[maf-formulas-show-detail] pops up the detail
-pane (movement dismisses it), \\[maf-formulas-toggle-detail] pins it open following point, \\[maf-formulas-filter]
+between formulas, \\[maf-formulas-next-group] between groups, \\[maf-formulas-show-detail] shows the formula at
+point in the detail pane, \\[maf-formulas-toggle-detail] has the pane follow point, \\[maf-formulas-filter]
 filters as you type, \\[maf-formulas-clear-filter] clears the filter, \\[maf-formulas-quit-or-clear-filter] clears the
 filter when narrowed and quits otherwise."
   (setq truncate-lines t)
