@@ -155,11 +155,36 @@
   (cl-assert (= (calc-locate-cursor-element (point)) 2))
   (cl-assert (eolp))
 
-  ;; At home there is no entry at point to carry: both directions are
-  ;; no-ops and point stays home. (`maf-swap-up' is the command that
-  ;; moves the top entry from home.)
+  ;; At home there is no entry at point, but carrying up reads home as
+  ;; level 1: the top entry rises a line and point rides it there,
+  ;; landing in that line's margin — the offset a point that was never
+  ;; inside the entry gets.
   (goto-char (point-max))
+  (cl-assert (maf--at-home-p))
   (call-interactively 'maf-carry-up)
+  (cl-assert (string= (math-format-value (calc-top 2 'full)) "7"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "sin(2 x + 1)"))
+  (cl-assert (= (calc-locate-cursor-element (point)) 2))
+  (cl-assert (= (current-column) 0))
+
+  ;; Point rode the entry, so the repeat carries that same entry on
+  ;; rather than the one that landed at home's level — here a ring of
+  ;; two, which takes it back round to level 1.
+  (call-interactively 'maf-carry-up)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "7"))
+  (cl-assert (= (calc-locate-cursor-element (point)) 1))
+  (cl-assert (= (current-column) 0))
+
+  ;; A single undo puts the stack and point back, home included.
+  (progn (setq last-command nil) (call-interactively 'maf-undo))
+  (progn (setq last-command nil) (call-interactively 'maf-undo))
+  (cl-assert (string= (math-format-value (calc-top 2 'full)) "sin(2 x + 1)"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "7"))
+
+  ;; Carrying down from home stays a no-op: the same reading would send
+  ;; the top entry round the ring to the deepest level rather than the
+  ;; line down the gesture asks for. Point stays home.
+  (goto-char (point-max))
   (call-interactively 'maf-carry-down)
   (cl-assert (string= (math-format-value (calc-top 2 'full)) "sin(2 x + 1)"))
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "7"))
@@ -176,6 +201,14 @@
   (cl-assert (= (calc-stack-size) 1))
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "7"))
   (cl-assert (looking-at "7"))
+
+  ;; Home on a ring of one: the entry the home line names has nowhere
+  ;; to go either, so point stays home.
+  (goto-char (point-max))
+  (call-interactively 'maf-carry-up)
+  (cl-assert (= (calc-stack-size) 1))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "7"))
+  (cl-assert (maf--at-home-p))
 
   ;; An empty stack is a no-op too, not an error.
   (calc-pop 1)
