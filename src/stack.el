@@ -2066,14 +2066,17 @@ entry there is nowhere to carry it to.
 
 A prefix argument N carries the entry N lines at once, wrapping as
 often as it takes; a negative N carries it down instead, as
-`maf-carry-down' does.
+`maf-carry-down' does — from home too, where that means the same
+no-op.
 
   C-u 3  4:  a       4:  d|
          3:  b   =>  3:  a
          2:  c       2:  b
          1:  d|      1:  c"
   (interactive "p")
-  (maf--carry-entry (abs n) (>= n 0) t))
+  ;; Home reads as level 1 only for the upward carry: negated, the
+  ;; command is a carry-down, and home is a no-op there.
+  (maf--carry-entry (abs n) (>= n 0) (>= n 0)))
 
 (defun maf-carry-down (n)
   "Carry the stack entry at point one line down the screen, point riding along.

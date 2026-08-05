@@ -270,7 +270,7 @@
 ;; Quick substitution: apply an assignment from the stack to the
 ;; contextual subject. C-<return> is the one-hand chord a substitution
 ;; is worth, and the edit module's quick-add gave the key up for it
-;; (`, S-RET and "(" remain, and ` opens the same bottom entry C-RET
+;; (`, C-o and "(" remain, and ` opens the same bottom entry C-RET
 ;; used to, as a trip home). It replaces C-c C-c, the conventional
 ;; mode-specific
 ;; "apply this" gesture, which had been the command's only key and is

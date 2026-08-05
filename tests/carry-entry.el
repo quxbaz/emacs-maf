@@ -167,24 +167,35 @@
   (cl-assert (= (calc-locate-cursor-element (point)) 2))
   (cl-assert (= (current-column) 0))
 
-  ;; Point rode the entry, so the repeat carries that same entry on
-  ;; rather than the one that landed at home's level — here a ring of
-  ;; two, which takes it back round to level 1.
-  (call-interactively 'maf-carry-up)
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "7"))
-  (cl-assert (= (calc-locate-cursor-element (point)) 1))
-  (cl-assert (= (current-column) 0))
-
-  ;; A single undo puts the stack and point back, home included.
-  (progn (setq last-command nil) (call-interactively 'maf-undo))
+  ;; A single undo reverts the home carry, and point returns home with
+  ;; it — the snapshot the carry took was of a point at home.
   (progn (setq last-command nil) (call-interactively 'maf-undo))
   (cl-assert (string= (math-format-value (calc-top 2 'full)) "sin(2 x + 1)"))
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "7"))
+  (cl-assert (maf--at-home-p))
 
-  ;; Carrying down from home stays a no-op: the same reading would send
-  ;; the top entry round the ring to the deepest level rather than the
-  ;; line down the gesture asks for. Point stays home.
+  ;; Point rode the entry on the carry, so a repeat carries that same
+  ;; entry on rather than the one that landed at home's level — here a
+  ;; ring of two, which takes it back round to level 1.
   (goto-char (point-max))
+  (call-interactively 'maf-carry-up)
+  (call-interactively 'maf-carry-up)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "7"))
+  (cl-assert (string= (math-format-value (calc-top 2 'full)) "sin(2 x + 1)"))
+  (cl-assert (= (calc-locate-cursor-element (point)) 1))
+  (cl-assert (= (current-column) 0))
+
+  ;; Negated, the command is a carry-down, and home means the same
+  ;; no-op there: the top entry must not take a trip round the ring.
+  (goto-char (point-max))
+  (let ((current-prefix-arg -1)) (call-interactively 'maf-carry-up))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "7"))
+  (cl-assert (string= (math-format-value (calc-top 2 'full)) "sin(2 x + 1)"))
+  (cl-assert (maf--at-home-p))
+
+  ;; Carrying down from home is that no-op spelled directly: the same
+  ;; reading would send the top entry round the ring to the deepest
+  ;; level rather than the line down the gesture asks for.
   (call-interactively 'maf-carry-down)
   (cl-assert (string= (math-format-value (calc-top 2 'full)) "sin(2 x + 1)"))
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "7"))
