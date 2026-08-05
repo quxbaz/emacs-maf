@@ -80,7 +80,16 @@
     which mismatches an ordinary group. Works from inside the group
     too, not only with point parked on a delimiter.
   - [ ] my/calc-edit-duplicate (M-RET) — duplicate line, comma-aware (vector entry)
-  - [ ] my/calc-duplicate-paren-expr (C-RET) — duplicate innermost paren group
+  - [X] my/calc-duplicate-paren-expr (C-RET) — =maf-editplus-duplicate-group=.
+    The group at point is written again just after itself, point landing
+    at the matching place in the copy — (x+1)(x-1) with one keypress and
+    one character changed. Nothing goes between the two: calc reads
+    juxtaposition as multiplication. A call comes along with its name
+    (the legacy left the head behind, writing sqrt(3)(3)), while a bare
+    number does not, 2(a+b) being a product. The group is the one point
+    stands on or inside, as it is for the bracket toggle, and the scan is
+    maf-edit's own rather than =syntax-ppss=: it stops at the entry, and a
+    group spanning lines copies as one line, without its prefixes.
 
 * PORT:plot.el
   - [ ] my/calc-graph-quick / -with-range (g l / g i) — plot the top entry straight to

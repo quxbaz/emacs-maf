@@ -10,9 +10,9 @@
 ;; stack is editable text, installed into `maf-edit-mode-map' and taken
 ;; back out when the module is off.
 ;;
-;; What is here now are the three delimiter gestures, TAB, M-o and the
-;; shifted arrows, the function keys L, Q and |, the exponent keys M-2
-;; through M-9 and :, and P for the constant pi.
+;; What is here now are the four delimiter gestures, TAB, M-o, C-RET
+;; and the shifted arrows, the function keys L, Q and |, the exponent
+;; keys M-2 through M-9 and :, and P for the constant pi.
 ;;
 ;; TAB escapes. Typing a formula runs forward past closing delimiters
 ;; constantly — sqrt(x^2+1), f(g(x)) — and reaching the far side of one
@@ -35,6 +35,13 @@
 ;; do — except on an interval, where `[' and `(' say included and
 ;; excluded rather than merely opening the group, and the end point is
 ;; at moves alone.
+;;
+;; C-RET duplicates a pair. The fourth thing wanted of a group already
+;; typed: a second one beside it differing in a character. (x+1)(x-1)
+;; is the shape of half the algebra there is, and typing the copy out
+;; again is the work the key saves — it writes the group after itself
+;; and puts point at the matching place inside the copy, so the sign to
+;; flip is where the fingers already are.
 ;;
 ;; L, Q and | apply a function. The term M-o would have put parens
 ;; around is also the term a function should be applied to, so these
@@ -563,6 +570,96 @@ during a maf-edit session, and only inside an entry."
        pos (1+ pos) (char-after pos)
        (cdr (assq (char-after pos) maf-editplus--bracket-toggle))))))
 
+;;; Duplicating a group
+
+(defun maf-editplus--call-start (open limit)
+  "Start of the group at OPEN, taking in the name that heads it.
+A function call is one unit — sqrt(3) copied whole rather than left
+without its head — but juxtaposition is not: the 2 of 2(a+b) is a
+factor multiplying the group, not a name the group belongs to. What
+tells them apart is what tells calc: a name begins with a letter or an
+underscore, so x2(a+b) is a call and 2(a+b) is a product. LIMIT bounds
+the scan, as everywhere else here."
+  (let ((start (maf-editplus--skip-name-back open limit)))
+    (if (and (< start open)
+             (string-match-p "[[:alpha:]_]" (string (char-after start))))
+        start
+      open)))
+
+(defun maf-editplus--flat-copy (start end mark)
+  "Text of START..END as one line, and where MARK falls inside it.
+Returns a cons of the text and the offset into it that corresponds to
+the buffer position MARK — the place point should land when the text
+is written down again elsewhere.
+
+Machine-owned characters are dropped and every run of whitespace,
+a line break and the pad that follows it included, becomes a single
+space: the same reading `maf-edit--entry-text' gives the parser. A
+copy is expression text going back into an entry, and the prefixes
+belong to the lines they were stamped on, not to the expression."
+  (let ((pos start) (chars nil) (n 0) (idx nil))
+    (while (< pos end)
+      (when (and (null idx) (>= pos mark)) (setq idx n))
+      (let ((c (char-after pos)))
+        (cond
+         ((get-text-property pos 'maf-edit-prefix))
+         ((memq c '(?\s ?\t ?\n))
+          (unless (eq (car chars) ?\s)
+            (push ?\s chars)
+            (setq n (1+ n))))
+         (t (push c chars) (setq n (1+ n)))))
+      (setq pos (1+ pos)))
+    (cons (apply #'string (nreverse chars)) (or idx n))))
+
+(defun maf-editplus-duplicate-group ()
+  "Duplicate the group at point, the copy landing just after it.
+Point moves to the matching place inside the copy, which is what makes
+the gesture worth a key: the second pair is nearly always the first
+with one character changed, and that character ends up where the
+fingers already are.
+
+  (x+|1)     =>  (x+1)(x+|1)      DEL - then gives (x+1)(x-1)
+  sqrt(3)|   =>  sqrt(3)sqrt(3)|
+  |(a+b)     =>  (a+b)|(a+b)
+
+Nothing is written between the two: calc reads juxtaposition as
+multiplication, so (x+1)(x-1) is the product it looks like — and
+[1,2][1,2] is the product calc means for two vectors, their dot.
+
+The group is the one point stands on or inside, as it is for
+`maf-editplus-toggle-brackets': the opener point sits before, else the
+closer just behind point, else the group enclosing point. A call is
+copied whole, name and all — the name in front of an argument list
+belongs to it — while a number in that place does not, 2(a+b) being a
+product of two things and not one call.
+
+A group spanning lines is copied as a single line, its prefixes and
+line breaks coming out as the whitespace they are to the parser.
+
+With no complete group in the entry — none at point, or one whose
+other half has not been typed yet — nothing is changed. Runs only
+during a maf-edit session, and only inside an entry."
+  (interactive)
+  (unless maf-edit-mode
+    (user-error "maf-edit is not active"))
+  (let* ((entry (or (maf-editplus--entry-at-point)
+                    (user-error "Point is not in a stack entry")))
+         (limit (+ (overlay-start entry)
+                   (maf-edit--leading-prefix-run (overlay-start entry))))
+         (pair (or (maf-editplus--group-at-point limit (overlay-end entry))
+                   (user-error "No complete group at point")))
+         (start (maf-editplus--call-start (car pair) limit))
+         (end (1+ (cdr pair)))
+         (copy (maf-editplus--flat-copy start end (point))))
+    ;; Point sits at END in the press-after-the-closer case, and the
+    ;; excursion's marker does not advance over an insert made there —
+    ;; so the copy always goes in ahead of point, and the goto below is
+    ;; the one thing that moves it.
+    (save-excursion
+      (goto-char end)
+      (insert (car copy)))
+    (goto-char (+ end (cdr copy)))))
+
 ;;; Applying a function
 
 (defun maf-editplus--apply-function (name)
@@ -740,6 +837,9 @@ Enabled, and while a maf-edit session is up:
        that closes the group it is in, one level per press
   M-o  `maf-editplus-wrap-parens' — parentheses go around the term
        before point, and a further press widens that pair
+  C-RET
+       `maf-editplus-duplicate-group' — the group at point is written
+       again just after itself, point landing in the copy
   S-up, S-down
        `maf-editplus-toggle-brackets' — the group at point trades its
        parens for brackets, or back; one end only on an interval
@@ -756,9 +856,12 @@ Disabled, the keys cede back to whatever the global map does with them
 \(`indent-for-tab-command', which has nothing to indent in an edited
 stack, `self-insert-command' for the printable ones, `digit-argument'
 for the meta-digits, the shifted arrows' selection motion, and nothing
-at all for M-o, which Emacs 30 leaves free). M-o and the shifted arrows
-run `mafcmd-mod-360' and `mafcmd-toggle-op' in `maf-mode-map', which is
-not competition: maf-mode is off for the duration of an edit session.
+at all for M-o and C-RET, which Emacs 30 leaves free). M-o, C-RET and
+the shifted arrows run `mafcmd-mod-360', `mafcmd-let' and
+`mafcmd-toggle-op' in `maf-mode-map', which is not competition:
+maf-mode is off for the duration of an edit session. Neither is the
+RET family of the session's own map — RET commits and S-RET breaks the
+line, and the control chord was free beside them.
 The arrows are the same gesture on the stack as here, a toggle between
 two spellings of one thing, and as there both directions run it — a
 toggle is its own inverse, so there is no second direction to give.
@@ -782,6 +885,7 @@ running, and the module is a no-op for anyone not using maf-edit."
   (let ((on maf-use-editplus-mode))
     (dolist (b '(("TAB" . maf-editplus-escape-group)
                  ("M-o" . maf-editplus-wrap-parens)
+                 ("C-<return>" . maf-editplus-duplicate-group)
                  ("S-<up>"   . maf-editplus-toggle-brackets)
                  ("S-<down>" . maf-editplus-toggle-brackets)
                  ("L"   . maf-editplus-wrap-ln)
@@ -800,6 +904,6 @@ running, and the module is a no-op for anyone not using maf-edit."
 ;; works on its own without it.
 (when (require 'maf-module nil t)
   (maf-register-module 'maf-editplus #'maf-use-editplus-mode
-                       "In-session keys for maf-edit (TAB escapes a group, M-o wraps one, S-up/S-down retype its delimiters, L/Q/| apply ln/sqrt/abs, M-2..M-9 and : raise to a power, P types pi)."))
+                       "In-session keys for maf-edit (TAB escapes a group, M-o wraps one, C-RET duplicates one, S-up/S-down retype its delimiters, L/Q/| apply ln/sqrt/abs, M-2..M-9 and : raise to a power, P types pi)."))
 
 (provide 'maf-editplus)
