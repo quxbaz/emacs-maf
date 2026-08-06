@@ -1,5 +1,5 @@
-;; Q and | inside a maf-edit session make the term before point the
-;; argument of a sqrt or an abs call (`maf-editplus-wrap-sqrt' and
+;; Q and | inside a maf-edit session make a sub-expression the argument
+;; of a sqrt or an abs call (`maf-editplus-wrap-sqrt' and
 ;; `maf-editplus-wrap-abs'). A step passes when it raises no error.
 ;;
 ;; Both are `maf-editplus--apply-function' with a different name, and
@@ -43,14 +43,19 @@
                     "abs(sqrt(x))"))
   (call-interactively 'maf-edit-discard)
 
-  ;; An active region becomes the argument exactly as marked.
+  ;; An active region becomes the argument exactly as marked. Marked
+  ;; and pressed in the one step: the stepper deactivates the mark
+  ;; around every form it runs (`maf--step-run'), so a region set in a
+  ;; step of its own is gone before the command sees it — and what
+  ;; would run instead is the press with point on the `+'.
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "pi+2") nil)
   (progn (maf-edit-move-beginning-of-line 1)
          (set-mark (point))
          (forward-char 2)
-         (activate-mark) nil)
-  (call-interactively 'maf-editplus-wrap-sqrt)
+         (activate-mark)
+         (call-interactively 'maf-editplus-wrap-sqrt)
+         nil)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
                     "sqrt(pi)+2"))
   (call-interactively 'maf-edit-discard)

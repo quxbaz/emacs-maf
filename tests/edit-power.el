@@ -3,10 +3,15 @@
 ;; writes ^2 and then counts it up, one press per power
 ;; (`maf-editplus-raise-power'). A step passes when it raises no error.
 ;;
-;; The contract: the meta-digits never look behind point, so an
-;; exponent already there stacks into a tower; `:' edits one in place,
-;; but only a run of digits with the caret directly in front of it; and
-;; the two keys compose, since both leave point after the digits.
+;; The contract: the meta-digits never look at anything, so an exponent
+;; already there stacks into a tower; `:' raises the sub-expression
+;; point names, as L and Q wrap the one point names
+;; (`edit-subexpr-target.el'), and counts an exponent up in place when
+;; the node it named is already a power written in digits. At the end of
+;; the entry — where there is no character under point — that comes to
+;; the old rule: a run of digits with the caret directly in front of it
+;; is the exponent, and the two keys compose there, both leaving point
+;; after the digits.
 
 (maf-step
   ;; Eight keys, one command — the digit comes off the key itself.
@@ -77,6 +82,93 @@
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
                     "x^2*y^2"))
   (call-interactively 'maf-edit-discard)
+
+  ;; Back inside the text the key names what it raises the way L does:
+  ;; the character under point picks the node, and an operand is raised
+  ;; where it stands.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (execute-kbd-macro "a+b*c") nil)
+  (progn (maf-edit-move-beginning-of-line 1) (forward-char 2) nil)
+  (progn (execute-kbd-macro ":") nil)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "a+b^2*c"))
+  ;; Point is left on the caret, so the next press counts the power up
+  ;; instead of squaring the exponent it just wrote.
+  (progn (execute-kbd-macro ":") nil)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "a+b^3*c"))
+  (call-interactively 'maf-edit-discard)
+
+  ;; One character to the left names the product, and there the text
+  ;; needs the parentheses to mean it — a+b*c^2 is a different formula.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (execute-kbd-macro "a+b*c") nil)
+  (progn (maf-edit-move-beginning-of-line 1) (forward-char 3) nil)
+  (progn (execute-kbd-macro ":") nil)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "a+(b*c)^2"))
+  (progn (execute-kbd-macro ":") nil)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "a+(b*c)^3"))
+  (call-interactively 'maf-edit-discard)
+
+  ;; A call, a vector and a node already in a pair of parentheses each
+  ;; read as one unit, so the caret goes straight on the end of them.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (execute-kbd-macro "sqrt(3)+1") nil)
+  (progn (maf-edit-move-beginning-of-line 1) nil)
+  (progn (execute-kbd-macro ":") nil)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "sqrt(3)^2+1"))
+  (call-interactively 'maf-edit-discard)
+
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (execute-kbd-macro "(a+b)*c") nil)
+  (progn (maf-edit-move-beginning-of-line 1) nil)
+  (progn (execute-kbd-macro ":") nil)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "(a+b)^2*c"))
+  (call-interactively 'maf-edit-discard)
+
+  ;; A power point names is counted up in place, wherever point stands
+  ;; on it — but only when its exponent is written in digits. x^y is a
+  ;; power all the same, and there the key squares it.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (execute-kbd-macro "x^2*y") nil)
+  (progn (maf-edit-move-beginning-of-line 1) (forward-char 1) nil)
+  (progn (execute-kbd-macro ":") nil)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "x^3*y"))
+  (call-interactively 'maf-edit-discard)
+
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (execute-kbd-macro "x^y*z") nil)
+  (progn (maf-edit-move-beginning-of-line 1) (forward-char 1) nil)
+  (progn (execute-kbd-macro ":") nil)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "(x^y)^2*z"))
+  (call-interactively 'maf-edit-discard)
+
+  ;; A sign belongs to the term it signs, and squaring it must not
+  ;; quietly negate the square: (-a)^2 is not -a^2.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (execute-kbd-macro "-a*b") nil)
+  (progn (maf-edit-move-beginning-of-line 1) nil)
+  (progn (execute-kbd-macro ":") nil)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "(-a)^2*b"))
+  (call-interactively 'maf-edit-discard)
+
+  ;; The parentheses are the formula's, not just the text's: what
+  ;; commits is the square of the sum.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (execute-kbd-macro "a+b") nil)
+  (progn (maf-edit-move-beginning-of-line 1) (forward-char 1) nil)
+  (progn (execute-kbd-macro ":") nil)
+  (call-interactively 'maf-edit-commit)
+  (cl-assert (equal (calc-top 1)
+                    '(^ (+ (var a var-a) (var b var-b)) 2)))
+  (calc-pop (calc-stack-size))
 
   ;; What the keys write is a power to calc, not just a caret and a
   ;; digit in the text. Committed as maf commits, so the power stands

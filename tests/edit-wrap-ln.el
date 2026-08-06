@@ -1,11 +1,15 @@
-;; L inside a maf-edit session makes the term before point the argument
-;; of an ln call (`maf-editplus-wrap-ln', the editplus module's third
-;; key). A step passes when it raises no error.
+;; L inside a maf-edit session makes a sub-expression the argument of an
+;; ln call (`maf-editplus-wrap-ln', the editplus module's third key). A
+;; step passes when it raises no error.
 ;;
-;; The contract: the term is the one `maf-editplus-wrap-parens' would
-;; have wrapped, so a call or a bracketed group comes along whole and an
-;; atom is never split; a press with no term behind point opens an empty
-;; ln() to type into; and the scan never leaves the entry it started in.
+;; The contract has two halves, and this file covers the second. At the
+;; end of the entry the argument is the term behind point — the one
+;; `maf-editplus-wrap-parens' would have wrapped, so a call or a
+;; bracketed group comes along whole and an atom is never split — and a
+;; press with no term behind point opens an empty ln() to type into.
+;; Inside the text the argument is the sub-expression point names, as on
+;; the stack; that half is `edit-subexpr-target.el'. Either way the scan
+;; never leaves the entry it started in.
 
 (maf-step
   ;; The module owns the key, and it lives in maf-edit's own map — so
@@ -65,14 +69,17 @@
                     "1+ln(2.5)"))
   (call-interactively 'maf-edit-discard)
 
-  ;; Nothing ahead of point is drawn in: the term behind an operator is
-  ;; the argument, and the rest of the entry is left alone.
+  ;; Point back inside the text is no longer the end of the entry, and
+  ;; the term behind point stops being the question: the character
+  ;; under point names the argument, as it does on the stack. Here that
+  ;; is the `*', so the product it heads is what ln takes —
+  ;; `edit-subexpr-target.el' works through the rest.
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "a+b*c") nil)
   (progn (backward-char 2) nil)
   (call-interactively 'maf-editplus-wrap-ln)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
-                    "a+ln(b)*c"))
+                    "a+ln(b*c)"))
   (call-interactively 'maf-edit-discard)
 
   ;; A leading sign belongs to the term it signs.
@@ -107,26 +114,31 @@
   (cl-assert (eq (char-after) ?\)))
   (call-interactively 'maf-edit-discard)
 
-  ;; The machine-owned prefix is not text, so a press at the start of a
-  ;; typed entry opens an empty call rather than reaching into the
-  ;; entry above for an argument.
+  ;; The machine-owned prefix is not text, and a press at the start of
+  ;; a typed entry never reaches into the entry above for an argument.
+  ;; The first character of the entry is the one under point, so it is
+  ;; the head of the formula that ln takes.
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "a+b") nil)
   (maf-edit-move-beginning-of-line 1)
   (call-interactively 'maf-editplus-wrap-ln)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
-                    "ln()a+b"))
+                    "ln(a)+b"))
   (call-interactively 'maf-edit-discard)
 
   ;; An active region becomes the argument exactly as marked, and point
-  ;; again ends after the closer.
+  ;; again ends after the closer. Marked and pressed in the one step:
+  ;; the stepper deactivates the mark around every form it runs
+  ;; (`maf--step-run'), so a region set in a step of its own is gone
+  ;; before the command sees it.
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "pi+2") nil)
   (progn (maf-edit-move-beginning-of-line 1)
          (set-mark (point))
          (forward-char 2)
-         (activate-mark) nil)
-  (call-interactively 'maf-editplus-wrap-ln)
+         (activate-mark)
+         (call-interactively 'maf-editplus-wrap-ln)
+         nil)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
                     "ln(pi)+2"))
   (cl-assert (eq (char-before) ?\)))
