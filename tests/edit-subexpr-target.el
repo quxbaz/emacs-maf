@@ -355,6 +355,116 @@
                                                  (+ (var b var-b) 1)))))
   (calc-pop (calc-stack-size))
 
+  ;; `calc-multiplication-has-precedence' is on by default, and there
+  ;; `*' binds tighter than `/': a/b*c is a/(b*c), so the `/' names
+  ;; the whole quotient and the `*' names the product inside it. The
+  ;; two answers are different formulas, not two spellings of one.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (execute-kbd-macro "a/b*c") nil)
+  (progn (maf-edit-move-beginning-of-line 1) (forward-char 1) nil)
+  (call-interactively 'maf-editplus-wrap-ln)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "ln(a/b*c)"))
+  (call-interactively 'maf-edit-discard)
+
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (execute-kbd-macro "a/b*c") nil)
+  (progn (maf-edit-move-beginning-of-line 1) (forward-char 3) nil)
+  (call-interactively 'maf-editplus-wrap-ln)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "a/ln(b*c)"))
+  (call-interactively 'maf-edit-discard)
+
+  ;; Which also makes `*' fold right, while `/' still folds left.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (execute-kbd-macro "a*b*c") nil)
+  (progn (maf-edit-move-beginning-of-line 1) (forward-char 1) nil)
+  (call-interactively 'maf-editplus-wrap-ln)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "ln(a*b*c)"))
+  (call-interactively 'maf-edit-discard)
+
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (execute-kbd-macro "a/b/c") nil)
+  (progn (maf-edit-move-beginning-of-line 1) (forward-char 1) nil)
+  (call-interactively 'maf-editplus-wrap-ln)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "ln(a/b)/c"))
+  (call-interactively 'maf-edit-discard)
+
+  ;; Turned off, the four share one level and fold left, and the scan
+  ;; follows — the setting is read at the press, not remembered.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (execute-kbd-macro "a/b*c")
+         (maf-edit-move-beginning-of-line 1)
+         (forward-char 1)
+         (let ((calc-multiplication-has-precedence nil))
+           (call-interactively 'maf-editplus-wrap-ln))
+         nil)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "ln(a/b)*c"))
+  (call-interactively 'maf-edit-discard)
+
+  ;; A run of the operators calc folds right is named whole from its
+  ;; first one: a mod b mod c is a mod (b mod c), and := likewise.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (insert "a mod b mod c")
+         (maf-edit-move-beginning-of-line 1)
+         (forward-char 2)
+         (let ((maf-edit-parse-text-function #'identity))
+           (call-interactively 'maf-editplus-wrap-ln))
+         nil)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "ln(a mod b mod c)"))
+  (call-interactively 'maf-edit-discard)
+
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (insert "a := b := c") nil)
+  (progn (maf-edit-move-beginning-of-line 1) (forward-char 2) nil)
+  (call-interactively 'maf-editplus-wrap-ln)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "ln(a := b := c)"))
+  (call-interactively 'maf-edit-discard)
+
+  ;; The rewrite condition folds left, as calc reads it.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (insert "a :: b :: c") nil)
+  (progn (maf-edit-move-beginning-of-line 1) (forward-char 2) nil)
+  (call-interactively 'maf-editplus-wrap-ln)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "ln(a :: b) :: c"))
+  (call-interactively 'maf-edit-discard)
+
+  ;; An error form is one operator, not a sum over a quotient, and it
+  ;; binds tighter than both the product and the power beside it.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (insert "a +/- b * c") nil)
+  (progn (maf-edit-move-beginning-of-line 1) (forward-char 2) nil)
+  (call-interactively 'maf-editplus-wrap-ln)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "ln(a +/- b) * c"))
+  (call-interactively 'maf-edit-discard)
+
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (insert "a +/- b^2") nil)
+  (progn (maf-edit-move-beginning-of-line 1) (forward-char 2) nil)
+  (call-interactively 'maf-editplus-wrap-ln)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "ln(a +/- b)^2"))
+  (call-interactively 'maf-edit-discard)
+
+  ;; And what commits is the quotient calc reads, not the one the old
+  ;; left-folding scan would have named.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (execute-kbd-macro "a/b*c") nil)
+  (progn (maf-edit-move-beginning-of-line 1) (forward-char 1) nil)
+  (call-interactively 'maf-editplus-wrap-ln)
+  (call-interactively 'maf-edit-commit)
+  (cl-assert (equal (calc-top 1)
+                    '(calcFunc-ln (/ (var a var-a)
+                                     (* (var b var-b) (var c var-c))))))
+  (calc-pop (calc-stack-size))
+
   ;; An atom is never split, and a sign belongs to the term it signs.
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "1+2.5") nil)

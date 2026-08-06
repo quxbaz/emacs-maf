@@ -719,12 +719,13 @@ during a maf-edit session, and only inside an entry."
 ;; leave the gesture with nothing to act on.
 
 (defconst maf-editplus--op-strings
-  '(".." "<=" ">=" "!=" "==" ":=" "=>" "**" "&&" "||" "!!"
+  '("+/-" ".." "<=" ">=" "!=" "==" ":=" "::" "=>" "**" "&&" "||" "!!"
     "+" "-" "*" "/" "\\" "%" "^" "=" "<" ">" "|" "!")
   "Operator spellings the scan reads, longest match first.
 Two-character operators come before the one-character operators they
 begin with, so `<=' is one boundary rather than `<' and a stray `=',
-and `**' is the power calc reads it as rather than two products.
+and `**' is the power calc reads it as rather than two products —
+and `+/-' one error form rather than a sum over a quotient.
 
 Calc's own table (`math-expr-ops') is longer than this. What is left
 out is what a node under point would gain nothing from: the
@@ -738,10 +739,12 @@ The word operator `mod' is not spelled here: it is an identifier to
 the scan, and `maf-editplus--tokens' turns that one identifier into an
 operator.")
 
-(defconst maf-editplus--assign-ops '(":=" "=>")
-  "Operators binding loosest of all: assignment and `evaluates to'.
-x = y => z is the evaluation of the equation, not an equation about
-an evaluation.")
+(defconst maf-editplus--assign-ops '(":=" "=>" "::")
+  "The three operators binding looser than everything else.
+Each is its own level, and they are listed here for the reader rather
+than parsed together: `=>' is loosest, then the rewrite condition
+`::', then assignment — so x = y => z is the evaluation of the
+equation, not an equation about an evaluation.")
 
 (defconst maf-editplus--relation-ops '("=" "==" "!=" "<" ">" "<=" ">=")
   "The relations, all of one precedence, as calc reads them.
@@ -948,60 +951,78 @@ spanning the whole entry, so point still names something."
          ;; A binary run: LEFT joined to each right operand in turn.
          ;; An operator with nothing after it keeps the node it opened,
          ;; ending the run — a+ mid-typing is still the sum a+.
-         (chain (ops sub)
+         ;; RIGHT folds the run to the right instead of the left, for
+         ;; the operators calc reads that way: a mod b mod c is
+         ;; a mod (b mod c), so the first `mod' names the whole of it.
+         (chain (ops sub &optional right)
            (let ((left (funcall sub))
                  (stop nil))
              (while (and left (not stop))
                (cond
                 ((opp ops)
                  (let* ((op (eat))
-                        (right (funcall sub)))
+                        (rest (if right (chain ops sub right) (funcall sub))))
                    (setq left (node (nth 3 op)
                                     (maf-editplus--node-start left)
-                                    (if right
-                                        (maf-editplus--node-end right)
+                                    (if rest
+                                        (maf-editplus--node-end rest)
                                       (nth 2 op))
-                                    (if right (list left right) (list left))))
-                   (unless right (setq stop t))))
+                                    (if rest (list left rest) (list left))))
+                   (when (or right (not rest)) (setq stop t))))
                 (t (setq stop t))))
              left))
-         ;; Loosest to tightest, as calc binds them: assignment, the
+         ;; Loosest to tightest, as calc binds them: `=>', the rewrite
+         ;; condition, assignment — which folds right — then the
          ;; logical pair, the relations, vector concatenation, then the
-         ;; interval — which is calc's only in name, `..' meaning
+         ;; interval, which is calc's only in name, `..' meaning
          ;; nothing outside the delimiters that carry it.
-         (expr () (chain maf-editplus--assign-ops #'disjunction))
+         (expr () (chain '("=>") #'condition))
+         (condition () (chain '("::") #'assignment))
+         (assignment () (chain '(":=") #'disjunction t))
          (disjunction () (chain '("||") #'conjunction))
          (conjunction () (chain '("&&") #'relation))
          (relation () (chain maf-editplus--relation-ops #'concatenation))
          (concatenation () (chain '("|") #'interval))
          (interval () (chain '("..") #'sum))
          (sum () (chain '("+" "-") #'product))
+         ;; `calc-multiplication-has-precedence', which is on by
+         ;; default, gives `*' a precedence of its own: it binds
+         ;; tighter than `/' and folds right, so a/b*c is a/(b*c) and
+         ;; a*b*c is a*(b*c). Off, the four share one left-folding
+         ;; level. The setting is read here rather than remembered,
+         ;; the user being free to turn it over between presses.
          (product ()
+           (if calc-multiplication-has-precedence
+               (chain '("/" "%" "\\") #'multiplication)
+             (factors '("*" "/" "%" "\\") nil)))
+         (multiplication () (factors '("*") t))
+         ;; The multiplications, explicit and juxtaposed alike:
+         ;; calc reads 2 x as the product OPS spell out, so the space
+         ;; between two factors is an operator like any other.
+         (factors (ops right)
            (let ((left (unary))
                  (stop nil))
              (while (and left (not stop))
                (cond
-                ((opp '("*" "/" "%" "\\"))
+                ((opp ops)
                  (let* ((op (eat))
-                        (right (unary)))
+                        (rest (if right (factors ops right) (unary))))
                    (setq left (node (nth 3 op)
                                     (maf-editplus--node-start left)
-                                    (if right
-                                        (maf-editplus--node-end right)
+                                    (if rest
+                                        (maf-editplus--node-end rest)
                                       (nth 2 op))
-                                    (if right (list left right) (list left))))
-                   (unless right (setq stop t))))
-                ;; Juxtaposition is multiplication — 2 x, 2(x+1) — so
-                ;; the factors make one node, as they will once calc
-                ;; reads the text back.
+                                    (if rest (list left rest) (list left))))
+                   (when (or right (not rest)) (setq stop t))))
                 ((memq (kind) '(atom open))
-                 (let ((right (unary)))
-                   (if right
+                 (let ((rest (if right (factors ops right) (unary))))
+                   (if rest
                        (setq left (node 'juxta
                                         (maf-editplus--node-start left)
-                                        (maf-editplus--node-end right)
-                                        (list left right)))
-                     (setq stop t))))
+                                        (maf-editplus--node-end rest)
+                                        (list left rest)))
+                     (setq stop t))
+                   (when right (setq stop t))))
                 (t (setq stop t))))
              left))
          (unary ()
@@ -1016,7 +1037,7 @@ spanning the whole entry, so point still names something."
          ;; Right-associative, and the exponent takes a sign of its
          ;; own: 2^-3 is one node, and -a^2 signs the power.
          (power ()
-           (let ((base (modulo)))
+           (let ((base (error-form)))
              (if (and base (opp '("^" "**")))
                  (let* ((op (eat))
                         (exp (unary)))
@@ -1025,9 +1046,12 @@ spanning the whole entry, so point still names something."
                          (if exp (maf-editplus--node-end exp) (nth 2 op))
                          (if exp (list base exp) (list base))))
                base)))
-         ;; Tighter than the power around it, which is how calc reads
-         ;; it: 2^3 mod 5 is 2 raised to (3 mod 5).
-         (modulo () (chain '("mod") #'postfix))
+         ;; Both tighter than the power that contains them, which is
+         ;; how calc reads them: 2^3 mod 5 is 2 raised to (3 mod 5),
+         ;; and a +/- b^2 raises the error form. `mod' is tighter than
+         ;; `+/-' in turn, and folds right.
+         (error-form () (chain '("+/-") #'modulo))
+         (modulo () (chain '("mod") #'postfix t))
          (postfix ()
            (let ((n (primary)))
              (while (and n (opp '("!" "!!")))
