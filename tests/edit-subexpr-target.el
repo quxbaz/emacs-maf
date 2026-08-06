@@ -154,6 +154,53 @@
                     "ln(a=b+1)"))
   (call-interactively 'maf-edit-discard)
 
+  ;; A number is one atom however calc spells it. The `-' of an
+  ;; exponent is not the operator it looks like, and neither the radix
+  ;; mark nor a missing leading zero breaks the number in half.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (insert "1e-3+2") nil)
+  (progn (maf-edit-move-beginning-of-line 1) (forward-char 1) nil)
+  (call-interactively 'maf-editplus-wrap-ln)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "ln(1e-3)+2"))
+  (call-interactively 'maf-edit-discard)
+
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (insert "16#ff+2") nil)
+  (progn (maf-edit-move-beginning-of-line 1) (forward-char 1) nil)
+  (call-interactively 'maf-editplus-wrap-ln)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "ln(16#ff)+2"))
+  (call-interactively 'maf-edit-discard)
+
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (insert "1+.5") nil)
+  (progn (maf-edit-move-beginning-of-line 1) (forward-char 2) nil)
+  (call-interactively 'maf-editplus-wrap-ln)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "1+ln(.5)"))
+  (call-interactively 'maf-edit-discard)
+
+  ;; The exponent rule is a number's alone: a marker inside a name is
+  ;; part of that name, and the subtraction after it is a subtraction.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (insert "ae-3+2") nil)
+  (progn (maf-edit-move-beginning-of-line 1) nil)
+  (call-interactively 'maf-editplus-wrap-ln)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "ln(ae)-3+2"))
+  (call-interactively 'maf-edit-discard)
+
+  ;; And the value that commits is the number that was written, which
+  ;; is the whole point of not splitting it.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (insert "1e-3") nil)
+  (progn (maf-edit-move-beginning-of-line 1) nil)
+  (call-interactively 'maf-editplus-wrap-sqrt)
+  (call-interactively 'maf-edit-commit)
+  (cl-assert (equal (calc-top 1) '(calcFunc-sqrt (float 1 -3))))
+  (calc-pop (calc-stack-size))
+
   ;; An atom is never split, and a sign belongs to the term it signs.
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "1+2.5") nil)

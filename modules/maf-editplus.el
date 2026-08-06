@@ -239,27 +239,61 @@ unit to the wrap scan, not a group with a stray sqrt beside it."
 Each only counts with a digit on the far side of it, which is what
 keeps the `..' of an interval — and the `:' of a conditional — out.")
 
+(defun maf-editplus--digit-p (c)
+  "Non-nil when C is a decimal digit."
+  (and c (<= ?0 c) (<= c ?9)))
+
+(defun maf-editplus--exponent-sign-p (pos)
+  "Non-nil when the sign at POS is a number's exponent sign.
+Calc reads 1e-3 as the one number (float 1 -3), so the `-' between
+the exponent marker and its digits is not the operator it is
+everywhere else: it lies inside the atom, and a scan that stops there
+cuts a number in half.
+
+Only between a digit and a digit. `x*e-3' and `ae-3' are the
+subtractions they look like, the marker in each being part of a name
+rather than the tail of a number."
+  (and (memq (char-after pos) '(?- ?+))
+       (memq (char-before pos) '(?e ?E))
+       (maf-editplus--digit-p (char-before (1- pos)))
+       (maf-editplus--digit-p (char-after (1+ pos)))))
+
+(defun maf-editplus--radix-mark-p (pos)
+  "Non-nil when the `#' at POS is a number's radix mark.
+Calc writes a number in another base as 16#ff, one atom whose mark
+sits between the base and its digits."
+  (and (eq (char-after pos) ?#)
+       (maf-editplus--digit-p (char-before pos))
+       (maf-editplus--name-char-p (char-after (1+ pos)))))
+
 (defun maf-editplus--atom-char-p (pos)
   "Non-nil when the character at POS carries on the atom before it.
 Name characters do, and so does one of `maf-editplus--atom-inner' with
-a digit after it."
+a digit after it, an exponent's sign (`maf-editplus--exponent-sign-p')
+and a radix mark (`maf-editplus--radix-mark-p') — each of them
+punctuation that lies inside one number rather than between two."
   (let ((c (char-after pos)))
     (and c
          (or (maf-editplus--name-char-p c)
              (and (memq c maf-editplus--atom-inner)
-                  (let ((next (char-after (1+ pos))))
-                    (and next (<= ?0 next) (<= next ?9))))))))
+                  (maf-editplus--digit-p (char-after (1+ pos))))
+             (maf-editplus--exponent-sign-p pos)
+             (maf-editplus--radix-mark-p pos)))))
 
 (defun maf-editplus--atom-before-p (pos)
   "Non-nil when the character before POS is part of an atom.
 The counterpart of `maf-editplus--atom-char-p' for the other side of
 point: a name character, or inner punctuation with the number's first
-half in front of it, so 2.|5 counts as standing inside 2.5."
+half in front of it, so 2.|5 counts as standing inside 2.5 — and
+likewise the exponent sign and radix mark, whose far halves are
+digits of the same number."
   (let ((c (char-before pos)))
     (and c
          (or (maf-editplus--name-char-p c)
              (and (memq c maf-editplus--atom-inner)
-                  (maf-editplus--name-char-p (char-before (1- pos))))))))
+                  (maf-editplus--name-char-p (char-before (1- pos))))
+             (maf-editplus--exponent-sign-p (1- pos))
+             (maf-editplus--radix-mark-p (1- pos))))))
 
 (defun maf-editplus--atom-end (pos bound)
   "POS moved forward past the atom it stands inside, no further than BOUND.
@@ -300,6 +334,10 @@ operator — see `maf-editplus--wrap-tight'."
       (let ((c (char-before pos)))
         (cond
          ((get-text-property (1- pos) 'maf-edit-prefix) (setq pos (1- pos)))
+         ;; A number's exponent sign is not the operator it looks like:
+         ;; 1e-3 is one atom, and stopping at the sign would wrap the
+         ;; three alone.
+         ((maf-editplus--exponent-sign-p (1- pos)) (setq pos (1- pos)))
          ((memq c maf-editplus--wrap-stops)
           (let ((before (maf-editplus--skip-fill-back (1- pos) limit)))
             (if (and (memq c '(?- ?+))
@@ -700,11 +738,15 @@ Absent the module there is no mark and this is nil."
 
 (defun maf-editplus--atom-start-p (pos)
   "Non-nil when an atom begins at POS.
-A name character starts one, and so does the editvars quoting mark
-with a name character behind it."
+A name character starts one; so does the editvars quoting mark with a
+name character behind it, and so does the point of a number written
+without its leading zero — .5 is one atom, while the two dots of an
+interval are not."
   (or (maf-editplus--name-char-p (char-after pos))
       (and (eq (char-after pos) (maf-editplus--quote-char))
-           (maf-editplus--name-char-p (char-after (1+ pos))))))
+           (maf-editplus--name-char-p (char-after (1+ pos))))
+      (and (eq (char-after pos) ?.)
+           (maf-editplus--digit-p (char-after (1+ pos))))))
 
 (defun maf-editplus--atom-run (pos bound)
   "End of the atom beginning at POS, no further than BOUND.

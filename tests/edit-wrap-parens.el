@@ -253,6 +253,15 @@
                     "(a+(b +c)"))
   (call-interactively 'maf-edit-discard)
 
+  ;; A number's exponent sign is inside the atom, not an operator the
+  ;; scan may stop at: 1e-3 is one term.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (execute-kbd-macro "2+1e-3") nil)
+  (call-interactively 'maf-editplus-wrap-parens)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "2+(1e-3)"))
+  (call-interactively 'maf-edit-discard)
+
   ;; An active region is wrapped exactly as marked, and point still
   ;; ends after the closer, so widening can carry on from there. Marked
   ;; and pressed in the one step: the stepper deactivates the mark

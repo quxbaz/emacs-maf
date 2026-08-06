@@ -59,6 +59,16 @@
                     "ln([1,2])"))
   (call-interactively 'maf-edit-discard)
 
+  ;; A number written with an exponent is one atom at the end of the
+  ;; entry too: the scan crosses the sign rather than stopping at it,
+  ;; so the three does not come away on its own.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (execute-kbd-macro "2+1e-3") nil)
+  (call-interactively 'maf-editplus-wrap-ln)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "2+ln(1e-3)"))
+  (call-interactively 'maf-edit-discard)
+
   ;; An atom is never split: point inside a decimal takes the number
   ;; whole, not the half behind point.
   (call-interactively 'maf-edit-add-entry-below)
