@@ -33,6 +33,15 @@
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "1"))
   (calc-pop (calc-stack-size))
 
+  ;; A radical leg on the arg side: :arg comes raw off the stack, so the
+  ;; sqrt(2) is still exact when it is squared — sqrt(4 - 2) is sqrt(2),
+  ;; not 1.41421356238.
+  (maf-push "2")
+  (maf-push "sqrt(2)")
+  (call-interactively 'mafcmd-cath)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "sqrt(2)"))
+  (calc-pop (calc-stack-size))
+
   ;; Floats stay floats.
   (maf-push "2.5")
   (maf-push "1.5")

@@ -72,13 +72,14 @@
      they are each other's Inverse variant (I f h, I f l). Complex legs
      are the one case calc's own reads better — abssqr takes a modulus,
      squaring does not. Tests: =tests/hypot.el=.
-   - [ ] Renormalized :arg forfeits exactness — =maf--resolve-context= takes
+   - [X] Renormalized :arg forfeits exactness — =maf--resolve-context= took
      :arg as (math-normalize (calc-top 1 'full)), and the stack top is
-     already normal, so the extra pass only floats an exact sqrt(2) into
-     1.41421356237. Every binary command is affected: 2 with sqrt(2) under
-     f l gives 1.41421356238 rather than sqrt(2), and f h with two radical
-     legs gives 2. rather than 2. Pinned in =tests/hypot.el=, which asserts
-     the float so a fix trips the line.
+     already normal, so the extra pass only floated an exact sqrt(2) into
+     1.41421356237. Fixed by taking :arg raw off the stack at all six
+     context builders: f h with two radical legs now gives 2, and 2 with
+     sqrt(2) under f l gives sqrt(2). Asserted from both directions —
+     =tests/hypot.el= (the pin flipped from 2. to 2) and a new arg-side
+     case in =tests/cath.el=.
 
 * PORT:edit.el
   maf-edit replaces the calc-edit buffer workflow itself; these are the

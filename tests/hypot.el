@@ -40,20 +40,15 @@
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "2"))
   (calc-pop (calc-stack-size))
 
-  ;; Both legs radical: the diagonal of a sqrt(2) square, exactly 2 — but
-  ;; the answer here is 2., and the float comes from neither this command
-  ;; nor calc. `maf--resolve-context' takes :arg as (math-normalize
-  ;; (calc-top 1 'full)), and that renormalize floats an already-exact
-  ;; sqrt(2) on the stack top, so the argument side has forfeited
-  ;; exactness before the command is entered. Every binary command shares
-  ;; it: mafcmd-cath answers 2 with sqrt(2) as 1.41421356238 rather than
-  ;; sqrt(2). The radical case above passes because there the radical is
-  ;; the resolved expression, which is not renormalized. Asserted as it
-  ;; behaves, so that fixing the resolve layer trips this line.
+  ;; Both legs radical: the diagonal of a sqrt(2) square, exactly 2. The
+  ;; arg side stays exact because `maf--resolve-context' takes :arg raw
+  ;; off the stack — a renormalize there would float the sqrt(2) before
+  ;; the command is entered, which is how every binary command once
+  ;; answered this with 2. instead.
   (maf-push "sqrt(2)")
   (maf-push "sqrt(2)")
   (call-interactively 'mafcmd-hypot)
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "2."))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "2"))
   (calc-pop (calc-stack-size))
 
   ;; Symbolic legs: the form stands as a formula that still composes,
