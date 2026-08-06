@@ -70,20 +70,10 @@ Any closer matches any opener — see `maf-edit--depth'.")
 
 (defun maf-editplus--entry-at-point ()
   "The maf-edit entry overlay covering point, or nil.
-Nil means point is somewhere no entry covers: the home line, or a
-blank line not yet adopted by the repair pass.
-
-Entry overlays are rear-advancing and end just before the newline, so
-`overlays-at' misses one when point rests at its very end — the usual
-place to press one of these keys. Hence the widened scan and the
-explicit inclusive containment test."
-  (seq-find
-   (lambda (ov)
-     (and (overlay-get ov 'maf-edit-entry)
-          (<= (overlay-start ov) (point))
-          (<= (point) (overlay-end ov))))
-   (overlays-in (max (point-min) (1- (point)))
-                (min (point-max) (1+ (point))))))
+maf-edit owns the entry machinery and the scan with it
+\(`maf-edit--entry-at-point'); this is the name the keys here reach it
+by."
+  (maf-edit--entry-at-point))
 
 (defun maf-editplus--entry-bounds ()
   "Bounds of the maf-edit entry point is in, as a cons of positions.
