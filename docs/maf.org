@@ -79,7 +79,15 @@
     alone. The legacy always retyped the one character under point,
     which mismatches an ordinary group. Works from inside the group
     too, not only with point parked on a delimiter.
-  - [ ] my/calc-edit-duplicate (M-RET) — duplicate line, comma-aware (vector entry)
+  - [X] my/calc-edit-duplicate (M-RET) — =maf-edit-dup-entry=. The unit
+    is the entry, not the line: a matrix written a row per line copies
+    whole rather than splitting across its rows, and the copy carries
+    the source's value object instead of a re-reading of its text, so
+    an entry whose display is lossy — a rounded float, a fixed notation
+    — duplicates exactly. The legacy's comma-awareness was a line
+    duplicate's problem, a copied vector element wanting its separator,
+    and does not arise for a whole entry. Same key as the stack's own
+    duplicate-below (=maf-dup-below=), the same gesture one layer in.
   - [ ] my/calc-duplicate-paren-expr (C-RET) — duplicate innermost paren group
 
 * PORT:plot.el
