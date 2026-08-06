@@ -48,7 +48,7 @@
 
 ;; Defined in lazily-loaded calc modules; calc-ext's autoload registry
 ;; resolves them at runtime, but the byte compiler needs declarations.
-(declare-function math-negp "calc-misc")
+(declare-function math-looks-negp "calc-misc")
 
 (defvar maf-poly-order--sorting nil
   "Non-nil while the sort itself is running, to bar re-entry.
@@ -80,16 +80,24 @@ constant, another variable's power, a symbolic exponent — counts 0."
 
 (defun maf-poly-order--build-sum (terms)
   "Rebuild a sum formula from TERMS, a list of additive terms.
-The inverse of `maf--sum-terms': negative terms — a negated formula or
-a negative number — fold in as subtractions, so the result reads
-x^2 - x + 1 rather than x^2 + -x + 1."
+The inverse of `maf--sum-terms': negative terms fold in as
+subtractions, so the result reads x^2 - x + 1 rather than
+x^2 + -x + 1.
+
+Negative means `math-looks-negp', not `math-negp'. The latter only
+knows literal negative numbers, and the terms needing the fold mostly
+are not: `maf--sum-terms' negates with `math-neg', which pushes the
+sign into a coefficient or a numerator rather than wrapping the term,
+so a subtracted 2 x arrives as -2 x and a subtracted 1:2 / (x + 1) as
+-1:2 / (x + 1). Both read as negative and neither is a negative
+number, which is how x^2 + -2 x + 4 used to come back out. Wrapped
+negations fold too — `math-neg' unwraps them — so this one test covers
+every shape."
   (let ((sum (car terms)))
     (dolist (term (cdr terms) sum)
-      (setq sum (cond ((eq (car-safe term) 'neg)
-                       (list '- sum (nth 1 term)))
-                      ((math-negp term)
-                       (list '- sum (math-neg term)))
-                      (t (list '+ sum term)))))))
+      (setq sum (if (math-looks-negp term)
+                    (list '- sum (math-neg term))
+                  (list '+ sum term))))))
 
 (defun maf-poly-order--sort (expr)
   "Sort EXPR's terms by descending degree if it is a one-variable sum.
