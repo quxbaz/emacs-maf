@@ -479,7 +479,7 @@ sub-formula at point, each side of an equation, the top entry at home.
   2 pi / 3 =>  pi / 3
   0.5      =>  2.64159265359  (radians mode)
   30@ 30'  =>  149@ 30'       (HMS mode)
-  x        =>  180 - x"
+  x        =>  -x + 180"
   :arity unary
   :prefix "supp"
   (commit (maf--turn-complement expr '(frac 1 2))))
@@ -505,7 +505,7 @@ home.
   pi / 6   =>  pi / 3
   0.5      =>  1.0707963268  (radians mode)
   30@ 30'  =>  59@ 30'       (HMS mode)
-  x        =>  90 - x"
+  x        =>  -x + 90"
   :arity unary
   :prefix "comp"
   (commit (maf--turn-complement expr '(frac 1 4))))
@@ -585,7 +585,7 @@ the top entry at home.
   1     =>  0
   1:2   =>  sqrt(3) / 2
   0.6   =>  0.8
-  x     =>  sqrt(1 - x^2)
+  x     =>  sqrt(-x^2 + 1)
   2     =>  sqrt(3) i    (leg past the hypotenuse)"
   :arity unary
   :prefix "ucth"
@@ -4077,7 +4077,7 @@ sub-formula under point never narrows it. The variable solved for is
 the first of x, y, z, t, else alphabetical; running the command again
 on a relation already solved for one moves on to the next.
 
-  x + y = 5    =>  x = 5 - y   (again: y = 5 - x)
+  x + y = 5    =>  x = -y + 5   (again: y = -x + 5)
   2 x - 3 < 7  =>  x < 5
   x + 3 != 7   =>  x != 4
   3 = 3        =>  3 = 3       (no variable: unchanged)
@@ -4120,7 +4120,7 @@ left out, for when the entry is the subject however point happens to
 sit on it.
 
   x + 3 = 7|  =>  x = 4
-  x + y = 5   =>  x = 5 - y   (again: y = 5 - x)
+  x + y = 5   =>  x = -y + 5   (again: y = -x + 5)
   3 = 3       =>  3 = 3       (no variable: unchanged)"
   (interactive)
   (maf--auto-solve t))
@@ -4291,7 +4291,7 @@ variables. A bare expression is the body alone; its inverse is named
 y, or y1 when the expression itself uses y.
 
   2 y = x + 1        =>  y = 2 x - 1
-  x^2 + y^2 = 1      =>  y = sqrt(1 - x^2)    (its own inverse)
+  x^2 + y^2 = 1      =>  y = sqrt(-x^2 + 1)   (its own inverse)
   x + 1              =>  y = x - 1
   y^2                =>  y1 = sqrt(y)
 
@@ -4446,7 +4446,7 @@ reading the right way round.
   abs(2 x) < 5      =>  -5:2 < x && x < 5:2
   abs(x - 1) <= 3   =>  -2 <= x && x <= 4
   abs(-2 x) > 5     =>  x < -5:2 || x > 5:2
-  abs(x + y) < 5    =>  -y - 5 < x && x < 5 - y   (y is a parameter)
+  abs(x + y) < 5    =>  -y - 5 < x && x < -y + 5   (y is a parameter)
 
 The abs may stand on either side — 5 > abs(x) is the same bound as
 abs(x) < 5 — and a half calc cannot rearrange is kept as written rather
