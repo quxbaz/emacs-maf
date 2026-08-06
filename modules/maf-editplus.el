@@ -996,21 +996,35 @@ spanning the whole entry, so point still names something."
              ('open
               (pcase (group)
                 (`(,open ,end ,elems ,commas ,delim)
-                 (if (and (eq delim ?\() (null commas) (= (length elems) 1))
-                     ;; Bare parentheses group what is already one node:
-                     ;; the span grows to cover them so point on either
-                     ;; one names the node, while what a command acts on
-                     ;; stays the expression inside.
-                     ;; The kind is the inner node's own: what the
-                     ;; parentheses hold is what the node is, and they
-                     ;; are furniture around it.
-                     (let ((inner (car elems)))
-                       (maf-editplus--make-node
-                        (maf-editplus--node-kind inner)
-                        open end
-                        (maf-editplus--node-inner inner)
-                        (maf-editplus--node-children inner)))
-                   (node 'group open end elems)))))
+                 (cond
+                  ;; An interval's delimiters are values, not
+                  ;; punctuation: `[' says the bound is included and
+                  ;; `(' that it is not, and `..' means nothing without
+                  ;; them — calc does not read it as an operator at all
+                  ;; (`math-expr-ops' has no entry for it). So the group
+                  ;; is the node, whichever pair it was written with,
+                  ;; and the endpoints are its operands: the dots name
+                  ;; the interval rather than a sub-expression that
+                  ;; could be lifted out of it.
+                  ((and (null commas)
+                        (= (length elems) 1)
+                        (equal (maf-editplus--node-kind (car elems)) ".."))
+                   (node 'group open end
+                         (maf-editplus--node-children (car elems))))
+                  ;; Bare parentheses group what is already one node:
+                  ;; the span grows to cover them so point on either
+                  ;; one names the node, while what a command acts on
+                  ;; stays the expression inside. The kind is the inner
+                  ;; node's own — what the parentheses hold is what the
+                  ;; node is, and they are furniture around it.
+                  ((and (eq delim ?\() (null commas) (= (length elems) 1))
+                   (let ((inner (car elems)))
+                     (maf-editplus--make-node
+                      (maf-editplus--node-kind inner)
+                      open end
+                      (maf-editplus--node-inner inner)
+                      (maf-editplus--node-children inner))))
+                  (t (node 'group open end elems))))))
              (_ nil)))
          ;; The raw shape of a delimited group: (OPEN END ELEMENTS
          ;; COMMAS DELIM). Its readings differ — an argument list, a

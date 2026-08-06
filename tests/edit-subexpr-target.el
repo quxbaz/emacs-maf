@@ -154,6 +154,55 @@
                     "ln(a=b+1)"))
   (call-interactively 'maf-edit-discard)
 
+  ;; An interval's delimiters are values, not punctuation: `[' says the
+  ;; bound is included and `(' that it is not, and calc reads `..' only
+  ;; between them — it is not an operator at all. So the pair stays
+  ;; whichever way it was written, from either end and from the dots,
+  ;; and what would otherwise be written — ln(1 .. 2) — does not parse.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (insert "(1 .. 2)+x") nil)
+  (progn (maf-edit-move-beginning-of-line 1) nil)
+  (call-interactively 'maf-editplus-wrap-ln)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "ln((1 .. 2))+x"))
+  (call-interactively 'maf-edit-discard)
+
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (insert "(1 .. 2)+x") nil)
+  (progn (maf-edit-move-beginning-of-line 1) (forward-char 3) nil)
+  (call-interactively 'maf-editplus-wrap-ln)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "ln((1 .. 2))+x"))
+  (call-interactively 'maf-edit-discard)
+
+  ;; A mixed pair is the notation working, not a group left broken, so
+  ;; both halves are kept exactly as they stand.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (insert "(1 .. 2]+x") nil)
+  (progn (maf-edit-move-beginning-of-line 1) nil)
+  (call-interactively 'maf-editplus-wrap-ln)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "ln((1 .. 2])+x"))
+  (call-interactively 'maf-edit-discard)
+
+  ;; An endpoint is still a node of its own inside the interval.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (insert "(1 .. 2)+x") nil)
+  (progn (maf-edit-move-beginning-of-line 1) (forward-char 1) nil)
+  (call-interactively 'maf-editplus-wrap-ln)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "(ln(1) .. 2)+x"))
+  (call-interactively 'maf-edit-discard)
+
+  ;; And what commits is the interval calc reads, bounds and all.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (insert "(1 .. 2]") nil)
+  (progn (maf-edit-move-beginning-of-line 1) nil)
+  (call-interactively 'maf-editplus-wrap-ln)
+  (call-interactively 'maf-edit-commit)
+  (cl-assert (equal (calc-top 1) '(calcFunc-ln (intv 1 1 2))))
+  (calc-pop (calc-stack-size))
+
   ;; A number is one atom however calc spells it. The `-' of an
   ;; exponent is not the operator it looks like, and neither the radix
   ;; mark nor a missing leading zero breaks the number in half.
