@@ -254,14 +254,18 @@
   (call-interactively 'maf-edit-discard)
 
   ;; An active region is wrapped exactly as marked, and point still
-  ;; ends after the closer, so widening can carry on from there.
+  ;; ends after the closer, so widening can carry on from there. Marked
+  ;; and pressed in the one step: the stepper deactivates the mark
+  ;; around every form it runs (`maf--step-run'), so a region set in a
+  ;; step of its own is gone before the command sees it.
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "pi+2") nil)
   (progn (maf-edit-move-beginning-of-line 1)
          (set-mark (point))
          (forward-char 2)
-         (activate-mark) nil)
-  (call-interactively 'maf-editplus-wrap-parens)
+         (activate-mark)
+         (call-interactively 'maf-editplus-wrap-parens)
+         nil)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
                     "(pi)+2"))
   (cl-assert (eq (char-before) ?\)))
