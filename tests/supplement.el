@@ -20,7 +20,7 @@
   ;; Symbolic in degrees: the subtraction stands.
   (maf-push "x")
   (call-interactively 'mafcmd-supplement)
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "180 - x"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "-x + 180"))
   (calc-pop (calc-stack-size))
 
   ;; Pi in the expression overrides degrees mode: a pi half turn.
@@ -53,7 +53,7 @@
   ;; Symbolic in radians: a symbolic pi half turn.
   (maf-push "x")
   (call-interactively 'mafcmd-supplement)
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "pi - x"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "-x + pi"))
   (calc-pop (calc-stack-size))
 
   ;; Contextual: supplement only the sub-formula at point.

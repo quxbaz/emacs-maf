@@ -30,7 +30,7 @@
   (goto-char (point-max))
   (cl-assert (string= (maf--solve-for-default-var) "y"))
   (maf-with-input nil (call-interactively 'mafcmd-solve-for))
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "y = 5 - a"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "y = -a + 5"))
   (calc-pop (calc-stack-size))
 
   ;; --- A named variable ---
@@ -38,7 +38,7 @@
   (maf-push "x + y = 5")
   (goto-char (point-max))
   (maf-with-input "y" (call-interactively 'mafcmd-solve-for))
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "y = 5 - x"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "y = -x + 5"))
   (calc-pop (calc-stack-size))
 
   ;; Solving for a variable the equation does not contain leaves it

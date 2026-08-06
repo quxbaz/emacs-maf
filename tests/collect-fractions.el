@@ -42,7 +42,7 @@
   ;; Unary negation in front of a fraction.
   (maf-push "-(x/2) + 1/3")
   (call-interactively 'mafcmd-collect-fractions)
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "(2 - 3 x) / 6"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "(-3 x + 2) / 6"))
   (calc-pop (calc-stack-size))
 
   ;; A denominator buried in a product.

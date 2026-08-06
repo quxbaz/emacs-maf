@@ -86,7 +86,7 @@
   (goto-char (point-max))
   (call-interactively 'mafcmd-inverse-function)
   (cl-assert (string= (math-format-value (calc-top 1 'full))
-                      "y = sqrt(1 - x^2)"))
+                      "y = sqrt(-x^2 + 1)"))
   (calc-pop (calc-stack-size))
 
   ;; With no y, the second of two variables is the output: a = 2 b - 1

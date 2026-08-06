@@ -32,7 +32,7 @@
   ;; Symbolic in degrees: the subtraction stands.
   (maf-push "x")
   (call-interactively 'mafcmd-complement)
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "90 - x"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "-x + 90"))
   (calc-pop (calc-stack-size))
 
   ;; Pi in the expression overrides degrees mode: a pi / 2 quarter turn.
@@ -78,7 +78,7 @@
   ;; Symbolic in radians: a symbolic pi / 2 quarter turn.
   (maf-push "x")
   (call-interactively 'mafcmd-complement)
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "pi / 2 - x"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "-x + pi / 2"))
   (calc-pop (calc-stack-size))
 
   ;; An hms value is degrees by construction, so it takes 90 even in

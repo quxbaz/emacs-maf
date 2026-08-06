@@ -93,7 +93,7 @@
          (push-mark (match-end 0) t t)
          (setq unread-command-events (listify-key-sequence "x\r2\r"))
          (call-interactively 'mafcmd-substitute))
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "2 + 2 y + b"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "2 y + 2 + b"))
   (cl-assert (not (region-active-p)))
   (calc-pop (calc-stack-size))
 

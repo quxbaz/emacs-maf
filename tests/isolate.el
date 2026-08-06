@@ -56,7 +56,7 @@
   (progn (calc-cursor-stack-index 1) (beginning-of-line)
          (search-forward "3") (backward-char 1))
   (call-interactively 'mafcmd-isolate)
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "3 = 7 - x"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "3 = -x + 7"))
   (cl-assert (eq (char-after) ?3))
   (calc-clear-selections) (calc-pop (calc-stack-size))
 
@@ -95,9 +95,9 @@
   (maf-push "x + y = 5")
   (goto-char (point-max))
   (call-interactively 'mafcmd-isolate)
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "x = 5 - y"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "x = -y + 5"))
   (call-interactively 'mafcmd-isolate)
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "y = 5 - x"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "y = -x + 5"))
   (calc-pop (calc-stack-size))
 
   ;; If compound isolation fails, the documented variable fallback still
