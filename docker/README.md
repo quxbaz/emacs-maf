@@ -113,7 +113,7 @@ hand if you want a box shaped differently:
 sudo docker run -it --name maf-my-feature \
   -v ~/lab/emacs-maf/.worktrees/my-feature:/work \
   -v ~/lab/emacs-maf/.git:/home/david/lab/emacs-maf/.git \
-  -v ~/.claude/.credentials.json:/seed/credentials.json:ro \
+  -e CLAUDE_CODE_OAUTH_TOKEN="$(< ~/.claude/box-token)" \
   -v ~/.codex/auth.json:/seed/codex-auth.json:ro \
   -v ~/.gitconfig:/home/dev/.gitconfig:ro \
   -v ~/conf/claude/CLAUDE.md:/home/dev/.claude/CLAUDE.md:ro \
@@ -132,8 +132,8 @@ sudo docker run -it --name maf-my-feature \
 | no `--rm` | the box outlives the shell, so you can come back to it; `docker rm maf-<feature>` when done |
 | `-v ...worktrees/my-feature:/work` | the worktree this box works on — the one line that assigns the branch |
 | `-v ...emacs-maf/.git:<same path>` | the main `.git`, at its *host path*: a worktree's `.git` file names that path absolutely, so git inside only resolves if the path matches exactly |
-| `-v ...credentials.json:/seed/...:ro` | Claude auth; copied in at startup, read-only so the container can't touch your host token |
-| `-v ~/.codex/auth.json:/seed/...:ro` | codex auth, the same way. Optional, unlike Claude's: without it a box still starts and codex asks you to sign in there |
+| `-e CLAUDE_CODE_OAUTH_TOKEN=...` | Claude auth: the long-lived token from `~/.claude/box-token` (minted by `claude setup-token`, per machine — see `conf/install/setup.org`). It never rotates, so boxes cannot log each other — or the host — out. Without the file, `box` falls back to `-v ~/.claude/.credentials.json:/seed/credentials.json:ro`, a copy of the live session; copies rotate independently and fight, so expect login prompts |
+| `-v ~/.codex/auth.json:/seed/...:ro` | codex auth, seeded as a copy. Optional: without it a box still starts and codex asks you to sign in there |
 | `-v ~/.gitconfig:...:ro` | your name/email, so commits from inside are attributed |
 | `-v ~/conf/claude/...:ro` (×6) | your agent config, each file where its agent reads it — on the host these paths are symlinks into `~/conf`, a box takes the real files. `AGENTS.md` appears twice: for codex, and at the path `CLAUDE.md` imports. Any that is missing is skipped; `$MAF_CONF` names another `conf` |
 | `-v ~/.emacs.d:/seed/emacs.d:ro` | my Emacs config, copied in at startup by the entrypoint rather than mounted, since Emacs writes into it. `--bare` swaps this for `-v ~/.emacs.d/my/calc:...:ro` alone — the legacy Calc config the `port` skill reads, at the path that skill names |
@@ -168,10 +168,16 @@ the repo's `CLAUDE.md` keys off.
   model, and permission prompts off (`defaultMode: bypassPermissions`) —
   the container is the sandbox. Change that file and rebuild to alter
   either.
-- Auth is a copy, for both agents: a token refresh inside the box
-  updates only the container's copy, and is lost when it exits.
-  Re-seeded from the host files on every start. To run a box on a
-  different account, mount that account's credentials file instead.
+- Claude auth is a long-lived token (`~/.claude/box-token`, from `claude
+  setup-token`), fixed into the environment when the container is
+  created: nothing refreshes, so a box never invalidates another's
+  session — a re-minted token reaches only boxes made after it. Codex
+  auth is a copy: its refresh inside the box updates only the
+  container's copy, lost on exit and re-seeded on every start. Claude
+  falls back to the same copy scheme when the token file is absent, but
+  copies of a rotating session invalidate one another — the first box
+  (or the host) to refresh logs the rest out. To run a box on a
+  different account, swap the token / credentials source.
 - Agent config is brought over two different ways. Claude's is layered:
   the box bakes its own `claude.json` and `settings.json` (onboarding
   done, `/work` trusted, permissions bypassed) and mounts only

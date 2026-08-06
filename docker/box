@@ -258,12 +258,26 @@ mount_ro "$conf/agents/AGENTS.md"  /home/dev/.codex/AGENTS.md
 mount_ro "$conf/codex/config.toml" /home/dev/.codex/config.toml
 mount_ro "$conf/tmux/tmux.conf"   /home/dev/.config/tmux/tmux.conf
 
-# Codex auth, beside the Claude credentials in the run below: mounted
-# read-only at /seed and copied in by the entrypoint, so a token refresh
-# inside the box writes to the container's copy and never the host file.
-# Optional, unlike Claude's — a box without it still starts, and codex
-# asks you to sign in there.
+# Codex auth: mounted read-only at /seed and copied in by the
+# entrypoint, so a token refresh inside the box writes to the
+# container's copy and never the host file. Optional — a box without it
+# still starts, and codex asks you to sign in there.
 mount_ro "$HOME/.codex/auth.json" /seed/codex-auth.json
+
+# Claude auth. A long-lived token minted by `claude setup-token`
+# (~/.claude/box-token — per machine, good for a year; see
+# conf/install/setup.org) rides in as an environment variable. It never
+# rotates, unlike the live login's credentials, whose every refresh
+# invalidates all other copies of them — seeding those into several
+# boxes is why they kept asking to log in. The seeding remains only as
+# the fallback when no token file exists. The environment is fixed at
+# container creation, so a re-minted token reaches new boxes only.
+claude_env=()
+if [ -s "$HOME/.claude/box-token" ]; then
+    claude_env=(-e "CLAUDE_CODE_OAUTH_TOKEN=$(<"$HOME/.claude/box-token")")
+else
+    mount_ro "$HOME/.claude/.credentials.json" /seed/credentials.json
+fi
 
 # My whole Emacs config, seeded rather than mounted, since Emacs writes
 # into it — the entrypoint copies it in. That carries my/calc along, so
@@ -343,9 +357,9 @@ case $state in
              --hostname "$box" \
              -v "$tree:/work" \
              -v "$repo/.git:$repo/.git" \
-             -v "$HOME/.claude/.credentials.json:/seed/credentials.json:ro" \
              -v "$HOME/.gitconfig:/home/dev/.gitconfig:ro" \
              "${mounts[@]}" \
+             "${claude_env[@]}" \
              maf "${session[@]}"
         ;;
     *)
