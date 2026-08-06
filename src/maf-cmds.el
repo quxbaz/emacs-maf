@@ -234,12 +234,13 @@ are set, making the I and H prefixes route to the variant contextually.
   (beta binary calcFunc-beta "f b")
   (erf unary calcFunc-erf "f e" :inv erfc)
   (gamma unary calcFunc-gamma "f g")
-  ;; hypot's inverse is `mafcmd-cath' (stack.el, f l): same operand
-  ;; order, sqrt of a difference instead of a sum. It has no table row —
-  ;; calc has no calcFunc for it — but the :inv link is just a command
-  ;; symbol, so it reaches out of the table fine. Calc leaves I f h
-  ;; unbound.
-  (hypot binary calcFunc-hypot "f h" :inv cath)
+  ;; hypot has left the table for `mafcmd-hypot' (stack.el, f h), beside
+  ;; mafcmd-cath, which is its Inverse variant and vice versa. It cannot
+  ;; be a row: rows apply their function under `math-normalize', which
+  ;; normalizes the arguments first, and that floats a sqrt(3) leg before
+  ;; the command can see it was exact. Calc's own `calcFunc-hypot' is
+  ;; also not what it applies — see `maf--hypot'. Both directions now
+  ;; live in stack.el, with the exactness rule they share.
   (im unary calcFunc-im "f i")
   (besJ binary calcFunc-besJ "f j")
   (re unary calcFunc-re "f r")

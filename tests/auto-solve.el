@@ -65,16 +65,16 @@
   (maf-push "x + y = 5")
   (goto-char (point-max))
   (call-interactively 'mafcmd-auto-solve)
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "x = 5 - y"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "x = -y + 5"))
   (call-interactively 'mafcmd-auto-solve)
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "y = 5 - x"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "y = -x + 5"))
   (calc-pop (calc-stack-size))
 
   ;; Non-priority variables sort alphabetically (a before b).
   (maf-push "b + a = 5")
   (goto-char (point-max))
   (call-interactively 'mafcmd-auto-solve)
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "a = 5 - b"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "a = -b + 5"))
   (calc-pop (calc-stack-size))
 
   ;; Three variables cycle x -> y -> z -> x.
@@ -290,7 +290,7 @@
   ;; Solve the first actual unknown rather than indexing past a missing pi.
   (maf-push "pi = x + y")
   (goto-char (point-max)) (call-interactively 'mafcmd-auto-solve)
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "x = pi - y"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "x = -y + pi"))
   (calc-pop (calc-stack-size))
 
   ;; Match Calc's documented unknown-sign inequality behavior: strict <

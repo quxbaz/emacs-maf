@@ -479,7 +479,7 @@ sub-formula at point, each side of an equation, the top entry at home.
   2 pi / 3 =>  pi / 3
   0.5      =>  2.64159265359  (radians mode)
   30@ 30'  =>  149@ 30'       (HMS mode)
-  x        =>  180 - x"
+  x        =>  -x + 180"
   :arity unary
   :prefix "supp"
   (commit (maf--turn-complement expr '(frac 1 2))))
@@ -505,10 +505,40 @@ home.
   pi / 6   =>  pi / 3
   0.5      =>  1.0707963268  (radians mode)
   30@ 30'  =>  59@ 30'       (HMS mode)
-  x        =>  90 - x"
+  x        =>  -x + 90"
   :arity unary
   :prefix "comp"
   (commit (maf--turn-complement expr '(frac 1 4))))
+
+(maf-defcmd mafcmd-hypot (expr arg commit)
+  "Take the hypotenuse of a right triangle with the top-of-stack leg.
+
+  3 with 4  =>  5
+
+The resolved expression and the argument are the two legs; the result is
+the hypotenuse, sqrt(a^2 + b^2). `mafcmd-cath' (f l) is the inverse and
+reads its operands in the same order, and each routes to the other under
+the Inverse flag — calc leaves I f h unbound.
+
+What it applies is maf's own `maf--hypot', not `calcFunc-hypot', which
+answers only when both legs pass `Math-scalarp' and otherwise hands back
+an inert hypot(sqrt(3), 1); here a radical leg reduces and a symbolic one
+stays written out as a formula that still composes. Exact operands keep
+an exact answer while a float in either evaluates numerically; see
+`maf--hypot'. Point picks the target as usual: a sub-formula at point,
+each side of an equation, stack level 2 at home; the top entry is always
+the argument, popped on commit.
+
+  5 with 12       =>  13
+  2 with 1        =>  sqrt(5)
+  sqrt(3) with 1  =>  2
+  1.5 with 2      =>  2.5
+  a with b        =>  sqrt(a^2 + b^2)
+  5 with 0        =>  5            (degenerate: the leg itself)"
+  :arity binary
+  :prefix "hypot"
+  :inverse mafcmd-cath
+  (commit (maf--hypot expr arg)))
 
 (maf-defcmd mafcmd-cath (expr arg commit)
   "Take the remaining leg of a right triangle with the top-of-stack leg.
@@ -555,7 +585,7 @@ the top entry at home.
   1     =>  0
   1:2   =>  sqrt(3) / 2
   0.6   =>  0.8
-  x     =>  sqrt(1 - x^2)
+  x     =>  sqrt(-x^2 + 1)
   2     =>  sqrt(3) i    (leg past the hypotenuse)"
   :arity unary
   :prefix "ucth"
@@ -4047,7 +4077,7 @@ sub-formula under point never narrows it. The variable solved for is
 the first of x, y, z, t, else alphabetical; running the command again
 on a relation already solved for one moves on to the next.
 
-  x + y = 5    =>  x = 5 - y   (again: y = 5 - x)
+  x + y = 5    =>  x = -y + 5   (again: y = -x + 5)
   2 x - 3 < 7  =>  x < 5
   x + 3 != 7   =>  x != 4
   3 = 3        =>  3 = 3       (no variable: unchanged)
@@ -4090,7 +4120,7 @@ left out, for when the entry is the subject however point happens to
 sit on it.
 
   x + 3 = 7|  =>  x = 4
-  x + y = 5   =>  x = 5 - y   (again: y = 5 - x)
+  x + y = 5   =>  x = -y + 5   (again: y = -x + 5)
   3 = 3       =>  3 = 3       (no variable: unchanged)"
   (interactive)
   (maf--auto-solve t))
@@ -4261,7 +4291,7 @@ variables. A bare expression is the body alone; its inverse is named
 y, or y1 when the expression itself uses y.
 
   2 y = x + 1        =>  y = 2 x - 1
-  x^2 + y^2 = 1      =>  y = sqrt(1 - x^2)    (its own inverse)
+  x^2 + y^2 = 1      =>  y = sqrt(-x^2 + 1)   (its own inverse)
   x + 1              =>  y = x - 1
   y^2                =>  y1 = sqrt(y)
 
@@ -4416,7 +4446,7 @@ reading the right way round.
   abs(2 x) < 5      =>  -5:2 < x && x < 5:2
   abs(x - 1) <= 3   =>  -2 <= x && x <= 4
   abs(-2 x) > 5     =>  x < -5:2 || x > 5:2
-  abs(x + y) < 5    =>  -y - 5 < x && x < 5 - y   (y is a parameter)
+  abs(x + y) < 5    =>  -y - 5 < x && x < -y + 5   (y is a parameter)
 
 The abs may stand on either side — 5 > abs(x) is the same bound as
 abs(x) < 5 — and a half calc cannot rearrange is kept as written rather

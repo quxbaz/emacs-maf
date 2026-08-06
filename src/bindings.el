@@ -329,12 +329,14 @@
 ;; mafcmd-arrange (v a), the N-column form it degenerates from.
 (define-key maf-mode-map (kbd "v L") #'mafcmd-flatten)
 
-;; Right-triangle legs, beside calc's own hypotenuse on f h. f l is
-;; unbound in calc itself; f L takes the key from calc-lnp1, which
-;; mafcmd-lnp1 cedes — see the table in maf-cmds.el, where lnp1 keeps
-;; its place as expm1's Inverse variant (I f E) and stays reachable by
-;; name. mafcmd-cath and mafcmd-hypot are each other's Inverse variant,
-;; so I f l is the hypotenuse.
+;; The right triangle, all three keys together. f h keeps calc's own
+;; hypotenuse key, for a command that answers where calc's gives up (see
+;; `mafcmd-hypot'); f l is unbound in calc itself; f L takes the key from
+;; calc-lnp1, which mafcmd-lnp1 cedes — see the table in maf-cmds.el,
+;; where lnp1 keeps its place as expm1's Inverse variant (I f E) and
+;; stays reachable by name. mafcmd-cath and mafcmd-hypot are each other's
+;; Inverse variant, so I f l is the hypotenuse and I f h the leg.
+(define-key maf-mode-map (kbd "f h") #'mafcmd-hypot)
 (define-key maf-mode-map (kbd "f l") #'mafcmd-cath)
 (define-key maf-mode-map (kbd "f L") #'mafcmd-unit-cath)
 

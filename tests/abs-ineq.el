@@ -104,7 +104,7 @@
   (goto-char (point-max))
   (call-interactively 'mafcmd-abs-ineq)
   (cl-assert (string= (math-format-value (calc-top 1 'full))
-                      "-y - 5 < x && x < 5 - y"))
+                      "-y - 5 < x && x < -y + 5"))
   (calc-pop (calc-stack-size))
 
   ;; A constant var is not a variable to solve for: pi is a coefficient,

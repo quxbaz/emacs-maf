@@ -10,7 +10,7 @@
   (maf-push "x^2 + 9")
   (call-interactively 'mafcmd-factor-powers)
   (cl-assert (string= (math-format-value (calc-top 1 'full))
-                      "(3 + x i) (3 - x i)"))
+                      "(x i + 3) (-(x i) + 3)"))
   (calc-pop (calc-stack-size))
 
   ;; Non-square constant: a radical, kept exact.
@@ -35,7 +35,7 @@
   (maf-push "1 - x^3")
   (call-interactively 'mafcmd-factor-powers)
   (cl-assert (string= (math-format-value (calc-top 1 'full))
-                      "(1 - x) (1 + x + x^2)"))
+                      "(-x + 1) (x^2 + x + 1)"))
   (calc-pop (calc-stack-size))
 
   ;; Sixth powers: differences prefer squares, sums prefer cubes.
@@ -60,7 +60,7 @@
   (maf-push "9 - x^2")
   (call-interactively 'mafcmd-factor-powers)
   (cl-assert (string= (math-format-value (calc-top 1 'full))
-                      "(3 + x) (3 - x)"))
+                      "(x + 3) (-x + 3)"))
   (calc-pop (calc-stack-size))
 
   ;; Multi-variable square and a compound base.

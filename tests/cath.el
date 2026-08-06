@@ -139,7 +139,7 @@
   (maf-push "x")
   (call-interactively 'mafcmd-unit-cath)
   (cl-assert (string= (math-format-value (calc-top 1 'full))
-                      "sqrt(1 - x^2)"))
+                      "sqrt(-x^2 + 1)"))
   (calc-pop (calc-stack-size))
 
   ;; sin -> cos, up to sign: the shape the command exists for.
