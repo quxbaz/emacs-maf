@@ -17,6 +17,10 @@
 ;;   newline inside open delimiters   continue the entry on a new line
 ;;   joining two entries' lines       merge them into one entry
 ;;
+;; One key works on a whole entry rather than on its text: M-RET copies
+;; the entry at point into the slot below it (`maf-edit-dup-entry'),
+;; value object and all.
+;;
 ;; Deleting delimiters never restructures — an unbalanced entry just
 ;; fails to parse at commit. An entry whose commas are its own is the
 ;; one shape commit completes rather than rejects: 1,2,3 becomes the
@@ -131,6 +135,11 @@ to. See modules/maf-editvars.el, which does exactly this.")
     ;; RET. It is also the newline key everywhere else in Emacs.
     (define-key map (kbd "C-j") #'maf-edit-newline)
     (define-key map (kbd "C-c C-k") #'maf-edit-discard)
+    ;; The entry at point copies into the slot below it, the gesture
+    ;; M-RET makes out in the stack (`maf-dup-below'). The GUI event and
+    ;; the terminal form both, as there is no calc M-RET to shadow.
+    (define-key map (kbd "M-<return>") #'maf-edit-dup-entry)
+    (define-key map (kbd "M-RET") #'maf-edit-dup-entry)
     ;; Line-start motion treats the machine-owned prefix/pad as column
     ;; zero. Direct keys beat visual-line-mode's remaps; the remaps
     ;; catch custom bindings of the same commands.
@@ -312,6 +321,23 @@ original text and as parser input."
                  (mapcar #'string-trim
                          (split-string (concat (nreverse out)) "\n")))
      " ")))
+
+(defun maf-edit--entry-at-point ()
+  "The entry overlay covering point, or nil.
+Nil means point is somewhere no entry covers: the home line, or a
+blank line not yet adopted by the repair pass.
+
+Entry overlays are rear-advancing and end just before the newline, so
+`overlays-at' misses one when point rests at its very end — the usual
+place to stand when a key wants the entry point is in. Hence the
+widened scan and the explicit inclusive containment test."
+  (seq-find
+   (lambda (ov)
+     (and (overlay-get ov 'maf-edit-entry)
+          (<= (overlay-start ov) (point))
+          (<= (point) (overlay-end ov))))
+   (overlays-in (max (point-min) (1- (point)))
+                (min (point-max) (1+ (point))))))
 
 ;;; Delimiter depth
 
@@ -1172,6 +1198,92 @@ was before the command when the session ends."
   ;; `electric-pair-inhibit-predicate'.
   (insert "[]")
   (backward-char))
+
+;;; Duplicating an entry
+
+(defun maf-edit-dup-entry (&optional n)
+  "Duplicate the entry at point, placing the copy directly below it.
+
+  3:  a + b       4:  a + b
+  2:  c|      =>  3:  c
+  1:  d           2:  c|
+                  1:  d
+
+The entry is copied whole, however many lines it renders on, and the
+copy carries the value the original holds rather than a re-reading of
+its text: a number whose display is lossy — a rounded float, a fixed
+notation — duplicates exactly, and the copy shows the plain N: of an
+entry that matches the stack. An entry already edited copies as the
+text it now has, both showing N* as before.
+
+Point travels to the copy, keeping its place within the entry. On the
+home line there is no entry to copy, so the bottom one is duplicated
+and point stays home. An active region is never consulted, and a
+numeric prefix argument makes N copies.
+
+  1:  [ [ 1, 2 ]        2:  [ [ 1, 2 ]
+        [ 3, 4 ] ]  =>        [ 3, 4 ] ]     (a matrix copies whole)
+                        1:  [ [ 1, 2 ]
+                              [ 3, 4 ] ]
+
+The in-session twin of `maf-dup-below', which does the same to the
+stack itself. Both work on the entry, never on the screen line: a
+line-based duplicate would cut a matrix across its rows, and would
+have to read every copy back from whatever the display shows."
+  (interactive "p")
+  (unless maf-edit-mode
+    (user-error "maf-edit is not active"))
+  (let* ((o (or (maf-edit--entry-at-point)
+                ;; Home, or a blank line: the bottom entry is the one to
+                ;; copy, as it is the subject of the same key at home out
+                ;; in the stack.
+                (car (last (maf-edit--overlays)))))
+         ;; Point's offset into the entry, measured before the insert
+         ;; and replayed against the copy — the two render identically,
+         ;; prefix run included. Nil when point is on no entry at all,
+         ;; which is where it stays.
+         (offset (when (and o (>= (point) (overlay-start o))
+                            (<= (point) (overlay-end o)))
+                   (- (point) (overlay-start o))))
+         (copy nil))
+    (unless o
+      (user-error "No entry to duplicate"))
+    ;; The surgery moves point to do its inserting; an excursion hands it
+    ;; back, which is the whole answer for a point that was never on the
+    ;; entry — home stays home, the copy going in above it. A point that
+    ;; was on the entry is placed on the copy below, once the repair has
+    ;; settled the text it lands in.
+    (save-excursion
+      (let ((maf-edit--inhibit t)
+            (inhibit-modification-hooks t)
+            (text (buffer-substring (overlay-start o) (overlay-end o))))
+        (maf-edit--clear-errors)
+        (dotimes (_ (max 1 (or n 1)))
+          (let ((start (overlay-start o))
+                (end (overlay-end o)))
+            (goto-char end)
+            ;; The newline lands inside the source overlay, which advances
+            ;; at the rear; re-wall it onto the lines it still owns before
+            ;; the copy below becomes an entry of its own. Inserting at
+            ;; the next line's beginning instead — where a line-based
+            ;; duplicate puts its copy — would land inside the
+            ;; *neighbour's* overlay, whose value object the copy would
+            ;; then carry off.
+            (insert "\n")
+            (move-overlay o start end)
+            (let ((bol (point)))
+              (insert text)
+              ;; The value and the text it was rendered from, so commit
+              ;; passes the object through untouched. The selection is not
+              ;; copied: it points into the entry it was made in.
+              (setq copy (maf-edit--make-entry bol (point)
+                                               (overlay-get o 'maf-edit-val)
+                                               nil
+                                               (overlay-get o 'maf-edit-text))))))
+        (maf-edit--repair)))
+    (when offset
+      (goto-char (min (+ (overlay-start copy) offset) (overlay-end copy))))
+    (maf-edit--snap-point-out-of-run)))
 
 (defun maf-edit-commit ()
   "Parse the edited buffer and commit it to the stack, leaving maf-edit.
