@@ -250,6 +250,111 @@
   (cl-assert (equal (calc-top 1) '(calcFunc-sqrt (float 1 -3))))
   (calc-pop (calc-stack-size))
 
+  ;; The operators calc spells with two characters are one boundary,
+  ;; not two: `==' is its second spelling of `=', and `**' is the power.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (insert "a == b+1") nil)
+  (progn (maf-edit-move-beginning-of-line 1) (forward-char 2) nil)
+  (call-interactively 'maf-editplus-wrap-ln)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "ln(a == b+1)"))
+  (call-interactively 'maf-edit-discard)
+
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (insert "2 ** 3 + 1") nil)
+  (progn (maf-edit-move-beginning-of-line 1) (forward-char 2) nil)
+  (call-interactively 'maf-editplus-wrap-ln)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "ln(2 ** 3) + 1"))
+  (call-interactively 'maf-edit-discard)
+
+  ;; The logical pair binds looser than the relations and `&&' tighter
+  ;; than `||', as calc reads them: a || b && c is a or (b and c).
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (insert "a || b && c") nil)
+  (progn (maf-edit-move-beginning-of-line 1) (forward-char 7) nil)
+  (call-interactively 'maf-editplus-wrap-ln)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "a || ln(b && c)"))
+  (call-interactively 'maf-edit-discard)
+
+  ;; `mod' is calc's one word operator — an identifier to read, an
+  ;; operator to parse — and it binds tighter than the power around
+  ;; it: 2^3 mod 5 raises 2 to (3 mod 5), so that is the node the word
+  ;; names. Only where the text is calc's own syntax, which is what
+  ;; the binding says: under an input dialect the letters may be
+  ;; something else entirely, and the press is made inside the let so
+  ;; the command sees it.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (insert "2^3 mod 5")
+         (maf-edit-move-beginning-of-line 1)
+         (forward-char 4)
+         (let ((maf-edit-parse-text-function #'identity))
+           (call-interactively 'maf-editplus-wrap-ln))
+         nil)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "2^ln(3 mod 5)"))
+  (call-interactively 'maf-edit-discard)
+
+  ;; A name that merely begins with the word is the name it looks like.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (insert "modulus+1")
+         (maf-edit-move-beginning-of-line 1)
+         (let ((maf-edit-parse-text-function #'identity))
+           (call-interactively 'maf-editplus-wrap-ln))
+         nil)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "ln(modulus)+1"))
+  (call-interactively 'maf-edit-discard)
+
+  ;; And under the editvars dialect it is no operator at all: there a
+  ;; bare run of letters is a run of factors, so the word commits as
+  ;; the product m o d and the scan must not name a node the commit
+  ;; does not agree exists. The letters are one atom to the scan,
+  ;; which is the grouping the press asks for either way.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (insert "a mod b")
+         (maf-edit-move-beginning-of-line 1)
+         (forward-char 2)
+         (let ((maf-edit-parse-text-function #'maf-editvars-parse-text))
+           (call-interactively 'maf-editplus-wrap-ln))
+         nil)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "a ln(mod) b"))
+  (call-interactively 'maf-edit-discard)
+
+  ;; Integer division is an operator like any other, and it is the
+  ;; editvars mark as well: a name written with the mark is still one
+  ;; atom, the mark reading as an operator only where no name follows.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (insert "6 \\ 4 + 1") nil)
+  (progn (maf-edit-move-beginning-of-line 1) (forward-char 2) nil)
+  (call-interactively 'maf-editplus-wrap-ln)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "ln(6 \\ 4) + 1"))
+  (call-interactively 'maf-edit-discard)
+
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (insert "\\pi+1") nil)
+  (progn (maf-edit-move-beginning-of-line 1) nil)
+  (call-interactively 'maf-editplus-wrap-ln)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "ln(\\pi)+1"))
+  (call-interactively 'maf-edit-discard)
+
+  ;; And the pieces they name commit as the operators calc reads. The
+  ;; `&&' is looser than the sum, so it names the whole of it — which
+  ;; is the precedence being checked as much as the spelling is.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (insert "a && b + 1") nil)
+  (progn (maf-edit-move-beginning-of-line 1) (forward-char 2) nil)
+  (call-interactively 'maf-editplus-wrap-ln)
+  (call-interactively 'maf-edit-commit)
+  (cl-assert (equal (calc-top 1)
+                    '(calcFunc-ln (calcFunc-land (var a var-a)
+                                                 (+ (var b var-b) 1)))))
+  (calc-pop (calc-stack-size))
+
   ;; An atom is never split, and a sign belongs to the term it signs.
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "1+2.5") nil)

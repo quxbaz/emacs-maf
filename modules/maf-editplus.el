@@ -719,13 +719,33 @@ during a maf-edit session, and only inside an entry."
 ;; leave the gesture with nothing to act on.
 
 (defconst maf-editplus--op-strings
-  '(".." "<=" ">=" "!=" ":=" "=>" "+" "-" "*" "/" "%" "^" "=" "<" ">" "|" "!")
+  '(".." "<=" ">=" "!=" "==" ":=" "=>" "**" "&&" "||" "!!"
+    "+" "-" "*" "/" "\\" "%" "^" "=" "<" ">" "|" "!")
   "Operator spellings the scan reads, longest match first.
 Two-character operators come before the one-character operators they
-begin with, so `<=' is one boundary rather than `<' and a stray `='.")
+begin with, so `<=' is one boundary rather than `<' and a stray `=',
+and `**' is the power calc reads it as rather than two products.
 
-(defconst maf-editplus--relation-ops '("=" "!=" "<" ">" "<=" ">=" ":=" "=>" "|")
-  "Operators binding loosest: the relations, plus vector concatenation.")
+Calc's own table (`math-expr-ops') is longer than this. What is left
+out is what a node under point would gain nothing from: the
+conditional `?:', whose ternary shape the parse has no operand for,
+and the ported-logic operators beside it. An operator the scan does
+not know becomes an atom of its own, so a press beside one names that
+character rather than the expression around it — wrong, but confined
+to the node point stands on.
+
+The word operator `mod' is not spelled here: it is an identifier to
+the scan, and `maf-editplus--tokens' turns that one identifier into an
+operator.")
+
+(defconst maf-editplus--assign-ops '(":=" "=>")
+  "Operators binding loosest of all: assignment and `evaluates to'.
+x = y => z is the evaluation of the equation, not an equation about
+an evaluation.")
+
+(defconst maf-editplus--relation-ops '("=" "==" "!=" "<" ">" "<=" ">=")
+  "The relations, all of one precedence, as calc reads them.
+`==' is calc's second spelling of `='.")
 
 (defun maf-editplus--quote-char ()
   "The identifier-quoting mark of the editvars dialect, or nil.
@@ -757,6 +777,18 @@ punctuation (2.5, calc's fraction 3:4) and stops at everything else."
     (while (and (< p bound) (maf-editplus--atom-char-p p))
       (setq p (1+ p)))
     (max p (1+ pos))))
+
+(defun maf-editplus--calc-syntax-p ()
+  "Non-nil when the entry text is calc's own input syntax.
+An input dialect sets `maf-edit-parse-text-function' to its
+translator, and what the text means is then that module's to say. It
+matters to one token: calc's word operator `mod' is an operator only
+where a run of letters is one identifier. Under the editvars dialect
+a bare run of letters is a run of factors — `mod' commits as the
+product m o d, calc's operator being unreachable without the quoting
+mark — so the scan must not read it as one, or it would name a node
+the commit does not agree exists."
+  (eq maf-edit-parse-text-function #'identity))
 
 (defun maf-editplus--call-name-p (pos)
   "Non-nil when the atom at POS can head a function call.
@@ -812,7 +844,16 @@ the one expression it is."
                ((eq c ?\")
                 (list 'atom pos (maf-editplus--string-run pos bound) nil))
                ((maf-editplus--atom-start-p pos)
-                (list 'atom pos (maf-editplus--atom-run pos bound) nil))
+                (let ((end (maf-editplus--atom-run pos bound)))
+                  ;; `mod' is calc's one word operator: an identifier
+                  ;; to read, an operator to parse. A name that merely
+                  ;; begins with it — modulus — is the name it looks
+                  ;; like, the atom run having taken the whole of it.
+                  (if (and (maf-editplus--calc-syntax-p)
+                           (string= (buffer-substring-no-properties pos end)
+                                    "mod"))
+                      (list 'op pos end "mod")
+                    (list 'atom pos end nil))))
                (op (list 'op pos (+ pos (length op)) op))
                ;; No reading for this character: an atom of its own, so
                ;; the parse carries on past it rather than stopping.
@@ -880,12 +921,15 @@ the text spells with an operator of its own does not: a+b squared is
   "Parse the entry text between LIMIT and BOUND into a tree of spans.
 Returns the root node, or nil when the text holds nothing at all.
 
-The grammar is calc's, to the depth this gesture needs: relations
-loosest, then the interval `..', then `+' and `-', then `*', `/', `%'
-and juxtaposition, then a leading sign, then `^' — which associates
-right, and whose exponent may be signed. A name in front of a
-parenthesized list is the call it heads, so sqrt(3) is one node with
-the 3 inside it. Everything binds left except `^'.
+The grammar is calc's, to the depth this gesture needs. Loosest
+first: assignment and `=>', then `||', then `&&', then the relations,
+then vector concatenation `|', then the interval `..', then `+' and
+`-', then `*', `/', `%', `\\' and juxtaposition, then a leading sign,
+then `^' — which associates right, and whose exponent may be signed —
+then the postfix factorials, and tightest of all `mod', which is why
+2^3 mod 5 raises 2 to (3 mod 5). A name in front of a parenthesized
+list is the call it heads, so sqrt(3) is one node with the 3 inside
+it. Everything binds left except `^'.
 
 Several expressions in a row with nothing joining them — the shape
 half-deleted text leaves behind — become the children of a root
@@ -921,7 +965,15 @@ spanning the whole entry, so point still names something."
                    (unless right (setq stop t))))
                 (t (setq stop t))))
              left))
-         (relation () (chain maf-editplus--relation-ops #'interval))
+         ;; Loosest to tightest, as calc binds them: assignment, the
+         ;; logical pair, the relations, vector concatenation, then the
+         ;; interval — which is calc's only in name, `..' meaning
+         ;; nothing outside the delimiters that carry it.
+         (expr () (chain maf-editplus--assign-ops #'disjunction))
+         (disjunction () (chain '("||") #'conjunction))
+         (conjunction () (chain '("&&") #'relation))
+         (relation () (chain maf-editplus--relation-ops #'concatenation))
+         (concatenation () (chain '("|") #'interval))
          (interval () (chain '("..") #'sum))
          (sum () (chain '("+" "-") #'product))
          (product ()
@@ -929,7 +981,7 @@ spanning the whole entry, so point still names something."
                  (stop nil))
              (while (and left (not stop))
                (cond
-                ((opp '("*" "/" "%"))
+                ((opp '("*" "/" "%" "\\"))
                  (let* ((op (eat))
                         (right (unary)))
                    (setq left (node (nth 3 op)
@@ -964,8 +1016,8 @@ spanning the whole entry, so point still names something."
          ;; Right-associative, and the exponent takes a sign of its
          ;; own: 2^-3 is one node, and -a^2 signs the power.
          (power ()
-           (let ((base (postfix)))
-             (if (and base (opp '("^")))
+           (let ((base (modulo)))
+             (if (and base (opp '("^" "**")))
                  (let* ((op (eat))
                         (exp (unary)))
                    (node "^"
@@ -973,11 +1025,15 @@ spanning the whole entry, so point still names something."
                          (if exp (maf-editplus--node-end exp) (nth 2 op))
                          (if exp (list base exp) (list base))))
                base)))
+         ;; Tighter than the power around it, which is how calc reads
+         ;; it: 2^3 mod 5 is 2 raised to (3 mod 5).
+         (modulo () (chain '("mod") #'postfix))
          (postfix ()
            (let ((n (primary)))
-             (while (and n (opp '("!")))
-               (setq n (node "!" (maf-editplus--node-start n) (nth 2 (eat))
-                             (list n))))
+             (while (and n (opp '("!" "!!")))
+               (let ((op (eat)))
+                 (setq n (node (nth 3 op) (maf-editplus--node-start n)
+                               (nth 2 op) (list n)))))
              n))
          (primary ()
            (pcase (kind)
@@ -1039,14 +1095,14 @@ spanning the whole entry, so point still names something."
                (pcase (kind)
                  ('close (setq end (nth 2 (eat))))
                  ('comma (eat) (setq commas t))
-                 (_ (let ((e (relation)))
+                 (_ (let ((e (expr)))
                       (if e (push e elems) (eat))))))
              ;; An unclosed group runs to the end of the entry — the
              ;; state every group is in while it is being typed.
              (list (nth 1 open) (or end bound) (nreverse elems) commas delim))))
       (let ((nodes nil))
         (while toks
-          (let ((n (relation)))
+          (let ((n (expr)))
             (if n (push n nodes) (eat))))
         (cond
          ((null nodes) nil)
