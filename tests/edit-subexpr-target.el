@@ -453,6 +453,25 @@
                     "ln(a +/- b)^2"))
   (call-interactively 'maf-edit-discard)
 
+  ;; It folds right as well, as `mod' and `:=' do: a +/- b +/- c is
+  ;; a +/- (b +/- c), so the first one names the whole run and the
+  ;; second names the pair inside it.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (insert "a +/- b +/- c") nil)
+  (progn (maf-edit-move-beginning-of-line 1) (forward-char 2) nil)
+  (call-interactively 'maf-editplus-wrap-ln)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "ln(a +/- b +/- c)"))
+  (call-interactively 'maf-edit-discard)
+
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (insert "a +/- b +/- c") nil)
+  (progn (maf-edit-move-beginning-of-line 1) (forward-char 8) nil)
+  (call-interactively 'maf-editplus-wrap-ln)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "a +/- ln(b +/- c)"))
+  (call-interactively 'maf-edit-discard)
+
   ;; And what commits is the quotient calc reads, not the one the old
   ;; left-folding scan would have named.
   (call-interactively 'maf-edit-add-entry-below)

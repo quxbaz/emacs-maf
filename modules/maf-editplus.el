@@ -925,14 +925,21 @@ the text spells with an operator of its own does not: a+b squared is
 Returns the root node, or nil when the text holds nothing at all.
 
 The grammar is calc's, to the depth this gesture needs. Loosest
-first: assignment and `=>', then `||', then `&&', then the relations,
-then vector concatenation `|', then the interval `..', then `+' and
-`-', then `*', `/', `%', `\\' and juxtaposition, then a leading sign,
-then `^' — which associates right, and whose exponent may be signed —
-then the postfix factorials, and tightest of all `mod', which is why
-2^3 mod 5 raises 2 to (3 mod 5). A name in front of a parenthesized
-list is the call it heads, so sqrt(3) is one node with the 3 inside
-it. Everything binds left except `^'.
+first: `=>', the rewrite condition `::', assignment `:=', `||',
+`&&', the relations, vector concatenation `|', the interval `..',
+`+' and `-', then the multiplications — `/', `%' and `\\' with `*'
+and juxtaposition binding tighter inside them, or all five on one
+level where `calc-multiplication-has-precedence' is off — then a
+leading sign, then `^' and `**', then the postfix factorials, then
+the error form `+/-', and tightest of all `mod'. Which is why
+2^3 mod 5 raises 2 to (3 mod 5), and a +/- b^2 raises the error form.
+
+Most of it folds left. `^', `:=', `+/-', `mod' and — where it has a
+precedence of its own — `*' fold right, as calc reads them: a mod b
+mod c is a mod (b mod c), so its first operator names the whole run.
+
+A name in front of a parenthesized list is the call it heads, so
+sqrt(3) is one node with the 3 inside it.
 
 Several expressions in a row with nothing joining them — the shape
 half-deleted text leaves behind — become the children of a root
@@ -1049,8 +1056,8 @@ spanning the whole entry, so point still names something."
          ;; Both tighter than the power that contains them, which is
          ;; how calc reads them: 2^3 mod 5 is 2 raised to (3 mod 5),
          ;; and a +/- b^2 raises the error form. `mod' is tighter than
-         ;; `+/-' in turn, and folds right.
-         (error-form () (chain '("+/-") #'modulo))
+         ;; `+/-' in turn, and both fold right.
+         (error-form () (chain '("+/-") #'modulo t))
          (modulo () (chain '("mod") #'postfix t))
          (postfix ()
            (let ((n (primary)))
@@ -1269,7 +1276,7 @@ it:
   a+|b*c       =>  a+ln(b)*c      (point on an operand: that operand)
   a+b|*c       =>  a+ln(b*c)      (point on an operator: its node)
   a|+b*c       =>  ln(a+b*c)      (the sum the + heads)
-  (|a+b)*c     =>  ln(a+b)*c      (a bare pair is punctuation)
+  |(a+b)*c     =>  ln(a+b)*c      (a bare pair is punctuation)
 
 At the end of the entry there is no character under point, and the
 term behind it is the argument instead — what
