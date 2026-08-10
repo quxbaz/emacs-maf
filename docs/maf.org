@@ -53,34 +53,6 @@
   are reference only, maf rebinds at port time. Ported or superseded
   features are summarized at the end of each section.
 
-* PORT:stack.el
-** Motion
-   Already covered: forward/backward noun → =maf-forward-noun= /
-   =maf-backward-noun= (M-f/M-b). Every number, variable and function
-   name is a stop — the name lands point on the call it heads — and the
-   operators and the line-number prefix are what the motion crosses, the
-   latter the line-prefix bug, fixed with the port.
-** Triangles
-   - [X] calcFunc-hypot advice — symbolic args: sqrt(abssqr(a) + abssqr(b)).
-     Ported as behavior, not as advice: =mafcmd-hypot= (f h) applies maf's
-     own =maf--hypot=, which squares under a structural math-normalize the
-     way =maf--cath= already did — so no abssqr, and nothing advises calc's
-     own =calcFunc-hypot=. It also answers where the legacy advice still
-     gave up: hypot(a, b) is sqrt(a^2 + b^2), a formula that composes,
-     where the advice handed back the inert call. =maf--pythagoras= is now
-     the shared step, hypot the plus direction and cath the minus, and
-     they are each other's Inverse variant (I f h, I f l). Complex legs
-     are the one case calc's own reads better — abssqr takes a modulus,
-     squaring does not. Tests: =tests/hypot.el=.
-   - [X] Renormalized :arg forfeits exactness — =maf--resolve-context= took
-     :arg as (math-normalize (calc-top 1 'full)), and the stack top is
-     already normal, so the extra pass only floated an exact sqrt(2) into
-     1.41421356237. Fixed by taking :arg raw off the stack at all six
-     context builders: f h with two radical legs now gives 2, and 2 with
-     sqrt(2) under f l gives sqrt(2). Asserted from both directions —
-     =tests/hypot.el= (the pin flipped from 2. to 2) and a new arg-side
-     case in =tests/cath.el=.
-
 * PORT:edit.el
   maf-edit replaces the calc-edit buffer workflow itself; these are the
   in-entry conveniences worth recreating in maf-edit / digit entry:
