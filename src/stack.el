@@ -24,6 +24,7 @@
 (declare-function calcFunc-pfloat "calc-stuff")
 (declare-function calc-roll-down "calc-misc")
 (declare-function calc-locate-cursor-element "calc-yank")
+(declare-function calc-yank-internal "calc-yank")
 (declare-function calc-del-selection "calc-sel")
 (declare-function calc-clear-selections "calc-sel")
 ;; Calc's fancy-prefix dispatch (K, I, H, O), advised below.
@@ -2473,6 +2474,48 @@ Signals an error on an empty stack when there is no region."
     (message "Copied%s: %s"
              (if (eq (plist-get maf--copy-state :format) 'latex) " as LaTeX" "")
              (string-trim (car kill-ring)))))
+
+;;; Yank
+
+(defconst maf--yank-grouped-number-re
+  (concat "^[ \t]*[-+]?[0-9]\\{1,3\\}\\(?:,[0-9]\\{3\\}\\)+"
+          "\\(?:\\.[0-9]*\\)?\\(?:[eE][-+]?[0-9]+\\)?[ \t]*$")
+  "A line that is one number written with digit-group commas.
+Groups after the first are exactly three digits with no space after
+the comma — \"1,234,567\" — which is what tells a grouped number from
+a comma-separated list like \"1, 234\" or \"12,34\". Anchored per
+line, so each line of a multi-line yank is judged on its own.")
+
+(defun maf--yank-degroup (text)
+  "Return TEXT with digit-group commas stripped from whole-number lines.
+A line matching `maf--yank-grouped-number-re' loses its commas; every
+other line is untouched. When no line matches, TEXT itself is
+returned, not a copy — `calc-yank-internal' recognizes calc's own
+last kill by object identity, and that exactness path survives only
+if the string passes through unchanged."
+  (if (string-match maf--yank-grouped-number-re text)
+      (replace-regexp-in-string maf--yank-grouped-number-re
+                                (lambda (line) (string-replace "," "" line))
+                                text 'fixedcase 'literal)
+    text))
+
+(defun maf-yank (radix)
+  "Yank from the kill ring, reading digit-grouped numbers whole.
+
+  kill ring: 1,234,567   =>   1:  1234567
+
+Numbers copied from spreadsheets, web pages, or bank statements
+arrive with digit-group commas, which calc's reader takes as
+expression separators — a stock yank of \"1,234,567\" pushes three
+entries. A line that is entirely one such number is read as the
+number; the commas must bracket exact groups of three, so \"1, 234\"
+and \"12,34\" still yank as the separate values they are. Each line
+of a multi-line yank is judged on its own, so a copied spreadsheet
+column comes in one entry per line. Everything else behaves as
+`calc-yank', RADIX prefix included."
+  (interactive "P")
+  (maf--with-calc-buffer
+    (calc-yank-internal radix (maf--yank-degroup (current-kill 0 t)))))
 
 (defun maf-dup (&optional keep-point)
   "Duplicate the item at point, pushing a copy onto the stack.

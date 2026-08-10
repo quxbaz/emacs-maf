@@ -138,6 +138,11 @@
 ;; maf-copy takes the region verbatim, as M-w does everywhere else.
 ;; Pressed twice it recopies as LaTeX.
 (define-key maf-mode-map (kbd "M-w") #'maf-copy)
+;; Yank, completing the kill-ring trio. Shadows calc-yank to read a
+;; number written with digit-group commas ("1,234,567") as one number
+;; rather than three comma-separated entries; otherwise identical,
+;; radix prefix included.
+(define-key maf-mode-map (kbd "C-y") #'maf-yank)
 ;; Shadows calc's TAB with the contextual swap. Bind both the terminal
 ;; and GUI events.
 (define-key maf-mode-map (kbd "TAB") #'maf-swap-up)
