@@ -61,7 +61,7 @@
   ;; moved: which value is the default is the underline the row carries
   ;; (see `maf-options--value-face'), and a second colour on that second
   ;; axis would read as a third state.
-  '((((class color)) :background "#6a3fa0" :foreground "white")
+  '((((class color)) :background "#553280" :foreground "white")
     (t :inverse-video t))
   "Face for the value a setting is currently on.
 The other values a setting can take are shadowed beside it, so this
