@@ -48,26 +48,29 @@
 (require 'calc)
 (require 'calc-ext)                     ; calc-mode-var-list
 (require 'tabulated-list)
-(require 'wid-edit)                     ; the `widget-field' face
 (require 'maf-conf "conf")              ; the `maf' customize group
 
 (defface maf-options-value
-  '((t :inherit widget-field))
-  "Face for the Value column of the options buffer.
-Marks the one part of a row that can be changed — the rest is the
-setting's name and where calc keeps it. Inherits from `widget-field',
-which is what Customize gives an editable field, so the column reads as
-one and follows the theme."
+  ;; Bright enough to carry black text, so it pins a foreground and
+  ;; reads the same under either theme. One face for every live value,
+  ;; whether or not the setting has moved: which value is the default
+  ;; is the bracketing the row carries, and a second colour on that
+  ;; second axis would read as a third state.
+  '((((class color)) :background "gold" :foreground "black")
+    (t :inverse-video t))
+  "Face for the value a setting is currently on.
+The other values a setting can take are shadowed beside it, so this
+face is what picks the live one out of the row."
   :group 'maf)
 
-(defface maf-options-value-changed
-  '((t :inherit (highlight widget-field)))
-  "Face for a Value that differs from the default calc starts with.
-Distinguishes the settings this session has moved from the ones sitting
-where calc left them — the same distinction \\<maf-options-mode-map>\\[maf-options-toggle-changed-only]
-filters on, shown without having to filter. `highlight' leads the
-inheritance so its background wins over `widget-field''s while the
-column still reads as a field."
+(defface maf-options-controls
+  ;; Cool where the live value is warm, and dark enough not to compete
+  ;; with it: the band should read as chrome above the list, not as
+  ;; another row in it. Extends, so it runs the width of the window.
+  '((((class color) (background dark))  :background "#1c2733" :extend t)
+    (((class color) (background light)) :background "#e2eaf3" :extend t)
+    (t :inverse-video t))
+  "Face for the controls line above the options list."
   :group 'maf)
 
 ;; Loaded lazily by calc; the setters below name them directly.
@@ -356,6 +359,16 @@ means leaving the current mode first and then entering the wanted one."
   "Return VAR's calc default, from `calc-mode-var-list'."
   (nth 1 (assq var calc-mode-var-list)))
 
+(defun maf-options--default-value (var spec)
+  "Return the value key naming VAR's calc default under SPEC.
+Normalized the way `maf-options--current' normalizes the live value, so
+the two are comparable: a flag defaulting to a group size still answers
+`t', the key its \"on\" entry is filed under."
+  (let ((default (maf-options--default var)))
+    (cond ((plist-get spec :current) (funcall (plist-get spec :current) default))
+          ((plist-get spec :flag) (and default t))
+          (t default))))
+
 (defun maf-options--value-string (var spec)
   "Return the Value column text for VAR under SPEC."
   (let* ((raw (maf-options--raw var))
@@ -366,15 +379,44 @@ means leaving the current mode first and then entering the wanted one."
                      (maf-options--values var spec)))
         (format "%S" raw))))
 
-(defun maf-options--value-cell (text changed)
-  "Return TEXT as a row's Value cell, faced to show it can be changed.
-CHANGED marks a setting sitting somewhere other than the default calc
-starts with, which takes the second face. Padding to the column's own
-width gives the cells a straight right edge instead of a ragged one."
-  (let ((width (1- (cadr (seq-find (lambda (col) (equal (car col) "Value"))
-                                   tabulated-list-format)))))
-    (propertize (truncate-string-to-width text width 0 ?\s)
-                'face (if changed 'maf-options-value-changed 'maf-options-value))))
+(defun maf-options--value-column (var spec)
+  "Return the Value column for VAR under SPEC: every value it can take.
+The one calc is on wears `maf-options-value', the rest are shadowed —
+the row doubles as the list \\<maf-options-mode-map>\\[maf-options-cycle]
+steps through, so what a cycle will reach is on show rather than found
+by cycling to it. The default is bracketed, wherever calc happens to be
+sitting. A setting with no fixed set of values, and one
+sitting on a value outside its set, shows that value alone."
+  (let* ((values (maf-options--values var spec))
+         (current (maf-options--current var spec))
+         (default (maf-options--default-value var spec))
+         (show (plist-get spec :show))
+         (chips (mapcar (lambda (v)
+                          (propertize
+                           ;; The default is bracketed rather than
+                           ;; coloured: colour is already saying which
+                           ;; value is live, and a second colour on a
+                           ;; second axis reads as a third state.
+                           (format " %s " (if (equal (car v) default)
+                                              (format "[%s]" (nth 1 v))
+                                            (nth 1 v)))
+                           'face (if (equal (car v) current)
+                                     'maf-options-value
+                                   'shadow)))
+                        values))
+         ;; What no chip can say: the value of a setting with an open
+         ;; domain, and the detail behind a chip that only names a
+         ;; state — grouping is "on", but on in threes.
+         (extra (or (and show (funcall show (maf-options--raw var)))
+                    (unless (assoc current values)
+                      (maf-options--value-string var spec)))))
+    (mapconcat #'identity
+               (if extra
+                   (append chips
+                           (list (propertize (format " %s " extra)
+                                             'face 'maf-options-value)))
+                 chips)
+               "")))
 
 (defun maf-options--changed-p (var)
   "Non-nil when VAR differs from the default calc would start with.
@@ -387,6 +429,25 @@ grouping in threes differs from grouping off, and both are \"on\"."
 (defvar-local maf-options--changed-only nil
   "Non-nil to list only settings differing from their calc default.")
 
+(defvar-local maf-options--show-keys nil
+  "Non-nil to show the Calc key column.
+Off to start: the column is a reference for the keys this buffer exists
+to save anyone reaching for, and the widest of them costs twenty
+columns that the values put to better use.")
+
+(defun maf-options--apply-format ()
+  "Set `tabulated-list-format' for the columns currently shown.
+Value goes last because it holds every value the setting can take,
+which for the display language is fifteen of them — no fixed width
+would hold that, and nothing may sit to the right of it. Calc key comes
+and goes with `maf-options--show-keys', so the format is built rather
+than written out."
+  (setq tabulated-list-format
+        (vconcat [("Group" 9 nil) ("Option" 18 nil)]
+                 (when maf-options--show-keys [("Calc key" 20 nil)])
+                 [("Value" 0 nil)]))
+  (tabulated-list-init-header))
+
 (defvar maf-options-mode-map (make-sparse-keymap)
   "Keymap for `maf-options-mode'.")
 
@@ -398,50 +459,125 @@ grouping in threes differs from grouping off, and both are \"on\"."
 (define-key maf-options-mode-map (kbd "e")   #'maf-options-choose)
 (define-key maf-options-mode-map (kbd "d")   #'maf-options-reset)
 (define-key maf-options-mode-map (kbd "c")   #'maf-options-toggle-changed-only)
+(define-key maf-options-mode-map (kbd "K")   #'maf-options-toggle-keys)
 (define-key maf-options-mode-map (kbd "g")   #'maf-options-refresh)
-(define-key maf-options-mode-map (kbd "j")   #'next-line)
-(define-key maf-options-mode-map (kbd "k")   #'previous-line)
+(define-key maf-options-mode-map (kbd "j")   #'maf-options-next-line)
+(define-key maf-options-mode-map (kbd "k")   #'maf-options-previous-line)
+(define-key maf-options-mode-map (kbd "n")   #'maf-options-next-line)
+(define-key maf-options-mode-map (kbd "p")   #'maf-options-previous-line)
+(define-key maf-options-mode-map (kbd "M-n") #'maf-options-next-group)
+(define-key maf-options-mode-map (kbd "M-p") #'maf-options-previous-group)
 
 (defvar maf-options--controls nil
   "Commands summarized on the options buffer's controls line, in order.
-Each entry is (COMMAND VERB . PREFERRED-KEY), the key optional. Keys
+Each entry is (COMMAND VERB . PREFERRED-KEYS), the keys optional. Keys
 are otherwise looked up in the live keymap, so moving a binding — here
 or in the maps this mode inherits, which is where `quit-window' comes
-from — keeps the line honest.")
+from — keeps the line honest.
+
+COMMAND may be a list of commands, for a pair that reads as one control
+rather than two: \\`M-n' and \\`M-p' are one \"group\" entry, not a next
+and a previous.")
 
 ;; Set outside the defvar, as the bindings are, so a reload applies.
 (setq maf-options--controls
-      '((maf-options-cycle "cycle" . "RET")
+      '((maf-options-cycle "cycle" "RET" "TAB")
         (maf-options-choose "choose")
-        (maf-options-reset "default")
+        (maf-options-reset "reset")
         (maf-options-toggle-changed-only "changed")
+        (maf-options-toggle-keys "calc keys")
+        ((maf-options-next-group maf-options-previous-group) "group" "M-n" "M-p")
         (maf-options-refresh "refresh")
         (quit-window "quit")))
 
-(defun maf-options--control-key (command preferred)
-  "Return the key string naming COMMAND on the controls line.
-PREFERRED wins while it still runs COMMAND: three keys cycle a setting,
-and the line should name the same one every time rather than whichever
-`where-is-internal' happens to return first."
-  (or (and preferred
-           (eq (lookup-key maf-options-mode-map (kbd preferred)) command)
-           preferred)
-      (when-let ((key (where-is-internal command maf-options-mode-map t)))
-        (key-description key))
-      "M-x"))
+(defun maf-options--control-keys (command preferred)
+  "Return the key strings naming COMMAND on the controls line.
+COMMAND is one command or a list of them. PREFERRED names the keys to
+show, in order, and each is kept only while it still runs one of
+COMMAND — so a binding moved away drops out of the line rather than
+misleading. With none given, or none left, the keymap decides, which
+for a command reachable several ways picks whichever key
+`where-is-internal' returns first."
+  (or (seq-filter (lambda (key)
+                    (memq (lookup-key maf-options-mode-map (kbd key))
+                          (ensure-list command)))
+                  (ensure-list preferred))
+      (when-let ((key (where-is-internal (car (ensure-list command))
+                                         maf-options-mode-map t)))
+        (list (key-description key)))
+      (list "M-x")))
 
 (defun maf-options--controls-line ()
-  "Return the controls line printed above the list."
+  "Return the controls line printed above the list.
+Ends with the legend for the mark the rows carry, which is the one
+thing on the line that is not a key — hence \\`d' reading \"reset\"
+rather than \"default\", which would have said two things here."
   (concat
    " "
    (mapconcat
     (lambda (cell)
       (pcase-let ((`(,command ,verb . ,preferred) cell))
-        (concat (propertize (maf-options--control-key command preferred)
-                            'face 'help-key-binding)
+        (concat (mapconcat (lambda (key)
+                             (propertize key 'face 'help-key-binding))
+                           (maf-options--control-keys command preferred)
+                           "/")
                 " " verb)))
     maf-options--controls
-    "   ")))
+    "   ")
+   "   " (propertize "[x] = default" 'face 'shadow)))
+
+(defun maf-options--setting-line-p ()
+  "Non-nil when point is on a row that names a setting.
+False on the controls line, the blank line under it, and the blank rows
+between groups — everything motion should step over rather than land
+on."
+  (let ((id (tabulated-list-get-id)))
+    (and id (symbolp id))))
+
+(defun maf-options--goto-option ()
+  "Put point on the first character of the current row's Option column.
+Found by the column name tabulated-list stamps on the printed text, so
+a column widening or disappearing ahead of it needs no change here."
+  (let ((pos (line-beginning-position))
+        (end (line-end-position))
+        found)
+    ;; Scanned rather than `text-property-any', which compares with
+    ;; `eq' and so never matches a column name that is a string.
+    (while (and (not found) (< pos end))
+      (if (equal (get-text-property pos 'tabulated-list-column-name) "Option")
+          (setq found pos)
+        (setq pos (next-single-property-change
+                   pos 'tabulated-list-column-name nil end))))
+    (when found (goto-char found))))
+
+(defun maf-options--move-line (n)
+  "Move N setting rows on, backwards for a negative N.
+Point lands on the first character of the Option column rather than
+holding whatever column it was in, so a row is picked out by its name;
+the blank rows between groups are stepped over rather than landed on.
+Staying put where there is no row left to reach."
+  (let ((start (point))
+        (step (if (> n 0) 1 -1)))
+    (dotimes (_ (abs n))
+      (let ((from (point)))
+        (forward-line step)
+        (while (and (not (maf-options--setting-line-p))
+                    (if (> step 0) (not (eobp)) (not (bobp))))
+          (forward-line step))
+        (unless (maf-options--setting-line-p) (goto-char from))))
+    (if (maf-options--setting-line-p)
+        (maf-options--goto-option)
+      (goto-char start))))
+
+(defun maf-options-next-line (&optional n)
+  "Move to the next setting, or N settings on."
+  (interactive "p")
+  (maf-options--move-line (or n 1)))
+
+(defun maf-options-previous-line (&optional n)
+  "Move to the previous setting, or N settings back."
+  (interactive "p")
+  (maf-options--move-line (- (or n 1))))
 
 (defun maf-options--print (&optional remember-pos)
   "Print the controls line and the list, honoring REMEMBER-POS.
@@ -454,10 +590,18 @@ The line goes in the buffer rather than the header line, which is
 already showing the column names, and is inserted after printing so
 REMEMBER-POS still measures against the rows alone."
   (tabulated-list-print remember-pos)
-  (let ((inhibit-read-only t))
+  (let ((inhibit-read-only t)
+        (line (concat (maf-options--controls-line) "\n")))
+    ;; Appended rather than propertized on, so the band fills in behind
+    ;; the keys without painting over the face that picks them out.
+    (add-face-text-property 0 (length line) 'maf-options-controls t line)
     (save-excursion
       (goto-char (point-min))
-      (insert (maf-options--controls-line) "\n\n"))))
+      (insert line "\n")))
+  (if (maf-options--setting-line-p)
+      (maf-options--goto-option)
+    (goto-char (point-min))
+    (maf-options--move-line 1)))
 
 (define-derived-mode maf-options-mode tabulated-list-mode "maf-options"
   "Major mode for the maf options buffer.
@@ -471,14 +615,12 @@ differ from their default; \\[quit-window] buries the buffer.
 
 Values are always set by running calc's own command, so the stack
 redraws and the trail records exactly as if the key had been pressed."
-  (setq tabulated-list-format [("Group" 9 nil) ("Option" 18 nil)
-                               ("Value" 16 nil) ("Calc key" 0 nil)]
-        tabulated-list-padding 1
+  (setq tabulated-list-padding 1
         ;; No sort key: rows print in registry order, which is what
         ;; keeps each :group's entries together under its heading.
         tabulated-list-sort-key nil)
   (add-hook 'tabulated-list-revert-hook #'maf-options--refresh nil t)
-  (tabulated-list-init-header))
+  (maf-options--apply-format))
 
 (defun maf-options--refresh ()
   "Rebuild `tabulated-list-entries' from `maf-options-registry'.
@@ -494,13 +636,16 @@ leaves `tabulated-list-print' able to put point back where it was."
              (changed (maf-options--changed-p var)))
         (unless (and maf-options--changed-only (not changed))
           (unless (or (null last-group) (equal group last-group))
-            (push (list (cons 'gap group) (vector "" "" "" "")) entries))
+            (push (list (cons 'gap group)
+                        (make-vector (length tabulated-list-format) ""))
+                  entries))
           (push (list var
-                      (vector (if (equal group last-group) "" group)
-                              (plist-get spec :label)
-                              (maf-options--value-cell
-                               (maf-options--value-string var spec) changed)
-                              (or (plist-get spec :keys) "")))
+                      (vconcat
+                       (vector (if (equal group last-group) "" group)
+                               (plist-get spec :label))
+                       (when maf-options--show-keys
+                         (vector (or (plist-get spec :keys) "")))
+                       (vector (maf-options--value-column var spec))))
                 entries)
           (setq last-group group))))
     (setq tabulated-list-entries (nreverse entries))))
@@ -520,6 +665,50 @@ echo reports what was set even if the row has moved."
   (interactive)
   (maf-options--refresh)
   (maf-options--print t))
+
+(defun maf-options--group-starts ()
+  "Return the position of each group's first setting, in buffer order.
+Read off the printed rows rather than the registry, so the filtered
+list navigates by the groups it is actually showing."
+  (save-excursion
+    (goto-char (point-min))
+    (let (starts last)
+      (while (not (eobp))
+        (let ((id (tabulated-list-get-id)))
+          (when (and id (symbolp id))
+            (let ((group (plist-get (alist-get id maf-options-registry) :group)))
+              (unless (equal group last)
+                (push (line-beginning-position) starts)
+                (setq last group)))))
+        (forward-line 1))
+      (nreverse starts))))
+
+(defun maf-options--goto-group (n)
+  "Move N groups on, backwards for a negative N.
+Moving back from inside a group lands on its own first row before going
+any further, the way paragraph motion does."
+  (let* ((starts (maf-options--group-starts))
+         (here (line-beginning-position))
+         (pos here))
+    (dotimes (_ (abs n))
+      (setq pos (or (if (> n 0)
+                        (seq-find (lambda (p) (> p pos)) starts)
+                      (car (last (seq-filter (lambda (p) (< p pos)) starts))))
+                    pos)))
+    (when (= pos here)
+      (user-error "No %s group" (if (> n 0) "next" "previous")))
+    (goto-char pos)
+    (maf-options--goto-option)))
+
+(defun maf-options-next-group (&optional n)
+  "Move to the first setting of the next group, or N groups on."
+  (interactive "p")
+  (maf-options--goto-group (or n 1)))
+
+(defun maf-options-previous-group (&optional n)
+  "Move to the first setting of the previous group, or N groups back."
+  (interactive "p")
+  (maf-options--goto-group (- (or n 1))))
 
 (defun maf-options--spec ()
   "Return (VAR . SPEC) for the setting on the current line.
@@ -569,12 +758,20 @@ gives no command that names the default."
   (interactive)
   (pcase-let* ((`(,var . ,spec) (maf-options--spec))
                (default (maf-options--default var))
-               (entry (assq (if (plist-get spec :flag) (and default t) default)
+               (entry (assq (maf-options--default-value var spec)
                             (maf-options--values var spec))))
     (unless entry
       (user-error "No setter for the default of %s (%S)" var default))
     (maf-options--set (nth 2 entry))
     (maf-options--redraw var spec)))
+
+(defun maf-options-toggle-keys ()
+  "Show or hide the Calc key column."
+  (interactive)
+  (setq maf-options--show-keys (not maf-options--show-keys))
+  (maf-options--apply-format)
+  (maf-options--refresh)
+  (maf-options--print t))
 
 (defun maf-options-toggle-changed-only ()
   "Toggle between all settings and only those changed from default."
