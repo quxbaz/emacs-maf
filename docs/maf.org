@@ -52,12 +52,6 @@
     \"set grid / set nokey\"
   - [ ] g i (my/calc-graph-quick-with-range) interval form a:b should work with spaces 'a b'
 
-* Saved for later
-  - Rebind formula manager
-  - Rebind module manager
-  - Figure out bindings
-    - Record which bindings/commands are most used
-
 * Cleanup
   - [ ] Delete my/calc
   - [ ] Use stock bindings
