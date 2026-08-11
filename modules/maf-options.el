@@ -154,6 +154,9 @@ where the box is real."
 ;;            the row has moved off its default.
 ;;   :default The value key the row starts on, for a row whose default
 ;;            cannot be derived — see `maf-options--default-value'.
+;;   :reset   Setter form putting the row back to its default, for the
+;;            few settings whose command does more than the generic
+;;            reset can — see `maf-options-reset'.
 ;;
 ;; A setter is a form rather than a command name because calc's own
 ;; commands do not uniformly take a value. Some are one command per
@@ -375,7 +378,12 @@ and for why the setters are forms rather than command names.")
     (calc-hms-format
      :group "Formats" :label "HMS" :keys "d h"
      :doc "Layout of hours-minutes-seconds forms."
-     :read (call-interactively #'calc-hms-notation))
+     :read (call-interactively #'calc-hms-notation)
+     ;; `calc-hms-notation' mirrors the format into the global value as
+     ;; well, for the minibuffer's benefit, so putting only the calc
+     ;; buffer's copy back would leave a new calc buffer inheriting the
+     ;; format this was undoing. Reset through the command instead.
+     :reset (calc-hms-notation "@ ' \""))
 
     (calc-date-format
      :group "Formats" :label "Dates" :keys "d d"
@@ -1229,15 +1237,17 @@ recomputes the modulo.
 A setting whose values are open has no such command: all calc offers is
 a prompt, and a prompt cannot be told to answer itself. Those go back
 through `maf-options--change', which is the mode-setting call those
-commands make once they have read their answer."
+commands make once they have read their answer — unless the spec gives
+a :reset form, which is how a setting whose command does more than that
+call says so."
   (interactive)
   (pcase-let* ((`(,var . ,spec) (maf-options--spec))
                (default (maf-options--default var))
                (entry (assq (maf-options--default-value var spec)
                             (maf-options--values var spec))))
-    (maf-options--set (if entry
-                          (nth 2 entry)
-                        `(maf-options--change ',var ',default)))
+    (maf-options--set (cond ((plist-get spec :reset))
+                            (entry (nth 2 entry))
+                            (t `(maf-options--change ',var ',default))))
     (maf-options--redraw var spec)))
 
 (defun maf-options-save ()
