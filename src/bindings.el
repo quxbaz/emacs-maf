@@ -392,11 +392,11 @@
 
 ;; The module toggle buffer. m is calc's mode prefix (m m saves the
 ;; modes, m d is degrees mode), which is where turning maf's own
-;; features on and off belongs; m q is unbound in calc itself. This one
+;; features on and off belongs; m c is unbound in calc itself. This one
 ;; lives here rather than in a module's toggle body —
 ;; `maf-list-modules' is core (core/maf-module.el), and the buffer that
 ;; toggles the modules cannot be a module itself.
-(define-key maf-mode-map (kbd "m q") #'maf-list-modules)
+(define-key maf-mode-map (kbd "m c") #'maf-list-modules)
 
 ;; The `t d' stack-timeline binding is installed by the maf-timeline
 ;; module when it is enabled (see modules/maf-timeline.el), and the
