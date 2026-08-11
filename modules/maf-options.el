@@ -534,6 +534,10 @@ than written out."
 (define-key maf-options-mode-map (kbd "c")   #'maf-options-toggle-changed-only)
 (define-key maf-options-mode-map (kbd "K")   #'maf-options-toggle-keys)
 (define-key maf-options-mode-map (kbd "g")   #'maf-options-refresh)
+;; h/l alongside TAB, as j/k sit alongside n/p: the values run across
+;; the row, so stepping them is the horizontal motion.
+(define-key maf-options-mode-map (kbd "l")   #'maf-options-next-value)
+(define-key maf-options-mode-map (kbd "h")   #'maf-options-previous-value)
 (define-key maf-options-mode-map (kbd "j")   #'maf-options-next-line)
 (define-key maf-options-mode-map (kbd "k")   #'maf-options-previous-line)
 (define-key maf-options-mode-map (kbd "n")   #'maf-options-next-line)
