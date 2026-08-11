@@ -493,8 +493,11 @@ than written out."
 ;; to the existing map.
 (define-key maf-options-mode-map (kbd "TAB")     #'maf-options-next-value)
 (define-key maf-options-mode-map (kbd "<backtab>") #'maf-options-previous-value)
-(define-key maf-options-mode-map (kbd "RET")     #'maf-options-set)
+;; SPC before RET: `define-key' pushes onto the front of a sparse
+;; keymap, so the key defined last is the one `where-is-internal' finds
+;; first, and RET is the one to name for a command two keys reach.
 (define-key maf-options-mode-map (kbd "SPC")     #'maf-options-set)
+(define-key maf-options-mode-map (kbd "RET")     #'maf-options-set)
 (define-key maf-options-mode-map (kbd "e")   #'maf-options-choose)
 (define-key maf-options-mode-map (kbd "d")   #'maf-options-reset)
 (define-key maf-options-mode-map (kbd "c")   #'maf-options-toggle-changed-only)
@@ -546,6 +549,13 @@ for a command reachable several ways picks whichever key
                                          maf-options-mode-map t)))
         (list (key-description key)))
       (list "M-x")))
+
+(defun maf-options--key (command preferred)
+  "Return the key string naming COMMAND in a message, PREFERRED first.
+`substitute-command-keys' would name whichever key the map yields
+first, which for a command two keys reach is not the one to tell
+someone about."
+  (car (maf-options--control-keys command preferred)))
 
 (defun maf-options--controls-line ()
   "Return the controls line printed above the list.
@@ -810,7 +820,7 @@ runs that one."
     (when (zerop count)
       (user-error "%s takes no fixed set of values — %s prompts for one"
                   (plist-get spec :label)
-                  (substitute-command-keys "\\[maf-options-set]")))
+                  (maf-options--key #'maf-options-set "RET")))
     (let* ((from (or (maf-options--pending-index var)
                      (seq-position values (maf-options--current var spec)
                                    (lambda (v c) (equal (car v) c)))
@@ -823,7 +833,7 @@ runs that one."
             (maf-options--refresh)
             (maf-options--print t)
             (message "%s needs a value — %s to enter it" (nth 1 value)
-                     (substitute-command-keys "\\[maf-options-set]")))
+                     (maf-options--key #'maf-options-set "RET")))
         (setq maf-options--pending nil)
         (maf-options--set (nth 2 value))
         (maf-options--redraw var spec)))))
@@ -847,8 +857,7 @@ values — for those, being asked is the only way to set them at all."
                  (setq maf-options--pending nil))
           ((plist-get spec :read) (maf-options--set (plist-get spec :read)))
           (t (user-error "Nothing waiting to be set — %s steps through the values"
-                         (substitute-command-keys
-                          "\\[maf-options-next-value]"))))
+                         (maf-options--key #'maf-options-next-value "TAB"))))
     (maf-options--redraw var spec)))
 
 (defun maf-options-choose ()
