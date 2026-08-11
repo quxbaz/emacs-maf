@@ -40,10 +40,9 @@
 ;;    untouched. `maf-options--set' is the only entry point for that
 ;;    reason.
 ;;
-;; STATUS: skeleton. Three groups are populated (Numbers, Algebra,
-;; Display) — enough to exercise the format and the buffer. The
-;; remaining groups (Vectors, Binary, Selection, Session) are listed in
-;; `maf-options--todo' at the foot of this file.
+;; Seven groups: Numbers, Algebra, Display, Formats, Vectors, Binary,
+;; Selection, Session. What is deliberately left out, and why, is at
+;; the foot of this file.
 
 (require 'calc)
 (require 'calc-ext)                     ; calc-mode-var-list
@@ -110,6 +109,15 @@ where the box is real."
 (declare-function calc-total-algebraic-mode "calc-mode")
 (declare-function calc-matrix-mode "calc-mode")
 (declare-function calc-auto-recompute "calc-mode")
+(declare-function calc-vector-brackets "calc-vec")
+(declare-function calc-vector-braces "calc-vec")
+(declare-function calc-vector-parens "calc-vec")
+(declare-function calc-word-size "calc-bin")
+(declare-function calc-working "calc-mode")
+(declare-function calc-auto-why "calc-mode")
+(declare-function calc-mode-record-mode "calc-mode")
+(declare-function calc-toggle-banner "calc-ext")
+(declare-function calc-save-modes "calc-mode")
 
 ;;; The registry
 
@@ -141,6 +149,14 @@ where the box is real."
 ;;            `calc-float-format' is (fix 3), not `fix'.
 ;;   :show    Function rendering VAR's raw value for the Value column,
 ;;            when the matched :values label does not say enough.
+;;   :vars    Other variables the row speaks for, when calc spreads one
+;;            setting over more than one. They count towards whether
+;;            the row has moved off its default.
+;;   :default The value key the row starts on, for a row whose default
+;;            cannot be derived — see `maf-options--default-value'.
+;;   :reset   Setter form putting the row back to its default, for the
+;;            few settings whose command does more than the generic
+;;            reset can — see `maf-options-reset'.
 ;;
 ;; A setter is a form rather than a command name because calc's own
 ;; commands do not uniformly take a value. Some are one command per
@@ -189,6 +205,12 @@ and for why the setters are forms rather than command names.")
      :doc "Let 1/0 produce an infinity instead of an error."
      :flag calc-infinite-mode)
 
+    (calc-complex-mode
+     :group "Numbers" :label "Complex form" :keys "m p"
+     :doc "Form complex results are given in."
+     :values ((cplx  "rectangular" (calc-polar-mode 0))
+              (polar "polar"       (calc-polar-mode 1))))
+
     ;;; Algebra
     (calc-simplify-mode
      :group "Algebra" :label "Simplification" :keys "m O/N/I/B/A/E/U"
@@ -204,9 +226,26 @@ and for why the setters are forms rather than command names.")
     (calc-algebraic-mode
      :group "Algebra" :label "Algebraic entry" :keys "m a, m t"
      :doc "Whether digit keys start an algebraic entry."
-     :values ((nil   "off"     (maf-options--set-algebraic nil))
-              (t     "partial" (maf-options--set-algebraic t))
-              (total "total"   (maf-options--set-algebraic 'total))))
+     :values ((nil        "off"        (maf-options--set-algebraic nil))
+              (t          "partial"    (maf-options--set-algebraic t))
+              (incomplete "incomplete" (maf-options--set-algebraic 'incomplete))
+              (total      "total"      (maf-options--set-algebraic 'total)))
+     ;; Two variables, one setting: incomplete mode is its own flag
+     ;; alongside `calc-algebraic-mode', and the two are never both on.
+     ;; :vars names the second so the row counts as moved when it is the
+     ;; one that moved, and :default states what deriving cannot reach —
+     ;; this :current reads a live variable, so applied to a default it
+     ;; would answer with the present.
+     :vars (calc-incomplete-algebraic-mode)
+     :default nil
+     ;; Read through `maf-options--raw': the rows are built with the
+     ;; options buffer current, and the mode variables are local to
+     ;; calc's.
+     :current ,(lambda (raw)
+                 (if (and (null raw)
+                          (maf-options--raw 'calc-incomplete-algebraic-mode))
+                     'incomplete
+                   raw)))
 
     (calc-matrix-mode
      :group "Algebra" :label "Matrix mode" :keys "m v"
@@ -290,6 +329,16 @@ and for why the setters are forms rather than command names.")
      :doc "Character printed as the decimal point."
      :read (call-interactively #'calc-point-char))
 
+    (calc-display-strings
+     :group "Display" :label "Strings" :keys "d \""
+     :doc "Print vectors of character codes as strings."
+     :flag calc-display-strings)
+
+    (calc-display-raw
+     :group "Display" :label "Raw display" :keys "d '"
+     :doc "Print calc's internal form of an entry instead of the entry."
+     :flag calc-display-raw)
+
     (calc-language
      :group "Display" :label "Language" :keys "d N/B/C/… (15 keys)"
      :doc "Notation entries are parsed and printed in."
@@ -310,7 +359,199 @@ and for why the setters are forms rather than command names.")
               (maxima  "Maxima"        (calc-maxima-language))
               (giac    "Giac"          (calc-giac-language))
               (math    "Mathematica"   (calc-mathematica-language))
-              (maple   "Maple"         (calc-maple-language))))))
+              (maple   "Maple"         (calc-maple-language))))
+
+    ;;; Formats
+    (calc-complex-format
+     :group "Formats" :label "Complex numbers" :keys "d c/i/j"
+     :doc "Notation complex numbers print in."
+     :values ((nil "(x,y)" (calc-complex-notation))
+              (i   "x+yi"  (calc-i-notation))
+              (j   "x+yj"  (calc-j-notation))))
+
+    (calc-frac-format
+     :group "Formats" :label "Fractions" :keys "d o"
+     :doc "Separator between a fraction's numerator and denominator."
+     :read (call-interactively #'calc-over-notation)
+     :show ,(lambda (raw) (format "%s%s" (car raw) (if (nth 1 raw) " (:/)" ""))))
+
+    (calc-hms-format
+     :group "Formats" :label "HMS" :keys "d h"
+     :doc "Layout of hours-minutes-seconds forms."
+     :read (call-interactively #'calc-hms-notation)
+     ;; `calc-hms-notation' mirrors the format into the global value as
+     ;; well, for the minibuffer's benefit, so putting only the calc
+     ;; buffer's copy back would leave a new calc buffer inheriting the
+     ;; format this was undoing. Reset through the command instead.
+     :reset (calc-hms-notation "@ ' \""))
+
+    (calc-date-format
+     :group "Formats" :label "Dates" :keys "d d"
+     :doc "Layout of date forms."
+     :read (call-interactively #'calc-date-notation)
+     ;; Held as a tree of format codes, not the string that was typed,
+     ;; and calc has no inverse of its parser. Flattening the tree
+     ;; recovers the codes in order, which is the readable form bar the
+     ;; brackets around an optional part.
+     :show ,(lambda (raw)
+              (mapconcat (lambda (part) (format "%s" part))
+                         (flatten-tree raw) "")))
+
+    (calc-group-char
+     :group "Formats" :label "Group separator" :keys "d ,"
+     :doc "Character separating groups of digits."
+     :read (call-interactively #'calc-group-char))
+
+    (calc-left-label
+     :group "Formats" :label "Left label" :keys "d {"
+     :doc "Text printed to the left of every stack entry."
+     :read (call-interactively #'calc-left-label)
+     :show ,(lambda (raw) (if (equal raw "") "none" raw)))
+
+    (calc-right-label
+     :group "Formats" :label "Right label" :keys "d }"
+     :doc "Text printed to the right of every stack entry."
+     :read (call-interactively #'calc-right-label)
+     :show ,(lambda (raw) (if (equal raw "") "none" raw)))
+
+    ;;; Vectors
+    (calc-vector-brackets
+     :group "Vectors" :label "Vector brackets" :keys "v [/{/("
+     :doc "Delimiters printed around a vector."
+     :values ((\[\] "[ ]"  (maf-options--set-vector-brackets "[]"))
+              ({}   "{ }"  (maf-options--set-vector-brackets "{}"))
+              (\(\) "( )"  (maf-options--set-vector-brackets "()"))
+              (nil  "none" (maf-options--set-vector-brackets nil)))
+     ;; The setting holds a string, so the keys above are only names
+     ;; for the three calc has commands for — symbols, since `assq'
+     ;; would never find a string one. Any other string calc has been
+     ;; left holding is passed through to match no key at all, rather
+     ;; than falling to nil and lighting "none".
+     :current ,(lambda (raw)
+                 (pcase raw ("[]" '\[\]) ("{}" '{}) ("()" '\(\)) (_ raw))))
+
+    (calc-vector-commas
+     :group "Vectors" :label "Vector commas" :keys "v ,"
+     :doc "Separate vector elements with commas rather than spaces."
+     :flag calc-vector-commas)
+
+    (calc-full-vectors
+     :group "Vectors" :label "Long vectors" :keys "v ."
+     :doc "Print long vectors in full rather than abbreviated."
+     :flag calc-full-vectors)
+
+    (calc-break-vectors
+     :group "Vectors" :label "One per line" :keys "v /"
+     :doc "Print each vector element on its own line."
+     :flag calc-break-vectors)
+
+    (calc-full-trail-vectors
+     :group "Vectors" :label "Trail vectors" :keys ""
+     :doc "Record long vectors in the trail in full."
+     :flag calc-full-trail-vectors)
+
+    (calc-matrix-just
+     :group "Vectors" :label "Matrix columns" :keys "v </=/>"
+     :doc "How matrix elements sit within their column."
+     :values ((nil    "left"   (calc-matrix-left-justify))
+              (center "center" (calc-matrix-center-justify))
+              (right  "right"  (calc-matrix-right-justify))))
+
+    (calc-matrix-brackets
+     :group "Vectors" :label "Matrix brackets" :keys "v ]"
+     :doc "Which brackets a matrix prints: rows, outer, commas."
+     :read (call-interactively #'calc-matrix-brackets)
+     :show ,(lambda (raw) (if raw (mapconcat #'symbol-name raw " ") "none")))
+
+    ;;; Binary
+    (calc-word-size
+     :group "Binary" :label "Word size" :keys "b w"
+     :doc "Bits the binary operations work in."
+     :values ((8  "8"  (calc-word-size 8))
+              (16 "16" (calc-word-size 16))
+              (32 "32" (calc-word-size 32))
+              (64 "64" (calc-word-size 64)))
+     :read (call-interactively #'calc-word-size)
+     :show ,(lambda (raw) (unless (memq raw '(8 16 32 64)) (format "%d" raw))))
+
+    (calc-twos-complement-mode
+     :group "Binary" :label "Two's complement" :keys ""
+     :doc "Print negative binary numbers in two's complement."
+     :values ((t   "on"  (maf-options--change 'calc-twos-complement-mode t))
+              (nil "off" (maf-options--change 'calc-twos-complement-mode nil))))
+
+    ;;; Selection
+    (calc-show-selections
+     :group "Selection" :label "Show selection" :keys "j d"
+     :doc "Highlight the selected sub-formula rather than the rest."
+     :flag calc-show-selections)
+
+    (calc-assoc-selections
+     :group "Selection" :label "Associative" :keys ""
+     :doc "Let a selection cover a whole run of the same operator."
+     :values ((t   "on"  (maf-options--change 'calc-assoc-selections t))
+              (nil "off" (maf-options--change 'calc-assoc-selections nil))))
+
+    ;;; Session
+    (calc-display-working-message
+     :group "Session" :label "Working message" :keys "m w"
+     :doc "Report progress while a long computation runs."
+     :values ((nil  "off"      (calc-working 0))
+              (t    "brief"    (calc-working 1))
+              (lots "detailed" (calc-working 2))))
+
+    (calc-auto-why
+     :group "Session" :label "Explain results" :keys "d w"
+     :doc "Say why a result was left unsimplified."
+     :values ((nil "never"     (calc-auto-why 0))
+              (1   "sometimes" (calc-auto-why 1))
+              (t   "always"    (calc-auto-why 2)))
+     ;; Anything non-nil short of t is the middle state, and the
+     ;; default calc ships is spelled `maybe' rather than 1.
+     :current ,(lambda (raw) (cond ((null raw) nil) ((eq raw t) t) (t 1))))
+
+    (calc-display-trail
+     :group "Session" :label "Trail window" :keys ""
+     :doc "Show the trail beside the stack."
+     :values ((t   "on"  (maf-options--set-trail t))
+              (nil "off" (maf-options--set-trail nil))))
+
+    (calc-show-banner
+     :group "Session" :label "Banner" :keys "d @"
+     :doc "Show the greeting above the stack."
+     :flag calc-toggle-banner)
+
+    (calc-window-height
+     :group "Session" :label "Window height" :keys ""
+     :doc "Lines the calc window opens with."
+     :read (maf-options--change
+            'calc-window-height
+            (read-number "Calc window height: " calc-window-height)))
+
+    (calc-shift-prefix
+     :group "Session" :label "Shifted prefixes" :keys "m S"
+     :doc "Let a shifted letter stand in for its prefix key."
+     :flag calc-shift-prefix)
+
+    (calc-always-load-extensions
+     :group "Session" :label "Load extensions" :keys "m x"
+     :doc "Load calc's extensions at startup rather than on demand."
+     :flag calc-always-load-extensions)
+
+    (calc-autorange-units
+     :group "Session" :label "Autorange units" :keys "u a"
+     :doc "Move a unit to the prefix that keeps its number readable."
+     :flag calc-autorange-units)
+
+    (calc-mode-save-mode
+     :group "Session" :label "Record modes" :keys "m R"
+     :doc "Where a mode change is written down, if anywhere."
+     :values ((nil    "nowhere"  (calc-mode-record-mode 0))
+              (local  "local"    (calc-mode-record-mode 1))
+              (edit   "edit"     (calc-mode-record-mode 2))
+              (perm   "perm"     (calc-mode-record-mode 3))
+              (global "global"   (calc-mode-record-mode 4))
+              (save   "settings" (calc-mode-record-mode 5))))))
 
 ;;; Reading and setting
 
@@ -348,22 +589,79 @@ does not uniformly mean on: `calc-symbolic-mode' reads 1 as on, but
 `calc-line-breaking' as \"break at column 1\". Toggling from the value
 we can see is the one form that means the same thing for all of them,
 and it saves the registry from recording each command's reading of a
-prefix."
+prefix.
+
+Some of these commands take no argument at all — `calc-toggle-banner'
+and `calc-vector-commas' only ever flip — so the nil is passed only
+where there is somewhere to put it."
   (unless (eq (and (symbol-value var) t) on)
-    (funcall command nil)))
+    (if (eql (cdr (func-arity command)) 0)
+        (funcall command)
+      (funcall command nil))))
+
+(defun maf-options--change (var value)
+  "Set VAR to VALUE through `calc-change-mode'.
+For the handful of settings calc binds to no command at all: it has the
+variable and the manual entry, and nothing to press. This is still
+calc's own machinery rather than an assignment — it redraws the stack,
+updates the mode line, tells an embedded buffer, and writes the
+settings file when the save mode says to. A bare `setq' does none of
+that, which is the rule the whole registry follows."
+  (calc-wrapper (calc-change-mode var value t)))
+
+(defun maf-options--set-trail (on)
+  "Show calc's trail window when ON, hide it otherwise.
+Through `calc-trail-display' rather than the variable: the variable
+alone only decides whether the next calc to open shows a trail, so
+setting it leaves this session's windows as they were and disagreeing
+with what the row now claims.
+
+Run from the calc window when one is on screen, because
+`calc-trail-display' splits the selected window — called from the
+options buffer it would put the trail beside the options rather than
+beside the stack."
+  (let ((window (get-buffer-window (current-buffer))))
+    (if window
+        (with-selected-window window (calc-trail-display (if on 1 0)))
+      (calc-trail-display (if on 1 0)))))
+
+(defun maf-options--set-vector-brackets (target)
+  "Put `calc-vector-brackets' on TARGET: \"[]\", \"{}\", \"()\" or nil.
+Each of calc's three commands only flips its own pair against no
+brackets at all, so reaching a named pair means clearing whichever pair
+is there before asking for the one wanted."
+  (unless (equal calc-vector-brackets target)
+    (pcase calc-vector-brackets
+      ("[]" (calc-vector-brackets))
+      ("{}" (calc-vector-braces))
+      ("()" (calc-vector-parens)))
+    (pcase target
+      ("[]" (calc-vector-brackets))
+      ("{}" (calc-vector-braces))
+      ("()" (calc-vector-parens)))))
 
 (defun maf-options--set-algebraic (target)
-  "Put calc in algebraic-entry mode TARGET: nil, t, or `total'.
+  "Put calc in algebraic-entry mode TARGET: nil, t, `incomplete' or `total'.
 Calc offers no command that sets this to a named value —
-`calc-algebraic-mode' flips between off and partial,
-`calc-total-algebraic-mode' between off and total — so reaching TARGET
-means leaving the current mode first and then entering the wanted one."
-  (unless (eq calc-algebraic-mode target)
-    (cond ((eq calc-algebraic-mode 'total) (calc-total-algebraic-mode))
-          (calc-algebraic-mode (calc-algebraic-mode nil)))
-    (pcase target
-      ('total (calc-total-algebraic-mode))
-      ('t (calc-algebraic-mode nil)))))
+`calc-algebraic-mode' flips between off and partial and, given an
+argument, between off and incomplete; `calc-total-algebraic-mode'
+between off and total — so reaching TARGET means leaving the current
+mode first and then entering the wanted one.
+
+Incomplete mode is a second variable rather than a third value of the
+first, so leaving it takes its own call."
+  (let ((from (cond ((eq calc-algebraic-mode 'total) 'total)
+                    (calc-algebraic-mode t)
+                    (calc-incomplete-algebraic-mode 'incomplete))))
+    (unless (eq from target)
+      (pcase from
+        ('total (calc-total-algebraic-mode))
+        ('t (calc-algebraic-mode nil))
+        ('incomplete (calc-algebraic-mode t)))
+      (pcase target
+        ('total (calc-total-algebraic-mode))
+        ('t (calc-algebraic-mode nil))
+        ('incomplete (calc-algebraic-mode t))))))
 
 (defun maf-options--values (var spec)
   "Return SPEC's value entries, synthesizing the pair for a :flag option."
@@ -389,11 +687,21 @@ means leaving the current mode first and then entering the wanted one."
   "Return the value key naming VAR's calc default under SPEC.
 Normalized the way `maf-options--current' normalizes the live value, so
 the two are comparable: a flag defaulting to a group size still answers
-`t', the key its \"on\" entry is filed under."
-  (let ((default (maf-options--default var)))
-    (cond ((plist-get spec :current) (funcall (plist-get spec :current) default))
-          ((plist-get spec :flag) (and default t))
-          (t default))))
+`t', the key its \"on\" entry is filed under.
+
+SPEC's :default is taken as the answer when it has one. Normalizing
+through :current only works while :current looks at nothing but the raw
+value it is handed — a :current that consults a second variable would
+read that variable's *live* value and report whatever the setting is
+on now as the value it starts on. A row like that states its default
+rather than deriving one."
+  (if (plist-member spec :default)
+      (plist-get spec :default)
+    (let ((default (maf-options--default var)))
+      (cond ((plist-get spec :current)
+             (funcall (plist-get spec :current) default))
+            ((plist-get spec :flag) (and default t))
+            (t default)))))
 
 (defun maf-options--value-string (var spec)
   "Return the Value column text for VAR under SPEC."
@@ -403,7 +711,9 @@ the two are comparable: a flag defaulting to a group size still answers
     (or shown
         (nth 1 (assq (maf-options--current var spec)
                      (maf-options--values var spec)))
-        (format "%S" raw))))
+        ;; A string setting is shown as the string, not as its printed
+        ;; form: the separator is a comma, not "\",\"".
+        (if (stringp raw) raw (format "%S" raw)))))
 
 (defvar-local maf-options--pending nil
   "(VAR . INDEX) for a value stepped onto but not set, or nil.
@@ -487,11 +797,18 @@ A value stepped onto but not set is marked too — see
                  chips)
                "  ")))
 
-(defun maf-options--changed-p (var)
-  "Non-nil when VAR differs from the default calc would start with.
+(defun maf-options--changed-p (var spec)
+  "Non-nil when VAR, or any of SPEC's :vars, has moved off calc's default.
 Compares the raw values, not the keys `maf-options--current' derives:
-grouping in threes differs from grouping off, and both are \"on\"."
-  (not (equal (maf-options--raw var) (maf-options--default var))))
+grouping in threes differs from grouping off, and both are \"on\".
+
+:vars names the other variables a row speaks for. A row that covers two
+and asks about only one calls itself unchanged while half of what it
+shows has moved — and then hides itself from the filter that exists to
+find exactly that."
+  (seq-some (lambda (v)
+              (not (equal (maf-options--raw v) (maf-options--default v))))
+            (cons var (plist-get spec :vars))))
 
 ;;; The buffer
 
@@ -533,6 +850,7 @@ than written out."
 (define-key maf-options-mode-map (kbd "d")   #'maf-options-reset)
 (define-key maf-options-mode-map (kbd "c")   #'maf-options-toggle-changed-only)
 (define-key maf-options-mode-map (kbd "K")   #'maf-options-toggle-keys)
+(define-key maf-options-mode-map (kbd "S")   #'maf-options-save)
 (define-key maf-options-mode-map (kbd "g")   #'maf-options-refresh)
 ;; h/l alongside TAB, as j/k sit alongside n/p: the values run across
 ;; the row, so stepping them is the horizontal motion.
@@ -564,6 +882,7 @@ and a previous.")
         (maf-options-reset "reset")
         (maf-options-toggle-changed-only "changed")
         (maf-options-toggle-keys "calc keys")
+        (maf-options-save "save")
         ((maf-options-next-group maf-options-previous-group) "group" "M-n" "M-p")
         (maf-options-refresh "refresh")
         (quit-window "quit")))
@@ -724,7 +1043,7 @@ leaves `tabulated-list-print' able to put point back where it was."
       (let* ((var (car entry))
              (spec (cdr entry))
              (group (plist-get spec :group))
-             (changed (maf-options--changed-p var)))
+             (changed (maf-options--changed-p var spec)))
         (unless (and maf-options--changed-only (not changed))
           (unless (or (null last-group) (equal group last-group))
             (push (list (cons 'gap group)
@@ -910,18 +1229,40 @@ values — for those, being asked is the only way to set them at all."
 
 (defun maf-options-reset ()
   "Restore the current line's setting to the default calc starts with.
-Only settings whose default is one of their listed values can be reset
-this way; the rest have to be set to a value explicitly, since calc
-gives no command that names the default."
+A setting with a named value for its default is put back by asking for
+that value, so calc's own command runs and does whatever else it does —
+the display language rebuilds its parse tables, the word size
+recomputes the modulo.
+
+A setting whose values are open has no such command: all calc offers is
+a prompt, and a prompt cannot be told to answer itself. Those go back
+through `maf-options--change', which is the mode-setting call those
+commands make once they have read their answer — unless the spec gives
+a :reset form, which is how a setting whose command does more than that
+call says so."
   (interactive)
   (pcase-let* ((`(,var . ,spec) (maf-options--spec))
                (default (maf-options--default var))
                (entry (assq (maf-options--default-value var spec)
                             (maf-options--values var spec))))
-    (unless entry
-      (user-error "No setter for the default of %s (%S)" var default))
-    (maf-options--set (nth 2 entry))
+    (maf-options--set (cond ((plist-get spec :reset))
+                            (entry (nth 2 entry))
+                            (t `(maf-options--change ',var ',default))))
     (maf-options--redraw var spec)))
+
+(defun maf-options-save ()
+  "Write every setting's current value to calc's settings file.
+Runs calc's own `calc-save-modes', the \\`m m' command, rather than
+writing the file here: it is the same list of settings either way, and
+one writer means the file keeps the shape calc reads back.
+
+Note that this saves calc's settings, not maf's — the buffer is a way
+of reaching them, not a second place they live."
+  (interactive)
+  (unless calc-settings-file
+    (user-error "No `calc-settings-file' to save to"))
+  (maf-options--set '(calc-save-modes))
+  (message "Settings saved in %s" (abbreviate-file-name calc-settings-file)))
 
 (defun maf-options-toggle-keys ()
   "Show or hide the Calc key column."
@@ -983,29 +1324,16 @@ through the module system; see `maf-modules'."
   (maf-register-module 'maf-options #'maf-use-options-mode
                        "Browse and set all of calc's options from one buffer."))
 
-;;; Not yet in the registry
+;;; Not in the registry
 ;;
-;; The settings below are real options with no row yet. Each needs the
-;; same treatment: a value domain, and a setter form per value.
+;; Every setting calc treats as a mode now has a row, bar these:
 ;;
-;;   Vectors    calc-vector-brackets (v [), calc-matrix-brackets (v ]),
-;;              calc-vector-commas (v ,), calc-full-vectors (v .),
-;;              calc-break-vectors (v /), calc-matrix-just (v </=/>)
-;;   Binary     calc-word-size (b w), calc-twos-complement-mode
-;;   Selection  calc-show-selections (j d), calc-assoc-selections
-;;   Formats    calc-frac-format (d :), calc-hms-format, calc-date-format (d d),
-;;              calc-complex-format (d c/i/j), calc-group-char (d ,),
-;;              calc-left-label (d {), calc-right-label (d })
-;;   Session    calc-display-working-message (m w), calc-auto-why (d w),
-;;              calc-display-trail, calc-window-height, calc-show-banner (d @),
-;;              calc-mode-save-mode (m R), calc-settings-file-name (m F)
+;;   calc-settings-file (m F) names the file the settings are written
+;;   to. It is not in `calc-mode-var-list', so there is no default to
+;;   show or reset to, and naming a file is an errand rather than a
+;;   setting -- m F still does it.
 ;;
-;; Three of these — calc-assoc-selections, calc-display-trail,
-;; calc-twos-complement-mode — have no key binding at all in calc, and
-;; are the clearest argument for the buffer: without it they are
-;; reachable only through Customize.
-
-(defvar maf-options--todo nil
-  "Placeholder; see the commentary above for the settings still to add.")
-
+;;   calc-full-trail-vectors, calc-previous-modulo, calc-language-option
+;;   and the graph and gnuplot settings are held by calc but driven by
+;;   the commands that use them, not chosen ahead of time.
 (provide 'maf-options)
