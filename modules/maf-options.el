@@ -51,12 +51,17 @@
 (require 'maf-conf "conf")              ; the `maf' customize group
 
 (defface maf-options-value
-  ;; Bright enough to carry black text, so it pins a foreground and
-  ;; reads the same under either theme. One face for every live value,
-  ;; whether or not the setting has moved: which value is the default
-  ;; is the bracketing the row carries, and a second colour on that
-  ;; second axis would read as a third state.
-  '((((class color)) :background "gold" :foreground "black")
+  ;; Both halves pinned, and pinned against each other rather than
+  ;; against the theme: the live value is the one thing in the buffer
+  ;; worth finding at a glance, so it is the one place that takes a
+  ;; contrast rather than a shade. Dark enough to carry white, so it
+  ;; reads the same under either theme.
+  ;;
+  ;; One face for every live value, whether or not the setting has
+  ;; moved: which value is the default is the bracketing the row
+  ;; carries, and a second colour on that second axis would read as a
+  ;; third state.
+  '((((class color)) :background "#6a3fa0" :foreground "white")
     (t :inverse-video t))
   "Face for the value a setting is currently on.
 The other values a setting can take are shadowed beside it, so this
@@ -64,9 +69,9 @@ face is what picks the live one out of the row."
   :group 'maf)
 
 (defface maf-options-controls
-  ;; Cool where the live value is warm, and dark enough not to compete
-  ;; with it: the band should read as chrome above the list, not as
-  ;; another row in it. Extends, so it runs the width of the window.
+  ;; Dark and drained where the live value is saturated: the band
+  ;; should read as chrome above the list, not as another row in it.
+  ;; Extends, so it runs the width of the window.
   '((((class color) (background dark))  :background "#1c2733" :extend t)
     (((class color) (background light)) :background "#e2eaf3" :extend t)
     (t :inverse-video t))
