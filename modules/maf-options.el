@@ -78,6 +78,16 @@ face is what picks the live one out of the row."
   "Face for the controls line above the options list."
   :group 'maf)
 
+(defface maf-options-selection
+  '((t :weight bold))
+  "Face for a value stepped onto but not set — see `maf-options--pending'.
+Additive: it stacks on the default's underline rather than replacing
+it, which is what lets one value be both stepped onto and the default.
+Bold for the same reason — it is the one mark left that neither the
+highlight nor the underline is using, and a terminal can always render
+it."
+  :group 'maf)
+
 ;; Loaded lazily by calc; the setters below name them directly.
 (declare-function calc-degrees-mode "calc-mode")
 (declare-function calc-radians-mode "calc-mode")
@@ -384,38 +394,52 @@ the two are comparable: a flag defaulting to a group size still answers
                      (maf-options--values var spec)))
         (format "%S" raw))))
 
-(defun maf-options--value-face (live default)
-  "Return the face for a value that is LIVE, is the DEFAULT, or both.
-The colour says which value calc is on, the underline which one it
-started from; a value that is both wears both. The two are independent,
-so they are carried by independent marks rather than by one colour
-trying to say two things.
+(defun maf-options--value-face (live default selected)
+  "Return the face for a value that is LIVE, is the DEFAULT, or SELECTED.
+The default is underlined only when it is not the live one. A mark on
+every row is a constant rather than a signal — every setting has a
+default, so saying so everywhere says nothing — and on the row where
+the two coincide the highlight has already said it. Left to appear
+exactly where it carries something: this setting has moved, and that is
+where it came from. It also makes the rows \\<maf-options-mode-map>\\[maf-options-toggle-changed-only]
+would keep visible without filtering, as they are the underlined ones.
 
-An underline costs no width and shows through a background, which is
-what lets it sit under the highlight instead of competing with it."
-  (let ((base (if live 'maf-options-value 'shadow)))
-    (if default (list 'underline base) base)))
+An underline shows through a background, so it composes with the
+highlight rather than competing with it, and costs no width. SELECTED
+composes over either the same way — it only ever appears on a value
+that could not be set, so it has to sit beside the highlight rather
+than take its place."
+  (let ((base (cond (live '(maf-options-value))
+                    (default '(underline shadow))
+                    (t '(shadow)))))
+    (if selected (cons 'maf-options-selection base) base)))
 
 (defun maf-options--value-column (var spec)
   "Return the Value column for VAR under SPEC: every value it can take.
 The one calc is on wears `maf-options-value', the rest are shadowed —
-the row doubles as the list \\<maf-options-mode-map>\\[maf-options-cycle]
-steps through, so what a cycle will reach is on show rather than found
-by cycling to it. The default is underlined wherever calc happens to be
-sitting — see `maf-options--value-face'. A setting with no fixed set of
-values, and one sitting on a value outside its set, shows that value
-alone."
+the row doubles as the list \\<maf-options-mode-map>\\[maf-options-next-value]
+steps through, so what a step will reach is on show rather than found by
+stepping to it. The default is underlined, but only where it is not
+already the value calc is on — see `maf-options--value-face'. A setting
+with no fixed set of values, and one sitting on a value outside its
+set, shows that value alone.
+
+A value stepped onto but not set is marked too — see
+`maf-options--pending'."
   (let* ((values (maf-options--values var spec))
          (current (maf-options--current var spec))
          (default (maf-options--default-value var spec))
          (show (plist-get spec :show))
-         (chips (mapcar (lambda (v)
-                          (propertize
-                           (nth 1 v)
-                           'face (maf-options--value-face
-                                  (equal (car v) current)
-                                  (equal (car v) default))))
-                        values))
+         (pending (maf-options--pending-index var))
+         (chips (seq-map-indexed
+                 (lambda (v i)
+                   (propertize
+                    (nth 1 v)
+                    'face (maf-options--value-face
+                           (equal (car v) current)
+                           (equal (car v) default)
+                           (eql i pending))))
+                 values))
          ;; What no chip can say: the value of a setting with an open
          ;; domain, and the detail behind a chip that only names a
          ;; state — grouping is "on", but on in threes.
@@ -467,9 +491,10 @@ than written out."
 
 ;; Bindings live outside the defvar so reloading the file applies edits
 ;; to the existing map.
-(define-key maf-options-mode-map (kbd "RET") #'maf-options-cycle)
-(define-key maf-options-mode-map (kbd "SPC") #'maf-options-cycle)
-(define-key maf-options-mode-map (kbd "TAB") #'maf-options-cycle)
+(define-key maf-options-mode-map (kbd "TAB")     #'maf-options-next-value)
+(define-key maf-options-mode-map (kbd "<backtab>") #'maf-options-previous-value)
+(define-key maf-options-mode-map (kbd "RET")     #'maf-options-set)
+(define-key maf-options-mode-map (kbd "SPC")     #'maf-options-set)
 (define-key maf-options-mode-map (kbd "e")   #'maf-options-choose)
 (define-key maf-options-mode-map (kbd "d")   #'maf-options-reset)
 (define-key maf-options-mode-map (kbd "c")   #'maf-options-toggle-changed-only)
@@ -495,7 +520,8 @@ and a previous.")
 
 ;; Set outside the defvar, as the bindings are, so a reload applies.
 (setq maf-options--controls
-      '((maf-options-cycle "cycle" "RET" "TAB")
+      '(((maf-options-next-value maf-options-previous-value) "select" "TAB")
+        (maf-options-set "set" "RET")
         (maf-options-choose "choose")
         (maf-options-reset "reset")
         (maf-options-toggle-changed-only "changed")
@@ -620,13 +646,18 @@ REMEMBER-POS still measures against the rows alone."
 
 (define-derived-mode maf-options-mode tabulated-list-mode "maf-options"
   "Major mode for the maf options buffer.
-Each row is one calc setting: its group, name, current value, and the
-key calc itself binds it to. \\<maf-options-mode-map>\\[maf-options-cycle]
-steps the setting on the current line to its next value (or prompts,
-for a setting with no fixed set); \\[maf-options-choose] picks a value
-by name; \\[maf-options-reset] restores calc's default;
+Each row is one calc setting: its group, name, every value it can take
+with the live one highlighted, and the key calc itself binds it to.
+
+\\<maf-options-mode-map>\\[maf-options-next-value] steps point along
+the row's values without setting any of them, and \\[maf-options-set]
+sets the one point is on — two acts on two keys, because a setter is
+free to prompt and stepping cannot be made to wait on it.
+\\[maf-options-choose] picks a value by name instead;
+\\[maf-options-reset] restores calc's default;
 \\[maf-options-toggle-changed-only] narrows the list to settings that
-differ from their default; \\[quit-window] buries the buffer.
+differ from their default; \\[maf-options-toggle-keys] shows the calc
+keys; \\[quit-window] buries the buffer.
 
 Values are always set by running calc's own command, so the stack
 redraws and the trail records exactly as if the key had been pressed."
@@ -733,18 +764,91 @@ Signals on a group separator, whose id names no setting."
     (unless spec (user-error "No setting on this line"))
     (cons var spec)))
 
-(defun maf-options-cycle ()
-  "Set the current line's setting to its next value.
-With no fixed set of values, prompts for one instead."
+;; Stepping through a row sets each value as it lands on it — the point
+;; of the row is to try the values, and having to confirm every one
+;; would halve the speed of the thing.
+;;
+;; With one exception, which is why setting has a key of its own: a
+;; setter is free to prompt, and `calc-fix-notation' asks for a digit
+;; count. Applying "fixed point" on the way past it would stop dead,
+;; and the step could not reach "scientific" until the prompt was
+;; answered. So a prompting value is stepped onto and left alone, and
+;; `maf-options-set' is what runs it.
+
+(defun maf-options--prompts-p (setter)
+  "Non-nil when SETTER asks the user for the value it sets.
+A setter that needs input is written as a `call-interactively' of the
+calc command that reads it, so the form says so itself and the registry
+needs no separate flag for it."
+  (and (listp setter) (memq 'call-interactively (flatten-tree setter))))
+
+(defvar-local maf-options--pending nil
+  "(VAR . INDEX) for a value stepped onto but not set, or nil.
+Only ever one: a step onto another setting's value replaces it, so the
+mark cannot be left behind on a row nobody is working on. Point does
+not move to it — the step walks the setting, not the buffer — so the
+row has to carry the mark itself, which is what this is read for.")
+
+(defun maf-options--pending-index (var)
+  "Return the index of VAR's stepped-onto value, if it has one."
+  (and (eq (car maf-options--pending) var) (cdr maf-options--pending)))
+
+(defun maf-options-next-value (&optional n)
+  "Set this row's setting to its next value, or the one N values on.
+Wraps at the end of the row, and steps on from the value last stepped
+onto rather than from the live one, so a value that could not be set
+is still a place to carry on from.
+
+A value whose setter prompts is stepped onto and marked, not set:
+running it would stop for an answer, and the step could not reach the
+value after it until that answer came. \\<maf-options-mode-map>\\[maf-options-set]
+runs that one."
+  (interactive "p")
+  (pcase-let* ((`(,var . ,spec) (maf-options--spec))
+               (values (maf-options--values var spec))
+               (count (length values)))
+    (when (zerop count)
+      (user-error "%s takes no fixed set of values — %s prompts for one"
+                  (plist-get spec :label)
+                  (substitute-command-keys "\\[maf-options-set]")))
+    (let* ((from (or (maf-options--pending-index var)
+                     (seq-position values (maf-options--current var spec)
+                                   (lambda (v c) (equal (car v) c)))
+                     0))
+           (index (mod (+ from (or n 1)) count))
+           (value (nth index values)))
+      (if (maf-options--prompts-p (nth 2 value))
+          (progn
+            (setq maf-options--pending (cons var index))
+            (maf-options--refresh)
+            (maf-options--print t)
+            (message "%s needs a value — %s to enter it" (nth 1 value)
+                     (substitute-command-keys "\\[maf-options-set]")))
+        (setq maf-options--pending nil)
+        (maf-options--set (nth 2 value))
+        (maf-options--redraw var spec)))))
+
+(defun maf-options-previous-value (&optional n)
+  "Set this row's setting to its previous value, or the one N values back."
+  (interactive "p")
+  (maf-options-next-value (- (or n 1))))
+
+(defun maf-options-set ()
+  "Set this row's setting to the value stepped onto but not yet set.
+That is the one case \\<maf-options-mode-map>\\[maf-options-next-value]
+leaves undone, since running it means answering a prompt. With nothing
+stepped onto, prompts anyway when the setting takes no fixed set of
+values — for those, being asked is the only way to set them at all."
   (interactive)
   (pcase-let* ((`(,var . ,spec) (maf-options--spec))
-               (values (maf-options--values var spec)))
-    (if (null values)
-        (maf-options--set (plist-get spec :read))
-      (let* ((current (maf-options--current var spec))
-             (pos (seq-position values current (lambda (v c) (equal (car v) c))))
-             (next (nth (mod (1+ (or pos -1)) (length values)) values)))
-        (maf-options--set (nth 2 next))))
+               (values (maf-options--values var spec))
+               (index (maf-options--pending-index var)))
+    (cond (index (maf-options--set (nth 2 (nth index values)))
+                 (setq maf-options--pending nil))
+          ((plist-get spec :read) (maf-options--set (plist-get spec :read)))
+          (t (user-error "Nothing waiting to be set — %s steps through the values"
+                         (substitute-command-keys
+                          "\\[maf-options-next-value]"))))
     (maf-options--redraw var spec)))
 
 (defun maf-options-choose ()
