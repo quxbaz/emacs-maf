@@ -58,9 +58,9 @@
   ;; reads the same under either theme.
   ;;
   ;; One face for every live value, whether or not the setting has
-  ;; moved: which value is the default is the bracketing the row
-  ;; carries, and a second colour on that second axis would read as a
-  ;; third state.
+  ;; moved: which value is the default is the underline the row carries
+  ;; (see `maf-options--value-face'), and a second colour on that second
+  ;; axis would read as a third state.
   '((((class color)) :background "#6a3fa0" :foreground "white")
     (t :inverse-video t))
   "Face for the value a setting is currently on.
@@ -384,30 +384,37 @@ the two are comparable: a flag defaulting to a group size still answers
                      (maf-options--values var spec)))
         (format "%S" raw))))
 
+(defun maf-options--value-face (live default)
+  "Return the face for a value that is LIVE, is the DEFAULT, or both.
+The colour says which value calc is on, the underline which one it
+started from; a value that is both wears both. The two are independent,
+so they are carried by independent marks rather than by one colour
+trying to say two things.
+
+An underline costs no width and shows through a background, which is
+what lets it sit under the highlight instead of competing with it."
+  (let ((base (if live 'maf-options-value 'shadow)))
+    (if default (list 'underline base) base)))
+
 (defun maf-options--value-column (var spec)
   "Return the Value column for VAR under SPEC: every value it can take.
 The one calc is on wears `maf-options-value', the rest are shadowed —
 the row doubles as the list \\<maf-options-mode-map>\\[maf-options-cycle]
 steps through, so what a cycle will reach is on show rather than found
-by cycling to it. The default is bracketed, wherever calc happens to be
-sitting. A setting with no fixed set of values, and one
-sitting on a value outside its set, shows that value alone."
+by cycling to it. The default is underlined wherever calc happens to be
+sitting — see `maf-options--value-face'. A setting with no fixed set of
+values, and one sitting on a value outside its set, shows that value
+alone."
   (let* ((values (maf-options--values var spec))
          (current (maf-options--current var spec))
          (default (maf-options--default-value var spec))
          (show (plist-get spec :show))
          (chips (mapcar (lambda (v)
                           (propertize
-                           ;; The default is bracketed rather than
-                           ;; coloured: colour is already saying which
-                           ;; value is live, and a second colour on a
-                           ;; second axis reads as a third state.
-                           (format " %s " (if (equal (car v) default)
-                                              (format "[%s]" (nth 1 v))
-                                            (nth 1 v)))
-                           'face (if (equal (car v) current)
-                                     'maf-options-value
-                                   'shadow)))
+                           (nth 1 v)
+                           'face (maf-options--value-face
+                                  (equal (car v) current)
+                                  (equal (car v) default))))
                         values))
          ;; What no chip can say: the value of a setting with an open
          ;; domain, and the detail behind a chip that only names a
@@ -415,13 +422,15 @@ sitting on a value outside its set, shows that value alone."
          (extra (or (and show (funcall show (maf-options--raw var)))
                     (unless (assoc current values)
                       (maf-options--value-string var spec)))))
+    ;; The values carry no padding of their own: a face spanning the
+    ;; space beside a value reads as highlighting something that is not
+    ;; there. The gap between them is the separator, unfaced.
     (mapconcat #'identity
                (if extra
                    (append chips
-                           (list (propertize (format " %s " extra)
-                                             'face 'maf-options-value)))
+                           (list (propertize extra 'face 'maf-options-value)))
                  chips)
-               "")))
+               "  ")))
 
 (defun maf-options--changed-p (var)
   "Non-nil when VAR differs from the default calc would start with.
@@ -529,7 +538,8 @@ rather than \"default\", which would have said two things here."
                 " " verb)))
     maf-options--controls
     "   ")
-   "   " (propertize "[x] = default" 'face 'shadow)))
+   "   " (propertize "underlined" 'face '(underline shadow))
+   (propertize " = default" 'face 'shadow)))
 
 (defun maf-options--setting-line-p ()
   "Non-nil when point is on a row that names a setting.
