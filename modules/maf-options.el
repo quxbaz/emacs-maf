@@ -79,13 +79,24 @@ face is what picks the live one out of the row."
   :group 'maf)
 
 (defface maf-options-selection
-  '((t :weight bold))
-  "Face for a value stepped onto but not set — see `maf-options--pending'.
-Additive: it stacks on the default's underline rather than replacing
-it, which is what lets one value be both stepped onto and the default.
-Bold for the same reason — it is the one mark left that neither the
-highlight nor the underline is using, and a terminal can always render
-it."
+  ;; `:box' would be the obvious outline and is what a graphical frame
+  ;; gets. A terminal ignores it entirely, so the outline there has to
+  ;; be characters — see `maf-options--outline'. Bold under both, since
+  ;; it is the one attribute neither the highlight nor the default's
+  ;; underline is using, and so stacks on either.
+  '((((type graphic)) :box (:line-width -1) :weight bold)
+    (t :weight bold))
+  "Face for a value stepped onto but still waiting for its input.
+See `maf-options--pending'."
+  :group 'maf)
+
+(defcustom maf-options-outline '("[" . "]")
+  "Characters drawn around a value that is waiting for input.
+A terminal cannot render the `:box' of `maf-options-selection', so the
+outline is drawn rather than styled. Set to nil on a graphical frame,
+where the box is real."
+  :type '(choice (const :tag "None — rely on the face's box" nil)
+                 (cons (string :tag "Before") (string :tag "After")))
   :group 'maf)
 
 ;; Loaded lazily by calc; the setters below name them directly.
@@ -394,6 +405,15 @@ the two are comparable: a flag defaulting to a group size still answers
                      (maf-options--values var spec)))
         (format "%S" raw))))
 
+(defun maf-options--outline (label selected)
+  "Return LABEL, drawn inside `maf-options-outline' when SELECTED.
+Only a value waiting for its input is ever outlined, so the width the
+outline costs is paid on one value at a time and never on a settled
+row."
+  (if (and selected maf-options-outline)
+      (concat (car maf-options-outline) label (cdr maf-options-outline))
+    label))
+
 (defun maf-options--value-face (live default selected)
   "Return the face for a value that is LIVE, is the DEFAULT, or SELECTED.
 The default is underlined only when it is not the live one. A mark on
@@ -434,7 +454,7 @@ A value stepped onto but not set is marked too — see
          (chips (seq-map-indexed
                  (lambda (v i)
                    (propertize
-                    (nth 1 v)
+                    (maf-options--outline (nth 1 v) (eql i pending))
                     'face (maf-options--value-face
                            (equal (car v) current)
                            (equal (car v) default)
