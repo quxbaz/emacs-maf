@@ -14,7 +14,7 @@
   - [X] Persistent sub-formula highlighting
   - [X] Timeline module
   - [ ] Graphing module
-  - [ ] Omni-options menu buffer
+  - [-] Omni-options menu buffer
   - [X] Formulas module
   - [X] Modules manager
   - [X] Use module architecture (maf-timeline, maf-edit)
