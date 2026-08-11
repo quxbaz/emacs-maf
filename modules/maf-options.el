@@ -117,6 +117,7 @@ where the box is real."
 (declare-function calc-auto-why "calc-mode")
 (declare-function calc-mode-record-mode "calc-mode")
 (declare-function calc-toggle-banner "calc-ext")
+(declare-function calc-save-modes "calc-mode")
 
 ;;; The registry
 
@@ -797,6 +798,7 @@ than written out."
 (define-key maf-options-mode-map (kbd "d")   #'maf-options-reset)
 (define-key maf-options-mode-map (kbd "c")   #'maf-options-toggle-changed-only)
 (define-key maf-options-mode-map (kbd "K")   #'maf-options-toggle-keys)
+(define-key maf-options-mode-map (kbd "S")   #'maf-options-save)
 (define-key maf-options-mode-map (kbd "g")   #'maf-options-refresh)
 ;; h/l alongside TAB, as j/k sit alongside n/p: the values run across
 ;; the row, so stepping them is the horizontal motion.
@@ -828,6 +830,7 @@ and a previous.")
         (maf-options-reset "reset")
         (maf-options-toggle-changed-only "changed")
         (maf-options-toggle-keys "calc keys")
+        (maf-options-save "save")
         ((maf-options-next-group maf-options-previous-group) "group" "M-n" "M-p")
         (maf-options-refresh "refresh")
         (quit-window "quit")))
@@ -1192,6 +1195,20 @@ commands make once they have read their answer."
                           (nth 2 entry)
                         `(maf-options--change ',var ',default)))
     (maf-options--redraw var spec)))
+
+(defun maf-options-save ()
+  "Write every setting's current value to calc's settings file.
+Runs calc's own `calc-save-modes', the \\`m m' command, rather than
+writing the file here: it is the same list of settings either way, and
+one writer means the file keeps the shape calc reads back.
+
+Note that this saves calc's settings, not maf's — the buffer is a way
+of reaching them, not a second place they live."
+  (interactive)
+  (unless calc-settings-file
+    (user-error "No `calc-settings-file' to save to"))
+  (maf-options--set '(calc-save-modes))
+  (message "Settings saved in %s" (abbreviate-file-name calc-settings-file)))
 
 (defun maf-options-toggle-keys ()
   "Show or hide the Calc key column."
