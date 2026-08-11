@@ -505,8 +505,8 @@ and for why the setters are forms rather than command names.")
     (calc-display-trail
      :group "Session" :label "Trail window" :keys ""
      :doc "Show the trail beside the stack."
-     :values ((t   "on"  (maf-options--change 'calc-display-trail t))
-              (nil "off" (maf-options--change 'calc-display-trail nil))))
+     :values ((t   "on"  (maf-options--set-trail t))
+              (nil "off" (maf-options--set-trail nil))))
 
     (calc-show-banner
      :group "Session" :label "Banner" :keys "d @"
@@ -600,6 +600,22 @@ updates the mode line, tells an embedded buffer, and writes the
 settings file when the save mode says to. A bare `setq' does none of
 that, which is the rule the whole registry follows."
   (calc-wrapper (calc-change-mode var value t)))
+
+(defun maf-options--set-trail (on)
+  "Show calc's trail window when ON, hide it otherwise.
+Through `calc-trail-display' rather than the variable: the variable
+alone only decides whether the next calc to open shows a trail, so
+setting it leaves this session's windows as they were and disagreeing
+with what the row now claims.
+
+Run from the calc window when one is on screen, because
+`calc-trail-display' splits the selected window — called from the
+options buffer it would put the trail beside the options rather than
+beside the stack."
+  (let ((window (get-buffer-window (current-buffer))))
+    (if window
+        (with-selected-window window (calc-trail-display (if on 1 0)))
+      (calc-trail-display (if on 1 0)))))
 
 (defun maf-options--set-vector-brackets (target)
   "Put `calc-vector-brackets' on TARGET: \"[]\", \"{}\", \"()\" or nil.
