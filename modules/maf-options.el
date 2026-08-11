@@ -1174,17 +1174,23 @@ values — for those, being asked is the only way to set them at all."
 
 (defun maf-options-reset ()
   "Restore the current line's setting to the default calc starts with.
-Only settings whose default is one of their listed values can be reset
-this way; the rest have to be set to a value explicitly, since calc
-gives no command that names the default."
+A setting with a named value for its default is put back by asking for
+that value, so calc's own command runs and does whatever else it does —
+the display language rebuilds its parse tables, the word size
+recomputes the modulo.
+
+A setting whose values are open has no such command: all calc offers is
+a prompt, and a prompt cannot be told to answer itself. Those go back
+through `maf-options--change', which is the mode-setting call those
+commands make once they have read their answer."
   (interactive)
   (pcase-let* ((`(,var . ,spec) (maf-options--spec))
                (default (maf-options--default var))
                (entry (assq (maf-options--default-value var spec)
                             (maf-options--values var spec))))
-    (unless entry
-      (user-error "No setter for the default of %s (%S)" var default))
-    (maf-options--set (nth 2 entry))
+    (maf-options--set (if entry
+                          (nth 2 entry)
+                        `(maf-options--change ',var ',default)))
     (maf-options--redraw var spec)))
 
 (defun maf-options-toggle-keys ()
