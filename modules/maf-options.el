@@ -405,6 +405,17 @@ the two are comparable: a flag defaulting to a group size still answers
                      (maf-options--values var spec)))
         (format "%S" raw))))
 
+(defvar-local maf-options--pending nil
+  "(VAR . INDEX) for a value stepped onto but not set, or nil.
+Only ever one: a step onto another setting's value replaces it, so the
+mark cannot be left behind on a row nobody is working on. Point does
+not move to it — the step walks the setting, not the buffer — so the
+row has to carry the mark itself, which is what this is read for.")
+
+(defun maf-options--pending-index (var)
+  "Return the index of VAR's stepped-onto value, if it has one."
+  (and (eq (car maf-options--pending) var) (cdr maf-options--pending)))
+
 (defun maf-options--outline (label selected)
   "Return LABEL, drawn inside `maf-options-outline' when SELECTED.
 Only a value waiting for its input is ever outlined, so the width the
@@ -730,7 +741,13 @@ leaves `tabulated-list-print' able to put point back where it was."
   "Redraw the list, keeping point on the same row, and echo VAR's value.
 SPEC is VAR's entry in `maf-options-registry'. Both are passed in from
 the command that just set VAR, rather than re-read from the row, so the
-echo reports what was set even if the row has moved."
+echo reports what was set even if the row has moved.
+
+Clears `maf-options--pending' — every path through here has just set
+the setting, by whatever route, so a value still waiting to be set is
+no longer waiting for anything. `maf-options-next-value' redraws
+without this when it is the one leaving a value pending."
+  (setq maf-options--pending nil)
   (maf-options--refresh)
   (maf-options--print t)
   (message "%s: %s" (plist-get spec :label)
@@ -811,17 +828,6 @@ A setter that needs input is written as a `call-interactively' of the
 calc command that reads it, so the form says so itself and the registry
 needs no separate flag for it."
   (and (listp setter) (memq 'call-interactively (flatten-tree setter))))
-
-(defvar-local maf-options--pending nil
-  "(VAR . INDEX) for a value stepped onto but not set, or nil.
-Only ever one: a step onto another setting's value replaces it, so the
-mark cannot be left behind on a row nobody is working on. Point does
-not move to it — the step walks the setting, not the buffer — so the
-row has to carry the mark itself, which is what this is read for.")
-
-(defun maf-options--pending-index (var)
-  "Return the index of VAR's stepped-onto value, if it has one."
-  (and (eq (car maf-options--pending) var) (cdr maf-options--pending)))
 
 (defun maf-options-next-value (&optional n)
   "Set this row's setting to its next value, or the one N values on.
