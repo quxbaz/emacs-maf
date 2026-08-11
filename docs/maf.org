@@ -29,15 +29,6 @@
     - [ ] simplify
     - [ ] factor
     - [ ] target-line
-  - maf-editplus module
-  - formulas module
-    - [X] tab to nav between items not groups
-    - [X] don't show details pane by default
-      - [X] bind details window to `d` and `?`
-      - doesn't focus, disappears on movement
-    - [X] M-n/p shouldn't cycle from start/end position. it should not be
-      allowed to move past these endpoints.
-    - [ ] C-n/p should still work from filter minibuffer
 
 * Todo
 # NOW
