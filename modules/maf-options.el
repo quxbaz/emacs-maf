@@ -149,6 +149,11 @@ where the box is real."
 ;;            `calc-float-format' is (fix 3), not `fix'.
 ;;   :show    Function rendering VAR's raw value for the Value column,
 ;;            when the matched :values label does not say enough.
+;;   :vars    Other variables the row speaks for, when calc spreads one
+;;            setting over more than one. They count towards whether
+;;            the row has moved off its default.
+;;   :default The value key the row starts on, for a row whose default
+;;            cannot be derived — see `maf-options--default-value'.
 ;;
 ;; A setter is a form rather than a command name because calc's own
 ;; commands do not uniformly take a value. Some are one command per
@@ -224,6 +229,12 @@ and for why the setters are forms rather than command names.")
               (total      "total"      (maf-options--set-algebraic 'total)))
      ;; Two variables, one setting: incomplete mode is its own flag
      ;; alongside `calc-algebraic-mode', and the two are never both on.
+     ;; :vars names the second so the row counts as moved when it is the
+     ;; one that moved, and :default states what deriving cannot reach —
+     ;; this :current reads a live variable, so applied to a default it
+     ;; would answer with the present.
+     :vars (calc-incomplete-algebraic-mode)
+     :default nil
      ;; Read through `maf-options--raw': the rows are built with the
      ;; options buffer current, and the mode variables are local to
      ;; calc's.
@@ -652,11 +663,21 @@ first, so leaving it takes its own call."
   "Return the value key naming VAR's calc default under SPEC.
 Normalized the way `maf-options--current' normalizes the live value, so
 the two are comparable: a flag defaulting to a group size still answers
-`t', the key its \"on\" entry is filed under."
-  (let ((default (maf-options--default var)))
-    (cond ((plist-get spec :current) (funcall (plist-get spec :current) default))
-          ((plist-get spec :flag) (and default t))
-          (t default))))
+`t', the key its \"on\" entry is filed under.
+
+SPEC's :default is taken as the answer when it has one. Normalizing
+through :current only works while :current looks at nothing but the raw
+value it is handed — a :current that consults a second variable would
+read that variable's *live* value and report whatever the setting is
+on now as the value it starts on. A row like that states its default
+rather than deriving one."
+  (if (plist-member spec :default)
+      (plist-get spec :default)
+    (let ((default (maf-options--default var)))
+      (cond ((plist-get spec :current)
+             (funcall (plist-get spec :current) default))
+            ((plist-get spec :flag) (and default t))
+            (t default)))))
 
 (defun maf-options--value-string (var spec)
   "Return the Value column text for VAR under SPEC."
@@ -752,11 +773,18 @@ A value stepped onto but not set is marked too — see
                  chips)
                "  ")))
 
-(defun maf-options--changed-p (var)
-  "Non-nil when VAR differs from the default calc would start with.
+(defun maf-options--changed-p (var spec)
+  "Non-nil when VAR, or any of SPEC's :vars, has moved off calc's default.
 Compares the raw values, not the keys `maf-options--current' derives:
-grouping in threes differs from grouping off, and both are \"on\"."
-  (not (equal (maf-options--raw var) (maf-options--default var))))
+grouping in threes differs from grouping off, and both are \"on\".
+
+:vars names the other variables a row speaks for. A row that covers two
+and asks about only one calls itself unchanged while half of what it
+shows has moved — and then hides itself from the filter that exists to
+find exactly that."
+  (seq-some (lambda (v)
+              (not (equal (maf-options--raw v) (maf-options--default v))))
+            (cons var (plist-get spec :vars))))
 
 ;;; The buffer
 
@@ -991,7 +1019,7 @@ leaves `tabulated-list-print' able to put point back where it was."
       (let* ((var (car entry))
              (spec (cdr entry))
              (group (plist-get spec :group))
-             (changed (maf-options--changed-p var)))
+             (changed (maf-options--changed-p var spec)))
         (unless (and maf-options--changed-only (not changed))
           (unless (or (null last-group) (equal group last-group))
             (push (list (cons 'gap group)
