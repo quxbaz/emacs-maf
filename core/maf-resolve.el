@@ -76,6 +76,11 @@
 ;;                 `maf--resolve-widen'). Absent for most commands, which
 ;;                 take the node under point as it comes.
 ;;   :keep         Snapshot of `calc-keep-args-flag' at resolve time.
+;;   :mapflag      Present (t) when the command consumed `maf-map-flag' (M).
+;;                 Prepended to OPTS by the defcmd macro before resolve; makes
+;;                 a relation subject take the equation target even past
+;;                 :map -1. The macro also reads it to map a vector subject
+;;                 elementwise.
 ;;   :point        Snapshot of point's placement at resolve time (see
 ;;                 `maf--point-snapshot'). The generated command restores
 ;;                 point from it after the calc epilogue runs.
@@ -362,6 +367,7 @@ equation when it is a relation; the guard here is a backstop for direct calls."
            ;; encases entry atoms in place, and the body must see clean
            ;; values — but not re-normalized, which could re-simplify.
            (expr  (maf--strip-encasing (calc-top m 'full))))
+      (maf--resolve-mapflag-relation-check (car expr) opts)
       (when (and (eq arity 'binary) (= m 1))
         (error "Binary commands on equation require the relation below the top"))
       `((:target     . equation)
@@ -405,22 +411,53 @@ have to be on the operand whose value will be replaced."
         (:commit-n   . ,(if keep 0 1))
         (:post-pop   . ,(if keep 0 (pcase arity ('unary 0) ('binary 1))))))))
 
+(defun maf--resolve-mapflag-relation-check (rel-op opts)
+  "Refuse a map-flag-forced relation mapping unless REL-OP is =.
+Only fires when the map flag (:mapflag) pushes a :map -1 command — one
+whose body consumes relations whole by design — into per-side mapping.
+An = survives any command applied to both sides; an ordered relation
+does not (the direction turns on which way the command bends, which a
+command, unlike $'s formula, has no way to state — I already means the
+inverse variant), and a != says nothing about f(a) and f(b) unless f
+is one-to-one. Commands without :map -1 are untouched: they map
+relations with or without the flag, as they always have."
+  (when (and (alist-get :mapflag opts)
+             (eql (alist-get :map opts) -1)
+             (not (eq rel-op 'calcFunc-eq)))
+    ;; != gets its own message: M and $ are no way out for it — they
+    ;; refuse a != too, I or not, for the same one-to-one reason.
+    (if (eq rel-op 'calcFunc-neq)
+        (user-error
+         "M cannot map this command over !=: nothing holds for both sides unless it is one-to-one")
+      (user-error
+       "M maps this command only over =; for an inequality map a formula ($ or #, I reverses)"))))
+
 (defun maf--resolve-map-relation (context opts)
   "Convert CONTEXT to an equation target when its subject is a relation.
 Applies to home, entry, and subexpr targets: whenever the resolved :expr
 is itself a relation, the body should run once per side, exactly as it
 does when point sits on a relation entry's margin. Commands whose body
 consumes the relation whole (solve, mapeq, the relation builders) opt out
-with :map -1 in OPTS.
+with :map -1 in OPTS — unless the map flag rode in as :mapflag, an
+explicit request to map that overrides the opt-out.
+
+A selection is a deliberate gesture at a node, so a selected relation
+ordinarily stays whole — but under :mapflag the request to map is just
+as deliberate, and the selection target converts like the others.
 
 The equation keys are prepended, shadowing :target while keeping the base
 target's commit fields — the rebuilt relation replaces whatever the base
 target would have replaced."
   (let ((expr (alist-get :expr context)))
-    (if (or (eql (alist-get :map opts) -1)
-            (not (memq (alist-get :target context) '(home entry subexpr)))
+    (if (or (and (eql (alist-get :map opts) -1)
+                 (not (alist-get :mapflag opts)))
+            (not (memq (alist-get :target context)
+                       (if (alist-get :mapflag opts)
+                           '(home entry subexpr selection)
+                         '(home entry subexpr))))
             (not (maf--relation-p expr)))
         context
+      (maf--resolve-mapflag-relation-check (car expr) opts)
       (append `((:target . equation)
                 (:rel-op . ,(car expr))
                 ;; :expr is already clean; keep the sides as they are
@@ -536,7 +573,8 @@ entry target, which shifts down to the entry below."
                  ;; non-relation below there is no coherent shift, so stay
                  ;; here and let the equation target reject it.
                  ((and (maf--at-equation-p)
-                       (not (eql (alist-get :map opts) -1))
+                       (or (alist-get :mapflag opts)
+                           (not (eql (alist-get :map opts) -1)))
                        (not (and (eq (alist-get :arity opts) 'binary)
                                  (= (calc-locate-cursor-element (point)) 1)
                                  (> (calc-stack-size) 1)

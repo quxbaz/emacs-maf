@@ -350,6 +350,28 @@ chain terms is never a relation. Degenerate regions resolve /as/
 subexpr, though, so a region snapped to a whole relation node maps per
 side like any subexpr would.
 
+** The map flag
+
+=mafcmd-map-flag= (=M=) sets =maf-map-flag= through calc's fancy-prefix
+machinery, so it chains with =K=/=I=/=H= and expires like them
+(=maf--map-flag-expire= sweeps it after a command that does not read
+it; keystrokes in a minibuffer never spend it, so it survives a
+prompting command's own prompt through to the defcmd worker). The next
+defcmd consumes the flag at resolve time: a relation subject takes the
+equation target even past =:map -1= — the flag is the explicit request
+to map, so =M |= on two stacked equations /does/ pair them into
+=[a, c] = [b, d]=, and a selected relation, ordinarily held whole as a
+deliberate gesture, converts too, though a forced =:map -1= command
+splits only an = (=maf--resolve-mapflag-relation-check=: an ordered
+relation or != refuses, since a command cannot say which way it bends
+the direction, and =I= already means the inverse variant) — and a
+vector subject runs the body
+once per element (=maf--defcmd-map-vec=; nested vectors recurse, the
+arg of a binary command shared across the runs). Any other subject
+refuses. Where =$= maps a formula you type and =#= one from the
+stack, =M= maps a command, with no operator table behind it the way
+calc's =V M= has.
+
 * Encasing
 
 Calc's mechanism for distinguishing duplicate atoms by =eq=.

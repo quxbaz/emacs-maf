@@ -27,8 +27,10 @@
 (declare-function calc-yank-internal "calc-yank")
 (declare-function calc-del-selection "calc-sel")
 (declare-function calc-clear-selections "calc-sel")
-;; Calc's fancy-prefix dispatch (K, I, H, O), advised below.
+;; Calc's fancy-prefix dispatch (K, I, H, O), advised below; the prefix
+;; setter itself carries maf's map flag (M).
 (declare-function calc-fancy-prefix-other-key "calc-ext")
+(declare-function calc-fancy-prefix "calc-ext")
 (declare-function calc-unread-command "calc")
 (declare-function calc-change-mode "calc-mode")
 (declare-function calc-reset "calc-ext")
@@ -5018,6 +5020,71 @@ equations side by side, inequalities only under I — is `mafcmd-map's."
   (maf--map-refuse-hyperbolic)
   (maf--map-dispatch 'stack))
 (put 'mafcmd-map-stack 'maf-command t)
+
+(defconst maf--map-flag-carriers
+  '(mafcmd-map-flag calc-fancy-prefix-other-key
+    calc-inverse calc-hyperbolic calc-option calc-keep-args
+    universal-argument digit-argument negative-argument)
+  "Commands `maf-map-flag' survives, read by `maf--map-flag-expire'.
+The flag's own setter and the machinery a pending flag rides through:
+`calc-fancy-prefix-other-key' is what the next key actually runs while
+a fancy prefix is live (it unreads the key and dispatches it for real),
+the other fancy prefixes chain (M I N maps the inverse), and the
+argument readers carry a prefix argument to the command they precede.")
+
+(defun maf--map-flag-expire ()
+  "Sweep `maf-map-flag' once a command that does not read it has run.
+On `post-command-hook' from `mafcmd-map-flag' until the flag is gone.
+A `maf-defcmd' command consumes the flag itself at resolve time; this
+hook is for every other next command — calc's or Emacs' own — which
+would ignore the flag silently and leave it lying in wait for a later
+command that does read it. Carrier commands (see
+`maf--map-flag-carriers') pass it along instead.
+
+The minibuffer passes it along too: a prompting command (l x, i, $)
+reads its input before its defcmd worker runs, so while a minibuffer is
+active the command the flag waits for has not happened yet — the
+prompt's own keystrokes must not spend it."
+  (cond ((null maf-map-flag)
+         (remove-hook 'post-command-hook #'maf--map-flag-expire))
+        ((> (minibuffer-depth) 0))
+        ((not (memq this-command maf--map-flag-carriers))
+         (setq maf-map-flag nil)
+         (remove-hook 'post-command-hook #'maf--map-flag-expire))))
+
+(defun mafcmd-map-flag (&optional n)
+  "Set the map flag: the next contextual command maps over its subject.
+
+  [x, y]  M N   =>  [-x, -y]      (negate, mapped over the elements)
+
+Where `mafcmd-map' ($) maps a formula you type and `mafcmd-map-stack'
+(#) maps one from the stack, M maps a command — any `maf-defcmd'
+command, unary or binary, with no keymap of blessed operations behind
+it (calc's V M reads its operator from a fixed table; a flag needs no
+table). A binary command's argument is shared across the runs:
+
+  [a, b]  5  M |   =>  [a | 5, b | 5]
+
+A vector subject runs the command once per element, a matrix over its
+individual elements — the same reading M gives one. A relation subject
+runs it once per side, which most commands do anyway; under the flag
+even commands that normally consume a relation whole (the | family,
+solve) split it, since the flag is an explicit request to map — though
+those forced commands split only an =. An ordered relation or a !=
+refuses there: whether the direction survives depends on which way the
+command bends, which a command, unlike $'s formula, has no way to
+state. Any other subject refuses too: there is nothing to map over.
+
+The flag lasts for exactly one command, like calc's K or I: it chains
+with those prefixes (M I | runs |'s inverse variant, vconcatrev, once
+per element), a second M cancels it, and a command that has no reading
+of it simply drops it. It also survives a command's own prompt, so
+M i on a vector of relations solves each one for the variable typed."
+  (interactive "P")
+  (calc-fancy-prefix 'maf-map-flag "Map..." n)
+  (when maf-map-flag
+    (add-hook 'post-command-hook #'maf--map-flag-expire)))
+(put 'mafcmd-map-flag 'maf-command t)
 
 ;;; Roots
 

@@ -11,6 +11,19 @@
 (require 'maf-resolve)
 (require 'maf-commit)
 
+(defvar maf-map-flag nil
+  "Non-nil while the next contextual command should map over its subject.
+Set by `mafcmd-map-flag' (M) through calc's fancy-prefix machinery, and
+consumed by the next `maf-defcmd' command: a vector subject runs the
+body once per element (`maf--defcmd-map-vec'), a relation subject runs
+it once per side — even for commands that opt out with :map -1, though
+those split only an =; ordered relations and != refuse
+(`maf--resolve-mapflag-relation-check') — and anything else refuses:
+the flag promised a mapping, and a subject with no elements has
+nowhere to map. The consuming command clears it up
+front, signal or not; `maf--map-flag-expire' sweeps it when the next
+command is not one that reads it.")
+
 (defvar maf-target nil
   "The resolved target, bound while a `maf-defcmd' body runs.
 One of the `:target' symbols `maf--resolve-context' produces — `home',
@@ -61,6 +74,27 @@ Skips a leading docstring and keyword-value pairs."
         (opts (maf--defcmd-parse-opts forms))
         (body (maf--defcmd-parse-body forms)))
     `(,docstring ,opts ,body)))
+
+(defun maf--defcmd-map-vec (runner expr arg)
+  "Run RUNNER over each element of vector EXPR; return the mapped vector.
+RUNNER is a defcmd body as a function of (ELEMENT ARG COMMIT-FN): each
+element runs the body once, ARG shared across the runs, and what the
+body commits becomes the element's replacement. A body that commits
+nothing leaves its element unchanged. Nested vectors recurse, so a
+matrix maps over its individual elements — the same reading
+`mafcmd-map' gives one. A non-vector refuses: the map flag promised a
+mapping, and a subject with no elements has nowhere to map (a relation
+never reaches here — it resolves to the equation target first)."
+  (unless (eq (car-safe expr) 'vec)
+    (user-error "Nothing to map over: the subject is not a vector or relation"))
+  (cons 'vec
+        (mapcar (lambda (el)
+                  (if (eq (car-safe el) 'vec)
+                      (maf--defcmd-map-vec runner el arg)
+                    (let (out)
+                      (funcall runner el arg (lambda (val) (setq out val)))
+                      (or out el))))
+                (cdr expr))))
 
 (defun maf--defcmd-dispatch (cmd flag-desc)
   "Consume calc's Inverse/Hyperbolic flags, then invoke variant command CMD.
@@ -123,6 +157,14 @@ OPTS configure context resolution and commit:
           instead of pairing its two sides with the subject's sides. For
           commands that consume a relation argument as one operand.
 
+Independent of OPTS, every defcmd answers the map flag (`maf-map-flag',
+set by M): a vector subject runs the body once per element with the
+result reassembled in place, a relation subject runs it once per side
+even under :map -1 — though a command forced past :map -1 splits only
+an =; ordered relations and != refuse — and any other subject refuses.
+The flag is consumed up front, so it never leaks past the command that
+received it.
+
   :scope  Narrows which targets resolve. `entry' takes the whole entry
           at point (the top at home) whatever the gesture, for commands
           with no sub-formula meaning; `explicit' takes it whole only
@@ -164,6 +206,12 @@ ARG, runs the body, and commits its result to the right stack location."
                (err (gensym "err-"))
                (lhs (gensym "lhs-"))
                (rhs (gensym "rhs-"))
+               (mapflag (gensym "mapflag-"))
+               (runner (gensym "runner-"))
+               (oarg (gensym "oarg-"))
+               (relem (gensym "elem-"))
+               (rarg (gensym "arg-"))
+               (rcommit (gensym "commit-"))
                (main
                 ;; `calc-wrapper' makes the whole command a single undoable
                 ;; unit and runs calc's command epilogue (trail, stack
@@ -175,10 +223,37 @@ ARG, runs the body, and commits its result to the right stack location."
                    (condition-case ,err
                        (progn
                          (calc-wrapper
-                          (setq ,context (maf--resolve-context ',opts))
-                          (let ((,arg (alist-get :arg ,context))
-                                (maf-target (alist-get :target ,context)))
-                            (if (eq (alist-get :target ,context) 'equation)
+                          ;; The map flag (M) is consumed here: snapshot and
+                          ;; clear before resolve, so a command that signals
+                          ;; still leaves the next command clean. Resolve
+                          ;; sees it as :mapflag, which forces a relation
+                          ;; subject to the equation target even past
+                          ;; :map -1.
+                          (let ((,mapflag (prog1 maf-map-flag
+                                            (setq maf-map-flag nil))))
+                            (setq ,context
+                                  (maf--resolve-context
+                                   (if ,mapflag
+                                       (cons '(:mapflag . t) ',opts)
+                                     ',opts)))
+                            ;; A gensym, not the caller's ARG symbol: the
+                            ;; runner binds that one per run, and a `_'-named
+                            ;; ARG must stay unused outside the body.
+                            (let ((,oarg (alist-get :arg ,context))
+                                  (maf-target (alist-get :target ,context))
+                                  ;; The body as a function: bind the
+                                  ;; caller's EXPR/ARG locals and route its
+                                  ;; COMMIT to the given continuation. Every
+                                  ;; branch below runs the body through it.
+                                  (,runner
+                                   (lambda (,relem ,rarg ,rcommit)
+                                     (let ((,expr ,relem)
+                                           (,arg ,rarg))
+                                       (cl-flet ((,commit (val)
+                                                   (funcall ,rcommit val)))
+                                         ,@body)))))
+                              (cond
+                               ((eq maf-target 'equation)
                                 ;; Equation target: run the body once per side
                                 ;; (expr bound to the LHS, then the RHS),
                                 ;; capturing each side's committed result. Then
@@ -190,27 +265,39 @@ ARG, runs the body, and commits its result to the right stack location."
                                 ;; than each side taking the whole arg as a
                                 ;; term (see `maf--resolve-pair-arg').
                                 (let (,lhs ,rhs)
-                                  (let ((,expr (alist-get :lhs ,context))
-                                        (,arg (or (alist-get :arg-lhs ,context)
-                                                  ,arg)))
-                                    (cl-flet ((,commit (val) (setq ,lhs val)))
-                                      ,@body))
-                                  (let ((,expr (alist-get :rhs ,context))
-                                        (,arg (or (alist-get :arg-rhs ,context)
-                                                  ,arg)))
-                                    (cl-flet ((,commit (val) (setq ,rhs val)))
-                                      ,@body))
+                                  (funcall ,runner
+                                           (alist-get :lhs ,context)
+                                           (or (alist-get :arg-lhs ,context)
+                                               ,oarg)
+                                           (lambda (val) (setq ,lhs val)))
+                                  (funcall ,runner
+                                           (alist-get :rhs ,context)
+                                           (or (alist-get :arg-rhs ,context)
+                                               ,oarg)
+                                           (lambda (val) (setq ,rhs val)))
                                   (setq ,landed
                                         (maf--commit
                                          (list (alist-get :rel-op ,context)
                                                ,lhs ,rhs)
-                                         ,context)))
-                              ;; All other targets: body runs once with :expr.
-                              (let ((,expr (alist-get :expr ,context)))
-                                (cl-flet ((,commit (val)
-                                            (setq ,landed
-                                                  (maf--commit val ,context))))
-                                  ,@body)))))
+                                         ,context))))
+                               (,mapflag
+                                ;; Map flag, and the subject was no relation:
+                                ;; it must be a vector, mapped elementwise
+                                ;; with the arg shared across the runs.
+                                (setq ,landed
+                                      (maf--commit
+                                       (maf--defcmd-map-vec
+                                        ,runner (alist-get :expr ,context)
+                                        ,oarg)
+                                       ,context)))
+                               (t
+                                ;; All other targets: body runs once on :expr.
+                                (funcall ,runner
+                                         (alist-get :expr ,context) ,oarg
+                                         (lambda (val)
+                                           (setq ,landed
+                                                 (maf--commit
+                                                  val ,context)))))))))
                          ;; An arg the user typed as part of this gesture (1 +)
                          ;; folds into this command's undo group, so one undo
                          ;; reverts both instead of stranding the arg.
