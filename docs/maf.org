@@ -56,9 +56,8 @@
 
 * IN-PROGRESS NOW
   - [-] Port my/calc/* features one-by-one.
-  Full inventory of ~/.emacs.d/my/calc below; legacy bindings in parens
-  are reference only, maf rebinds at port time. Ported or superseded
-  features are summarized at the end of each section.
+  Full inventory with per-file status lives in [[file:../port.org][port.org]] (project root),
+  including items the old inventory missed (its =* flagged= section).
 
 * later::plotting module
   - [ ] my/calc-graph-quick / -with-range (g l / g i) — plot the top entry straight to
