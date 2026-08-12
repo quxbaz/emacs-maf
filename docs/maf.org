@@ -30,8 +30,6 @@
     - [ ] target-line
 
 * NOW
-  - [X] `,` command if target is a variable, should overwrite instead of joining (multiplying)
-  - [ ] mod-360 from digit entry (legacy o) — mafcmd-mod-360 exists (M-o) but has no digit-map key
 ** bindings
    three binding modes:
    1) calc-native bindings
