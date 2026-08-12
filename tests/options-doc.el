@@ -31,35 +31,9 @@
   (plist-get (alist-get (tabulated-list-get-id) maf-options-registry) :doc))
 
 (defun mafstep--echoes-doc-p ()
-  "Non-nil when the echo area is saying the current row's doc.
-The line is the doc followed by a hint at where a step would go, so the
-doc is matched as its head rather than as the whole of it."
-  (let ((doc (mafstep--doc-at-point))
-        (msg (current-message)))
-    (and doc msg (string-prefix-p doc msg))))
-
-(defun mafstep--goto-row (var)
-  "Put point on VAR's row, from the top of the list.
-Bounded by the list's own length rather than by `eobp': motion stays
-put where there is no row left to reach, so a row that never turns up
-would spin here forever and take the Emacs it is running in with it."
-  (goto-char (point-min))
-  (setq maf-options--pending nil)
-  (let ((left (length maf-options-registry)))
-    (while (and (not (eq (tabulated-list-get-id) var)) (> left 0))
-      (maf-options-next-line)
-      (setq left (1- left))))
-  (cl-assert (eq (tabulated-list-get-id) var) t "no row for %s" var))
-
-(defun mafstep--step-to-pending (values)
-  "Step the current row until a value is left pending.
-Bounded to one turn of the row: with the step landing somewhere other
-than expected, this would otherwise cycle the row forever."
-  (let ((left (length values)))
-    (while (and (not maf-options--pending) (> left 0))
-      (maf-options-next-value 1)
-      (setq left (1- left))))
-  (cl-assert maf-options--pending t "no value on this row was left pending"))
+  "Non-nil when the echo area is saying the current row's doc."
+  (let ((doc (mafstep--doc-at-point)))
+    (and doc (equal (current-message) doc))))
 
 (maf-step
 
@@ -100,64 +74,6 @@ than expected, this would otherwise cycle the row forever."
     (cl-assert (mafstep--echoes-doc-p) t "next group")
     (maf-options-previous-group)
     (cl-assert (mafstep--echoes-doc-p) t "previous group"))
-
-  ;; --- The step hint ---
-
-  ;; The line ends with where a step would go. Checked end to end
-  ;; rather than against the helper that produced it: the hint names a
-  ;; value, and stepping has to land on that same value, which is the
-  ;; off-by-one the shared index exists to rule out.
-  (mafstep--with-echo
-    (mafstep--goto-row 'calc-angle-mode)
-    (cl-assert (string-match "TAB: \\(.*\\)\\'" (current-message)) t "no hint")
-    (let ((promised (match-string 1 (current-message))))
-      (maf-options-next-value 1)
-      (cl-assert (equal promised (maf-options--value-string
-                                  'calc-angle-mode
-                                  (alist-get 'calc-angle-mode maf-options-registry)))
-                 t "hint said %s" promised)))
-
-  ;; A row whose value can only be prompted for gets the key that works
-  ;; on it. TAB is not that key -- it errors -- so naming it would be
-  ;; worse than saying nothing.
-  (mafstep--with-echo
-    (mafstep--goto-row 'calc-internal-prec)
-    (cl-assert (string-suffix-p "RET: prompts" (current-message)) t
-               "echoed: %s" (current-message))
-    (cl-assert (not (string-match-p "TAB" (current-message))))
-    (cl-assert (equal '(error) (condition-case nil (maf-options-next-value 1)
-                                 (user-error '(error))))
-               t "TAB did not error on a prompt-only row"))
-
-  ;; Stepping onto a value that prompts leaves it pending rather than
-  ;; setting it, and the hint counts on from there -- the same place
-  ;; the next step counts from.
-  (mafstep--with-echo
-    (mafstep--goto-row 'calc-float-format)
-    (let ((values (mapcar #'cadr (maf-options--values
-                                  'calc-float-format
-                                  (alist-get 'calc-float-format
-                                             maf-options-registry)))))
-      (mafstep--step-to-pending values)
-      (maf-options--echo-doc)
-      (let ((after-pending (nth (mod (1+ (cdr maf-options--pending)) (length values))
-                                values)))
-        (cl-assert (string-suffix-p (concat "TAB: " after-pending) (current-message))
-                   t "pending %S, echoed: %s" maf-options--pending (current-message)))
-      (setq maf-options--pending nil)))
-
-  ;; --- Too narrow for the hint ---
-
-  ;; The echo area growing to two lines under every motion key costs
-  ;; more than the hint is worth, so on a window that cannot hold both
-  ;; the doc goes out alone.
-  (mafstep--with-echo
-    (mafstep--goto-row 'calc-angle-mode)
-    (cl-assert (string-match-p "TAB" (current-message)))
-    (cl-letf (((symbol-function 'frame-width) (lambda (&rest _) 40)))
-      (maf-options--echo-doc)
-      (cl-assert (equal (current-message) (mafstep--doc-at-point)) t
-                 "echoed: %s" (current-message))))
 
   ;; --- Not logged ---
 
