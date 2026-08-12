@@ -846,7 +846,6 @@ than written out."
 ;; first, and RET is the one to name for a command two keys reach.
 (define-key maf-options-mode-map (kbd "SPC")     #'maf-options-set)
 (define-key maf-options-mode-map (kbd "RET")     #'maf-options-set)
-(define-key maf-options-mode-map (kbd "e")   #'maf-options-choose)
 (define-key maf-options-mode-map (kbd "d")   #'maf-options-reset)
 (define-key maf-options-mode-map (kbd "c")   #'maf-options-toggle-changed-only)
 (define-key maf-options-mode-map (kbd "K")   #'maf-options-toggle-keys)
@@ -878,7 +877,6 @@ and a previous.")
 (setq maf-options--controls
       '(((maf-options-next-value maf-options-previous-value) "select" "TAB")
         (maf-options-set "set" "RET")
-        (maf-options-choose "choose")
         (maf-options-reset "reset")
         (maf-options-toggle-changed-only "changed")
         (maf-options-toggle-keys "calc keys")
@@ -1041,7 +1039,6 @@ what the one under point does; \\[maf-options-next-group] and
 the row's values without setting any of them, and \\[maf-options-set]
 sets the one point is on — two acts on two keys, because a setter is
 free to prompt and stepping cannot be made to wait on it.
-\\[maf-options-choose] picks a value by name instead;
 \\[maf-options-reset] restores calc's default;
 \\[maf-options-toggle-changed-only] narrows the list to settings that
 differ from their default; \\[maf-options-toggle-keys] shows the calc
@@ -1233,24 +1230,6 @@ values — for those, being asked is the only way to set them at all."
           ((plist-get spec :read) (maf-options--set (plist-get spec :read)))
           (t (user-error "Nothing waiting to be set — %s steps through the values"
                          (maf-options--key #'maf-options-next-value "TAB"))))
-    (maf-options--redraw var spec)))
-
-(defun maf-options-choose ()
-  "Pick a value for the current line's setting by name."
-  (interactive)
-  (pcase-let* ((`(,var . ,spec) (maf-options--spec))
-               (values (maf-options--values var spec))
-               (read (plist-get spec :read)))
-    (if (null values)
-        (maf-options--set read)
-      (let* ((labels (mapcar (lambda (v) (nth 1 v)) values))
-             (labels (if read (append labels '("other…")) labels))
-             (pick (completing-read (format "%s: " (plist-get spec :label))
-                                    labels nil t)))
-        (maf-options--set
-         (if (equal pick "other…")
-             read
-           (nth 2 (seq-find (lambda (v) (equal (nth 1 v) pick)) values))))))
     (maf-options--redraw var spec)))
 
 (defun maf-options-reset ()
