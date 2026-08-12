@@ -61,15 +61,13 @@
   are reference only, maf rebinds at port time. Ported or superseded
   features are summarized at the end of each section.
 
-* plotting modules
+* later::plotting module
   - [ ] my/calc-graph-quick / -with-range (g l / g i) — plot the top entry straight to
     gnuplot (see Todo: interval form for the range prompt)
   - [ ] my/calc-to-gnuplot-string — calc expr → gnuplot formula (fortran mode + fixups)
   - [ ] gnuplot session defaults (index.el) — resolution 1000, qt device, seeded
     \"set grid / set nokey\"
   - [ ] g i (my/calc-graph-quick-with-range) interval form a:b should work with spaces 'a b'
-
-* later
 
 * maybe
 ** TODO preview entry as latex
