@@ -33,7 +33,7 @@
 * NOW
 ** bindings
    three binding modes:
-   1) calc bindings
+   1) calc-native bindings
       - this set of mappings tries to stay as close as possible to the default calc bindings
       - if a user familiar with calc uses maf, they should be instantly familiar
         and should not have to re-adjust to new bindings
@@ -43,13 +43,17 @@
           - eg, `+` is rebound from calc-add to maf-add
         - for maf commands that have no calc analogy, use key combinations which
           are unoccupied
-   2) maf bindings
+   2) maf-native bindings
       - this is the opinionated set of bindings optimized for maf
       - this is the default activated bindings for maf
       - tries to stay with default calc bindings, but also doesn't mind
         reassigning/shadowing/overwriting existing bindings when necessary or
         convenient
       - uses emacs-style navigation (C-n, C-p, M-f, M-b) for basic navigation
+   3) vim-flavored maf bindings
+      - this is similar to (2), but instead prefers vim-style bindings for navigation
+      - so `hjkl` and `wb` are taken up solely for basic navigation
+      - the commands formerly bound to these keys will need to be reassigned
 
 * port
   - [-] Port my/calc/* features one-by-one.
