@@ -298,11 +298,15 @@ ARG, runs the body, and commits its result to the right stack location."
                                            (setq ,landed
                                                  (maf--commit
                                                   val ,context)))))))))
-                         ;; An arg the user typed as part of this gesture (1 +)
+                         ;; An entry the user typed as part of this gesture
                          ;; folds into this command's undo group, so one undo
-                         ;; reverts both instead of stranding the arg.
-                         ,@(when (eq (alist-get :arity opts) 'binary)
-                             '((maf--undo-amalgamate-digit-entry)))
+                         ;; reverts both instead of stranding the push: the
+                         ;; arg of 1 +, and equally the subject of a unary
+                         ;; command dispatched off the entry's own
+                         ;; terminator (400 o). Gated on the digit handoff,
+                         ;; so a deliberate push (1 RET, the command later)
+                         ;; keeps its own group.
+                         (maf--undo-amalgamate-digit-entry)
                          ;; The epilogue parks point at home; put it back on
                          ;; what the command acted on — the committed node's
                          ;; glyph or its start, else where resolve found it
