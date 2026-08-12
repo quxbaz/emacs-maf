@@ -4913,10 +4913,14 @@ Bound per call from calc's Inverse flag — see `maf--map-relation'.")
   "Apply `maf--map-mapper' to the resolved expression.
 The worker behind `mafcmd-map' — see there. Relations are consumed
 whole (`:map -1') because mapping decides for itself what to do with
-one: an = maps side by side, an inequality only under I."
+one: an = maps side by side, an inequality only under I. The subject
+is the whole entry wherever point sits on it (`:scope explicit'):
+mapping speaks of the entry's elements, so point within the formula
+does not narrow it — a region or a calc selection still does."
   :arity unary
   :prefix "map"
   :map -1
+  :scope explicit
   (commit (maf--map-subject maf--map-mapper expr maf--map-reverse)))
 
 (maf-defcmd maf--map-arg-run (expr arg commit)
@@ -4926,6 +4930,7 @@ The $ form: the entry above the subject is the formula, read by
   :arity binary
   :prefix "map"
   :map -1
+  :scope explicit
   (commit (maf--map-subject (maf--map-from-expr arg) expr maf--map-reverse)))
 
 (defun maf--map-dispatch (mapper)
@@ -4964,16 +4969,17 @@ Reads the formula in algebraic notation. It may name the element three
 ways: a formula with one free variable (x^2), a $ in place of the
 element (2 $ + 1), or a bare one-argument function name (sin). A lone
 $ is the exception — it means the formula is on the stack, and is the same
-gesture as `mafcmd-map-stack' ($).
+gesture as `mafcmd-map-stack' (#).
 
-Point picks the subject as usual: the selection or sub-formula at
-point, the whole entry from its margin, the top entry at home. A vector
-is mapped elementwise, and a matrix over its individual elements; a
-sub-formula that is itself a vector maps in place, leaving what
-surrounds it alone.
+The subject is the whole entry at point, wherever point sits on its
+line, or the top entry at home: mapping speaks of the entry's
+elements, so point within the formula is not used to narrow it. A
+region or a calc selection still narrows — the deliberate gestures —
+so a selected vector maps in place, leaving what surrounds it alone.
+A vector is mapped elementwise, and a matrix over its individual
+elements.
 
-  [1, 2] + k          =>  [1, 4] + k      (subject is the vector at point)
-  sqrt(x)             =>  sqrt(2 x)       (typed: 2 x; the part at point)
+  [1, 2] + k          =>  [1, 4] + k      (the vector selected)
 
 An equation maps side by side — both sides through the same formula,
 which is what keeps the equation saying something true.

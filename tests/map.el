@@ -1,7 +1,9 @@
-;; mafcmd-map (M) and mafcmd-map-stack ($): apply a formula to the
-;; target — each element of a vector, both sides of an equation, the
-;; sub-formula at point. M's prompt is driven with real keys, so each
-;; case queues its input and fires the command in a single form.
+;; mafcmd-map ($) and mafcmd-map-stack (#): apply a formula to the
+;; target — each element of a vector, both sides of an equation. The
+;; subject is the whole entry wherever point sits on it; a region or a
+;; calc selection still narrows. $'s prompt is driven with real keys,
+;; so each case queues its input and fires the command in a single
+;; form.
 
 (defun maf-test-map-refused (keys)
   "Run `mafcmd-map' with KEYS at its prompt; t if it refused."
@@ -139,17 +141,29 @@
                       "a != b"))
   (calc-pop (calc-stack-size))
 
-  ;; Subexpr: the vector at point maps in place, what surrounds it
-  ;; untouched.
+  ;; Point inside the formula does not narrow (:scope explicit): the
+  ;; whole entry is the subject wherever point sits on its line, and a
+  ;; non-vector entry takes the formula whole.
   (maf-push "[1, 2] + k")
-  ;; Point on the opening bracket names the vector; a digit inside it
-  ;; would name that element alone.
   (progn (calc-cursor-stack-index 1) (end-of-line) (search-backward "["))
   (progn (setq unread-command-events (listify-key-sequence "x^2\r"))
          (call-interactively 'mafcmd-map))
   (cl-assert (string= (math-format-value
                        (maf--strip-encasing (calc-top 1 'full)))
+                      "(k + [1, 2])^2"))
+  (calc-pop (calc-stack-size))
+
+  ;; A calc selection is a deliberate gesture and still narrows: the
+  ;; selected vector maps in place, what surrounds it untouched.
+  (maf-push "[1, 2] + k")
+  (progn (calc-cursor-stack-index 1) (end-of-line) (search-backward "[")
+         (execute-kbd-macro (kbd "j s")))
+  (progn (setq unread-command-events (listify-key-sequence "x^2\r"))
+         (call-interactively 'mafcmd-map))
+  (cl-assert (string= (math-format-value
+                       (maf--strip-encasing (calc-top 1 'full)))
                       "[1, 4] + k"))
+  (progn (maf-clear-selections))
   (calc-pop (calc-stack-size))
 
   ;; Several variables do not say which one is the element.
@@ -167,7 +181,7 @@
   (cl-assert (maf-test-map-refused "7\r"))
   (calc-pop (calc-stack-size))
 
-  ;; $ (mafcmd-map-stack): the entry above the subject is the formula,
+  ;; # (mafcmd-map-stack): the entry above the subject is the formula,
   ;; consumed on commit.
   (maf-push "[1, 2, 3]")
   (maf-push "x^2")
@@ -179,7 +193,7 @@
   (cl-assert (= (calc-stack-size) 1))
   (calc-pop (calc-stack-size))
 
-  ;; A lone $ at M's prompt is the same gesture, reached from the
+  ;; A lone $ at $'s prompt is the same gesture, reached from the
   ;; prompt instead of the key.
   (maf-push "[1, 2, 3]")
   (maf-push "2 x")

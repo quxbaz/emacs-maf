@@ -59,13 +59,37 @@ this needs a few parts:
 if necessary or useful, just undo the existing maf-map functionality and start
 over from scratch.
 
+Status (2026-08-12): all three parts landed. (1) mafcmd-map-stack and
+(2) mafcmd-map were already as specified; both now take the whole entry
+wherever point sits (:scope explicit — a region or calc selection still
+narrows), and the keys moved: `$` prompts for the formula, `#` takes it
+from the stack. (3) mafcmd-map-flag, now on `M` (`W` freed), sets
+maf-map-flag via calc's fancy-prefix machinery (chains with K/I/H, expires
+after one command); any maf-defcmd consumes it — vector subject runs once
+per element (matrix per individual element, binary arg shared), relation
+subject maps per side even past :map -1 (= only there — ordered
+relations and != refuse), anything else refuses.
+Tests: tests/map-flag.el. Docs: concepts.org "The map flag".
+
 * Todo
 # NOW
 ** TODO move all options to unified configuration view
    - Free up option prefix bindings (eg, m).
 ** TODO preview entry as latex
-** IN-PROGRESS issue with map, mapping actual commands
+** DONE issue with map, mapping actual commands
    eg, can't map command against vector
+   Resolved by the map flag (M): any maf-defcmd now maps over a vector
+   or equation when the flag is set.
+** TODO equation target maps value-changing commands over inequalities
+   a < b then n gives -a < -b (false math). Pre-dates the map flag —
+   the default equation target has always kept the operator. $/# refuse
+   and use I to reverse; I already means inverse-variant for commands,
+   so the flag cannot. DONE for the flag's new surface: a :map -1
+   command forced per side refuses everything but =
+   (maf--resolve-mapflag-relation-check). Still open: the default
+   equation target itself — commands without :map -1 (n, o, binary *
+   by a negative) map ordered relations keeping the operator, flag or
+   not.
 
 * Port
   - [-] Port my/calc/* features one-by-one.
