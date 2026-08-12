@@ -57,9 +57,14 @@
       - the commands formerly bound to these keys will need to be reassigned
 
 * IN-PROGRESS NOW
-  - [-] Port my/calc/* features one-by-one.
-  Full inventory with per-file status lives in [[file:../port.org][port.org]] (project root),
-  including items the old inventory missed (its =* flagged= section).
+  - [X] Port my/calc/* features one-by-one.
+  Complete as of 2026-08-12; the last port was literal variable recall
+  (maf-recall-variable r r, maf-recall-quick r 0-9). Declined rather
+  than forgotten: one-shot no-simplify, whole-stack duplicate,
+  in-memory stack slot, in-entry jump-sides / fixed powers / M-' /
+  J→*, debug sexp view, show-point-mode config; legacy ERT coverage is
+  superseded by the maf step suite. Plotting stays open under
+  later::plotting module; cleanup still lists "delete my/calc".
 
 * later::plotting module
   - [ ] my/calc-graph-quick / -with-range (g l / g i) — plot the top entry straight to
