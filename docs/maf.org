@@ -5,9 +5,9 @@
   [[https://www.gnu.org/software/emacs/manual/html_mono/calc.html#Stack-Access][stack access]]
   [[https://www.gnu.org/software/emacs/manual/html_mono/calc.html#Symbolic-Lisp-Functions][symbolic lisp functions]]
 
-* plan (macro)
-  1) [ ] Move all of relevant my/calc config into project
-  2) [ ] Harden through using w/ anki math
+* plan
+  1) [ ] port all of relevant my/calc config into project
+  2) [ ] harden through using w/ anki math
 
 * major features [7/10]
   - [ ] bindings module
