@@ -30,6 +30,31 @@
     - [ ] factor
     - [ ] target-line
 
+* map
+let's work on the map feature
+we've worked on this before but i want to make it's correct
+this needs a few parts:
+1) a binary command (bound to `$`) to map top of stack (the mapping function)
+   against the target entry (the data structure, either an equation or vector)
+   - if vector, apply the mapping function at m=1 over all the vector elements
+   - if equation, apply the mapping function to both sides of the equation
+   - this command combines the builtin calc functions to EITHER map over an
+     equation of vector. there's no good reason to have separate commands for
+     this when we could instead have just a single mapping command.
+   - this seems to match the current `$`
+2) similary to (1), but is unary. the mapping function, instead of being taken
+   from the stack m=1, take it from minibuffer input. bind to `M`. this is a
+   builtin command that alreadyd exists, but does not work contextually, and
+   also uses a separate command for equations and vectors.
+3) a command which sets a new FLAG (like keep-args `K`, or hyper `H`).
+   when this flag is set, the next command maps over the entry or vector.
+   the command could be either binary or unary - it should work either way.
+   - this is built into calc already, but works differently. it doesn't set a
+     flag, but instead uses a prefix and the user supplies the next command
+     given a keymap. our method is much more flexible and future-facing because
+     it doesn't require a hardcoded keymap which supports a limited set of
+     commands, but instead works with any command which processes a MAP FLAG.
+
 * Todo
 # NOW
 ** TODO move all options to unified configuration view
