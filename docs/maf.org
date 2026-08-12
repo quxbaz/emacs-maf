@@ -55,7 +55,7 @@
       - so `hjkl` and `wb` are taken up solely for basic navigation
       - the commands formerly bound to these keys will need to be reassigned
 
-* NOW
+* IN-PROGRESS NOW
   - [-] Port my/calc/* features one-by-one.
   Full inventory of ~/.emacs.d/my/calc below; legacy bindings in parens
   are reference only, maf rebinds at port time. Ported or superseded
