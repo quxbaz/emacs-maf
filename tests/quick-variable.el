@@ -8,13 +8,22 @@
   (cl-assert (equal (calc-top 1 'full) '(var x var-x)))
   (calc-pop (calc-stack-size))
 
-  ;; Subexpr (the example): point on the a of a + 2, variable x
-  ;; multiplies just that sub-formula.
+  ;; Subexpr on a variable: overwritten, not multiplied — naming a
+  ;; name means renaming it.
   (maf-push "a + 2")
   (progn (goto-char (point-min)) (search-forward "a") (backward-char 1))
   (progn (setq unread-command-events (listify-key-sequence "x"))
          (call-interactively 'maf-quick-variable))
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "x a + 2"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "x + 2"))
+  (calc-pop (calc-stack-size))
+
+  ;; Subexpr on anything else (the example): multiplied, variable on
+  ;; the left.
+  (maf-push "a + 2")
+  (progn (goto-char (point-min)) (search-forward "2") (backward-char 1))
+  (progn (setq unread-command-events (listify-key-sequence "x"))
+         (call-interactively 'maf-quick-variable))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "a + 2 x"))
   (calc-pop (calc-stack-size))
 
   ;; Entry margin: the whole formula is multiplied, undistributed.
@@ -26,13 +35,14 @@
   (cl-assert (eolp))
   (calc-pop (calc-stack-size))
 
-  ;; Equation: each side is multiplied, preserving the relation.
+  ;; Equation: the body runs once per side, so a bare-variable side is
+  ;; renamed while the other side is multiplied.
   (maf-push "a = b + 1")
   (progn (goto-char (point-min)) (end-of-line))
   (progn (setq unread-command-events (listify-key-sequence "y"))
          (call-interactively 'maf-quick-variable))
   (cl-assert (string= (math-format-value (calc-top 1 'full))
-                      "y a = y*(b + 1)"))
+                      "y = y*(b + 1)"))
   (calc-pop (calc-stack-size))
 
   ;; A non-letter is rejected with the stack untouched.

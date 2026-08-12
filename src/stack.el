@@ -1122,23 +1122,29 @@ point, each side of an equation, the top entry at home.
   "Variable read by `maf-quick-variable', for the contextual body.")
 
 (maf-defcmd mafcmd--quick-variable-mul (expr _arg commit)
-  "Multiply the resolved expression by `maf--quick-variable'.
+  "Apply `maf--quick-variable' to the resolved expression.
 Internal: `maf-quick-variable' reads the variable, binds it, and
-dispatches here when point is on an expression."
+dispatches here when point is on an expression. A target that is
+itself a variable is overwritten — naming a name means renaming it —
+anything else is multiplied, variable on the left."
   :arity unary
   :prefix "qvar"
-  (commit (calcFunc-mul maf--quick-variable expr)))
+  (commit (if (eq (car-safe expr) 'var)
+              maf--quick-variable
+            (calcFunc-mul maf--quick-variable expr))))
 
 (defun maf-quick-variable ()
   "Read a letter and apply it as a variable, contextually.
 
-  x on a| + 2  =>  x a + 2
+  x on a + 2|  =>  a + 2 x
+  x on a| + 2  =>  x + 2      (a variable target is overwritten)
 
 At home with no selection active, the variable is pushed as a new
-stack entry instead. Any other target is multiplied by it, variable
-on the left: the selection, the sub-formula at point, each side of an
-equation, the whole entry from its margin. Any letter is a valid
-variable; anything else aborts."
+stack entry instead. A target that is itself a variable is replaced by
+the new one — naming a name means renaming it. Any other target is
+multiplied by it, variable on the left: the selection, the sub-formula
+at point, each side of an equation, the whole entry from its margin.
+Any letter is a valid variable; anything else aborts."
   (interactive)
   (let ((char (read-char-from-minibuffer "Variable: ")))
     (unless (or (<= ?a char ?z) (<= ?A char ?Z))
