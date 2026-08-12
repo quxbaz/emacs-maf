@@ -5003,14 +5003,14 @@ matrix, which is not implemented yet."
   x^2                                     (the formula, on top)
   [1, 2, 3]  =>  [1, 4, 9]
 
-The same command as `mafcmd-map' (M) with the formula taken from the
+The same command as `mafcmd-map' ($) with the formula taken from the
 stack instead of a prompt — the shortcut for a formula already built
-there, and the same thing a lone $ at M's prompt does. As for any
+there, and the same thing a lone $ at $'s prompt does. As for any
 binary command, the formula is the entry above the subject (the top
 entry at home) and is consumed on commit, so the subject must lie below
 the top.
 
-The formula names its element as at M's prompt: one free variable, or a
+The formula names its element as at $'s prompt: one free variable, or a
 bare one-argument function name. A nameless function (<x : x^2>) works
 too, its own parameter being the element.
 
