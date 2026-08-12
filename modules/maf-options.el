@@ -726,6 +726,18 @@ row has to carry the mark itself, which is what this is read for.")
   "Return the index of VAR's stepped-onto value, if it has one."
   (and (eq (car maf-options--pending) var) (cdr maf-options--pending)))
 
+(defun maf-options--value-index (var spec values n)
+  "Index in VALUES that stepping VAR on by N lands on. Wraps.
+Counted from the value last stepped onto rather than from the live one,
+so a value that could not be set is still a place to carry on from.
+Shared with the echo, which is how the line saying where a step goes
+and the step itself cannot come to disagree."
+  (let ((from (or (maf-options--pending-index var)
+                  (seq-position values (maf-options--current var spec)
+                                (lambda (v c) (equal (car v) c)))
+                  0)))
+    (mod (+ from n) (length values))))
+
 (defun maf-options--outline (label selected)
   "Return LABEL, drawn inside `maf-options-outline' when SELECTED.
 Only a value waiting for its input is ever outlined, so the width the
@@ -974,8 +986,27 @@ Staying put where there is no row left to reach."
         (maf-options--goto-option)
       (goto-char start))))
 
+(defun maf-options--step-hint (var spec)
+  "Return a short phrase for what stepping VAR next would do.
+Names the value rather than the key. The controls line already says
+what \\`TAB' is for, permanently and for every row; the one thing it
+cannot say is which value this row in particular is on its way to.
+
+A row with no fixed set of values gets the key that does work on it
+instead — \\`TAB' only errors there, and being told so before pressing
+it is worth as much as the value name is elsewhere."
+  (let ((values (maf-options--values var spec)))
+    (if values
+        (format "%s: %s"
+                (propertize (maf-options--key #'maf-options-next-value "TAB")
+                            'face 'help-key-binding)
+                (nth 1 (nth (maf-options--value-index var spec values 1) values)))
+      (format "%s: prompts"
+              (propertize (maf-options--key #'maf-options-set "RET")
+                          'face 'help-key-binding)))))
+
 (defun maf-options--echo-doc ()
-  "Echo the current row's :doc line, if it has one.
+  "Echo the current row's :doc line, if it has one, and where a step goes.
 What a row is for cannot be read off the row: the Option column has
 room for a name, not for a sentence. So the sentence follows point
 instead, which is why every registry entry carries a :doc.
@@ -983,13 +1014,21 @@ instead, which is why every registry entry carries a :doc.
 Not logged. This runs on every motion key, and a line of help repeated
 down a list is not what *Messages* is for. Silent on a row with no doc
 rather than blanking the echo area, so whatever was last said — the
-value just set, a value waiting for input — survives the move."
-  (let ((doc (plist-get (alist-get (tabulated-list-get-id)
-                                   maf-options-registry)
-                        :doc)))
+value just set, a value waiting for input — survives the move.
+
+The hint is dropped rather than wrapped where the line will not fit:
+the echo area growing to two lines under every motion key costs more
+than knowing which value is next is worth. Dropped too if working it
+out signals — the calc buffer can be killed while this one is open,
+and a motion key is not where that should surface."
+  (let* ((var (tabulated-list-get-id))
+         (spec (alist-get var maf-options-registry))
+         (doc (plist-get spec :doc)))
     (when doc
-      (let ((message-log-max nil))
-        (message "%s" doc)))))
+      (let* ((hint (ignore-errors (maf-options--step-hint var spec)))
+             (line (if hint (concat doc "   " hint) doc))
+             (message-log-max nil))
+        (message "%s" (if (< (length line) (frame-width)) line doc))))))
 
 (defun maf-options-next-line (&optional n)
   "Move to the next setting, or N settings on, and echo what it does."
@@ -1196,11 +1235,7 @@ runs that one."
       (user-error "%s takes no fixed set of values — %s prompts for one"
                   (plist-get spec :label)
                   (maf-options--key #'maf-options-set "RET")))
-    (let* ((from (or (maf-options--pending-index var)
-                     (seq-position values (maf-options--current var spec)
-                                   (lambda (v c) (equal (car v) c)))
-                     0))
-           (index (mod (+ from (or n 1)) count))
+    (let* ((index (maf-options--value-index var spec values (or n 1)))
            (value (nth index values)))
       (if (maf-options--prompts-p (nth 2 value))
           (progn
