@@ -45,6 +45,11 @@
           are unoccupied
    2) maf bindings
       - this is the opinionated set of bindings optimized for maf
+      - this is the default activated bindings for maf
+      - tries to stay with default calc bindings, but also doesn't mind
+        reassigning/shadowing/overwriting existing bindings when necessary or
+        convenient
+      - uses emacs-style navigation (C-n, C-p, M-f, M-b) for basic navigation
 
 * port
   - [-] Port my/calc/* features one-by-one.
