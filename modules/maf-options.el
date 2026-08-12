@@ -1329,7 +1329,7 @@ on the current line to its next value (see `maf-options-mode')."
 ;;;###autoload
 (define-minor-mode maf-use-options-mode
   "Global minor mode giving calc's settings a single browsable buffer.
-Enabled, `\\[maf-options]' — bound to \\`m o' in `maf-mode' buffers —
+Enabled, `\\[maf-options]' — bound to \\`?' in `maf-mode' buffers —
 opens the *maf-options* menu, where every setting in
 `maf-options-registry' shows its current value and can be set without
 recalling its key. Calc's own option keys are untouched. Managed
@@ -1337,12 +1337,11 @@ through the module system; see `maf-modules'."
   :global t
   :group 'maf
   (if maf-use-options-mode
-      ;; `m' is calc's mode prefix, where a settings buffer belongs;
-      ;; `m o' is unbound in calc itself, as `m c' is for the module
-      ;; menu. Freeing the rest of the prefix is a separate decision
-      ;; from offering this buffer, and is not made here.
-      (define-key maf-mode-map (kbd "m o") #'maf-options)
-    (define-key maf-mode-map (kbd "m o") nil)))
+      ;; ? shadows calc-help: the settings menu is the glanceable
+      ;; answer to "what state am I in", which is most of what the
+      ;; help key gets asked; calc's help summary stays on h.
+      (define-key maf-mode-map (kbd "?") #'maf-options)
+    (define-key maf-mode-map (kbd "?") nil)))
 
 ;; Register with the module system when it is present; the mode above
 ;; works on its own without it.
