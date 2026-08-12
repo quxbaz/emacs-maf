@@ -321,6 +321,43 @@ there e-notation is untouched."
 
 (define-key calc-digit-map "e" #'maf-digit-equal-to)
 
+(defun maf-digit-mod-360 ()
+  "End the digit entry on `o' and reduce the number modulo 360.
+`M-o' is `mafcmd-mod-360' out in the stack (see src/bindings.el); this
+gives the entry minibuffer a plain key for the same reduction, so an
+angle is normalized as it is typed:
+
+  400 o  =>  1:  40
+
+It is calc's command-key termination with the key exchanged: the entry
+ends as if `M-o' had been pressed, so the number is pushed and the
+reduction resolves it, the push folding into the reduction's undo
+group. The Hyperbolic mod-180 route is the one thing out of reach this
+way — calc's H flag does not survive a digit entry — exactly as I is
+for `e'.
+
+The key is calc's own inside a radix-prefixed entry, where only calc
+knows whether o is a digit, and while an incomplete vector or matrix
+is under construction, where the number still being typed is not yet
+anything to reduce. The cost is o's old octal-suffix reading, long
+superseded by the 8# prefix."
+  (interactive)
+  (if (or (not (maf--digit-shortcuts-live-p))
+          (maf--digit-radix-entry-p)
+          (maf--incomplete-entry-p))
+      ;; Calc's own key, named as `this-command' to keep the run of
+      ;; digit keys unbroken for the next key's `last-command' test.
+      (progn (setq this-command 'calcDigit-key)
+             (calcDigit-key))
+    ;; Named as calc's own terminator for the same undo-amalgamation
+    ;; reason as `maf-digit-equal-to'; the exchanged event is what
+    ;; `calcDigit-nondigit' unreads, so M-o is what dispatches.
+    (setq this-command 'calcDigit-nondigit
+          last-command-event ?\M-o)
+    (calcDigit-nondigit)))
+
+(define-key calc-digit-map "o" #'maf-digit-mod-360)
+
 (defvar maf--digit-jump-level nil
   "Stack level a finished digit entry should send point to, or nil.
 Set by `maf-digit-jump' (`j') to the level the entry named; read by
