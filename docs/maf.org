@@ -65,6 +65,10 @@
   J→*, debug sexp view, show-point-mode config; legacy ERT coverage is
   superseded by the maf step suite. Plotting stays open under
   later::plotting module; cleanup still lists "delete my/calc".
+ - [ ] Allow options to target entry by default and ignore subexpr
+ - [ ] Extract options buffer to common package which can be reused for
+   configuration interfaces
+ - [ ] Maf module buffer to use package configuration interface
 
 * later::plotting module
   - [ ] my/calc-graph-quick / -with-range (g l / g i) — plot the top entry straight to
