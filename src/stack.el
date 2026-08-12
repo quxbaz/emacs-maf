@@ -3932,6 +3932,37 @@ for one that is never scrolled to."
     (unless (maf--at-home-p) (maf--mark-before-home))
     (maf--literal (calc-recall (intern (concat "var-" name))))))
 
+(defun maf--recall-literal (var)
+  "Push VAR's stored value with simplification off, marking the way back.
+The shared trunk of the recall commands: what was stored is what lands
+— a stored x + x stays x + x instead of collapsing to 2 x — the push
+parks point at home as calc's own recall does, and a mark is left
+where point was so \\[maf-go-home] returns to it. An empty VAR signals
+here; `calc-recall' signals for one that holds no value."
+  (unless var (user-error "No variable to recall"))
+  (unless (maf--at-home-p) (maf--mark-before-home))
+  (maf--literal (calc-recall var)))
+
+(defun maf-recall-variable ()
+  "Recall a variable read from the minibuffer, without simplification.
+Calc's prompt recall (s r, which keeps its key and its simplifying
+push) with the literal push of `maf-browse-variables' (p), which is
+the annotated version of this same recall — this one asks by name.
+The prompt is read before any calc state is touched, so C-g aborts
+with nothing done. Bound to r r, unbound in calc itself."
+  (interactive)
+  (require 'calc-ext)
+  (maf--recall-literal (calc-read-var-name "Recall: ")))
+
+(defun maf-recall-quick ()
+  "Recall quick variable q0-q9, without simplification.
+Calc's own quick recall on the same keys renormalizes the value under
+the current modes on the way out; this push is literal, so what s 0-9
+stored is what lands. The digit is the key that invoked the command,
+exactly as calc's `calc-recall-quick' reads it."
+  (interactive)
+  (maf--recall-literal (intern (format "var-q%c" last-command-event))))
+
 ;;; Solving
 
 (defun maf--solve-solved-for (expr)

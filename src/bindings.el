@@ -116,6 +116,13 @@
 ;; once and then left alone, reachable by name afterwards, giving up
 ;; its key to something pressed while working.
 (define-key maf-mode-map (kbd "p") #'maf-browse-variables)
+;; Literal recall: what was stored is what lands, unsimplified. r 0-9
+;; shadow calc's quick recall, which renormalizes under the current
+;; modes on the way out; r r is unbound in calc itself (its prompt
+;; recall lives on s r, which keeps its key and its simplifying push).
+(define-key maf-mode-map (kbd "r r") #'maf-recall-variable)
+(dotimes (i 10)
+  (define-key maf-mode-map (kbd (format "r %d" i)) #'maf-recall-quick))
 ;; The in-place editing entry keys (SPC / ` / C-o / "(") are
 ;; installed by the edit module when it is enabled (see
 ;; modules/edit.el), not here. ` shadows calc-edit, the command the
