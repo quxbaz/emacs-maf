@@ -974,15 +974,34 @@ Staying put where there is no row left to reach."
         (maf-options--goto-option)
       (goto-char start))))
 
+(defun maf-options--echo-doc ()
+  "Echo the current row's :doc line, if it has one.
+What a row is for cannot be read off the row: the Option column has
+room for a name, not for a sentence. So the sentence follows point
+instead, which is why every registry entry carries a :doc.
+
+Not logged. This runs on every motion key, and a line of help repeated
+down a list is not what *Messages* is for. Silent on a row with no doc
+rather than blanking the echo area, so whatever was last said — the
+value just set, a value waiting for input — survives the move."
+  (let ((doc (plist-get (alist-get (tabulated-list-get-id)
+                                   maf-options-registry)
+                        :doc)))
+    (when doc
+      (let ((message-log-max nil))
+        (message "%s" doc)))))
+
 (defun maf-options-next-line (&optional n)
-  "Move to the next setting, or N settings on."
+  "Move to the next setting, or N settings on, and echo what it does."
   (interactive "p")
-  (maf-options--move-line (or n 1)))
+  (maf-options--move-line (or n 1))
+  (maf-options--echo-doc))
 
 (defun maf-options-previous-line (&optional n)
-  "Move to the previous setting, or N settings back."
+  "Move to the previous setting, or N settings back, and echo what it does."
   (interactive "p")
-  (maf-options--move-line (- (or n 1))))
+  (maf-options--move-line (- (or n 1)))
+  (maf-options--echo-doc))
 
 (defun maf-options--print (&optional remember-pos)
   "Print the controls line and the list, honoring REMEMBER-POS.
@@ -1013,7 +1032,12 @@ REMEMBER-POS still measures against the rows alone."
 Each row is one calc setting: its group, name, every value it can take
 with the live one highlighted, and the key calc itself binds it to.
 
-\\<maf-options-mode-map>\\[maf-options-next-value] steps point along
+\\<maf-options-mode-map>\\[maf-options-next-line] and
+\\[maf-options-previous-line] move between settings, echoing a line on
+what the one under point does; \\[maf-options-next-group] and
+\\[maf-options-previous-group] move a whole group at a time.
+
+\\[maf-options-next-value] steps point along
 the row's values without setting any of them, and \\[maf-options-set]
 sets the one point is on — two acts on two keys, because a setter is
 free to prompt and stepping cannot be made to wait on it.
@@ -1119,12 +1143,14 @@ any further, the way paragraph motion does."
 (defun maf-options-next-group (&optional n)
   "Move to the first setting of the next group, or N groups on."
   (interactive "p")
-  (maf-options--goto-group (or n 1)))
+  (maf-options--goto-group (or n 1))
+  (maf-options--echo-doc))
 
 (defun maf-options-previous-group (&optional n)
   "Move to the first setting of the previous group, or N groups back."
   (interactive "p")
-  (maf-options--goto-group (- (or n 1))))
+  (maf-options--goto-group (- (or n 1)))
+  (maf-options--echo-doc))
 
 (defun maf-options--spec ()
   "Return (VAR . SPEC) for the setting on the current line.
