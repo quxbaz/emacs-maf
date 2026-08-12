@@ -326,6 +326,12 @@
 ;; unbound in calc itself — its l prefix is the logarithmic units,
 ;; which has no g — and it joins maf's other l bindings above.
 (define-key maf-mode-map (kbd "l g") #'mafcmd-unique-groups)
+;; Surround the target with vector brackets: the one-operand vector
+;; builder, on the control twin of the | key that concatenates two
+;; entries into one. Calc binds neither C-| nor anything else on the
+;; control side of |, and the pairing is the whole point — | joins two
+;; things into a vector, C-| wraps one.
+(define-key maf-mode-map (kbd "C-|") #'mafcmd-bracket)
 ;; Flatten the target vector. Takes calc's v L from calc-lud (LU
 ;; decomposition), which the table in maf-cmds.el gives up its key for;
 ;; mafcmd-lud is still reachable by name. Flattening earns the vector
@@ -414,10 +420,21 @@
 ;; modifier number is 1 plus the bitmask (shift 1, alt 2, ctrl 4): 7
 ;; for the bury's Ctrl+Alt. The restack's Shift-backspace was decoded
 ;; here too until the restack moved to S-<return>.
+;;
+;; The bracket's C-| has the same gap for a different reason: control
+;; plus a printable character has no ASCII form either, and xterm.el's
+;; table stops at keycode 63 for the shifted punctuation (it lists
+;; C-! through C-?, and | is 124). Which modifier the terminal reports
+;; depends on whether it counts the shift that produced the | — take
+;; both 6 (ctrl+shift) and 5 (ctrl alone).
 (defun maf--tty-setup-keys ()
   "Decode terminal sequences for keys maf binds and `term/xterm.el' omits."
   (define-key input-decode-map "\e[27;7;127~" [C-M-backspace])
-  (define-key input-decode-map "\e[127;7u" [C-M-backspace]))
+  (define-key input-decode-map "\e[127;7u" [C-M-backspace])
+  (define-key input-decode-map "\e[27;6;124~" [?\C-\|])
+  (define-key input-decode-map "\e[124;6u" [?\C-\|])
+  (define-key input-decode-map "\e[27;5;124~" [?\C-\|])
+  (define-key input-decode-map "\e[124;5u" [?\C-\|]))
 
 ;; `input-decode-map' is terminal-local, so this runs once per tty
 ;; rather than once at load.

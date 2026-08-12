@@ -5211,6 +5211,42 @@ vector around it — commits unchanged rather than signaling.
               (cons 'vec (math-flatten-vector expr))
             expr)))
 
+;;; Bracketing
+
+(maf-defcmd mafcmd-bracket (expr _arg commit)
+  "Enclose the resolved expression in square brackets.
+
+  x  =>  [x]
+
+The brackets are calc's vector brackets, so what comes back is the
+one-element vector holding what point named — the one-operand
+counterpart of the concatenation on the | key, which builds a vector
+out of two stack entries. Nothing is computed and nothing is
+simplified: the expression arrives inside the brackets exactly as it
+stood.
+
+Point picks the target as usual: a sub-formula at point, the entry at
+point, the top entry at home. A vector nests inside the new one rather
+than splicing into it — that is what surrounding it means — and a
+relation is one element rather than a subject to bracket side by side,
+so an equation comes back whole within the brackets. `mafcmd-unpack'
+is the way back out, peeling a one-element vector to its element.
+
+  x + 1|   =>  [x + 1]
+  x + |1   =>  x + [1]
+  [a, b]   =>  [[ a, b ]]   (nests rather than splicing)
+  x = 1    =>  [x = 1]    (a relation is one element)
+  a| + b   =>  [a] + b"
+  :arity unary
+  :prefix "brkt"
+  ;; A relation is an element, not a thing to run once per side: the
+  ;; whole point is a bracket around what point named, and mapped, an
+  ;; equation would come back as the vector equation [x] = [1] instead
+  ;; of the one-element system [x = 1]. Same reading as the | family
+  ;; takes in maf-cmds.el.
+  :map -1
+  (commit (list 'vec expr)))
+
 ;;; Unpacking
 
 (defun maf--unpack-parts (expr mode)
