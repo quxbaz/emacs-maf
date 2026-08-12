@@ -19,18 +19,23 @@ Looked missing but are not: sum-to-list / list-to-sum and change-sign
 are the guts of listed items (poly term ordering; contextual negate).
 
 * stack.el
-  - [ ] my/calc-next-cmd-no-simplify (#) — run just the next command
+  - [X] my/calc-next-cmd-no-simplify (#) — run just the next command
     with simplification off. @ (maf-toggle-simplify) is the sticky
     toggle; the one-shot has no maf answer. # itself now belongs to
     mafcmd-map-stack.
+    > will not implement
   - [ ] my/calc-duplicate-stack (C-M-RET) — duplicate the whole stack
+    > will not implement
   - [ ] my/calc-store-stack / my/calc-recall-stack (s RET / r RET) —
     in-memory stack slot; maf-persist (t u / t l) is file-backed and the
     timeline restores whole states — decide whether a memory slot still
     earns a port.
+    > will not implement
   - [ ] my/calc-recall / my/calc-recall-quick (r 0-9) — recall without
     simplification; maf-browse-variables (p) recalls literally, calc's
     own r 0-9 is unshadowed and still simplifies.
+    > this is bound to `,` is it not?
+
   Ported: reset pair (C-M-k / C-M-l), noun motion (M-f / M-b), copy
   dwim with LaTeX on the double press (M-w) and the \log_{b}
   composition, contextual duplicate (RET / C-u RET / M-RET), rolls
