@@ -30,6 +30,7 @@
     - [ ] target-line
 
 * NOW
+  - [ ] `,` command if target is a variable, should overwrite instead of joining (multiplying)
 ** bindings
    three binding modes:
    1) calc-native bindings
