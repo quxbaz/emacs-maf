@@ -1,0 +1,109 @@
+#+title: port
+
+Port tracking for ~/.emacs.d/my/calc → maf, one feature at a time.
+Legacy bindings in parens are reference only; maf rebinds at port time.
+Ported or superseded features are summarized at the end of each section.
+Statuses verified against the code 2026-08-12.
+
+* flagged
+Present in my/calc but missing from the previous inventory:
+- index.el enabled show-point-mode in calc buffers — config, never
+  listed; decide whether maf wants it or drops it deliberately.
+- The legacy ERT suite (my/calc/tests/, run-tests) was never listed.
+  maf's step tests supersede the convention, but the coverage itself has
+  no ported counterpart (cleanup: "generate tests full coverage").
+- calc-edit-mode-map M-w (my/lisp-kill-ring-save-dwim) — an edit-buffer
+  copy convenience, subsumed by maf-edit replacing calc-edit but never
+  spelled out.
+Looked missing but are not: sum-to-list / list-to-sum and change-sign
+are the guts of listed items (poly term ordering; contextual negate).
+
+* stack.el
+  - [ ] my/calc-next-cmd-no-simplify (#) — run just the next command
+    with simplification off. @ (maf-toggle-simplify) is the sticky
+    toggle; the one-shot has no maf answer. # itself now belongs to
+    mafcmd-map-stack.
+  - [ ] my/calc-duplicate-stack (C-M-RET) — duplicate the whole stack
+  - [ ] my/calc-store-stack / my/calc-recall-stack (s RET / r RET) —
+    in-memory stack slot; maf-persist (t u / t l) is file-backed and the
+    timeline restores whole states — decide whether a memory slot still
+    earns a port.
+  - [ ] my/calc-recall / my/calc-recall-quick (r 0-9) — recall without
+    simplification; maf-browse-variables (p) recalls literally, calc's
+    own r 0-9 is unshadowed and still simplifies.
+  Ported: reset pair (C-M-k / C-M-l), noun motion (M-f / M-b), copy
+  dwim with LaTeX on the double press (M-w) and the \log_{b}
+  composition, contextual duplicate (RET / C-u RET / M-RET), rolls
+  (S-RET / C-M-backspace), variable browser (p), substitute (a b),
+  swap variables (l x), quick substitution → mafcmd-let (C-RET),
+  equation arithmetic via side pairing (+ / -), auto-solve (M-i),
+  inverse function (l v), poly roots (M-r), ref angle (M-l),
+  supplement / complement (M-s / M-c), poly LCM (a L), term ordering
+  (maf-poly-order module), coordinate toggle (M-k), unique groups
+  (l g), flatten (v L), cath / unit-cath (f l / f L), hypot (f h —
+  squares rather than abssqr, so complex legs answer differently;
+  documented), big-language toggle (by name only; lost G to
+  maf-go-home). Earlier coverage: stack persistence, maf-calc/-direct,
+  undo/redo, kill/del, beginning-of-entry, equal-to, quick-variable,
+  toggle-simplify; table cmds (factor-by, factor-gcd, sqrt/sqr, exp,
+  ln, log, pow, mul, div, add, sub, neg, inv, esimplify, factor,
+  expand). Trail yanks → timeline (t d).
+
+* evaluate.el
+  Ported whole: mafcmd-evaluate (k k), mafcmd-identify (I k k).
+
+* ineq.el
+  Ported whole: mafcmd-abs-ineq (a k).
+
+* rewrite.el
+  Ported whole: collect-fractions (l t); to-degrees / to-radians,
+  mod-360/180, log-exp identities, complete-square, factor-powers all
+  reimplemented structurally.
+
+* selection.el
+  Ported whole: jump across = and != (j e), balanced negate (N),
+  distribute (j D), merge (j M), point-preserving clear, commute (O).
+
+* edit.el
+  maf-edit replaces the calc-edit workflow itself; editplus carries the
+  in-entry conveniences.
+  - [ ] my/calc-edit-jump-sides — jump between the sides of =,
+    inserting " = " when absent; nothing in the entry does this
+  - [ ] my/calc-edit-square-dwim / -cube-dwim (W / ") — fixed ^2 / ^3
+    inserts; : raises the power with repeat-increment, so decide
+    whether : already suffices
+  - [ ] M-' — insert ^() (M-2..M-9 are ported)
+  - [ ] J → * shorthand
+  Ported: entry history → maf-recall (M-p / M-n, stack buffer and edit
+  sessions), vector entry on (, wraps rekeyed (Q / L / |), wrap-parens
+  (M-o), escape-group (TAB), toggle-brackets (S-up / S-down),
+  comma-aware line duplicate (M-RET), innermost-group duplicate
+  (C-RET), pi (P), ; → :.
+
+* minibuffer.el
+  - [ ] mod-360 from digit entry (o) — mafcmd-mod-360 exists (M-o) but
+    has no digit-map key
+  Ported: ; → :, ×pi (n / P), equal-to from entry (e); the digit map
+  grew past legacy (SPC contextual commit, j jump, C-RET commit-here,
+  C-g quit).
+
+* plot.el
+  - [ ] my/calc-graph-quick / -with-range (g l / g i) — plot the top
+    entry straight to gnuplot (interval form for the range prompt)
+  - [ ] g i interval form a:b should work with spaces 'a b'
+  - [ ] my/calc-to-gnuplot-string — calc expr → gnuplot formula
+    (fortran mode + fixups)
+  - [ ] gnuplot session defaults (index.el) — resolution 1000, qt
+    device, seeded "set grid / set nokey"
+
+* debug.el
+  - [ ] my/calc-debug-mode (M-d) — live structural sexp view of the
+    entry at point in *calc-debug*; S dumps the whole stack.
+    maf-preview renders the Big language, not sexps.
+  Covered: highlighting → maf-hl.
+
+* lib.el, var.el, index.el, bindings.el
+  Nothing to port on their own: the replace-expr-dwim macro and the
+  predicates became resolve/commit and maf-lib, bindings travel with
+  their commands, and index.el's trail auto-hide dies with the trail
+  (timeline). The show-point-mode hook is flagged above.
