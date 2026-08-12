@@ -34,10 +34,17 @@
 ** bindings
    three binding modes:
    1) calc bindings
-      - use default calc bindings
-      - overwrite using our maf- style commands when there is a 1-to-1 analogy
-        to the underlying command
-      - add new bindings for new maf commands only where the key combination is unbound
+      - this set of mappings tries to stay as close as possible to the default calc bindings
+      - if a user familiar with calc uses maf, they should be instantly familiar
+        and should not have to re-adjust to new bindings
+      - rules:
+        - use the default calc bindings
+        - rebind existing combinations with their maf- siblings
+          - eg, `+` is rebound from calc-add to maf-add
+        - for maf commands that have no calc analogy, use key combinations which
+          are unoccupied
+   2) maf bindings
+      - this is the opinionated set of bindings optimized for maf
 
 * port
   - [-] Port my/calc/* features one-by-one.
