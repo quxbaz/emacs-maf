@@ -21,3 +21,22 @@
 
 (setq server-name (or (getenv "MAF_SERVER_NAME") "#emacs"))
 (server-start)
+
+;; The agent launches this instance from its own shell, whose
+;; SSH_AUTH_SOCK is a snapshot from wherever that session began — often
+;; a dead socket by launch time. Git under magit then finds no agent
+;; and falls back to prompting for the key's passphrase, which the
+;; user's normally-started Emacs (inheriting the live session socket)
+;; never does. Repoint at a live agent socket whenever the inherited
+;; one is unset or stale, probing the standard per-user locations:
+;; gpg-agent's ssh interface, gnome-keyring, the systemd ssh-agent.
+(let ((sock (getenv "SSH_AUTH_SOCK")))
+  (unless (and sock (file-exists-p sock))
+    (let* ((runtime (or (getenv "XDG_RUNTIME_DIR")
+                        (format "/run/user/%d" (user-uid))))
+           (live (seq-find #'file-exists-p
+                           (list (expand-file-name "gnupg/S.gpg-agent.ssh" runtime)
+                                 (expand-file-name "keyring/ssh" runtime)
+                                 (expand-file-name "ssh-agent.socket" runtime)))))
+      (when live
+        (setenv "SSH_AUTH_SOCK" live)))))
