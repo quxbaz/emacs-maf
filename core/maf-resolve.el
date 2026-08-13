@@ -76,6 +76,13 @@
 ;;                 `maf--resolve-widen'). Absent for most commands, which
 ;;                 take the node under point as it comes.
 ;;   :keep         Snapshot of `calc-keep-args-flag' at resolve time.
+;;   :narrowing    The narrowing gestures the command honors on this run —
+;;                 its *-targets variable's value, capability-checked and
+;;                 prepended by the defcmd macro. Gates the region,
+;;                 selection, and subexpr branches of the cascade; absent
+;;                 (a command outside the targets pattern), :scope decides
+;;                 as ever. Commit reads it too: a suppressed selection
+;;                 must not pull the pushed result into itself.
 ;;   :mapflag      Present (t) when the command consumed `maf-map-flag' (M).
 ;;                 Prepended to OPTS by the defcmd macro before resolve; makes
 ;;                 a relation subject take the equation target even past
@@ -524,6 +531,13 @@ than each side taking the whole arg as a term. Commands opt out with
 :pair -1 in OPTS when the relation arg is one semantic operand — see
 `maf--resolve-pair-arg'.
 
+Which narrowing gestures fire is per command: a :narrowing entry in
+OPTS (the command's *-targets variable, see `maf-defcmd') names the
+honored subset of region, selection, and subexpr; a gesture off the
+list is treated as absent — skipped, not consumed — and with subexpr
+off the list the entry at point is taken whole wherever point sits.
+Commands outside that pattern say the same things through :scope:
+
 With `:scope entry' in OPTS the sub-formula/selection/region targets are
 bypassed entirely: the command always operates on the whole entry at
 point (or the top at home). For commands with no sub-formula meaning —
@@ -540,28 +554,34 @@ entry target, which shifts down to the entry below."
     ;; Snapshot point before target resolution: the target functions probe
     ;; calc state and must not perturb what restore later reproduces.
     (let ((point-snapshot (maf--point-snapshot))
-          (scope (alist-get :scope opts)))
+          ;; The narrowing gestures this command honors: the command's
+          ;; *-targets variable when one rode in (already checked
+          ;; against capability), else derived from :scope for commands
+          ;; outside the pattern. A gesture not in the set is treated
+          ;; as absent — an active region or selection is skipped, not
+          ;; consumed.
+          (narrowing (let ((n (assq :narrowing opts)))
+                       (cond (n (cdr n))
+                             ((eq (alist-get :scope opts) 'entry) nil)
+                             ((eq (alist-get :scope opts) 'explicit)
+                              '(region selection))
+                             (t '(region selection subexpr))))))
       (append (maf--resolve-pair-arg
                (maf--resolve-map-relation
                 (cond
-                 ;; `:scope explicit' says of point alone what `entry'
-                 ;; says of every gesture: the entry is taken whole
-                 ;; wherever point sits on it. The two gestures the user
-                 ;; makes deliberately still narrow, so they come first.
-                 ((and (eq scope 'explicit) (use-region-p))
+                 ;; The region is the most deliberate gesture there is;
+                 ;; it outranks even an explicit calc selection.
+                 ((and (use-region-p) (memq 'region narrowing))
                   (maf--resolve-target-region opts))
-                 ((and (eq scope 'explicit) (maf--sel-any-p))
+                 ((and (maf--sel-any-p) (memq 'selection narrowing))
                   (maf--resolve-target-selection opts))
-                 ;; Whole-entry commands take the entry at point (or the
-                 ;; top at home) regardless of where point sits within it.
-                 ((memq scope '(entry explicit))
+                 ;; No subexpr narrowing: the entry is taken whole
+                 ;; wherever point sits on it (what `:scope entry' and
+                 ;; `explicit' always compiled down to).
+                 ((not (memq 'subexpr narrowing))
                   (if (maf--at-home-p)
                       (maf--resolve-target-home opts)
                     (maf--resolve-target-entry opts)))
-                 ;; The region is the most deliberate gesture there is;
-                 ;; it outranks even an explicit calc selection.
-                 ((use-region-p)          (maf--resolve-target-region opts))
-                 ((maf--sel-any-p)        (maf--resolve-target-selection opts))
                  ((maf--at-home-p)        (maf--resolve-target-home opts))
                  ((maf--at-subexpr-p)     (maf--resolve-target-subexpr opts))
                  ;; A binary command at the top relation has nowhere to take

@@ -55,7 +55,14 @@ The optional keywords :inv, :hyp, and :invhyp name the SUFFIX of another
 spec to run instead when calc's Inverse flag, Hyperbolic flag, or both
 are set, making the I and H prefixes route to the variant contextually.
 :map -1 opts the command out of per-side equation mapping (see
-`maf-defcmd'), for commands that consume or produce relations."
+`maf-defcmd'), for commands that consume or produce relations.
+
+Every row generates a mafcmd-SUFFIX-targets policy variable of its own
+(see `maf-defcmd'). Under a flag dispatch the pressed key's policy
+rides along and outranks the variable of whichever variant answers
+(see `maf--dispatch-narrowing') — H E maps by exp's variable even
+though exp10 runs, I | by vconcat's even though vconcatrev does — so a
+variant's own variable governs only its direct invocation."
   (declare (indent 0))
   `(progn
      ,@(mapcan

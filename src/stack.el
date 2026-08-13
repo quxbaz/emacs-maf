@@ -1129,6 +1129,7 @@ itself a variable is overwritten — naming a name means renaming it —
 anything else is multiplied, variable on the left."
   :arity unary
   :prefix "qvar"
+  :targets-var maf-quick-variable-targets
   (commit (if (eq (car-safe expr) 'var)
               maf--quick-variable
             (calcFunc-mul maf--quick-variable expr))))
@@ -4623,6 +4624,7 @@ expression is normalized, so a substitution that makes a part constant
 folds it under the current simplification mode."
   :arity unary
   :prefix "sbst"
+  :targets-var mafcmd-substitute-targets
   (commit (math-normalize
            (math-expr-subst expr maf--subst-old maf--subst-new))))
 
@@ -4632,6 +4634,7 @@ The $ form of `mafcmd-substitute': the entry above the subject is the
 replacement, and commit consumes it as the binary arg it is."
   :arity binary
   :prefix "sbst"
+  :targets-var mafcmd-substitute-targets
   (commit (math-normalize (math-expr-subst expr maf--subst-old arg))))
 
 (defun mafcmd-substitute ()
@@ -4958,6 +4961,7 @@ does not narrow it — a region or a calc selection still does."
   :prefix "map"
   :map -1
   :scope explicit
+  :targets-var mafcmd-map-targets
   (commit (maf--map-subject maf--map-mapper expr maf--map-reverse)))
 
 (maf-defcmd maf--map-arg-run (expr arg commit)
@@ -4968,6 +4972,7 @@ The $ form: the entry above the subject is the formula, read by
   :prefix "map"
   :map -1
   :scope explicit
+  :targets-var mafcmd-map-stack-targets
   (commit (maf--map-subject (maf--map-from-expr arg) expr maf--map-reverse)))
 
 (defun maf--map-dispatch (mapper)

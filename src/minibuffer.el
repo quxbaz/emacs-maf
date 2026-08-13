@@ -576,6 +576,9 @@ are built literally — nothing is normalized, so 5 on (a + b) gives
   :arity unary
   :prefix "dgt"
   :map -1
+  ;; Digit entry's targeting is its own system (see `maf-digit-start');
+  ;; no *-targets variable is generated for it.
+  :targets custom
   (commit (cond
            ((Math-numberp expr) maf--digit-value)
            ((maf--relation-p expr)

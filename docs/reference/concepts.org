@@ -69,6 +69,36 @@ region denotes something a plain subexpr could express, it collapses
 into a subexpr context and only the pointing gesture was new (see
 [[*The region target][The region target]]).
 
+** Per-command targeting policy
+
+Every conventional defcmd generates a =NAME-targets= variable — the
+narrowing gestures (region, selection, subexpr) the command currently
+honors — consulted on each run and passed to resolve as =:narrowing=,
+where it gates the cascade's three narrowing branches. The user
+retunes a command by editing the list; a gesture off it is treated as
+absent, skipped rather than consumed (commit reads =:narrowing= too,
+so a suppressed selection never pulls the pushed result into itself).
+The default value encodes the declared =:scope=, so shipped behavior
+is the variable's initial state.
+
+The value is checked against the command's /capability/ — =:targets=
+in the declaration, defaulting to all three, or to none for
+=:scope entry= commands — and a symbol outside it (including a typo)
+signals when the command runs. An empty capability generates no
+variable at all: bespoke-targeting commands (=:targets custom=, the
+entry-scoped workers) are simply not part of this surface. Workers
+name their variable after the public command with =:targets-var=
+(the two substitution workers share =mafcmd-substitute-targets=).
+
+Across a flag dispatch the pressed key's policy governs, whichever
+variant answers: the invoking command sends its policy along raw, and
+the dispatcher validates it after consuming the I/H flags — a
+misconfigured variable must not strand a flag for the next command —
+then the variant prefers it (=maf--dispatch-narrowing=) over its own
+variable. =I L= maps by ln's variable though exp runs, =H E= by exp's
+though exp10 does, =I |= by vconcat's though vconcatrev does. A
+variant's own variable decides only its direct invocation.
+
 ** Whole-entry scope
 
 =:scope entry= in a command's options bypasses the cascade above: the

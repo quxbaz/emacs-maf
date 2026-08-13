@@ -53,13 +53,46 @@ Skips a leading docstring."
         (push (cons k v) final-opts)))
     final-opts))
 
+(defconst maf--narrowing-targets '(region selection subexpr)
+  "The three narrowing gestures a *-targets variable may name.
+The other targets — home, entry, equation — are not gestures but the
+places a subject lands when nothing narrows, so they are not on the
+menu: every command has them.")
+
 (defun maf--defcmd-validate-opts (opts)
   "Validate OPTS, signaling an error if any are invalid."
-  (let ((arity (alist-get :arity opts)))
+  (let ((arity (alist-get :arity opts))
+        (tdecl (assq :targets opts)))
     (unless arity
       (error "Missing required option :arity"))
     (unless (memq arity '(unary binary))
-      (error "Invalid :arity %s (expected unary or binary)" arity))))
+      (error "Invalid :arity %s (expected unary or binary)" arity))
+    ;; assq, not alist-get: an explicitly empty declaration must not
+    ;; read as absent — it would silently grant full capability, the
+    ;; opposite of what it says. The two things it could mean are
+    ;; already spelled :scope entry and :targets custom.
+    (when tdecl
+      (let ((targets (cdr tdecl)))
+        (unless (or (eq targets 'custom)
+                    (and (consp targets)
+                         (seq-every-p (lambda (s)
+                                        (memq s maf--narrowing-targets))
+                                      targets)))
+          (error "Invalid :targets %s (custom or a nonempty subset of %s; for no capability say :scope entry or :targets custom)"
+                 targets maf--narrowing-targets))))))
+
+(defun maf--targets-checked (value capability name)
+  "Return VALUE, signaling when it names a target outside CAPABILITY.
+VALUE is a *-targets variable's current list, NAME the command about
+to consult it. The bound is what makes the variable safe to edit
+freely: a gesture the command's body cannot take — or a misspelled
+one — signals here, loudly, instead of resolving nonsense."
+  (unless (proper-list-p value)
+    (user-error "%s: targets must be a list of gestures, not %S" name value))
+  (let ((extra (seq-difference value capability)))
+    (when extra
+      (user-error "%s cannot target %s" name (car extra))))
+  value)
 
 (defun maf--defcmd-parse-body (forms)
   "Return the body forms from FORMS.
@@ -96,18 +129,41 @@ never reaches here — it resolves to the equation target first)."
                       (or out el))))
                 (cdr expr))))
 
-(defun maf--defcmd-dispatch (cmd flag-desc)
+(defvar maf--dispatch-narrowing nil
+  "Narrowing policy riding a flag dispatch to a variant command.
+The policy of the key the user pressed governs, whichever variant
+answers it: I L maps through ln's *-targets variable even though
+`mafcmd-exp' runs, and H E through exp's even though `mafcmd-exp10'
+does — a variant reached from two families cannot say this statically.
+Bound by `maf--defcmd-dispatch' to a one-element list holding the
+invoking command's checked policy, which the dispatched command
+prefers over its own variable. The wrapper is what keeps an empty
+policy distinct from no policy: (nil) rides \"whole entry always\",
+bare nil (a direct, undirected invocation) means use your own.")
+
+(defun maf--defcmd-dispatch (cmd flag-desc &optional policy capability name)
   "Consume calc's Inverse/Hyperbolic flags, then invoke variant command CMD.
 The flags are cleared before CMD runs, so a variant that itself declares
 flag variants does not dispatch again — that is what keeps cross-linked
 pairs like ln <-> exp from looping. CMD resolves its own context, and its
 `calc-do' epilogue refreshes the mode line as usual. A nil CMD means the
 invoking command has no FLAG-DESC variant: signal `user-error', still
-consuming the flags so the next command starts clean."
+consuming the flags so the next command starts clean.
+
+POLICY is the invoking command's targeting policy, raw, with its
+CAPABILITY and NAME; a non-nil CAPABILITY means the invoker has a
+policy to send, which rides so the variant honors the pressed key's
+variable (see `maf--dispatch-narrowing'). It is validated here, not at
+the call — an argument is evaluated before the callee runs, and a
+misconfigured variable must not signal past the flag consumption
+above, stranding I or H for the next command."
   (setq calc-inverse-flag nil
         calc-hyperbolic-flag nil)
   (if cmd
-      (call-interactively cmd)
+      (let ((maf--dispatch-narrowing
+             (and capability
+                  (list (maf--targets-checked policy capability name)))))
+        (call-interactively cmd))
     (calc-set-mode-line)
     (user-error "No %s variant for this command" flag-desc)))
 
@@ -181,6 +237,22 @@ received it.
           (`mafcmd-raise'). Independent of `:scope', which decides what
           the body receives, not where the result lands.
 
+  :targets     The narrowing gestures the command's body can take at
+          all: a nonempty subset of (region selection subexpr), or
+          `custom' for a command whose targeting is bespoke. An
+          explicit nil is rejected — its two readings are already
+          spelled `:scope entry' and `custom'. Unless `custom' — or
+          the command is `:scope entry' with no :targets declared,
+          which bounds it to nothing — the macro generates a NAME-targets
+          variable holding the gestures the command currently honors
+          (defaulted from :scope), consulted on every run: the user
+          edits that list to retune the command's targeting, and a
+          gesture outside the declared bound signals.
+  :targets-var Symbol naming the generated variable instead of
+          NAME-targets — for a worker whose public command is the name
+          users know; two workers of one public command name the same
+          variable and share it.
+
   :widen  A predicate (named as a bare symbol) deciding which
           sub-formulas the command can act on. At the subexpr target the
           node under point is widened outward to the innermost ancestor
@@ -201,6 +273,45 @@ ARG, runs the body, and commits its result to the right stack location."
                (inv (alist-get :inverse opts))
                (hyp (alist-get :hyperbolic opts))
                (invhyp (alist-get :inverse-hyperbolic opts))
+               (scope (alist-get :scope opts))
+               (targets-opt (alist-get :targets opts))
+               ;; The narrowing gestures this command can honor at all.
+               ;; Empty — declared custom, or entry-scoped with nothing
+               ;; declared — means no policy variable is generated: a
+               ;; knob that could hold only nil would be a knob that
+               ;; lies.
+               (capability (cond ((eq targets-opt 'custom) nil)
+                                 ((consp targets-opt) targets-opt)
+                                 ((eq scope 'entry) nil)
+                                 (t maf--narrowing-targets)))
+               (tvar (and capability
+                          (or (alist-get :targets-var opts)
+                              (intern (format "%s-targets" name)))))
+               ;; The default policy encodes the declared :scope, so
+               ;; the variable's initial value is the behavior the
+               ;; command shipped with. An entry-scoped command with a
+               ;; declared capability is the "entry by default, user
+               ;; may enable" case: the capability opens the door, the
+               ;; default leaves it shut.
+               (tdefault (pcase scope
+                           ('entry nil)
+                           ('explicit (seq-intersection
+                                       '(region selection) capability))
+                           (_ capability)))
+               ;; What the resolve call receives: the policy rides in as
+               ;; :narrowing, checked against capability on every run so
+               ;; edits fail loudly, not silently. A policy sent along
+               ;; by a flag dispatch — the pressed key's — outranks this
+               ;; command's own variable (see `maf--dispatch-narrowing').
+               (baseopts (if tvar
+                             `(cons (cons :narrowing
+                                          (maf--targets-checked
+                                           (if maf--dispatch-narrowing
+                                               (car maf--dispatch-narrowing)
+                                             ,tvar)
+                                           ',capability ',name))
+                                    ',opts)
+                           `',opts))
                (context (gensym "context-"))
                (landed (gensym "landed-"))
                (err (gensym "err-"))
@@ -234,8 +345,8 @@ ARG, runs the body, and commits its result to the right stack location."
                             (setq ,context
                                   (maf--resolve-context
                                    (if ,mapflag
-                                       (cons '(:mapflag . t) ',opts)
-                                     ',opts)))
+                                       (cons '(:mapflag . t) ,baseopts)
+                                     ,baseopts)))
                             ;; A gensym, not the caller's ARG symbol: the
                             ;; runner binds that one per run, and a `_'-named
                             ;; ARG must stay unused outside the body.
@@ -328,6 +439,26 @@ ARG, runs the body, and commits its result to the right stack location."
                       (signal (car ,err) (cdr ,err)))))))
     (maf--defcmd-validate-opts opts)
     `(progn
+       ;; The command's targeting policy, a variable so the user edits
+       ;; a list instead of diving into config structure. `defvar'
+       ;; leaves an existing value standing, so a setq in the init file
+       ;; survives however load order falls — and a variable shared
+       ;; between two workers of one public command is defined by
+       ;; whichever loads first, the other a no-op.
+       ,@(when tvar
+           (list
+            `(defvar ,tvar ',tdefault
+               ,(format "Narrowing targets `%s' honors, a subset of %S.
+These are the gestures that narrow the subject to a sub-formula under
+point; the whole-entry targets (home, entry, equation) are always on.
+Remove a symbol and the command ignores that gesture, taking the whole
+entry at point instead: the gesture is never chosen as the subject and
+never captures the result, though a selection living on the very entry
+the command rewrites is gone with that entry. A symbol outside the
+subset above signals when the command runs."
+                        (replace-regexp-in-string
+                         "-targets\\'" "" (symbol-name tvar))
+                        capability))))
        ;; Mark the command as one that accepts calc's prefix flags. The
        ;; commit path reads the resolve-time `:keep' snapshot, so keep-args
        ;; means something here in a way it does not for a hand-written stack
@@ -343,13 +474,19 @@ ARG, runs the body, and commits its result to the right stack location."
               ;; Calc's I/H flags reroute to the declared variant command
               ;; before any context is resolved (and before calc-wrapper, so
               ;; the variant's own wrapper is the only one that runs).
+              ;; The policy rides raw — dispatch validates it after
+              ;; consuming the flags, so a misconfigured variable
+              ;; cannot strand I or H set for the next command.
               `(cond ((and calc-inverse-flag calc-hyperbolic-flag)
                       (maf--defcmd-dispatch ,(and invhyp `#',invhyp)
-                                            "inverse hyperbolic"))
+                                            "inverse hyperbolic"
+                                            ,tvar ',capability ',name))
                      (calc-inverse-flag
-                      (maf--defcmd-dispatch ,(and inv `#',inv) "inverse"))
+                      (maf--defcmd-dispatch ,(and inv `#',inv) "inverse"
+                                            ,tvar ',capability ',name))
                      (calc-hyperbolic-flag
-                      (maf--defcmd-dispatch ,(and hyp `#',hyp) "hyperbolic"))
+                      (maf--defcmd-dispatch ,(and hyp `#',hyp) "hyperbolic"
+                                            ,tvar ',capability ',name))
                      (t ,main))
             main)))))
 

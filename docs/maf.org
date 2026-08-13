@@ -55,7 +55,7 @@
       - the commands formerly bound to these keys will need to be reassigned
 
 * IN-PROGRESS NOW
- - [ ] defcmd commands should allow per-command configuration where targeting
+ - [X] defcmd commands should allow per-command configuration where targeting
    can be changed. in some commands it's useful to ignore subexpr targeting
    because it wouldn't make any sense for whatever reason. for other commands,
    the user may have a preference to only allow entry-level targeting.
@@ -66,6 +66,16 @@
      - in this case, the user should be able to do something like:
        (setter-fn 'mafcmd-vconcat no-subexpr-targeting)
      - i'm not certain this is the correct shape, but this is the general idea
+   - Landed 2026-08-12: every conventional defcmd generates a
+     NAME-targets variable holding the narrowing gestures it honors —
+     (setq mafcmd-vconcat-targets '(region selection)) drops subexpr,
+     nil takes the entry always. Capability-checked (signals on a
+     gesture the command cannot take, typos included); across a flag
+     dispatch the pressed key's policy governs whichever variant
+     answers (mafcmd-vconcat-targets rules I | and H |, mafcmd-ln-targets
+     rules I L though exp runs); bespoke-targeting commands are exempt.
+     Test: tests/command-targets.el. Docs: concepts.org
+     "Per-command targeting policy".
 
  - [ ] Extract options buffer to common package which can be reused for
    configuration interfaces

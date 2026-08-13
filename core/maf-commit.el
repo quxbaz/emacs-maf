@@ -109,7 +109,13 @@ formula otherwise) and :m is that entry's stack level after the pops."
          ;; the formula this command exists to discard.
          (let* ((entry-scoped-p
                  (or (eq (alist-get :scope context) 'entry)
-                     (eq (alist-get :commit-scope context) 'entry)))
+                     (eq (alist-get :commit-scope context) 'entry)
+                     ;; A selection the command's *-targets list told
+                     ;; resolve to ignore must not pull the push into
+                     ;; itself here either: suppressed means absent at
+                     ;; both ends.
+                     (let ((n (assq :narrowing context)))
+                       (and n (not (memq 'selection (cdr n)))))))
                 (calc-use-selections
                  (and (not entry-scoped-p) calc-use-selections)))
            (maf--commit-push commit-n prefix val commit-m nil post-pop)
