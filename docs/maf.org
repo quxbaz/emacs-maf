@@ -40,8 +40,11 @@
         - use the default calc bindings
         - rebind existing combinations with their maf- siblings
           - eg, `+` is rebound from calc-add to maf-add
-        - for maf commands that have no calc analogy, use key combinations which
-          are unoccupied
+        - maf commands with no calc sibling are simply not bound
+          - this mode is for those who strictly want to work comfortably in
+            vanilla calc while still getting maf's improvements to the commands
+            they already know
+          - users who want the new commands can bind them manually
    2) maf-native bindings
       - this is the opinionated set of bindings optimized for maf
       - this is the default activated bindings for maf
