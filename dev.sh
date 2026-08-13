@@ -40,6 +40,17 @@ case ":$PATH:" in
 esac
 export PATH
 
+# Prefer the long-lived Claude setup token without exporting it to every
+# child process. Fall back to Claude's normal credential lookup on machines
+# that have not minted one yet (see ~/conf/install/setup.org).
+claude() {
+    if [ -s "$HOME/.claude/box-token" ]; then
+        CLAUDE_CODE_OAUTH_TOKEN=$(<"$HOME/.claude/box-token") command claude "$@"
+    else
+        command claude "$@"
+    fi
+}
+
 if [ -n "${ZSH_VERSION-}" ]; then
     fpath=("$_maf_repo/docker/completions" $fpath)
     # compdef arrives with compinit, which an interactive zsh has usually
