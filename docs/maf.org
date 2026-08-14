@@ -30,6 +30,16 @@
     - [ ] target-line
 
 * NOW
+** help text
+   - in *maf-options* buffer, when cycling through (TAB key) values for an
+     option, in the minibuffer, if possible and applicable for that value, show
+     an example of the new output given the newly set option
+   - example, for digit grouping, cycling between `on` and `off` values:
+     - [on] Example: 999,999
+     - [off] Example: 999999
+   - only output this when TABbing through values
+   - behavior and help text output on npjk doesn't change, this feature is
+     independent of that
 ** bindings
    three binding modes:
    1) calc-native bindings
@@ -114,9 +124,10 @@
        it is
 
 * IN-PROGRESS NOW
-  - [ ] Extract options buffer to common package which can be reused for
-    configuration interfaces
-  - [ ] Maf module buffer to use package configuration interface
+- extract the interface of *maf-options* buffer into an independent package which
+  can be used for configuration interfaces
+- for now, we'll store it in a new directory at <root>/pkg/
+- maf module buffer to use package configuration interface
 
 * later::plotting module
   - [ ] my/calc-graph-quick / -with-range (g l / g i) — plot the top entry straight to
