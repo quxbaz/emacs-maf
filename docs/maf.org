@@ -29,6 +29,22 @@
     - [ ] factor
     - [ ] target-line
 
+* IN-PROGRESS dial
+  extract the interaction layer of the *maf-options* buffer into a new,
+  self-contained package named "dial": a general-purpose library for building
+  configuration interfaces, not tied to maf.
+  - lives at <root>/pkg/dial for now, but the eventual plan is to pull it out
+    of the repo entirely as a standalone package. so even while it lives here,
+    write it with zero maf dependencies (no maf- requires, no reliance on maf
+    state) under its own dial- namespace, so the future extraction is trivial
+  - the boundary: dial provides the shell — the interface and machinery
+    (buffer setup, item rendering, navigation, toggling, keymap); maf
+    specifies the content (its own option definitions/data) as a consumer
+    of dial
+  - in scope now: create pkg/dial and refactor *maf-options* onto it
+  - out of scope for now, but design for it: *maf-modules* will later be
+    refactored onto dial too, so the API must be general enough to serve both
+
 * NOW
 ** help text
    - in *maf-options* buffer, when cycling through (TAB key) values for an
@@ -122,22 +138,6 @@
      - mode 2 names C-n/C-p/M-f/M-b; mode 1 is silent. is that "whatever emacs
        does globally", or deliberately no navigation bindings? record whichever
        it is
-
-* TODO dial
-  extract the interaction layer of the *maf-options* buffer into a new,
-  self-contained package named "dial": a general-purpose library for building
-  configuration interfaces, not tied to maf.
-  - lives at <root>/pkg/dial for now, but the eventual plan is to pull it out
-    of the repo entirely as a standalone package. so even while it lives here,
-    write it with zero maf dependencies (no maf- requires, no reliance on maf
-    state) under its own dial- namespace, so the future extraction is trivial
-  - the boundary: dial provides the shell — the interface and machinery
-    (buffer setup, item rendering, navigation, toggling, keymap); maf
-    specifies the content (its own option definitions/data) as a consumer
-    of dial
-  - in scope now: create pkg/dial and refactor *maf-options* onto it
-  - out of scope for now, but design for it: *maf-modules* will later be
-    refactored onto dial too, so the API must be general enough to serve both
 
 * later::plotting module
   - [ ] my/calc-graph-quick / -with-range (g l / g i) — plot the top entry straight to
