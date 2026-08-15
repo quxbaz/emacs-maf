@@ -452,6 +452,11 @@ The per-buffer arm of `maf-use-preview-mode'."
 ;; works on its own without it.
 (when (require 'maf-module nil t)
   (maf-register-module 'maf-preview #'maf-use-preview-mode
-                       "Big-display preview of the entry at point, in a floating panel."))
+                       "Show the entry at point in a big 2D display.
+
+A panel floating over the top-right of the calc window renders the
+entry you are on — as it stands, unsimplified — in calc's Big
+display, where fractions stack and exponents rise. The stack itself
+stays one line per entry, where moving and editing are convenient."))
 
 (provide 'maf-preview)

@@ -35,8 +35,20 @@
   "Alist of (NAME MODE DESCRIPTION) for registered modules.
 NAME is a symbol naming the module; MODE is its global minor-mode
 function, which is also the variable holding the mode's state;
-DESCRIPTION is a one-line string shown in the module menu (see
-`maf-list-modules'), or nil.")
+DESCRIPTION is the module's help text, shown in the module menu (see
+`maf-list-modules'), or nil.
+
+A description is written in two parts: a first line saying in one
+short sentence what the module does, then a blank line, then a
+paragraph saying what that means in practice — the keys it puts under
+your fingers, why you would want it, what it leaves alone. Three or
+four lines of paragraph is the size; the whole text is echoed at once
+and has to fit an echo area on a small frame.
+
+The first line stands alone where only one line fits, so it has to
+say something on its own; see `maf-module--summary'. The module's
+name is not part of it — the menu puts that in front of the text it
+echoes, and Customize in front of the tag it builds.")
 
 (defvar maf-module--applying nil
   "Non-nil while `maf-modules-apply' is driving modes from `maf-modules'.
@@ -60,15 +72,23 @@ list back does not re-trigger `maf-modules-apply'."
          (when (symbol-value (cadr entry))
            (push (car entry) active)))))))
 
+(defun maf-module--summary (description)
+  "Return DESCRIPTION's first line, or nil if there is none.
+A description carries a summary line and a paragraph under it (see
+`maf-module-registry'). Where only one line fits — a Customize
+checkbox tag — this is the part that goes there."
+  (and description (car (split-string description "\n"))))
+
 (defun maf-module--custom-type ()
   "Build a Customize `:type' for `maf-modules' from `maf-module-registry'.
 A checkbox per registered module, labelled with the name to set from
-Lisp and the description the module gives for itself. Sorted by name:
+Lisp and the summary line of the description the module gives for
+itself — a tag is one line, so only that part fits. Sorted by name:
 `maf-module-registry' is in reverse registration order, an artifact of
 the load order in maf.el that should not decide how the option reads."
   `(set ,@(mapcar (lambda (entry)
                     (let ((name (car entry))
-                          (desc (caddr entry)))
+                          (desc (maf-module--summary (caddr entry))))
                       `(const :tag ,(if desc
                                         (format "%s — %s" name desc)
                                       (symbol-name name))
@@ -78,9 +98,11 @@ the load order in maf.el that should not decide how the option reads."
 
 (defun maf-register-module (name mode &optional description)
   "Register module NAME with its global minor mode MODE.
-DESCRIPTION is a one-line string the module gives for itself, shown in
-the module menu (see `maf-list-modules') and on the module's checkbox
-in Customize.
+DESCRIPTION is the help text the module gives for itself — a summary
+line, a blank line, then a short paragraph (see
+`maf-module-registry') — shown in the module menu (see
+`maf-list-modules'), and its summary line alone on the module's
+checkbox in Customize.
 
 Records the entry in `maf-module-registry' and adds
 `maf-module--reconcile' to MODE's hook, so toggling MODE keeps
@@ -116,12 +138,33 @@ skipped until its file loads and the next apply enables it."
 ;; `maf-module--reconcile' keeps `maf-modules' in step just as an
 ;; `M-x' toggle would. The description a module gives for itself is
 ;; the row's :doc, echoed as point rests on it — dial's convention,
-;; where the old menu spent a column on it.
+;; where the old menu spent a column on it. The echo area is the whole
+;; help surface here, which is why a description is a summary line and
+;; a paragraph rather than the one line an options row carries: a row
+;; names a module you have never heard of, and the name plus "on/off"
+;; says nothing about whether you want it. The name heads the echoed
+;; text (see `maf-module--doc'), so help outliving the move off its
+;; row still says who it is about. The echo area grows to fit what is
+;; messaged, so the whole thing costs a few lines while point rests on
+;; the row and nothing after — provided it stays small enough to fit,
+;; which is why a description keeps to a summary and three or four
+;; lines under it.
 
 (defun maf-module--state (name)
   "Non-nil when module NAME's mode is on."
   (let ((mode (car (alist-get name maf-module-registry))))
     (and (boundp mode) (symbol-value mode) t)))
+
+(defun maf-module--doc (name description)
+  "Build the help echoed for module NAME from its DESCRIPTION.
+The name heads the text on a line of its own, then the description as
+the module wrote it (see `maf-module-registry'). Point moving off the
+row leaves the help standing in the echo area, where a paragraph with
+nothing above it says nothing about which module it is for — so the
+row's own name comes along. Nil for a module that gave no
+description, which leaves dial silent rather than echoing a bare name
+the row already shows."
+  (and description (concat (symbol-name name) "\n\n" description)))
 
 (defun maf-module--items ()
   "Compile `maf-module-registry' into dial items, sorted by name.
@@ -132,7 +175,7 @@ order in maf.el that should not decide how the menu reads."
               (cons name
                     (list :group "Modules"
                           :label (symbol-name name)
-                          :doc description
+                          :doc (maf-module--doc name description)
                           :values `((t   "on"  (,mode 1))
                                     (nil "off" (,mode -1)))))))
           (sort (copy-sequence maf-module-registry)
@@ -154,10 +197,12 @@ module is the whole interface.")
 (defun maf-list-modules ()
   "Show the maf module toggle buffer in another window and select it.
 Each registered module is a row; TAB or SPC flips the one on the
-current line, and its description echoes as point rests on it (see
-`dial-mode'). The buffer is dial's, keys and all — flipping is dial's
-value stepping, which on a two-value row is a toggle — and this
-command only supplies the registry."
+current line, and what that module is for echoes as point rests on it
+— its name, a line saying what it does, and a paragraph on what that
+means in practice (see `dial-mode' and `maf-module-registry'). The
+buffer is dial's, keys and all — flipping is dial's value stepping,
+which on a two-value row is a toggle — and this command only supplies
+the registry."
   (interactive)
   (dial-open "*maf-modules*" (maf-module--items)
              :name "maf-modules"

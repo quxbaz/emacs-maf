@@ -1433,6 +1433,11 @@ on-demand `maf-edit-mode' editing session they lead into."
 ;; works on its own without it.
 (when (require 'maf-module nil t)
   (maf-register-module 'maf-edit #'maf-use-edit-mode
-                       "Edit the stack in place as plain text (SPC / ` / C-o / \"(\")."))
+                       "Edit the stack in place as plain text.
+
+SPC (or `, C-o, \"(\") turns the calc buffer into ordinary editable
+text, and the same key commits it back — a formula is fixed where it
+stands. Newlines are the structural gestures: one at a balanced point
+splits an entry, joining two entries' lines merges them."))
 
 (provide 'maf-edit)

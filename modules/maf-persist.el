@@ -292,6 +292,11 @@ See `maf-stack-session-name' for how sessions are named, and
 ;; works on its own without it.
 (when (require 'maf-module nil t)
   (maf-register-module 'maf-persist #'maf-persist-mode
-                       "Save and restore the calc stack across Emacs sessions."))
+                       "Save and restore the stack across Emacs sessions.
+
+Each session saves its own stack under its own name and reads it back
+when it starts, so several running at once never lose one another's.
+Saved files hold plain values: no selections, trail or undo history.
+It writes to disk, which is why it is off unless you ask for it."))
 
 (provide 'maf-persist)

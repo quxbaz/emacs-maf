@@ -156,6 +156,11 @@ normalize. This is the `maf-poly-order' module (see `maf-modules')."
 ;; works on its own without it.
 (when (require 'maf-module nil t)
   (maf-register-module 'maf-poly-order #'maf-use-poly-order-mode
-                       "Keep one-variable polynomial sums in descending degree."))
+                       "Keep one-variable polynomials in descending degree.
+
+Calc has no canonical order for a sum's terms and tends to leave
+polynomials ascending: x + x^2 + 1 where paper puts x^2 first. Sums
+in one variable are reordered by falling degree; multi-variable sums
+are left alone. Only the order moves, never the value."))
 
 (provide 'maf-poly-order)
