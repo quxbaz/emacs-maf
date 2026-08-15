@@ -29,33 +29,6 @@
     - [ ] factor
     - [ ] target-line
 
-* REVIEW dial
-  extract the interaction layer of the *maf-options* buffer into a new,
-  self-contained package named "dial": a general-purpose library for building
-  configuration interfaces, not tied to maf.
-  - lives at <root>/pkg/dial for now, but the eventual plan is to pull it out
-    of the repo entirely as a standalone package. so even while it lives here,
-    write it with zero maf dependencies (no maf- requires, no reliance on maf
-    state) under its own dial- namespace, so the future extraction is trivial
-  - the boundary: dial provides the shell — the interface and machinery
-    (buffer setup, item rendering, navigation, toggling, keymap); maf
-    specifies the content (its own option definitions/data) as a consumer
-    of dial
-  - [X] create pkg/dial and refactor *maf-options* onto it
-  - method: characterization spec first. before the refactor, pilot the live
-    instance and record the observable behavior and appearance of *maf-options*
-    (sandbox/options-spec.el writes sandbox/options-spec.eld); after the
-    refactor, the check re-drives the buffer and diffs against the recording.
-    the refactored buffer must behave and render identically — command and
-    face names excepted (compared by role/appearance, not name)
-  - [X] refactor *maf-modules* onto dial: each module is an on/off row, its
-    description echoed as :doc where the old menu spent a column on it;
-    toggling steps the row's values (TAB), which calls the mode directly so
-    reconcile keeps `maf-modules' in step
-  - remaining: extract dial out of the repo as a standalone package (its
-    capabilities test tests/dial-capabilities.el is calc-independent but runs
-    under maf-step; extraction means converting it to ERT)
-
 * NOW
 ** help text
    - in *maf-options* buffer, when cycling through (TAB key) values for an
