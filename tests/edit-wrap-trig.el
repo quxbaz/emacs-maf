@@ -27,13 +27,13 @@
   (cl-assert (eolp))
   (call-interactively 'maf-edit-discard)
 
-  ;; Same for the cosine, and on the term the scan calls one unit —
-  ;; the product, not the factor at its end.
+  ;; Same for the cosine, on the smallest unit ending at point — the
+  ;; last factor, exactly what a power typed here would take.
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "a+b*c") nil)
   (progn (execute-kbd-macro "C") nil)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
-                    "a+cos(b*c)"))
+                    "a+b*cos(c)"))
   (call-interactively 'maf-edit-discard)
 
   ;; And the tangent with nothing behind point: an empty call opens,

@@ -33,12 +33,15 @@
                     "x+ln(ln(2))"))
   (call-interactively 'maf-edit-discard)
 
-  ;; A product is the innermost term worth taking, exactly as with M-o.
+  ;; At the end of the entry the argument is the smallest complete
+  ;; unit ending there — the last factor, not the product, exactly
+  ;; what a power typed here would take. Reaching the product is what
+  ;; point on the `*' (or a region) is for.
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "a+b*c") nil)
   (call-interactively 'maf-editplus-wrap-ln)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
-                    "a+ln(b*c)"))
+                    "a+b*ln(c)"))
   (call-interactively 'maf-edit-discard)
 
   ;; A function call comes with its name, and a denominator is a term
@@ -92,12 +95,13 @@
                     "a+ln(b*c)"))
   (call-interactively 'maf-edit-discard)
 
-  ;; A leading sign belongs to the term it signs.
+  ;; A leading sign stays outside the unit: -3^2 is -(3^2), and the
+  ;; wrap reads the position the way the power does.
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "2*-3") nil)
   (call-interactively 'maf-editplus-wrap-ln)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
-                    "2*ln(-3)"))
+                    "2*-ln(3)"))
   (call-interactively 'maf-edit-discard)
 
   ;; With no term behind point an empty call is opened instead of the

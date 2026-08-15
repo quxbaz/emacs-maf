@@ -25,13 +25,13 @@
   (cl-assert (eolp))
   (call-interactively 'maf-edit-discard)
 
-  ;; Same for the modulus, and on the term the scan calls one unit —
-  ;; the product, not the factor at its end.
+  ;; Same for the modulus, on the smallest unit ending at point — the
+  ;; last factor, exactly what a power typed here would take.
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "a+b*c") nil)
   (progn (execute-kbd-macro "|") nil)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
-                    "a+abs(b*c)"))
+                    "a+b*abs(c)"))
   (call-interactively 'maf-edit-discard)
 
   ;; The two compose, each taking the call the other left as one unit.

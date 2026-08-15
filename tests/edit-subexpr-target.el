@@ -540,24 +540,65 @@
   (call-interactively 'maf-edit-discard)
 
   ;; The end of the entry is the boundary between the two rules: there
-  ;; is no character under point, and the term behind it is the
-  ;; argument — which is why typing a formula and pressing the key
-  ;; still wraps what was just typed.
+  ;; is no character under point, and the smallest complete unit
+  ;; ending at point is the argument — the last factor, exactly what a
+  ;; power typed here would take, so the wraps and `:' read the
+  ;; position as one.
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "a+b*c") nil)
   (call-interactively 'maf-editplus-wrap-ln)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
-                    "a+ln(b*c)"))
+                    "a+b*ln(c)"))
   (cl-assert (eolp))
   (call-interactively 'maf-edit-discard)
 
-  ;; Trailing whitespace is not a character under point either: the
-  ;; entry still ends there.
+  ;; Trailing whitespace severs the unit: a power does not reach back
+  ;; across a space, so nothing is behind point and an empty call
+  ;; opens — under the dialect the space is the product, and x+2 ln()
+  ;; is 2 times the call being typed.
   (call-interactively 'maf-edit-add-entry-below)
   (progn (insert "x+2 ") nil)
   (call-interactively 'maf-editplus-wrap-ln)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
-                    "x+ln(2)"))
+                    "x+2 ln()"))
+  (cl-assert (eq (char-after) ?\)))
+  (call-interactively 'maf-edit-discard)
+
+  ;; A quoted call is one unit with its mark: the quote belongs to the
+  ;; name, and the name to the group.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (insert "\\foo(3)") nil)
+  (call-interactively 'maf-editplus-wrap-ln)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "ln(\\foo(3))"))
+  (call-interactively 'maf-edit-discard)
+
+  ;; A string literal's closing quote completes the whole literal.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (insert "\"abc\"") nil)
+  (call-interactively 'maf-editplus-wrap-ln)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "ln(\"abc\")"))
+  (call-interactively 'maf-edit-discard)
+
+  ;; The opener of a string still being typed completes nothing: the
+  ;; quotes must pair forward, or the closer of \"a\" would pair with
+  ;; the unfinished quote and name the \"+\" between them. No unit, so
+  ;; the empty call opens where typing left off.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (insert "\"a\"+\"") nil)
+  (call-interactively 'maf-editplus-wrap-ln)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "\"a\"+\"ln()"))
+  (call-interactively 'maf-edit-discard)
+
+  ;; An interval's parens are notation, not grouping: they survive the
+  ;; wrap, where a bare pair's would go.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (insert "(1 .. 2)") nil)
+  (call-interactively 'maf-editplus-wrap-ln)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "ln((1 .. 2))"))
   (call-interactively 'maf-edit-discard)
 
   ;; What the gesture writes is a call to calc, not just a name and a

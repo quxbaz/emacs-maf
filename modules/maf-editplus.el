@@ -47,9 +47,9 @@
 ;; sub-expression the way it does on the stack — the character under
 ;; point decides, an operand taking itself and an operator the node it
 ;; heads — and these write ln, sqrt, abs, sin, cos or tan around
-;; that. At the end of
-;; the entry there is no character under point, and the term M-o would
-;; have wrapped is the argument instead, so a formula just typed
+;; that. At the end of the entry there is no character under point,
+;; and the smallest complete unit ending at point is the argument
+;; instead — the same unit `:' raises there — so a term just typed
 ;; becomes the log, the root, the modulus or a trig function of itself
 ;; without going back to find where it starts.
 ;;
@@ -802,11 +802,12 @@ variable xy squared. An input dialect reads the same run as a run of
 factors (`maf-editplus--calc-syntax-p'), so an operator written after
 it takes only the last factor: there xy is the product x y, and
 squaring the run whole needs the parentheses. A quoted run is one
-name under either reading — the mark exists to say exactly that —
-and a bare number is one number."
+name under either reading — the mark exists to say exactly that — a
+string literal is one string, and a bare number is one number."
   (and (not (maf-editplus--calc-syntax-p))
        (> (- end start) 1)
        (not (eq (char-after start) (maf-editplus--quote-char)))
+       (not (eq (char-after start) ?\"))
        (string-match-p "[[:alpha:]]"
                        (buffer-substring-no-properties start end))))
 
@@ -1248,41 +1249,83 @@ restructure text the writer is in the middle of."
       (set-marker m1 nil)
       (set-marker m2 nil))))
 
-;;; Applying a function
+;;; The common target
 
-(defun maf-editplus--apply-function (name)
-  "Wrap the sub-expression at point, or the active region, in a call to NAME.
-Point inside the entry's text names its subject the way it does on the
-stack: the innermost node whose span covers the character after point
-\(`maf-editplus--subexpr-bounds'), so an operand takes itself and an
-operator takes the node it heads. Point lands on the call just
-written, which is the node under point now — a second press applies
-the function again rather than reaching past it.
+(defun maf-editplus--unit-before (pos limit)
+  "Bounds of the smallest complete unit ending exactly at POS, or nil.
+An atom with its own punctuation — a name, quoted or not, a number, a
+string literal — or a delimited group taken with the call name that
+heads it, quote mark included. Nil when the character behind POS
+completes nothing: whitespace, an operator, the head of the entry. No
+whitespace is crossed on the way in: this is the unit a power typed
+at POS would bind to, and a power does not reach back across a space."
+  (when (> pos limit)
+    (let ((c (char-before pos)))
+      (cond
+       ((memq c maf-editplus--closers)
+        (let ((open (maf-editplus--group-start pos limit)))
+          (when open
+            (let ((beg (maf-editplus--call-start open limit)))
+              (when (and (< beg open)
+                         (maf-editplus--quote-char)
+                         (eq (char-before beg) (maf-editplus--quote-char)))
+                (setq beg (1- beg)))
+              (cons beg pos)))))
+       ;; A string's contents are not syntax, so its closing quote
+       ;; completes the whole literal. Quotes pair forward — scanned
+       ;; backward, a closer cannot be told from the opener of a
+       ;; string still being typed, and in \"a\"+\" the scan would
+       ;; pair across the two — so the strings are walked from the
+       ;; head of the entry, escapes skipped as in
+       ;; `maf-editplus--string-run', and the unit is a literal whose
+       ;; own closer sits just before POS. An unfinished quote
+       ;; completes nothing.
+       ((eq c ?\")
+        (let ((p limit)
+              (found nil))
+          (while (and (not found) (< p pos))
+            (if (not (eq (char-after p) ?\"))
+                (setq p (1+ p))
+              (let ((q (1+ p)))
+                (while (and (< q pos) (not (eq (char-after q) ?\")))
+                  (setq q (if (eq (char-after q) ?\\) (+ q 2) (1+ q))))
+                (if (and (= q (1- pos)) (eq (char-after q) ?\"))
+                    (setq found (cons p pos))
+                  (setq p (1+ q))))))
+          found))
+       ((maf-editplus--atom-char-p (1- pos))
+        (let ((beg (1- pos)))
+          (while (and (> beg limit)
+                      (maf-editplus--atom-char-p (1- beg)))
+            (setq beg (1- beg)))
+          (when (and (maf-editplus--quote-char)
+                     (eq (char-before beg) (maf-editplus--quote-char)))
+            (setq beg (1- beg)))
+          (cons beg pos)))))))
 
-At the end of the entry there is no character under point, and the
-term behind it is the subject instead: the same scan
-`maf-editplus-wrap-parens' uses, which is why typing a formula and
-pressing the key wraps what was just typed. Point ends after the
-closer there, where typing carries on.
+(defun maf-editplus--resolve-target ()
+  "Resolve what a subexpression key acts on at point; the commands' root.
+Every subexpression command — the wrap keys and the power key — asks
+this one question and differs only in what it does with the answer.
+The region comes first, an explicit answer outranking any reading of
+point; then the node the character under point belongs to
+\(`maf-editplus--subexpr-node'); then the smallest complete unit
+ending at point (`maf-editplus--unit-before'). Returns
+\(region BEG END), (node . NODE), (unit BEG END), or nil — nothing at
+all, which each command answers in its own shape: an empty call, a
+bare power.
 
-With no term behind point either — the head of an entry, or just
-after an operator — an empty call is inserted and point goes inside
-it, so the argument can be typed next. That is the one place this
-differs from wrapping in bare parens, which refuses there: an empty
-pair means nothing, while NAME() is a call waiting for its argument.
-
-Outside any entry — the dot line, or anywhere on an empty stack — a
-fresh entry opens at the bottom first, the same place typed text
-would start one, and the empty call goes inside it. The key behaves
-like typing there rather than refusing: the entry it needs is the
-entry it makes."
+Point outside any entry opens a fresh one at the dot first, the same
+place typed text would start one, so every subexpression key behaves
+like typing there. The mark is deactivated when the region was the
+answer — the marks are spent by being read, and the next press should
+read point anew."
   (unless maf-edit-mode
     (user-error "maf-edit is not active"))
   (let* ((entry (or (maf-editplus--entry-at-point)
                     (maf-edit--open-at-dot)))
          (limit (+ (overlay-start entry)
-                   (maf-edit--leading-prefix-run (overlay-start entry))))
-         (node (unless (use-region-p) (maf-editplus--subexpr-node))))
+                   (maf-edit--leading-prefix-run (overlay-start entry)))))
     (cond
      ((use-region-p)
       (let ((beg (max (region-beginning) limit))
@@ -1290,29 +1333,59 @@ entry it makes."
         (when (> end (overlay-end entry))
           (user-error "Region reaches past the entry"))
         (when (>= beg end)
-          (user-error "Nothing to wrap"))
+          (user-error "Nothing marked to act on"))
         (deactivate-mark)
-        (maf-editplus--wrap beg end name)))
-     (node
-      ;; Point lands on the call rather than after it: the node it
-      ;; named is now the call written around that node, and point
-      ;; stays on the node it named, as it does when a command commits
-      ;; on the stack.
-      (goto-char (maf-editplus--wrap-node node name)))
-     (t
-      (let* ((end (maf-editplus--atom-end
-                   (maf-editplus--skip-fill-back (point) limit)
-                   (overlay-end entry)))
-             (start (unless (memq (char-before end) maf-editplus--wrap-ops)
-                      (maf-editplus--skip-fill-forward
-                       (maf-editplus--term-start end limit) end))))
-        (if (and start (< start end))
-            (maf-editplus--wrap start end name)
-          ;; No term: open an empty call at point rather than at END,
-          ;; which the scan has already pulled back over any trailing
-          ;; whitespace — `2 + ' should become `2 + ln()', not `2 +ln() '.
-          (insert name "()")
-          (backward-char)))))))
+        (list 'region beg end)))
+     ((when-let ((node (maf-editplus--subexpr-node)))
+        (cons 'node node)))
+     ((when-let ((unit (maf-editplus--unit-before (point) limit)))
+        (list 'unit (car unit) (cdr unit)))))))
+
+;;; Applying a function
+
+(defun maf-editplus--apply-function (name)
+  "Wrap what point names in a call to NAME.
+The subject is `maf-editplus--resolve-target's answer: the region as
+marked, the node the character under point belongs to, or the
+smallest complete unit ending at point — the unit the power key
+raises there, so the whole subexpression family reads point one way.
+
+Point lands on the call when a node was the subject — the call is the
+node under point now, and a second press nests rather than reaching
+past it — and after the closer otherwise, where typing carries on.
+
+A unit that is itself a bare pair loses it: the call supplies the
+grouping the pair was there for, ln(a+b) being written where
+ln((a+b)) would have been. An interval keeps its delimiters — they
+are notation, not grouping.
+
+With no subject at all — the head of an entry, just after an
+operator, the fresh entry the resolver opened when point was outside
+any — an empty call opens at point, point inside it: NAME() is a
+call waiting for its argument."
+  (pcase (maf-editplus--resolve-target)
+    (`(region ,beg ,end)
+     (maf-editplus--wrap beg end name))
+    (`(node . ,node)
+     ;; Point lands on the call rather than after it: the node it
+     ;; named is now the call written around that node, and point
+     ;; stays on the node it named, as it does when a command commits
+     ;; on the stack.
+     (goto-char (maf-editplus--wrap-node node name)))
+    (`(unit ,beg ,end)
+     ;; An interval keeps its parens — they are notation, not
+     ;; grouping, and ln(1 .. 2) would not parse back.
+     (if (and (eq (char-after beg) ?\()
+              (eq (char-before end) ?\))
+              (not (maf-editplus--interval-dots beg (1- end))))
+         (progn
+           (delete-region (1- end) end)
+           (delete-region beg (1+ beg))
+           (maf-editplus--wrap beg (- end 2) name))
+       (maf-editplus--wrap beg end name)))
+    (_
+     (insert name "()")
+     (backward-char))))
 
 (defun maf-editplus-wrap-ln ()
   "Apply ln to the sub-expression at point.
@@ -1327,11 +1400,12 @@ it:
   |(a+b)*c     =>  ln(a+b)*c      (a bare pair is punctuation)
 
 At the end of the entry there is no character under point, and the
-term behind it is the argument instead — what
-`maf-editplus-wrap-parens' would have wrapped, with point left after
-the closing paren so typing carries on:
+smallest complete unit ending at point is the argument instead — the
+unit `:' raises there — with point left after the closing paren so
+typing carries on:
 
   x+2|         =>  x+ln(2)
+  a+b*c|       =>  a+b*ln(c)
   27/sqrt(3)|  =>  27/ln(sqrt(3))
   ln(x)|       =>  ln(ln(x))
   x = |        =>  x = ln(|)
@@ -1374,7 +1448,7 @@ apply to the end of the entry, to a region, and to a press with
 nothing behind point:
 
   a+|b*c     =>  a+abs(b)*c
-  a+b*c|     =>  a+abs(b*c)
+  a+b*c|     =>  a+b*abs(c)
   x = |      =>  x = abs(|)
 
 Bound to `|' in `maf-edit-mode-map', which costs the character its own
@@ -1472,6 +1546,18 @@ it does anything else."
                  "\\`[0-9]+\\'" (buffer-substring-no-properties start end))
             (cons start end)))))))
 
+(defun maf-editplus--raise-span (beg end)
+  "Square BEG..END as one parenthesized unit; point lands on the caret.
+The parens are not optional: the span is a region or a run that only
+the marks or the dialect say to treat whole, and a bare caret would
+take just its tail. As in `maf-editplus--raise-node', the opener goes
+in first, so the closer's position is the span's end shifted by the
+one character — and with point on the caret, the next press finds a
+power to count up."
+  (save-excursion (goto-char beg) (insert "("))
+  (save-excursion (goto-char (1+ end)) (insert ")^2"))
+  (goto-char (+ end 2)))
+
 (defun maf-editplus--raise-node (node)
   "Raise the sub-expression NODE names to the next power.
 Returns where the caret ended up, which is where point belongs: the
@@ -1541,49 +1627,29 @@ Bound to `:' in `maf-edit-mode-map'. The character itself is not lost:
 has a key with no modifier at all."
   (interactive "p")
   (dotimes (_ n)
-    (if (use-region-p)
-        (let* ((entry (or (maf-editplus--entry-at-point)
-                          (user-error "Point is not in a stack entry")))
-               (limit (+ (overlay-start entry)
-                         (maf-edit--leading-prefix-run
-                          (overlay-start entry))))
-               (beg (max (region-beginning) limit))
-               (end (region-end)))
-          (when (> end (overlay-end entry))
-            (user-error "Region reaches past the entry"))
-          (when (>= beg end)
-            (user-error "Nothing to raise"))
-          (deactivate-mark)
-          ;; As in `maf-editplus--raise-node': the opener goes in
-          ;; first, so the closer's position is the region's end
-          ;; shifted by the one character, and the caret lands where
-          ;; the next press finds a power to count up.
-          (save-excursion (goto-char beg) (insert "("))
-          (save-excursion (goto-char (1+ end)) (insert ")^2"))
-          (goto-char (+ end 2)))
-      (let ((node (maf-editplus--subexpr-node)))
-        (if node
-            (goto-char (maf-editplus--raise-node node))
-          (let* ((limit (line-beginning-position))
-                 (start (save-excursion (skip-chars-backward "0-9" limit) (point))))
-            (if (and (< start (point)) (eq (char-before start) ?^))
-                (let ((power (string-to-number
-                              (buffer-substring-no-properties start (point)))))
-                  (delete-region start (point))
-                  (insert (number-to-string (1+ power))))
-              ;; The run just typed may be one the dialect splits —
-              ;; xy| is the product x y there, and a bare ^2 would
-              ;; take only the y. The parens keep the run whole, with
-              ;; the caret under point for the next press to count.
-              (let ((run (maf-editplus--skip-name-back (point) limit)))
-                (when (eq (char-before run) (maf-editplus--quote-char))
-                  (setq run (1- run)))
-                (if (maf-editplus--split-run-p run (point))
-                    (progn
-                      (save-excursion (goto-char run) (insert "("))
-                      (insert ")^2")
-                      (backward-char 2))
-                  (insert "^2"))))))))))
+    (pcase (maf-editplus--resolve-target)
+      (`(region ,beg ,end)
+       (maf-editplus--raise-span beg end))
+      (`(node . ,node)
+       (goto-char (maf-editplus--raise-node node)))
+      (`(unit ,beg ,end)
+       (let ((text (buffer-substring-no-properties beg end)))
+         (cond
+          ;; A power's spelled-out exponent counts up in place.
+          ((and (string-match-p "\\`[0-9]+\\'" text)
+                (eq (char-before beg) ?^))
+           (delete-region beg end)
+           (goto-char beg)
+           (insert (number-to-string (1+ (string-to-number text)))))
+          ;; A run the dialect splits is raised whole — a bare ^2
+          ;; would take only its last factor.
+          ((maf-editplus--split-run-p beg end)
+           (maf-editplus--raise-span beg end))
+          (t
+           (goto-char end)
+           (insert "^2")))))
+      (_
+       (insert "^2")))))
 
 (defun maf-editplus-insert-pi (n)
   "Insert the constant pi, N times, on the unmodified `P' key.
