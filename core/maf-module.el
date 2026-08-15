@@ -28,7 +28,7 @@
 ;; mode body knows nothing of this file, so the feature is fully usable
 ;; with the registry absent — you just lose the list-driven management.
 
-(require 'tabulated-list)
+(require 'dial)
 (require 'maf-conf "conf")
 
 (defvar maf-module-registry nil
@@ -111,71 +111,55 @@ skipped until its file loads and the next apply enables it."
 
 ;;; Module menu
 
-;; A tabulated-list buffer of every registered module — state, name,
-;; and the module's own description — from which modules toggle in
-;; place. Toggling calls the mode directly, so `maf-module--reconcile'
-;; keeps `maf-modules' in step just as an `M-x' toggle would.
+;; A dial buffer (pkg/dial) over the registry: each module is an
+;; on/off row whose setters call the mode function directly, so
+;; `maf-module--reconcile' keeps `maf-modules' in step just as an
+;; `M-x' toggle would. The description a module gives for itself is
+;; the row's :doc, echoed as point rests on it — dial's convention,
+;; where the old menu spent a column on it.
 
-(defvar maf-modules-menu-mode-map (make-sparse-keymap)
-  "Keymap for `maf-modules-menu-mode'.")
+(defun maf-module--state (name)
+  "Non-nil when module NAME's mode is on."
+  (let ((mode (car (alist-get name maf-module-registry))))
+    (and (boundp mode) (symbol-value mode) t)))
 
-;; Bindings live outside the defvar so reloading the file applies edits
-;; to the existing map.
-(define-key maf-modules-menu-mode-map (kbd "RET") #'maf-modules-menu-toggle)
-(define-key maf-modules-menu-mode-map (kbd "SPC") #'maf-modules-menu-toggle)
-(define-key maf-modules-menu-mode-map (kbd "t")   #'maf-modules-menu-toggle)
-(define-key maf-modules-menu-mode-map (kbd "j")   #'next-line)
-(define-key maf-modules-menu-mode-map (kbd "k")   #'previous-line)
+(defun maf-module--items ()
+  "Compile `maf-module-registry' into dial items, sorted by name.
+The registry is in reverse registration order, an artifact of the load
+order in maf.el that should not decide how the menu reads."
+  (mapcar (lambda (entry)
+            (pcase-let ((`(,name ,mode ,description) entry))
+              (cons name
+                    (list :group "Modules"
+                          :label (symbol-name name)
+                          :doc description
+                          :values `((t   "on"  (,mode 1))
+                                    (nil "off" (,mode -1)))))))
+          (sort (copy-sequence maf-module-registry)
+                (lambda (a b) (string< (car a) (car b))))))
 
-(define-derived-mode maf-modules-menu-mode tabulated-list-mode "maf-modules"
-  "Major mode for the maf module toggle buffer.
-Each row is a registered module: its on/off state, name, and a short
-description. \\<maf-modules-menu-mode-map>\\[maf-modules-menu-toggle]
-toggles the module on the current line; \\[revert-buffer] refreshes the
-list; \\[quit-window] buries the buffer."
-  (setq tabulated-list-format [("On" 3 t) ("Module" 16 t) ("Description" 0 nil)]
-        tabulated-list-padding 1
-        tabulated-list-sort-key '("Module" . nil))
-  (add-hook 'tabulated-list-revert-hook #'maf-modules-menu--refresh nil t)
-  (tabulated-list-init-header))
+(defvar maf-module--controls nil
+  "The module menu's controls line.
+Dial's default names controls this buffer has no use for — resetting,
+filtering by changed, a save — so the line is written out: flipping a
+module is the whole interface.")
 
-(defun maf-modules-menu--refresh ()
-  "Rebuild `tabulated-list-entries' from `maf-module-registry'."
-  (setq tabulated-list-entries
-        (mapcar
-         (lambda (entry)
-           (let ((name (car entry))
-                 (mode (cadr entry))
-                 (desc (or (caddr entry) "")))
-             (list name
-                   (vector (if (and (boundp mode) (symbol-value mode))
-                               "[X]" "[ ]")
-                           (symbol-name name)
-                           desc))))
-         maf-module-registry)))
-
-(defun maf-modules-menu-toggle ()
-  "Toggle the module named on the current line, and update its row."
-  (interactive)
-  (let* ((name (tabulated-list-get-id))
-         (mode (car (alist-get name maf-module-registry))))
-    (unless mode (user-error "No module on this line"))
-    (funcall mode (if (and (boundp mode) (symbol-value mode)) -1 1))
-    (maf-modules-menu--refresh)
-    (tabulated-list-print t)
-    (message "%s %s" name (if (symbol-value mode) "enabled" "disabled"))))
+;; Set outside the defvar so a reload applies edits to the list.
+(setq maf-module--controls
+      '(((dial-next-value dial-previous-value) "toggle" "TAB")
+        (dial-refresh "refresh")
+        (quit-window "quit")))
 
 ;;;###autoload
 (defun maf-list-modules ()
   "Show the maf module toggle buffer in another window and select it.
-Lists every registered module with its state and description; RET
-toggles the module on the current line (see `maf-modules-menu-mode')."
+Each registered module is a row; TAB flips the one on the current line,
+and its description echoes as point rests on it (see `dial-mode'). The
+buffer is dial's; this command supplies it the registry."
   (interactive)
-  (let ((buf (get-buffer-create "*maf-modules*")))
-    (with-current-buffer buf
-      (maf-modules-menu-mode)
-      (maf-modules-menu--refresh)
-      (tabulated-list-print))
-    (pop-to-buffer buf)))
+  (dial-open "*maf-modules*" (maf-module--items)
+             :name "maf-modules"
+             :controls maf-module--controls
+             :raw #'maf-module--state))
 
 (provide 'maf-module)

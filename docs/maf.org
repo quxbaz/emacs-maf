@@ -41,15 +41,20 @@
     (buffer setup, item rendering, navigation, toggling, keymap); maf
     specifies the content (its own option definitions/data) as a consumer
     of dial
-  - in scope now: create pkg/dial and refactor *maf-options* onto it
+  - [X] create pkg/dial and refactor *maf-options* onto it
   - method: characterization spec first. before the refactor, pilot the live
     instance and record the observable behavior and appearance of *maf-options*
     (sandbox/options-spec.el writes sandbox/options-spec.eld); after the
     refactor, the check re-drives the buffer and diffs against the recording.
     the refactored buffer must behave and render identically — command and
     face names excepted (compared by role/appearance, not name)
-  - out of scope for now, but design for it: *maf-modules* will later be
-    refactored onto dial too, so the API must be general enough to serve both
+  - [X] refactor *maf-modules* onto dial: each module is an on/off row, its
+    description echoed as :doc where the old menu spent a column on it;
+    toggling steps the row's values (TAB), which calls the mode directly so
+    reconcile keeps `maf-modules' in step
+  - remaining: extract dial out of the repo as a standalone package (its
+    capabilities test tests/dial-capabilities.el is calc-independent but runs
+    under maf-step; extraction means converting it to ERT)
 
 * NOW
 ** help text
