@@ -23,7 +23,9 @@
   (add-to-list 'load-path (expand-file-name "src" dir))
   (add-to-list 'load-path (expand-file-name "core" dir))
   (add-to-list 'load-path (expand-file-name "modules" dir))
-  (add-to-list 'load-path (expand-file-name "debug" dir)))
+  (add-to-list 'load-path (expand-file-name "debug" dir))
+  ;; In-repo packages destined to stand alone; see docs/maf.org.
+  (add-to-list 'load-path (expand-file-name "pkg/dial" dir)))
 
 (require 'maf-conf "conf")
 (require 'maf-module)

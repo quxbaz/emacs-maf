@@ -53,14 +53,14 @@
   (mafstep--with-echo
     (goto-char (point-min))
     (dotimes (_ 8)
-      (maf-options-next-line)
+      (dial-next-line)
       (let ((row (tabulated-list-get-id)))
         (cl-assert (mafstep--echoes-doc-p) t "moving down: %s" row))))
 
   ;; And going back up, which walks the same rows in reverse.
   (mafstep--with-echo
     (dotimes (_ 5)
-      (maf-options-previous-line)
+      (dial-previous-line)
       (let ((row (tabulated-list-get-id)))
         (cl-assert (mafstep--echoes-doc-p) t "moving up: %s" row))))
 
@@ -69,10 +69,10 @@
   ;; M-n and M-p land on a setting too, so they say the same thing.
   (mafstep--with-echo
     (goto-char (point-min))
-    (maf-options-next-line)
-    (maf-options-next-group)
+    (dial-next-line)
+    (dial-next-group)
     (cl-assert (mafstep--echoes-doc-p) t "next group")
-    (maf-options-previous-group)
+    (dial-previous-group)
     (cl-assert (mafstep--echoes-doc-p) t "previous group"))
 
   ;; --- Not logged ---
@@ -82,7 +82,7 @@
   (mafstep--with-echo
     (goto-char (point-min))
     (let ((before (with-current-buffer (messages-buffer) (buffer-string))))
-      (dotimes (_ (length maf-options-registry)) (maf-options-next-line))
+      (dotimes (_ (length maf-options-registry)) (dial-next-line))
       (cl-assert (mafstep--echoes-doc-p) t "reached the last row")
       (cl-assert (equal before (with-current-buffer (messages-buffer)
                                  (buffer-string)))
@@ -95,11 +95,11 @@
   ;; than blanking whatever was last said.
   (mafstep--with-echo
     (goto-char (point-min))
-    (maf-options-next-line)
+    (dial-next-line)
     (let ((doc (current-message)))
       (goto-char (point-min))
       (cl-assert (null (mafstep--doc-at-point)))
-      (maf-options--echo-doc)
+      (dial--echo-doc)
       (cl-assert (equal (current-message) doc) t "a docless row blanked the echo")))
 
   )
