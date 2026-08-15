@@ -968,7 +968,12 @@ in place: it calls the mode directly, so the
 reconcile above keeps =maf-modules= in step. Each module supplies its
 own description as the third argument to =maf-register-module=,
 echoed as point rests on its row, so the menu documents whatever is
-loaded without a central list to maintain.
+loaded without a central list to maintain. A description is written
+in two parts — one short sentence saying what the module does, a
+blank line, then three or four lines on what that means in practice.
+The menu heads the echoed text with the module's name, since help
+left standing in the echo area outlives the move off its row;
+Customize, which has room for one line, takes the summary alone.
 
 Two module shapes have appeared, matching the feature's state:
 
