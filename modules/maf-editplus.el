@@ -794,6 +794,22 @@ mark — so the scan must not read it as one, or it would name a node
 the commit does not agree exists."
   (eq maf-edit-parse-text-function #'identity))
 
+(defun maf-editplus--split-run-p (start end)
+  "Non-nil when the atom at START..END is a run the input dialect splits.
+Calc reads a run of letters as one identifier, and under calc's own
+syntax that is what the text commits as — xy^2 already means the one
+variable xy squared. An input dialect reads the same run as a run of
+factors (`maf-editplus--calc-syntax-p'), so an operator written after
+it takes only the last factor: there xy is the product x y, and
+squaring the run whole needs the parentheses. A quoted run is one
+name under either reading — the mark exists to say exactly that —
+and a bare number is one number."
+  (and (not (maf-editplus--calc-syntax-p))
+       (> (- end start) 1)
+       (not (eq (char-after start) (maf-editplus--quote-char)))
+       (string-match-p "[[:alpha:]]"
+                       (buffer-substring-no-properties start end))))
+
 (defun maf-editplus--call-name-p (pos)
   "Non-nil when the atom at POS can head a function call.
 A name can — sqrt(3) is a call — and a number cannot: 2(x+1) is the
@@ -918,8 +934,17 @@ pair."
 A number or name, a function call and a bracketed group each read as
 one unit already, so a^2 and sqrt(3)^2 mean what they say. Everything
 the text spells with an operator of its own does not: a+b squared is
-\(a+b)^2, and the parentheses are the difference."
-  (memq (maf-editplus--node-kind node) '(atom call group)))
+\(a+b)^2, and the parentheses are the difference.
+
+Under an input dialect a bare run of letters is one atom to the scan
+but a run of factors to the commit (`maf-editplus--split-run-p'), so
+it cannot take the operator as it stands either — xy^2 would commit
+as x times y squared."
+  (and (memq (maf-editplus--node-kind node) '(atom call group))
+       (not (and (eq (maf-editplus--node-kind node) 'atom)
+                 (maf-editplus--split-run-p
+                  (maf-editplus--node-start node)
+                  (maf-editplus--node-end node))))))
 
 (defun maf-editplus--parse (limit bound)
   "Parse the entry text between LIMIT and BOUND into a tree of spans.
@@ -1546,7 +1571,19 @@ has a key with no modifier at all."
                               (buffer-substring-no-properties start (point)))))
                   (delete-region start (point))
                   (insert (number-to-string (1+ power))))
-              (insert "^2"))))))))
+              ;; The run just typed may be one the dialect splits —
+              ;; xy| is the product x y there, and a bare ^2 would
+              ;; take only the y. The parens keep the run whole, with
+              ;; the caret under point for the next press to count.
+              (let ((run (maf-editplus--skip-name-back (point) limit)))
+                (when (eq (char-before run) (maf-editplus--quote-char))
+                  (setq run (1- run)))
+                (if (maf-editplus--split-run-p run (point))
+                    (progn
+                      (save-excursion (goto-char run) (insert "("))
+                      (insert ")^2")
+                      (backward-char 2))
+                  (insert "^2"))))))))))
 
 (defun maf-editplus-insert-pi (n)
   "Insert the constant pi, N times, on the unmodified `P' key.
