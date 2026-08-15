@@ -963,8 +963,8 @@ management.
 
 =M-x maf-list-modules= opens =*maf-modules*=, a dial buffer
 (=pkg/dial=) of every registered module as an on/off row, split into
-its own window. =TAB= (also =RET=, =SPC= or =t=) flips the module on
-the current line in place: it calls the mode directly, so the
+its own window. =TAB= or =SPC= flips the module on the current line
+in place: it calls the mode directly, so the
 reconcile above keeps =maf-modules= in step. Each module supplies its
 own description as the third argument to =maf-register-module=,
 echoed as point rests on its row, so the menu documents whatever is

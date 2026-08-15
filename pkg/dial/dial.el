@@ -335,10 +335,10 @@ format is built rather than written out."
 ;; to the existing map.
 (define-key dial-mode-map (kbd "TAB")       #'dial-next-value)
 (define-key dial-mode-map (kbd "<backtab>") #'dial-previous-value)
-;; SPC before RET: `define-key' pushes onto the front of a sparse
-;; keymap, so the key defined last is the one `where-is-internal' finds
-;; first, and RET is the one to name for a command two keys reach.
-(define-key dial-mode-map (kbd "SPC")  #'dial-set)
+;; SPC steps with TAB, not with RET: stepping is the act a dial buffer
+;; lives on, and a toggle-shaped row makes SPC the flip key. TAB stays
+;; the key messages and the controls line name it by.
+(define-key dial-mode-map (kbd "SPC")  #'dial-next-value)
 (define-key dial-mode-map (kbd "RET")  #'dial-set)
 (define-key dial-mode-map (kbd "d")    #'dial-reset)
 (define-key dial-mode-map (kbd "c")    #'dial-toggle-changed-only)

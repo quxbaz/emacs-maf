@@ -1681,8 +1681,8 @@ management.
 <p>
 <code>M-x maf-list-modules</code> opens <code>*maf-modules*</code>, a dial buffer
 (<code>pkg/dial</code>) of every registered module as an on/off row, split into
-its own window. <code>TAB</code> (also <code>RET</code>, <code>SPC</code> or <code>t</code>) flips the module on
-the current line in place: it calls the mode directly, so the
+its own window. <code>TAB</code> or <code>SPC</code> flips the module on the current line
+in place: it calls the mode directly, so the
 reconcile above keeps <code>maf-modules</code> in step. Each module supplies its
 own description as the third argument to <code>maf-register-module</code>,
 echoed as point rests on its row, so the menu documents whatever is
