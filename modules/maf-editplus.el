@@ -11,8 +11,8 @@
 ;; back out when the module is off.
 ;;
 ;; What is here now are the four delimiter gestures, TAB, M-o, C-RET
-;; and the shifted arrows, the function keys L, Q and |, the exponent
-;; keys M-2 through M-9 and :, and P for the constant pi.
+;; and the shifted arrows, the function keys L, Q, |, S, C and T, the
+;; exponent keys M-2 through M-9 and :, and P for the constant pi.
 ;;
 ;; TAB escapes. Typing a formula runs forward past closing delimiters
 ;; constantly — sqrt(x^2+1), f(g(x)) — and reaching the far side of one
@@ -43,14 +43,15 @@
 ;; and puts point at the matching place inside the copy, so the sign to
 ;; flip is where the fingers already are.
 ;;
-;; L, Q and | apply a function. Point inside the text names a
+;; L, Q, |, S, C and T apply a function. Point inside the text names a
 ;; sub-expression the way it does on the stack — the character under
 ;; point decides, an operand taking itself and an operator the node it
-;; heads — and these write ln, sqrt or abs around that. At the end of
+;; heads — and these write ln, sqrt, abs, sin, cos or tan around
+;; that. At the end of
 ;; the entry there is no character under point, and the term M-o would
 ;; have wrapped is the argument instead, so a formula just typed
-;; becomes the log, the root or the modulus of itself without going
-;; back to find where it starts.
+;; becomes the log, the root, the modulus or a trig function of itself
+;; without going back to find where it starts.
 ;;
 ;; M-2..M-9 and : raise to a power. An exponent is two characters that
 ;; interrupt a formula being typed, and the digit is nearly always
@@ -1341,6 +1342,57 @@ concatenation, and one wanted literally has to be yanked in."
   (interactive)
   (maf-editplus--apply-function "abs"))
 
+(defun maf-editplus-wrap-sin ()
+  "Apply sin to the sub-expression at point.
+`maf-editplus-wrap-ln' with a different name written in front of the
+pair — point names the argument the same way, and the same rules
+apply to the end of the entry, to a region, and to a press with
+nothing behind point:
+
+  a+|b*c     =>  a+sin(b)*c
+  x+2|       =>  x+sin(2)
+  x = |      =>  x = sin(|)
+
+Bound to `S' in `maf-edit-mode-map', the key calc gives the sine on
+the stack, so a capital S is no longer self-inserting during a
+session."
+  (interactive)
+  (maf-editplus--apply-function "sin"))
+
+(defun maf-editplus-wrap-cos ()
+  "Apply cos to the sub-expression at point.
+`maf-editplus-wrap-ln' with a different name written in front of the
+pair — point names the argument the same way, and the same rules
+apply to the end of the entry, to a region, and to a press with
+nothing behind point:
+
+  a+|b*c     =>  a+cos(b)*c
+  x+2|       =>  x+cos(2)
+  x = |      =>  x = cos(|)
+
+Bound to `C' in `maf-edit-mode-map', the key calc gives the cosine on
+the stack, so a capital C is no longer self-inserting during a
+session — a variable wanting the bare letter has to be yanked in."
+  (interactive)
+  (maf-editplus--apply-function "cos"))
+
+(defun maf-editplus-wrap-tan ()
+  "Apply tan to the sub-expression at point.
+`maf-editplus-wrap-ln' with a different name written in front of the
+pair — point names the argument the same way, and the same rules
+apply to the end of the entry, to a region, and to a press with
+nothing behind point:
+
+  a+|b*c     =>  a+tan(b)*c
+  x+2|       =>  x+tan(2)
+  x = |      =>  x = tan(|)
+
+Bound to `T' in `maf-edit-mode-map', the key calc gives the tangent on
+the stack, so a capital T is no longer self-inserting during a
+session."
+  (interactive)
+  (maf-editplus--apply-function "tan"))
+
 ;;; Raising to a power
 
 (defun maf-editplus-insert-power ()
@@ -1502,6 +1554,9 @@ Enabled, and while a maf-edit session is up:
        of the entry
   Q    `maf-editplus-wrap-sqrt' — and of a sqrt call
   |    `maf-editplus-wrap-abs' — and of an abs call
+  S    `maf-editplus-wrap-sin' — and of a sin call
+  C    `maf-editplus-wrap-cos' — and of a cos call
+  T    `maf-editplus-wrap-tan' — and of a tan call
   M-2..M-9
        `maf-editplus-insert-power' — `^' and the digit pressed
   :    `maf-editplus-raise-power' — the sub-expression point names
@@ -1522,7 +1577,7 @@ The arrows are the same gesture on the stack as here, a toggle between
 two spellings of one thing, and as there both directions run it — a
 toggle is its own inverse, so there is no second direction to give.
 
-L, Q, |, : and P are unmodified printable keys, as
+L, Q, |, S, C, T, : and P are unmodified printable keys, as
 `maf-edit-insert-colon' already is: each costs its self-insertion for
 the length of a session, and there is no cheap way back to the
 character — \\[quoted-insert] is not one, since pausing to read a
@@ -1547,6 +1602,9 @@ running, and the module is a no-op for anyone not using maf-edit."
                  ("L"   . maf-editplus-wrap-ln)
                  ("Q"   . maf-editplus-wrap-sqrt)
                  ("|"   . maf-editplus-wrap-abs)
+                 ("S"   . maf-editplus-wrap-sin)
+                 ("C"   . maf-editplus-wrap-cos)
+                 ("T"   . maf-editplus-wrap-tan)
                  (":"   . maf-editplus-raise-power)
                  ("P"   . maf-editplus-insert-pi)))
       (define-key maf-edit-mode-map (kbd (car b)) (and on (cdr b))))
@@ -1560,6 +1618,6 @@ running, and the module is a no-op for anyone not using maf-edit."
 ;; works on its own without it.
 (when (require 'maf-module nil t)
   (maf-register-module 'maf-editplus #'maf-use-editplus-mode
-                       "In-session keys for maf-edit (TAB escapes a group, M-o wraps one, C-RET duplicates one, S-up/S-down retype its delimiters, L/Q/| apply ln/sqrt/abs, M-2..M-9 and : raise to a power, P types pi)."))
+                       "In-session keys for maf-edit (TAB escapes a group, M-o wraps one, C-RET duplicates one, S-up/S-down retype its delimiters, L/Q/|/S/C/T apply ln/sqrt/abs/sin/cos/tan, M-2..M-9 and : raise to a power, P types pi)."))
 
 (provide 'maf-editplus)
