@@ -38,7 +38,9 @@ Spelled `docker/box` until `dev.sh` is sourced.
    versions of the day it was built. `docker/box --rebuild` refreshes
    them, keeping the old image as `maf-old`; `box` says so itself once
    the image is a month old. Boxes already made keep the image they
-   were made from until closed and made again.
+   were made from; to move one over, replace its container alone —
+   `docker rm maf-<feature> && box <feature>` — the worktree and branch
+   stay, and the same name makes a fresh box on them.
 
 2. Start a box on the feature:
 
@@ -184,8 +186,10 @@ the repo's `CLAUDE.md` keys off.
   points that out on its own once the image is past a month. Nothing
   else in the image goes stale the same way — the code is mounted, and
   your config is mounted or seeded — so a rebuild is only ever about the
-  agents. Existing boxes keep their image; close and remake one to move
-  it over. The image also carries a `maf.entrypoint` label, its
+  agents. Existing boxes keep their image; `docker rm maf-<feature> &&
+  box <feature>` moves one over — the container goes, the worktree and
+  branch stay (`--close` is for a landed feature and takes all three).
+  The image also carries a `maf.entrypoint` label, its
   entrypoint's feature level; `box` warns when that is below what the
   script relies on, since such an image makes boxes that start fine but
   skip whatever the newer entrypoint does. A warning, not a refusal —
@@ -198,8 +202,9 @@ the repo's `CLAUDE.md` keys off.
   host, `--model fable` (or any name) works regardless. Every start,
   that is, of a box made since the seed mount existed: a container
   keeps the mounts it was created with, so an older box restarts
-  without it — `box` says so when it starts one — and only closing and
-  remaking the box brings it in.
+  without it — `box` says so when it starts one — and only a fresh
+  container brings it in: `docker rm maf-<feature> && box <feature>`,
+  worktree and branch untouched.
 - Claude auth is a long-lived token (`~/.claude/box-token`, from `claude
   setup-token`), fixed into the environment when the container is
   created: nothing refreshes, so a box never invalidates another's

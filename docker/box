@@ -39,7 +39,8 @@ the first two — uncommitted changes go, unmerged commits go.
 The agents (claude, codex) are installed into the image, so every box
 runs the versions the image was built with. --rebuild refreshes them;
 box says when the image has aged enough to be worth it. Boxes already
-made keep the old image until closed and remade.
+made keep the old image; `docker rm maf-<feature> && box <feature>`
+moves one over — the container goes, the worktree and branch stay.
 
 Tab completion for bash, zsh and fish: docker/completions/
 EOF
@@ -151,7 +152,8 @@ check_image() {
 # not-ours error above suggests by hand: a build that fails halfway
 # leaves the tag where it was, and a build that succeeds leaves a way
 # back if the new agents misbehave. Boxes already made are unaffected —
-# a container holds its image — until closed and made again.
+# a container holds its image — until their container is replaced
+# (docker rm maf-<feature> && box <feature>; the worktree stays).
 rebuild_image() {
     docker_sudo
     if $sudo docker image inspect maf >/dev/null 2>&1; then
@@ -446,13 +448,17 @@ case $state in
         # What does not come back up to date is the mounts: a container
         # keeps the ones it was made with, so a box from before a mount
         # was added here restarts without it, and the entrypoint has
-        # nothing to seed from. Only remaking the box gets it — say so.
+        # nothing to seed from. Only remaking the container gets it — the
+        # container alone: the worktree and branch stay, and naming the
+        # feature again makes a fresh box on them. Not --close, which is
+        # for a feature that has landed and takes all three away.
         if [ -e "$HOME/.claude.json" ] \
            && ! $sudo docker inspect -f '{{range .Mounts}}{{.Destination}}{{"\n"}}{{end}}' "maf-$box" \
                 | grep -qx /seed/claude.json; then
             echo "box: maf-$box was made before Claude's model menu was seeded into boxes;" >&2
             echo "     its /model lacks what the host's has (--model fable still works)." >&2
-            echo "     box --close $feature and make it again to get it." >&2
+            echo "     To get it, replace the container alone — the worktree stays:" >&2
+            echo "     ${sudo:+$sudo }docker rm maf-$box && box $feature" >&2
         fi
         exec $sudo docker start -ai "${detach[@]}" "maf-$box"
         ;;
