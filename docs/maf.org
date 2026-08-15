@@ -34,9 +34,9 @@
    three binding modes, each its own heading below: calc-native, maf-native,
    vim-flavored
    open decisions:
-   - how a mode is chosen, and whether it can be switched live
+   - [ ] how a mode is chosen, and whether it can be switched live
      - defcustom? a command? what happens to a user's own overrides on switch?
-   - where the per-mode keys live
+   - [ ] where the per-mode keys live
      - the mafcmd table currently binds keys from row data (one key per row),
        and bindings.el collects everything made outside the table
      - three modes means either extra key columns in the table (defaulting to
@@ -44,7 +44,7 @@
        layers on top of one base map
      - picking this early matters: it's also the maintenance answer to the real
        cost of this feature — every future command needs a key decision × 3
-   - calc-native's navigation story
+   - [ ] calc-native's navigation story
      - maf-native names C-n/C-p/M-f/M-b; calc-native is silent. is that
        "whatever emacs does globally", or deliberately no navigation bindings?
        record whichever it is
