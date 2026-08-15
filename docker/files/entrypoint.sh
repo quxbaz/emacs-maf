@@ -13,6 +13,37 @@ if [ -f /seed/credentials.json ]; then
     chmod 600 "$HOME/.claude/.credentials.json"
 fi
 
+# Which models Claude offers. Its /model menu comes from entitlement
+# caches in ~/.claude.json that only a login fills in; a box authed by
+# token never gets them, so its menu lacks the models the host's shows
+# (Fable, for one). The host's ~/.claude.json is mounted at /seed: take
+# those keys, and only those, into the box's own copy — the rest of the
+# host file (account, per-project state, history) stays out. Runs on
+# every start, so a restart picks up what the host has learned since.
+# node does the JSON, being what the agent itself runs on.
+if [ -f /seed/claude.json ]; then
+    node -e '
+        const fs = require("fs");
+        const keys = ["additionalModelOptionsCache",
+                      "additionalModelCostsCache",
+                      "modelAccessCache"];
+        const own = process.env.HOME + "/.claude.json";
+        let seed, box;
+        try { seed = JSON.parse(fs.readFileSync("/seed/claude.json", "utf8")); }
+        catch { process.exit(0); }
+        try { box = JSON.parse(fs.readFileSync(own, "utf8")); }
+        catch { box = {}; }
+        let changed = false;
+        for (const k of keys) {
+            if (seed[k] != null && JSON.stringify(seed[k]) !== JSON.stringify(box[k])) {
+                box[k] = seed[k];
+                changed = true;
+            }
+        }
+        if (changed) fs.writeFileSync(own, JSON.stringify(box, null, 2) + "\n");
+    '
+fi
+
 # Codex keeps its own auth in a separate file, seeded the same way and
 # for the same reason. Absent when the host has never signed in to
 # codex; the box still runs, and codex asks you to sign in there.

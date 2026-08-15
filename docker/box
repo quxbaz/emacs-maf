@@ -20,6 +20,7 @@ usage: box <feature>          a box on .worktrees/<feature>, made if new
        box -d <feature>       discard it: the same three, work and all
        box                    list the worktrees you can name
        box --names            those names alone, for completion
+       box --rebuild          rebuild the maf image, for newer agents
        box --help             this text
 
 One box per feature branch, several at once. A feature with no worktree
@@ -34,6 +35,11 @@ the container is made, so an existing box has to go before it changes.
 branch that is not merged, a worktree holding changes, or the tree you
 are standing in. -d is for one you are throwing away, and forces past
 the first two — uncommitted changes go, unmerged commits go.
+
+The agents (claude, codex) are installed into the image, so every box
+runs the versions the image was built with. --rebuild refreshes them;
+box says when the image has aged enough to be worth it. Boxes already
+made keep the old image until closed and remade.
 
 Tab completion for bash, zsh and fish: docker/completions/
 EOF
@@ -64,6 +70,80 @@ repo=$(dirname "$common")
 
 branch_exists() { git show-ref --quiet --verify "refs/heads/$feature"; }
 
+# The docker socket is root-owned unless you are in the docker group.
+# Only the docker calls are elevated — the paths stay yours. Asked for
+# only where docker is about to be used: completion runs on every tab
+# and has no business probing the socket.
+docker_sudo() {
+    sudo=
+    docker info >/dev/null 2>&1 || sudo=sudo
+}
+
+# The image a fresh box is cut from. Two ways it goes wrong, both quiet:
+# absent, and docker takes `maf` for a registry name and pulls a stranger's
+# image; present but built from an older Dockerfile, and the container comes
+# up without the entrypoint that lays out the tmux session, so the box is a
+# bare shell with no sign of what is missing. The entrypoint is the thing to
+# look for either way — it is what the rest of this script assumes ran.
+#
+# A third way is slow rather than quiet: the agents are npm-installed into
+# the image, root-owned, so they cannot update themselves in a box, and
+# every box runs the versions of the day the image was built. Past a month
+# that starts to show — features the host's agent has and the box's does
+# not — so check_image says so, and --rebuild is the remedy.
+build="docker build --build-arg UID=\$(id -u) --build-arg GID=\$(id -g) -t maf docker/"
+image_age_days() {
+    local created
+    created=$($sudo docker image inspect -f '{{.Created}}' maf 2>/dev/null) || return 1
+    echo $(( ($(date +%s) - $(date -d "$created" +%s)) / 86400 ))
+}
+build_image() {
+    $sudo docker build --build-arg UID="$(id -u)" --build-arg GID="$(id -g)" \
+          -t maf "$repo/docker/"
+}
+check_image() {
+    local entry age
+    if ! $sudo docker image inspect maf >/dev/null 2>&1; then
+        echo "box: no maf image yet — building it (once per machine)" >&2
+        build_image
+        return
+    fi
+    # An image with no entrypoint at all has no Entrypoint key to index —
+    # the template has to test it before reaching in, or it errors instead
+    # of reporting the empty answer that is the whole point of asking.
+    entry=$($sudo docker image inspect \
+                  -f '{{if .Config.Entrypoint}}{{index .Config.Entrypoint 0}}{{end}}' maf)
+    if [ "$entry" != /usr/local/bin/entrypoint ]; then
+        # Rebuilding for them would overwrite an image this may not even be
+        # — the tag is short enough for something else on the machine to have
+        # taken it.
+        echo "box: the maf image was not built from docker/Dockerfile" >&2
+        echo "     (its entrypoint is ${entry:-none}, expected /usr/local/bin/entrypoint)" >&2
+        echo "     rebuild it, keeping the old one first if it is still wanted:" >&2
+        echo "     docker tag maf maf-old && $build" >&2
+        exit 1
+    fi
+    age=$(image_age_days) || return 0
+    if [ "$age" -gt 30 ]; then
+        echo "box: the maf image is $age days old, and so are the agents in it" >&2
+        echo "     box --rebuild to refresh them (this box keeps the old image)" >&2
+    fi
+}
+# --rebuild keeps the image being replaced as maf-old, the way the
+# not-ours error above suggests by hand: a build that fails halfway
+# leaves the tag where it was, and a build that succeeds leaves a way
+# back if the new agents misbehave. Boxes already made are unaffected —
+# a container holds its image — until closed and made again.
+rebuild_image() {
+    docker_sudo
+    if $sudo docker image inspect maf >/dev/null 2>&1; then
+        $sudo docker tag maf maf-old
+        echo "box: previous image kept as maf-old" >&2
+    fi
+    build_image
+    echo "box: rebuilt; boxes made from now on use it — existing ones keep the old image" >&2
+}
+
 # The feature names, bare and one per line — what completion consumes,
 # and the reason no shell has to parse the listing above.
 names() {
@@ -92,6 +172,10 @@ case ${1-} in
         names | while IFS= read -r name; do
             case $name in "$cur"*) echo "$name" ;; esac
         done
+        exit 0
+        ;;
+    --rebuild)
+        rebuild_image
         exit 0
         ;;
     --close)
@@ -154,10 +238,7 @@ fi
 # the slash, the container does not.
 box=${feature//\//-}
 
-# The docker socket is root-owned unless you are in the docker group.
-# Only the docker call is elevated — the paths above stay yours.
-sudo=
-docker info >/dev/null 2>&1 || sudo=sudo
+docker_sudo
 
 # --close and -d take the same three things away — container, worktree,
 # branch — and differ only in what they will step over. --close is for a
@@ -279,6 +360,15 @@ else
     mount_ro "$HOME/.claude/.credentials.json" /seed/credentials.json
 fi
 
+# Which models Claude offers. Its /model menu is built from entitlement
+# caches in ~/.claude.json, filled in after a login — the token above is
+# not one, so a box's copy stays empty and the menu falls back to the
+# built-in list: no Fable, though `--model fable` works. Mounted at
+# /seed for the entrypoint to copy those keys, and only those, into the
+# box's own file on every start — nothing else in the host file (account,
+# per-project state, history) is taken. Optional, like the rest of /seed.
+mount_ro "$HOME/.claude.json" /seed/claude.json
+
 # My whole Emacs config, seeded rather than mounted, since Emacs writes
 # into it — the entrypoint copies it in. That carries my/calc along, so
 # the narrow mount is only for --bare: the legacy Calc config the port
@@ -304,38 +394,6 @@ session=(bash -c 'tmux attach -t emacs; exec bash')
 # swallows it waiting to see whether C-q follows. C-q C-q costs only
 # Emacs's quoted-insert of a literal C-q, which nothing here types.
 detach=(--detach-keys 'ctrl-q,ctrl-q')
-
-# The image a fresh box is cut from. Two ways it goes wrong, both quiet:
-# absent, and docker takes `maf` for a registry name and pulls a stranger's
-# image; present but built from an older Dockerfile, and the container comes
-# up without the entrypoint that lays out the tmux session, so the box is a
-# bare shell with no sign of what is missing. The entrypoint is the thing to
-# look for either way — it is what the rest of this script assumes ran.
-build="docker build --build-arg UID=\$(id -u) --build-arg GID=\$(id -g) -t maf docker/"
-check_image() {
-    local entry
-    if ! $sudo docker image inspect maf >/dev/null 2>&1; then
-        echo "box: no maf image yet — building it (once per machine)" >&2
-        $sudo docker build --build-arg UID="$(id -u)" --build-arg GID="$(id -g)" \
-              -t maf "$repo/docker/"
-        return
-    fi
-    # An image with no entrypoint at all has no Entrypoint key to index —
-    # the template has to test it before reaching in, or it errors instead
-    # of reporting the empty answer that is the whole point of asking.
-    entry=$($sudo docker image inspect \
-                  -f '{{if .Config.Entrypoint}}{{index .Config.Entrypoint 0}}{{end}}' maf)
-    if [ "$entry" != /usr/local/bin/entrypoint ]; then
-        # Rebuilding for them would overwrite an image this may not even be
-        # — the tag is short enough for something else on the machine to have
-        # taken it.
-        echo "box: the maf image was not built from docker/Dockerfile" >&2
-        echo "     (its entrypoint is ${entry:-none}, expected /usr/local/bin/entrypoint)" >&2
-        echo "     rebuild it, keeping the old one first if it is still wanted:" >&2
-        echo "     docker tag maf maf-old && $build" >&2
-        exit 1
-    fi
-}
 
 # A box outlives its shell, so naming one again revisits it rather than
 # building a second: running, join it in another shell; stopped, start it

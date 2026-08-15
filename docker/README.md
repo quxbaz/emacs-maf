@@ -18,6 +18,7 @@ box --close <feature>  done and merged: container, worktree, branch
 box -d <feature>       discard it instead: the same three, work and all
 box                    list the worktrees you can name
 box --names            those names alone, for completion
+box --rebuild          rebuild the image, for newer agents
 box --help             usage
 . ./dev.sh             put box on PATH with tab completion
 ```
@@ -26,11 +27,18 @@ Spelled `docker/box` until `dev.sh` is sourced.
 
 ## Quick start
 
-1. Build the image (once per machine):
+1. Build the image (once per machine; `box` does it for you the first
+   time it is needed):
 
    ```sh
    sudo docker build --build-arg UID=$(id -u) --build-arg GID=$(id -g) -t maf docker/
    ```
+
+   The agents are installed into the image, so every box runs the
+   versions of the day it was built. `docker/box --rebuild` refreshes
+   them, keeping the old image as `maf-old`; `box` says so itself once
+   the image is a month old. Boxes already made keep the image they
+   were made from until closed and made again.
 
 2. Start a box on the feature:
 
@@ -114,6 +122,7 @@ sudo docker run -it --name maf-my-feature \
   -v ~/lab/emacs-maf/.worktrees/my-feature:/work \
   -v ~/lab/emacs-maf/.git:/home/david/lab/emacs-maf/.git \
   -e CLAUDE_CODE_OAUTH_TOKEN="$(< ~/.claude/box-token)" \
+  -v ~/.claude.json:/seed/claude.json:ro \
   -v ~/.codex/auth.json:/seed/codex-auth.json:ro \
   -v ~/.gitconfig:/home/dev/.gitconfig:ro \
   -v ~/conf/claude/CLAUDE.md:/home/dev/.claude/CLAUDE.md:ro \
@@ -133,6 +142,7 @@ sudo docker run -it --name maf-my-feature \
 | `-v ...worktrees/my-feature:/work` | the worktree this box works on — the one line that assigns the branch |
 | `-v ...emacs-maf/.git:<same path>` | the main `.git`, at its *host path*: a worktree's `.git` file names that path absolutely, so git inside only resolves if the path matches exactly |
 | `-e CLAUDE_CODE_OAUTH_TOKEN=...` | Claude auth: the long-lived token from `~/.claude/box-token` (minted by `claude setup-token`, per machine — see `conf/install/setup.org`). It never rotates, so boxes cannot log each other — or the host — out. Without the file, `box` falls back to `-v ~/.claude/.credentials.json:/seed/credentials.json:ro`, a copy of the live session; copies rotate independently and fight, so expect login prompts |
+| `-v ~/.claude.json:/seed/claude.json:ro` | which models Claude offers: its `/model` menu is built from entitlement caches in this file that only a login fills in, and a token is not a login — without this a box's menu is the built-in list, no Fable (though `--model fable` still works). The entrypoint copies those cache keys, and only those, into the box's own `.claude.json` on every start; nothing else in the host file is taken |
 | `-v ~/.codex/auth.json:/seed/...:ro` | codex auth, seeded as a copy. Optional: without it a box still starts and codex asks you to sign in there |
 | `-v ~/.gitconfig:...:ro` | your name/email, so commits from inside are attributed |
 | `-v ~/conf/claude/...:ro` (×6) | your agent config, each file where its agent reads it — on the host these paths are symlinks into `~/conf`, a box takes the real files. `AGENTS.md` appears twice: for codex, and at the path `CLAUDE.md` imports. Any that is missing is skipped; `$MAF_CONF` names another `conf` |
@@ -168,6 +178,20 @@ the repo's `CLAUDE.md` keys off.
   model, and permission prompts off (`defaultMode: bypassPermissions`) —
   the container is the sandbox. Change that file and rebuild to alter
   either.
+- The agents themselves are as old as the image: npm-installed at build,
+  root-owned, so they cannot update themselves in a box. `box --rebuild`
+  refreshes them (the previous image stays as `maf-old`), and `box`
+  points that out on its own once the image is past a month. Nothing
+  else in the image goes stale the same way — the code is mounted, and
+  your config is mounted or seeded — so a rebuild is only ever about the
+  agents. Existing boxes keep their image; close and remake one to move
+  it over.
+- Claude's `/model` menu in a box lists what the host's does — Fable
+  included — because the entrypoint seeds the model-entitlement caches
+  from the host's `~/.claude.json` on every start. Those caches are
+  filled in only by a real login, which the token auth below is not; a
+  box left to itself shows the built-in list. Should the menu lag the
+  host, `--model fable` (or any name) works regardless.
 - Claude auth is a long-lived token (`~/.claude/box-token`, from `claude
   setup-token`), fixed into the environment when the container is
   created: nothing refreshes, so a box never invalidates another's
