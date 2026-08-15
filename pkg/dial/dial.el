@@ -20,7 +20,9 @@
 ;;   :keys    Text for the optional reference-key column, shown when
 ;;            the consumer names that column (see `dial-open') and the
 ;;            user toggles it in.
-;;   :doc     One line, echoed when point rests on the row.
+;;   :doc     What the row is for, echoed when point rests on it.
+;;            A line is the usual size; a consumer whose rows need
+;;            more may send several, the echo area growing to fit.
 ;;   :values  ((VALUE LABEL SETTER PROP...) ...) for an option with a
 ;;            fixed domain. VALUE is what the option's current key
 ;;            equals when it is set that way; SETTER is an opaque form
@@ -545,10 +547,11 @@ Staying put where there is no row left to reach."
       (goto-char start))))
 
 (defun dial--echo-doc ()
-  "Echo the current row's :doc line, if it has one.
+  "Echo the current row's :doc, if it has one.
 What a row is for cannot be read off the row: the Option column has
 room for a name, not for a sentence. So the sentence follows point
-instead, which is why an item carries a :doc.
+instead, which is why an item carries a :doc. A doc running to
+several lines is echoed whole — the echo area grows to fit it.
 
 Not logged. This runs on every motion key, and a line of help repeated
 down a list is not what *Messages* is for. Silent on a row with no doc
