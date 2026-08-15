@@ -961,13 +961,14 @@ knows nothing of the registry, so each module guards its registration
 usable with the registry absent — you just lose the list-driven
 management.
 
-=M-x maf-list-modules= opens =*maf-modules*=, a =tabulated-list-mode=
-buffer of every registered module — state, name, and a one-line
-description — split into its own window. =RET= on a row toggles that
-module in place: it calls the mode directly, so the reconcile above
-keeps =maf-modules= in step. Each module supplies its own description
-as the third argument to =maf-register-module=, so the menu documents
-whatever is loaded without a central list to maintain.
+=M-x maf-list-modules= opens =*maf-modules*=, a dial buffer
+(=pkg/dial=) of every registered module as an on/off row, split into
+its own window. =TAB= (also =RET=, =SPC= or =t=) flips the module on
+the current line in place: it calls the mode directly, so the
+reconcile above keeps =maf-modules= in step. Each module supplies its
+own description as the third argument to =maf-register-module=,
+echoed as point rests on its row, so the menu documents whatever is
+loaded without a central list to maintain.
 
 Two module shapes have appeared, matching the feature's state:
 

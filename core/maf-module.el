@@ -146,20 +146,36 @@ module is the whole interface.")
 
 ;; Set outside the defvar so a reload applies edits to the list.
 (setq maf-module--controls
-      '(((dial-next-value dial-previous-value) "toggle" "TAB")
+      '(((dial-next-value dial-previous-value) "toggle" "TAB" "RET")
         (dial-refresh "refresh")
         (quit-window "quit")))
+
+(defun maf-module--menu-map ()
+  "Return the module menu's keymap: dial's, with the toggle on more keys.
+RET, SPC and t have always flipped the module on the current line, and
+keep doing so — on a two-value row, stepping is toggling. A child of
+`dial-mode-map' rather than a copy, so dial's own bindings stay live
+underneath. RET displaces `dial-set', which has nothing to do here: no
+module row prompts."
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map dial-mode-map)
+    (define-key map (kbd "RET") #'dial-next-value)
+    (define-key map (kbd "SPC") #'dial-next-value)
+    (define-key map (kbd "t")   #'dial-next-value)
+    map))
 
 ;;;###autoload
 (defun maf-list-modules ()
   "Show the maf module toggle buffer in another window and select it.
-Each registered module is a row; TAB flips the one on the current line,
-and its description echoes as point rests on it (see `dial-mode'). The
-buffer is dial's; this command supplies it the registry."
+Each registered module is a row; TAB, RET, SPC or t flips the one on
+the current line, and its description echoes as point rests on it (see
+`dial-mode'). The buffer is dial's; this command supplies it the
+registry."
   (interactive)
   (dial-open "*maf-modules*" (maf-module--items)
              :name "maf-modules"
              :controls maf-module--controls
-             :raw #'maf-module--state))
+             :raw #'maf-module--state
+             :init (lambda () (use-local-map (maf-module--menu-map)))))
 
 (provide 'maf-module)
