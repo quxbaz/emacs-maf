@@ -112,6 +112,28 @@
                     "a+(b*c)^3"))
   (call-interactively 'maf-edit-discard)
 
+  ;; An active region is raised as one unit, in parens whatever it
+  ;; holds — even a single name, which the marks say to treat whole.
+  ;; Marked and pressed in the one step: the stepper deactivates the
+  ;; mark around every form it runs.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (execute-kbd-macro "ln(xy)") nil)
+  (progn (maf-edit-move-beginning-of-line 1)
+         (forward-char 3)
+         (set-mark (point))
+         (forward-char 2)
+         (activate-mark)
+         (execute-kbd-macro ":")
+         nil)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "ln((xy)^2)"))
+  ;; Point lands on the caret, the region spent, so the next press
+  ;; counts the power up.
+  (progn (execute-kbd-macro ":") nil)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "ln((xy)^3)"))
+  (call-interactively 'maf-edit-discard)
+
   ;; The closer of a call names nothing: electric parens leave point
   ;; in front of it for the whole time the argument is typed, so a
   ;; press there raises the term just typed, not the call around it.

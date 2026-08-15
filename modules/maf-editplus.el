@@ -1500,6 +1500,12 @@ text honest go in with it:
 Point is left on the caret, so pressing again counts the power up
 rather than squaring the exponent.
 
+An active region is raised exactly as marked, the way it names the
+argument of `maf-editplus-wrap-ln', in the parentheses that keep the
+marked text one unit whatever it holds — ln(xy) with xy marked
+becomes ln((xy)^2). Point lands on the caret here too, so the next
+press counts the power up.
+
 At the end of the entry there is no character under point, and what
 counts as the exponent is a run of digits immediately behind point
 with the caret in front of it — anything else and a fresh ^2 goes in.
@@ -1510,17 +1516,37 @@ Bound to `:' in `maf-edit-mode-map'. The character itself is not lost:
 has a key with no modifier at all."
   (interactive "p")
   (dotimes (_ n)
-    (let ((node (maf-editplus--subexpr-node)))
-      (if node
-          (goto-char (maf-editplus--raise-node node))
-        (let* ((limit (line-beginning-position))
-               (start (save-excursion (skip-chars-backward "0-9" limit) (point))))
-          (if (and (< start (point)) (eq (char-before start) ?^))
-              (let ((power (string-to-number
-                            (buffer-substring-no-properties start (point)))))
-                (delete-region start (point))
-                (insert (number-to-string (1+ power))))
-            (insert "^2")))))))
+    (if (use-region-p)
+        (let* ((entry (or (maf-editplus--entry-at-point)
+                          (user-error "Point is not in a stack entry")))
+               (limit (+ (overlay-start entry)
+                         (maf-edit--leading-prefix-run
+                          (overlay-start entry))))
+               (beg (max (region-beginning) limit))
+               (end (region-end)))
+          (when (> end (overlay-end entry))
+            (user-error "Region reaches past the entry"))
+          (when (>= beg end)
+            (user-error "Nothing to raise"))
+          (deactivate-mark)
+          ;; As in `maf-editplus--raise-node': the opener goes in
+          ;; first, so the closer's position is the region's end
+          ;; shifted by the one character, and the caret lands where
+          ;; the next press finds a power to count up.
+          (save-excursion (goto-char beg) (insert "("))
+          (save-excursion (goto-char (1+ end)) (insert ")^2"))
+          (goto-char (+ end 2)))
+      (let ((node (maf-editplus--subexpr-node)))
+        (if node
+            (goto-char (maf-editplus--raise-node node))
+          (let* ((limit (line-beginning-position))
+                 (start (save-excursion (skip-chars-backward "0-9" limit) (point))))
+            (if (and (< start (point)) (eq (char-before start) ?^))
+                (let ((power (string-to-number
+                              (buffer-substring-no-properties start (point)))))
+                  (delete-region start (point))
+                  (insert (number-to-string (1+ power))))
+              (insert "^2"))))))))
 
 (defun maf-editplus-insert-pi (n)
   "Insert the constant pi, N times, on the unmodified `P' key.
