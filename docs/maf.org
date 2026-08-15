@@ -29,7 +29,7 @@
     - [ ] factor
     - [ ] target-line
 
-* IN-PROGRESS dial
+* REVIEW dial
   extract the interaction layer of the *maf-options* buffer into a new,
   self-contained package named "dial": a general-purpose library for building
   configuration interfaces, not tied to maf.
