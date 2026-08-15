@@ -92,6 +92,11 @@ docker_sudo() {
 # that starts to show — features the host's agent has and the box's does
 # not — so check_image says so, and --rebuild is the remedy.
 build="docker build --build-arg UID=\$(id -u) --build-arg GID=\$(id -g) -t maf docker/"
+# The entrypoint feature level this script counts on — LABEL
+# maf.entrypoint in the Dockerfile, bumped there whenever the entrypoint
+# gains something box relies on. 1: seeds Claude's model caches from
+# /seed/claude.json.
+entrypoint_level=1
 image_age_days() {
     local created
     created=$($sudo docker image inspect -f '{{.Created}}' maf 2>/dev/null) || return 1
@@ -102,7 +107,7 @@ build_image() {
           -t maf "$repo/docker/"
 }
 check_image() {
-    local entry age
+    local entry age level
     if ! $sudo docker image inspect maf >/dev/null 2>&1; then
         echo "box: no maf image yet — building it (once per machine)" >&2
         build_image
@@ -122,6 +127,19 @@ check_image() {
         echo "     rebuild it, keeping the old one first if it is still wanted:" >&2
         echo "     docker tag maf maf-old && $build" >&2
         exit 1
+    fi
+    # The image's entrypoint level, against the one this script wants.
+    # Below it — or absent, from an image built before the label was —
+    # and the boxes it makes come up fine but skip what the newer
+    # entrypoint does, with nothing to say so; hence this. A warning
+    # rather than a refusal: maf-old is kept to be fallen back to, and
+    # falling back has to be allowed to.
+    level=$($sudo docker image inspect -f '{{index .Config.Labels "maf.entrypoint"}}' maf)
+    if [ "${level:-0}" -lt "$entrypoint_level" ]; then
+        echo "box: the maf image predates this box script (entrypoint level ${level:-none}, wants $entrypoint_level)" >&2
+        echo "     boxes made from it start, but skip what the newer entrypoint does —" >&2
+        echo "     box --rebuild to catch it up (this box keeps the old image)" >&2
+        return
     fi
     age=$(image_age_days) || return 0
     if [ "$age" -gt 30 ]; then
@@ -424,6 +442,18 @@ case $state in
         # Exited, created, paused: the filesystem is as you left it. The
         # entrypoint runs again, so credentials are re-seeded and Emacs
         # comes back up — the tmux session did not survive the stop.
+        #
+        # What does not come back up to date is the mounts: a container
+        # keeps the ones it was made with, so a box from before a mount
+        # was added here restarts without it, and the entrypoint has
+        # nothing to seed from. Only remaking the box gets it — say so.
+        if [ -e "$HOME/.claude.json" ] \
+           && ! $sudo docker inspect -f '{{range .Mounts}}{{.Destination}}{{"\n"}}{{end}}' "maf-$box" \
+                | grep -qx /seed/claude.json; then
+            echo "box: maf-$box was made before Claude's model menu was seeded into boxes;" >&2
+            echo "     its /model lacks what the host's has (--model fable still works)." >&2
+            echo "     box --close $feature and make it again to get it." >&2
+        fi
         exec $sudo docker start -ai "${detach[@]}" "maf-$box"
         ;;
 esac

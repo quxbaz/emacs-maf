@@ -185,13 +185,21 @@ the repo's `CLAUDE.md` keys off.
   else in the image goes stale the same way — the code is mounted, and
   your config is mounted or seeded — so a rebuild is only ever about the
   agents. Existing boxes keep their image; close and remake one to move
-  it over.
+  it over. The image also carries a `maf.entrypoint` label, its
+  entrypoint's feature level; `box` warns when that is below what the
+  script relies on, since such an image makes boxes that start fine but
+  skip whatever the newer entrypoint does. A warning, not a refusal —
+  `maf-old` is kept to be fallen back to.
 - Claude's `/model` menu in a box lists what the host's does — Fable
   included — because the entrypoint seeds the model-entitlement caches
   from the host's `~/.claude.json` on every start. Those caches are
   filled in only by a real login, which the token auth below is not; a
   box left to itself shows the built-in list. Should the menu lag the
-  host, `--model fable` (or any name) works regardless.
+  host, `--model fable` (or any name) works regardless. Every start,
+  that is, of a box made since the seed mount existed: a container
+  keeps the mounts it was created with, so an older box restarts
+  without it — `box` says so when it starts one — and only closing and
+  remaking the box brings it in.
 - Claude auth is a long-lived token (`~/.claude/box-token`, from `claude
   setup-token`), fixed into the environment when the container is
   created: nothing refreshes, so a box never invalidates another's

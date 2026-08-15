@@ -93,6 +93,13 @@ ENV MAF_SERVER_NAME="#emacs"
 # Marks the shell as a container box (the repo's CLAUDE.md keys off it).
 ENV MAF_CONTAINER=1
 
+# What this image's entrypoint knows how to do, for box to compare against
+# what its script expects: an image built before a feature that box now
+# relies on would otherwise start boxes that quietly lack it. Bump it when
+# the entrypoint gains something box depends on. 1: seeds Claude's model
+# caches from /seed/claude.json.
+LABEL maf.entrypoint=1
+
 # The entrypoint installs credentials and starts Emacs, then runs CMD.
 ENTRYPOINT ["/usr/local/bin/entrypoint"]
 CMD ["bash"]
