@@ -724,6 +724,11 @@ and the variable registration follow the mode. See `maf-modules'."
 
 (when (require 'maf-module nil t)
   (maf-register-module 'maf-formulas #'maf-use-formulas-mode
-                       "Menu of saved formulas by category; RET inserts onto the stack."))
+                       "Keep a library of formulas and push them onto the stack.
+
+The *maf-formulas* menu lists saved formulas by category, each beside
+its form; RET pushes the one at point onto the stack, `o' opens a
+detail pane — Big display, what it is for, what each variable means.
+The library is a file of your own (`maf-formulas-file')."))
 
 (provide 'maf-formulas)

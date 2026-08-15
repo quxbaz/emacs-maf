@@ -166,6 +166,11 @@ The per-buffer arm of `maf-use-selplus-mode'."
 ;; works on its own without it.
 (when (require 'maf-module nil t)
   (maf-register-module 'maf-selplus #'maf-use-selplus-mode
-                       "Badge in the calc header line while a selection is active."))
+                       "Show a badge while a selection is standing.
+
+A selection is a mode in all but name — while one is active, keys act
+on the selected sub-formula rather than the entry — and calc gives it
+no indicator. The badge holds the calc header line for as long as any
+entry carries a selection, and names the key that clears it."))
 
 (provide 'maf-selplus)

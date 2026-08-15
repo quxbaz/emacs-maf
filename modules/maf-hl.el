@@ -133,6 +133,11 @@ Big mode and returns when the display goes back to normal."
 ;; works on its own without it.
 (when (require 'maf-module nil t)
   (maf-register-module 'maf-hl #'maf-use-hl-mode
-                       "Highlight the innermost sub-formula under point as the cursor moves."))
+                       "Highlight the sub-formula under point.
+
+The innermost sub-formula around point is highlighted as the cursor
+moves, so what a contextual command would act on is visible before
+you press the key. Nothing is selected and nothing is changed — the
+highlight only shows you where you are standing."))
 
 (provide 'maf-hl)

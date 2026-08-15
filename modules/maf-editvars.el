@@ -537,6 +537,11 @@ and algebraic entry at calc's own prompt are untouched."
 ;; works on its own without it.
 (when (require 'maf-module nil t)
   (maf-register-module 'maf-editvars #'maf-use-editvars-mode
-                       "Handwritten-style algebra in maf-edit: 2xy is 2*x*y, \\name quotes one identifier."))
+                       "Read maf-edit text the way algebra is written by hand.
+
+Calc reads a run of letters as one variable, so xy is a single name.
+Here every run splits into factors — 2xy is 2*x*y — and a backslash
+quotes one identifier whole: \\cm is the unit, \\xy the variable. An
+input dialect for edit sessions; the stack keeps calc's own syntax."))
 
 (provide 'maf-editvars)

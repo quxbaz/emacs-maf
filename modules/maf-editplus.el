@@ -1697,6 +1697,12 @@ running, and the module is a no-op for anyone not using maf-edit."
 ;; works on its own without it.
 (when (require 'maf-module nil t)
   (maf-register-module 'maf-editplus #'maf-use-editplus-mode
-                       "In-session keys for maf-edit (TAB escapes a group, M-o wraps one, C-RET duplicates one, S-up/S-down retype its delimiters, L/Q/|/S/C/T apply ln/sqrt/abs/sin/cos/tan, M-2..M-9 and : raise to a power, P types pi)."))
+                       "Extra keys for typing formulas inside maf-edit.
+
+TAB runs point past the delimiter closing the group it stands in, and
+M-o wraps the term before point in parens, widening a step per press.
+Then C-RET duplicates an entry, S-up/S-down retype its delimiters,
+L/Q/| and S/C/T apply ln/sqrt/abs and sin/cos/tan, M-2..M-9 and :
+raise to a power, P types pi."))
 
 (provide 'maf-editplus)

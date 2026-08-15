@@ -761,7 +761,12 @@ through the module system; see `maf-modules'."
 ;; works on its own without it.
 (when (require 'maf-module nil t)
   (maf-register-module 'maf-options #'maf-use-options-mode
-                       "Browse and set all of calc's options from one buffer."))
+                       "Browse and set all of calc's options from one buffer.
+
+Calc's settings are spread over six prefix maps and some ninety key
+bindings. The *maf-options* buffer gathers them into one table, each
+row showing the option's current value and the values it can take, so
+a setting can be found by reading rather than recalled by key."))
 
 ;;; Not in the registry
 ;;
