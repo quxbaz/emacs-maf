@@ -34,11 +34,13 @@
    - in *maf-options* buffer, when cycling through (TAB key) values for an
      option, in the minibuffer, if possible and applicable for that value, show
      an example of the new output given the newly set option
-   - the example replaces the usual echo message entirely — the buffer already
-     shows the option's new state, so the minibuffer carries only the example
+   - the message replaces the usual echo entirely, two lines: the option and
+     the value just set, then the example
    - example, for digit grouping, cycling between `on` and `off` values:
-     - [on] Example: 999,999
-     - [off] Example: 999999
+     - Digit grouping: on
+       Example: 999,999
+     - Digit grouping: off
+       Example: 999999
    - when no example is applicable for an option/value, keep the current
      behavior (no extra output)
    - only output this when TABbing through values

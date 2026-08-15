@@ -93,6 +93,16 @@
 ;;            the two entries are synthesized by `maf-options--items'.
 ;;            See `maf-options--set-flag' for why this is not just
 ;;            shorthand.
+;;   :sample  A calc object — or a function returning one, when
+;;            producing the sample itself depends on the setting, as
+;;            dividing does on fraction mode — that stepping formats
+;;            and echoes after each value lands, showing the output
+;;            the new value produces. Compiled by `maf-options--items'
+;;            into dial's :example; formatted live in the calc buffer
+;;            by `maf-options--example', so the echo is calc's own
+;;            rendering, not a transcript. Only for options whose
+;;            effect is visible in one formatted value — a window
+;;            layout or an entry mode has nothing to sample.
 ;;
 ;; :keys holds calc's own key(s) for the setting, shown in the Calc key
 ;; column. Informational: the menu never presses them, and they stay
@@ -134,7 +144,10 @@ and for why the setters are forms rather than command names.")
     (calc-prefer-frac
      :group "Numbers" :label "Fraction mode" :keys "m f"
      :doc "Leave integer quotients as fractions rather than floats."
-     :flag calc-frac-mode)
+     :flag calc-frac-mode
+     ;; 3/4 under the mode just set: the sample is the division, not
+     ;; its answer, since which answer comes out is the setting.
+     :sample ,(lambda () (math-div 3 4)))
 
     (calc-symbolic-mode
      :group "Numbers" :label "Symbolic mode" :keys "m s"
@@ -212,7 +225,8 @@ and for why the setters are forms rather than command names.")
               (8  "octal"       (calc-octal-radix))
               (16 "hexadecimal" (calc-hex-radix)))
      :read (call-interactively #'calc-radix)
-     :show ,(lambda (raw) (unless (memq raw '(10 2 8 16)) (format "base %d" raw))))
+     :show ,(lambda (raw) (unless (memq raw '(10 2 8 16)) (format "base %d" raw)))
+     :sample 100)
 
     (calc-float-format
      :group "Display" :label "Float format" :keys "d n/f/s/e"
@@ -225,6 +239,7 @@ and for why the setters are forms rather than command names.")
                      :prompts t)
               (sci   "scientific"  (calc-sci-notation nil))
               (eng   "engineering" (calc-eng-notation nil)))
+     :sample (float 123456789 -4)
      ;; Stored as (STYLE DIGITS), with 0 digits meaning "as many as
      ;; the precision allows".
      :current ,#'car
@@ -242,12 +257,14 @@ and for why the setters are forms rather than command names.")
      :flag calc-group-digits
      ;; A positive prefix sets the group size rather than turning
      ;; grouping on, so the variable can hold a number.
-     :show ,(lambda (raw) (when (integerp raw) (format "groups of %d" raw))))
+     :show ,(lambda (raw) (when (integerp raw) (format "groups of %d" raw)))
+     :sample 999999)
 
     (calc-leading-zeros
      :group "Display" :label "Leading zeros" :keys "d z"
      :doc "Pad numbers to the current word size with leading zeros."
-     :flag calc-leading-zeros)
+     :flag calc-leading-zeros
+     :sample 63)
 
     (calc-line-numbering
      :group "Display" :label "Line numbers" :keys "d l"
@@ -276,7 +293,8 @@ and for why the setters are forms rather than command names.")
     (calc-display-strings
      :group "Display" :label "Strings" :keys "d \""
      :doc "Print vectors of character codes as strings."
-     :flag calc-display-strings)
+     :flag calc-display-strings
+     :sample (vec 72 105))
 
     (calc-display-raw
      :group "Display" :label "Raw display" :keys "d '"
@@ -303,7 +321,12 @@ and for why the setters are forms rather than command names.")
               (maxima  "Maxima"        (calc-maxima-language))
               (giac    "Giac"          (calc-giac-language))
               (math    "Mathematica"   (calc-mathematica-language))
-              (maple   "Maple"         (calc-maple-language))))
+              (maple   "Maple"         (calc-maple-language)))
+     ;; A formula, since a bare number reads the same in every
+     ;; language: the product, the call and big's radical are where
+     ;; the notations part ways. Languages that agree on it — most of
+     ;; the programming ones — honestly show the same text.
+     :sample (+ (* 2 (var x var-x)) (calcFunc-sqrt 2)))
 
     ;;; Formats
     (calc-complex-format
@@ -311,7 +334,8 @@ and for why the setters are forms rather than command names.")
      :doc "Notation complex numbers print in."
      :values ((nil "(x,y)" (calc-complex-notation))
               (i   "x+yi"  (calc-i-notation))
-              (j   "x+yj"  (calc-j-notation))))
+              (j   "x+yj"  (calc-j-notation)))
+     :sample (cplx 2 3))
 
     (calc-frac-format
      :group "Formats" :label "Fractions" :keys "d o"
@@ -372,22 +396,26 @@ and for why the setters are forms rather than command names.")
      ;; is passed through to match no key at all, rather than falling
      ;; to nil and lighting "none".
      :current ,(lambda (raw)
-                 (pcase raw ("[]" '\[\]) ("{}" '{}) ("()" '\(\)) (_ raw))))
+                 (pcase raw ("[]" '\[\]) ("{}" '{}) ("()" '\(\)) (_ raw)))
+     :sample (vec 1 2 3))
 
     (calc-vector-commas
      :group "Vectors" :label "Vector commas" :keys "v ,"
      :doc "Separate vector elements with commas rather than spaces."
-     :flag calc-vector-commas)
+     :flag calc-vector-commas
+     :sample (vec 1 2 3))
 
     (calc-full-vectors
      :group "Vectors" :label "Long vectors" :keys "v ."
      :doc "Print long vectors in full rather than abbreviated."
-     :flag calc-full-vectors)
+     :flag calc-full-vectors
+     :sample ,(cons 'vec (number-sequence 1 10)))
 
     (calc-break-vectors
      :group "Vectors" :label "One per line" :keys "v /"
      :doc "Print each vector element on its own line."
-     :flag calc-break-vectors)
+     :flag calc-break-vectors
+     :sample (vec 1 2 3))
 
     (calc-full-trail-vectors
      :group "Vectors" :label "Trail vectors" :keys ""
@@ -529,6 +557,17 @@ nothing and set a local binding in the wrong buffer."
   "Return VAR's calc default, from `calc-mode-var-list'."
   (nth 1 (assq var calc-mode-var-list)))
 
+(defun maf-options--example (sample)
+  "Format SAMPLE the way calc displays values right now.
+SAMPLE is a calc object, or a function returning one — a function when
+producing the sample itself depends on a setting, as dividing does on
+fraction mode. Both the call and the formatting run in the calc buffer,
+where the mode variables the formatter reads are local. Stepping an
+option calls this after the new value has landed, so the answer shows
+that value's effect."
+  (with-current-buffer (maf-options--calc-buffer)
+    (math-format-value (if (functionp sample) (funcall sample) sample))))
+
 (defun maf-options--set-flag (var command on)
   "Turn the on/off setting VAR ON, by toggling it with COMMAND.
 COMMAND is called with nil, the argument every calc mode command reads
@@ -629,15 +668,19 @@ of reaching them, not a second place they live."
 
 (defun maf-options--items ()
   "Compile `maf-options-registry' into dial items.
-The one registry key dial does not read is :flag, this file's shorthand
-for a plain on/off option: its two value entries are synthesized here,
-closing over the toggling command, along with the :current that reads a
-group size or a break column as still meaning on. Everything else
+Two registry keys dial does not read are compiled here. :flag, this
+file's shorthand for a plain on/off option: its two value entries are
+synthesized, closing over the toggling command, along with the :current
+that reads a group size or a break column as still meaning on. See
+`maf-options--set-flag' for why it is not just shorthand. And :sample,
+a value to illustrate the option with, which becomes dial's :example —
+a closure formatting the sample in the calc buffer. Everything else
 passes through — the registry is already written in dial's item format."
   (mapcar (lambda (entry)
             (let* ((var (car entry))
                    (spec (copy-sequence (cdr entry)))
-                   (command (plist-get spec :flag)))
+                   (command (plist-get spec :flag))
+                   (sample (plist-get spec :sample)))
               (when command
                 (setq spec (plist-put
                             spec :values
@@ -645,6 +688,10 @@ passes through — the registry is already written in dial's item format."
                               (nil "off" (maf-options--set-flag ',var #',command nil))))
                       spec (plist-put spec :current
                                       (lambda (raw) (and raw t)))))
+              (when sample
+                (setq spec (plist-put spec :example
+                                      (lambda (_value)
+                                        (maf-options--example sample)))))
               (cons var spec)))
           maf-options-registry))
 

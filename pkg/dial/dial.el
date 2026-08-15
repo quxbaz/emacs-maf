@@ -38,6 +38,11 @@
 ;;            against :values, for options stored decomposed.
 ;;   :show    Function rendering the raw value for the Value column,
 ;;            when the matched :values label does not say enough.
+;;   :example Function mapping a value key to a short sample of the
+;;            output the option produces set that way, or to nil when
+;;            no example applies. Called after a step has applied the
+;;            value, so it may read live state; only stepping echoes
+;;            it — see `dial--example'.
 ;;   :vars    Other IDs the row speaks for, when one setting is spread
 ;;            over several. They count towards whether the row has
 ;;            moved off its default.
@@ -647,11 +652,13 @@ setting on this line\" — and being distinct per group, it also leaves
           (setq last-group group))))
     (setq tabulated-list-entries (nreverse entries))))
 
-(defun dial--redraw (id spec)
+(defun dial--redraw (id spec &optional echo)
   "Redraw the list, keeping point on the same row, and echo ID's value.
 SPEC is ID's entry in `dial-items'. Both are passed in from the command
 that just set ID, rather than re-read from the row, so the echo reports
-what was set even if the row has moved.
+what was set even if the row has moved. ECHO, when non-nil, is said in
+place of the label-and-value message — how the stepping path shows a
+row's example instead.
 
 Clears `dial--pending' — every path through here has just set the
 setting, by whatever route, so a value still waiting to be set is no
@@ -660,8 +667,9 @@ when it is the one leaving a value pending."
   (setq dial--pending nil)
   (dial--refresh)
   (dial--print t)
-  (message "%s: %s" (plist-get spec :label)
-           (dial--value-string id spec)))
+  (message "%s" (or echo
+                    (format "%s: %s" (plist-get spec :label)
+                            (dial--value-string id spec)))))
 
 (defun dial-refresh ()
   "Re-read every setting and redraw the list."
@@ -733,6 +741,29 @@ Signals on a group separator, whose id names no setting."
 ;; until the prompt was answered. So a prompting value is stepped onto
 ;; and left alone, and `dial-set' is what runs it.
 
+(defun dial--example (spec value)
+  "Return the example echoed after stepping SPEC's item to value entry VALUE.
+Nil without an :example function, and nil when the function answers nil
+— how a row says no example applies to this value. Called after the
+setter has run, so the function may read the state the value just
+produced.
+
+Two lines: the option and the value just landed on, then the example —
+
+  Digit grouping: off
+  Example: 999999
+
+— so what changed is legible without looking back at the row.
+
+Only the stepping path shows this, in place of the label-and-value
+echo: stepping is a tour of the values, which is where a sample of each
+one's output earns its keep. `dial-set' and `dial-reset' land on a
+value already chosen, so they keep the plain echo."
+  (when-let* ((fn (plist-get spec :example))
+              (sample (funcall fn (car value))))
+    (format "%s: %s\nExample: %s"
+            (plist-get spec :label) (nth 1 value) sample)))
+
 (defun dial--prompts-p (value)
   "Non-nil when VALUE's setter asks the user for the value it sets.
 Declared by the entry itself — :prompts in the plist after the setter —
@@ -774,7 +805,7 @@ runs that one."
                      (dial--key #'dial-set "RET")))
         (setq dial--pending nil)
         (dial--apply (nth 2 value))
-        (dial--redraw id spec)))))
+        (dial--redraw id spec (dial--example spec value))))))
 
 (defun dial-previous-value (&optional n)
   "Set this row's setting to its previous value, or the one N values back."
