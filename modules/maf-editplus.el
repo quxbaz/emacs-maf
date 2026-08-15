@@ -1227,11 +1227,17 @@ With no term behind point either — the head of an entry, or just
 after an operator — an empty call is inserted and point goes inside
 it, so the argument can be typed next. That is the one place this
 differs from wrapping in bare parens, which refuses there: an empty
-pair means nothing, while NAME() is a call waiting for its argument."
+pair means nothing, while NAME() is a call waiting for its argument.
+
+Outside any entry — the dot line, or anywhere on an empty stack — a
+fresh entry opens at the bottom first, the same place typed text
+would start one, and the empty call goes inside it. The key behaves
+like typing there rather than refusing: the entry it needs is the
+entry it makes."
   (unless maf-edit-mode
     (user-error "maf-edit is not active"))
   (let* ((entry (or (maf-editplus--entry-at-point)
-                    (user-error "Point is not in a stack entry")))
+                    (maf-edit--open-at-dot)))
          (limit (+ (overlay-start entry)
                    (maf-edit--leading-prefix-run (overlay-start entry))))
          (node (unless (use-region-p) (maf-editplus--subexpr-node))))
@@ -1289,7 +1295,12 @@ the closing paren so typing carries on:
   x = |        =>  x = ln(|)
 
 An active region becomes the argument exactly as marked. With nothing
-behind point an empty ln() is opened instead, point inside it.
+behind point an empty ln() is opened instead, point inside it — and
+outside any entry, on the dot line or an empty stack, a fresh entry
+opens at the bottom to hold it, as typing would have started one:
+
+  .|           =>  1+  ln(|)
+                       .
 
 Bound to `L' in `maf-edit-mode-map', so a capital L is no longer
 self-inserting during a session — see `maf-use-editplus-mode' on what

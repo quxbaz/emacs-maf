@@ -165,19 +165,33 @@
                     "(a+b +ln(c)"))
   (call-interactively 'maf-edit-discard)
 
-  ;; The home line is not an entry: the dot is furniture, and a press
-  ;; there must not turn it into one.
+  ;; The home line is not an entry, and a press there makes one: a
+  ;; fresh entry opens at the bottom with the empty call inside it,
+  ;; point between the parens — the same start typing would have made.
   (maf-push "a+b")
   (maf-edit-mode 1)
   (progn (goto-char (point-max)) nil)
   (cl-assert (null (maf-editplus--entry-at-point)))
-  (cl-assert (string-match-p
-              "not in a stack entry"
-              (condition-case e
-                  (progn (call-interactively 'maf-editplus-wrap-ln) "")
-                (error (error-message-string e)))))
+  (call-interactively 'maf-editplus-wrap-ln)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "ln()"))
+  (cl-assert (eq (char-after) ?\)))
   (call-interactively 'maf-edit-discard)
   (calc-pop (calc-stack-size))
+
+  ;; An empty stack is the same story from nothing at all: no entry
+  ;; anywhere, and the press starts the first one, ready for its
+  ;; argument.
+  (maf-edit-mode 1)
+  (progn (goto-char (point-min)) nil)
+  (cl-assert (null (maf-editplus--entry-at-point)))
+  (call-interactively 'maf-editplus-wrap-ln)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "ln()"))
+  (progn (execute-kbd-macro "x") nil)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "ln(x)"))
+  (call-interactively 'maf-edit-discard)
 
   ;; Outside a session the command refuses rather than editing calc's
   ;; rendered stack. The key never reaches here — it is bound in
