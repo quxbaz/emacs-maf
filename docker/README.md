@@ -176,10 +176,12 @@ the repo's `CLAUDE.md` keys off.
   `box my-feature`. Completion alone lives in `docker/completions/`
   (bash, zsh, fish) — each shim asks `box --names` for the candidates
   rather than parsing the listing, and says how to load it.
-- The agent's defaults are `docker/files/settings.json`: Opus as the
-  model, and permission prompts off (`defaultMode: bypassPermissions`) —
-  the container is the sandbox. Change that file and rebuild to alter
-  either.
+- The agent's defaults are `docker/files/settings.json`: Fable as the
+  model (`claude-fable-5[1m]`, the host's own default — an explicit
+  model id, which the agent honors whether or not the model-menu seed
+  below reached the box), and permission prompts off (`defaultMode:
+  bypassPermissions`) — the container is the sandbox. Change that file
+  and rebuild to alter either.
 - The agents themselves are as old as the image: npm-installed at build,
   root-owned, so they cannot update themselves in a box. `box --rebuild`
   refreshes them (the previous image stays as `maf-old`), and `box`
