@@ -1163,7 +1163,16 @@ node of the entry's parse whose span covers point (see
 
 Nil when there is nothing under point — the end of the entry, where a
 command's own scan for the term behind point takes over — and nil
-outside an entry, where there is no text to parse."
+outside an entry, where there is no text to parse.
+
+Nil also on the closer of a call, the one character inside an entry
+that names nothing: electric parens leave point in front of it for
+the whole time the argument is being typed, so a press there means
+the term just typed — ln(x y|) raising y — and the same term-behind
+scan takes over, as at the end of the entry. Only a call's own
+closer: a bare pair's closer still names the expression it encloses,
+and a vector's bracket the vector, both being where the pinned-down
+grammar puts them."
   (let ((entry (maf-editplus--entry-at-point)))
     (when entry
       (let* ((limit (+ (overlay-start entry)
@@ -1172,13 +1181,20 @@ outside an entry, where there is no text to parse."
              (pos (max (point) limit)))
         (when (< (maf-editplus--skip-fill-forward pos bound) bound)
           (let* ((tree (maf-editplus--parse limit bound))
-                 (node (or (maf-editplus--node-at tree pos)
+                 (at pos)
+                 (node (or (maf-editplus--node-at tree at)
                            ;; Point in front of the entry's first token
                            ;; — leading whitespace — still names the
                            ;; text it is in front of.
-                           (maf-editplus--node-at
-                            tree (maf-editplus--skip-fill-forward pos bound)))))
-            node))))))
+                           (progn
+                             (setq at (maf-editplus--skip-fill-forward
+                                       pos bound))
+                             (maf-editplus--node-at tree at)))))
+            (unless (and node
+                         (eq (maf-editplus--node-kind node) 'call)
+                         (= at (1- (maf-editplus--node-end node)))
+                         (memq (char-after at) maf-editplus--closers))
+              node)))))))
 
 (defun maf-editplus--wrap-node (node name)
   "Write a call to NAME around NODE; return where the call begins.

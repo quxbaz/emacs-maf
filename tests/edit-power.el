@@ -112,6 +112,21 @@
                     "a+(b*c)^3"))
   (call-interactively 'maf-edit-discard)
 
+  ;; The closer of a call names nothing: electric parens leave point
+  ;; in front of it for the whole time the argument is typed, so a
+  ;; press there raises the term just typed, not the call around it.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (execute-kbd-macro "ln(x y)") nil)
+  (progn (backward-char 1) nil)
+  (progn (execute-kbd-macro ":") nil)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "ln(x y^2)"))
+  ;; And the next press still counts that power up.
+  (progn (execute-kbd-macro ":") nil)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "ln(x y^3)"))
+  (call-interactively 'maf-edit-discard)
+
   ;; A call, a vector and a node already in a pair of parentheses each
   ;; read as one unit, so the caret goes straight on the end of them.
   (call-interactively 'maf-edit-add-entry-below)

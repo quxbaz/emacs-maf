@@ -86,6 +86,18 @@
                     "f(x,ln(y))+1"))
   (call-interactively 'maf-edit-discard)
 
+  ;; The call's closer is the one character that names nothing: point
+  ;; in front of it is the tail of the argument being typed — electric
+  ;; parens hold it there — so the term behind point is the subject,
+  ;; exactly as at the end of the entry.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (execute-kbd-macro "27/sqrt(3)") nil)
+  (progn (maf-edit-move-beginning-of-line 1) (forward-char 9) nil)
+  (call-interactively 'maf-editplus-wrap-ln)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "27/sqrt(ln(3))"))
+  (call-interactively 'maf-edit-discard)
+
   ;; A vector is structure: its bracket names the whole thing, an
   ;; element names itself, and neither press disturbs the other.
   (call-interactively 'maf-edit-add-entry-below)
