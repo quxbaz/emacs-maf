@@ -30,10 +30,11 @@
     - [ ] target-line
 
 * NOW
-** in *maf-modules*, also show binding in help text
+** TODO in *maf-modules*, also show binding in help text
    eg,
    maf-formulas (s o)
    [...]
+** TODO (mafcmd-unpack) should always operate on entry
 ** bindings
    three binding modes, each its own heading below: calc-native, maf-native,
    vim-flavored
