@@ -56,7 +56,8 @@
      almost all regards
 ** TODO G (maf-go-home) should go to the "dot" at home even it's at the home row
    only trigger the trampoline action when point is exactly at the "dot"
-** TODO add help text to *maf-formulas*
+** TODO *maf-formulas*
+   - show details by default
 ** TODO stack mode
    - bind command to jump to next SPC character
    - should work in stack and editplus
