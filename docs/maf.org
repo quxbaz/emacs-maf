@@ -30,6 +30,7 @@
     - [ ] target-line
 
 * NOW
+** in *maf-modules*, also show binding in help text
 ** bindings
    three binding modes, each its own heading below: calc-native, maf-native,
    vim-flavored
