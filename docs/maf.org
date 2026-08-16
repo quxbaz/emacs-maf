@@ -33,6 +33,7 @@
 ** in *maf-modules*, also show binding in help text
    eg,
    maf-formulas (s o)
+   ...
 ** bindings
    three binding modes, each its own heading below: calc-native, maf-native,
    vim-flavored
