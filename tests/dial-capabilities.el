@@ -53,7 +53,7 @@ From `point-min', not from point, which the open leaves on a row."
                              (b "off" (setq dialtest--value 'b))))))
 
   ;; The line advertises only what the buffer can do, and drops the
-  ;; underline legend with the defaults that would earn it.
+  ;; changed-highlight legend with the defaults that would earn it.
   (let ((line (dialtest--controls)))
     (cl-assert (string-match-p "select" line))
     (cl-assert (string-match-p "set" line))
@@ -77,14 +77,15 @@ From `point-min', not from point, which the open leaves on a row."
 
   ;; An open-domain item with a :default callback but no :write: there
   ;; is a default value, and no path that resets to it — no :reset, no
-  ;; entry to run, no writer — and no entry for the underline either.
+  ;; entry to run, no writer. The default is still known, so the row
+  ;; can show as changed and the legend stays.
   (dialtest--open
    `((dialtest-item :group "G" :label "Item" :doc "A setting."
                     :read (ignore)))
    :default (lambda (_) 5))
   (let ((line (dialtest--controls)))
     (cl-assert (not (string-match-p "reset" line)) t "dead reset shown: %s" line)
-    (cl-assert (not (string-match-p "default" line))))
+    (cl-assert (string-match-p "default" line)))
   (cl-assert (equal (dialtest--refused 'dial-reset)
                     "No default to reset to"))
 
@@ -99,8 +100,9 @@ From `point-min', not from point, which the open leaves on a row."
   (cl-assert (equal (dialtest--refused 'dial-reset)
                     "No default to reset to"))
 
-  ;; A stated :default naming no value entry can neither underline nor
-  ;; reset, so neither is advertised.
+  ;; A stated :default naming no value entry cannot reset, so reset is
+  ;; not advertised — but the row knows it is off that default, and
+  ;; the live value says so on a tinted ground.
   (dialtest--open
    `((dialtest-item :group "G" :label "Item" :doc "A setting."
                     :default z
@@ -108,9 +110,15 @@ From `point-min', not from point, which the open leaves on a row."
                              (b "off" (setq dialtest--value 'b))))))
   (let ((line (dialtest--controls)))
     (cl-assert (not (string-match-p "reset" line)))
-    (cl-assert (not (string-match-p "default" line))))
+    (cl-assert (string-match-p "default" line)))
   (cl-assert (equal (dialtest--refused 'dial-reset)
                     "No default to reset to"))
+  (with-current-buffer "*dial-test*"
+    (goto-char (point-min))
+    (search-forward "on")
+    (cl-assert (memq 'dial-changed
+                     (ensure-list (get-text-property (match-beginning 0)
+                                                     'face)))))
 
   ;; --- An item whose own :default reaches a value entry ---
 
@@ -127,20 +135,31 @@ From `point-min', not from point, which the open leaves on a row."
     (cl-assert (string-match-p "default" line))
     (cl-assert (not (string-match-p "changed" line))))
 
-  ;; The stated default wears the underline,
+  ;; The setting is off its stated default, so the live value is tinted
+  ;; and the default itself carries no mark of its own,
   (with-current-buffer "*dial-test*"
     (goto-char (point-min))
-    (search-forward "off")
-    (cl-assert (memq 'underline
+    (search-forward "on")
+    (cl-assert (memq 'dial-changed
                      (ensure-list (get-text-property (match-beginning 0)
-                                                     'face)))))
+                                                     'face))))
+    (search-forward "off")
+    (cl-assert (equal (ensure-list (get-text-property (match-beginning 0)
+                                                      'face))
+                      '(shadow))))
 
-  ;; and d puts the setting on it, through the value's own setter.
+  ;; and d puts the setting on it, through the value's own setter —
+  ;; after which the live value is back to bare.
   (with-current-buffer "*dial-test*"
     (goto-char (point-min))
     (dial--move-line 1)
     (dial-reset)
-    (cl-assert (eq dialtest--value 'b)))
+    (cl-assert (eq dialtest--value 'b))
+    (goto-char (point-min))
+    (search-forward "off")
+    (cl-assert (memq 'dial-value
+                     (ensure-list (get-text-property (match-beginning 0)
+                                                     'face)))))
 
   ;; --- An item with only a :reset form ---
 
@@ -150,8 +169,8 @@ From `point-min', not from point, which the open leaves on a row."
                     :values ((a "on"  (setq dialtest--value 'a))
                              (b "off" (setq dialtest--value 'b))))))
 
-  ;; Resettable, so d shows; but no default is nameable, so no
-  ;; underline and no legend claiming one.
+  ;; Resettable, so d shows; but no default is nameable, so no changed
+  ;; highlight and no legend claiming one.
   (let ((line (dialtest--controls)))
     (cl-assert (string-match-p "reset" line))
     (cl-assert (not (string-match-p "default" line))))
@@ -180,9 +199,9 @@ From `point-min', not from point, which the open leaves on a row."
   ;; --- Value keys compare by `equal', end to end ---
 
   ;; String keys, and a default callback returning a fresh string that
-  ;; is `equal' but not `eq'. What the chips underline, the controls
-  ;; line, reset, and the value label all have to agree on — an
-  ;; identity-based lookup anywhere splits them.
+  ;; is `equal' but not `eq'. What the chips highlight, the controls line,
+  ;; reset, and the value label all have to agree on — an identity-based
+  ;; lookup anywhere splits them.
   (dialtest--open
    `((dialtest-item :group "G" :label "Item" :doc "A setting."
                     :values (("[]" "square" (setq dialtest--value "[]"))
@@ -197,11 +216,11 @@ From `point-min', not from point, which the open leaves on a row."
     (cl-assert (string-match-p "reset" line) t "string default lost reset: %s" line)
     (cl-assert (string-match-p "default" line)))
 
-  ;; wears the underline on its entry,
+  ;; shows the live value as moved off it,
   (with-current-buffer "*dial-test*"
     (goto-char (point-min))
-    (search-forward "square")
-    (cl-assert (memq 'underline
+    (search-forward "curly")
+    (cl-assert (memq 'dial-changed
                      (ensure-list (get-text-property (match-beginning 0)
                                                      'face)))))
 

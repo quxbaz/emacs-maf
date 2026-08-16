@@ -69,25 +69,33 @@
   :group 'convenience)
 
 (defface dial-value
-  ;; Both halves pinned, and pinned against each other rather than
-  ;; against the theme: the live value is the one thing in the buffer
-  ;; worth finding at a glance, so it is the one place that takes a
-  ;; contrast rather than a shade. Dark enough to carry white, so it
-  ;; reads the same under either theme.
-  ;;
-  ;; One face for every live value, whether or not the setting has
-  ;; moved: which value is the default is the underline the row carries
-  ;; (see `dial--value-face'), and a second colour on that second axis
-  ;; would read as a third state.
-  '((((class color)) :background "#553280" :foreground "white")
-    (t :inverse-video t))
-  "Face for the value a setting is currently on.
+  ;; Coloured text, no background: against the shadowed values beside
+  ;; it, the live one is picked out by colour alone. Two shades, one
+  ;; for each theme's ground, both unmistakably purple.
+  '((((class color) (background dark))  :foreground "#b48ee0")
+    (((class color) (background light)) :foreground "#553280")
+    (t :weight bold))
+  "Face for the value a setting is currently on, when it is the default.
 The other values a setting can take are shadowed beside it, so this
-face is what picks the live one out of the row."
+face is what picks the live one out of the row. A setting moved off its
+default wears `dial-changed' instead."
+  :group 'dial)
+
+(defface dial-changed
+  ;; Gold text against the purple of `dial-value': the same weight of
+  ;; mark, so a moved setting is still found the same way, in a colour
+  ;; that says so on its own — the two states are the two colours, and
+  ;; nothing else on the row has to carry the difference. Bright on a
+  ;; dark ground, deep on a light one.
+  '((((class color) (background dark))  :foreground "#e6b422")
+    (((class color) (background light)) :foreground "#a06f00")
+    (t :weight bold :inverse-video t))
+  "Face for the value a setting is currently on, when it is not the default.
+See `dial-value'."
   :group 'dial)
 
 (defface dial-controls
-  ;; Dark and drained where the live value is saturated: the band
+  ;; Dark and drained where the live value is bright: the band
   ;; should read as chrome above the list, not as another row in it.
   ;; Extends, so it runs the width of the window.
   '((((class color) (background dark))  :background "#1c2733" :extend t)
@@ -100,8 +108,8 @@ face is what picks the live one out of the row."
   ;; `:box' would be the obvious outline and is what a graphical frame
   ;; gets. A terminal ignores it entirely, so the outline there has to
   ;; be characters — see `dial--outline'. Bold under both, since it is
-  ;; the one attribute neither the highlight nor the default's
-  ;; underline is using, and so stacks on either.
+  ;; the one attribute the highlights are not using, and so stacks on
+  ;; either.
   '((((type graphic)) :box (:line-width -1) :weight bold)
     (t :weight bold))
   "Face for a value stepped onto but still waiting for its input.
@@ -129,8 +137,8 @@ See this file's commentary for SPEC's keys. Set by `dial-open'.")
 (defvar-local dial--default-fn nil
   "Function returning an item's default raw value, given its ID.
 Nil when the consumer has no notion of defaults, which quietly disables
-the default underline, the changed-only filter's idea of changed, and
-resetting by value.")
+the changed-only filter's idea of changed and resetting by value, and
+leaves the changed highlight to rows stating a :default of their own.")
 
 (defvar-local dial--apply-fn nil
   "Function evaluating a setter form wherever the consumer needs it run.")
@@ -233,40 +241,52 @@ row."
       (concat (car dial-outline) label (cdr dial-outline))
     label))
 
-(defun dial--value-face (live default selected)
-  "Return the face for a value that is LIVE, is the DEFAULT, or SELECTED.
-The default is underlined only when it is not the live one. A mark on
-every row is a constant rather than a signal — every setting has a
-default, so saying so everywhere says nothing — and on the row where
-the two coincide the highlight has already said it. Left to appear
-exactly where it carries something: this setting has moved, and that is
-where it came from. It also makes the rows \\<dial-mode-map>\\[dial-toggle-changed-only]
-would keep visible without filtering, as they are the underlined ones.
+(defun dial--value-face (live changed selected)
+  "Return the face for a value that is LIVE, on a CHANGED row, or SELECTED.
+The live value stands out of the shadowed row in purple: bare
+(`dial-value') on a row sitting on its default, over a tinted ground
+(`dial-changed') on one that has moved. The ground carries the state,
+so nothing marks the default value itself — a mark on every row is a
+constant rather than a signal, and where the setting has moved, the
+tint already says so. The tinted rows are the ones
+\\<dial-mode-map>\\[dial-toggle-changed-only] would keep visible without
+filtering.
 
-An underline shows through a background, so it composes with the
-highlight rather than competing with it, and costs no width. SELECTED
-composes over either the same way — it only ever appears on a value
-that could not be set, so it has to sit beside the highlight rather
-than take its place."
-  (let ((base (cond (live '(dial-value))
-                    (default '(underline shadow))
+SELECTED composes over either — it only ever appears on a value that
+could not be set, so it has to sit beside the highlight rather than
+take its place."
+  (let ((base (cond ((and live changed) '(dial-changed))
+                    (live '(dial-value))
                     (t '(shadow)))))
     (if selected (cons 'dial-selection base) base)))
+
+(defun dial--moved-p (id spec)
+  "Non-nil when ID's row is known to be off its default under SPEC.
+Through the consumer's raw values where it supplies defaults — the same
+answer the changed-only filter gives, see `dial--changed-p' — and
+otherwise by the value key against a :default the row states for
+itself. Nil, not \"changed\", when no default is known at all."
+  (if dial--default-fn
+      (dial--changed-p id spec)
+    (let ((default (dial--default-value id spec)))
+      (and (not (eq default dial--no-default))
+           (not (equal (dial--current id spec) default))))))
 
 (defun dial--value-column (id spec)
   "Return the Value column for ID under SPEC: every value it can take.
 The one the setting is on wears `dial-value', the rest are shadowed —
 the row doubles as the list \\<dial-mode-map>\\[dial-next-value]
 steps through, so what a step will reach is on show rather than found by
-stepping to it. The default is underlined, but only where it is not
-already the value the setting is on — see `dial--value-face'. A setting
+stepping to it. The live value sits on a tinted ground where the
+setting has moved off its default — see `dial--value-face'. A setting
 with no fixed set of values, and one sitting on a value outside its
 set, shows that value alone.
 
 A value stepped onto but not set is marked too — see `dial--pending'."
   (let* ((values (dial--values spec))
          (current (dial--current id spec))
-         (default (dial--default-value id spec))
+         (moved (dial--moved-p id spec))
+         (live-face (if moved 'dial-changed 'dial-value))
          (show (plist-get spec :show))
          (pending (dial--pending-index id))
          (chips (seq-map-indexed
@@ -275,7 +295,7 @@ A value stepped onto but not set is marked too — see `dial--pending'."
                     (dial--outline (nth 1 v) (eql i pending))
                     'face (dial--value-face
                            (equal (car v) current)
-                           (equal (car v) default)
+                           moved
                            (eql i pending))))
                  values))
          ;; What no chip can say: the value of a setting with an open
@@ -290,7 +310,7 @@ A value stepped onto but not set is marked too — see `dial--pending'."
     (mapconcat #'identity
                (if extra
                    (append chips
-                           (list (propertize extra 'face 'dial-value)))
+                           (list (propertize extra 'face live-face)))
                  chips)
                "  ")))
 
@@ -419,14 +439,13 @@ someone about."
 
 (defun dial--default-entry (id spec)
   "Return the :values entry matching ID's default under SPEC, if any.
-This entry is the only place the default underline can land, and it is
-what `dial-reset' runs when the row has no :reset form of its own — so
-a default that matches no entry, or an open-domain row with no entries
-at all, can do neither.
+This entry is what `dial-reset' runs when the row has no :reset form of
+its own — so a default that matches no entry, or an open-domain row
+with no entries at all, cannot reset that way.
 
 Matched with `assoc', because the chips match with `equal': a string
-key found by the renderer but missed here would underline a default
-the buffer then claims it cannot reset to."
+key the renderer treats as the default would otherwise be one the
+buffer claims it cannot reset to."
   (let ((default (dial--default-value id spec)))
     (and (not (eq default dial--no-default))
          (assoc default (dial--values spec)))))
@@ -443,12 +462,13 @@ be written back directly."
       (and dial--write-fn dial--default-fn)))
 
 (defun dial--any-default-p ()
-  "Non-nil when some row can actually wear the default underline.
-Not \"defaults exist\": the mark only renders on a value entry matching
-the row's derived default, so a buffer whose defaults never meet an
-entry earns no legend describing marks that cannot appear."
+  "Non-nil when some row knows its default, and so can show as changed.
+Every row does with a :default callback; without one, only rows stating
+a :default of their own. A buffer where no row can tell earns no legend
+describing a highlight that cannot appear."
   (and (seq-some (lambda (entry)
-                   (dial--default-entry (car entry) (cdr entry)))
+                   (not (eq (dial--default-value (car entry) (cdr entry))
+                            dial--no-default)))
                  dial-items)
        t))
 
@@ -481,11 +501,11 @@ works only with one."
 (defun dial--controls-line ()
   "Return the controls line printed above the list.
 Controls whose capability the consumer left unsupplied are omitted —
-see `dial--control-available-p'. Ends with the legend for the mark the
-rows carry, which is the one thing on the line that is not a key —
-hence \\`d' reading \"reset\" rather than \"default\", which would have
-said two things here. No defaults means no underline, so the legend
-goes with the reset control."
+see `dial--control-available-p'. Ends with the legend for the highlight
+a moved row's value carries, which is the one thing on the line that is
+not a key — hence \\`d' reading \"reset\" rather than \"default\", which
+would have said two things here. No defaults means no changed highlight,
+so the legend goes with them."
   (concat
    " "
    (mapconcat
@@ -500,8 +520,8 @@ goes with the reset control."
                 (or dial-controls dial-default-controls))
     "   ")
    (when (dial--any-default-p)
-     (concat "   " (propertize "underlined" 'face '(underline shadow))
-             (propertize " = default" 'face 'shadow)))))
+     (concat "   " (propertize "value" 'face 'dial-changed)
+             (propertize " = not the default" 'face 'shadow)))))
 
 (defun dial--setting-line-p ()
   "Non-nil when point is on a row that names a setting.
@@ -903,8 +923,8 @@ keyword arguments are the consumer's half of the contract:
 Each optional capability left nil also drops its control from the
 controls line — no :save loses the save control, no :keys-name the
 key-column toggle, no :default the changed-only filter. Reset and the
-default underline outlive the :default callback wherever an item
-carries its own :default or :reset — see `dial--control-available-p'.
+changed highlight outlive the :default callback wherever an item carries
+its own :default or :reset — see `dial--control-available-p'.
   :controls  Controls-line entries overriding `dial-default-controls'.
   :name      Mode-line name for the buffer, in place of \"dial\".
   :init      Function () run in the buffer after the mode starts and
