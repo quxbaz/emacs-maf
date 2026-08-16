@@ -1,4 +1,4 @@
-;; mafcmd-map ($) and mafcmd-map-stack (#): apply a formula to the
+;; mafcmd-map (#) and mafcmd-map-stack ($): apply a formula to the
 ;; target — each element of a vector, both sides of an equation. The
 ;; subject is the whole entry wherever point sits on it; a region or a
 ;; calc selection still narrows. $'s prompt is driven with real keys,
@@ -181,7 +181,7 @@
   (cl-assert (maf-test-map-refused "7\r"))
   (calc-pop (calc-stack-size))
 
-  ;; # (mafcmd-map-stack): the entry above the subject is the formula,
+  ;; $ (mafcmd-map-stack): the entry above the subject is the formula,
   ;; consumed on commit.
   (maf-push "[1, 2, 3]")
   (maf-push "x^2")

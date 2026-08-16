@@ -5011,7 +5011,7 @@ Reads the formula in algebraic notation. It may name the element three
 ways: a formula with one free variable (x^2), a $ in place of the
 element (2 $ + 1), or a bare one-argument function name (sin). A lone
 $ is the exception — it means the formula is on the stack, and is the same
-gesture as `mafcmd-map-stack' (#).
+gesture as `mafcmd-map-stack' ($).
 
 The subject is the whole entry at point, wherever point sits on its
 line, or the top entry at home: mapping speaks of the entry's
@@ -5051,9 +5051,9 @@ matrix, which is not implemented yet."
   x^2                                     (the formula, on top)
   [1, 2, 3]  =>  [1, 4, 9]
 
-The same command as `mafcmd-map' ($) with the formula taken from the
+The same command as `mafcmd-map' (#) with the formula taken from the
 stack instead of a prompt — the shortcut for a formula already built
-there, and the same thing a lone $ at $'s prompt does. As for any
+there, and the same thing a lone $ at #'s prompt does. As for any
 binary command, the formula is the entry above the subject (the top
 entry at home) and is consumed on commit, so the subject must lie below
 the top.
@@ -5105,8 +5105,8 @@ prompt's own keystrokes must not spend it."
 
   [x, y]  M N   =>  [-x, -y]      (negate, mapped over the elements)
 
-Where `mafcmd-map' ($) maps a formula you type and `mafcmd-map-stack'
-(#) maps one from the stack, M maps a command — any `maf-defcmd'
+Where `mafcmd-map' (#) maps a formula you type and `mafcmd-map-stack'
+($) maps one from the stack, M maps a command — any `maf-defcmd'
 command, unary or binary, with no keymap of blessed operations behind
 it (calc's V M reads its operator from a fixed table; a flag needs no
 table). A binary command's argument is shared across the runs:
