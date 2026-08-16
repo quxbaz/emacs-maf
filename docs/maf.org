@@ -31,6 +31,7 @@
 
 * NOW
 ** TODO fix regression in docker/tmux box. claude no longer responds to S-RET to enter a newline
+** TODO in stack mode, bind \ to same effect as (Q), square root.
 ** TODO in editplus module, bind \ to sqrt (same command as Q, but keep Q binding also)
 ** TODO in stack mode, bind W to same effect as (I Q), square.
 ** TODO bind W in editplus to same command as : (keep : binding also)
