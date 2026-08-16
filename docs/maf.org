@@ -30,7 +30,7 @@
     - [ ] target-line
 
 * NOW
-** NEXT *maf-options*
+** IN-PROGRESS *maf-options*
    - if option value is not the default, highlight it in gold instead of purple
    - remove the underlining to denote a default value
 ** bindings
