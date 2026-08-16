@@ -42,6 +42,7 @@
      (prior to current expression at point)
 ** TODO *maf-timeline* on restore `r`, quit buffer
 ** TODO *maf-timeline* show bindings in legend similar to *maf-options*
+** TODO *maf-timeline* bind `D` to delete timeline entry
 ** TODO G (maf-go-home) should go to the "dot" at home even it's at the home row
    only trigger the trampoline action when point is exactly at the "dot"
 ** bindings
