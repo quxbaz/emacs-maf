@@ -19,6 +19,10 @@
 ;; division, whose key this was — calc's \ is shadowed, and the idiv
 ;; row in maf-cmds.el keeps no key.
 (define-key maf-mode-map (kbd "\\") #'mafcmd-sqrt)
+;; The square on a key of its own: I Q reaches mafcmd-sqr through the
+;; inverse flag, and W is free in both maps. The next key over from
+;; Q, and the shape of the two square-root keys' inverse.
+(define-key maf-mode-map (kbd "W") #'mafcmd-sqr)
 ;; Shadows calc-stirling's key; the contextual stirling pair
 ;; (mafcmd-stir1/stir2) cedes it — see the table in maf-cmds.el.
 (define-key maf-mode-map (kbd "k s") #'mafcmd-complete-square)
