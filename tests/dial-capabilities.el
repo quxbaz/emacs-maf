@@ -272,6 +272,42 @@ From `point-min', not from point, which the open leaves on a row."
     (cl-assert (string-match-p "x refresh" (dialtest--controls)))
     (cl-assert (not (string-match-p "g refresh" (dialtest--controls)))))
 
+  ;; --- Any motion onto another row echoes its :doc ---
+
+  ;; Not only dial's own n and p: C-n, the arrows, a scroll or a click
+  ;; land point on a row too, and the doc follows through
+  ;; `post-command-hook'. Only a change of row speaks, so a command
+  ;; that stays on the row leaves the echo area to its own message.
+  (dialtest--open
+   `((dialtest-one :group "G" :label "One" :doc "The first setting."
+                   :values ((a "on" (setq dialtest--value 'a))))
+     (dialtest-two :group "G" :label "Two" :doc "The second setting."
+                   :values ((a "on" (setq dialtest--value 'a))))))
+  ;; The harness runs under `inhibit-message', so the echo is read by
+  ;; catching what `message' is handed rather than off the echo area.
+  (with-current-buffer "*dial-test*"
+    (let ((said nil))
+      (cl-letf (((symbol-function 'message)
+                 (lambda (fmt &rest args)
+                   (when fmt (push (apply #'format fmt args) said)))))
+        (goto-char (point-min))
+        (dial--move-line 1)
+        (run-hooks 'post-command-hook)
+        (cl-assert (equal said '("The first setting.")))
+        ;; Plain `next-line', as C-n runs it — no dial command involved.
+        (next-line 1)
+        (run-hooks 'post-command-hook)
+        (cl-assert (equal (car said) "The second setting."))
+        ;; Staying put says nothing new: what the last command said
+        ;; stands.
+        (setq said nil)
+        (forward-char 1)
+        (run-hooks 'post-command-hook)
+        (cl-assert (null said))
+        (previous-line 1)
+        (run-hooks 'post-command-hook)
+        (cl-assert (equal said '("The first setting."))))))
+
   ;; Leave nothing behind.
   (progn (kill-buffer "*dial-test*")
          (setq dialtest--value nil)

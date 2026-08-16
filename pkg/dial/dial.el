@@ -596,6 +596,30 @@ value just set, a value waiting for input — survives the move."
   (dial--move-line (- (or n 1)))
   (dial--echo-doc))
 
+(defvar-local dial--echoed-row nil
+  "The row whose :doc was echoed last, for `dial--echo-on-move'.
+Compared by row identity, so a command that leaves point on the same
+setting says nothing again.")
+
+(defun dial--echo-on-move ()
+  "Echo the row's :doc when a command has moved point onto another row.
+On `post-command-hook', so that the ordinary motion keys — C-n and
+C-p, the arrows, scrolling, a mouse click — read the help off the row
+they land on just as \\<dial-mode-map>\\[dial-next-line] and
+\\[dial-previous-line] do, rather than the help being a privilege of
+dial's own keys. Only a change of row speaks: staying on the row, or
+stepping along its values, must not repeat the doc over whatever the
+command itself just said. Rows without an id — the controls line, the
+gaps between groups — echo nothing and count as no row."
+  (let ((row (dial--item-id-at-point)))
+    (unless (equal row dial--echoed-row)
+      (setq dial--echoed-row row)
+      (when row (dial--echo-doc)))))
+
+(defun dial--item-id-at-point ()
+  "The item ID of the row point is on, or nil off any setting row."
+  (and (dial--setting-line-p) (tabulated-list-get-id)))
+
 (defun dial--print (&optional remember-pos)
   "Print the controls line and the list, honoring REMEMBER-POS.
 `tabulated-list-print' erases the buffer, so the controls are written
@@ -627,7 +651,8 @@ the live one highlighted, and optionally a reference key.
 
 \\<dial-mode-map>\\[dial-next-line] and
 \\[dial-previous-line] move between settings, echoing a line on
-what the one under point does; \\[dial-next-group] and
+what the one under point does — as does any motion that lands on
+another row, C-n and C-p included; \\[dial-next-group] and
 \\[dial-previous-group] move a whole group at a time.
 
 \\[dial-next-value] steps point along
@@ -646,6 +671,7 @@ themselves come from."
         ;; each :group's entries together under its heading.
         tabulated-list-sort-key nil)
   (add-hook 'tabulated-list-revert-hook #'dial--refresh nil t)
+  (add-hook 'post-command-hook #'dial--echo-on-move nil t)
   (dial--apply-format))
 
 (defun dial--refresh ()
