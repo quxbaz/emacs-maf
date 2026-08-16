@@ -22,6 +22,17 @@
   (progn (calc-pop 1) (calc-refresh)
          (goto-char (point-min)) (search-forward "a / b") (backward-char 3))
 
+  ;; Long vectors are always abbreviated in the preview, whatever the
+  ;; buffer's `v .' setting: a full 100-element vector would make the
+  ;; panel taller than the window.
+  (progn (calc-push (cons 'vec (number-sequence 1 100)))
+         (calc-refresh)
+         (goto-char (point-min)) (search-forward "[1, 2, 3") (backward-char 3))
+  (let ((calc-full-vectors t))
+    (cl-assert (equal (maf-preview--render) "[1, 2, 3, ..., 100]")))
+  (progn (calc-pop 1) (calc-refresh)
+         (goto-char (point-min)) (search-forward "a / b") (backward-char 3))
+
   ;; The rendered entry is laid out as a bordered, titled panel whose
   ;; rows are all one width — what both backends put on screen.
   (cl-assert (equal (maf-preview--panel-rows "a\n-\nb" 40 10)

@@ -91,8 +91,12 @@ buffer already showing the Big language (the panel would be redundant)."
           ;; value calc itself composes the stack line from.
           ;;
           ;; Rendered in Big without disturbing the buffer's own display
-          ;; language (see this file's commentary).
-          (let ((calc-language 'big))
+          ;; language (see this file's commentary). Long vectors are
+          ;; always abbreviated (`[1, 2, 3, ..., 100]'), whatever the
+          ;; buffer's `v .' setting: a full 100-element vector would make
+          ;; the panel taller than the window it sits in.
+          (let ((calc-language 'big)
+                (calc-full-vectors nil))
             (math-format-value (calc-top level))))))))
 
 ;;; The child-frame backend
