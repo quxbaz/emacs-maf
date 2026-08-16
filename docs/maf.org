@@ -30,10 +30,6 @@
     - [ ] target-line
 
 * NOW
-** TODO in stack mode, bind \ to same effect as (Q), square root.
-** TODO in editplus module, bind \ to sqrt (same command as Q, but keep Q binding also)
-** TODO in stack mode, bind W to same effect as (I Q), square.
-** TODO bind W in editplus to same command as : (keep : binding also)
 ** TODO in *maf-options* and *maf-modules*, regular C-n and C-p should show help text in minibuffer
    currently, on jknp trigger the help text
 ** DONE *maf-options*
