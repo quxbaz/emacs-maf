@@ -31,7 +31,8 @@
 
 * NOW
 ** NEXT *maf-options*
-   if option value is not the default, highlight it in gold instead of purple
+   - if option value is not the default, highlight it in gold instead of purple
+   - remove the underlining to denote a default value
 ** bindings
    three binding modes, each its own heading below: calc-native, maf-native,
    vim-flavored
