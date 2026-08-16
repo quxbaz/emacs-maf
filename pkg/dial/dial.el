@@ -501,11 +501,12 @@ works only with one."
 (defun dial--controls-line ()
   "Return the controls line printed above the list.
 Controls whose capability the consumer left unsupplied are omitted —
-see `dial--control-available-p'. Ends with the legend for the highlight
-a moved row's value carries, which is the one thing on the line that is
-not a key — hence \\`d' reading \"reset\" rather than \"default\", which
-would have said two things here. No defaults means no changed highlight,
-so the legend goes with them."
+see `dial--control-available-p'. Ends with the legend for the colour of
+a value sitting on its default — the shorter of the two states to name,
+and the gold of a moved one follows from it. It is the one thing on the
+line that is not a key — hence \\`d' reading \"reset\" rather than
+\"default\", which would have said two things here. No defaults means
+neither colour means anything, so the legend goes with them."
   (concat
    " "
    (mapconcat
@@ -520,8 +521,8 @@ so the legend goes with them."
                 (or dial-controls dial-default-controls))
     "   ")
    (when (dial--any-default-p)
-     (concat "   " (propertize "value" 'face 'dial-changed)
-             (propertize " = not the default" 'face 'shadow)))))
+     (concat "   " (propertize "value" 'face 'dial-value)
+             (propertize " = default" 'face 'shadow)))))
 
 (defun dial--setting-line-p ()
   "Non-nil when point is on a row that names a setting.
