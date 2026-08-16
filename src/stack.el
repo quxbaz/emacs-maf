@@ -594,6 +594,33 @@ the top entry at home.
   :prefix "ucth"
   (commit (maf--cath 1 expr)))
 
+(maf-defcmd mafcmd-abs (expr _arg commit)
+  "Replace the resolved expression with its absolute value.
+
+  -5  =>  5
+
+A vector is read as its norm — calc's own overloading of abs, sqrt of
+the summed squared magnitudes of the entries. Calc answers the
+two-element [2, sqrt(3)] with an inert hypot(2, sqrt(3)) where the
+same entries one longer give sqrt(7); here every length takes the
+general recipe, so both give sqrt(7), and exact entries keep an exact
+answer while a float in any evaluates numerically — see `maf--abs'.
+Scalars are calc's own `calcFunc-abs' untouched. Point picks the
+target as usual: a sub-formula at point, each side of an equation, the
+top entry at home.
+
+  [3, 4]        =>  5
+  [2, sqrt(3)]  =>  sqrt(7)
+  [2, 1]        =>  sqrt(5)
+  [(3, 4), 0]   =>  5
+  [a, b]        =>  sqrt(abssqr(a) + abssqr(b))
+  [0.6, 0.8]    =>  1.
+  (3, 4)        =>  5    (complex modulus)
+  x             =>  abs(x)"
+  :arity unary
+  :prefix "abs"
+  (commit (maf--abs expr)))
+
 (maf-defcmd mafcmd-commute (expr _arg commit)
   "Swap the first two operands of the resolved expression.
 

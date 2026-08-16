@@ -372,6 +372,44 @@ This is the transformation behind `mafcmd-hypot'; to change it, change
 this function or `maf--pythagoras'."
   (maf--pythagoras '+ a b))
 
+(defun maf--abs (a)
+  "Return the absolute value of A, a vector read as its norm.
+Calc's own `calcFunc-abs' already reads a vector as the Frobenius
+norm, but its two-element case is a shortcut through `math-hypot',
+which gives up on anything `Math-scalarp' rejects and hands back an
+inert hypot(2, sqrt(3)) — where the same entries one longer,
+[2, sqrt(3), 0], go through sqrt(abssqr(v)) and answer sqrt(7). Here
+every vector of two or more elements takes that general recipe, so
+[2, sqrt(3)] answers sqrt(7) too. abssqr rather than the squaring of
+`maf--pythagoras' keeps the modulus reading: a complex entry
+contributes its magnitude, so [(3, 4), 0] gives 5.
+
+Exact entries keep an exact answer, as in `maf--pythagoras': the root
+is taken in symbolic mode, so [3, 4] gives 5 and [2, 1] gives sqrt(5)
+rather than 2.2360679775. A float anywhere in the vector has already
+forfeited exactness, so the root evaluates numerically instead.
+Symbolic entries stay written out — [a, b] gives
+sqrt(abssqr(a) + abssqr(b)), a formula that still composes, where the
+inert hypot call does not.
+
+Anything else — scalars, complex numbers, the degenerate empty and
+one-element vectors — is `calcFunc-abs' under the ambient calc modes,
+exactly as the maf-cmds.el table row applied it before this function
+replaced that row. The exactness binding stops at the norm because a
+scalar forced symbolic can lose an answer it had: calc cannot place
+the sign of -sqrt(3), so abs of it would stand inert as abs(sqrt(3))
+where numeric evaluation answers 1.73205080757.
+
+This is the transformation behind `mafcmd-abs'; to change it, change
+this function."
+  (if (and (eq (car-safe a) 'vec) (cddr a))
+      (let* ((exact (not (maf--contains-float-p a)))
+             (calc-symbolic-mode exact)
+             (calc-prefer-frac exact))
+        (math-normalize
+         (list 'calcFunc-sqrt (list 'calcFunc-abssqr a))))
+    (math-normalize (list 'calcFunc-abs a))))
+
 (defun maf--terms-gcd (terms)
   "Return the GCD of TERMS via `calcFunc-pgcd', iterated to a fixpoint.
 A single reduce can overshoot when both arguments carry variables the

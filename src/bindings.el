@@ -365,6 +365,12 @@
 (define-key maf-mode-map (kbd "f l") #'mafcmd-cath)
 (define-key maf-mode-map (kbd "f L") #'mafcmd-unit-cath)
 
+;; Absolute value, on calc's own key for it. The command left the table
+;; in maf-cmds.el for the reason f h did: its vector-norm case needs the
+;; expression raw, before a row's normalize can float an exact entry —
+;; see `mafcmd-abs'.
+(define-key maf-mode-map (kbd "A") #'mafcmd-abs)
+
 ;; Coordinate naming, cycling the name sets on repeat. Shadows
 ;; calc-copy-as-kill; maf-copy (M-w) copies the region or the entry,
 ;; and maf-kill (C-k) kills the whole entry onto the kill ring.

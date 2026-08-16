@@ -126,7 +126,13 @@ variant's own variable governs only its direct invocation."
   (fact unary calcFunc-fact "!")
   (inv unary calcFunc-inv "&")
   (neg unary calcFunc-neg "n")
-  (abs unary calcFunc-abs "A")
+  ;; abs has left the table for `mafcmd-abs' (stack.el, A), which reads
+  ;; a vector as its norm through `maf--abs' rather than `calcFunc-abs',
+  ;; whose two-element case hands back an inert hypot(2, sqrt(3)). It
+  ;; cannot be a row for the reason hypot below could not: rows apply
+  ;; their function under `math-normalize', which normalizes the
+  ;; arguments first, and that floats an exact sqrt(3) entry before the
+  ;; command can see it was exact.
   (conj unary calcFunc-conj "J")
   ;; arg cedes calc's G to maf-go-home (bindings.el).
   (arg unary calcFunc-arg)
