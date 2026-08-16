@@ -575,6 +575,23 @@
                     "{foo}ln(3)"))
   (call-interactively 'maf-edit-discard)
 
+  ;; Nor is a name in front of a brace group: x{foo} is x times foo,
+  ;; and only the group is the unit before point. Only a paren group
+  ;; can be headed by a name — x[1, 2] is a product to calc as well.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (insert "x{foo}") nil)
+  (call-interactively 'maf-editplus-wrap-ln)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "xln({foo})"))
+  (call-interactively 'maf-edit-discard)
+
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (insert "x[1,2]") nil)
+  (call-interactively 'maf-editplus-wrap-ln)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "xln([1,2])"))
+  (call-interactively 'maf-edit-discard)
+
   ;; A string literal's closing quote completes the whole literal.
   (call-interactively 'maf-edit-add-entry-below)
   (progn (insert "\"abc\"") nil)

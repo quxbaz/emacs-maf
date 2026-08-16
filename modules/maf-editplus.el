@@ -614,10 +614,15 @@ A function call is one unit — sqrt(3) copied whole rather than left
 without its head — but juxtaposition is not: the 2 of 2(a+b) is a
 factor multiplying the group, not a name the group belongs to. What
 tells them apart is what tells calc: a name begins with a letter or an
-underscore, so x2(a+b) is a call and 2(a+b) is a product. LIMIT bounds
-the scan, as everywhere else here."
+underscore, so x2(a+b) is a call and 2(a+b) is a product. Only a
+paren group can be called, as the parser reads it too
+\(`maf-editplus--parse'): a name before a bracket or a brace is a
+factor — x[1, 2] is the product to calc, and x{foo} is x times foo
+under the editvars dialect — so those groups begin at OPEN. LIMIT
+bounds the scan, as everywhere else here."
   (let ((start (maf-editplus--skip-name-back open limit)))
-    (if (and (< start open)
+    (if (and (eq (char-after open) ?\()
+             (< start open)
              (string-match-p "[[:alpha:]_]" (string (char-after start))))
         start
       open)))
