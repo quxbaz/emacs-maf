@@ -355,10 +355,13 @@ the same."
   ;; At home, where point names no part, the top entry is the subject
   ;; and the rules fire at the first site they reach — one rule per
   ;; invocation, so the second logarithm is left for the next press.
+  ;; Point stays home rather than following the marked part into the
+  ;; entry, as after any other command run from there.
   (maf-push "ln(a b) + ln(c d)")
   (goto-char (point-max))
   (call-interactively 'maf-distribute)
   (cl-assert (string= (dm-top) "ln(b) + ln(a) + ln(c d)"))
+  (cl-assert (maf--at-home-p))
   (calc-pop (calc-stack-size))
 
   ;; Home walks marked candidates like everywhere else, rather than
@@ -392,6 +395,7 @@ the same."
   (goto-char (point-max))
   (call-interactively 'maf-merge)
   (cl-assert (string= (dm-top) "x^(b + a)"))
+  (cl-assert (maf--at-home-p))
   (calc-pop (calc-stack-size))
 
   (maf-push "exp(a) exp(b)")
@@ -401,11 +405,16 @@ the same."
   (calc-pop (calc-stack-size))
 
   ;; A fraction distributes at home too, on the same substitution the
-  ;; on-entry path uses.
+  ;; on-entry path uses. Point stays home, so nothing has run calc's
+  ;; selection machinery over the entry, and its atoms are still bare:
+  ;; the division formats tight, as the stack line has it. (On the
+  ;; entry, anchoring point encases the atoms, and the same value reads
+  ;; back as "1 / 4".)
   (maf-push "sqrt(3:4)")
   (goto-char (point-max))
   (call-interactively 'maf-distribute)
-  (cl-assert (string= (dm-top) "sqrt(1 / 4) sqrt(3)"))
+  (cl-assert (string= (dm-top) "sqrt(1/4) sqrt(3)"))
+  (cl-assert (maf--at-home-p))
   (calc-pop (calc-stack-size))
 
   ;; At home with a selection standing, the rewrite goes to it and

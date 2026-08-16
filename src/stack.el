@@ -3360,7 +3360,7 @@ the first one a rule reaches (see `maf--sel-rewrite-entry').
 
 Nothing is left selected: point names the target on the next
 keystroke, and point follows the marker the rules carried into the
-result. With no rule matching, the entry is left untouched rather than
+result — or stays home, when it was home. With no rule matching, the entry is left untouched rather than
 popped and pushed for a value that only normalization changed."
   (maf--with-calc-buffer
     (let ((at-point (calc-locate-cursor-element (point))))
@@ -3442,8 +3442,12 @@ popped and pushed for a value that only normalization changed."
               (calc-wrapper
                (calc-pop-push-record-list 1 prefix (list new) m (list nil)))
               ;; The epilogue parks point at home; put it back on the
-              ;; part the rules marked as the outcome.
-              (or (and (consp maf--sel-marked)
+              ;; part the rules marked as the outcome — when point was
+              ;; on an entry to begin with. From home the gesture named
+              ;; no part, and point stays home as it does after any
+              ;; other command run from there.
+              (or (and (> at-point 0)
+                       (consp maf--sel-marked)
                        (maf--anchor-on-node m maf--sel-marked))
                   (maf--point-restore snapshot))
               ;; A single undo reverts point along with the stack.
@@ -3482,7 +3486,7 @@ exception, moved to the front as calc writes it: ln(x^2) gives
 calc's ordering that cannot undo a rewrite, so a symbolic coefficient
 stays where the rule put it. Nothing is left selected for the next
 keystroke to trip over, and point follows the part the rules mark as
-the outcome.
+the outcome; from home it stays home.
 
 A literal fraction distributes too, though calc stores one as a single
 atom no `a / b' rule can match. It is read as an explicit division
@@ -3536,7 +3540,8 @@ selection when there is one — looking outward for the innermost
 formula some rule reaches and marking the part of it the rule wants,
 so any position on the entry works. Where two parts of one formula
 would both serve, the one point is in decides which is marked.
-Nothing is left selected, and point follows the merged part.
+Nothing is left selected, and point follows the merged part; from home
+it stays home.
 
   a / x + b / x    =>  (a + b) / x
   x^a x^b          =>  x^(a + b)
