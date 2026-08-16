@@ -37,6 +37,8 @@
 ** TODO (mafcmd-unpack) should always operate on entry
 ** TODO bind & to toggle big mode
 ** TODO editplus: bind B to log
+** TODO G (maf-go-home) should go to the "dot" at home even it's at the home row
+   only trigger the trampoline action when point is exactly at the "dot"
 ** bindings
    three binding modes, each its own heading below: calc-native, maf-native,
    vim-flavored
