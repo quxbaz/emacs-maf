@@ -56,7 +56,7 @@
                      (maf--strip-encasing (calc-top 1 'full)))
                     (math-format-value
                      (math-read-expr
-                      "[[x^2 + 2 x + 1, x^2 - 2 x + 1], [a^2 + 2 b a + b^2, 4]]"))))
+                      "[[x^2 + 2 x + 1, x^2 - 2 x + 1], [a^2 + 2 a b + b^2, 4]]"))))
   (calc-pop (calc-stack-size))
 
   ;; A vector sub-formula at point maps in place, the entry around it

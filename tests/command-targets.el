@@ -26,14 +26,16 @@
   (calc-pop (calc-stack-size))
 
   ;; Subexpr removed: the same gesture takes the entry whole — both
-  ;; powers expand, so a policy silently ignored would fail here.
+  ;; powers expand, so a policy silently ignored would fail here. The
+  ;; constants fold: the result is committed under the simplification
+  ;; mode, as calc's own a x commits it, and this is its `alg' shape.
   (maf-push "(x + 1)^2 + (y + 1)^2")
   (progn (calc-cursor-stack-index 1) (search-forward "^") (backward-char 1))
   (let ((mafcmd-expand-targets '(region selection)))
     (call-interactively 'mafcmd-expand))
   (cl-assert (string= (math-format-value
                        (maf--strip-encasing (calc-top 1 'full)))
-                      "x^2 + 2 x + 1 + y^2 + 2 y + 1"))
+                      "x^2 + 2 x + y^2 + 2 y + 2"))
   (calc-pop (calc-stack-size))
 
   ;; A suppressed selection is never chosen and never captures the
@@ -47,7 +49,7 @@
     (call-interactively 'mafcmd-expand))
   (cl-assert (string= (math-format-value
                        (maf--strip-encasing (calc-top 1 'full)))
-                      "x^2 + 2 x + 1 + y^2 + 2 y + 1"))
+                      "x^2 + 2 x + y^2 + 2 y + 2"))
   (cl-assert (not (maf--sel-any-p)))
   (calc-pop (calc-stack-size))
 

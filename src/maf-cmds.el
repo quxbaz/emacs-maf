@@ -5,9 +5,13 @@
 ;; The standard library of contextual calc commands, defined from a table.
 ;; Each row (SUFFIX ARITY CALCFUNC [KEY]) expands into a `maf-defcmd' named
 ;; mafcmd-SUFFIX whose body applies CALCFUNC to the resolved expression and
-;; commits the normalized result. `math-normalize' evaluates the call when it
-;; can and leaves it symbolic otherwise, matching algebraic entry, and
-;; autoloads the calc module that defines CALCFUNC on first use.
+;; commits the normalized result. `calc-normalize' evaluates the call when it
+;; can and leaves it symbolic otherwise, under the buffer's simplification
+;; mode — so a row's key gives what calc's own key gives under m A, m N and
+;; the rest, where `math-normalize' would apply the default simplifications
+;; alone and leave 3 sqrt(2) / sqrt(2) standing under `alg'. It matches
+;; algebraic entry, and autoloads the calc module that defines CALCFUNC on
+;; first use.
 ;;
 ;; When KEY is present the command is also bound to it in `maf-mode-map', so
 ;; enabling `maf-mode' in a calc buffer shadows calc's own binding of that key
@@ -47,7 +51,7 @@
 Each spec is a list (SUFFIX ARITY FUNC [KEY] [KEYWORD SUFFIX]...): defines
 mafcmd-SUFFIX via `maf-defcmd' with :arity ARITY (unary or binary), whose
 body applies FUNC to the resolved expression — plus the stack-top arg for
-binary — and commits the result through `math-normalize'. When KEY (a
+binary — and commits the result through `calc-normalize'. When KEY (a
 `kbd' string) is present, the command is bound to it in `maf-mode-map',
 shadowing calc's binding of that key while `maf-mode' is on.
 
@@ -96,7 +100,7 @@ variant's own variable governs only its direct invocation."
                  ,@(when hyp `(:hyperbolic ,hyp))
                  ,@(when invhyp `(:inverse-hyperbolic ,invhyp))
                  ,@(when mapv `(:map ,mapv))
-                 (commit (math-normalize
+                 (commit (calc-normalize
                           (list ',func expr
                                 ,@(when (eq arity 'binary) '(arg)))))))
              (when key
@@ -130,7 +134,7 @@ variant's own variable governs only its direct invocation."
   ;; a vector as its norm through `maf--abs' rather than `calcFunc-abs',
   ;; whose two-element case hands back an inert hypot(2, sqrt(3)). It
   ;; cannot be a row for the reason hypot below could not: rows apply
-  ;; their function under `math-normalize', which normalizes the
+  ;; their function under `calc-normalize', which normalizes the
   ;; arguments first, and that floats an exact sqrt(3) entry before the
   ;; command can see it was exact.
   (conj unary calcFunc-conj "J")
@@ -249,7 +253,7 @@ variant's own variable governs only its direct invocation."
   (gamma unary calcFunc-gamma "f g")
   ;; hypot has left the table for `mafcmd-hypot' (stack.el, f h), beside
   ;; mafcmd-cath, which is its Inverse variant and vice versa. It cannot
-  ;; be a row: rows apply their function under `math-normalize', which
+  ;; be a row: rows apply their function under `calc-normalize', which
   ;; normalizes the arguments first, and that floats a sqrt(3) leg before
   ;; the command can see it was exact. Calc's own `calcFunc-hypot' is
   ;; also not what it applies — see `maf--hypot'. Both directions now

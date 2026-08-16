@@ -7,10 +7,12 @@
   (calc-pop (calc-stack-size))
 
   ;; Improper: the polynomial quotient splits off before the fractions.
+  ;; The order of the terms is the simplification mode's — this is the
+  ;; shape calc's own a \ gives under the default `alg'.
   (maf-push "(x^2 + 2) / (x + 1)")
   (call-interactively 'mafcmd-apart)
   (cl-assert (string= (math-format-value (calc-top 1 'full))
-                      "x - 1 + 3 / (x + 1)"))
+                      "x + 3 / (x + 1) - 1"))
   (calc-pop (calc-stack-size))
 
   ;; Nothing to split: polynomials and non-rational functions pass
