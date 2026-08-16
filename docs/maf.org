@@ -30,6 +30,8 @@
     - [ ] target-line
 
 * NOW
+** NEXT maf-options
+   if option value is not the default, highlight it in gold instead of purple
 ** bindings
    three binding modes, each its own heading below: calc-native, maf-native,
    vim-flavored
