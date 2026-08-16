@@ -59,6 +59,7 @@
 ** TODO *maf-formulas*
    - show details by default
    - bind D to delete recent entry at point
+   - if `O follows` is on, then render in gold text in legend
 ** TODO stack mode
    - bind command to jump to next SPC character
    - should work in stack and editplus
