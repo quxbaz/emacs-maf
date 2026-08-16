@@ -58,6 +58,7 @@
    only trigger the trampoline action when point is exactly at the "dot"
 ** TODO *maf-formulas*
    - show details by default
+   - bind D to delete recent entry at point
 ** TODO stack mode
    - bind command to jump to next SPC character
    - should work in stack and editplus
