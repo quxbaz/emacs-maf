@@ -37,6 +37,9 @@
 ** TODO (mafcmd-unpack) should always operate on entry
 ** TODO bind & to toggle big mode
 ** TODO editplus: bind B to log
+   - default to log(x, 10)
+   - if log expression already exists on current entry, default to closest one
+     (prior to current expression at point)
 ** TODO G (maf-go-home) should go to the "dot" at home even it's at the home row
    only trigger the trampoline action when point is exactly at the "dot"
 ** bindings
