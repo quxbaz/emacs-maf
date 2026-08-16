@@ -126,7 +126,9 @@ variant's own variable governs only its direct invocation."
   ;; calc's own spelling of a system (what a S returns and takes).
   (vconcat binary maf-vconcat "|" :inv vconcatrev :hyp append :invhyp appendrev :map -1)
   (mod binary calcFunc-mod "%")
-  (idiv binary calcFunc-idiv "\\")
+  ;; idiv cedes \ to a second square-root key (bindings.el); calc's
+  ;; own \ is shadowed with it. Reachable by name, and I / is not it.
+  (idiv binary calcFunc-idiv)
   (fact unary calcFunc-fact "!")
   (inv unary calcFunc-inv "&")
   (neg unary calcFunc-neg "n")

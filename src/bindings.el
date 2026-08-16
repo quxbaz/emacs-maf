@@ -14,6 +14,11 @@
 (defvar maf-mode-map (make-sparse-keymap)
   "Keymap for `maf-mode'.")
 
+;; A second key for the square root, beside Q (mafcmd-sqrt in the
+;; table): the root is reached for far more often than integer
+;; division, whose key this was — calc's \ is shadowed, and the idiv
+;; row in maf-cmds.el keeps no key.
+(define-key maf-mode-map (kbd "\\") #'mafcmd-sqrt)
 ;; Shadows calc-stirling's key; the contextual stirling pair
 ;; (mafcmd-stir1/stir2) cedes it — see the table in maf-cmds.el.
 (define-key maf-mode-map (kbd "k s") #'mafcmd-complete-square)
