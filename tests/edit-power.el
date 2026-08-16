@@ -160,13 +160,21 @@
                     "(xy)^2+1"))
   (call-interactively 'maf-edit-discard)
 
-  ;; A quoted run is one name — the mark exists to say so — and a
-  ;; number is one number: both take the caret as they stand.
+  ;; A quoted run is one name — the mark exists to say so — an exempt
+  ;; run (pi, bare) is one name without it, and a number is one
+  ;; number: each takes the caret as it stands.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (execute-kbd-macro "\\foo") nil)
+  (progn (execute-kbd-macro ":") nil)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "\\foo^2"))
+  (call-interactively 'maf-edit-discard)
+
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "P") nil)
   (progn (execute-kbd-macro ":") nil)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
-                    "\\pi^2"))
+                    "pi^2"))
   (call-interactively 'maf-edit-discard)
 
   (call-interactively 'maf-edit-add-entry-below)

@@ -802,14 +802,17 @@ variable xy squared. An input dialect reads the same run as a run of
 factors (`maf-editplus--calc-syntax-p'), so an operator written after
 it takes only the last factor: there xy is the product x y, and
 squaring the run whole needs the parentheses. A quoted run is one
-name under either reading — the mark exists to say exactly that — a
-string literal is one string, and a bare number is one number."
+name under either reading — the mark exists to say exactly that — and
+so is an exempt one (`maf-editvars-exempt-names'), pi bare; a string
+literal is one string, and a bare number is one number."
   (and (not (maf-editplus--calc-syntax-p))
        (> (- end start) 1)
        (not (eq (char-after start) (maf-editplus--quote-char)))
        (not (eq (char-after start) ?\"))
-       (string-match-p "[[:alpha:]]"
-                       (buffer-substring-no-properties start end))))
+       (let ((run (buffer-substring-no-properties start end)))
+         (and (string-match-p "[[:alpha:]]" run)
+              (not (and (fboundp 'maf-editvars-exempt-p)
+                        (maf-editvars-exempt-p run)))))))
 
 (defun maf-editplus--call-name-p (pos)
   "Non-nil when the atom at POS can head a function call.
@@ -1651,6 +1654,19 @@ has a key with no modifier at all."
       (_
        (insert "^2")))))
 
+(defun maf-editplus--number-before-p ()
+  "Non-nil when the text just before point ends a bare number.
+The digit run before point belongs to a number — not to an identifier
+\(x2) or a radix form (16#22), whose next character it would swallow —
+so a name written directly against it stays a separate token: calc
+and the editvars dialect both read 2pi as a product."
+  (save-excursion
+    (let ((from (point)))
+      (skip-chars-backward "0-9")
+      (and (< (point) from)
+           (not (eq (char-before) ?#))
+           (not (maf-editplus--name-char-p (char-before)))))))
+
 (defun maf-editplus-insert-pi (n)
   "Insert the constant pi, N times, on the unmodified `P' key.
 Two characters for the price of one keypress; a capital P is no
@@ -1658,23 +1674,26 @@ longer self-inserting during a session — see `maf-use-editplus-mode'
 on what that costs.
 
 After a name character a space goes in first, so `x' becomes the
-product `x pi' and not the unrelated variable `xpi'. Digits get the
-space too: `2pi' would read back fine, but `x2' would not, and the
-spaced form parses the same either way.
+product `x pi' and not the unrelated variable `xpi'. A number takes
+the name directly — `44pi', the way it is written by hand — but a
+digit that is the tail of an identifier or a radix form still gets
+the space: `x2pi' is one name calc has never heard of, where `x2 pi'
+is the product meant (`maf-editplus--number-before-p').
 
-Under the maf-editvars dialect the name goes in quoted — `\\pi' with
-the default mark — because there a run of letters is a run of factors
-and a bare pi would commit as the product p i. The quoting is that
-module's to decide (`maf-editvars-quote-name'), and with it absent or
-standing down the plain name is what goes in. The space rule is
-unaffected: `x \\pi' is the product either way."
+Under the maf-editvars dialect the name goes in as that module
+spells it (`maf-editvars-quote-name'): bare while pi is exempt, the
+default, and quoted — `\\pi' with the default mark — where the
+exemption has been withdrawn and a bare run of letters is a run of
+factors. With the module absent or standing down the plain name is
+what goes in."
   (interactive "p")
   (let ((name (if (fboundp 'maf-editvars-quote-name)
                   (maf-editvars-quote-name "pi")
                 "pi")))
     (dotimes (_ n)
       (when (and (char-before)
-                 (string-match-p "[[:alnum:]]" (string (char-before))))
+                 (string-match-p "[[:alnum:]]" (string (char-before)))
+                 (not (maf-editplus--number-before-p)))
         (insert " "))
       (insert name))))
 

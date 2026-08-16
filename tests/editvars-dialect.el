@@ -1,6 +1,7 @@
 ;; The maf-editvars input dialect: inside a maf-edit session a run of
 ;; letters is a product of one-letter factors (2xy is 2*x*y) and a
-;; multi-letter identifier is written with a backslash (\cm). A name in
+;; multi-letter identifier is written with a backslash (\cm) — save the
+;; exempt names, pi alone by default, which stay whole bare. A name in
 ;; front of `(' is still a call, so xy(5) calls xy while \xy(5)
 ;; multiplies. A step passes when it raises no error.
 ;;
@@ -37,12 +38,28 @@
                  t "%s" (car case)))
     nil)
 
-  ;; The rule is uniform: no name is exempt for being one calc knows.
-  ;; pi splits like anything else, and is quoted like anything else.
+  ;; The rule takes no account of what calc knows — cm splits and is
+  ;; quoted like anything else — with one deliberate exception: the
+  ;; short exempt list, pi alone by default, stays whole bare.
+  (cl-assert (equal maf-editvars-exempt-names '("pi")))
   (cl-assert (equal (math-read-expr (maf-editvars--split "pi"))
-                    (math-read-expr "p*i")))
+                    (math-read-expr "pi")))
+  (cl-assert (equal (math-read-expr (maf-editvars--split "2pi"))
+                    (math-read-expr "2*pi")))
+  ;; Whole runs only: pi inside a longer run is letters like any
+  ;; others, and the exemption does not reach in.
+  (cl-assert (equal (math-read-expr (maf-editvars--split "xpi"))
+                    (math-read-expr "x*p*i")))
+  ;; The mark still works on it, and both directions agree: the
+  ;; stack's pi loads unmarked where foo takes the mark.
   (cl-assert (equal (math-read-expr (maf-editvars--split "\\pi"))
                     (math-read-expr "pi")))
+  (cl-assert (string= (maf-editvars--quote "2 pi + foo") "2 pi + \\foo"))
+  ;; Withdrawn from the list, pi splits and quotes like anything else.
+  (cl-assert (let ((maf-editvars-exempt-names nil))
+               (and (equal (math-read-expr (maf-editvars--split "pi"))
+                           (math-read-expr "p*i"))
+                    (string= (maf-editvars--quote "2 pi") "2 \\pi"))))
 
   ;; Calc's own syntax that happens to contain letters is not touched:
   ;; a float exponent, a radix form, a name with a digit in it.
@@ -128,6 +145,24 @@
   (call-interactively 'maf-edit-discard)
   (cl-assert (null (seq-filter (lambda (o) (overlay-get o 'maf-editvars))
                                (overlays-in (point-min) (point-max)))))
+  (calc-pop (calc-stack-size))
+
+  ;; An exempt run is coloured too — bare, having no mark to take in —
+  ;; since nothing else in the text would say it holds together.
+  (maf-push "2 pi")
+  (call-interactively 'maf-edit)
+  (progn (setq maf-step--ovs
+               (seq-filter (lambda (o) (overlay-get o 'maf-editvars))
+                           (overlays-in (point-min) (point-max))))
+         nil)
+  (cl-assert (= 1 (length maf-step--ovs)))
+  (cl-assert (equal (buffer-substring-no-properties
+                     (overlay-start (car maf-step--ovs))
+                     (overlay-end (car maf-step--ovs)))
+                    "pi"))
+  (cl-assert (eq (overlay-get (car maf-step--ovs) 'face)
+                 'maf-editvars-quoted))
+  (call-interactively 'maf-edit-discard)
   (calc-pop (calc-stack-size))
 
   ;; The mark is configurable, `\' being only the default — and it has

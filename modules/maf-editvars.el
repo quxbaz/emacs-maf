@@ -17,19 +17,29 @@
 ;;   \cm              cm             a mark quotes one identifier
 ;;   2\cm             2*cm
 ;;   \foo+x           foo+x
+;;   2pi              2*pi           pi is exempt and stays whole
 ;;   xy(5)            the function xy, called on 5
 ;;   \xy(5)           xy*5           the variable xy, times 5
 ;;   map(\sin,[1,2])  sin passed by name, not called
 ;;
-;; The rule is uniform and takes no account of what anything means:
-;; every run of letters splits, whether or not calc knows the name, so
-;; \pi and \cm are quoted exactly as \foo is. That is the point. An
-;; earlier design left "known" names — calc's 171 units, its constants,
-;; whatever the user had stored — unsplit, which made the meaning of a
-;; run of letters depend on a table nobody has read (lx is lux, mu is
-;; the micron, me is the electron mass) and on mutable state, so that
-;; storing into xy would quietly change what 5xy meant. Quoting is
-;; explicit, visible in the text, and stable.
+;; The rule takes no account of what anything means: a run of letters
+;; splits whether or not calc knows the name, so \cm is quoted exactly
+;; as \foo is. That is the point. An earlier design left "known" names
+;; — calc's 171 units, its constants, whatever the user had stored —
+;; unsplit, which made the meaning of a run of letters depend on a
+;; table nobody has read (lx is lux, mu is the micron, me is the
+;; electron mass) and on mutable state, so that storing into xy would
+;; quietly change what 5xy meant. Quoting is explicit, visible in the
+;; text, and stable.
+;;
+;; The one exception is `maf-editvars-exempt-names' — pi, and pi alone
+;; by default. 2pi means twice the circle constant everywhere algebra
+;; is written by hand, and nobody writes it meaning p times i, so the
+;; bare run stays one name and needs no mark. Unlike the rejected
+;; table this is not "what calc knows": it is a short, fixed,
+;; user-visible list, and an exempt run is coloured in the buffer just
+;; as a quoted one is, so what holds together is still visible in the
+;; text. Only a whole run is exempt — xpi is still x*p*i.
 ;;
 ;; A run is a *letter* run: a name with a digit in it is one identifier
 ;; already and needs no quoting, so x1 and xy1 pass through untouched.
@@ -127,6 +137,34 @@ character out."
 (defun maf-editvars--quote-string ()
   "The quoting character as a one-character string."
   (char-to-string maf-editvars-quote-char))
+
+;;; The exempt names
+
+(defcustom maf-editvars-exempt-names '("pi")
+  "Letter runs that stay one identifier without a mark.
+A run in this list never splits and is never quoted: bare pi commits
+as the constant rather than as the product p i, keys that type it
+type it bare, and text loaded from the stack shows it without a mark.
+
+The default holds pi alone, for being ubiquitous: 2pi is how twice
+the circle constant is written by hand, and no one writes it meaning
+p times i. Every addition widens the same trap the dialect exists to
+close — a run whose meaning depends on a list rather than on the text
+— so this wants to stay short, and each entry should be a name whose
+product reading no one would ever intend.
+
+Whole runs only, compared case-sensitively: xpi still splits into
+three factors, and Pi is not pi. A name in front of `(' is still a
+call — pi(5) calls calc's pi function — since calls are calc's own
+syntax in either dialect."
+  :type '(repeat string)
+  :group 'maf)
+
+(defun maf-editvars-exempt-p (name)
+  "Non-nil when NAME is a run the dialect leaves whole without a mark.
+Membership in `maf-editvars-exempt-names', exactly and
+case-sensitively."
+  (member name maf-editvars-exempt-names))
 
 ;;; Faces
 
@@ -316,17 +354,22 @@ reads even `foo (5)', space and all, as a call."
 
 (defun maf-editvars--split (text)
   "TEXT in this module's dialect, rewritten as calc input.
-Letter runs become explicit products, and quoted names lose their
-mark and are padded apart from their neighbours so that the
-identifier survives the join: `2\\=\\cm' has to reach calc as `2 cm'
-and not as `2cm'... which happens to read the same, where `\\=\\cm\\=\\cm'
-would not."
+Letter runs become explicit products — except an exempt run
+\(`maf-editvars-exempt-names'), which is one name already and passes
+through as written — and quoted names lose their mark and are padded
+apart from their neighbours so that the identifier survives the join:
+`2\\=\\cm' has to reach calc as `2 cm' and not as `2cm'... which happens
+to read the same, where `\\=\\cm\\=\\cm' would not. An exempt run needs no
+padding: its neighbours in the text were never letters, or the run
+would have been longer."
   (let ((tokens (maf-editvars--scan text))
         (out '()))
     (while tokens
       (let ((tok (pop tokens)))
         (push (pcase (car tok)
-                ('word (mapconcat #'string (string-to-list (cdr tok)) "*"))
+                ('word (if (maf-editvars-exempt-p (cdr tok))
+                           (cdr tok)
+                         (mapconcat #'string (string-to-list (cdr tok)) "*")))
                 ('quoted
                  (if (maf-editvars--call-follows-p tokens)
                      (concat (cdr tok) "*")
@@ -348,7 +391,9 @@ earlier ones valid."
   (let ((i 0) (out '()))
     (dolist (tok (maf-editvars--scan text))
       (pcase (car tok)
-        ('word (push i out) (setq i (+ i (length (cdr tok)))))
+        ;; An exempt run reads as one name bare, so it takes no mark.
+        ('word (unless (maf-editvars-exempt-p (cdr tok)) (push i out))
+               (setq i (+ i (length (cdr tok)))))
         ;; A quoted token's string has lost its mark, but the mark is
         ;; still there in TEXT.
         ('quoted (setq i (+ i 1 (length (cdr tok)))))
@@ -393,14 +438,17 @@ that the same global setting is harmless in a TeX-language buffer."
 Marked with `maf-editvars-quote-char' where the dialect applies and a
 run of letters would otherwise split, and returned untouched
 everywhere else — the dialect off, another language, a name calc and
-the dialect already spell alike.
+the dialect already spell alike, an exempt name
+\(`maf-editvars-exempt-names') that stays whole bare.
 
 For anything that types a name into an entry on the user's behalf.
 Text a person types they can quote themselves, and text loaded from
-the stack goes through `maf-editvars--quote'; a key that writes `pi'
-has neither route, and unquoted it would mean the product p i."
+the stack goes through `maf-editvars--quote'; a key that writes a
+name has neither route, and one the dialect splits would commit as a
+product of its letters."
   (if (and (maf-editvars--applicable-p)
-           (maf-editvars--pure-letters-p name))
+           (maf-editvars--pure-letters-p name)
+           (not (maf-editvars-exempt-p name)))
       (concat (maf-editvars--quote-string) name)
     name))
 
@@ -472,28 +520,57 @@ the user has defined (\\[calc-define-unit]) counts too."
   "Remove this module's highlighting from the buffer."
   (remove-overlays (point-min) (point-max) 'maf-editvars t))
 
+(defun maf-editvars--fontify-spans (text)
+  "Spans in TEXT this module colours, as (START END . NAME) triples.
+Offsets index TEXT. A marked identifier's span takes its mark in; an
+exempt run (`maf-editvars-exempt-names') has no mark and is coloured
+bare — without the colour nothing in the text would say the run is
+one the dialect leaves whole."
+  (let ((i 0) (out '()))
+    (dolist (tok (maf-editvars--scan text))
+      (let ((len (length (cdr tok))))
+        (pcase (car tok)
+          ('quoted
+           (push (cons i (cons (+ i 1 len) (cdr tok))) out)
+           (setq i (+ i 1 len)))
+          ('word
+           (when (maf-editvars-exempt-p (cdr tok))
+             (push (cons i (cons (+ i len) (cdr tok))) out))
+           (setq i (+ i len)))
+          (_ (setq i (+ i len))))))
+    (nreverse out)))
+
 (defun maf-editvars--fontify ()
-  "Highlight the quoted identifiers in every entry of the session.
+  "Highlight the identifiers this module holds together as one name.
+The quoted ones, and the exempt runs that hold together bare.
 Rebuilt from scratch on each pass: the spans are short, there are as
 many as there are entries, and a session's text changes under nearly
 every key. Overlays rather than text properties, so that nothing this
-adds can reach `maf-edit--entry-text' or the undo list."
+adds can reach `maf-edit--entry-text' or the undo list. Found with
+the scanner rather than a regexp, line by line as the translations
+go, so the letters of a string literal stay uncoloured just as they
+stay unsplit."
   (when (and maf-edit-mode (maf-editvars--applicable-p))
     (maf-editvars--unfontify)
     (save-excursion
       (dolist (o (maf-edit--overlays))
         (goto-char (overlay-start o))
-        (while (re-search-forward (concat (regexp-quote
-                                           (maf-editvars--quote-string))
-                                          "\\([A-Za-z][A-Za-z0-9]*\\)")
-                                  (overlay-end o) t)
-          (let ((ov (make-overlay (match-beginning 0) (match-end 0))))
-            (overlay-put ov 'maf-editvars t)
-            (overlay-put ov 'evaporate t)
-            (overlay-put ov 'face
-                         (if (maf-editvars--unit-p (match-string 1))
-                             'maf-editvars-unit
-                           'maf-editvars-quoted))))))))
+        (while (< (point) (overlay-end o))
+          (let* ((bol (line-beginning-position))
+                 (beg (+ bol (maf-edit--leading-prefix-run bol)))
+                 (end (min (line-end-position) (overlay-end o))))
+            (when (< beg end)
+              (dolist (span (maf-editvars--fontify-spans
+                             (buffer-substring-no-properties beg end)))
+                (let ((ov (make-overlay (+ beg (car span))
+                                        (+ beg (cadr span)))))
+                  (overlay-put ov 'maf-editvars t)
+                  (overlay-put ov 'evaporate t)
+                  (overlay-put ov 'face
+                               (if (maf-editvars--unit-p (cddr span))
+                                   'maf-editvars-unit
+                                 'maf-editvars-quoted))))))
+          (forward-line 1))))))
 
 ;;; The module
 
@@ -506,9 +583,12 @@ of it: \\=\\cm, \\=\\pi, \\=\\foo. A name in front of `(' is still a function
 call, so xy(5) calls xy while \\=\\xy(5) multiplies by 5.
 
 The rule applies to every letter run alike, with no exemption for
-names calc happens to know: \\=\\pi is quoted exactly as \\=\\foo is. Quoted
-names are coloured — gold for one the unit table recognises — but the
-colour only reports what the mark already decided.
+names calc happens to know — \\=\\cm is quoted exactly as \\=\\foo is —
+save the short list in `maf-editvars-exempt-names': pi, by default,
+which stays one name bare, so 2pi is twice the constant. Quoted
+names and exempt runs are coloured — gold for one the unit table
+recognises — but for a quoted name the colour only reports what the
+mark already decided.
 
 The mark is `maf-editvars-quote-char'. It defaults to `\\=\\', which calc
 also reads as integer division; a session that needs both should set
@@ -541,7 +621,9 @@ and algebraic entry at calc's own prompt are untouched."
 
 Calc reads a run of letters as one variable, so xy is a single name.
 Here every run splits into factors — 2xy is 2*x*y — and a backslash
-quotes one identifier whole: \\cm is the unit, \\xy the variable. An
-input dialect for edit sessions; the stack keeps calc's own syntax."))
+quotes one identifier whole: \\cm is the unit, \\xy the variable. The
+exception is pi, ubiquitous enough to stay whole bare: 2pi is twice
+the constant (`maf-editvars-exempt-names'). An input dialect for edit
+sessions; the stack keeps calc's own syntax."))
 
 (provide 'maf-editvars)
