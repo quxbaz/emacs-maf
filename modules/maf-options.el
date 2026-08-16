@@ -475,12 +475,15 @@ and for why the setters are forms rather than command names.")
     (calc-auto-why
      :group "Session" :label "Explain results" :keys "d w"
      :doc "Say why a result was left unsimplified."
-     :values ((nil "never"     (calc-auto-why 0))
-              (1   "sometimes" (calc-auto-why 1))
-              (t   "always"    (calc-auto-why 2)))
-     ;; Anything non-nil short of t is the middle state, and the
-     ;; default calc ships is spelled `maybe' rather than 1.
-     :current ,(lambda (raw) (cond ((null raw) nil) ((eq raw t) t) (t 1))))
+     ;; Anything non-nil short of t is the middle state. The default
+     ;; calc ships spells it `maybe' where `d w' with an argument
+     ;; writes 1, so the middle setter lands the shipped spelling: the
+     ;; row is compared to its default by raw value, and a reset that
+     ;; left 1 behind would still count as changed.
+     :values ((nil   "never"     (calc-auto-why 0))
+              (maybe "sometimes" (maf-options--change 'calc-auto-why 'maybe))
+              (t     "always"    (calc-auto-why 2)))
+     :current ,(lambda (raw) (cond ((null raw) nil) ((eq raw t) t) (t 'maybe))))
 
     (calc-display-trail
      :group "Session" :label "Trail window" :keys ""
