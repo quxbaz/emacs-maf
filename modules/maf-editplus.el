@@ -1708,8 +1708,9 @@ Enabled, and while a maf-edit session is up:
   T    `maf-editplus-wrap-tan' — and of a tan call
   M-2..M-9
        `maf-editplus-insert-power' — `^' and the digit pressed
-  :    `maf-editplus-raise-power' — the sub-expression point names
-       squared, counting up a press at a time
+  :, W `maf-editplus-raise-power' — the sub-expression point names
+       squared, counting up a press at a time; W is the square on the
+       stack too
   P    `maf-editplus-insert-pi' — the constant pi, typed as one key
 
 Disabled, the keys cede back to whatever the global map does with them
@@ -1726,7 +1727,7 @@ The arrows are the same gesture on the stack as here, a toggle between
 two spellings of one thing, and as there both directions run it — a
 toggle is its own inverse, so there is no second direction to give.
 
-L, Q, \\, |, S, C, T, : and P are unmodified printable keys, as
+L, Q, \\, |, S, C, T, :, W and P are unmodified printable keys, as
 `maf-edit-insert-colon' already is: each costs its self-insertion for
 the length of a session — \\ its integer division, which the stack
 has given up too — and there is no cheap way back to the character — \\[quoted-insert] is not one, since pausing to read a
@@ -1756,6 +1757,7 @@ running, and the module is a no-op for anyone not using maf-edit."
                  ("C"   . maf-editplus-wrap-cos)
                  ("T"   . maf-editplus-wrap-tan)
                  (":"   . maf-editplus-raise-power)
+                 ("W"   . maf-editplus-raise-power)
                  ("P"   . maf-editplus-insert-pi)))
       (define-key maf-edit-mode-map (kbd (car b)) (and on (cdr b))))
     ;; One command behind eight keys — it reads the digit off the key
@@ -1774,6 +1776,7 @@ TAB runs point past the delimiter closing the group it stands in, and
 M-o wraps the term before point in parens, widening a step per press.
 Then C-RET duplicates an entry, S-up/S-down retype its delimiters,
 L/Q/| and S/C/T apply ln/sqrt/abs and sin/cos/tan (\\ is sqrt too, as
-on the stack), M-2..M-9 and : raise to a power, P types pi."))
+on the stack), M-2..M-9 and : raise to a power (W squares too, as on
+the stack), P types pi."))
 
 (provide 'maf-editplus)

@@ -24,6 +24,19 @@
   ;; `;' still types the character `:' gave up, so nothing is lost.
   (cl-assert (eq (lookup-key maf-edit-mode-map (kbd ";"))
                  'maf-edit-insert-colon))
+  ;; W is the square here as on the stack, a second key for the same
+  ;; command; driven by the real key below, it must not self-insert.
+  (cl-assert (eq (lookup-key maf-edit-mode-map (kbd "W"))
+                 'maf-editplus-raise-power))
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (execute-kbd-macro "x") nil)
+  (progn (execute-kbd-macro "W") nil)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "x^2"))
+  (progn (execute-kbd-macro "W") nil)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "x^3"))
+  (call-interactively 'maf-edit-discard)
 
   ;; The digit pressed is the digit written. Driven by the real key, so
   ;; the reading of `last-command-event' is exercised too.
