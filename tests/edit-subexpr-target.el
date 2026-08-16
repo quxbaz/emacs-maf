@@ -335,9 +335,7 @@
                     "a ln(mod) b"))
   (call-interactively 'maf-edit-discard)
 
-  ;; Integer division is an operator like any other, and it is the
-  ;; editvars mark as well: a name written with the mark is still one
-  ;; atom, the mark reading as an operator only where no name follows.
+  ;; Integer division is an operator like any other.
   (call-interactively 'maf-edit-add-entry-below)
   (progn (insert "6 \\ 4 + 1") nil)
   (progn (maf-edit-move-beginning-of-line 1) (forward-char 2) nil)
@@ -346,12 +344,14 @@
                     "ln(6 \\ 4) + 1"))
   (call-interactively 'maf-edit-discard)
 
+  ;; A name the editvars dialect quotes, {foo}, is a brace group to
+  ;; the scan, and so one unit with its braces.
   (call-interactively 'maf-edit-add-entry-below)
-  (progn (insert "\\pi+1") nil)
+  (progn (insert "{foo}+1") nil)
   (progn (maf-edit-move-beginning-of-line 1) nil)
   (call-interactively 'maf-editplus-wrap-ln)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
-                    "ln(\\pi)+1"))
+                    "ln({foo})+1"))
   (call-interactively 'maf-edit-discard)
 
   ;; And the pieces they name commit as the operators calc reads. The
@@ -564,13 +564,15 @@
   (cl-assert (eq (char-after) ?\)))
   (call-interactively 'maf-edit-discard)
 
-  ;; A quoted call is one unit with its mark: the quote belongs to the
-  ;; name, and the name to the group.
+  ;; A quoted name in front of a paren group is not a call — the
+  ;; dialect reads {foo}(3) as the product — and the two groups are
+  ;; two units, so the key takes the one before point, and a bare
+  ;; pair becomes the call's own.
   (call-interactively 'maf-edit-add-entry-below)
-  (progn (insert "\\foo(3)") nil)
+  (progn (insert "{foo}(3)") nil)
   (call-interactively 'maf-editplus-wrap-ln)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
-                    "ln(\\foo(3))"))
+                    "{foo}ln(3)"))
   (call-interactively 'maf-edit-discard)
 
   ;; A string literal's closing quote completes the whole literal.

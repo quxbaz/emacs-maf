@@ -61,29 +61,18 @@
   (progn (execute-kbd-macro "2") nil)
   (progn (execute-kbd-macro "P") nil)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
-                    "2\\pi"))
+                    "2{pi}"))
   (call-interactively 'maf-edit-commit)
   (cl-assert (equal (calc-top 1) '(* 2 (var pi var-pi))))
   (calc-pop (calc-stack-size))
 
-  ;; The mark is the dialect's to choose, not this command's.
-  (setq maf-editvars-quote-char ?@)
-  (call-interactively 'maf-edit-add-entry-below)
-  (progn (execute-kbd-macro "P") nil)
-  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
-                    "@pi"))
-  (call-interactively 'maf-edit-commit)
-  (cl-assert (equal (calc-top 1) '(var pi var-pi)))
-  (calc-pop (calc-stack-size))
-  (setq maf-editvars-quote-char ?\\)
-
-  ;; The prefix argument repeats it, and the space rule keeps the
-  ;; copies apart — a name character before the mark is still a name
-  ;; character.
+  ;; The prefix argument repeats it. The braces keep the copies apart
+  ;; on their own — a closing brace is no name character, so the space
+  ;; rule has nothing to add.
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro (kbd "C-u 3 P")) nil)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
-                    "\\pi \\pi \\pi"))
+                    "{pi}{pi}{pi}"))
   (call-interactively 'maf-edit-commit)
   ;; A product of three, standing as written — maf commits without
   ;; working anything out.
@@ -121,10 +110,10 @@
   ;; And the spelling is asked for by name, so it follows the dialect
   ;; and its exempt list rather than being spelled out here twice.
   (cl-assert (equal (maf-editvars-quote-name "pi") "pi"))
-  (cl-assert (equal (maf-editvars-quote-name "foo") "\\foo"))
+  (cl-assert (equal (maf-editvars-quote-name "foo") "{foo}"))
   (cl-assert (equal (let ((maf-editvars-exempt-names nil))
                       (maf-editvars-quote-name "pi"))
-                    "\\pi"))
+                    "{pi}"))
   ;; A single letter is already one factor, and a name with a digit in
   ;; it is spelled the same either way — neither is quoted.
   (cl-assert (equal (maf-editvars-quote-name "x") "x"))

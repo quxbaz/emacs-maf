@@ -1,8 +1,8 @@
 ;; The maf-editvars input dialect: inside a maf-edit session a run of
 ;; letters is a product of one-letter factors (2xy is 2*x*y) and a
-;; multi-letter identifier is written with a backslash (\cm) — save the
+;; multi-letter identifier is written in braces ({cm}) — save the
 ;; exempt names, pi alone by default, which stay whole bare. A name in
-;; front of `(' is still a call, so xy(5) calls xy while \xy(5)
+;; front of `(' is still a call, so xy(5) calls xy while {xy}(5)
 ;; multiplies. A step passes when it raises no error.
 ;;
 ;; The contract has two halves that must agree. Typed text is
@@ -25,12 +25,19 @@
   ;; about meaning rather than about spelling.
   (progn
     (dolist (case '(("2xy"             . "2 x y")
-                    ("2\\cm"           . "2 cm")
-                    ("\\foo+x"         . "foo + x")
+                    ("2{cm}"           . "2 cm")
+                    ("{foo}+x"         . "foo + x")
                     ("xy(5)"           . "xy(5)")
-                    ("\\xy(5)"         . "xy 5")
-                    ("map(\\sin,[1,2])" . "map(sin, [1, 2])")
-                    ("abc"             . "a b c")))
+                    ("{xy}(5)"         . "xy 5")
+                    ("map({sin},[1,2])" . "map(sin, [1, 2])")
+                    ("abc"             . "a b c")
+                    ;; Braces around a bare name are the quotes; around
+                    ;; anything else they are still calc's vector.
+                    ("{x}"             . "x")
+                    ("{x1}"            . "x1")
+                    ("{1,2}"           . "[1, 2]")
+                    ("{ab,c}"          . "[a b, c]")
+                    ("{{a}}"           . "[a]")))
       (cl-assert (string= (math-format-value
                            (math-read-expr (maf-editvars--split (car case)))
                            1000)
@@ -50,16 +57,19 @@
   ;; others, and the exemption does not reach in.
   (cl-assert (equal (math-read-expr (maf-editvars--split "xpi"))
                     (math-read-expr "x*p*i")))
-  ;; The mark still works on it, and both directions agree: the
-  ;; stack's pi loads unmarked where foo takes the mark.
-  (cl-assert (equal (math-read-expr (maf-editvars--split "\\pi"))
+  ;; The braces still work on it, and both directions agree: the
+  ;; stack's pi loads bare where foo takes the braces.
+  (cl-assert (equal (math-read-expr (maf-editvars--split "{pi}"))
                     (math-read-expr "pi")))
-  (cl-assert (string= (maf-editvars--quote "2 pi + foo") "2 pi + \\foo"))
+  (cl-assert (string= (maf-editvars--quote "2 pi + foo") "2 pi + {foo}"))
   ;; Withdrawn from the list, pi splits and quotes like anything else.
   (cl-assert (let ((maf-editvars-exempt-names nil))
                (and (equal (math-read-expr (maf-editvars--split "pi"))
                            (math-read-expr "p*i"))
-                    (string= (maf-editvars--quote "2 pi") "2 \\pi"))))
+                    (string= (maf-editvars--quote "2 pi") "2 {pi}"))))
+  ;; An unclosed brace quotes nothing: the letters after it split as
+  ;; they would anywhere, and calc is left to reject the text.
+  (cl-assert (string= (maf-editvars--split "{xy") "{x*y"))
 
   ;; Calc's own syntax that happens to contain letters is not touched:
   ;; a float exponent, a radix form, a name with a digit in it.
@@ -91,7 +101,7 @@
   (calc-pop (calc-stack-size))
   (maf-push "foo + 1")
   (call-interactively 'maf-edit)
-  (cl-assert (string-match-p "\\\\foo \\+ 1"
+  (cl-assert (string-match-p "{foo} \\+ 1"
                              (buffer-substring-no-properties (point-min) (point-max))))
 
   ;; An entry nobody touched still compares equal to what the session
@@ -105,7 +115,7 @@
   ;; f*o*o.
   (progn (calc-cursor-stack-index 1) (end-of-line) nil)
   (call-interactively 'maf-edit)
-  (progn (execute-kbd-macro "0") nil)     ; \foo + 1 => \foo + 10
+  (progn (execute-kbd-macro "0") nil)     ; {foo} + 1 => {foo} + 10
   (call-interactively 'maf-edit-commit)
   (cl-assert (string= (math-format-value (calc-top 1 'full) 1000) "foo + 10"))
   (calc-pop (calc-stack-size))
@@ -119,7 +129,7 @@
   (calc-pop (calc-stack-size))
 
   (call-interactively 'maf-edit-add-entry-below)
-  (progn (execute-kbd-macro "2\\cm") nil)
+  (progn (execute-kbd-macro "2{cm}") nil)
   (call-interactively 'maf-edit-commit)
   (cl-assert (string= (math-format-value (calc-top 1 'full) 1000) "2 cm"))
 
@@ -165,48 +175,21 @@
   (call-interactively 'maf-edit-discard)
   (calc-pop (calc-stack-size))
 
-  ;; The mark is configurable, `\' being only the default — and it has
-  ;; to be, since calc reads `\' as integer division: 5\b is idiv(5, b)
-  ;; to calc and the quoted name b to the dialect. Under `~', which
-  ;; calc does not read at all, the same session leaves that alone.
-  (progn (setq maf-step--editvars-char maf-editvars-quote-char
-               maf-editvars-quote-char ?~)
-         nil)
-  (cl-assert (equal (math-read-expr (maf-editvars--split "2~cm"))
-                    (math-read-expr "2 cm")))
-  (cl-assert (equal (math-read-expr (maf-editvars--split "2xy"))
-                    (math-read-expr "2 x y")))
-  ;; The old mark is now ordinary text, and reaches calc as the
-  ;; operator it is.
-  (cl-assert (equal (math-read-expr (maf-editvars--split "5\\b"))
-                    (math-read-expr "5\\b")))
-  ;; Quoting follows the setting, both as a string and in the buffer.
-  (cl-assert (string= (maf-editvars--quote "foo + 1") "~foo + 1"))
-  (calc-pop (calc-stack-size))
+  ;; The quoted span the highlighter paints takes the braces in.
   (maf-push "foo + 1")
   (call-interactively 'maf-edit)
-  (cl-assert (string-match-p "~foo \\+ 1"
-                             (buffer-substring-no-properties (point-min) (point-max))))
-  ;; And so does the highlighting, which builds its pattern from it.
-  (cl-assert (= 1 (length (seq-filter (lambda (o) (overlay-get o 'maf-editvars))
-                                      (overlays-in (point-min) (point-max))))))
+  (progn (setq maf-step--ovs
+               (seq-filter (lambda (o) (overlay-get o 'maf-editvars))
+                           (overlays-in (point-min) (point-max))))
+         nil)
+  (cl-assert (= 1 (length maf-step--ovs)))
+  (cl-assert (equal (buffer-substring-no-properties
+                     (overlay-start (car maf-step--ovs))
+                     (overlay-end (car maf-step--ovs)))
+                    "{foo}"))
   (call-interactively 'maf-edit-commit)
   (cl-assert (string= (math-format-value (calc-top 1 'full) 1000) "foo + 1"))
   (calc-pop (calc-stack-size))
-
-  ;; A character the scanner cannot tell from a name, or one that opens
-  ;; a run whose letters are not identifiers, is refused — and the
-  ;; dialect stands down rather than mangling the buffer.
-  (cl-assert (not (maf-editvars-quote-char-valid-p ?x)))
-  (cl-assert (not (maf-editvars-quote-char-valid-p ?5)))
-  (cl-assert (not (maf-editvars-quote-char-valid-p ?\")))
-  (cl-assert (not (maf-editvars-quote-char-valid-p ?<)))
-  (cl-assert (maf-editvars-quote-char-valid-p ?@))
-  (progn (setq maf-editvars-quote-char ?x) nil)
-  (cl-assert (not (maf-editvars--applicable-p)))
-  (cl-assert (string= (maf-editvars-parse-text "2xy") "2xy"))
-  (progn (setq maf-editvars-quote-char maf-step--editvars-char) nil)
-  (cl-assert (maf-editvars--applicable-p))
 
   ;; The dialect stands down in every language but Normal: the text
   ;; reaches the parser as written.
@@ -215,8 +198,7 @@
   (cl-assert (string= (maf-editvars-parse-text "2xy") "2xy"))
   (progn (calc-set-language nil) nil)
 
-  ;; Why that restriction is not about the mark, and does not lift when
-  ;; the mark changes. The dialect rests on juxtaposition meaning
+  ;; Why that restriction. The dialect rests on juxtaposition meaning
   ;; multiplication, which is a fact about the Normal language: calc's
   ;; Mathematica mode renders a call as `sin x' and groups 2xy the
   ;; other way, so the same text means something else there.
@@ -229,8 +211,8 @@
                     (math-read-expr "2*(x*y)")))
   ;; And two more languages calc itself round-trips cleanly, where this
   ;; module would not: C spells pi with an underscore whose PI would
-  ;; split, and TeX writes a product with a word the default mark reads
-  ;; as a quoted name.
+  ;; split, and TeX writes a product with a word this module would take
+  ;; apart.
   (progn (calc-set-language 'c) nil)
   (cl-assert (string-match-p "M_PI" (math-format-value (math-read-expr "pi") 1000)))
   (progn (calc-set-language 'tex) nil)

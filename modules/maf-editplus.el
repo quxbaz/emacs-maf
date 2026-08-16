@@ -751,33 +751,22 @@ equation, not an equation about an evaluation.")
   "The relations, all of one precedence, as calc reads them.
 `==' is calc's second spelling of `='.")
 
-(defun maf-editplus--quote-char ()
-  "The identifier-quoting mark of the editvars dialect, or nil.
-Under that module a multi-letter name is written with a mark in front
-of it (`maf-editvars-quote-char'), and mark and name are the one
-identifier they commit as — so the scan reads them as a single atom.
-Absent the module there is no mark and this is nil."
-  (and (boundp 'maf-editvars-quote-char)
-       (symbol-value 'maf-editvars-quote-char)))
-
 (defun maf-editplus--atom-start-p (pos)
   "Non-nil when an atom begins at POS.
-A name character starts one; so does the editvars quoting mark with a
-name character behind it, and so does the point of a number written
-without its leading zero — .5 is one atom, while the two dots of an
-interval are not."
+A name character starts one, and so does the point of a number
+written without its leading zero — .5 is one atom, while the two dots
+of an interval are not. A name the editvars dialect quotes, {cm}, is
+not an atom but a brace group, and the group scans read it as one
+unit the way they read any delimited group."
   (or (maf-editplus--name-char-p (char-after pos))
-      (and (eq (char-after pos) (maf-editplus--quote-char))
-           (maf-editplus--name-char-p (char-after (1+ pos))))
       (and (eq (char-after pos) ?.)
            (maf-editplus--digit-p (char-after (1+ pos))))))
 
 (defun maf-editplus--atom-run (pos bound)
   "End of the atom beginning at POS, no further than BOUND.
-The quoting mark, when the atom carries one, is crossed first; the
-rest is `maf-editplus--atom-char-p's run, which keeps a number's own
+`maf-editplus--atom-char-p's run, which keeps a number's own
 punctuation (2.5, calc's fraction 3:4) and stops at everything else."
-  (let ((p (if (maf-editplus--name-char-p (char-after pos)) pos (1+ pos))))
+  (let ((p pos))
     (while (and (< p bound) (maf-editplus--atom-char-p p))
       (setq p (1+ p)))
     (max p (1+ pos))))
@@ -790,7 +779,7 @@ matters to one token: calc's word operator `mod' is an operator only
 where a run of letters is one identifier. Under the editvars dialect
 a bare run of letters is a run of factors — `mod' commits as the
 product m o d, calc's operator being unreachable without the quoting
-mark — so the scan must not read it as one, or it would name a node
+braces — so the scan must not read it as one, or it would name a node
 the commit does not agree exists."
   (eq maf-edit-parse-text-function #'identity))
 
@@ -801,13 +790,14 @@ syntax that is what the text commits as — xy^2 already means the one
 variable xy squared. An input dialect reads the same run as a run of
 factors (`maf-editplus--calc-syntax-p'), so an operator written after
 it takes only the last factor: there xy is the product x y, and
-squaring the run whole needs the parentheses. A quoted run is one
-name under either reading — the mark exists to say exactly that — and
-so is an exempt one (`maf-editvars-exempt-names'), pi bare; a string
-literal is one string, and a bare number is one number."
+squaring the run whole needs the parentheses. A quoted run, {xy}, is
+a brace group — one unit under either reading, as any delimited group
+is; an exempt run \(`maf-editvars-exempt-names'), pi bare, is one
+name under either; a string literal is one string, and a bare number
+is one number."
   (and (not (maf-editplus--calc-syntax-p))
        (> (- end start) 1)
-       (not (eq (char-after start) (maf-editplus--quote-char)))
+       (not (memq (char-after start) maf-editplus--openers))
        (not (eq (char-after start) ?\"))
        (let ((run (buffer-substring-no-properties start end)))
          (and (string-match-p "[[:alpha:]]" run)
@@ -819,9 +809,7 @@ literal is one string, and a bare number is one number."
 A name can — sqrt(3) is a call — and a number cannot: 2(x+1) is the
 product it reads as, not a call to 2."
   (let ((c (char-after pos)))
-    (and c
-         (or (string-match-p "[[:alpha:]_]" (char-to-string c))
-             (eq c (maf-editplus--quote-char))))))
+    (and c (string-match-p "[[:alpha:]_]" (char-to-string c)))))
 
 (defun maf-editplus--string-run (pos bound)
   "End of the string literal opening at POS, no further than BOUND.
@@ -1256,9 +1244,9 @@ restructure text the writer is in the middle of."
 
 (defun maf-editplus--unit-before (pos limit)
   "Bounds of the smallest complete unit ending exactly at POS, or nil.
-An atom with its own punctuation — a name, quoted or not, a number, a
-string literal — or a delimited group taken with the call name that
-heads it, quote mark included. Nil when the character behind POS
+An atom with its own punctuation — a name, a number, a string literal
+— or a delimited group taken with the call name that heads it; a
+quoted name, {cm}, is such a group. Nil when the character behind POS
 completes nothing: whitespace, an operator, the head of the entry. No
 whitespace is crossed on the way in: this is the unit a power typed
 at POS would bind to, and a power does not reach back across a space."
@@ -1268,12 +1256,7 @@ at POS would bind to, and a power does not reach back across a space."
        ((memq c maf-editplus--closers)
         (let ((open (maf-editplus--group-start pos limit)))
           (when open
-            (let ((beg (maf-editplus--call-start open limit)))
-              (when (and (< beg open)
-                         (maf-editplus--quote-char)
-                         (eq (char-before beg) (maf-editplus--quote-char)))
-                (setq beg (1- beg)))
-              (cons beg pos)))))
+            (cons (maf-editplus--call-start open limit) pos))))
        ;; A string's contents are not syntax, so its closing quote
        ;; completes the whole literal. Quotes pair forward — scanned
        ;; backward, a closer cannot be told from the opener of a
@@ -1300,9 +1283,6 @@ at POS would bind to, and a power does not reach back across a space."
         (let ((beg (1- pos)))
           (while (and (> beg limit)
                       (maf-editplus--atom-char-p (1- beg)))
-            (setq beg (1- beg)))
-          (when (and (maf-editplus--quote-char)
-                     (eq (char-before beg) (maf-editplus--quote-char)))
             (setq beg (1- beg)))
           (cons beg pos)))))))
 
@@ -1682,9 +1662,8 @@ is the product meant (`maf-editplus--number-before-p').
 
 Under the maf-editvars dialect the name goes in as that module
 spells it (`maf-editvars-quote-name'): bare while pi is exempt, the
-default, and quoted — `\\pi' with the default mark — where the
-exemption has been withdrawn and a bare run of letters is a run of
-factors. With the module absent or standing down the plain name is
+default, and quoted — `{pi}' — where the exemption has been withdrawn
+and a bare run of letters is a run of factors. With the module absent or standing down the plain name is
 what goes in."
   (interactive "p")
   (let ((name (if (fboundp 'maf-editvars-quote-name)
