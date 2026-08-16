@@ -1700,7 +1700,8 @@ Enabled, and while a maf-edit session is up:
   L    `maf-editplus-wrap-ln' — the sub-expression point names becomes
        the argument of an ln call, or the term before point at the end
        of the entry
-  Q    `maf-editplus-wrap-sqrt' — and of a sqrt call
+  Q, \\ `maf-editplus-wrap-sqrt' — and of a sqrt call; two keys, as
+       on the stack, where \\ is the root beside Q
   |    `maf-editplus-wrap-abs' — and of an abs call
   S    `maf-editplus-wrap-sin' — and of a sin call
   C    `maf-editplus-wrap-cos' — and of a cos call
@@ -1725,10 +1726,10 @@ The arrows are the same gesture on the stack as here, a toggle between
 two spellings of one thing, and as there both directions run it — a
 toggle is its own inverse, so there is no second direction to give.
 
-L, Q, |, S, C, T, : and P are unmodified printable keys, as
+L, Q, \\, |, S, C, T, : and P are unmodified printable keys, as
 `maf-edit-insert-colon' already is: each costs its self-insertion for
-the length of a session, and there is no cheap way back to the
-character — \\[quoted-insert] is not one, since pausing to read a
+the length of a session — \\ its integer division, which the stack
+has given up too — and there is no cheap way back to the character — \\[quoted-insert] is not one, since pausing to read a
 character re-locks the calc buffer under the session and the insert
 that follows fails (`maf-edit-insert-semicolon' exists for that
 reason). Yanking one in is what is left. `:' is the cheapest of them,
@@ -1749,6 +1750,7 @@ running, and the module is a no-op for anyone not using maf-edit."
                  ("S-<down>" . maf-editplus-toggle-brackets)
                  ("L"   . maf-editplus-wrap-ln)
                  ("Q"   . maf-editplus-wrap-sqrt)
+                 ("\\"  . maf-editplus-wrap-sqrt)
                  ("|"   . maf-editplus-wrap-abs)
                  ("S"   . maf-editplus-wrap-sin)
                  ("C"   . maf-editplus-wrap-cos)
@@ -1771,7 +1773,7 @@ running, and the module is a no-op for anyone not using maf-edit."
 TAB runs point past the delimiter closing the group it stands in, and
 M-o wraps the term before point in parens, widening a step per press.
 Then C-RET duplicates an entry, S-up/S-down retype its delimiters,
-L/Q/| and S/C/T apply ln/sqrt/abs and sin/cos/tan, M-2..M-9 and :
-raise to a power, P types pi."))
+L/Q/| and S/C/T apply ln/sqrt/abs and sin/cos/tan (\\ is sqrt too, as
+on the stack), M-2..M-9 and : raise to a power, P types pi."))
 
 (provide 'maf-editplus)

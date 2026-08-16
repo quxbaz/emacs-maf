@@ -13,6 +13,9 @@
                  'maf-editplus-wrap-sqrt))
   (cl-assert (eq (lookup-key maf-edit-mode-map (kbd "|"))
                  'maf-editplus-wrap-abs))
+  ;; \ is a second key for the root, as it is on the stack.
+  (cl-assert (eq (lookup-key maf-edit-mode-map (kbd "\\"))
+                 'maf-editplus-wrap-sqrt))
 
   ;; The gesture as it is used: type a term, then apply the root to it.
   ;; Driven by the real key, so a capital Q reaching self-insert would
@@ -23,6 +26,14 @@
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
                     "x+sqrt(2)"))
   (cl-assert (eolp))
+  (call-interactively 'maf-edit-discard)
+
+  ;; The same through \, which no longer types integer division.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (execute-kbd-macro "x+2") nil)
+  (progn (execute-kbd-macro "\\") nil)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "x+sqrt(2)"))
   (call-interactively 'maf-edit-discard)
 
   ;; Same for the modulus, on the smallest unit ending at point — the
