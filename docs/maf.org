@@ -35,6 +35,7 @@
    maf-formulas (s o)
    [...]
 ** TODO (mafcmd-unpack) should always operate on entry
+** TODO bind & to toggle big mode
 ** bindings
    three binding modes, each its own heading below: calc-native, maf-native,
    vim-flavored
