@@ -32,9 +32,6 @@
 * NOW
 ** TODO in *maf-options* and *maf-modules*, regular C-n and C-p should show help text in minibuffer
    currently, on jknp trigger the help text
-** DONE *maf-options*
-   - if option value is not the default, highlight it in gold instead of purple
-   - remove the underlining to denote a default value
 ** bindings
    three binding modes, each its own heading below: calc-native, maf-native,
    vim-flavored
