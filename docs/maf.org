@@ -30,7 +30,7 @@
     - [ ] target-line
 
 * NOW
-** TODO in *maf-options* and *maf-modules*, regular C-n and C-p should show help text in minibuffer
+** DONE in *maf-options* and *maf-modules*, regular C-n and C-p should show help text in minibuffer
    currently, on jknp trigger the help text
 ** bindings
    three binding modes, each its own heading below: calc-native, maf-native,
