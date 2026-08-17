@@ -29,13 +29,13 @@
     - [ ] factor
     - [ ] target-line
 
-* NOW [0/11]
+* NOW [0/12]
 ** IN-PROGRESS in *maf-modules*, also show binding in help text
    eg,
    maf-formulas (s o)
    [...]
 ** IN-PROGRESS (mafcmd-unpack) should always operate on entry
-** TODO bind & to toggle big mode
+** IN-PROGRESS bind & to toggle big mode
 ** TODO editplus: bind B to log
    - default to log(x, 10)
    - if log expression already exists on current entry, default to closest one
