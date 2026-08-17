@@ -110,8 +110,14 @@ through `maf-modules', not by this mode."
   ;; just stops coming back to life on its own. Buffer-local and undone
   ;; on exit, so stock calc is unaffected.
   (if maf-mode
-      (setq-local mark-even-if-inactive nil)
-    (kill-local-variable 'mark-even-if-inactive)))
+      (progn
+        (setq-local mark-even-if-inactive nil)
+        ;; Point may rest at home only on the dot; anywhere else in the
+        ;; home section it is snapped there after every command.
+        (add-hook 'post-command-hook #'maf--home-snap nil t)
+        (maf--home-snap))
+    (kill-local-variable 'mark-even-if-inactive)
+    (remove-hook 'post-command-hook #'maf--home-snap t)))
 
 ;; Activate the feature modules listed in `maf-modules'. Runs once at
 ;; load, after every module file has registered its toggle.

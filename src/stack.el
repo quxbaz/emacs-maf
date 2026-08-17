@@ -1554,6 +1554,31 @@ line's start when it is off."
     (skip-chars-forward " ")
     (point)))
 
+(defun maf--home-snap ()
+  "Keep point on the dot whenever it is in the home section.
+Point has no business anywhere else past the last stack entry — the
+line's leading margin, its tail, the blank below — so a command that
+leaves it there is tidied onto the dot, the one home position
+\(`maf--home-dot-position'), where calc itself parks point after every
+command. No mark is pushed: the spots snapped from are all a keystroke
+from the dot, no journey worth returning to.
+
+Runs on `post-command-hook' in maf calc buffers (installed by
+`maf-mode'); errors are swallowed so a bad calc state can never get
+the hook function disabled. Steps aside while a region is active — the
+mark is the selection's anchor, point its live end, and both are
+targets — and under `maf-edit-mode', whose editable text point roams
+freely. Isearch is left alone mid-search, so a search can walk through
+home; the snap catches up on the command that exits it."
+  (ignore-errors
+    (unless (or (region-active-p)
+                (bound-and-true-p isearch-mode)
+                (bound-and-true-p maf-edit-mode))
+      (when (maf--at-home-p)
+        (let ((dot (maf--home-dot-position)))
+          (unless (= (point) dot)
+            (goto-char dot)))))))
+
 (defun maf--home-mark-position ()
   "Return the mark `maf-go-home' should bounce back to, or nil.
 Nil when the buffer has no mark, and when the mark is itself at home:
