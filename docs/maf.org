@@ -36,11 +36,14 @@
    [...]
 ** IN-PROGRESS (mafcmd-unpack) should always operate on entry
 ** IN-PROGRESS bind & to toggle big mode
-** TODO editplus: bind B to log
+** DONE editplus: bind B to log
    - default to log(x, 10)
    - if log expression already exists on current entry, default to closest one
      (prior to current expression at point)
-   - if delete the ^ in an expression, delete the power expr also. eg,
+   - C-u <n> B names the base outright
+   - on commit, log(x, 10) converts to calc's log10(x)
+** TODO editplus: deleting the ^ deletes the power expr too
+   - eg,
      x^|3
      <backspace>
      => x
