@@ -87,37 +87,30 @@
         (maf-formulas--close-detail)
         (cl-assert (= 1 (length (window-list)))))
 
-      ;; `o' shows one formula and holds it: movement neither dismisses
-      ;; the pane (it costs the list no room) nor re-aims it, and a
-      ;; re-render leaves it alone too.
+      ;; With follow off, `o' shows the formula at point on request:
+      ;; staying on the line the pane stays, `o' again closes it by
+      ;; hand, and moving off the line dismisses it — the window going
+      ;; back to what it held, in respect of `O' being off.
       (delete-other-windows)
+      (setq maf-formulas--pane-state nil)
       (goto-char (point-min))
       (maf-formulas-next-item)
       (maf-formulas-show-detail)
       (cl-assert (eq maf-formulas--pane-state 'frozen))
-      (let ((held (with-current-buffer maf-formulas--detail-buffer (buffer-string))))
-        (maf-formulas-next-item)
-        (maf-formulas--detail-on-move)
-        (cl-assert (get-buffer-window maf-formulas--detail-buffer))
-        (cl-assert (equal held (with-current-buffer maf-formulas--detail-buffer
-                                 (buffer-string))))
-        (maf-formulas--render)
-        (cl-assert (equal held (with-current-buffer maf-formulas--detail-buffer
-                                 (buffer-string))))
-        ;; `o' with the pane up is a toggle: it closes, the borrowed
-        ;; window handed back; pressed again it returns frozen on the
-        ;; formula now at point.
-        (maf-formulas-next-item)
-        (maf-formulas-show-detail)
-        (cl-assert (null maf-formulas--pane-state))
-        (cl-assert (not (get-buffer-window maf-formulas--detail-buffer)))
-        (maf-formulas-show-detail)
-        (cl-assert (eq maf-formulas--pane-state 'frozen))
-        (cl-assert (not (equal held (with-current-buffer maf-formulas--detail-buffer
-                                      (buffer-string))))))
+      (cl-assert (get-buffer-window maf-formulas--detail-buffer))
+      (maf-formulas--detail-on-move)    ; point unmoved: the pane stays
+      (cl-assert (get-buffer-window maf-formulas--detail-buffer))
+      (maf-formulas-show-detail)
+      (cl-assert (not (get-buffer-window maf-formulas--detail-buffer)))
+      (maf-formulas-show-detail)
+      (cl-assert (get-buffer-window maf-formulas--detail-buffer))
+      (maf-formulas-next-item)
+      (maf-formulas--detail-on-move)
+      (cl-assert (null maf-formulas--pane-state))
+      (cl-assert (not (get-buffer-window maf-formulas--detail-buffer)))
 
-      ;; `O' takes the pane over and follows point from there; pressed
-      ;; again it closes.
+      ;; `O' opens the pane that follows point; pressed again it
+      ;; closes.
       (maf-formulas-toggle-detail)
       (cl-assert (eq maf-formulas--pane-state 'follow))
       (let ((shown (with-current-buffer maf-formulas--detail-buffer (buffer-string))))
@@ -125,6 +118,19 @@
         (maf-formulas--detail-on-move)
         (cl-assert (not (equal shown (with-current-buffer maf-formulas--detail-buffer
                                        (buffer-string))))))
+      ;; `o' on a following pane is a peek at calc: follow stays on —
+      ;; the legend keeps its gold — and the pane returns on its own
+      ;; the moment point reaches another formula.
+      (maf-formulas-show-detail)
+      (cl-assert (eq maf-formulas--pane-state 'follow))
+      (cl-assert (not (get-buffer-window maf-formulas--detail-buffer)))
+      (let ((h header-line-format))
+        (cl-assert (eq (get-text-property (string-match "O follows" h) 'face h)
+                       'warning)))
+      (maf-formulas-next-item)
+      (maf-formulas--detail-on-move)
+      (cl-assert (eq maf-formulas--pane-state 'follow))
+      (cl-assert (get-buffer-window maf-formulas--detail-buffer))
       (maf-formulas-toggle-detail)
       (cl-assert (null maf-formulas--pane-state))
       (cl-assert (not (get-buffer-window maf-formulas--detail-buffer)))

@@ -9,11 +9,12 @@
 ;; `O' toggles that following pane off and on, and the choice holds
 ;; for the rest of the session, so the menu reopens the way it was
 ;; left; the legend's "O follows" shows gold while it is on. `o' (or
-;; `?') is a toggle too, but freezes: it holds the formula at point
-;; however far point moves after, and with the pane already up —
-;; frozen or following — it closes it, the borrowed window handed
-;; back to calc; `C-g' closes either. RET pushes the formula at point
-;; onto the calc stack.
+;; `?') toggles the pane's visibility, deferring to that flag: with
+;; `O' on, closing is only a peek at calc, the pane returning as soon
+;; as point reaches another formula; with `O' off, `o' shows the
+;; formula at point and moving off its line dismisses the pane again.
+;; `C-g' closes the pane and turns follow off. RET pushes the formula
+;; at point onto the calc stack.
 ;;
 ;; A formula is a plist. Only :expr is required; the rest are optional
 ;; and the detail pane renders just what is present:
@@ -240,16 +241,14 @@ that leaves it where it was.")
 ;; name for live sessions to actually get a global.
 (defvar maf-formulas--pane-state 'follow
   "How the detail pane is open: `frozen', `follow', or nil for closed.
-`frozen' is `maf-formulas-show-detail' (\\`o'): the pane holds the one
-formula it was opened on. `follow' is `maf-formulas-toggle-detail'
-(\\`O'): it re-renders for each formula point reaches — the default,
-so the menu opens with the pane already following. Either way it
-stays up until closed — it borrows a window rather than taking room
-from the list, so there is nothing to be won by dismissing it on the
-next keystroke. Global where the pane's other bookkeeping is
-buffer-local: the state is the session's choice, not the buffer's, so
-quitting the menu and opening it again brings the pane back the way
-it was left.")
+`follow' is `maf-formulas-toggle-detail' (\\`O'): the pane re-renders
+for each formula point reaches — the default, so the menu opens with
+the pane already following. `frozen' is `maf-formulas-show-detail'
+(\\`o') with follow off: the pane shows the one formula it was opened
+on, and moving off that line dismisses it. Global where the pane's
+other bookkeeping is buffer-local: the state is the session's choice,
+not the buffer's, so quitting the menu and opening it again brings
+the pane back the way it was left.")
 
 (defun maf-formulas--header-line ()
   "The menu's header line: the key legend, or the filter in effect.
@@ -471,15 +470,25 @@ calc, normally — comes back if it did not."
       (quit-restore-window win 'bury))))
 
 (defun maf-formulas--detail-on-move ()
-  "Follow point with the detail pane; on `post-command-hook'.
-Only a following pane re-renders, and only for a line other than the
-one already rendered, so the commands that leave point where it was
-cost nothing. A pane opened with \\<maf-formulas-mode-map>\\[maf-formulas-show-detail] holds the formula it was
-opened on and ignores point entirely."
-  (when (and (eq maf-formulas--pane-state 'follow)
-             (not (eq (line-beginning-position) maf-formulas--detail-line)))
-    (setq maf-formulas--detail-line (line-beginning-position))
-    (maf-formulas--update-detail)))
+  "React to point's moves with the detail pane; on `post-command-hook'.
+The pane reacts only to a line other than the one rendered, so the
+commands that leave point where it was cost nothing. What it does
+there is the `O' flag's call. Following, it re-renders — or comes
+back, when \\<maf-formulas-mode-map>\\[maf-formulas-show-detail] hid it for a peek at what its window held. Frozen
+\(follow off), the pane is dismissed instead, the window handed back:
+the details were for the formula it was opened on, and point has
+moved on."
+  (unless (eq (line-beginning-position) maf-formulas--detail-line)
+    (pcase maf-formulas--pane-state
+      ('follow
+       (if (get-buffer-window maf-formulas--detail-buffer)
+           (progn (setq maf-formulas--detail-line (line-beginning-position))
+                  (maf-formulas--update-detail))
+         (maf-formulas--open-detail)))
+      ('frozen
+       (setq maf-formulas--pane-state nil
+             maf-formulas--detail-line nil)
+       (maf-formulas--close-detail)))))
 
 (defun maf-formulas-keyboard-quit ()
   "Close the detail pane, then quit as \\[keyboard-quit] does.
@@ -513,20 +522,20 @@ way it was opened, so it takes neither a matching key nor leaving the menu."
     (setq maf-formulas--detail-line (line-beginning-position))))
 
 (defun maf-formulas-show-detail ()
-  "Show the formula at point in the detail pane, or close a pane that is up.
-A toggle: with the pane showing — frozen or following — this hands the
-borrowed window back to what it held, calc's stack normally; pressed
-again it returns the pane frozen on the formula at point. Frozen, the
-pane keeps its formula however far point wanders after: a look at one
-formula while reading down the list, not a running commentary on it.
-\\<maf-formulas-mode-map>\\[maf-formulas-toggle-detail] opens a pane that follows point instead. On a category header
-it shows the group's first formula."
+  "Show the detail pane, or close a pane that is up — a visibility toggle.
+Either way the `O' flag (\\<maf-formulas-mode-map>\\[maf-formulas-toggle-detail]) keeps the say over what happens next.
+With follow on, closing is a peek at what the window held — calc's
+stack normally — the legend's gold untouched, and the pane returns on
+its own the moment point reaches another formula. With follow off,
+the pane shows the formula at point and moving off that line
+dismisses it again: details on request, where follow makes them a
+running commentary. On a category header it shows the group's first
+formula."
   (interactive)
   (if (get-buffer-window maf-formulas--detail-buffer)
-      (progn (setq maf-formulas--pane-state nil
-                   maf-formulas--detail-line nil)
-             (maf-formulas--close-detail))
-    (setq maf-formulas--pane-state 'frozen)
+      (maf-formulas--close-detail)
+    (unless maf-formulas--pane-state
+      (setq maf-formulas--pane-state 'frozen))
     (maf-formulas--open-detail))
   (maf-formulas--refresh-header))
 
