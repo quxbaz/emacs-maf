@@ -60,6 +60,10 @@
    - show details by default
    - bind D to delete recent entry at point
    - if `O follows` is on, then render in gold text in legend
+   - `O` value currently doesn't persist when *maf-formulas* buffer is quit
+     and open again
+     - note: we're talking about persisting in a session, not permanently across
+       emacs sessions
 ** TODO stack mode
    - bind command to jump to next SPC character
    - should work in stack and editplus
