@@ -12,7 +12,9 @@
 ;;
 ;; What is here now are the four delimiter gestures, TAB, M-o, C-RET
 ;; and the shifted arrows, the function keys L, Q, |, S, C and T, the
-;; exponent keys M-2 through M-9 and :, and P for the constant pi.
+;; exponent keys M-2 through M-9 and :, P for the constant pi, and
+;; DEL and C-d, which delete a power whole from either side of its
+;; operator.
 ;;
 ;; TAB escapes. Typing a formula runs forward past closing delimiters
 ;; constantly — sqrt(x^2+1), f(g(x)) — and reaching the far side of one
@@ -61,6 +63,14 @@
 ;; way L and Q name what they wrap — the sub-expression under point,
 ;; parenthesized where the text needs it — while the meta-digits write
 ;; their two characters at point and look at nothing.
+;;
+;; DEL and C-d un-raise. A power deleted is deleted whole: deleting
+;; the caret from either side takes the exponent with it, since the
+;; alternative is text that quietly means something else — x^3 minus
+;; its caret reads as the one name x3. The parentheses the base
+;; carried for the power's sake go too, where dropping them cannot
+;; regroup the neighbours, so the keys give back what the raise
+;; wrote. Everywhere else each is the plain deletion it always was.
 ;;
 ;; The scan is maf-edit's own: any closer matches any opener (calc's
 ;; interval notation mixes them — (1 .. 2]), machine-owned prefix
@@ -1639,6 +1649,180 @@ has a key with no modifier at all."
       (_
        (insert "^2")))))
 
+;;; Deleting a power whole
+
+(defun maf-editplus--power-op-before (pos limit)
+  "Start of the power operator ending just before POS, or nil.
+The caret, or the second star of `**' — calc's other spelling of the
+power, two characters that are one operator, which is why its tail is
+not a `*' to backspace alone. LIMIT bounds the look behind, and
+machine-owned characters are furniture, never operators."
+  (cond
+   ((<= pos limit) nil)
+   ((get-text-property (1- pos) 'maf-edit-prefix) nil)
+   ((eq (char-before pos) ?^) (1- pos))
+   ((and (eq (char-before pos) ?*)
+         (> (1- pos) limit)
+         (eq (char-before (1- pos)) ?*)
+         (not (get-text-property (- pos 2) 'maf-edit-prefix)))
+    (- pos 2))))
+
+(defun maf-editplus--power-op-at (pos limit)
+  "Start of the power operator whose character POS stands on, or nil.
+The caret under point, or either star of `**' — deleting forward into
+any character of the operator is deleting the operator, and its other
+half must not be left behind as the `*' it is not. LIMIT bounds the
+look behind for the pair's first half, and machine-owned characters
+are furniture, never operators."
+  (cond
+   ((get-text-property pos 'maf-edit-prefix) nil)
+   ((eq (char-after pos) ?^) pos)
+   ((eq (char-after pos) ?*)
+    (cond
+     ((and (eq (char-after (1+ pos)) ?*)
+           (not (get-text-property (1+ pos) 'maf-edit-prefix)))
+      pos)
+     ((and (> pos limit)
+           (eq (char-before pos) ?*)
+           (not (get-text-property (1- pos) 'maf-edit-prefix)))
+      (1- pos))))))
+
+(defun maf-editplus--whole-element-p (start end limit bound)
+  "Non-nil when START..END stands alone as one element of the entry.
+Nothing but fill lies between it and the entry's own ends, a
+delimiter, or a comma — the places any expression stands unbracketed,
+so a bare pair around such a span is furniture whatever it holds. An
+operator on either side fails the test: there dropping a pair can
+regroup its neighbours, and whether it would is precedence this check
+deliberately does not weigh — a pair kept is never wrong, a pair
+dropped can be."
+  (let ((before (maf-editplus--skip-fill-back start limit))
+        (after (maf-editplus--skip-fill-forward end bound)))
+    (and (or (<= before limit)
+             (memq (char-before before)
+                   (append maf-editplus--openers '(?, ?\;))))
+         (or (>= after bound)
+             (memq (char-after after)
+                   (append maf-editplus--closers '(?, ?\;)))))))
+
+(defun maf-editplus--delete-power-at (op entry limit)
+  "Delete the power whose operator starts at OP; non-nil when one did.
+The node the operator's own character lies in is the power it heads:
+the base ends before the operator and the exponent starts after, so
+no child of the power covers it. Anything else under the character —
+an atom holding a stray caret, a string — is not a power, and nil
+comes back with nothing deleted.
+
+The operator and its exponent go together, and the base's bare pair
+goes too where it stands alone as one element of the entry
+\(`maf-editplus--whole-element-p'). Point lands after the base."
+  (let ((node (maf-editplus--node-at
+               (maf-editplus--parse limit (overlay-end entry))
+               op)))
+    (when (and node (equal (maf-editplus--node-kind node) "^"))
+      (let* ((base (car (maf-editplus--node-children node)))
+             (bs (maf-editplus--node-start base))
+             (be (maf-editplus--node-end base)))
+        (delete-region op (maf-editplus--node-end node))
+        (goto-char op)
+        (when (and (maf-editplus--node-parenthesized-p base)
+                   (maf-editplus--whole-element-p
+                    bs be limit (overlay-end entry)))
+          ;; Closer first, as in `maf-editplus--wrap-node', so the
+          ;; opener's position still holds; point then belongs at the
+          ;; end of the unwrapped base.
+          (delete-region (1- be) be)
+          (delete-region bs (1+ bs))
+          (goto-char (- be 2)))
+        t))))
+
+(defun maf-editplus-delete-backward (n)
+  "Delete backward; a power's operator takes its exponent with it.
+Backspacing onto `^' — or onto the second star of `**', calc's other
+spelling — deletes the whole power tail rather than leaving text that
+quietly means something else: x^3 minus its caret alone would read as
+the one name x3. The exponent goes with the operator whatever its
+shape — digits, a name, a call, a signed number, a tower folded to
+the right:
+
+  x^|3        =>  x
+  x^|(a+b)    =>  x
+  x^|2^3      =>  x          (the exponent of the first caret)
+  x^2^|3      =>  x^2
+
+Parentheses the base carried for the power's sake go with it, when
+dropping them cannot regroup what is around them — the pair stands
+alone as one element of the entry, nothing but a delimiter, a comma
+or the entry's own ends beside it (`maf-editplus--whole-element-p'):
+
+  (x + 1)^|(a + b)  =>  x + 1
+  ln((a+b)^|2)      =>  ln(a+b)
+  2*(x+1)^|2        =>  2*(x+1)    (the pair still groups)
+
+which makes the key the inverse of `maf-editplus-raise-power': the
+parentheses that key writes to keep the text honest are the ones this
+one takes back out.
+
+What the caret heads is the parse's answer (`maf-editplus--parse'),
+so a `^' the entry does not read as a power — inside a string, or
+with no base in front of it — is just a character, and deletes as
+one. Everywhere else the key is what DEL always was: plain backward
+deletion, one character per press, N of them with an argument — the
+join gesture on a prefix, the entry-merging delete at an entry's
+head, all of it unchanged. C-d is the same gesture from the other
+side of the operator (`maf-editplus-delete-forward').
+
+Runs only during a maf-edit session, where the key is bound; outside
+one there is no entry text for the gesture to read."
+  (interactive "p")
+  (unless maf-edit-mode
+    (user-error "maf-edit is not active"))
+  (dotimes (_ n)
+    (let* ((entry (maf-editplus--entry-at-point))
+           (limit (and entry
+                       (+ (overlay-start entry)
+                          (maf-edit--leading-prefix-run
+                           (overlay-start entry)))))
+           (op (and entry
+                    (maf-editplus--power-op-before (point) limit))))
+      (unless (and op (maf-editplus--delete-power-at op entry limit))
+        (delete-char -1)))))
+
+(defun maf-editplus-delete-forward (n)
+  "Delete forward; a power's operator takes its exponent with it.
+The forward twin of `maf-editplus-delete-backward': pressed with
+point on the caret — or on either star of `**', whose other half
+must not be left behind as the `*' it is not — the operator and its
+exponent go together, rather than leaving text that quietly means
+something else:
+
+  1 / (x|^2 - 1)  =>  1 / (x - 1)
+  x|^2^3          =>  x
+  (a+b)|^2        =>  a+b
+  2*(x+1)|^2      =>  2*(x+1)    (the pair still groups)
+
+The rules are the backward key's own (`maf-editplus--delete-power-at'):
+the parse names the power the operator heads, the exponent goes whole
+whatever its shape, and the base's bare pair goes where it stands
+alone as one element of the entry. Point lands after the base. On any
+other character the key is what C-d always was — plain forward
+deletion, one character per press, N of them with an argument.
+
+Runs only during a maf-edit session, where the key is bound; outside
+one there is no entry text for the gesture to read."
+  (interactive "p")
+  (unless maf-edit-mode
+    (user-error "maf-edit is not active"))
+  (dotimes (_ n)
+    (let* ((entry (maf-editplus--entry-at-point))
+           (limit (and entry
+                       (+ (overlay-start entry)
+                          (maf-edit--leading-prefix-run
+                           (overlay-start entry)))))
+           (op (and entry (maf-editplus--power-op-at (point) limit))))
+      (unless (and op (maf-editplus--delete-power-at op entry limit))
+        (delete-char 1)))))
+
 (defun maf-editplus--number-before-p ()
   "Non-nil when the text just before point ends a bare number.
 The digit run before point belongs to a number — not to an identifier
@@ -1712,11 +1896,17 @@ Enabled, and while a maf-edit session is up:
        squared, counting up a press at a time; W is the square on the
        stack too
   P    `maf-editplus-insert-pi' — the constant pi, typed as one key
+  DEL, C-d
+       `maf-editplus-delete-backward' and `maf-editplus-delete-forward'
+       — deleting a power's operator from either side deletes the
+       exponent with it, and the parentheses the base then no longer
+       needs; anywhere else the keys delete as ever
 
 Disabled, the keys cede back to whatever the global map does with them
 \(`indent-for-tab-command', which has nothing to indent in an edited
 stack, `self-insert-command' for the printable ones, `digit-argument'
-for the meta-digits, the shifted arrows' selection motion, and nothing
+for the meta-digits, the shifted arrows' selection motion, plain
+`delete-backward-char' and `delete-char' for DEL and C-d, and nothing
 at all for M-o and C-RET, which Emacs 30 leaves free). M-o, C-RET and
 the shifted arrows run `mafcmd-mod-360', `mafcmd-let' and
 `mafcmd-toggle-op' in `maf-mode-map', which is not competition:
@@ -1758,7 +1948,9 @@ running, and the module is a no-op for anyone not using maf-edit."
                  ("T"   . maf-editplus-wrap-tan)
                  (":"   . maf-editplus-raise-power)
                  ("W"   . maf-editplus-raise-power)
-                 ("P"   . maf-editplus-insert-pi)))
+                 ("P"   . maf-editplus-insert-pi)
+                 ("DEL" . maf-editplus-delete-backward)
+                 ("C-d" . maf-editplus-delete-forward)))
       (define-key maf-edit-mode-map (kbd (car b)) (and on (cdr b))))
     ;; One command behind eight keys — it reads the digit off the key
     ;; that ran it.
@@ -1777,6 +1969,7 @@ M-o wraps the term before point in parens, widening a step per press.
 Then C-RET duplicates an entry, S-up/S-down retype its delimiters,
 L/Q/| and S/C/T apply ln/sqrt/abs and sin/cos/tan (\\ is sqrt too, as
 on the stack), M-2..M-9 and : raise to a power (W squares too, as on
-the stack), P types pi."))
+the stack), P types pi, and DEL and C-d delete a power whole from
+either side of its operator."))
 
 (provide 'maf-editplus)
