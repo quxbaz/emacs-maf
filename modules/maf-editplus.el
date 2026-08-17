@@ -11,8 +11,8 @@
 ;; back out when the module is off.
 ;;
 ;; What is here now are the four delimiter gestures, TAB, M-o, C-RET
-;; and the shifted arrows, the function keys L, Q, |, S, C and T, the
-;; exponent keys M-2 through M-9 and :, P for the constant pi, and
+;; and the shifted arrows, the function keys L, Q, |, S, C, T and B,
+;; the exponent keys M-2 through M-9 and :, P for the constant pi, and
 ;; DEL and C-d, which delete a power whole from either side of its
 ;; operator.
 ;;
@@ -45,10 +45,10 @@
 ;; and puts point at the matching place inside the copy, so the sign to
 ;; flip is where the fingers already are.
 ;;
-;; L, Q, |, S, C and T apply a function. Point inside the text names a
-;; sub-expression the way it does on the stack — the character under
+;; L, Q, |, S, C, T and B apply a function. Point inside the text names
+;; a sub-expression the way it does on the stack — the character under
 ;; point decides, an operand taking itself and an operator the node it
-;; heads — and these write ln, sqrt, abs, sin, cos or tan around
+;; heads — and these write ln, sqrt, abs, sin, cos, tan or log around
 ;; that. At the end of the entry there is no character under point,
 ;; and the smallest complete unit ending at point is the argument
 ;; instead — the same unit `:' raises there — so a term just typed
@@ -387,16 +387,18 @@ deleting a delimiter the entry needs."
                (char-before (maf-editplus--skip-fill-back open limit))))
          open)))
 
-(defun maf-editplus--wrap (start end &optional name)
+(defun maf-editplus--wrap (start end &optional name tail)
   "Put parentheses around START..END, leaving point after the closer.
 With NAME, the pair is the argument list of a call to it — NAME(...)
-rather than (...).
+rather than (...). With TAIL, TAIL goes in between the wrapped text
+and the closer: the further arguments of the call, so log with its
+base is NAME(..., 10) from the one wrap.
 
 Point lands where the next press expects it, so wrapping and widening
 are the same key pressed again."
   (let ((m (copy-marker end t)))
     (save-excursion
-      (goto-char m) (insert ")")
+      (goto-char m) (insert (concat tail ")"))
       (goto-char start) (insert (concat name "(")))
     (goto-char m)
     (set-marker m nil)
@@ -1228,8 +1230,9 @@ grammar puts them."
                          (memq (char-after at) maf-editplus--closers))
               node)))))))
 
-(defun maf-editplus--wrap-node (node name)
+(defun maf-editplus--wrap-node (node name &optional tail)
   "Write a call to NAME around NODE; return where the call begins.
+With TAIL, TAIL goes in before the closer, as in `maf-editplus--wrap'.
 The argument is NODE's inner text, so a pair of bare parentheses the
 writer put around it is not wrapped a second time — and when the call
 makes that pair redundant it goes, ln(a+b) being written where
@@ -1251,7 +1254,7 @@ restructure text the writer is in the middle of."
       (delete-region (1- end) end)
       (delete-region start (1+ start)))
     (prog1 (marker-position m1)
-      (maf-editplus--wrap (marker-position m1) (marker-position m2) name)
+      (maf-editplus--wrap (marker-position m1) (marker-position m2) name tail)
       (set-marker m1 nil)
       (set-marker m2 nil))))
 
@@ -1361,15 +1364,26 @@ With no subject at all — the head of an entry, just after an
 operator, the fresh entry the resolver opened when point was outside
 any — an empty call opens at point, point inside it: NAME() is a
 call waiting for its argument."
-  (pcase (maf-editplus--resolve-target)
+  (maf-editplus--apply-call (maf-editplus--resolve-target) name nil))
+
+(defun maf-editplus--apply-call (target name tail)
+  "Wrap TARGET in a call to NAME; the shared half of the wrap keys.
+TARGET is `maf-editplus--resolve-target's answer, resolved by the
+caller — the base of a log call is read off the entry before anything
+is written, so the resolution cannot be this function's own. TAIL,
+when given, goes in between the argument and the closer
+\(`maf-editplus--wrap'): the call's further arguments, already spelled
+out. With no target at all the empty call is NAME(TAIL) with point on
+the argument slot, in front of the comma the tail brings with it."
+  (pcase target
     (`(region ,beg ,end)
-     (maf-editplus--wrap beg end name))
+     (maf-editplus--wrap beg end name tail))
     (`(node . ,node)
      ;; Point lands on the call rather than after it: the node it
      ;; named is now the call written around that node, and point
      ;; stays on the node it named, as it does when a command commits
      ;; on the stack.
-     (goto-char (maf-editplus--wrap-node node name)))
+     (goto-char (maf-editplus--wrap-node node name tail)))
     (`(unit ,beg ,end)
      ;; An interval keeps its parens — they are notation, not
      ;; grouping, and ln(1 .. 2) would not parse back.
@@ -1379,11 +1393,11 @@ call waiting for its argument."
          (progn
            (delete-region (1- end) end)
            (delete-region beg (1+ beg))
-           (maf-editplus--wrap beg (- end 2) name))
-       (maf-editplus--wrap beg end name)))
+           (maf-editplus--wrap beg (- end 2) name tail))
+       (maf-editplus--wrap beg end name tail)))
     (_
-     (insert name "()")
-     (backward-char))))
+     (insert name "(" (or tail "") ")")
+     (backward-char (1+ (length (or tail "")))))))
 
 (defun maf-editplus-wrap-ln ()
   "Apply ln to the sub-expression at point.
@@ -1505,6 +1519,132 @@ the stack, so a capital T is no longer self-inserting during a
 session."
   (interactive)
   (maf-editplus--apply-function "tan"))
+
+;;; The general logarithm
+
+;; log is the one function key whose call has a second argument, and
+;; the base is the whole of what is different about it. The wrap is the
+;; family's — point names the argument the way it names ln's — and the
+;; base is written out rather than prompted for: a minibuffer read
+;; mid-session is the thing `maf-edit-insert-semicolon' exists to avoid,
+;; and a base spelled in the text is one the next press can read back.
+;; That reading is the default: a log already in the entry says what
+;; base the work is in, so the nearest one at or before the target
+;; lends its base, and only the first log of an entry falls back to 10.
+;; Corrected once, the correction propagates by itself.
+;;
+;; On commit the visible spelling is traded for calc's: log(x, 10) is
+;; calc's log10(x), and `maf-editplus--commit-log10' rewrites every
+;; instance through `maf-edit-transform-value-functions'. The text kept
+;; the base in sight while it could still be edited; the stack gets the
+;; name calc gives the common logarithm.
+
+(defun maf-editplus--call-name (node)
+  "The name heading NODE, when NODE is a call; nil otherwise.
+A call node's span starts on its name — `maf-editplus--parse' builds
+it from the atom and the group together — so the name is the atom run
+at the span's head."
+  (when (eq (maf-editplus--node-kind node) 'call)
+    (let ((start (maf-editplus--node-start node)))
+      (buffer-substring-no-properties
+       start
+       (maf-editplus--atom-run start (maf-editplus--node-end node))))))
+
+(defun maf-editplus--log-inherited-base (target)
+  "The base text the log written at TARGET inherits, or nil.
+The entry is parsed and its two-argument log calls collected; the one
+starting nearest to — at or before — TARGET's own start lends its
+base, as the text spells it: 2, b and n+1 are each a base worth
+carrying forward. At-or-before rather than strictly before, so a log
+being wrapped in another log lends its own base to the wrap.
+
+Nil with no such call: the first log of an entry has nothing to
+inherit, and the caller falls back to 10. A one-argument log(x) has
+no base written and lends nothing."
+  (let ((entry (maf-editplus--entry-at-point)))
+    (when entry
+      (let* ((limit (+ (overlay-start entry)
+                       (maf-edit--leading-prefix-run (overlay-start entry))))
+             (bound (overlay-end entry))
+             (pos (pcase target
+                    (`(region ,beg ,_) beg)
+                    (`(node . ,node) (maf-editplus--node-start node))
+                    (`(unit ,beg ,_) beg)
+                    (_ (point))))
+             (best nil)
+             (base nil))
+        (cl-labels
+            ((walk (node)
+               (when node
+                 (let ((kids (maf-editplus--node-children node)))
+                   (when (and (equal (maf-editplus--call-name node) "log")
+                              (= (length kids) 2)
+                              (<= (maf-editplus--node-start node) pos)
+                              (or (null best)
+                                  (> (maf-editplus--node-start node) best)))
+                     (setq best (maf-editplus--node-start node)
+                           base (cadr kids)))
+                   (mapc #'walk kids)))))
+          (walk (maf-editplus--parse limit bound)))
+        (when base
+          ;; Flattened as a copy is (`maf-editplus--flat-copy'): a base
+          ;; continued across a line break carries over as one line.
+          (car (maf-editplus--flat-copy
+                (maf-editplus--node-start base)
+                (maf-editplus--node-end base)
+                (maf-editplus--node-start base))))))))
+
+(defun maf-editplus-wrap-log (base)
+  "Apply log to the sub-expression at point, its base written out.
+`maf-editplus-wrap-ln' with a second argument: point names the log's
+argument the same way, and the same rules apply to the end of the
+entry, to a region, and to a press with nothing behind point — where
+the empty call opens with its base already in place, point on the
+argument slot:
+
+  a+b|*c     =>  a+log(b*c, 10)
+  x+2|       =>  x+log(2, 10)
+  x = |      =>  x = log(|, 10)
+
+The base is defaulted, never prompted for. A numeric prefix names it
+outright — \\[universal-argument] 2 then the key writes log(x, 2) —
+and otherwise the entry itself is read: the two-argument log call
+starting nearest at or before the target lends its base, whatever
+expression the text spells there, and 10 is the fallback with no log
+to inherit from. So the base is only ever wrong on the first log of
+an entry, and correcting that one corrects the rest:
+
+  log(a,2)+x|  =>  log(a,2)+log(x, 2)
+
+On commit the 10 the fallback wrote goes away again: every log(x, 10)
+in a changed entry commits as log10(x), the spelling calc itself uses
+for the common logarithm (`maf-editplus--commit-log10'). A base the
+text inherited or was given stays as written.
+
+Bound to `B' in `maf-edit-mode-map', the key calc gives the logarithm
+on the stack (and maf keeps for `mafcmd-log'), so a capital B is no
+longer self-inserting during a session."
+  (interactive "P")
+  (let* ((target (maf-editplus--resolve-target))
+         (tail (concat ", " (cond ((integerp base) (number-to-string base))
+                                  ((maf-editplus--log-inherited-base target))
+                                  (t "10")))))
+    (maf-editplus--apply-call target "log" tail)))
+
+(defun maf-editplus--commit-log10 (expr)
+  "EXPR with every log(x, 10) rewritten as the log10(x) calc spells it.
+On `maf-edit-transform-value-functions' while the module is on, so
+the base-10 default `maf-editplus-wrap-log' writes — and a log(x, 10)
+typed by hand — commits in calc's own spelling. Only the exact
+integer 10: log(x, 10.) and log(x, b) mean what they say and pass
+through untouched, as does everything else in EXPR."
+  (cond
+   ((not (consp expr)) expr)
+   ((and (eq (car expr) 'calcFunc-log)
+         (= (length expr) 3)
+         (eql (nth 2 expr) 10))
+    (list 'calcFunc-log10 (maf-editplus--commit-log10 (nth 1 expr))))
+   (t (cons (car expr) (mapcar #'maf-editplus--commit-log10 (cdr expr))))))
 
 ;;; Raising to a power
 
@@ -1890,6 +2030,10 @@ Enabled, and while a maf-edit session is up:
   S    `maf-editplus-wrap-sin' — and of a sin call
   C    `maf-editplus-wrap-cos' — and of a cos call
   T    `maf-editplus-wrap-tan' — and of a tan call
+  B    `maf-editplus-wrap-log' — and of a log call with its base
+       written out: the nearest log at or before the target lends its
+       base, 10 is the fallback, and a numeric prefix names one
+       outright; log(x, 10) commits as calc's log10(x)
   M-2..M-9
        `maf-editplus-insert-power' — `^' and the digit pressed
   :, W `maf-editplus-raise-power' — the sub-expression point names
@@ -1917,7 +2061,7 @@ The arrows are the same gesture on the stack as here, a toggle between
 two spellings of one thing, and as there both directions run it — a
 toggle is its own inverse, so there is no second direction to give.
 
-L, Q, \\, |, S, C, T, :, W and P are unmodified printable keys, as
+L, Q, \\, |, S, C, T, B, :, W and P are unmodified printable keys, as
 `maf-edit-insert-colon' already is: each costs its self-insertion for
 the length of a session — \\ its integer division, which the stack
 has given up too — and there is no cheap way back to the character — \\[quoted-insert] is not one, since pausing to read a
@@ -1946,6 +2090,7 @@ running, and the module is a no-op for anyone not using maf-edit."
                  ("S"   . maf-editplus-wrap-sin)
                  ("C"   . maf-editplus-wrap-cos)
                  ("T"   . maf-editplus-wrap-tan)
+                 ("B"   . maf-editplus-wrap-log)
                  (":"   . maf-editplus-raise-power)
                  ("W"   . maf-editplus-raise-power)
                  ("P"   . maf-editplus-insert-pi)
@@ -1956,7 +2101,14 @@ running, and the module is a no-op for anyone not using maf-edit."
     ;; that ran it.
     (dolist (d '(?2 ?3 ?4 ?5 ?6 ?7 ?8 ?9))
       (define-key maf-edit-mode-map (kbd (format "M-%c" d))
-                  (and on #'maf-editplus-insert-power)))))
+                  (and on #'maf-editplus-insert-power)))
+    ;; The commit-time half of B: the base-10 default trades its
+    ;; visible spelling for calc's log10 as the entry leaves the text.
+    (if on
+        (add-hook 'maf-edit-transform-value-functions
+                  #'maf-editplus--commit-log10)
+      (remove-hook 'maf-edit-transform-value-functions
+                   #'maf-editplus--commit-log10))))
 
 ;; Register with the module system when it is present; the mode above
 ;; works on its own without it.
@@ -1968,8 +2120,10 @@ TAB runs point past the delimiter closing the group it stands in, and
 M-o wraps the term before point in parens, widening a step per press.
 Then C-RET duplicates an entry, S-up/S-down retype its delimiters,
 L/Q/| and S/C/T apply ln/sqrt/abs and sin/cos/tan (\\ is sqrt too, as
-on the stack), M-2..M-9 and : raise to a power (W squares too, as on
-the stack), P types pi, and DEL and C-d delete a power whole from
-either side of its operator."))
+on the stack), B applies log with its base written out — inherited
+from the entry's nearest log, 10 as the fallback, log(x, 10)
+committing as calc's log10(x) — M-2..M-9 and : raise to a power (W
+squares too, as on the stack), P types pi, and DEL and C-d delete a
+power whole from either side of its operator."))
 
 (provide 'maf-editplus)
