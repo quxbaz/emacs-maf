@@ -5376,8 +5376,9 @@ Point picks the target as usual: a sub-formula at point, the entry at
 point, the top entry at home. A vector nests inside the new one rather
 than splicing into it — that is what surrounding it means — and a
 relation is one element rather than a subject to bracket side by side,
-so an equation comes back whole within the brackets. `mafcmd-unpack'
-is the way back out, peeling a one-element vector to its element.
+so an equation comes back whole within the brackets. For a bracketed
+entry, `mafcmd-unpack' is the way back out, peeling the one-element
+vector to its element.
 
   x + 1|   =>  [x + 1]
   x + |1   =>  x + [1]
@@ -5416,41 +5417,26 @@ dimension entries `calc-unpack' adds for its own stack listing."
 Nil — one level — when no prefix was given."
   (and current-prefix-arg (prefix-numeric-value current-prefix-arg)))
 
-(defun maf--unpack-peelable-p (expr)
-  "Non-nil when EXPR unwraps to exactly one part.
-The `:widen' predicate for `mafcmd-unpack': a node that gives exactly
-one part is one a sub-formula slot can hold, so it is the node to peel.
-Reads the mode through `maf--unpack-mode', the same way the body does —
-resolve and body must agree on what counts, or resolve would widen to a
-node the body then declines to unwrap."
-  (let ((parts (maf--unpack-parts expr (maf--unpack-mode))))
-    (and parts (null (cdr parts)))))
-
 (maf-defcmd mafcmd-unpack (expr _arg commit)
-  "Unwrap the resolved expression, spreading its parts across the stack.
+  "Unwrap the entry at point, spreading its parts across the stack.
 
   [x, y]  =>  2:  x
               1:  y
 
 One level comes apart at a time: a composite object into its
 components, a function call into its arguments, an operator into its
-operands. A whole entry gives one stack entry per part.
+operands — one stack entry per part.
 
-Inside a formula there is room for only one expression, so point peels
-the innermost wrapper around it that gives exactly one part — the node
-under point when that fits, otherwise the nearest enclosing one. So
-anywhere within sin(2 x) the command means the same thing: take off
-the sin.
-
-  sin(2| x)  =>  2 x
-  sin|(2 x)  =>  2 x
+The subject is always a whole entry: the entry at point, the top at
+home, whatever the gesture. The parts land as stack entries, and a
+formula slot has no room for them, so a region, a calc selection, or
+point within a formula names the entry that holds it, not a part.
 
 A numeric prefix argument gives calc's unpacking mode: a positive N
 unwraps N levels deep, a negative N splits a vector by component type.
-An expression with nothing to give — a plain number, a bare variable,
-or one the requested mode does not fit — commits unchanged rather than
-signaling, as does a sub-formula with no peelable wrapper around it.
-An explicit calc selection is taken as it stands and never widened.
+An entry with nothing to give — a plain number, a bare variable, or
+one the requested mode does not fit — commits unchanged rather than
+signaling.
 
   sin(x)                 =>  x
   a + b                  =>  2:  a / 1:  b
@@ -5459,31 +5445,28 @@ An explicit calc selection is taken as it stands and never widened.
   x                      =>  x                 (nothing to give)
   C-u 2 [(1,2),(3,4)]    =>  4:  1 / 3:  2 / 2:  3 / 1:  4
   x = sin(y)             =>  2:  x / 1:  sin(y)
-  y + sin(a + b)|        =>  y + a + b         (peels the sin)
-  (a| + b) (2 c - d)     =>  unchanged         (no wrapper to peel)"
+  y + sin(a| + b)        =>  2:  y / 1:  sin(a + b)   (the whole entry)"
   :arity unary
   :prefix "unpk"
   ;; A relation is a function call like any other: unwrapping consumes
   ;; it into its two sides, as calc-unpack does, rather than mapping
   ;; over them and putting the relation back together.
   :map -1
-  ;; In a formula slot only a one-part node fits, so resolve hands the
-  ;; body the innermost such node around point instead of whatever
-  ;; point happens to name. Without this, pressing the key on an
-  ;; operand or on a multi-part operator would silently do nothing.
-  :widen maf--unpack-peelable-p
+  ;; The parts spread over the stack, and only a whole entry has room
+  ;; for that: whatever the gesture, the subject is the entry at point.
+  :scope entry
   (let ((parts (maf--unpack-parts expr (maf--unpack-mode))))
     (commit
      (cond
-      ;; Nothing to give: leave the target exactly as it stands.
+      ;; Nothing to give: leave the entry exactly as it stands.
       ((null parts) expr)
-      ;; A whole stack entry takes the parts as a value list, which
-      ;; commit spreads over one entry each.
-      ((memq maf-target '(home entry)) parts)
-      ;; A sub-formula slot holds a single expression: unwrap when the
-      ;; parts amount to one, otherwise there is no room for them.
-      ((null (cdr parts)) (car parts))
-      (t expr)))))
+      ;; The map flag forced a relation apart past :map -1, and each
+      ;; side's slot holds a single expression: unwrap when the parts
+      ;; amount to one, otherwise there is no room for them.
+      ((eq maf-target 'equation) (if (cdr parts) expr (car parts)))
+      ;; The whole entry takes the parts as a value list, which commit
+      ;; spreads over one entry each.
+      (t parts)))))
 
 ;;; Raising
 

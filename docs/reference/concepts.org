@@ -555,13 +555,15 @@ expression fits. Committing a list there signals.
 Bodies that can produce either read =maf-target= to tell which applies:
 
 #+begin_example
-(cond ((memq maf-target '(home entry)) parts)   ; one entry per part
-      ((null (cdr parts)) (car parts))          ; a slot fits one
-      (t expr))                                 ; no room: unchanged
+(cond ((eq maf-target 'equation)                ; forced per-side run
+       (if (cdr parts) expr (car parts)))       ; a side's slot fits one
+      (t parts))                                ; one entry per part
 #+end_example
 
-=mafcmd-unpack= is the case in point — =[x, y]= at home becomes two
-entries, while =y + sin(x)|= unwraps in place to =y + x=.
+=mafcmd-unpack= is the case in point — =[x, y]= becomes two entries.
+Entry-scoped as it is, the only slot it can meet is a relation's side
+when the map flag forces a per-side run, and that slot fits a single
+part.
 
 * Widening the sub-formula target
 
@@ -578,22 +580,22 @@ The walk starts /at/ the node under point, so a position that already
 had an acceptable target is unaffected — widening only ever fills in
 where the command used to be silent.
 
-For =mafcmd-unpack= the predicate is "unwraps to exactly one part", so
-the command means *peel the innermost single-argument wrapper around
-point*:
+For =mafcmd-flatten= the predicate is "a vector with nesting to
+remove", so the command means *flatten the innermost nested vector
+around point*:
 
 #+begin_example
-sin(2| x)      =>  2 x        ; the 2 x under point has two parts, so
-sin(2 x)|      =>  2 x        ; the sin around it is peeled instead
-sin(cos(x|))   =>  sin(x)     ; innermost wins: cos is peeled
-sin|(cos(x))   =>  cos(x)     ; on sin itself, sin is peeled
-(a| + b) (2 c - d)  =>  unchanged   ; nothing peelable out to the entry
+[[1|, 2], [3, 4]]      =>  [1, 2, 3, 4]      ; point names the flat row
+                                             ; [1, 2]; the matrix holding
+                                             ; it has the nesting
+x + [[1, 2], [3, 4]]|  =>  x + [1, 2, 3, 4]  ; already acceptable: no walk
+x + [1, 2]|            =>  unchanged         ; nothing nested out to the
+                                             ; entry
 #+end_example
 
 Explicit calc selections are never widened — an active selection is a
 deliberate gesture, and the selection target does not route through
-=maf--resolve-widen=. That also keeps =j U= faithful to
-=calc-sel-unpack=, which acts on the selection exactly as given.
+=maf--resolve-widen=.
 
 The user reaches the same walk by hand: =maf-up-expression= (C-M-u)
 moves point out to the enclosing sub-formula over the same ancestors
