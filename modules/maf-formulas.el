@@ -28,6 +28,8 @@
 ;;
 ;; Formulas you insert are remembered in a "Recent" group at the top of
 ;; the menu for the rest of the session; it is not written anywhere.
+;; `D' drops the entry at point from the group (the formula itself
+;; stays, under its own category).
 ;;
 ;; The formulas live in `maf-formulas-file' (a file in your Emacs config
 ;; by default); it is loaded on first use and sets `maf-formulas-user'.
@@ -269,6 +271,7 @@ doubles as the toggle's indicator."
                          (if (eq maf-formulas--pane-state 'follow)
                              (propertize "O follows" 'face 'warning)
                            (funcall entry "O" "follows"))
+                         (funcall entry "D" "deletes recent")
                          (funcall entry "q" "quits"))
                    "   "))
     (format "maf-formulas — filter: %s  (q clears)" maf-formulas--query)))
@@ -560,6 +563,41 @@ reopens with the pane the way this left it."
       (message "Inserted: %s" (maf-formulas--title f))
       (maf-formulas-quit))))
 
+(defun maf-formulas--recent-line-p ()
+  "Non-nil when the line at point lies in the \"Recent\" group.
+A recent formula is listed twice — here and under its own category —
+so what matters is which copy point is on: the nearest header above
+decides."
+  (let* ((p (line-beginning-position))
+         (header (car (last (seq-filter (lambda (s) (<= s p))
+                                        (maf-formulas--group-starts))))))
+    (and header
+         (equal (save-excursion
+                  (goto-char header)
+                  (buffer-substring-no-properties header (line-end-position)))
+                maf-formulas--recent-category))))
+
+(defun maf-formulas-delete-recent ()
+  "Drop the entry at point from the \"Recent\" group.
+Only a line in that group qualifies: the group is the session's memory
+of what was inserted, and this forgets one entry. The formula itself
+is untouched, still listed under its own category."
+  (interactive)
+  (let ((f (get-text-property (line-beginning-position) 'maf-formula)))
+    (unless (and f (maf-formulas--recent-line-p))
+      (user-error "Not on a Recent entry"))
+    (setq maf-formulas--recent (delq f maf-formulas--recent))
+    (let ((line (line-number-at-pos)))
+      (maf-formulas--render)
+      (goto-char (point-min))
+      (forward-line (1- line))
+      ;; The line may now lie past the shrunken group — or the group may
+      ;; be gone entirely — so settle on the nearest formula.
+      (unless (get-text-property (line-beginning-position) 'maf-formula)
+        (or (ignore-errors (maf-formulas-prev-item) t)
+            (ignore-errors (maf-formulas-next-item) t))))
+    (message "Removed from Recent: %s" (maf-formulas--title f))))
+
 (defvar maf-formulas--filter-buffer nil
   "Menu buffer being narrowed while the minibuffer reads a filter.
 Bound for the dynamic extent of `maf-formulas-filter' only.")
@@ -701,12 +739,12 @@ second `q' then leaves. `maf-formulas-quit' always quits outright."
 (define-key maf-formulas-mode-map (kbd "g")   #'maf-formulas-clear-filter)
 (define-key maf-formulas-mode-map (kbd "q")   #'maf-formulas-quit-or-clear-filter)
 (define-key maf-formulas-mode-map (kbd "o")   #'maf-formulas-show-detail)
-(define-key maf-formulas-mode-map (kbd "d")   #'maf-formulas-show-detail)
 (define-key maf-formulas-mode-map (kbd "?")   #'maf-formulas-show-detail)
-;; The shifted keys make the pane follow point; the unshifted ones show
-;; one formula and hold it.
+;; `d' — once an alias for `o' — is deliberately unbound; the explicit
+;; nil clears it from a live map on reload.
+(define-key maf-formulas-mode-map (kbd "d")   nil)
 (define-key maf-formulas-mode-map (kbd "O")   #'maf-formulas-toggle-detail)
-(define-key maf-formulas-mode-map (kbd "D")   #'maf-formulas-toggle-detail)
+(define-key maf-formulas-mode-map (kbd "D")   #'maf-formulas-delete-recent)
 (define-key maf-formulas-mode-map (kbd "C-g") #'maf-formulas-keyboard-quit)
 ;; Two levels of motion: n/p/j/k and TAB/S-TAB step formula to formula
 ;; (headers and the blank lines between groups are skipped), M-n/M-p
@@ -728,7 +766,8 @@ form. \\<maf-formulas-mode-map>\\[maf-formulas-insert]
 pushes the formula at point onto the stack, \\[maf-formulas-next-item] and \\[maf-formulas-prev-item] step
 between formulas, \\[maf-formulas-next-group] between groups, \\[maf-formulas-show-detail] shows the formula at
 point in the detail pane (again to close it), \\[maf-formulas-toggle-detail] toggles the pane following point (on by
-default, remembered for the session), \\[maf-formulas-filter] filters as you type, \\[maf-formulas-clear-filter] clears the filter, \\[maf-formulas-quit-or-clear-filter] clears the
+default, remembered for the session), \\[maf-formulas-delete-recent] drops the recent entry at
+point, \\[maf-formulas-filter] filters as you type, \\[maf-formulas-clear-filter] clears the filter, \\[maf-formulas-quit-or-clear-filter] clears the
 filter when narrowed and quits otherwise."
   (setq truncate-lines t)
   ;; The legend's band is the options buffer's: `header-line's own look

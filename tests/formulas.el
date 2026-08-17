@@ -45,15 +45,16 @@
       (cl-assert (eq (get-text-property (string-match "O follows" h) 'face h)
                      'warning)))
 
-    ;; The detail renderer (behind `o' / `d' / `?', i.e.
+    ;; The detail renderer (behind `o' / `?', i.e.
     ;; `maf-formulas-show-detail') fills the detail buffer for the
     ;; formula at point.
     (cl-assert (eq (key-binding (kbd "o")) #'maf-formulas-show-detail))
-    (cl-assert (eq (key-binding (kbd "d")) #'maf-formulas-show-detail))
     (cl-assert (eq (key-binding (kbd "?")) #'maf-formulas-show-detail))
-    ;; The shifted keys open the pane that follows point.
+    ;; `d', once an alias for `o', is unbound; `O' toggles the following
+    ;; pane and `D' prunes the Recent group.
+    (cl-assert (null (lookup-key maf-formulas-mode-map (kbd "d"))))
     (cl-assert (eq (key-binding (kbd "O")) #'maf-formulas-toggle-detail))
-    (cl-assert (eq (key-binding (kbd "D")) #'maf-formulas-toggle-detail))
+    (cl-assert (eq (key-binding (kbd "D")) #'maf-formulas-delete-recent))
     (maf-formulas--update-detail)
     (with-current-buffer maf-formulas--detail-buffer
       (cl-assert (> (buffer-size) 0)))
@@ -268,6 +269,31 @@
     (cl-assert (equal (maf-formulas--title (get-text-property (point) 'maf-formula))
                       "Area of triangle")))
   (calc-pop (calc-stack-size))
+
+  ;; `D' forgets the recent entry at point: the group shrinks, point
+  ;; stays in it, and the formula keeps its place under its own
+  ;; category.
+  (with-current-buffer "*maf-formulas*"
+    (maf-formulas-delete-recent)
+    (cl-assert (equal (mapcar #'maf-formulas--title maf-formulas--recent)
+                      '("Volume of sphere")))
+    (cl-assert (equal (maf-formulas--title (get-text-property (point) 'maf-formula))
+                      "Volume of sphere"))
+    (cl-assert (maf-formulas--recent-line-p))
+    (cl-assert (string-match-p "Area of triangle" (buffer-string)))
+    ;; On a formula's category copy — or any non-Recent line — it refuses.
+    (goto-char (point-max))
+    (maf-formulas-prev-item)
+    (cl-assert (not (maf-formulas--recent-line-p)))
+    (cl-assert (condition-case nil (progn (maf-formulas-delete-recent) nil)
+                 (user-error t)))
+    ;; Deleting the last entry drops the group; point settles on a formula.
+    (goto-char (point-min))
+    (maf-formulas-next-item)
+    (maf-formulas-delete-recent)
+    (cl-assert (null maf-formulas--recent))
+    (cl-assert (not (string-match-p "Recent" (buffer-string))))
+    (cl-assert (get-text-property (point) 'maf-formula)))
 
   ;; Restore the session state the fixture displaced. Turning the mode
   ;; off first unregisters the fixture's var-eq-* variables; the real
