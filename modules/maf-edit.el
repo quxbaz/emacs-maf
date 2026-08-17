@@ -949,7 +949,7 @@ Point is parked on the dot — where calc parks it after every command,
 and where `maf-go-home' lands — rather than left wherever the
 re-render put it. A SPEC that is a point snapshot also gets a silent
 mark at the place the gesture left, so a single `pop-to-mark-command'
-\(or `maf-go-home' pressed at home) returns there. Call this on the
+\(or `maf-go-home' pressed on the dot) returns there. Call this on the
 re-rendered stack, never before; nil is a no-op."
   (when spec
     (when (consp spec)
