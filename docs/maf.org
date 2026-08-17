@@ -58,7 +58,8 @@
    only trigger the trampoline action when point is exactly at the "dot"
 ** TODO *maf-formulas*
    - show details by default
-   - bind D to delete recent entry at point
+   - bind `D` to delete recent entry at point
+   - unbind `d`
    - if `O follows` is on, then render in gold text in legend
    - `O` value currently doesn't persist when *maf-formulas* buffer is quit
      and open again
