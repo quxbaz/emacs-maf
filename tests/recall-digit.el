@@ -17,11 +17,11 @@
   (cl-assert (equal (mapcar #'car maf-recall--ring) '("0.5" "42")))
   (progn (calc-pop (calc-stack-size)) nil)
 
-  ;; SPC's contextual commit edits the sub-formula at point. Nothing
+  ;; RET's contextual commit edits the sub-formula at point. Nothing
   ;; new reached the stack, so nothing reaches the ring.
   (maf-push "12 x + 3")
   (progn (goto-char (point-min)) (search-forward "12") (backward-char 1))
-  (execute-kbd-macro (kbd "5 SPC"))
+  (execute-kbd-macro (kbd "5 RET"))
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "5 x + 3"))
   (cl-assert (equal (mapcar #'car maf-recall--ring) '("0.5" "42")))
   (progn (calc-pop (calc-stack-size)) nil)

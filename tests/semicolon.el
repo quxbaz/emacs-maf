@@ -22,10 +22,10 @@
   (calc-pop (calc-stack-size))
 
   ;; A contextual entry commits the fraction the same way : does: on a
-  ;; numeric leaf, SPC replaces it.
+  ;; numeric leaf, RET replaces it.
   (maf-push "2.5 x")
   (progn (goto-char (point-min)) (search-forward "2.5") (backward-char 1))
-  (execute-kbd-macro (kbd "1 ; 3 SPC"))
+  (execute-kbd-macro (kbd "1 ; 3 RET"))
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "1:3 x"))
   (calc-pop (calc-stack-size))
 

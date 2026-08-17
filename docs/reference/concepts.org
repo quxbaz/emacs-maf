@@ -819,26 +819,26 @@ flags, so the next command starts clean.
 The digit keys (and =_=, =.=, =#=, =@=) start calc's normal number
 entry, but where the result lands depends on point at the first
 keypress and on the key that ends the entry (=maf-digit-start= in
-[[file:../../src/minibuffer.el][src/minibuffer.el]]). RET pushes the number onto the stack exactly as
-in plain calc, wherever point is. SPC is the contextual commit
+[[file:../../src/minibuffer.el][src/minibuffer.el]]). SPC pushes the number onto the stack exactly as
+in plain calc, wherever point is. RET is the contextual commit
 (=maf-digit-commit-contextual=): on a numeric leaf the entered number
 replaces it; on any other sub-formula it multiplies it, number on the
 left, with the product left literal so nothing distributes; on a
-relation node it multiplies both sides. The split is the one maf draws
-out in the stack, where SPC is the edit key (=maf-edit=) and RET the
-push.
+relation node it multiplies both sides. The entry is an edit of the
+formula at point, and RET commits it, as it commits maf's text edits
+(=maf-edit-commit=).
 
-Away from a sub-formula there is nothing to edit and SPC pushes too —
+Away from a sub-formula there is nothing to edit and RET pushes too —
 at home, in the line prefix, at EOL, in algebraic mode, for entries
 that escape to algebraic, and for interval entry (=..=). The entry
 minibuffer is calc's own (=calc-digit-map=), so the in-entry keys —
 =_=, =:=, =@=, =#=, =..= — are unchanged but for the handful maf takes
 there, below.
 
-C-<return> is RET's keep-point sibling (=maf-digit-commit-here=): the
+C-<return> is SPC's keep-point sibling (=maf-digit-commit-here=): the
 same push, but point stays on the entry it was on instead of dropping
 to the home line, so the next command still resolves there. It has no
-SPC counterpart, because SPC keeps point already — the edit happens
+RET counterpart, because RET keeps point already — the edit happens
 where point stands.
 
 =;= is the fraction colon (=maf-digit-colon=), so 3 ; 4 enters 3:4
@@ -858,7 +858,7 @@ fraction there still goes in on =:=.
 gives 2 pi and 1:3 n a third of it, symbolic either way. Being a value
 and its terminator in one key, =n= has no second key to split the two
 destinations across: the product goes where a value goes from this
-position — contextually on a sub-formula, as SPC does, pushed
+position — contextually on a sub-formula, as RET does, pushed
 anywhere else. =e= ends the entry and equates with the
 number typed (=maf-digit-equal-to=), the in-entry twin of =e= out in
 the stack: on =x= the entry 5 e gives =x = 5=. It is calc's own
@@ -878,19 +878,21 @@ not a whole number names no level and is refused, left standing in the
 minibuffer to be corrected. The key is calc's =j= selection prefix out
 in the stack, addressing a part of an entry where this one addresses a
 level; the cost is the command-key termination it was, so 3 j e no
-longer pushes the 3 and runs the prefix on it — push first (3 RET) and
+longer pushes the 3 and runs the prefix on it — push first (3 SPC) and
 the prefix is itself again.
 
 =n=, =P=, =e=, and =j= step aside where the key is calc's own: inside
 a radix-prefixed entry — where a letter is a digit and which letters
 count depends on the radix (=20#j= is 19), and where a number is
 plainly a value, since no one writes a stack level in base 16 — and
-with =maf-mode= off in the calc buffer the entry belongs to. =e= and
-=j= stand aside for an incomplete object too: half a vector is no
-entry to equate with or jump from. SPC is calc's own element separator
-inside one, so =[ 1 SPC 2 ]= stays typeable, and it is calc's plain
-terminator with =maf-mode= off. =n= and =P= work inside an incomplete
-object, so a vector can be filled with multiples of pi.
+with =maf-mode= off in the calc buffer the entry belongs to. =e=, =j=,
+and RET stand aside for an incomplete object too: half a vector is no
+entry to equate with, jump from, or commit contextually, so inside one
+RET is calc's own terminator again, as it is with =maf-mode= off. SPC
+stays calc's own everywhere — the element separator inside an
+incomplete object (=[ 1 SPC 2 ]=), the plain push elsewhere. =n= and
+=P= work inside an incomplete object, so a vector can be filled with
+multiples of pi.
 
 * Files
 

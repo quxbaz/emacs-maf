@@ -76,7 +76,7 @@
 
   ;; The contextual entry path commits nothing either: the formula point
   ;; stood on is untouched — not multiplied by the number typed, as the
-  ;; SPC beside this key would have — and the spot it left is marked as
+  ;; RET beside this key would have — and the spot it left is marked as
   ;; from any other position.
   (calc-wrapper (calc-pop (calc-stack-size))
                 (maf-push "a") (maf-push "b") (maf-push "x + 3"))
