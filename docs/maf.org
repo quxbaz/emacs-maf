@@ -30,11 +30,11 @@
     - [ ] target-line
 
 * NOW [0/11]
-** TODO in *maf-modules*, also show binding in help text
+** IN-PROGRESS in *maf-modules*, also show binding in help text
    eg,
    maf-formulas (s o)
    [...]
-** TODO (mafcmd-unpack) should always operate on entry
+** IN-PROGRESS (mafcmd-unpack) should always operate on entry
 ** TODO bind & to toggle big mode
 ** TODO editplus: bind B to log
    - default to log(x, 10)
@@ -87,6 +87,7 @@
    this is the command that replaces the numeric value at point, or
    joins/multiplies with the variable at point. don't change the command, just
    the binding.
+** TODO rework preview. it's a bit awkward at the moment and isn't where you need it to be for it to be useful.
 ** bindings
    three binding modes, each its own heading below: calc-native, maf-native,
    vim-flavored
