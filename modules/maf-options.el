@@ -769,7 +769,8 @@ through the module system; see `maf-modules'."
 Calc's settings are spread over six prefix maps and some ninety key
 bindings. The *maf-options* buffer gathers them into one table, each
 row showing the option's current value and the values it can take, so
-a setting can be found by reading rather than recalled by key."))
+a setting can be found by reading rather than recalled by key."
+                       "?"))
 
 ;;; Not in the registry
 ;;
