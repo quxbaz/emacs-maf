@@ -56,7 +56,7 @@
      => x pi + 2
    - pretty much it should work like a very conventional contextual function in
      almost all regards
-** TODO G (maf-go-home) should go to the "dot" at home even it's at the home row
+** IN-PROGRESS G (maf-go-home) should go to the "dot" at home even it's at the home row
    only trigger the trampoline action when point is exactly at the "dot"
 ** TODO *maf-formulas*
    - show details by default
