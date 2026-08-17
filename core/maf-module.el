@@ -163,10 +163,18 @@ skipped until its file loads and the next apply enables it."
   (let ((mode (car (alist-get name maf-module-registry))))
     (and (boundp mode) (symbol-value mode) t)))
 
+(defface maf-module-keys
+  ;; Quieter than the name beside it, but a step lighter than `shadow',
+  ;; whose gray sinks into the echo area's ground.
+  '((((class color) (background dark))  :foreground "#a8b2bd")
+    (((class color) (background light)) :foreground "#595f66"))
+  "Face for a module's entry keys in the menu's echoed help."
+  :group 'maf)
+
 (defun maf-module--doc (name description keys)
   "Build the help echoed for module NAME from its DESCRIPTION and KEYS.
 The name heads the text on a line of its own — KEYS beside it in
-parens, for the modules that have entry keys, in the `shadow' face so
+parens, for the modules that have entry keys, in `maf-module-keys' so
 the name stays the line's loudest word — then the description as the
 module wrote it (see `maf-module-registry'). Point moving off
 the row leaves the help standing in the echo area, where a paragraph
@@ -177,7 +185,7 @@ the row already shows."
   (and description
        (concat (symbol-name name)
                (if keys
-                   (propertize (format " (%s)" keys) 'face 'shadow)
+                   (propertize (format " (%s)" keys) 'face 'maf-module-keys)
                  "")
                "\n\n" description)))
 
