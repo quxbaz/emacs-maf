@@ -29,16 +29,7 @@
     - [ ] factor
     - [ ] target-line
 
-* NOW [0/4]
-** IN-PROGRESS *maf-formulas*
-   - show details by default
-   - bind `D` to delete recent entry at point
-   - unbind current `d`
-   - if `O follows` is on, then render in gold text in legend
-   - `O` value currently doesn't persist when *maf-formulas* buffer is quit
-     and open again
-     - note: we're talking about persisting within a single session, not
-       permanently across emacs sessions
+* NOW [0/3]
 ** TODO stack mode
    - bind command to jump to next SPC character
    - should work in stack and editplus
