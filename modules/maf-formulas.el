@@ -3,13 +3,17 @@
 ;; modules/maf-formulas.el
 ;;
 ;; Saved-formula library. `maf-formulas' opens a menu of formulas
-;; grouped by category, each shown beside its form. `o' (or `d', `?')
-;; shows the formula at point in a detail pane — the formula in Big
-;; display, a description, and what each variable means — without
-;; taking focus, and leaves it there however far point moves after.
-;; `O' (or `D') opens a pane that follows point instead, re-rendering
-;; for each formula reached, and closes it again; `C-g' closes either.
-;; RET pushes the formula at point onto the calc stack.
+;; grouped by category, each shown beside its form, with a detail pane
+;; following point — the formula in Big display, a description, and
+;; what each variable means — re-rendering for each formula reached.
+;; `O' toggles that following pane off and on, and the choice holds
+;; for the rest of the session, so the menu reopens the way it was
+;; left; the legend's "O follows" shows gold while it is on. `o' (or
+;; `?') is a toggle too, but freezes: it holds the formula at point
+;; however far point moves after, and with the pane already up —
+;; frozen or following — it closes it, the borrowed window handed
+;; back to calc; `C-g' closes either. RET pushes the formula at point
+;; onto the calc stack.
 ;;
 ;; A formula is a plist. Only :expr is required; the rest are optional
 ;; and the detail pane renders just what is present:
@@ -37,6 +41,7 @@
 (require 'maf-lib)
 (require 'cl-lib)
 (require 'maf-conf "conf")  ; the `maf' customize group
+(require 'dial)             ; `dial-controls', the legend's chrome
 
 ;; The module installs its `s o' binding into this map, defined in
 ;; maf.el / bindings.el and current by the time the module is enabled.
@@ -218,6 +223,61 @@ shortcut, not a move."
   (let ((s (ignore-errors (let ((calc-language nil)) (math-format-value expr)))))
     (if s (replace-regexp-in-string "\n" " " s) "")))
 
+;; Two of the detail pane's variables live up here with the renderer,
+;; which consults them, rather than with the pane: forward references
+;; from `maf-formulas--render' would otherwise be to free variables.
+
+(defvar-local maf-formulas--detail-line nil
+  "Beginning of the line the detail pane is currently rendered for, or nil.
+`maf-formulas--detail-on-move' compares point against it, so the pane
+re-renders when point reaches another formula and not on every command
+that leaves it where it was.")
+
+;; Not `--detail-state', its name when it was `defvar-local': the
+;; buffer-local marking survives a reload, so going global took a new
+;; name for live sessions to actually get a global.
+(defvar maf-formulas--pane-state 'follow
+  "How the detail pane is open: `frozen', `follow', or nil for closed.
+`frozen' is `maf-formulas-show-detail' (\\`o'): the pane holds the one
+formula it was opened on. `follow' is `maf-formulas-toggle-detail'
+(\\`O'): it re-renders for each formula point reaches — the default,
+so the menu opens with the pane already following. Either way it
+stays up until closed — it borrows a window rather than taking room
+from the list, so there is nothing to be won by dismissing it on the
+next keystroke. Global where the pane's other bookkeeping is
+buffer-local: the state is the session's choice, not the buffer's, so
+quitting the menu and opening it again brings the pane back the way
+it was left.")
+
+(defun maf-formulas--header-line ()
+  "The menu's header line: the key legend, or the filter in effect.
+The legend reads like dial's controls line in *maf-options*: keys wear
+`help-key-binding', entries set apart by spaces alone, and the band
+itself takes `dial-controls' (the mode remaps `header-line' to it).
+The \"O follows\" entry renders in gold — `warning's, the one gold
+across maf's buffers — while the pane is following, so the legend
+doubles as the toggle's indicator."
+  (if (string-empty-p maf-formulas--query)
+      (let ((entry (lambda (key verb)
+                     (concat (propertize key 'face 'help-key-binding)
+                             " " verb))))
+        (mapconcat #'identity
+                   (list "maf-formulas"
+                         (funcall entry "RET" "inserts")
+                         (funcall entry "/" "filters")
+                         (funcall entry "o" "details")
+                         (if (eq maf-formulas--pane-state 'follow)
+                             (propertize "O follows" 'face 'warning)
+                           (funcall entry "O" "follows"))
+                         (funcall entry "q" "quits"))
+                   "   "))
+    (format "maf-formulas — filter: %s  (q clears)" maf-formulas--query)))
+
+(defun maf-formulas--refresh-header ()
+  "Recompute the header line, for a state change without a re-render."
+  (setq header-line-format (maf-formulas--header-line))
+  (force-mode-line-update))
+
 (defun maf-formulas--render ()
   "Render the categorized list: each formula beside its one-line form.
 Groups are separated by a blank line."
@@ -225,10 +285,7 @@ Groups are separated by a blank line."
          (groups (maf-formulas--groups))
          (fs (apply #'append (mapcar #'cdr groups))))
     (erase-buffer)
-    (setq header-line-format
-          (if (string-empty-p maf-formulas--query)
-              "maf-formulas — RET inserts · / filters · o details · O follows · q quits"
-            (format "maf-formulas — filter: %s  (q clears)" maf-formulas--query)))
+    (setq header-line-format (maf-formulas--header-line))
     (let ((w (apply #'max 0 (mapcar (lambda (f) (length (maf-formulas--title f))) fs))))
       (dolist (g groups)
         (unless first (insert "\n"))    ; blank line above each group
@@ -256,17 +313,11 @@ Groups are separated by a blank line."
     ;; re-renders with it, for whatever point landed on. A frozen one
     ;; holds its formula: the filter it was narrowed by is no reason to
     ;; drop what the user put up to read.
-    (when (eq maf-formulas--detail-state 'follow)
+    (when (eq maf-formulas--pane-state 'follow)
       (setq maf-formulas--detail-line (line-beginning-position))
       (maf-formulas--update-detail))))
 
 ;;; The detail pane
-
-(defvar-local maf-formulas--detail-line nil
-  "Beginning of the line the detail pane is currently rendered for, or nil.
-`maf-formulas--detail-on-move' compares point against it, so the pane
-re-renders when point reaches another formula and not on every command
-that leaves it where it was.")
 
 (defvar-local maf-formulas--detail-dir nil
   "Direction the detail pane was last split off in, `right' or `below'.
@@ -278,15 +329,6 @@ shrink.")
   "Height the detail pane has grown to while open, or nil when closed.
 A floor for `maf-formulas--fit-detail', so the pane never shrinks
 under a following pane's point.")
-
-(defvar-local maf-formulas--detail-state nil
-  "How the detail pane is open: `frozen', `follow', or nil for closed.
-`frozen' is `maf-formulas-show-detail' (\\`o'): the pane holds the one
-formula it was opened on. `follow' is `maf-formulas-toggle-detail'
-(\\`O'): it re-renders for each formula point reaches. Either way it
-stays up until closed — it borrows a window rather than taking room
-from the list, so there is nothing to be won by dismissing it on the
-next keystroke.")
 
 (defun maf-formulas--fill (text width)
   "TEXT filled to WIDTH and indented two spaces, for the description.
@@ -431,7 +473,7 @@ Only a following pane re-renders, and only for a line other than the
 one already rendered, so the commands that leave point where it was
 cost nothing. A pane opened with \\<maf-formulas-mode-map>\\[maf-formulas-show-detail] holds the formula it was
 opened on and ignores point entirely."
-  (when (and (eq maf-formulas--detail-state 'follow)
+  (when (and (eq maf-formulas--pane-state 'follow)
              (not (eq (line-beginning-position) maf-formulas--detail-line)))
     (setq maf-formulas--detail-line (line-beginning-position))
     (maf-formulas--update-detail)))
@@ -442,8 +484,9 @@ On the menu's \\`C-g': the usual dismiss gesture shuts the pane whichever
 way it was opened, so it takes neither a matching key nor leaving the menu."
   (interactive)
   (setq maf-formulas--detail-line nil
-        maf-formulas--detail-state nil)
+        maf-formulas--pane-state nil)
   (maf-formulas--close-detail)
+  (maf-formulas--refresh-header)
   (keyboard-quit))
 
 (defun maf-formulas--open-detail ()
@@ -467,29 +510,38 @@ way it was opened, so it takes neither a matching key nor leaving the menu."
     (setq maf-formulas--detail-line (line-beginning-position))))
 
 (defun maf-formulas-show-detail ()
-  "Show the formula at point in the detail pane, and leave it there.
-The pane keeps that formula however far point wanders after: a look at
-one formula while reading down the list, not a running commentary on
-it. Press again on another formula to swap what it holds, \\<maf-formulas-mode-map>\\[maf-formulas-toggle-detail] for a
-pane that follows point instead, \\[maf-formulas-keyboard-quit] to close it. On a category
-header it shows the group's first formula."
+  "Show the formula at point in the detail pane, or close a pane that is up.
+A toggle: with the pane showing — frozen or following — this hands the
+borrowed window back to what it held, calc's stack normally; pressed
+again it returns the pane frozen on the formula at point. Frozen, the
+pane keeps its formula however far point wanders after: a look at one
+formula while reading down the list, not a running commentary on it.
+\\<maf-formulas-mode-map>\\[maf-formulas-toggle-detail] opens a pane that follows point instead. On a category header
+it shows the group's first formula."
   (interactive)
-  (setq maf-formulas--detail-state 'frozen)
-  (maf-formulas--open-detail))
+  (if (get-buffer-window maf-formulas--detail-buffer)
+      (progn (setq maf-formulas--pane-state nil
+                   maf-formulas--detail-line nil)
+             (maf-formulas--close-detail))
+    (setq maf-formulas--pane-state 'frozen)
+    (maf-formulas--open-detail))
+  (maf-formulas--refresh-header))
 
 (defun maf-formulas-toggle-detail ()
   "Open a detail pane that follows point, or close a following one.
 Where \\<maf-formulas-mode-map>\\[maf-formulas-show-detail] holds one formula, this re-renders for each formula
 point reaches — for reading down a group. Pressed while such a pane is
 up it closes it; pressed while \\[maf-formulas-show-detail] holds one, it takes the pane over
-and starts following."
+and starts following. The choice holds for the session: the menu
+reopens with the pane the way this left it."
   (interactive)
-  (if (eq maf-formulas--detail-state 'follow)
-      (progn (setq maf-formulas--detail-state nil
+  (if (eq maf-formulas--pane-state 'follow)
+      (progn (setq maf-formulas--pane-state nil
                    maf-formulas--detail-line nil)
              (maf-formulas--close-detail))
-    (setq maf-formulas--detail-state 'follow)
-    (maf-formulas--open-detail)))
+    (setq maf-formulas--pane-state 'follow)
+    (maf-formulas--open-detail))
+  (maf-formulas--refresh-header))
 
 ;;; Commands
 
@@ -675,16 +727,20 @@ repeated in a \"Recent\" group at the top, each shown beside its
 form. \\<maf-formulas-mode-map>\\[maf-formulas-insert]
 pushes the formula at point onto the stack, \\[maf-formulas-next-item] and \\[maf-formulas-prev-item] step
 between formulas, \\[maf-formulas-next-group] between groups, \\[maf-formulas-show-detail] shows the formula at
-point in the detail pane, \\[maf-formulas-toggle-detail] has the pane follow point, \\[maf-formulas-filter]
-filters as you type, \\[maf-formulas-clear-filter] clears the filter, \\[maf-formulas-quit-or-clear-filter] clears the
+point in the detail pane (again to close it), \\[maf-formulas-toggle-detail] toggles the pane following point (on by
+default, remembered for the session), \\[maf-formulas-filter] filters as you type, \\[maf-formulas-clear-filter] clears the filter, \\[maf-formulas-quit-or-clear-filter] clears the
 filter when narrowed and quits otherwise."
   (setq truncate-lines t)
+  ;; The legend's band is the options buffer's: `header-line's own look
+  ;; is replaced outright, not layered under, so the two read as one
+  ;; piece of chrome across maf's buffers.
+  (face-remap-set-base 'header-line 'dial-controls)
   (add-hook 'post-command-hook #'maf-formulas--detail-on-move nil t))
 
 ;;;###autoload
 (defun maf-formulas ()
-  "Open the saved-formula menu.
-\\<maf-formulas-mode-map>\\[maf-formulas-show-detail] pops up the detail pane for the formula at point."
+  "Open the saved-formula menu, its detail pane following point.
+\\<maf-formulas-mode-map>\\[maf-formulas-toggle-detail] toggles the pane, \\[maf-formulas-show-detail] freezes it on the formula at point."
   (interactive)
   (let ((buf (get-buffer-create "*maf-formulas*")))
     (with-current-buffer buf
@@ -693,7 +749,11 @@ filter when narrowed and quits otherwise."
     ;; Ordinary `pop-to-buffer' display: Emacs picks the window by the
     ;; usual rules, so `display-buffer-alist' can route the menu, and
     ;; `maf-formulas-quit' undoes exactly what was done.
-    (pop-to-buffer buf)))
+    (pop-to-buffer buf)
+    ;; The pane's state survives the menu being quit (following by
+    ;; default), so opening brings it back rather than starting closed.
+    (when maf-formulas--pane-state
+      (maf-formulas--open-detail))))
 
 ;;; The module
 
