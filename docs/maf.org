@@ -83,6 +83,10 @@
    it should be,
    => (1 + r^2)
    because `r` is the smallest expression preceeding point
+** TODO rebind `<digit> SPC` to `<digit> RET`
+   this is the command that replaces the numeric value at point, or
+   joins/multiplies with the variable at point. don't change the command, just
+   the binding.
 ** bindings
    three binding modes, each its own heading below: calc-native, maf-native,
    vim-flavored
