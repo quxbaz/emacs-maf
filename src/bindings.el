@@ -216,8 +216,9 @@
 ;; With a selection active the same key clears the selections instead —
 ;; the way back out of the sub-formula it drilled into — so the
 ;; duplicate is one step away rather than the escape being a prefix key.
-;; During digit/algebraic entry RET stays calc's own (the entry
-;; minibuffer terminates), as with e / = / @.
+;; During algebraic entry RET stays calc's own (the entry minibuffer
+;; terminates), as with e / = / @; during digit entry it is the
+;; contextual commit (`maf-digit-commit-contextual', src/minibuffer.el).
 ;;
 ;; C-u RET is the keep-point variant (`maf-dup-here'): same push, point
 ;; stays on the target instead of homing, so the next command still

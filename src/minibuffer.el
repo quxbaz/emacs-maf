@@ -4,7 +4,7 @@
 ;;
 ;; Digit-entry integration: contextual digit entry (`maf-digit-start'),
 ;; the shortcuts maf takes in the entry minibuffer (`;' for the fraction
-;; colon, `n'/`P' for a multiple of pi, `e' to equate, SPC to commit the
+;; colon, `n'/`P' for a multiple of pi, `e' to equate, RET to commit the
 ;; number into the formula at point, `j' to jump to the entry it names),
 ;; and keeping point in place when a command key or C-g terminates
 ;; minibuffer digit entry, so the command still resolves the position
@@ -46,13 +46,13 @@ drop a mark. This flag tells the advice the entry keeps point by design.")
 
 (defvar maf--digit-contextual nil
   "Non-nil when the finished digit entry commits into the formula at point.
-Set by `maf-digit-commit-contextual' (SPC), and by `maf-digit-pi' for
+Set by `maf-digit-commit-contextual' (RET), and by `maf-digit-pi' for
 the completion it stands for, whenever the entry is one maf itself is
 reading on a sub-formula; read by `maf-digit-start', which then applies
 the number there instead of pushing it, and by the keep-point advice,
 for which a contextual commit is an in-place edit that moves nothing.
 Cleared at the start of every entry. nil for every other completion —
-RET included, which pushes as it does in plain calc.")
+SPC included, which pushes as it does in plain calc.")
 
 (defun maf--digit-entry-keep-point ()
   "Keep or mark point when a digit entry completes, by how it completed.
@@ -63,11 +63,11 @@ typing 1 + would add 1 to the top of the stack instead of that entry.
 A command-key termination (1 +) sets the `no-align' flag so the push
 leaves point where it was — the entry's row survives, only its level
 number changes — and the command that follows targets that position.
-SPC's contextual commit edits the sub-formula under point, so it keeps
+RET's contextual commit edits the sub-formula under point, so it keeps
 point too; C-<return> is the explicit keep-point commit.
 
-A RET does park point home — it pushes the number onto the stack, as in
-plain calc — as does the SPC that falls through to a push, at a margin
+A SPC does park point home — it pushes the number onto the stack, as in
+plain calc — as does the RET that falls through to a push, at a margin
 or wherever else `maf-digit-commit-contextual' steps aside. Before it
 does, drop a mark where the user was, so a single `pop-to-mark-command'
 brings them back from the home line. The mark's marker rides the push,
@@ -88,7 +88,7 @@ Point already at home, or `maf-mode' off in the calc buffer, is a no-op
        (command-key (calc-set-command-flag 'no-align))
        ;; C-<return>'s keep-point commit stays put by design.
        (maf--digit-commit-in-place)
-       ;; SPC's contextual commit edits the sub-formula in place.
+       ;; RET's contextual commit edits the sub-formula in place.
        (maf--digit-contextual)
        ;; A RET/SPC that pushes homes point with it: mark the origin so
        ;; the user can pop back. Point (in the calc buffer) is still on the
@@ -222,8 +222,8 @@ out of the entry in `calc-digit-value', as calc's own
 `calcDigit-algebraic' (') hands out its string, so the entry completes
 by its normal route: the completion goes where a value goes from this
 position. From home or a margin the product is pushed (and the push
-homes point, leaving a mark to pop back to, as RET's does); on a
-sub-formula it commits contextually, as SPC does, where 2 n on the 3 of
+homes point, leaving a mark to pop back to, as SPC's does); on a
+sub-formula it commits contextually, as RET does, where 2 n on the 3 of
 3 x gives (2 pi) x — the product goes in as one factor, built as
 literally as any other contextual commit. Being a value and its
 terminator in one key, `n' has no second key to split the two
@@ -263,7 +263,7 @@ off in the calc buffer the entry belongs to."
           ;; refuse it and stay in the minibuffer.
           (progn (beep) (calc-temp-minibuffer-message " [Bad format]"))
         (setq calc-digit-value (math-mul n '(var pi var-pi))
-              ;; Where the product lands, decided as SPC decides it.
+              ;; Where the product lands, decided as RET decides it.
               maf--digit-contextual (maf--digit-contextual-p))
         ;; Exiting directly bypasses `calcDigit-nondigit', where the
         ;; advice that does maf's point bookkeeping lives — so run it
@@ -439,14 +439,14 @@ place to leave from; and with `maf-mode' off in the calc buffer."
 (define-key calc-digit-map "j" #'maf-digit-jump)
 
 (defun maf-digit-commit-contextual ()
-  "Commit the digit entry into the sub-formula at point, on SPC.
-SPC is maf's edit key out in the stack (`maf-edit' opens the entry at
-point as text), and it edits here too: the number goes into the
-formula under point rather than onto the stack.
+  "Commit the digit entry into the sub-formula at point, on RET.
+RET is maf's commit key wherever an edit is in progress (`maf-edit'
+commits its text on RET too), and the entry is an edit here: the
+number goes into the formula under point rather than onto the stack.
 
-  12| x + 3     5 SPC  =>  5 x + 3        (numeric leaf: replaced)
-  x| + 3        5 SPC  =>  5 x + 3        (sub-formula: multiplied)
-  2 + (a| + b)  5 SPC  =>  2 + 5 (a + b)  (literal: no distributing)
+  12| x + 3     5 RET  =>  5 x + 3        (numeric leaf: replaced)
+  x| + 3        5 RET  =>  5 x + 3        (sub-formula: multiplied)
+  2 + (a| + b)  5 RET  =>  2 + 5 (a + b)  (literal: no distributing)
 
 `maf-digit-start' does the committing (`maf--digit-apply' decides which
 of those three it is); this key only marks the completion as
@@ -454,23 +454,23 @@ contextual. Point stays on the sub-formula it edited — nothing was
 pushed, so there is no push to home after.
 
 Everywhere a value is pushed instead — at home, in the line prefix, at
-EOL, in algebraic mode, while an incomplete object is being entered
-\(where SPC separates a vector's elements), and with `maf-mode' off —
-the key is calc's own terminator, which is exactly a push: the
-unshifted twin of RET, doing what RET does."
+EOL, in algebraic mode, while an incomplete object is being entered,
+and with `maf-mode' off — the key is calc's own terminator, which is
+exactly a push: what RET has always done in plain calc, and what its
+unshifted twin SPC keeps doing everywhere."
   (interactive)
-  ;; nil here is also the clear: SPC is the only key that sets the flag
+  ;; nil here is also the clear: RET is the only key that sets the flag
   ;; by hand, and it must not carry a stale t into a pushing entry.
   (setq maf--digit-contextual (maf--digit-contextual-p))
-  ;; Calc's own terminator either way — SPC is one of the two keys
-  ;; (with RET) that end the entry without re-dispatching a command.
+  ;; Calc's own terminator either way — RET is one of the two keys
+  ;; (with SPC) that end the entry without re-dispatching a command.
   ;; Named as itself for the same reason `maf-digit-equal-to' names it:
   ;; `last-command' after the entry must still be one of the
   ;; digit-entry commands.
   (setq this-command 'calcDigit-nondigit)
   (calcDigit-nondigit))
 
-(define-key calc-digit-map " " #'maf-digit-commit-contextual)
+(define-key calc-digit-map (kbd "RET") #'maf-digit-commit-contextual)
 
 (defun maf--digit-take-jump ()
   "Send point to the level `maf-digit-jump' asked for, if it asked.
@@ -508,16 +508,16 @@ which says the same thing to the advice — cannot serve: its binding is
 gone by the time the read returns.")
 
 (defun maf-digit-commit-here ()
-  "Push the digit entry like RET, but keep point instead of homing.
-The keep-point sibling of RET in the digit-entry minibuffer, on
-C-<return>: the number is pushed onto the stack exactly as RET pushes
+  "Push the digit entry like SPC, but keep point instead of homing.
+The keep-point sibling of SPC in the digit-entry minibuffer, on
+C-<return>: the number is pushed onto the stack exactly as SPC pushes
 it, but point stays on the entry it was on rather than dropping to the
 home line, so the next command still resolves there. At home there is
-nowhere to stay, so it matches RET. With `maf-mode' off in the calc
+nowhere to stay, so it matches SPC. With `maf-mode' off in the calc
 buffer, plain calc behavior.
 
-It follows RET onto the stack rather than into the formula at point:
-the contextual commit is SPC's, and SPC keeps point already — the edit
+It follows SPC onto the stack rather than into the formula at point:
+the contextual commit is RET's, and RET keeps point already — the edit
 happens where point stands, so there is nothing for a keep-point
 sibling of it to do.
 
@@ -590,18 +590,19 @@ are built literally — nothing is normalized, so 5 on (a + b) gives
 (defun maf-digit-start ()
   "Start a numeric entry, committed by the key that ends it.
 
-  12| x + 3     5 SPC  =>  5 x + 3        (numeric leaf: replaced)
-  x| + 3        5 SPC  =>  5 x + 3        (sub-formula: multiplied)
-  2 + (a| + b)  5 SPC  =>  2 + 5 (a + b)  (literal: no distributing)
+  12| x + 3     5 RET  =>  5 x + 3        (numeric leaf: replaced)
+  x| + 3        5 RET  =>  5 x + 3        (sub-formula: multiplied)
+  2 + (a| + b)  5 RET  =>  2 + 5 (a + b)  (literal: no distributing)
 
-RET pushes the number onto the stack, exactly as in plain calc,
-wherever point is. SPC is the contextual commit: on a sub-formula the
+SPC pushes the number onto the stack, exactly as in plain calc,
+wherever point is. RET is the contextual commit: on a sub-formula the
 entered number replaces it when it is a numeric leaf and multiplies it
 otherwise, number on the left and the product built literally; on a
-relation node it multiplies both sides. The split is the same one maf
-draws out in the stack, where SPC is the edit key and RET the push.
+relation node it multiplies both sides. The entry is an edit of the
+formula at point, and RET commits it, as it commits maf's text edits
+\(`maf-edit-commit').
 
-Away from a sub-formula there is nothing to edit and SPC pushes too —
+Away from a sub-formula there is nothing to edit and RET pushes too —
 at home, in the line prefix, at EOL, in algebraic mode, for entries
 that escape to algebraic, and for interval entry (..), whose
 incomplete-object flow is inseparable from the stack.
@@ -610,7 +611,7 @@ The entry minibuffer is calc's own (`calc-digit-map'), so the in-entry
 keys — _, :, @, #, .. — work unchanged; only where the result lands
 differs. The exceptions are the keys maf takes in that map: `;' as the
 fraction colon, `n' and `P' for a multiple of pi, `e' to equate with
-the number entered, SPC to commit it into the formula at point, and
+the number entered, RET to commit it into the formula at point, and
 `j' to jump to the entry it names."
   (interactive)
   ;; Where point stands now, for a `j' completion to mark and to jump
@@ -668,7 +669,7 @@ the number entered, SPC to commit it into the formula at point, and
        ((stringp val) (calc-wrapper (calc-alg-entry val)))
        ;; Empty or unreadable entry: nothing to commit.
        ((null val) nil)
-       ;; SPC (or the `n' that stands for it): the number is an edit of
+       ;; RET (or the `n' that stands for it): the number is an edit of
        ;; the sub-formula point is on, not a value for the stack.
        (maf--digit-contextual
         (unwind-protect
@@ -684,7 +685,7 @@ the number entered, SPC to commit it into the formula at point, and
        ;; a subexpr, never at home), and leave `maf--digit-entry-handoff'
        ;; set so the command folds the push into its undo group.
        (maf--digit-entry-handoff (maf--digit-push val t))
-       ;; RET: push, exactly as plain calc does, point homing after it
+       ;; SPC: push, exactly as plain calc does, point homing after it
        ;; with a mark left behind. C-<return> is the same push holding
        ;; point where it stands.
        (t (maf--digit-push val keep-point)))))
