@@ -4983,6 +4983,16 @@ pointing at the $ that names the element outright."
                        (math-format-value expr)))
         (_ (user-error "Several variables: mark the element with $")))))))
 
+(defun maf--map-read-elementwise (input)
+  "Parse INPUT, the typed formula rewritten with the element's $ supplied.
+The second read behind `maf--map-read's operator and constant sugar."
+  (let* ((calc-dollar-values (list maf--map-param))
+         (calc-dollar-used 0)
+         (expr (math-read-expr input)))
+    (when (eq (car-safe expr) 'error)
+      (user-error "Bad format in formula: %s" (nth 2 expr)))
+    (cons maf--map-param expr)))
+
 (defun maf--map-read ()
   "Read the mapping formula from the minibuffer; return a mapper.
 A lone $ returns the symbol `stack' instead: the formula then comes
@@ -4993,7 +5003,17 @@ Anywhere else in the formula a $ stands for the element being mapped —
 the one thing calc's own operator prompt uses it for — so 2 $ + 1 and
 2 x + 1 say the same thing. The two readings never collide: a $ that
 means the stack is the whole answer, a $ that means the element is part
-of a larger formula."
+of a larger formula.
+
+Input that names no element at all reads as an operation on it. An
+operator on either end takes the element on that side: +2 adds 2,
+-2 subtracts it, /2 halves, ^2 squares — and 2+ adds the same 2,
+2- subtracts the element from it, 2/ divides it by the element. A
+lone - negates. Any
+other constant multiplies: 2 doubles, sqrt(2) scales by it. Only input
+that would otherwise refuse reads this way — -x still negates, x + 2
+still adds — so every formula that named its element before means what
+it meant."
   (let ((input (string-trim (read-string "Map: "))))
     (when (string-empty-p input)
       (user-error "No formula given"))
@@ -5005,12 +5025,37 @@ of a larger formula."
       (let* ((calc-dollar-values (list maf--map-param))
              (calc-dollar-used 0)
              (expr (math-read-expr input)))
-        ;; A parse failure comes back as (error POSITION MESSAGE).
-        (when (eq (car-safe expr) 'error)
-          (user-error "Bad format in formula: %s" (nth 2 expr)))
-        (if (> calc-dollar-used 0)
-            (cons maf--map-param expr)
-          (maf--map-from-expr expr))))))
+        (cond
+         ;; A parse failure comes back as (error POSITION MESSAGE).
+         ;; An operator on either end is not a formula at all until
+         ;; the element fills that side (*2, /2, ^2, 2+, 2/ all fail
+         ;; here) — those read again with the $ supplied where the
+         ;; operator left room; anything else is malformed.
+         ((eq (car-safe expr) 'error)
+          (cond
+           ;; A lone - is the one operator whole on its own: negation.
+           ((string= input "-")
+            (maf--map-read-elementwise "-$"))
+           ((string-match-p "\\`[-+*/^%|]" input)
+            (maf--map-read-elementwise (concat "$ " input)))
+           ((string-match-p "[-+*/^%|]\\'" input)
+            (maf--map-read-elementwise (concat input " $")))
+           (t (user-error "Bad format in formula: %s" (nth 2 expr)))))
+         ((> calc-dollar-used 0)
+          (cons maf--map-param expr))
+         ;; Parsed, but nothing names the element — no $, no variable.
+         ;; +2 and -2 land here rather than above, their sign reading
+         ;; as part of the number; the typed operator is kept. Any
+         ;; other constant scales. The lambda guard keeps a nameless
+         ;; function on the strict one-argument check below.
+         ((and (not (eq (car-safe expr) 'calcFunc-lambda))
+               (null (maf--solve-sorted-vars expr)))
+          (maf--map-read-elementwise
+           (if (string-match-p "\\`[-+]" input)
+               (concat "$ " input)
+             (concat "$ * (" input ")"))))
+         (t
+          (maf--map-from-expr expr)))))))
 
 (defun maf--map-apply (mapper expr)
   "Return EXPR with MAPPER applied to it.
@@ -5143,7 +5188,12 @@ the macro's answer by hand rather than ignoring the prefix silently."
 
 Reads the formula in algebraic notation. It may name the element three
 ways: a formula with one free variable (x^2), a $ in place of the
-element (2 $ + 1), or a bare one-argument function name (sin). A lone
+element (2 $ + 1), or a bare one-argument function name (sin). Input
+that names no element reads as an operation on it: an operator on
+either end takes the element on that side (+2 and 2+ add, -2 subtracts
+2, 2- subtracts the element from it, /2 halves, 2/ divides 2 by it,
+^2 squares), a lone - negates, and a bare constant multiplies
+(2 doubles). A lone
 $ is the exception — it means the formula is on the stack, and is the same
 gesture as `mafcmd-map-stack' (M $).
 

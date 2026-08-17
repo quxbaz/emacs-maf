@@ -36,6 +36,108 @@
                       "[3, 5, 7]"))
   (calc-pop (calc-stack-size))
 
+  ;; Input that names no element reads as an operation on it: a
+  ;; leading operator applies with the element on the left, a bare
+  ;; constant multiplies.
+  (maf-push "[1, 2, 3]")
+  (goto-char (point-max))
+  (progn (setq unread-command-events (listify-key-sequence "+2\r"))
+         (call-interactively 'mafcmd-map))
+  (cl-assert (string= (math-format-value
+                       (maf--strip-encasing (calc-top 1 'full)))
+                      "[3, 4, 5]"))
+  (calc-pop (calc-stack-size))
+
+  ;; A leading minus subtracts — the scale-by-negative reading stays
+  ;; spelled -2 x or -2 $.
+  (maf-push "[1, 2, 3]")
+  (goto-char (point-max))
+  (progn (setq unread-command-events (listify-key-sequence "-2\r"))
+         (call-interactively 'mafcmd-map))
+  (cl-assert (string= (math-format-value
+                       (maf--strip-encasing (calc-top 1 'full)))
+                      "[-1, 0, 1]"))
+  (calc-pop (calc-stack-size))
+
+  ;; The operators that cannot even parse alone read the same way.
+  (maf-push "[1, 2, 3]")
+  (goto-char (point-max))
+  (progn (setq unread-command-events (listify-key-sequence "^2\r"))
+         (call-interactively 'mafcmd-map))
+  (cl-assert (string= (math-format-value
+                       (maf--strip-encasing (calc-top 1 'full)))
+                      "[1, 4, 9]"))
+  (calc-pop (calc-stack-size))
+
+  (maf-push "[2, 4, 6]")
+  (goto-char (point-max))
+  (progn (setq unread-command-events (listify-key-sequence "/2\r"))
+         (call-interactively 'mafcmd-map))
+  (cl-assert (string= (math-format-value
+                       (maf--strip-encasing (calc-top 1 'full)))
+                      "[1, 2, 3]"))
+  (calc-pop (calc-stack-size))
+
+  ;; A bare constant multiplies.
+  (maf-push "[1, 2, 3]")
+  (goto-char (point-max))
+  (progn (setq unread-command-events (listify-key-sequence "2\r"))
+         (call-interactively 'mafcmd-map))
+  (cl-assert (string= (math-format-value
+                       (maf--strip-encasing (calc-top 1 'full)))
+                      "[2, 4, 6]"))
+  (calc-pop (calc-stack-size))
+
+  ;; A trailing operator takes the element on the right: 2+ adds like
+  ;; +2, but 2- subtracts the element from 2, and 2^ raises 2 to it.
+  (maf-push "[1, 2, 3]")
+  (goto-char (point-max))
+  (progn (setq unread-command-events (listify-key-sequence "2+\r"))
+         (call-interactively 'mafcmd-map))
+  (cl-assert (string= (math-format-value
+                       (maf--strip-encasing (calc-top 1 'full)))
+                      "[3, 4, 5]"))
+  (calc-pop (calc-stack-size))
+
+  (maf-push "[1, 2, 3]")
+  (goto-char (point-max))
+  (progn (setq unread-command-events (listify-key-sequence "2-\r"))
+         (call-interactively 'mafcmd-map))
+  (cl-assert (string= (math-format-value
+                       (maf--strip-encasing (calc-top 1 'full)))
+                      "[1, 0, -1]"))
+  (calc-pop (calc-stack-size))
+
+  (maf-push "[1, 2, 3]")
+  (goto-char (point-max))
+  (progn (setq unread-command-events (listify-key-sequence "2^\r"))
+         (call-interactively 'mafcmd-map))
+  (cl-assert (string= (math-format-value
+                       (maf--strip-encasing (calc-top 1 'full)))
+                      "[2, 4, 8]"))
+  (calc-pop (calc-stack-size))
+
+  ;; A lone - negates.
+  (maf-push "[1, 2, 3]")
+  (goto-char (point-max))
+  (progn (setq unread-command-events (listify-key-sequence "-\r"))
+         (call-interactively 'mafcmd-map))
+  (cl-assert (string= (math-format-value
+                       (maf--strip-encasing (calc-top 1 'full)))
+                      "[-1, -2, -3]"))
+  (calc-pop (calc-stack-size))
+
+  ;; -x names the element, so it keeps its old reading — negation, not
+  ;; $ - x. The sugar only claims input that would otherwise refuse.
+  (maf-push "[1, 2, 3]")
+  (goto-char (point-max))
+  (progn (setq unread-command-events (listify-key-sequence "-x\r"))
+         (call-interactively 'mafcmd-map))
+  (cl-assert (string= (math-format-value
+                       (maf--strip-encasing (calc-top 1 'full)))
+                      "[-1, -2, -3]"))
+  (calc-pop (calc-stack-size))
+
   ;; A bare name calc knows as a function is the call it names.
   (maf-push "[-1, 2, -3]")
   (goto-char (point-max))
@@ -175,10 +277,17 @@
                       "[1, 2]"))
   (calc-pop (calc-stack-size))
 
-  ;; A formula with no variable has nothing to map over.
+  ;; A constant with no variable used to refuse; it now multiplies at
+  ;; the prompt (the sugar above). The stack form still refuses one —
+  ;; a stack entry has no typed spelling to read an operator off.
   (maf-push "[1, 2]")
+  (maf-push "7")
   (goto-char (point-max))
-  (cl-assert (maf-test-map-refused "7\r"))
+  (let ((message
+         (condition-case err
+             (progn (call-interactively 'mafcmd-map-stack) nil)
+           (user-error (error-message-string err)))))
+    (cl-assert (string-match-p "no variable" message)))
   (calc-pop (calc-stack-size))
 
   ;; $ (mafcmd-map-stack): the entry above the subject is the formula,
