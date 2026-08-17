@@ -73,6 +73,32 @@
   (call-interactively 'pop-to-mark-command)
   (cl-assert (= (point) maf-test--mark))
 
+  ;; --- The bounce fires from the dot alone ---
+
+  ;; At home but off the dot, a press with a live mark does not bounce:
+  ;; it only tidies point onto the dot. The next press, from the dot,
+  ;; makes the return trip.
+  (progn (goto-char (point-min)) (search-forward "6 x")
+         (setq maf-test--origin (point)) nil)
+  (call-interactively 'maf-go-home)
+  (progn (end-of-line) nil)
+  (cl-assert (maf--at-home-p))
+  (cl-assert (/= (point) (maf--home-dot-position)))
+  (call-interactively 'maf-go-home)
+  (cl-assert (looking-at "\\.$"))
+  (cl-assert (= (mark t) maf-test--origin))
+  (call-interactively 'maf-go-home)
+  (cl-assert (= (point) maf-test--origin))
+
+  ;; Same from below the home line, which also counts as home.
+  (call-interactively 'maf-go-home)
+  (progn (goto-char (point-max)) nil)
+  (cl-assert (maf--at-home-p))
+  (call-interactively 'maf-go-home)
+  (cl-assert (looking-at "\\.$"))
+  (call-interactively 'maf-go-home)
+  (cl-assert (= (point) maf-test--origin))
+
   ;; --- Nothing to bounce to ---
 
   ;; A mark at home is no destination — the trip never leaves one there

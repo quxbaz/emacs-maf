@@ -1545,6 +1545,15 @@ the mark has moved on since, POS then being none of its business."
           (setq mark-ring (cdr mark-ring)))
       (set-marker (mark-marker) nil))))
 
+(defun maf--home-dot-position ()
+  "Return the buffer position of the home line's dot.
+The dot sits past the line-number margin when numbering is on, at the
+line's start when it is off."
+  (save-excursion
+    (calc-cursor-stack-index 0)
+    (skip-chars-forward " ")
+    (point)))
+
 (defun maf--home-mark-position ()
   "Return the mark `maf-go-home' should bounce back to, or nil.
 Nil when the buffer has no mark, and when the mark is itself at home:
@@ -1569,8 +1578,8 @@ so the next key resolves at home rather than on an entry.
 The trip out marks the place point left (`maf--mark-before-home', as
 every maf command that homes point does), so C-u C-SPC returns to it.
 
-Pressed at home the key makes the return trip itself: point goes back
-to that mark, and the mark is dropped — the ring is left as it was
+Pressed on the dot itself the key makes the return trip: point goes
+back to that mark, and the mark is dropped — the ring is left as it was
 before the round trip (`maf--home-drop-mark'), older marks and all, so
 C-u C-SPC still walks the ones the trip found there. The trip itself
 always returns to where it last left, never further back. One key
@@ -1578,6 +1587,11 @@ covers both legs of it: out
 to home for a command that wants the whole entry, back to the
 sub-formula for one that wants the term. The stack may be rewritten in
 between; a mark is a marker and rides the rewrite.
+
+At home but off the dot — the line's tail, the blank below — the press
+only tidies point onto the dot. The bounce fires from the dot alone,
+never by surprise from a stray spot on the row: one press to land,
+a second to leave.
 
 The mark it returns to is whichever one is current, so a homing push —
 a dup, an algebraic entry — is bounced back from just as this command's
@@ -1602,7 +1616,8 @@ with none it just undoes horizontal scrolling."
   (interactive)
   (let* ((from (point))
          (home (maf--at-home-p))
-         (back (and home
+         (dot (maf--home-dot-position))
+         (back (and (= from dot)
                     (not (use-region-p))
                     (maf--home-mark-position))))
     (cond
@@ -1610,10 +1625,7 @@ with none it just undoes horizontal scrolling."
       (goto-char back)
       (maf--home-drop-mark back))
      (t
-      (calc-cursor-stack-index 0)
-      ;; The dot sits past the line-number margin when numbering is on,
-      ;; at the line's start when it is off.
-      (skip-chars-forward " ")
+      (goto-char dot)
       ;; A press that started at home moved point at most from the tail
       ;; of the line onto the dot: no journey, nothing to mark.
       (unless (or home (use-region-p))
