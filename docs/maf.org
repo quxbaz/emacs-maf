@@ -29,8 +29,8 @@
     - [ ] factor
     - [ ] target-line
 
-* NOW [0/12]
-** TODO editplus: bind B to log
+* NOW [0/9]
+** IN-PROGRESS editplus: bind B to log
    - default to log(x, 10)
    - if log expression already exists on current entry, default to closest one
      (prior to current expression at point)
@@ -42,7 +42,7 @@
      (x + 1)^|(a + b)
      <backspace>
      => x + 1
-** TODO *maf-timeline*
+** IN-PROGRESS *maf-timeline*
    - [ ] on restore `r`, quit buffer
    - [ ] show bindings in legend similar to *maf-options*
    - [ ] bind `D` to new command to delete current timeline entry
