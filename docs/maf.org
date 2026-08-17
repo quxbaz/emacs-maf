@@ -29,7 +29,7 @@
     - [ ] factor
     - [ ] target-line
 
-* NOW [0/9]
+* NOW [1/9]
 ** IN-PROGRESS editplus: bind B to log
    - default to log(x, 10)
    - if log expression already exists on current entry, default to closest one
@@ -46,7 +46,7 @@
    - [ ] on restore `r`, quit buffer
    - [ ] show bindings in legend similar to *maf-options*
    - [ ] bind `D` to new command to delete current timeline entry
-** TODO `P` (calc-pi) should behave contextually - similar to (maf-quick-variable)
+** DONE `P` (calc-pi) should behave contextually - similar to (maf-quick-variable)
    - currently it always pushes `pi` to top of stack
    - always join/multiply with contextual expression
    - unlike (maf-quick-variable), never replace the variable
