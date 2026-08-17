@@ -124,6 +124,21 @@ is rewritten into the dialect. The two must agree, or an entry left
 untouched will not compare equal to what a changed one parses back
 to. See modules/maf-editvars.el, which does exactly this.")
 
+(defvar maf-edit-transform-value-functions nil
+  "Functions rewriting a reparsed entry's value before it commits.
+Called in order, each on the previous one's result, on the parsed
+value of every entry whose text has changed — and on nothing else: an
+untouched entry keeps its value object, as it keeps its text. nil,
+the default, commits the parse exactly as written.
+
+The extension point for a module that owes calc a spelling: a key
+that writes log(x, 10) so the base stays visible in the text commits
+it as the log10(x) calc itself writes (see maf-editplus). A transform
+must return a value stable under calc's own rendering — what it
+returns is re-rendered, and an edit session started on it hands the
+rendering back to this hook — or an entry could change under a commit
+that never touched it.")
+
 (defvar maf-edit-mode-map
   (let ((map (make-sparse-keymap)))
     ;; RET confirms; the newline gesture (split/continue) moves to
@@ -1290,7 +1305,10 @@ have to read every copy back from whatever the display shows."
 Entries whose text is untouched keep their value objects and
 selections; changed or new text is parsed in the current input modes
 and committed exactly as written, never simplified — 1 + 2 + x stays
-1 + 2 + x.
+1 + 2 + x. The one exception is deliberate:
+`maf-edit-transform-value-functions' maps each reparsed value, so a
+module can commit a spelling calc prefers over the one the session
+wanted visible.
 
 An entry whose commas are its own — 1,2,3 — commits as the vector
 [1, 2, 3]: the brackets are punctuation calc wants and the writer does
@@ -1333,8 +1351,11 @@ session `maf-edit' opened there."
                                         " (unbalanced delimiters)")))
                       errors)
               ;; Raw, not normalized: the user's text commits exactly
-              ;; as written; even 1 + 2 must survive unfolded.
-              (push v vals)
+              ;; as written; even 1 + 2 must survive unfolded. The
+              ;; transform hook is the one deliberate exception.
+              (push (seq-reduce (lambda (val f) (funcall f val))
+                                maf-edit-transform-value-functions v)
+                    vals)
               (push nil sels)))))))
     (if errors
         (let* ((errors (nreverse errors))
