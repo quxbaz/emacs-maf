@@ -1,6 +1,6 @@
 ;; mafcmd-map-flag (M): a fancy prefix like calc's K or I — the next
 ;; contextual command, unary or binary, maps over its subject: one run
-;; per vector element or equation side. Where M ' maps a formula you
+;; per vector element or equation side. Where M : maps a formula you
 ;; type and M $ maps one from the stack, M maps a command. The prefix is
 ;; driven with real keys where the flow through calc's fancy-prefix
 ;; machinery is itself the thing under test.

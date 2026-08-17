@@ -1,7 +1,7 @@
-;; mafcmd-map (M ') and mafcmd-map-stack (M $): apply a formula to the
+;; mafcmd-map (M :) and mafcmd-map-stack (M $): apply a formula to the
 ;; target — each element of a vector, both sides of an equation. The
 ;; subject is the whole entry wherever point sits on it; a region or a
-;; calc selection still narrows. M ''s prompt is driven with real keys,
+;; calc selection still narrows. M :'s prompt is driven with real keys,
 ;; so each case queues its input and fires the command in a single
 ;; form.
 
