@@ -42,6 +42,16 @@
   "Face for the current operation in the timeline strip."
   :group 'maf)
 
+(defface maf-timeline-legend
+  ;; The band dial's controls line wears (see `dial-controls'), copied
+  ;; rather than inherited so the module does not require dial: the
+  ;; legend should read like the *maf-options* one.
+  '((((class color) (background dark))  :background "#1c2733" :extend t)
+    (((class color) (background light)) :background "#e2eaf3" :extend t)
+    (t :inverse-video t))
+  "Face for the key legend above the timeline."
+  :group 'maf)
+
 (defcustom maf-timeline-size 100
   "Maximum number of stack states kept in the timeline.
 Recording past the limit drops the oldest states. A state shares all
@@ -239,12 +249,66 @@ a `…' at an end when more states lie beyond the window."
             (string-join (nreverse parts) " · ")
             (if (> lo 0) " …" ""))))
 
+(defvar maf-timeline--controls nil
+  "Commands summarized on the legend line, in order.
+Each entry is (COMMAND VERB . PREFERRED-KEYS), the shape dial's
+controls line uses (see `dial-default-controls'): COMMAND one command
+or a list that reads as one control, and the keys the ones to show
+for it, kept only while each still runs it.")
+
+;; Set outside the defvar so a reload applies edits to the list.
+(setq maf-timeline--controls
+      '(((maf-timeline-previous maf-timeline-next) "step" "h" "l" "u" "i")
+        ((maf-timeline-oldest maf-timeline-newest) "ends" "<" ">")
+        (maf-timeline-insert "insert" "RET")
+        (maf-timeline-restore "restore" "r")
+        (maf-timeline-delete "delete" "D")
+        (maf-timeline-visit-calc "calc" "v")
+        (quit-window "quit" "q")))
+
+(defun maf-timeline--control-keys (command preferred)
+  "Return the key strings naming COMMAND on the legend line.
+COMMAND is one command or a list of them. Each PREFERRED key is kept
+only while it still runs one of COMMAND in this buffer, so a binding
+moved away drops out of the legend rather than misleading; with none
+left the live keymap decides."
+  (or (seq-filter (lambda (key)
+                    (memq (key-binding (kbd key)) (ensure-list command)))
+                  (ensure-list preferred))
+      (when-let ((key (where-is-internal (car (ensure-list command)) nil t)))
+        (list (key-description key)))
+      (list "M-x")))
+
+(defun maf-timeline--legend ()
+  "Return the key legend line shown at the top of the buffer.
+The shape of the *maf-options* controls line: each control's keys in
+the binding face, its verb after, the whole line on the
+`maf-timeline-legend' band. Keys are looked up in the buffer's live
+keymaps, so the legend follows a rebinding. Ends in its own newline,
+which carries the band face so its `:extend' reaches the window edge."
+  (let ((line (concat
+               " "
+               (mapconcat
+                (lambda (cell)
+                  (pcase-let ((`(,command ,verb . ,preferred) cell))
+                    (concat (mapconcat (lambda (key)
+                                         (propertize key 'face 'help-key-binding))
+                                       (maf-timeline--control-keys command preferred)
+                                       "/")
+                            " " verb)))
+                maf-timeline--controls
+                "   ")
+               "\n")))
+    (add-face-text-property 0 (length line) 'maf-timeline-legend t line)
+    line))
+
 (defun maf-timeline--render ()
   "Render the state at `maf-timeline--index' into the current buffer.
-A one-line operation strip (see `maf-timeline--strip') sits at the top,
-above the stack state. Point keeps its line and column when the buffer
-had content; a fresh buffer gets point on the top-of-stack entry, the
-likeliest RET target."
+A key legend (see `maf-timeline--legend') sits at the top, then a
+one-line operation strip (see `maf-timeline--strip'), then the stack
+state. Point keeps its line and column when the buffer had content; a
+fresh buffer gets point on the top-of-stack entry, the likeliest RET
+target."
   (let* ((total (length maf-timeline--states))
          (index (max 0 (min maf-timeline--index (max 0 (1- total)))))
          (state (nth index maf-timeline--states))
@@ -260,9 +324,10 @@ likeliest RET target."
          (inhibit-read-only t))
     (setq maf-timeline--index index)
     (erase-buffer)
-    ;; The operation strip: a row of nearby operations beneath the
-    ;; header, above the stack state. No `maf-timeline-value' property,
-    ;; so RET/r ignore it.
+    ;; The legend, then the operation strip: a row of nearby operations
+    ;; beneath the header, above the stack state. Neither carries the
+    ;; `maf-timeline-value' property, so RET ignores them.
+    (insert (maf-timeline--legend) "\n")
     (when (> total 0)
       (insert (maf-timeline--strip total index) "\n\n"))
     (cond
@@ -326,6 +391,8 @@ its index shifted under it."
 (define-key maf-timeline-mode-map (kbd "RET") #'maf-timeline-insert)
 (define-key maf-timeline-mode-map (kbd "C-<return>") #'maf-timeline-insert-stay)
 (define-key maf-timeline-mode-map (kbd "r") #'maf-timeline-restore)
+;; Capital, so a fingerslip on the motion keys cannot reach a delete.
+(define-key maf-timeline-mode-map (kbd "D") #'maf-timeline-delete)
 
 (define-derived-mode maf-timeline-mode special-mode "maf-timeline"
   "Major mode for browsing calc stack timeline.
@@ -336,7 +403,9 @@ to newer ones; \\[maf-timeline-oldest] and \\[maf-timeline-newest] jump
 to the ends. \\[maf-timeline-insert] pushes the entry at point onto
 the live stack and quits; \\[maf-timeline-insert-stay] pushes and
 stays, ready to insert more. \\[maf-timeline-restore] replaces the
-whole stack with the state shown. \\[quit-window] buries the buffer."
+whole stack with the state shown and quits. \\[maf-timeline-delete]
+deletes the state shown from the log. \\[quit-window] buries the
+buffer."
   (setq truncate-lines t)
   (setq-local revert-buffer-function
               (lambda (&rest _) (maf-timeline--render))))
@@ -431,11 +500,12 @@ in place, ready to insert more."
     (message "Pushed: %s" (math-format-value val))))
 
 (defun maf-timeline-restore ()
-  "Replace the live calc stack with the state being viewed.
+  "Replace the live calc stack with the state being viewed, and quit.
 The whole stack becomes this snapshot — copies, as in
 `maf-timeline-insert' — and the view jumps back to the newest state,
 which now shows the restored stack. A single undo reverts the
-restore."
+restore. The timeline window quits, as after `maf-timeline-insert':
+a restore is the end of a browse."
   (interactive)
   (let ((state (nth maf-timeline--index maf-timeline--states)))
     (unless state (user-error "No states recorded yet"))
@@ -452,7 +522,27 @@ restore."
       (setq maf-timeline--index 0)
       (maf-timeline--render)
       (message "Stack restored (%d %s)" (length values)
-               (if (= (length values) 1) "entry" "entries")))))
+               (if (= (length values) 1) "entry" "entries"))
+      (quit-window))))
+
+(defun maf-timeline-delete ()
+  "Delete the state being viewed from the timeline log.
+The live stack is untouched — the timeline is a log of what happened,
+and this drops one record from it, so like `maf-timeline-clear' it is
+not undoable. The view lands on the next older state, or on the
+newest remaining when the oldest was the one deleted."
+  (interactive)
+  (let ((state (nth maf-timeline--index maf-timeline--states)))
+    (unless state (user-error "No states recorded yet"))
+    (let ((total (length maf-timeline--states))
+          (index maf-timeline--index))
+      (if (zerop index)
+          (setq maf-timeline--states (cdr maf-timeline--states))
+        (let ((cell (nthcdr (1- index) maf-timeline--states)))
+          (setcdr cell (cddr cell))))
+      (maf-timeline--render)
+      (message "Deleted state %d/%d (%s)" (- total index) total
+               (maf-timeline--strip-label state)))))
 
 (defun maf-timeline-clear ()
   "Discard every recorded stack state, keeping the live stack.
@@ -462,9 +552,9 @@ next change starts a fresh log, baselined against the stack as it
 stands. Recording carries on if it was on; this only empties what was
 recorded. `maf-reset' calls it as part of wiping a session.
 
-Deliberately unbound in the browser: every other key there is a
-reversible move, and a destructive one a fingerslip away from
-\\`r' would not be. Reach it as \\[maf-timeline-clear]."
+Deliberately unbound in the browser: wiping the whole log a fingerslip
+away from \\`r' would be far worse than \\`D''s one state at a time.
+Reach it as \\[maf-timeline-clear]."
   (interactive)
   (let ((n (length maf-timeline--states)))
     (setq maf-timeline--states nil
@@ -518,7 +608,8 @@ recorded stay browsable. Managed through the module system; see
 Every command that changes the stack records a snapshot. The
 *maf-timeline* buffer shows one state at a time with the entries that
 changed highlighted: u and i step through them, RET pushes the entry
-at point onto the live stack, r restores the whole state."
+at point onto the live stack, r restores the whole state, D deletes
+a state from the log."
                        "t d"))
 
 (provide 'maf-timeline)

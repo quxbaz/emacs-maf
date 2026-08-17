@@ -43,9 +43,9 @@
      <backspace>
      => x + 1
 ** IN-PROGRESS *maf-timeline*
-   - [ ] on restore `r`, quit buffer
-   - [ ] show bindings in legend similar to *maf-options*
-   - [ ] bind `D` to new command to delete current timeline entry
+   - [X] on restore `r`, quit buffer
+   - [X] show bindings in legend similar to *maf-options*
+   - [X] bind `D` to new command to delete current timeline entry
 ** IN-PROGRESS `P` (calc-pi) should behave contextually - similar to (maf-quick-variable)
    - currently it always pushes `pi` to top of stack
    - always join/multiply with contextual expression
