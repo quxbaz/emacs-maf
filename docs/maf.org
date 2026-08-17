@@ -46,7 +46,7 @@
    - [ ] on restore `r`, quit buffer
    - [ ] show bindings in legend similar to *maf-options*
    - [ ] bind `D` to new command to delete current timeline entry
-** TODO `P` (calc-pi) should behave contextually - similar to (maf-quick-variable)
+** IN-PROGRESS `P` (calc-pi) should behave contextually - similar to (maf-quick-variable)
    - currently it always pushes `pi` to top of stack
    - always join/multiply with contextual expression
    - unlike (maf-quick-variable), never replace the variable
