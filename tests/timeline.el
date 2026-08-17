@@ -34,15 +34,17 @@
 
   ;; The buffer renders the newest state like the stack itself, the
   ;; entry the step produced highlighted, header showing position and
-  ;; the producing command. The operation strip sits above the stack,
-  ;; both steps labeled `new' (each added an entry).
+  ;; the producing command. A key legend heads the buffer, dial-style;
+  ;; the operation strip sits above the stack, both steps labeled `new'
+  ;; (each added an entry).
   (with-current-buffer (maf-timeline--buffer)
-    (cl-assert (string= (buffer-substring-no-properties (point-min) (point-max))
-                        "new · new\n\n2:  6 x + 12\n1:  a + b\n"))
+    (let ((text (buffer-substring-no-properties (point-min) (point-max))))
+      (cl-assert (string-match-p "\\` h/l/u/i step .* r restore .* D delete " text))
+      (cl-assert (string-suffix-p "new · new\n\n2:  6 x + 12\n1:  a + b\n" text)))
     (cl-assert (string-prefix-p "maf-timeline 2/2" header-line-format))
     (progn (goto-char (point-min)) (search-forward "a + b") (backward-char 1))
     (cl-assert (eq (get-text-property (point) 'face) 'maf-timeline-changed))
-    ;; The unchanged entry carries no highlight (point-min is the strip).
+    ;; The unchanged entry carries no highlight.
     (progn (goto-char (point-min)) (search-forward "6 x + 12") (backward-char 1))
     (cl-assert (null (get-text-property (point) 'face))))
 
@@ -51,8 +53,8 @@
   ;; is an error.
   (with-current-buffer (maf-timeline--buffer)
     (call-interactively 'maf-timeline-previous)
-    (cl-assert (string= (buffer-substring-no-properties (point-min) (point-max))
-                        "new · new\n\n1:  6 x + 12\n"))
+    (cl-assert (string-suffix-p "new · new\n\n1:  6 x + 12\n"
+                                (buffer-substring-no-properties (point-min) (point-max))))
     (cl-assert (string-prefix-p "maf-timeline 1/2" header-line-format))
     (progn (goto-char (point-min)) (search-forward "6 x + 12") (backward-char 1))
     (cl-assert (null (get-text-property (point) 'face)))
@@ -90,13 +92,15 @@
     (cl-assert (string-prefix-p "maf-timeline 1/3" header-line-format))
     ;; Strip: the two original steps (new) plus the history insert (hist),
     ;; newest last; the view stays on the oldest, single-entry state.
-    (cl-assert (string= (buffer-substring-no-properties (point-min) (point-max))
-                        "new · new · hist\n\n1:  6 x + 12\n")))
+    (cl-assert (string-suffix-p "new · new · hist\n\n1:  6 x + 12\n"
+                                (buffer-substring-no-properties (point-min) (point-max)))))
 
-  ;; r replaces the whole stack with the state shown and jumps the view
-  ;; to the newest state — which now shows the restored stack.
-  (with-current-buffer (maf-timeline--buffer)
-    (call-interactively 'maf-timeline-restore))
+  ;; r replaces the whole stack with the state shown, jumps the view to
+  ;; the newest state — which now shows the restored stack — and quits
+  ;; the window; the excursion keeps the quit off the cockpit's window.
+  (save-window-excursion
+    (with-current-buffer (maf-timeline--buffer)
+      (call-interactively 'maf-timeline-restore)))
   (maf-timeline--capture)
   (cl-assert (= (calc-stack-size) 1))
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "6 x + 12"))
