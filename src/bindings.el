@@ -98,12 +98,19 @@
 ;; A single-key alias for expand, which also keeps its table key a x.
 ;; Shadows calc-execute-extended-command.
 (define-key maf-mode-map (kbd "x") #'mafcmd-expand)
-;; A single-key alias for the reciprocal, which also keeps its table
-;; key &. It sat on i until the prompted solve took that key back, and
-;; takes o in turn from the home motion below. Shadows calc-realign,
-;; whose bare press only undoes horizontal scrolling; M-x calc-realign
-;; still reaches that and the prefixed home motion both.
+;; The reciprocal. It sat on i until the prompted solve took that key
+;; back, and takes o in turn from the home motion below; its table key
+;; & went to the big-language toggle next, so this is now its only
+;; key. Shadows calc-realign, whose bare press only undoes horizontal
+;; scrolling; M-x calc-realign still reaches that and the prefixed
+;; home motion both.
 (define-key maf-mode-map (kbd "o") #'mafcmd-inv)
+;; Toggle calc's Big 2D display language. Takes &, the key the
+;; reciprocal cedes above (see the inv row in maf-cmds.el); calc's own
+;; & is calc-inv, which mafcmd-inv subsumes, so nothing is lost to the
+;; shadow. The toggle held G until maf-go-home took it (below); calc's
+;; own d B / d N stay the one-way switches.
+(define-key maf-mode-map (kbd "&") #'maf-toggle-big-language)
 ;; Send point home, the one motion the buffer needs a key for: every
 ;; other command already leaves it there. Pressed at home it returns to
 ;; the mark instead — its own trip out left one, as every maf command
@@ -111,9 +118,7 @@
 ;; a command that wants the entry, back for one that wants the term.
 ;; It sat on o until the reciprocal above took that key. Takes calc's
 ;; G, which mafcmd-arg cedes (see the table in maf-cmds.el);
-;; `maf-toggle-big-language' held G before and now has no key of its
-;; own — it stays reachable by name, and calc's own d B / d N switch
-;; the language one way each.
+;; `maf-toggle-big-language' held G before and now sits on & (above).
 (define-key maf-mode-map (kbd "G") #'maf-go-home)
 ;; A toggle between pair members is its own inverse, so both directions
 ;; run the same command.
