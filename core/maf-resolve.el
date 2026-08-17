@@ -315,12 +315,12 @@ ENCASED itself and walking out through its ancestors in the entry at
 stack level M; the first acceptance wins. Without a `:widen' predicate,
 or when nothing out to the whole entry is accepted, ENCASED stands.
 
-This is what lets a command whose result does not fit the node under
-point act on the enclosing node that can hold it, instead of doing
-nothing: `mafcmd-unpack' peels the innermost single-argument wrapper
-around point rather than only the node point names. An explicit calc
-selection is a deliberate gesture and is never widened — the selection
-target does not come through here."
+This is what lets a command whose subject is not the node under point
+act on the enclosing node that is, instead of doing nothing:
+`mafcmd-flatten' widens to the innermost vector with nesting to remove
+rather than only the node point names. An explicit calc selection is a
+deliberate gesture and is never widened — the selection target does
+not come through here."
   (let ((pred (alist-get :widen opts)))
     (or (and pred
              (cl-find-if (lambda (node)

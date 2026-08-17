@@ -86,87 +86,62 @@
   (cl-assert (equal (calc-top 1 'full) '(vec)))
   (calc-pop 1)
 
-  ;; Sub-formula: a slot holds one expression, so a single-part
-  ;; sub-formula unwraps in place and the entry count does not change.
+  ;; The subject is always the whole entry: point inside a formula does
+  ;; not narrow to the node it sits on. On sin here, the entry's sum
+  ;; comes apart, not the sin call.
   (maf-push "y + sin(x)")
   (progn (goto-char (point-min)) (search-forward "sin") (backward-char 2))
   (call-interactively 'mafcmd-unpack)
-  (cl-assert (= (calc-stack-size) 1))
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "y + x"))
-  (calc-pop 1)
+  (cl-assert (= (calc-stack-size) 2))
+  (cl-assert (string= (math-format-value (calc-top 2 'full)) "y"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "sin(x)"))
+  (calc-pop 2)
 
-  ;; A multi-part sub-formula does not fit the slot, and here nothing
-  ;; encloses it that would: f(a,b) gives two parts, and so does the sum
-  ;; around it. Unchanged, with nothing spilling onto the stack.
-  (maf-push "y + f(a,b)")
-  (progn (goto-char (point-min)) (search-forward "f(a") (backward-char 3))
-  (call-interactively 'mafcmd-unpack)
-  (cl-assert (= (calc-stack-size) 1))
-  (cl-assert (equal (calc-top 1 'full)
-                    '(+ (var y var-y) (calcFunc-f (var a var-a) (var b var-b)))))
-  (calc-pop 1)
-
-  ;; Widening: point on an operand peels the wrapper enclosing it. The
-  ;; node under point (x) has nothing to give, so the target becomes the
-  ;; innermost node that does -- sin(2 x).
-  (maf-push "y + sin(2 x)")
-  (progn (goto-char (point-min)) (search-forward "2 x") (backward-char 1))
-  (call-interactively 'mafcmd-unpack)
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "y + 2 x"))
-  (calc-pop 1)
-
-  ;; Same from the implicit multiplication operator between 2 and x,
-  ;; whose own node (2 x) has two parts and does not fit either.
-  (maf-push "y + sin(2 x)")
-  (progn (goto-char (point-min)) (search-forward "2 x") (backward-char 2))
-  (call-interactively 'mafcmd-unpack)
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "y + 2 x"))
-  (calc-pop 1)
-
-  ;; Widening stops at the innermost wrapper, so nesting still follows
-  ;; point: on x it peels cos, on sin it peels sin.
+  ;; Same from deep inside a nested call: whatever the position, one
+  ;; level of the entry comes off. A single wrapper gives a single
+  ;; part, so the entry count does not change.
   (maf-push "sin(cos(x))")
   (progn (goto-char (point-min)) (search-forward "(x)") (backward-char 2))
   (call-interactively 'mafcmd-unpack)
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "sin(x)"))
-  (calc-pop 1)
-
-  (maf-push "sin(cos(x))")
-  (progn (goto-char (point-min)) (search-forward "sin") (backward-char 2))
-  (call-interactively 'mafcmd-unpack)
+  (cl-assert (= (calc-stack-size) 1))
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "cos(x)"))
   (calc-pop 1)
 
-  ;; Nothing peelable anywhere out to the entry: unchanged. Bounding the
-  ;; walk at the entry is what keeps widening from reaching past what
-  ;; point is looking at.
+  ;; A product entry splits into its factors from anywhere inside it.
   (maf-push "(a + b) (2 c - d)")
   (progn (goto-char (point-min)) (search-forward "a") (backward-char 1))
   (call-interactively 'mafcmd-unpack)
-  (cl-assert (string= (math-format-value (calc-top 1 'full))
-                      "(a + b) (2 c - d)"))
-  (calc-pop 1)
+  (cl-assert (= (calc-stack-size) 2))
+  (cl-assert (string= (math-format-value (calc-top 2 'full)) "a + b"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "2 c - d"))
+  (calc-pop 2)
 
-  ;; An explicit calc selection is a deliberate gesture and is never
-  ;; widened: selecting the two-part 2 x leaves the entry alone rather
-  ;; than peeling the sin around it.
-  (maf-push "sin(2 x)")
-  (progn (goto-char (point-min)) (search-forward "2 x") (backward-char 2))
-  (call-interactively 'calc-select-here)
-  (cl-assert (string= (math-format-value (nth 2 (nth 1 calc-stack))) "2 x"))
+  ;; The entry at point, not the top: unpacking a lower entry spreads
+  ;; its parts in place, beneath the entries above it.
+  (maf-push "[1, 2]")
+  (maf-push "z")
+  (progn (calc-cursor-stack-index 2) (end-of-line))
   (call-interactively 'mafcmd-unpack)
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "sin(2 x)"))
-  (calc-clear-selections)
-  (calc-pop 1)
+  (cl-assert (= (calc-stack-size) 3))
+  (cl-assert (equal (calc-top 3 'full) 1))
+  (cl-assert (equal (calc-top 2 'full) 2))
+  (cl-assert (equal (calc-top 1 'full) '(var z var-z)))
+  (calc-pop 3)
 
-  ;; A selection that does fit still unwraps in place.
-  (maf-push "sin(2 x)")
+  ;; An explicit calc selection does not narrow the subject either --
+  ;; parts spread over the stack, and a formula slot has no room for
+  ;; that -- so the selection's entry comes apart whole, the selection
+  ;; gone with it.
+  (maf-push "y + sin(x)")
   (progn (goto-char (point-min)) (search-forward "sin") (backward-char 2))
   (call-interactively 'calc-select-here)
+  (cl-assert (string= (math-format-value (nth 2 (nth 1 calc-stack))) "sin(x)"))
   (call-interactively 'mafcmd-unpack)
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "2 x"))
-  (calc-clear-selections)
-  (calc-pop 1)
+  (cl-assert (= (calc-stack-size) 2))
+  (cl-assert (string= (math-format-value (calc-top 2 'full)) "y"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "sin(x)"))
+  (cl-assert (null (nth 2 (nth 1 calc-stack))))
+  (calc-pop 2)
 
   ;; Equation at the entry: a relation is a function call like any
   ;; other, so it comes apart into its two sides rather than mapping
@@ -186,71 +161,51 @@
   (cl-assert (= (calc-stack-size) 2))
   (calc-pop 2)
 
-  ;; Point on a sub-formula inside a relation still targets that
-  ;; sub-formula, so the relation survives.
+  ;; Point on a sub-formula inside a relation is the same gesture as
+  ;; anywhere else on the entry: the relation comes apart.
   (maf-push "x = sin(y)")
   (progn (goto-char (point-min)) (search-forward "sin") (backward-char 2))
   (call-interactively 'mafcmd-unpack)
-  (cl-assert (= (calc-stack-size) 1))
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "x = y"))
-  (calc-pop 1)
+  (cl-assert (= (calc-stack-size) 2))
+  (cl-assert (string= (math-format-value (calc-top 2 'full)) "x"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "sin(y)"))
+  (calc-pop 2)
 
-  ;; Selection: the selected sub-formula is the target, and the
-  ;; unwrapped result stays selected.
-  (maf-push "y + sin(x)")
-  (progn (goto-char (point-min)) (search-forward "sin") (backward-char 2))
-  (call-interactively 'calc-select-here)
-  (call-interactively 'mafcmd-unpack)
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "y + x"))
-  (cl-assert (string= (math-format-value (nth 2 (nth 1 calc-stack))) "x"))
-  (calc-clear-selections)
-  (calc-pop 1)
-
-  ;; A region covering a chain run has no node to peel -- the run is
-  ;; carved from the chain, not a sub-formula -- so the entry stands.
+  ;; A region is bypassed like the other narrowing gestures: the entry
+  ;; it lies on comes apart, one level.
   (maf-push "a + sin(2 x) + c")
-  (progn (calc-cursor-stack-index 1)
-         (search-forward "sin(2 x) + c" (line-end-position))
-         (goto-char (match-beginning 0))
-         (push-mark (match-end 0) t t)
-         (call-interactively 'mafcmd-unpack))
-  (cl-assert (= (calc-stack-size) 1))
-  (cl-assert (string= (math-format-value (calc-top 1 'full))
-                      "a + sin(2 x) + c"))
-  (calc-pop 1)
-
-  ;; A region covering exactly one node resolves as a sub-formula, and
-  ;; peels as one.
-  (maf-push "a + sin(2 x)")
   (progn (calc-cursor-stack-index 1)
          (search-forward "sin(2 x)" (line-end-position))
          (goto-char (match-beginning 0))
          (push-mark (match-end 0) t t)
          (call-interactively 'mafcmd-unpack))
-  (cl-assert (= (calc-stack-size) 1))
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "a + 2 x"))
-  (calc-pop 1)
+  (cl-assert (= (calc-stack-size) 2))
+  (cl-assert (string= (math-format-value (calc-top 2 'full)) "a + sin(2 x)"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "c"))
+  (calc-pop 2)
 
-  ;; Keep-args at a widened sub-formula: the peeled entry goes on top,
-  ;; the original stays beneath it.
+  ;; Keep-args with point inside the formula: the parts go on top, the
+  ;; original entry stays beneath them.
   (maf-push "y + sin(2 x)")
   (progn (goto-char (point-min)) (search-forward "2 x") (backward-char 1))
   (call-interactively 'calc-keep-args)
   (call-interactively 'mafcmd-unpack)
-  (cl-assert (= (calc-stack-size) 2))
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "y + 2 x"))
-  (cl-assert (string= (math-format-value (calc-top 2 'full)) "y + sin(2 x)"))
-  (calc-pop 2)
+  (cl-assert (= (calc-stack-size) 3))
+  (cl-assert (string= (math-format-value (calc-top 3 'full)) "y + sin(2 x)"))
+  (cl-assert (string= (math-format-value (calc-top 2 'full)) "y"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "sin(2 x)"))
+  (calc-pop 3)
 
-  ;; Widening walks the formula, not the glyphs, so big-language display
-  ;; peels the same wrapper.
+  ;; Big-language display resolves the same entry, so the same split.
   (maf-push "y + sin(2 x)")
   (call-interactively 'maf-toggle-big-language)
   (progn (goto-char (point-min)) (search-forward "2 x") (backward-char 1))
   (call-interactively 'mafcmd-unpack)
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "y + 2 x"))
+  (cl-assert (= (calc-stack-size) 2))
+  (cl-assert (string= (math-format-value (calc-top 2 'full)) "y"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "sin(2 x)"))
   (call-interactively 'maf-toggle-big-language)
-  (calc-pop 1)
+  (calc-pop 2)
 
   ;; A positive prefix argument unwraps that many levels deep.
   (maf-push "[(1,2),(3,4)]")

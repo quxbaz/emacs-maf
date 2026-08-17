@@ -326,15 +326,15 @@
 ;; itself (l is its logarithmic-units prefix).
 (define-key maf-mode-map (kbd "l x") #'mafcmd-swap-vars)
 
-;; Unwrap the target into its parts. M-u is unbound in calc itself (it
-;; shadows the global upcase-dwim, which has no place in the stack
-;; buffer). The other two are calc's own unpack keys, and mafcmd-unpack
-;; subsumes both commands: v u is calc-unpack, which spreads a whole
-;; entry's parts over the stack, and j U (with its j M-U alias) is
-;; calc-sel-unpack, which replaces a selected one-argument call with
-;; its argument. Shadowing both keeps one unpack behavior in the
-;; buffer — left alone, j U would still signal on the multi-part
-;; sub-formulas the contextual command commits unchanged.
+;; Unwrap the entry at point into its parts. M-u is unbound in calc
+;; itself (it shadows the global upcase-dwim, which has no place in the
+;; stack buffer). The other two are calc's own unpack keys: v u is
+;; calc-unpack, whose whole-entry behavior mafcmd-unpack matches, and
+;; j U (with its j M-U alias) is calc-sel-unpack, which replaces a
+;; selected one-argument call with its argument — unpacking spreads
+;; parts over the stack, and a formula slot has no room for that, so
+;; the contextual command takes the selection's entry whole instead.
+;; Shadowing both keeps one unpack behavior in the buffer.
 (define-key maf-mode-map (kbd "M-u") #'mafcmd-unpack)
 (define-key maf-mode-map (kbd "v u") #'mafcmd-unpack)
 (define-key maf-mode-map (kbd "j U") #'mafcmd-unpack)
