@@ -30,37 +30,6 @@
     - [ ] target-line
 
 * NOW [2/10]
-** DONE editplus: bind B to log
-   - default to log(x, 10)
-   - if log expression already exists on current entry, default to closest one
-     (prior to current expression at point)
-   - C-u <n> B names the base outright
-   - on commit, log(x, 10) converts to calc's log10(x)
-** TODO editplus: deleting the ^ deletes the power expr too
-   - eg,
-     x^|3
-     <backspace>
-     => x
-   - another example,
-     (x + 1)^|(a + b)
-     <backspace>
-     => x + 1
-** IN-PROGRESS *maf-timeline*
-   - [X] on restore `r`, quit buffer
-   - [X] show bindings in legend similar to *maf-options*
-   - [X] bind `D` to new command to delete current timeline entry
-** DONE `P` (calc-pi) should behave contextually - similar to (maf-quick-variable)
-   - currently it always pushes `pi` to top of stack
-   - always join/multiply with contextual expression
-   - unlike (maf-quick-variable), never replace the variable
-     - so,
-     1: |x + 2
-     (calc-pi)
-     => x pi + 2
-   - pretty much it should work like a very conventional contextual function in
-     almost all regards
-** IN-PROGRESS G (maf-go-home) should go to the "dot" at home even it's at the home row
-   only trigger the trampoline action when point is exactly at the "dot"
 ** IN-PROGRESS *maf-formulas*
    - show details by default
    - bind `D` to delete recent entry at point
@@ -80,10 +49,6 @@
    it should be,
    => (1 + r^2)
    because `r` is the smallest expression preceeding point
-** IN-PROGRESS rebind `<digit> SPC` to `<digit> RET`
-   this is the command that replaces the numeric value at point, or
-   joins/multiplies with the variable at point. don't change the command, just
-   the binding.
 ** TODO rework preview. it's a bit awkward at the moment and isn't where you need it to be for it to be useful.
 ** bindings
    three binding modes, each its own heading below: calc-native, maf-native,
