@@ -5,9 +5,11 @@
 
 (maf-step
   (setq maf--formulas-stash (list maf-formulas-user maf-formulas--loaded
-                                  maf-formulas--recent maf-use-formulas-mode)
+                                  maf-formulas--recent maf-use-formulas-mode
+                                  maf-formulas--pane-state)
         maf-formulas--loaded t          ; skip loading maf-formulas-file
         maf-formulas--recent nil        ; a clean session's recents
+        maf-formulas--pane-state 'follow  ; a fresh session's default
         maf-formulas-user
         '((:name "volume-of-sphere" :title "Volume of sphere"
            :category "Geometry — 3D: Sphere"
@@ -36,15 +38,23 @@
     (cl-assert (string-match-p "=" (buffer-substring (line-beginning-position)
                                                      (line-end-position))))
 
-    ;; The detail renderer (behind `o' / `d' / `?', i.e.
+    ;; The pane follows by default, and the legend's "O follows" shows
+    ;; gold — `warning' — while it does.
+    (cl-assert (eq maf-formulas--pane-state 'follow))
+    (let ((h header-line-format))
+      (cl-assert (eq (get-text-property (string-match "O follows" h) 'face h)
+                     'warning)))
+
+    ;; The detail renderer (behind `o' / `?', i.e.
     ;; `maf-formulas-show-detail') fills the detail buffer for the
     ;; formula at point.
     (cl-assert (eq (key-binding (kbd "o")) #'maf-formulas-show-detail))
-    (cl-assert (eq (key-binding (kbd "d")) #'maf-formulas-show-detail))
     (cl-assert (eq (key-binding (kbd "?")) #'maf-formulas-show-detail))
-    ;; The shifted keys open the pane that follows point.
+    ;; `d', once an alias for `o', is unbound; `O' toggles the following
+    ;; pane and `D' prunes the Recent group.
+    (cl-assert (null (lookup-key maf-formulas-mode-map (kbd "d"))))
     (cl-assert (eq (key-binding (kbd "O")) #'maf-formulas-toggle-detail))
-    (cl-assert (eq (key-binding (kbd "D")) #'maf-formulas-toggle-detail))
+    (cl-assert (eq (key-binding (kbd "D")) #'maf-formulas-delete-recent))
     (maf-formulas--update-detail)
     (with-current-buffer maf-formulas--detail-buffer
       (cl-assert (> (buffer-size) 0)))
@@ -77,41 +87,78 @@
         (maf-formulas--close-detail)
         (cl-assert (= 1 (length (window-list)))))
 
-      ;; `o' shows one formula and holds it: movement neither dismisses
-      ;; the pane (it costs the list no room) nor re-aims it, and a
-      ;; re-render leaves it alone too.
+      ;; With follow off, `o' shows the formula at point on request:
+      ;; staying on the line the pane stays, `o' again closes it by
+      ;; hand, and moving off the line dismisses it — the window going
+      ;; back to what it held, in respect of `O' being off.
       (delete-other-windows)
+      (setq maf-formulas--pane-state nil)
       (goto-char (point-min))
       (maf-formulas-next-item)
       (maf-formulas-show-detail)
-      (cl-assert (eq maf-formulas--detail-state 'frozen))
-      (let ((held (with-current-buffer maf-formulas--detail-buffer (buffer-string))))
-        (maf-formulas-next-item)
-        (maf-formulas--detail-on-move)
-        (cl-assert (get-buffer-window maf-formulas--detail-buffer))
-        (cl-assert (equal held (with-current-buffer maf-formulas--detail-buffer
-                                 (buffer-string))))
-        (maf-formulas--render)
-        (cl-assert (equal held (with-current-buffer maf-formulas--detail-buffer
-                                 (buffer-string))))
-        ;; Pressed again it swaps to the formula now at point.
-        (maf-formulas-next-item)
-        (maf-formulas-show-detail)
-        (cl-assert (not (equal held (with-current-buffer maf-formulas--detail-buffer
-                                      (buffer-string))))))
+      (cl-assert (eq maf-formulas--pane-state 'frozen))
+      (cl-assert (get-buffer-window maf-formulas--detail-buffer))
+      (maf-formulas--detail-on-move)    ; point unmoved: the pane stays
+      (cl-assert (get-buffer-window maf-formulas--detail-buffer))
+      (maf-formulas-show-detail)
+      (cl-assert (not (get-buffer-window maf-formulas--detail-buffer)))
+      (maf-formulas-show-detail)
+      (cl-assert (get-buffer-window maf-formulas--detail-buffer))
+      (maf-formulas-next-item)
+      (maf-formulas--detail-on-move)
+      (cl-assert (null maf-formulas--pane-state))
+      (cl-assert (not (get-buffer-window maf-formulas--detail-buffer)))
 
-      ;; `O' takes the pane over and follows point from there; pressed
-      ;; again it closes.
+      ;; `O' opens the pane that follows point; pressed again it
+      ;; closes.
       (maf-formulas-toggle-detail)
-      (cl-assert (eq maf-formulas--detail-state 'follow))
+      (cl-assert (eq maf-formulas--pane-state 'follow))
       (let ((shown (with-current-buffer maf-formulas--detail-buffer (buffer-string))))
         (maf-formulas-prev-item)
         (maf-formulas--detail-on-move)
         (cl-assert (not (equal shown (with-current-buffer maf-formulas--detail-buffer
                                        (buffer-string))))))
+      ;; `o' on a following pane is a peek at calc: follow stays on —
+      ;; the legend keeps its gold — and the pane returns on its own
+      ;; the moment point reaches another formula.
+      (maf-formulas-show-detail)
+      (cl-assert (eq maf-formulas--pane-state 'follow))
+      (cl-assert (not (get-buffer-window maf-formulas--detail-buffer)))
+      (let ((h header-line-format))
+        (cl-assert (eq (get-text-property (string-match "O follows" h) 'face h)
+                       'warning)))
+      (maf-formulas-next-item)
+      (maf-formulas--detail-on-move)
+      (cl-assert (eq maf-formulas--pane-state 'follow))
+      (cl-assert (get-buffer-window maf-formulas--detail-buffer))
       (maf-formulas-toggle-detail)
-      (cl-assert (null maf-formulas--detail-state))
-      (cl-assert (not (get-buffer-window maf-formulas--detail-buffer))))
+      (cl-assert (null maf-formulas--pane-state))
+      (cl-assert (not (get-buffer-window maf-formulas--detail-buffer)))
+      ;; Off, the legend's "O follows" loses its gold, the key wearing
+      ;; the legend's usual `help-key-binding' like its neighbours.
+      (let ((h header-line-format))
+        (cl-assert (eq (get-text-property (string-match "O follows" h) 'face h)
+                       'help-key-binding))))
+
+    ;; `O's choice is the session's: quitting the menu and opening it
+    ;; again brings the following pane back with it.
+    (save-window-excursion
+      (delete-other-windows)
+      (setq maf-formulas--pane-state 'follow)
+      (maf-formulas)
+      (cl-assert (get-buffer-window maf-formulas--detail-buffer))
+      (maf-formulas-quit)
+      (cl-assert (not (get-buffer-window maf-formulas--detail-buffer)))
+      (maf-formulas)
+      (cl-assert (eq maf-formulas--pane-state 'follow))
+      (cl-assert (get-buffer-window maf-formulas--detail-buffer))
+      ;; Toggled off, quit, reopened: it stays off.
+      (with-current-buffer "*maf-formulas*" (maf-formulas-toggle-detail))
+      (maf-formulas-quit)
+      (maf-formulas)
+      (cl-assert (null maf-formulas--pane-state))
+      (cl-assert (not (get-buffer-window maf-formulas--detail-buffer)))
+      (maf-formulas-quit))
 
     ;; That split goes where the shape is better: beside the list when
     ;; halving the menu's window still leaves both halves at least
@@ -229,6 +276,31 @@
                       "Area of triangle")))
   (calc-pop (calc-stack-size))
 
+  ;; `D' forgets the recent entry at point: the group shrinks, point
+  ;; stays in it, and the formula keeps its place under its own
+  ;; category.
+  (with-current-buffer "*maf-formulas*"
+    (maf-formulas-delete-recent)
+    (cl-assert (equal (mapcar #'maf-formulas--title maf-formulas--recent)
+                      '("Volume of sphere")))
+    (cl-assert (equal (maf-formulas--title (get-text-property (point) 'maf-formula))
+                      "Volume of sphere"))
+    (cl-assert (maf-formulas--recent-line-p))
+    (cl-assert (string-match-p "Area of triangle" (buffer-string)))
+    ;; On a formula's category copy — or any non-Recent line — it refuses.
+    (goto-char (point-max))
+    (maf-formulas-prev-item)
+    (cl-assert (not (maf-formulas--recent-line-p)))
+    (cl-assert (condition-case nil (progn (maf-formulas-delete-recent) nil)
+                 (user-error t)))
+    ;; Deleting the last entry drops the group; point settles on a formula.
+    (goto-char (point-min))
+    (maf-formulas-next-item)
+    (maf-formulas-delete-recent)
+    (cl-assert (null maf-formulas--recent))
+    (cl-assert (not (string-match-p "Recent" (buffer-string))))
+    (cl-assert (get-text-property (point) 'maf-formula)))
+
   ;; Restore the session state the fixture displaced. Turning the mode
   ;; off first unregisters the fixture's var-eq-* variables; the real
   ;; formulas are then back in place, so re-enabling (when the session
@@ -238,6 +310,7 @@
     (maf-use-formulas-mode -1)
     (setq maf-formulas-user (nth 0 maf--formulas-stash)
           maf-formulas--loaded (nth 1 maf--formulas-stash)
-          maf-formulas--recent (nth 2 maf--formulas-stash))
+          maf-formulas--recent (nth 2 maf--formulas-stash)
+          maf-formulas--pane-state (nth 4 maf--formulas-stash))
     (when (nth 3 maf--formulas-stash)
       (maf-use-formulas-mode 1))))
