@@ -29,7 +29,7 @@
     - [ ] factor
     - [ ] target-line
 
-* NOW
+* NOW [0/11]
 ** TODO in *maf-modules*, also show binding in help text
    eg,
    maf-formulas (s o)
