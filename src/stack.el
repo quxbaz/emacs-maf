@@ -22,6 +22,7 @@
 (declare-function calc-push "calc-ext")
 (declare-function calc-push-list "calc-ext")
 (declare-function calcFunc-pfloat "calc-stuff")
+(declare-function calc-pi "calc-math")
 (declare-function calc-roll-down "calc-misc")
 (declare-function calc-locate-cursor-element "calc-yank")
 (declare-function calc-yank-internal "calc-yank")
@@ -1184,6 +1185,70 @@ Any letter is a valid variable; anything else aborts."
           (calc-wrapper (calc-push var))
         (let ((maf--quick-variable var))
           (mafcmd--quick-variable-mul))))))
+
+(maf-defcmd mafcmd--pi-mul (expr _arg commit)
+  "Multiply the resolved expression by the symbolic constant pi.
+Internal: `maf-pi' dispatches here when point is on an expression;
+the Inverse and Hyperbolic flags route to the sibling constants. The
+target is multiplied, constant on the right — a variable target too,
+never replaced."
+  :arity unary
+  :prefix "pi"
+  :targets-var maf-pi-targets
+  :inverse mafcmd--gamma-mul
+  :hyperbolic mafcmd--e-mul
+  :inverse-hyperbolic mafcmd--phi-mul
+  (commit (calcFunc-mul expr '(var pi var-pi))))
+
+(maf-defcmd mafcmd--e-mul (expr _arg commit)
+  "Multiply the resolved expression by the symbolic constant e.
+Internal: the Hyperbolic route of `maf-pi'. See `mafcmd--pi-mul'."
+  :arity unary
+  :prefix "e"
+  :targets-var maf-pi-targets
+  (commit (calcFunc-mul expr '(var e var-e))))
+
+(maf-defcmd mafcmd--gamma-mul (expr _arg commit)
+  "Multiply the resolved expression by Euler's constant gamma.
+Internal: the Inverse route of `maf-pi'. See `mafcmd--pi-mul'."
+  :arity unary
+  :prefix "gmma"
+  :targets-var maf-pi-targets
+  (commit (calcFunc-mul expr '(var gamma var-gamma))))
+
+(maf-defcmd mafcmd--phi-mul (expr _arg commit)
+  "Multiply the resolved expression by the golden ratio phi.
+Internal: the Inverse Hyperbolic route of `maf-pi'. See
+`mafcmd--pi-mul'."
+  :arity unary
+  :prefix "phi"
+  :targets-var maf-pi-targets
+  (commit (calcFunc-mul expr '(var phi var-phi))))
+
+(defun maf-pi ()
+  "Multiply the target by pi, contextually.
+
+  |x + 2  =>  x pi + 2
+
+With the Hyperbolic flag the constant is e, with Inverse it is gamma
+(Euler's constant), and with both it is phi (the golden ratio).
+
+At home with no selection active, the command stays `calc-pi': the
+constant is pushed as a new stack entry, a float under the current
+precision unless Symbolic mode is on. Anywhere else the target is
+multiplied by the symbolic constant, on the right: the selection, the
+sub-formula at point, each side of an equation, the whole entry from
+its margin. Unlike `maf-quick-variable', a target that is itself a
+variable is multiplied like anything else, never replaced.
+
+  2| x       =>  (2 pi) x        (the product goes in as one factor)
+  x = 3 y    =>  x pi = 3 y pi   (each side, from the entry's margin)"
+  (interactive)
+  ;; The map flag is an explicit request to map, so it outranks the
+  ;; home push: M routes to the worker even at home.
+  (if (and (maf--at-home-p) (not (maf--sel-any-p)) (not maf-map-flag))
+      (call-interactively #'calc-pi)
+    (call-interactively #'mafcmd--pi-mul)))
 
 (maf-defcmd mafcmd-toggle-op (expr _arg commit)
   "Toggle the top operator of the resolved expression to its counterpart.

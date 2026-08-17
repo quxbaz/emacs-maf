@@ -125,6 +125,11 @@
 (define-key maf-mode-map (kbd "S-<up>") #'mafcmd-toggle-op)
 (define-key maf-mode-map (kbd "S-<down>") #'mafcmd-toggle-op)
 (define-key maf-mode-map (kbd ",") #'maf-quick-variable)
+;; Contextual pi, shadowing calc-pi on its own key: the target is
+;; multiplied by the symbolic constant; at home with no selection the
+;; command defers to calc-pi's push. I/H reach gamma, e, and phi
+;; through the flags, as in calc.
+(define-key maf-mode-map (kbd "P") #'maf-pi)
 ;; Recall a variable by picking it off a list of values. Shadows
 ;; calc-precision, whose only key this is: a mode setting that is set
 ;; once and then left alone, reachable by name afterwards, giving up

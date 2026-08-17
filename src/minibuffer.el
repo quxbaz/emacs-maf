@@ -232,7 +232,7 @@ typed is the multiple, so a vector or matrix can be filled with
 multiples of pi.
 
 Both keys are calc's elsewhere: `n' is the entry's own sign flip, which
-stays on the `_' beside it, and `P' is `calc-pi' out in the stack. They
+stays on the `_' beside it, and `P' is `maf-pi' out in the stack. They
 are calc's here too inside a radix-prefixed entry, and with `maf-mode'
 off in the calc buffer the entry belongs to."
   (interactive)
