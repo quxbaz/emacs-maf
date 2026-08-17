@@ -61,7 +61,7 @@
 ** TODO *maf-formulas*
    - show details by default
    - bind `D` to delete recent entry at point
-   - unbind `d`
+   - unbind current `d`
    - if `O follows` is on, then render in gold text in legend
    - `O` value currently doesn't persist when *maf-formulas* buffer is quit
      and open again
