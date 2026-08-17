@@ -56,20 +56,15 @@
 ;; calc-eval-num; N is also one of the two V M operator codes that are
 ;; not real keys, so nothing contextual claims it — see maf-cmds.el.
 (define-key maf-mode-map (kbd "N") #'mafcmd-negate)
-;; Map a formula over the target: each element of a vector, both sides
-;; of an equation. # prompts for the formula, $ takes it from the top
-;; of the stack. $ shadows calc-auto-algebraic-entry — starting an
-;; algebraic entry with the stack top is rare enough to give up, and
-;; maf's own entry reaches it other ways; # gives up its digit-starter
-;; role (radix entry still types 16#FF fine once begun with a digit).
-;; Calc's a M keeps the operator prompt (mafcmd-mapeq in the table),
-;; which stays the escape hatch. M is the map flag, below.
-(define-key maf-mode-map (kbd "#") #'mafcmd-map)
-(define-key maf-mode-map (kbd "$") #'mafcmd-map-stack)
 ;; The map flag: the next command — not a formula — maps over the
 ;; target, one run per vector element or equation side. A fancy prefix
 ;; like calc's K/I/H, so it chains with them; M shadows
-;; calc-more-recursion-depth.
+;; calc-more-recursion-depth. The formula-mapping commands live one
+;; keypress behind it (`maf--map-flag-keys'): M ' prompts for the
+;; formula (mafcmd-map), M $ takes it from the top of the stack
+;; (mafcmd-map-stack) — ' and $ alone keep calc's entry commands, and
+;; # its digit-starter role. Calc's a M keeps the operator prompt
+;; (mafcmd-mapeq in the table), which stays the escape hatch.
 (define-key maf-mode-map (kbd "M") #'mafcmd-map-flag)
 ;; Shift the term under point through its associative chain. Lowercase
 ;; j l / j r (calc binds the shifts to capital j L / j R, left reachable).
@@ -397,11 +392,10 @@
 (define-key maf-mode-map (kbd "M-k") #'mafcmd-coordinate-toggle)
 
 ;; The digit-entry starters, mirroring calc-mode-map's calcDigit-start
-;; set minus @, which maf-toggle-simplify shadows, and minus #, which
-;; mafcmd-map takes.
+;; set minus @, which maf-toggle-simplify shadows.
 (mapc (lambda (x)
         (define-key maf-mode-map (char-to-string x) #'maf-digit-start))
-      "_0123456789.")
+      "_0123456789.#")
 
 ;; Entry-beginning motion. Shadows calc's own M-m prefix, whose two
 ;; sequences (M-m t, M-m M-t) stay reachable as m t and m M-t.

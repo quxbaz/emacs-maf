@@ -5076,7 +5076,7 @@ and takes a plain expression whole."
 
 (defvar maf--map-mapper nil
   "The mapper `maf--map-run' applies; bound per `mafcmd-map' call.
-Nil for the $ form, whose formula is the stack arg `maf--map-arg-run'
+Nil for the M $ form, whose formula is the stack arg `maf--map-arg-run'
 receives.")
 
 (defvar maf--map-reverse nil
@@ -5100,7 +5100,7 @@ does not narrow it — a region or a calc selection still does."
 
 (maf-defcmd maf--map-arg-run (expr arg commit)
   "Like `maf--map-run', with the stack supplying the formula.
-The $ form: the entry above the subject is the formula, read by
+The M $ form: the entry above the subject is the formula, read by
 `maf--map-from-expr' and consumed as the binary arg it is."
   :arity binary
   :prefix "map"
@@ -5145,7 +5145,7 @@ Reads the formula in algebraic notation. It may name the element three
 ways: a formula with one free variable (x^2), a $ in place of the
 element (2 $ + 1), or a bare one-argument function name (sin). A lone
 $ is the exception — it means the formula is on the stack, and is the same
-gesture as `mafcmd-map-stack' ($).
+gesture as `mafcmd-map-stack' (M $).
 
 The subject is the whole entry at point, wherever point sits on its
 line, or the top entry at home: mapping speaks of the entry's
@@ -5185,9 +5185,9 @@ matrix, which is not implemented yet."
   x^2                                     (the formula, on top)
   [1, 2, 3]  =>  [1, 4, 9]
 
-The same command as `mafcmd-map' (#) with the formula taken from the
+The same command as `mafcmd-map' (M \\=') with the formula taken from the
 stack instead of a prompt — the shortcut for a formula already built
-there, and the same thing a lone $ at #'s prompt does. As for any
+there, and the same thing a lone $ at M \\='s prompt does. As for any
 binary command, the formula is the entry above the subject (the top
 entry at home) and is consumed on commit, so the subject must lie below
 the top.
@@ -5214,6 +5214,39 @@ a fancy prefix is live (it unreads the key and dispatches it for real),
 the other fancy prefixes chain (M I N maps the inverse), and the
 argument readers carry a prefix argument to the command they precede.")
 
+(defun maf--map-flag-entry ()
+  "Run `mafcmd-map' as \\`M \\='', spending the pending map flag.
+The flag and the prefix keymap are cleared first: the flag asks the
+next command to map, and this command is its own mapping — left set it
+would ask `mafcmd-map' to map the mapper."
+  (interactive)
+  (setq overriding-terminal-local-map nil
+        maf-map-flag nil)
+  (call-interactively #'mafcmd-map))
+
+(defun maf--map-flag-stack ()
+  "Run `mafcmd-map-stack' as \\`M $', spending the pending map flag.
+See `maf--map-flag-entry'."
+  (interactive)
+  (setq overriding-terminal-local-map nil
+        maf-map-flag nil)
+  (call-interactively #'mafcmd-map-stack))
+
+(defvar maf--map-flag-keys
+  (let ((map (make-sparse-keymap)))
+    (define-key map "$" #'maf--map-flag-stack)
+    (define-key map "'" #'maf--map-flag-entry)
+    map)
+  "Keymap live for the keypress after \\`M', over calc's fancy-prefix map.
+Its parent is `calc-fancy-prefix-map', attached in `mafcmd-map-flag'
+once calc-ext has defined it, so the two keys here are the only change:
+$ and \\=' run the formula-mapping commands, digits still gather a
+prefix argument, and any other key falls to
+`calc-fancy-prefix-other-key', which re-dispatches it normally with the
+flag still set. Chaining a fancy prefix drops this map with the
+re-dispatch, so \\`M I' keeps the flag but not the two keys — chain as
+\\`I M $' instead.")
+
 (defun maf--map-flag-expire ()
   "Sweep `maf-map-flag' once a command that does not read it has run.
 On `post-command-hook' from `mafcmd-map-flag' until the flag is gone.
@@ -5223,15 +5256,21 @@ would ignore the flag silently and leave it lying in wait for a later
 command that does read it. Carrier commands (see
 `maf--map-flag-carriers') pass it along instead.
 
-The minibuffer passes it along too: a prompting command (l x, i, $)
+The minibuffer passes it along too: a prompting command (l x, i)
 reads its input before its defcmd worker runs, so while a minibuffer is
 active the command the flag waits for has not happened yet — the
 prompt's own keystrokes must not spend it."
   (cond ((null maf-map-flag)
+         ;; A quit after M can leave the prefix keymap behind with the
+         ;; flag already gone; sweep it with the hook.
+         (when (eq overriding-terminal-local-map maf--map-flag-keys)
+           (setq overriding-terminal-local-map nil))
          (remove-hook 'post-command-hook #'maf--map-flag-expire))
         ((> (minibuffer-depth) 0))
         ((not (memq this-command maf--map-flag-carriers))
          (setq maf-map-flag nil)
+         (when (eq overriding-terminal-local-map maf--map-flag-keys)
+           (setq overriding-terminal-local-map nil))
          (remove-hook 'post-command-hook #'maf--map-flag-expire))))
 
 (defun mafcmd-map-flag (&optional n)
@@ -5239,8 +5278,8 @@ prompt's own keystrokes must not spend it."
 
   [x, y]  M N   =>  [-x, -y]      (negate, mapped over the elements)
 
-Where `mafcmd-map' (#) maps a formula you type and `mafcmd-map-stack'
-($) maps one from the stack, M maps a command — any `maf-defcmd'
+Where `mafcmd-map' (M \\=') maps a formula you type and `mafcmd-map-stack'
+(M $) maps one from the stack, M maps a command — any `maf-defcmd'
 command, unary or binary, with no keymap of blessed operations behind
 it (calc's V M reads its operator from a fixed table; a flag needs no
 table). A binary command's argument is shared across the runs:
@@ -5265,6 +5304,14 @@ M i on a vector of relations solves each one for the variable typed."
   (interactive "P")
   (calc-fancy-prefix 'maf-map-flag "Map..." n)
   (when maf-map-flag
+    ;; Ride over calc's fancy-prefix map for the next keypress, adding
+    ;; $ and ' on top of it. The parent attaches here rather than at
+    ;; the defvar: `calc-fancy-prefix-map' is calc-ext's, not yet
+    ;; loaded when this file is.
+    (unless (keymap-parent maf--map-flag-keys)
+      (set-keymap-parent maf--map-flag-keys calc-fancy-prefix-map))
+    (when (eq overriding-terminal-local-map calc-fancy-prefix-map)
+      (setq overriding-terminal-local-map maf--map-flag-keys))
     (add-hook 'post-command-hook #'maf--map-flag-expire)))
 (put 'mafcmd-map-flag 'maf-command t)
 
