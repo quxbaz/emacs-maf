@@ -1355,14 +1355,14 @@ of an equation, the whole entry from its margin — where a vector steps
 elementwise. A numeric prefix gives the step, so C-u 5 adds 5 and a
 negative prefix walks the other way.
 
-`mafcmd-decrement' ([) is the same step downward."
+`mafcmd-decrement' (<) is the same step downward."
   :arity unary
   :prefix "incr"
   (commit (math-add expr (maf--nudge-amount))))
 
 (maf-defcmd mafcmd-decrement (expr _arg commit)
   "Subtract one from the target, contextually.
-The downward twin of `mafcmd-increment' (]) — see there."
+The downward twin of `mafcmd-increment' (>) — see there."
   :arity unary
   :prefix "decr"
   (commit (math-sub expr (maf--nudge-amount))))

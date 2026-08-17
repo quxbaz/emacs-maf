@@ -52,12 +52,13 @@
 (define-key maf-mode-map (kbd "M-c") #'mafcmd-complement)
 (define-key maf-mode-map (kbd "O") #'mafcmd-commute)
 ;; Nudge the target a step down or up — plain ±1, a prefix for more.
-;; The cost is calc's incomplete-vector entry ([ begins one, ] closes
-;; it); a vector still types algebraically, through ' or maf's entry,
-;; and calc's own f [ / f ] (mafcmd-decr/incr in the table) keep the
-;; ulp-stepping originals.
-(define-key maf-mode-map (kbd "[") #'mafcmd-decrement)
-(define-key maf-mode-map (kbd "]") #'mafcmd-increment)
+;; < and > read as less/more. They displace the horizontal scrolling
+;; the keys used to carry (maf's swapped reading of calc's own pair);
+;; an entry too wide for the window still slides with C-x < and
+;; C-x >. Calc's own f [ / f ] (mafcmd-decr/incr in the table) keep
+;; the ulp-stepping originals, and [ ] stay calc's vector delimiters.
+(define-key maf-mode-map (kbd "<") #'mafcmd-decrement)
+(define-key maf-mode-map (kbd ">") #'mafcmd-increment)
 ;; Balanced negation, beside calc's own n (mafcmd-neg in the table,
 ;; which flips the sign and lets the value change with it). Shadows
 ;; calc-eval-num; N is also one of the two V M operator codes that are
@@ -422,16 +423,6 @@
 ;; resolve.
 (define-key maf-mode-map (kbd "M-f") #'maf-forward-noun)
 (define-key maf-mode-map (kbd "M-b") #'maf-backward-noun)
-
-;; Horizontal scrolling, on calc's own two keys with the commands
-;; swapped. Calc names the direction the text slides — < is
-;; `calc-scroll-left', which slides the line left and so uncovers its
-;; right end — leaving each bracket pointing away from what it brings
-;; into view. Swapped, the bracket points at what it reveals: > walks
-;; out to the right end of an entry too wide for the window, < back
-;; toward its left.
-(define-key maf-mode-map (kbd ">") #'calc-scroll-left)
-(define-key maf-mode-map (kbd "<") #'calc-scroll-right)
 
 ;; Step out to the enclosing sub-formula, taking the key the global map
 ;; gives `backward-up-list' — the same gesture, over the formula rather

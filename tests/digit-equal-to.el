@@ -70,14 +70,9 @@
   (calc-pop (calc-stack-size))
 
   ;; While an incomplete object is being entered there is nothing to
-  ;; equate, so the element keeps its exponent: 2e3 is 2000. The
-  ;; incomplete vector opens by command — [ and ] are maf's nudge keys
-  ;; (mafcmd-decrement/increment), no longer calc's vector delimiters.
+  ;; equate, so the element keeps its exponent: 2e3 is 2000.
   (goto-char (point-max))
-  (call-interactively 'calc-begin-vector)
-  (execute-kbd-macro (kbd "1 ; 2 e 3"))
-  (call-interactively 'calc-end-vector)
-  (call-interactively 'calc-end-vector)
+  (execute-kbd-macro (kbd "[ 1 ; 2 e 3 ] ]"))
   (cl-assert (equal (calc-top 1 'full) '(vec (vec 1) (vec (float 2 3)))))
   (calc-pop (calc-stack-size))
 
