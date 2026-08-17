@@ -117,6 +117,37 @@
                       "[2, 4, 8]"))
   (calc-pop (calc-stack-size))
 
+  ;; A leading relation builds the comparison, element on the open
+  ;; side. < is also how calc spells dates and lambdas, so the typed
+  ;; operator must win over the reader's date guess...
+  (maf-push "[1, -2, 3]")
+  (goto-char (point-max))
+  (progn (setq unread-command-events (listify-key-sequence "< 0\r"))
+         (call-interactively 'mafcmd-map))
+  (cl-assert (string= (math-format-value
+                       (maf--strip-encasing (calc-top 1 'full)))
+                      "[0, 1, 0]"))
+  (calc-pop (calc-stack-size))
+
+  (maf-push "[1, -2, 3]")
+  (goto-char (point-max))
+  (progn (setq unread-command-events (listify-key-sequence "== 0\r"))
+         (call-interactively 'mafcmd-map))
+  (cl-assert (string= (math-format-value
+                       (maf--strip-encasing (calc-top 1 'full)))
+                      "[0, 0, 0]"))
+  (calc-pop (calc-stack-size))
+
+  ;; ...while a typed nameless function still reads as itself.
+  (maf-push "[1, -2, 3]")
+  (goto-char (point-max))
+  (progn (setq unread-command-events (listify-key-sequence "<x : x^3>\r"))
+         (call-interactively 'mafcmd-map))
+  (cl-assert (string= (math-format-value
+                       (maf--strip-encasing (calc-top 1 'full)))
+                      "[1, -8, 27]"))
+  (calc-pop (calc-stack-size))
+
   ;; A lone - negates.
   (maf-push "[1, 2, 3]")
   (goto-char (point-max))

@@ -5008,8 +5008,9 @@ of a larger formula.
 Input that names no element at all reads as an operation on it. An
 operator on either end takes the element on that side: +2 adds 2,
 -2 subtracts it, /2 halves, ^2 squares — and 2+ adds the same 2,
-2- subtracts the element from it, 2/ divides it by the element. A
-lone - negates. Any
+2- subtracts the element from it, 2/ divides it by the element. The
+relations read the same way: > 0, == 0 and their kin build the
+comparison with the element on the open side. A lone - negates. Any
 other constant multiplies: 2 doubles, sqrt(2) scales by it. Only input
 that would otherwise refuse reads this way — -x still negates, x + 2
 still adds — so every formula that named its element before means what
@@ -5036,22 +5037,24 @@ it meant."
            ;; A lone - is the one operator whole on its own: negation.
            ((string= input "-")
             (maf--map-read-elementwise "-$"))
-           ((string-match-p "\\`[-+*/^%|]" input)
+           ((string-match-p "\\`[-+*/^%|<>=!]" input)
             (maf--map-read-elementwise (concat "$ " input)))
-           ((string-match-p "[-+*/^%|]\\'" input)
+           ((string-match-p "[-+*/^%|<>=!]\\'" input)
             (maf--map-read-elementwise (concat input " $")))
            (t (user-error "Bad format in formula: %s" (nth 2 expr)))))
          ((> calc-dollar-used 0)
           (cons maf--map-param expr))
          ;; Parsed, but nothing names the element — no $, no variable.
          ;; +2 and -2 land here rather than above, their sign reading
-         ;; as part of the number; the typed operator is kept. Any
-         ;; other constant scales. The lambda guard keeps a nameless
-         ;; function on the strict one-argument check below.
+         ;; as part of the number, and < 0 lands here too, calc's
+         ;; reader seeing a date in the < ; a typed leading operator
+         ;; is kept either way. Any other constant scales. The lambda
+         ;; guard keeps a nameless function on the strict one-argument
+         ;; check below.
          ((and (not (eq (car-safe expr) 'calcFunc-lambda))
                (null (maf--solve-sorted-vars expr)))
           (maf--map-read-elementwise
-           (if (string-match-p "\\`[-+]" input)
+           (if (string-match-p "\\`[-+<>=!]" input)
                (concat "$ " input)
              (concat "$ * (" input ")"))))
          (t
@@ -5192,8 +5195,8 @@ element (2 $ + 1), or a bare one-argument function name (sin). Input
 that names no element reads as an operation on it: an operator on
 either end takes the element on that side (+2 and 2+ add, -2 subtracts
 2, 2- subtracts the element from it, /2 halves, 2/ divides 2 by it,
-^2 squares), a lone - negates, and a bare constant multiplies
-(2 doubles). A lone
+^2 squares, > 0 and == 0 build the comparison), a lone - negates, and
+a bare constant multiplies (2 doubles). A lone
 $ is the exception — it means the formula is on the stack, and is the same
 gesture as `mafcmd-map-stack' (M $).
 
