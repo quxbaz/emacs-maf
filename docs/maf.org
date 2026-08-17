@@ -29,7 +29,7 @@
     - [ ] factor
     - [ ] target-line
 
-* NOW [2/10]
+* NOW [0/4]
 ** IN-PROGRESS *maf-formulas*
    - show details by default
    - bind `D` to delete recent entry at point
