@@ -1336,6 +1336,36 @@ reports the switch."
           (calc-normal-language)
         (calc-big-language)))))
 
+;;; Nudging
+
+(defun maf--nudge-amount ()
+  "The step for `mafcmd-increment', from the prefix argument.
+One when no prefix was given."
+  (if current-prefix-arg (prefix-numeric-value current-prefix-arg) 1))
+
+(maf-defcmd mafcmd-increment (expr _arg commit)
+  "Add one to the target, contextually.
+
+  x + 5|  =>  x + 6
+
+Plain arithmetic, not calc's f ] — a float steps by 1, not by its last
+representable digit. The usual targets: the sub-formula at point (a
+constant under the cursor nudges in place), the selection, each side
+of an equation, the whole entry from its margin — where a vector steps
+elementwise. A numeric prefix gives the step, so C-u 5 adds 5 and a
+negative prefix walks the other way.
+
+`mafcmd-decrement' ([) is the same step downward."
+  :arity unary
+  :prefix "incr"
+  (commit (math-add expr (maf--nudge-amount))))
+
+(maf-defcmd mafcmd-decrement (expr _arg commit)
+  "Subtract one from the target, contextually.
+The downward twin of `mafcmd-increment' (]) — see there."
+  :arity unary
+  :prefix "decr"
+  (commit (math-sub expr (maf--nudge-amount))))
 
 ;;; Session
 

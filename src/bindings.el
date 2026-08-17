@@ -51,6 +51,13 @@
 ;; global `capitalize-dwim', which has no place in the stack buffer.
 (define-key maf-mode-map (kbd "M-c") #'mafcmd-complement)
 (define-key maf-mode-map (kbd "O") #'mafcmd-commute)
+;; Nudge the target a step down or up — plain ±1, a prefix for more.
+;; The cost is calc's incomplete-vector entry ([ begins one, ] closes
+;; it); a vector still types algebraically, through ' or maf's entry,
+;; and calc's own f [ / f ] (mafcmd-decr/incr in the table) keep the
+;; ulp-stepping originals.
+(define-key maf-mode-map (kbd "[") #'mafcmd-decrement)
+(define-key maf-mode-map (kbd "]") #'mafcmd-increment)
 ;; Balanced negation, beside calc's own n (mafcmd-neg in the table,
 ;; which flips the sign and lets the value change with it). Shadows
 ;; calc-eval-num; N is also one of the two V M operator codes that are
