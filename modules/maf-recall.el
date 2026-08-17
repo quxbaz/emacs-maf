@@ -488,6 +488,7 @@ The recording rides two pieces of advice, on `maf-edit-commit' and on
 M-p and M-n walk back through the entries you have typed and put one
 where you are: into the edit session you are in, or onto the stack as
 a fresh entry. The ring holds what you typed, never what was
-computed, so an entry a calculation ate is typed only once."))
+computed, so an entry a calculation ate is typed only once."
+                       "M-p, M-n"))
 
 (provide 'maf-recall)

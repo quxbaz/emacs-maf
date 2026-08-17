@@ -518,6 +518,7 @@ recorded stay browsable. Managed through the module system; see
 Every command that changes the stack records a snapshot. The
 *maf-timeline* buffer shows one state at a time with the entries that
 changed highlighted: u and i step through them, RET pushes the entry
-at point onto the live stack, r restores the whole state."))
+at point onto the live stack, r restores the whole state."
+                       "t d"))
 
 (provide 'maf-timeline)

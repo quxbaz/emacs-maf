@@ -32,11 +32,16 @@
 (require 'maf-conf "conf")
 
 (defvar maf-module-registry nil
-  "Alist of (NAME MODE DESCRIPTION) for registered modules.
+  "Alist of (NAME MODE DESCRIPTION KEYS) for registered modules.
 NAME is a symbol naming the module; MODE is its global minor-mode
 function, which is also the variable holding the mode's state;
 DESCRIPTION is the module's help text, shown in the module menu (see
-`maf-list-modules'), or nil.
+`maf-list-modules'), or nil; KEYS names the entry keys MODE binds
+while on, written as they are shown to the user (\"s o\";
+\"t l, t u\" for several), or nil for a module with none. The menu
+puts KEYS beside the name heading the echoed help — the binding only
+exists while the mode is on, so the menu cannot look it up from the
+keymap for the modules one is reading about before enabling.
 
 A description is written in two parts: a first line saying in one
 short sentence what the module does, then a blank line, then a
@@ -96,13 +101,16 @@ the load order in maf.el that should not decide how the option reads."
                   (sort (copy-sequence maf-module-registry)
                         (lambda (a b) (string< (car a) (car b)))))))
 
-(defun maf-register-module (name mode &optional description)
+(defun maf-register-module (name mode &optional description keys)
   "Register module NAME with its global minor mode MODE.
 DESCRIPTION is the help text the module gives for itself — a summary
 line, a blank line, then a short paragraph (see
 `maf-module-registry') — shown in the module menu (see
 `maf-list-modules'), and its summary line alone on the module's
-checkbox in Customize.
+checkbox in Customize. KEYS names the entry keys MODE binds while on,
+as they are shown to the user (see `maf-module-registry'), or nil for
+a module with none; the menu shows it beside the name heading the
+echoed help.
 
 Records the entry in `maf-module-registry' and adds
 `maf-module--reconcile' to MODE's hook, so toggling MODE keeps
@@ -115,7 +123,7 @@ option offers exactly the modules that have registered — see
 `maf-module--custom-type'. Registering is the only thing that changes
 the registry, so recomputing here keeps the type current without
 conf.el naming a single module."
-  (setf (alist-get name maf-module-registry) (list mode description))
+  (setf (alist-get name maf-module-registry) (list mode description keys))
   (put 'maf-modules 'custom-type (maf-module--custom-type))
   (add-hook (intern (concat (symbol-name mode) "-hook"))
             #'maf-module--reconcile))
@@ -155,27 +163,34 @@ skipped until its file loads and the next apply enables it."
   (let ((mode (car (alist-get name maf-module-registry))))
     (and (boundp mode) (symbol-value mode) t)))
 
-(defun maf-module--doc (name description)
-  "Build the help echoed for module NAME from its DESCRIPTION.
-The name heads the text on a line of its own, then the description as
-the module wrote it (see `maf-module-registry'). Point moving off the
-row leaves the help standing in the echo area, where a paragraph with
-nothing above it says nothing about which module it is for — so the
-row's own name comes along. Nil for a module that gave no
+(defun maf-module--doc (name description keys)
+  "Build the help echoed for module NAME from its DESCRIPTION and KEYS.
+The name heads the text on a line of its own — KEYS beside it in
+parens, for the modules that have entry keys, in the `shadow' face so
+the name stays the line's loudest word — then the description as the
+module wrote it (see `maf-module-registry'). Point moving off
+the row leaves the help standing in the echo area, where a paragraph
+with nothing above it says nothing about which module it is for — so
+the row's own name comes along. Nil for a module that gave no
 description, which leaves dial silent rather than echoing a bare name
 the row already shows."
-  (and description (concat (symbol-name name) "\n\n" description)))
+  (and description
+       (concat (symbol-name name)
+               (if keys
+                   (propertize (format " (%s)" keys) 'face 'shadow)
+                 "")
+               "\n\n" description)))
 
 (defun maf-module--items ()
   "Compile `maf-module-registry' into dial items, sorted by name.
 The registry is in reverse registration order, an artifact of the load
 order in maf.el that should not decide how the menu reads."
   (mapcar (lambda (entry)
-            (pcase-let ((`(,name ,mode ,description) entry))
+            (pcase-let ((`(,name ,mode ,description ,keys) entry))
               (cons name
                     (list :group "Modules"
                           :label (symbol-name name)
-                          :doc (maf-module--doc name description)
+                          :doc (maf-module--doc name description keys)
                           :values `((t   "on"  (,mode 1))
                                     (nil "off" (,mode -1)))))))
           (sort (copy-sequence maf-module-registry)
