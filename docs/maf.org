@@ -76,6 +76,13 @@
 ** TODO stack mode
    - bind command to jump to next SPC character
    - should work in stack and editplus
+** TODO fix bug with wrap functions (:, C, T, Q, etc) in editplus
+   1: (1 + r|)
+   (maf-editplus-raise-power N)
+   => (1 + r)^2
+   it should be,
+   => (1 + r^2)
+   because `r` is the smallest expression preceeding point
 ** bindings
    three binding modes, each its own heading below: calc-native, maf-native,
    vim-flavored
