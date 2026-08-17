@@ -341,6 +341,11 @@
 (define-key maf-mode-map (kbd "j U") #'mafcmd-unpack)
 (define-key maf-mode-map (kbd "j M-U") #'mafcmd-unpack)
 
+;; Push an index vector [1..n], the size prompted for — the legacy
+;; config's v RET. The contextual mafcmd-index keeps v x; this is the
+;; push-only sibling, and RET was free under calc's v prefix.
+(define-key maf-mode-map (kbd "v RET") #'maf-index)
+
 ;; Keep only the part point names: it becomes the whole entry, the
 ;; formula around it discarded. j j is unbound in calc itself — its j
 ;; prefix is the selection commands, which have no j of their own — and

@@ -5457,6 +5457,42 @@ formula is not used to narrow it.
 
 ;;; Vectors
 
+(defun maf-index (&optional n)
+  "Prompt for a size and push the index vector [1, 2, .., N].
+
+  5  =>  [1, 2, 3, 4, 5]
+
+The size comes from the prompt — or a numeric prefix, which skips it —
+never from the stack or from point; the vector simply lands on top.
+The contextual sibling is `mafcmd-index' (v x), which reads its size
+from the target. The prompt takes a formula, so 2^4 sizes as 16 and a
+symbolic size pushes the call unevaluated, ready for a value later.
+
+Ported from the legacy config's v RET, which kept calc's own
+`calc-index' there; the prompt-only reading is the part kept — the
+C-u form that reads start and increment off the stack is not, being
+the stack-reading this key exists to avoid."
+  (interactive "P")
+  (let ((size
+         (if n
+             (prefix-numeric-value n)
+           (let* ((input (string-trim (read-string "Size of vector: ")))
+                  (expr (and (not (string-empty-p input))
+                             (math-read-expr input))))
+             (when (null expr)
+               (user-error "No size given"))
+             (when (eq (car-safe expr) 'error)
+               (user-error "Bad format in size: %s" (nth 2 expr)))
+             (math-simplify expr)))))
+    ;; A number must be a whole size; anything symbolic passes through
+    ;; and the call waits for its value.
+    (when (and (Math-numberp size)
+               (not (and (math-integerp size) (not (math-negp size)))))
+      (user-error "Size of vector must be a non-negative integer"))
+    (calc-wrapper
+     (calc-enter-result 0 "indx" (list 'calcFunc-index size)))))
+(put 'maf-index 'maf-command t)
+
 (maf-defcmd mafcmd-unique-groups (expr arg commit)
   "Group the resolved vector's elements, the top of the stack at a time.
 
