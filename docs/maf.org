@@ -58,7 +58,7 @@
      almost all regards
 ** IN-PROGRESS G (maf-go-home) should go to the "dot" at home even it's at the home row
    only trigger the trampoline action when point is exactly at the "dot"
-** TODO *maf-formulas*
+** IN-PROGRESS *maf-formulas*
    - show details by default
    - bind `D` to delete recent entry at point
    - unbind current `d`
