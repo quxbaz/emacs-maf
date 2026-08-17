@@ -33,6 +33,7 @@
 ** TODO stack mode
    - bind command to jump to next SPC character
    - should work in stack and editplus
+   - bind `[` and `]` to dec/inc value at context
 ** TODO fix bug with wrap functions (:, C, T, Q, etc) in editplus
    1: (1 + r|)
    (maf-editplus-raise-power N)
