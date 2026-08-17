@@ -130,7 +130,9 @@ variant's own variable governs only its direct invocation."
   ;; own \ is shadowed with it. Reachable by name, and I / is not it.
   (idiv binary calcFunc-idiv)
   (fact unary calcFunc-fact "!")
-  (inv unary calcFunc-inv "&")
+  ;; inv cedes & to maf-toggle-big-language (bindings.el); calc's own
+  ;; & is shadowed with it. The reciprocal's key is o (bindings.el).
+  (inv unary calcFunc-inv)
   (neg unary calcFunc-neg "n")
   ;; abs has left the table for `mafcmd-abs' (stack.el, A), which reads
   ;; a vector as its norm through `maf--abs' rather than `calcFunc-abs',
