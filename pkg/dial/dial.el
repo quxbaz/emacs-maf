@@ -94,6 +94,16 @@ default wears `dial-changed' instead."
 See `dial-value'."
   :group 'dial)
 
+(defface dial-group
+  ;; Blue text, no background: a heading should be found at a glance
+  ;; without competing with the purple and gold the values wear.
+  ;; Two shades, one for each theme's ground, both unmistakably blue.
+  '((((class color) (background dark))  :foreground "#6fa8f5")
+    (((class color) (background light)) :foreground "#1f4e99")
+    (t :weight bold))
+  "Face for a group's heading in the first column."
+  :group 'dial)
+
 (defface dial-controls
   ;; Dark and drained where the live value is bright: the band
   ;; should read as chrome above the list, not as another row in it.
@@ -693,7 +703,9 @@ setting on this line\" — and being distinct per group, it also leaves
                   entries))
           (push (list id
                       (vconcat
-                       (vector (if (equal group last-group) "" group)
+                       (vector (if (equal group last-group)
+                                   ""
+                                 (propertize group 'face 'dial-group))
                                (plist-get spec :label))
                        (when (dial--keys-shown-p)
                          (vector (or (plist-get spec :keys) "")))
