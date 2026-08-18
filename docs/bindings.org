@@ -1,0 +1,104 @@
+#+title: bindings module plan
+
+* concepts
+  - the =maf-bindings= module controls whether maf bindings are active at all
+  - a *profile* selects the key layout: =calc-native=, =maf-native= (default),
+    =vim-flavored=
+  - the bindings are what's native, not the commands: every profile runs
+    mafcmds — calc-native means calc's *layout*, maf's *commands*
+
+* architecture: hub and spokes
+  - one shared *base map*; each profile map is an independent sibling
+    inheriting from base — no profile references another profile
+  - base holds *command remaps only*, so it claims no keys and cannot
+    collide with any profile's layout:
+    #+begin_src elisp
+      (define-key maf-bindings-base-map [remap calc-plus] #'mafcmd-add)
+    #+end_src
+  - remaps are audited (allowlist), not automatic: maf deliberately keeps
+    some calc originals reachable as escape hatches (j E vs j e), and a
+    remap would silently convert them. Excluding from the allowlist *is*
+    the escape hatch — no wrapper commands
+  - profile deltas are declared, and a declaration may target several
+    profiles (source-level sharing, not inheritance):
+    #+begin_src elisp
+      (maf-bindings-define '(native vim) "x" #'mafcmd-expand)  ; displacement
+      (maf-bindings-define '(vim) "w" #'maf-forward-noun)      ; vim delta
+    #+end_src
+  - =maf-mode-map= stays the one registered map (stable dispatcher);
+    switching = repointing its parent, live, nothing rebuilt:
+    #+begin_src elisp
+      (maf-set-binding-profile 'calc)
+    #+end_src
+
+* lookup order (per profile)
+  1. user bindings (per-profile user map, plus a common user map)
+  2. user suppressions
+  3. enabled-module declarations
+  4. profile defaults
+  5. base remaps
+  6. calc's own map
+
+* user configuration
+  - user maps are never written or rebuilt by maf; they survive switches
+    #+begin_src elisp
+      (setq maf-binding-profile 'vim)
+      (define-key maf-bindings-vim-user-map (kbd "g") #'maf-go-home)
+      (define-key maf-bindings-common-user-map (kbd "<f6>") #'maf-timeline)
+    #+end_src
+  - removing a default needs explicit support — nil exposes the layer
+    below, =undefined= blocks calc too:
+    #+begin_src elisp
+      (maf-unbind-key 'native ">")   ; > falls through to calc
+    #+end_src
+
+* rules
+  - modules declare their keys to the binding system; no raw define-key
+    into =maf-mode-map= (a toggle must never erase a user override)
+  - profiles govern the stack map and the digit-map overrides only;
+    maf-edit, timeline, formulas, options keep their own fixed maps
+  - digit-map changes are tracked installs: uninstalling restores calc's
+    binding only if the current binding is still the one maf installed
+  - key displays (module help, dial legends) derive keys from the active
+    profile — no static key strings
+  - the registry compiler validates at build time: a key cannot be both
+    a command and a live prefix in one profile; module/profile and
+    module/module key conflicts are errors, not precedence accidents
+
+* calc-native
+  - promise: zero surprises for a calc user; layout untouched
+  - siblings run via base remaps on calc's own keys (+, a x, a S, ...)
+  - keys whose calc command has no sibling stay calc's (x, h, scrolling)
+  - no navigation bindings: silence means stock calc/emacs lookup
+
+* vim-flavored
+  - hjkl / wb become motions; everything under stolen prefixes must be
+    relocated or explicitly dropped (compiler-checked)
+  - design the relocation table before implementing; this profile lands
+    last
+
+* open decisions
+  - [ ] calc-native strictness: strict (only sibling remaps — matches the
+    written promise; recommended) vs curated additions on unbound keys
+  - [ ] bindings module off: truly zero maf keys (M-x is the way back;
+    recommended) vs a bootstrap key for the module menu
+  - [ ] module declarations above profile defaults in lookup — keep, once
+    compiler conflict detection exists?
+  - [ ] vim motion semantics: h/l by char or noun? j/k by line or entry?
+    w/b = noun motion?
+  - [ ] vim relocation table for the h/j/k/l/w/b families
+  - [ ] does the profile choice persist beyond customize (maf-persist)?
+
+* phases
+  - [ ] 1. snapshot current behavior in step tests: effective bindings,
+    remaps, prefix descendants, module on/off, digit-entry, real
+    key-binding answers in a calc buffer
+  - [ ] 2. registry + compiler reproducing today's map exactly (behavior,
+    not bytes); conflict validation; suppression support
+  - [ ] 3. dispatcher, profile defcustom + switch command, user maps,
+    profile-aware key displays
+  - [ ] 4. calc-native via audited remaps, verified against local calc maps
+  - [ ] 5. convert module and digit-map bindings to declarations
+  - [ ] 6. vim: relocation table, then the profile
+  - [ ] 7. document user configuration and migration from direct
+    maf-mode-map bindings
