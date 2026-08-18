@@ -123,6 +123,31 @@ prefix — as absent as nil, for these assertions."
       (setq maf-bindings--digit
             (cl-remove "Z" maf-bindings--digit :key #'car :test #'equal))))
 
+  ;; The laziness contract: declaration changes while the dispatcher is
+  ;; inactive compile nothing — they mark the maps dirty and the next
+  ;; flush pays once. Switching profiles never compiles by itself.
+  (let ((maf-bindings--active nil)
+        (before maf-bindings--compile-count))
+    (maf-bindings-define '(test-b) "9" #'ignore)
+    (maf-bindings-module-keys 'test-mod 'maf-test-br--mode
+                              '(((test-b) "8" ignore)))
+    (setq maf-test-br--mode nil)
+    (cl-assert (= maf-bindings--compile-count before))
+    (cl-assert maf-bindings--dirty))
+  (let ((before maf-bindings--compile-count))
+    (maf-bindings-compile)
+    (setq maf-bindings--dirty nil)
+    (cl-assert (= maf-bindings--compile-count (1+ before))))
+  (let ((maf-bindings--active t)
+        (before maf-bindings--compile-count))
+    ;; Clean maps: a profile switch repoints without compiling...
+    (maf-bindings-set-profile maf-bindings-profile)
+    (cl-assert (= maf-bindings--compile-count before))
+    ;; ...and a live declaration change compiles exactly once.
+    (maf-bindings-define '(test-b) "7" #'ignore)
+    (maf-bindings--refresh)
+    (cl-assert (= maf-bindings--compile-count (1+ before))))
+
   ;; Toy state out of the registry.
   (maf-bindings--forget 'test-a)
   (maf-bindings--forget 'test-b)

@@ -140,7 +140,11 @@ module has not been loaded yet is simply not in the registry, so it is
 skipped until its file loads and the next apply enables it."
   (let ((maf-module--applying t))
     (dolist (entry maf-module-registry)
-      (funcall (cadr entry) (if (memq (car entry) maf-modules) 1 -1)))))
+      (funcall (cadr entry) (if (memq (car entry) maf-modules) 1 -1))))
+  ;; After the burst, so work a mode body batched while
+  ;; `maf-module--applying' was set can run once — the bindings
+  ;; system compiles here instead of once per toggle.
+  (run-hooks 'maf-modules-applied-hook))
 
 ;;; Module menu
 

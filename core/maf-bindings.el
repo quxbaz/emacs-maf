@@ -50,7 +50,17 @@ Replaced as a set per module by `maf-bindings-module-keys'.")
 
 (defvar maf-bindings--active nil
   "Non-nil once the dispatcher owns `maf-mode-map'.
-Set by the maf-bindings module; while nil, compiles are just data.")
+Set by the maf-bindings module; while nil, declaration changes only
+mark the maps dirty and nothing compiles.")
+
+(defvar maf-bindings--dirty t
+  "Non-nil when the generated maps lag the registry.
+Set by every declaration-level change; cleared by the compile that
+catches the maps up. Startup's many registrations and toggles thus
+cost one compile, at the moment the module turns on.")
+
+(defvar maf-bindings--compile-count 0
+  "Compiles performed; the laziness contract is tested against it.")
 
 (defun maf-bindings--profile (name)
   "Return NAME's registry entry, or signal."
@@ -197,6 +207,7 @@ recompile runs on every module toggle, so it must cost nothing."
   "Rebuild every profile's generated map from the registry.
 Validates first; the maps keep their identity, so a composition that
 references them stays live."
+  (cl-incf maf-bindings--compile-count)
   (dolist (p maf-bindings--profiles)
     (pcase-let* ((`(,name . ,entry) p)
                  (defaults (plist-get entry :defaults))
@@ -222,8 +233,10 @@ set through Customize; a plain setq after load does not re-apply."
                  (symbol :tag "Custom profile"))
   :set (lambda (sym val)
          (set-default sym val)
-         (when (and (featurep 'maf-bindings) maf-bindings--active)
-           (maf-bindings--refresh)))
+         ;; fboundp: on a reload this setter can run mid-file, before
+         ;; the flush below it is defined again.
+         (when (and (fboundp 'maf-bindings--flush) maf-bindings--active)
+           (maf-bindings--flush)))
   :group 'maf)
 
 (defun maf-bindings--apply ()
@@ -241,11 +254,30 @@ profile map (whose own parent is the base map)."
             (plist-get entry :map))))))
 
 (defun maf-bindings--refresh ()
-  "Recompile, and re-apply when the dispatcher is live."
-  (maf-bindings-compile)
+  "Note a declaration-level change; catch the maps up when live.
+Inactive, the change only marks the maps dirty — startup's stream of
+registrations and module toggles compiles nothing until the module's
+enable flushes once."
+  (setq maf-bindings--dirty t)
+  (when (and maf-bindings--active
+             ;; A modules-apply burst flushes once, from its hook.
+             (not (bound-and-true-p maf-module--applying)))
+    (maf-bindings--flush)))
+
+(defun maf-bindings--flush ()
+  "Compile if dirty, then point the dispatcher at the active profile."
+  (when maf-bindings--dirty
+    (maf-bindings-compile)
+    (setq maf-bindings--dirty nil))
+  (maf-bindings--apply)
+  (maf-bindings--digit-sync))
+
+(defun maf-bindings--flush-applied ()
+  "Catch up after a `maf-modules-apply' burst, when live."
   (when maf-bindings--active
-    (maf-bindings--apply)
-    (maf-bindings--digit-sync)))
+    (maf-bindings--flush)))
+
+(add-hook 'maf-modules-applied-hook #'maf-bindings--flush-applied)
 
 (defun maf-bindings-set-profile (name)
   "Switch to binding profile NAME, live."
@@ -257,7 +289,10 @@ profile map (whose own parent is the base map)."
                   nil t))))
   (maf-bindings--profile name)
   (setq maf-bindings-profile name)
-  (maf-bindings--refresh)
+  ;; A switch changes no declarations: repoint, compiling only if some
+  ;; change was left pending.
+  (when maf-bindings--active
+    (maf-bindings--flush))
   (message "maf bindings: %s profile" name))
 
 ;;; Digit-entry overrides
@@ -325,7 +360,7 @@ the module system; see `maf-modules'."
   :group 'maf
   (if maf-use-bindings-mode
       (progn (setq maf-bindings--active t)
-             (maf-bindings--refresh))
+             (maf-bindings--flush))
     (setq maf-bindings--active nil)
     (set-keymap-parent maf-mode-map nil)
     (maf-bindings--digit-sync)))
