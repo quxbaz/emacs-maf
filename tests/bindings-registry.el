@@ -148,6 +148,28 @@ prefix — as absent as nil, for these assertions."
     (maf-bindings--refresh)
     (cl-assert (= maf-bindings--compile-count (1+ before))))
 
+  ;; Every mutator marks dirty on its own — a defprofile, a define, a
+  ;; digit declaration — so the documented custom-profile flow
+  ;; (defprofile, define, set-profile) compiles and lands its keys.
+  (progn (setq maf-bindings--dirty nil)
+         (maf-bindings-defprofile 'test-c)
+         (cl-assert maf-bindings--dirty))
+  (progn (setq maf-bindings--dirty nil)
+         (maf-bindings-define '(test-c) "5" #'ignore)
+         (cl-assert maf-bindings--dirty))
+  (progn (setq maf-bindings--dirty nil)
+         (maf-bindings-digit-define "Z" #'ignore 'ignore)
+         (cl-assert maf-bindings--dirty)
+         (setq maf-bindings--digit
+               (cl-remove "Z" maf-bindings--digit :key #'car :test #'equal)))
+  (let ((maf-bindings--active t)
+        (before maf-bindings--compile-count))
+    (maf-bindings-set-profile 'test-c)
+    (cl-assert (= maf-bindings--compile-count (1+ before)))
+    (cl-assert (eq (maf-test-br--lookup 'test-c "5") 'ignore))
+    (maf-bindings-set-profile 'native))
+  (maf-bindings--forget 'test-c)
+
   ;; Toy state out of the registry.
   (maf-bindings--forget 'test-a)
   (maf-bindings--forget 'test-b)

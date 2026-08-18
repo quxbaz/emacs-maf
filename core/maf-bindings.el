@@ -98,6 +98,9 @@ declarations. Returns NAME."
         (push (cons name (list :map map :user-map user-sym
                                :defaults seed :suppressed nil))
               maf-bindings--profiles)))
+    ;; Mark, without flushing: the define calls that follow a
+    ;; defprofile batch onto the same compile.
+    (setq maf-bindings--dirty t)
     name))
 
 (defun maf-bindings--forget (name)
@@ -118,7 +121,8 @@ owner, last say wins; across owners the compiler refuses instead."
           (setcdr cell command)
         (plist-put entry :defaults
                    (append (plist-get entry :defaults)
-                           (list (cons key command))))))))
+                           (list (cons key command)))))))
+  (setq maf-bindings--dirty t))
 
 (defun maf-bindings-module-keys (module mode-var specs)
   "Declare MODULE's keys, replacing its previous set.
@@ -309,7 +313,8 @@ installation's criterion and removal's restore value.")
   "Declare a calc-digit-map override, replacing any prior one for KEY."
   (setq maf-bindings--digit
         (cons (list key command expected)
-              (cl-remove key maf-bindings--digit :key #'car :test #'equal))))
+              (cl-remove key maf-bindings--digit :key #'car :test #'equal))
+        maf-bindings--dirty t))
 
 (defun maf-bindings--digit-sync ()
   "Install or remove the digit overrides to match the active state.
