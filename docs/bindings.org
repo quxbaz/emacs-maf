@@ -22,54 +22,65 @@
   - profile deltas are declared, and a declaration may target several
     profiles (source-level sharing, not inheritance):
     #+begin_src elisp
-      (maf-bindings-define '(native vim) "x" #'mafcmd-expand)  ; displacement
-      (maf-bindings-define '(vim) "w" #'maf-forward-noun)      ; vim delta
+      (maf-bindings-define '(maf-native vim-style) "x" #'mafcmd-expand)
+      (maf-bindings-define '(vim-style) "w" #'maf-forward-noun)
     #+end_src
   - `maf-mode-map` stays the one registered map (stable dispatcher);
     switching = repointing its parent, live, nothing rebuilt:
     #+begin_src elisp
-      (maf-bindings-set-profile 'calc)
+      (maf-bindings-set-profile 'calc-native)
     #+end_src
 
 * lookup order (per profile)
-  1. user bindings (per-profile user map, plus a common user map)
-  2. user suppressions
-  3. enabled-module declarations
-  4. profile defaults
-  5. base remaps
-  6. calc's own map
+  1. user bindings (per-profile user map first, then the common user map)
+  2. enabled-module declarations
+  3. profile defaults (minus compiled suppressions)
+  4. base remaps
+  5. calc's own map
 
 * user configuration
   - user maps are never written or rebuilt by maf; they survive switches
     #+begin_src elisp
-      (setq maf-bindings-profile 'vim)
-      (define-key maf-bindings-vim-user-map (kbd "g") #'maf-go-home)
+      (setq maf-bindings-profile 'vim-style)   ; before maf loads;
+      ;; after load: M-x maf-bindings-set-profile, or customize
+      (define-key maf-bindings-vim-style-user-map (kbd "g") #'maf-go-home)
       (define-key maf-bindings-common-user-map (kbd "<f6>") #'maf-timeline)
     #+end_src
   - principle: the user surface is plain elisp — real keymaps,
     `define-key`, `kbd`; no maf-specific bind API
   - removing a default is the one thing keymaps cannot say — nil exposes
-    what lies below, `undefined` blocks calc too — so a sentinel command
+    what lies below, `undefined` blocks calc too — so a sentinel entry
     says it, still through define-key:
     #+begin_src elisp
       ;; > falls through to whatever it runs without maf
-      (define-key maf-bindings-native-user-map
+      (define-key maf-bindings-maf-native-user-map
                   (kbd ">") #'maf-bindings-passthrough)
     #+end_src
+  - suppression is *compiled*, not dispatched: the compiler reads
+    passthrough entries as markers and omits the suppressed default from
+    the effective map, so lookup falls through to calc naturally, C-h k
+    names calc's real command, and suppressing a prefix key (j) exposes
+    calc's whole prefix. The command itself redispatches correctly if it
+    ever runs (a suppression added mid-session, before the next
+    recompile)
   - `maf-bindings-unbind` is optional sugar for exactly that define-key
-  - known costs: C-h k names the sentinel, not the command it lands on;
-    suppressing a whole prefix key (j) needs special handling
   - users can declare their own profiles — a profile is just a
     registered name plus two maps over base, nothing about the built-in
     three is special:
     #+begin_src elisp
-      (maf-bindings-defprofile 'my-dvorak :clone 'native)
+      (maf-bindings-defprofile 'my-dvorak :clone 'maf-native)
       (maf-bindings-define '(my-dvorak) "n" #'mafcmd-solve)
       (setq maf-bindings-profile 'my-dvorak)
     #+end_src
     tweaks to an existing profile don't need this — that's the user
     map's job; a profile earns its existence as a whole switchable
     layout
+  - clone copies the source profile's *own defaults only*, at the
+    declaration level; module keys are never copied — modules target
+    all registered profiles unless restricted, so a custom profile gets
+    them live, not as stale snapshots
+  - ships after the built-ins work: custom profiles need the
+    profile-aware displays, so both land together
 
 * rules
   - dogfooding: the built-in profiles are declared through the same
@@ -79,10 +90,17 @@
     double as the reference example for writing your own
   - modules declare their keys to the binding system; no raw define-key
     into `maf-mode-map` (a toggle must never erase a user override)
+  - registrations are owned and replaced as whole sets, so a reload is
+    safe by construction: defprofile replaces that profile's default
+    set, a module registration replaces that module's set, generated
+    maps rebuild from the registry — a declaration deleted from source
+    is gone after reload. User maps are never rebuilt
   - profiles govern the stack map and the digit-map overrides only;
     maf-edit, timeline, formulas, options keep their own fixed maps
-  - digit-map changes are tracked installs: uninstalling restores calc's
-    binding only if the current binding is still the one maf installed
+  - digit-map changes are tracked installs: installing never overwrites
+    a user's direct calc-digit-map customization, and uninstalling
+    restores calc's binding only if the current binding is still the one
+    maf installed
   - key displays (module help, dial legends) derive keys from the active
     profile — no static key strings
   - the registry compiler validates at build time: a key cannot be both
@@ -148,15 +166,15 @@
     written promise; recommended) vs curated additions on unbound keys
   - [ ] bindings module off: truly zero maf keys (M-x is the way back;
     recommended) vs a bootstrap key for the module menu
-  - [ ] module declarations above profile defaults in lookup — keep, once
-    compiler conflict detection exists?
   - [ ] vim motion semantics: h/l by char or noun? j/k by line or entry?
     w/b = noun motion?
   - [ ] vim relocation table for the h/j/k/l/w/b families
-  - [ ] does the profile choice persist beyond customize (maf-persist)?
-  - [ ] user profile seeding: empty, clone at definition (recommended —
-    keeps profiles independent), or live-inherit from another profile
-    (reintroduces coupling, but user opts in)?
+  - [ ] digit-entry customization surface: per-profile digit declarations
+    for users, or a documented API?
+  resolved: module-vs-profile precedence (conflicts are compiler errors,
+  so precedence rarely decides anything); profile persistence (customize
+  only — maf-persist is a separate concern); user profile seeding
+  (declaration-level clone, defaults only, modules stay live)
 
 * phases — skeleton first
   Build the architecture now; decide no new binding content. Today's
@@ -167,17 +185,19 @@
     remaps, prefix descendants, module on/off, digit-entry, real
     key-binding answers in a calc buffer
   - [ ] 2. registry + compiler: base + three profile maps + user maps +
-    suppressions; every profile reproduces today's map exactly (behavior,
-    not bytes); conflict validation
-  - [ ] 3. dispatcher, profile defcustom + switch command, live switching
-  - [ ] 4. convert module and digit-map bindings to declarations
-    (tracked installs)
-  - [ ] 5. document user configuration and migration from direct
+    compiled suppressions; every profile reproduces today's map exactly
+    (behavior, not bytes); conflict validation
+  - [ ] 3. one atomic landing: module + digit-map declaration conversion
+    (tracked installs), then dispatcher, profile defcustom + switch
+    command, live switching. Not split: raw module define-keys under the
+    dispatcher would outrank user maps and falsify the lookup order
+  - [ ] 4. document user configuration and migration from direct
     maf-mode-map bindings
 
 * later: profile content (out of scope for the skeleton)
   - [ ] audit the remap allowlist and fill calc-native
   - [ ] classify today's maf-native bindings: remap-covered vs
     displacement delta
-  - [ ] profile-aware key displays (matters once a second profile is real)
+  - [ ] profile-aware key displays + user-defined profiles (gated on the
+    displays; land together)
   - [ ] vim: motion semantics, relocation table, then the profile
