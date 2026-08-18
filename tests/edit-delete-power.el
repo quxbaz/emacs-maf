@@ -213,6 +213,27 @@
                     "^3"))
   (call-interactively 'maf-edit-discard)
 
+  ;; A power still missing its exponent gives back only its operator:
+  ;; the pair was written before the caret was, so backspacing the
+  ;; caret mid-typing keeps the parens.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (execute-kbd-macro "(1 + r") nil)
+  (progn (forward-char 1) nil)
+  (progn (execute-kbd-macro ":") nil)
+  (progn (execute-kbd-macro (kbd "DEL")) nil)
+  (progn (execute-kbd-macro (kbd "DEL")) nil)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "(1 + r)"))
+  (call-interactively 'maf-edit-discard)
+
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (insert "(1 + r)^") nil)
+  (progn (deactivate-mark) (backward-char 1) nil)
+  (progn (execute-kbd-macro (kbd "C-d")) nil)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "(1 + r)"))
+  (call-interactively 'maf-edit-discard)
+
   ;; What commits after the gesture is the base alone.
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "(x + 1)^(a + b)") nil)

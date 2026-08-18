@@ -1857,17 +1857,23 @@ comes back with nothing deleted.
 
 The operator and its exponent go together, and the base's bare pair
 goes too where it stands alone as one element of the entry
-\(`maf-editplus--whole-element-p'). Point lands after the base."
+\(`maf-editplus--whole-element-p'). Point lands after the base.
+
+A power still missing its exponent — (1 + r)^| backspaced mid-typing —
+gives back only its operator: the pair was written before the caret
+was, so the caret's deletion has no claim on it."
   (let ((node (maf-editplus--node-at
                (maf-editplus--parse limit (overlay-end entry))
                op)))
     (when (and node (equal (maf-editplus--node-kind node) "^"))
       (let* ((base (car (maf-editplus--node-children node)))
+             (exponent (cadr (maf-editplus--node-children node)))
              (bs (maf-editplus--node-start base))
              (be (maf-editplus--node-end base)))
         (delete-region op (maf-editplus--node-end node))
         (goto-char op)
-        (when (and (maf-editplus--node-parenthesized-p base)
+        (when (and exponent
+                   (maf-editplus--node-parenthesized-p base)
                    (maf-editplus--whole-element-p
                     bs be limit (overlay-end entry)))
           ;; Closer first, as in `maf-editplus--wrap-node', so the
