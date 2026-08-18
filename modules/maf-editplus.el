@@ -1199,14 +1199,15 @@ Nil when there is nothing under point — the end of the entry, where a
 command's own scan for the term behind point takes over — and nil
 outside an entry, where there is no text to parse.
 
-Nil also on the closer of a call, the one character inside an entry
-that names nothing: electric parens leave point in front of it for
-the whole time the argument is being typed, so a press there means
-the term just typed — ln(x y|) raising y — and the same term-behind
-scan takes over, as at the end of the entry. Only a call's own
-closer: a bare pair's closer still names the expression it encloses,
-and a vector's bracket the vector, both being where the pinned-down
-grammar puts them."
+Nil also on a closer with a complete unit ending at point: electric
+parens leave point in front of the closer for the whole time the
+argument is being typed, so a press there means the term just typed —
+ln(x y|) raising y, (1 + r|) raising r — and the same term-behind
+scan takes over, as at the end of the entry. A call's own closer
+names nothing even with no unit behind it (an empty call is the
+command's own answer); a bare pair's or a vector's closer with
+nothing complete behind point — an operator, the opener — still
+names the enclosure, there being no smaller expression to mean."
   (let ((entry (maf-editplus--entry-at-point)))
     (when entry
       (let* ((limit (+ (overlay-start entry)
@@ -1225,9 +1226,10 @@ grammar puts them."
                                        pos bound))
                              (maf-editplus--node-at tree at)))))
             (unless (and node
-                         (eq (maf-editplus--node-kind node) 'call)
                          (= at (1- (maf-editplus--node-end node)))
-                         (memq (char-after at) maf-editplus--closers))
+                         (memq (char-after at) maf-editplus--closers)
+                         (or (eq (maf-editplus--node-kind node) 'call)
+                             (maf-editplus--unit-before at limit)))
               node)))))))
 
 (defun maf-editplus--wrap-node (node name &optional tail)

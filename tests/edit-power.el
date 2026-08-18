@@ -289,6 +289,16 @@
   (cl-assert (equal (calc-top 1) '(^ 2 3)))
   (calc-pop (calc-stack-size))
 
+  ;; Before a bare pair's electric closer the power binds to the
+  ;; smallest complete expression behind point, not to the enclosing
+  ;; group — (1 + r|) squares the r just typed.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (execute-kbd-macro "(1 + r") nil)
+  (progn (execute-kbd-macro ":") nil)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "(1 + r^2)"))
+  (call-interactively 'maf-edit-discard)
+
   ;; The command behind the meta-digits is theirs alone: reached any
   ;; other way there is no digit to read, and it says so rather than
   ;; writing a caret and whatever key ran it.

@@ -116,9 +116,9 @@
                     "[ln(1),2]+x"))
   (call-interactively 'maf-edit-discard)
 
-  ;; A pair of bare parentheses is punctuation, not structure. It names
-  ;; the expression inside it — from either end — and the call supplies
-  ;; the grouping the pair was there for, so the pair goes rather than
+  ;; A pair of bare parentheses is punctuation, not structure. Its
+  ;; opener names the expression inside it, and the call supplies the
+  ;; grouping the pair was there for, so the pair goes rather than
   ;; ln((a+b)) being written.
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "(a+b)*c") nil)
@@ -128,12 +128,16 @@
                     "ln(a+b)*c"))
   (call-interactively 'maf-edit-discard)
 
+  ;; On the closer the unit just typed wins, as at a call's closer —
+  ;; electric parens hold point there for the whole time the group's
+  ;; tail is being typed, so (a+b|) means b, the smallest complete
+  ;; expression behind point. The group keeps its opener.
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "(a+b)*c") nil)
   (progn (maf-edit-move-beginning-of-line 1) (forward-char 4) nil)
   (call-interactively 'maf-editplus-wrap-ln)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
-                    "ln(a+b)*c"))
+                    "(a+ln(b))*c"))
   (call-interactively 'maf-edit-discard)
 
   ;; A group still being typed keeps both of its own characters: the
