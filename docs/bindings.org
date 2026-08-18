@@ -147,6 +147,8 @@
 
 * vim profile
   - not vim's command model, just its navigation keys
+  - currently the sibling set only — identical to the calc profile
+    until the motion semantics and relocation table are decided
   - hjkl / wb become motions; everything under stolen prefixes must be
     relocated or explicitly dropped (compiler-checked) — not yet: skeleton
     keeps today's bindings
@@ -194,9 +196,11 @@
 
 * profile:native
   What today's layout is, beyond calc's own keys. The shadowing and
-  additions groups below are declared `'(native vim)` — the calc
-  profile carries only the sibling groups (and, pending the module
-  strictness ruling, the module keys). The bulk first:
+  additions groups below are declared `'(native)` — src/bindings.el is
+  the native layout's file. calc and vim carry only the sibling groups
+  (and, pending the module strictness ruling, the module keys); vim
+  stays identical to calc until its content phase lays it out. The
+  bulk first:
   - the mafcmd table: ~200 contextual siblings shadowing their calc
     originals on calc's own keys (the key column in src/maf-cmds.el)
   - base remaps: undo, undo-redo, calc-undo, calc-redo → maf-undo/redo
@@ -285,9 +289,9 @@
 * phases — skeleton first
   Build the architecture now; decide no new binding content. The
   skeleton carried today's bindings into all three profiles
-  identically; since then the calc profile has been differentiated —
-  it keeps the sibling groups only (see profile:native) — while vim
-  still equals native until its own content phase.
+  identically; since then calc and vim have been reduced to the
+  sibling groups only (see profile:native) — vim equals calc until its
+  content phase lays out the navigation keys and relocations.
   - [X] 1. snapshot current behavior in step tests: effective bindings,
     remaps, prefix descendants, module on/off, digit-entry, real
     key-binding answers in a calc buffer (tests/bindings-snapshot.el)
