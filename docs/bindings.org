@@ -59,8 +59,24 @@
   - `maf-bindings-unbind` is optional sugar for exactly that define-key
   - known costs: C-h k names the sentinel, not the command it lands on;
     suppressing a whole prefix key (j) needs special handling
+  - users can declare their own profiles — a profile is just a
+    registered name plus two maps over base, nothing about the built-in
+    three is special:
+    #+begin_src elisp
+      (maf-bindings-defprofile 'my-dvorak :clone 'native)
+      (maf-bindings-define '(my-dvorak) "n" #'mafcmd-solve)
+      (setq maf-bindings-profile 'my-dvorak)
+    #+end_src
+    tweaks to an existing profile don't need this — that's the user
+    map's job; a profile earns its existence as a whole switchable
+    layout
 
 * rules
+  - dogfooding: the built-in profiles are declared through the same
+    public API a user would use — `maf-bindings-defprofile` +
+    `maf-bindings-define`, no privileged internal path. The built-ins
+    are ordinary registry entries that happen to ship with maf, and
+    double as the reference example for writing your own
   - modules declare their keys to the binding system; no raw define-key
     into `maf-mode-map` (a toggle must never erase a user override)
   - profiles govern the stack map and the digit-map overrides only;
@@ -83,10 +99,14 @@
   - "style", not "-native": not vim's command model, just its
     navigation keys
   - hjkl / wb become motions; everything under stolen prefixes must be
-    relocated or explicitly dropped (compiler-checked)
+    relocated or explicitly dropped (compiler-checked) — not yet: skeleton
+    keeps today's bindings
   - design the relocation table before implementing; this profile lands
     last
 ** stolen-key inventory (what each key holds in maf-native today)
+   NOTE: do not bind any of this yet — in the skeleton, vim-style
+   carries today's bindings like every profile; the steals and
+   relocations wait for the relocation table.
    - `h` — calc-help-prefix (the whole h help family)
    - `j` — the selection prefix, close to maf's core:
      - maf's own: mafcmd-raise (j j), mafcmd-isolate (j i),
@@ -134,6 +154,9 @@
     w/b = noun motion?
   - [ ] vim relocation table for the h/j/k/l/w/b families
   - [ ] does the profile choice persist beyond customize (maf-persist)?
+  - [ ] user profile seeding: empty, clone at definition (recommended —
+    keeps profiles independent), or live-inherit from another profile
+    (reintroduces coupling, but user opts in)?
 
 * phases — skeleton first
   Build the architecture now; decide no new binding content. Today's
