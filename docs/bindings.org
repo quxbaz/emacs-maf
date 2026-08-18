@@ -3,7 +3,7 @@
 * concepts
   - the =maf-bindings= module controls whether maf bindings are active at all
   - a *profile* selects the key layout: =calc-native=, =maf-native= (default),
-    =vim-flavored=
+    =vim-style=
   - the bindings are what's native, not the commands: every profile runs
     mafcmds — calc-native means calc's *layout*, maf's *commands*
 
@@ -71,11 +71,49 @@
   - keys whose calc command has no sibling stay calc's (x, h, scrolling)
   - no navigation bindings: silence means stock calc/emacs lookup
 
-* vim-flavored
+* vim-style
+  - "style", not "-native": not vim's command model, just its
+    navigation keys
   - hjkl / wb become motions; everything under stolen prefixes must be
     relocated or explicitly dropped (compiler-checked)
   - design the relocation table before implementing; this profile lands
     last
+** stolen-key inventory (what each key holds in maf-native today)
+   - =h= — calc-help-prefix (the whole h help family)
+   - =j= — the selection prefix, close to maf's core:
+     - maf's own: mafcmd-raise (j j), mafcmd-isolate (j i),
+       mafcmd-unpack (j U), maf-merge (j M), maf-distribute (j D),
+       maf-jump-equals (j e), maf-commute-left/right (j l / j r)
+     - calc's selection machinery: calc-select-here/once/more/less/
+       next/previous/part, calc-sel-add/sub/mult/div-both-sides,
+       calc-sel-isolate/commute/distribute/merge/negate/invert/
+       evaluate/expand-formula, calc-rewrite-selection,
+       calc-enter/edit/copy/del-selection,
+       calc-enable/show/clear/break-selections, calc-unselect, calc-conj
+   - =k= — the combinatorics prefix:
+     - mafcmd siblings shadowing calc: choose, gcd, lcm, prfac,
+       nextprime, totient, moebius, euler, bern, random, shuffle,
+       utpt/utpp/utpc
+     - maf-only: mafcmd-evaluate (k k), mafcmd-complete-square (k s),
+       mafcmd-factor-powers (k d)
+     - calc-only leftovers: calc-keep-args (k K), calc-prime-test,
+       calc-random-again, calc-extended-gcd, calc-utpn/utpf/utpb
+   - =l= — maf's own invented prefix, layered over calc's log-units
+     prefix:
+     - maf's own: mafcmd-factor-by (l f), mafcmd-factor-gcd (l F),
+       mafcmd-collect-fractions (l t), mafcmd-float (l l),
+       mafcmd-frac (l c), mafcmd-to-degrees (l d),
+       mafcmd-to-radians (l r), mafcmd-inverse-function (l v),
+       mafcmd-swap-vars (l x), mafcmd-unique-groups (l g)
+     - calc's log-units family: calc-lu-plus/minus/times/divide/quant,
+       calc-db, calc-np, calc-freq, calc-midi, calc-spn
+   - =w= — calc-why (single command)
+   - =b= — the binary/financial prefix:
+     - mafcmd table rows: and, or, xor, diff, not, clip, lsh, rsh,
+       ash, rash, rot, vpack, vunpack, irr, npv, relch
+     - calc-only: calc-word-size (b w), calc-percent-change,
+       calc-log (b B), calc-lshift/rshift-arith,
+       calc-fin-pv/fv/pmt/nper/rate/sln/syd/ddb
 
 * open decisions
   - [ ] calc-native strictness: strict (only sibling remaps — matches the
@@ -89,16 +127,26 @@
   - [ ] vim relocation table for the h/j/k/l/w/b families
   - [ ] does the profile choice persist beyond customize (maf-persist)?
 
-* phases
+* phases — skeleton first
+  Build the architecture now; decide no new binding content. Today's
+  bindings are carried through the registry declared for *all three
+  profiles*, so every profile behaves identically — switching works but
+  changes nothing — until the content phases differentiate them.
   - [ ] 1. snapshot current behavior in step tests: effective bindings,
     remaps, prefix descendants, module on/off, digit-entry, real
     key-binding answers in a calc buffer
-  - [ ] 2. registry + compiler reproducing today's map exactly (behavior,
-    not bytes); conflict validation; suppression support
-  - [ ] 3. dispatcher, profile defcustom + switch command, user maps,
-    profile-aware key displays
-  - [ ] 4. calc-native via audited remaps, verified against local calc maps
-  - [ ] 5. convert module and digit-map bindings to declarations
-  - [ ] 6. vim: relocation table, then the profile
-  - [ ] 7. document user configuration and migration from direct
+  - [ ] 2. registry + compiler: base + three profile maps + user maps +
+    suppressions; every profile reproduces today's map exactly (behavior,
+    not bytes); conflict validation
+  - [ ] 3. dispatcher, profile defcustom + switch command, live switching
+  - [ ] 4. convert module and digit-map bindings to declarations
+    (tracked installs)
+  - [ ] 5. document user configuration and migration from direct
     maf-mode-map bindings
+
+* later: profile content (out of scope for the skeleton)
+  - [ ] audit the remap allowlist and fill calc-native
+  - [ ] classify today's maf-native bindings: remap-covered vs
+    displacement delta
+  - [ ] profile-aware key displays (matters once a second profile is real)
+  - [ ] vim: motion semantics, relocation table, then the profile
