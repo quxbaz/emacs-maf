@@ -326,6 +326,22 @@ the module system; see `maf-modules'."
 
 ;; Register with the module system when it is present; the mode above
 ;; works on its own without it.
+(defun maf-bindings--module-values ()
+  "Dial row values for the module menu: off, then every profile.
+The menu row is a profile picker rather than a toggle — stepping onto
+a profile turns the module on and switches to it; off is the module
+off. Built fresh per menu build, so a user-defined profile appears the
+moment it is registered."
+  (list :values
+        (append '((nil "off" (maf-use-bindings-mode -1)))
+                (mapcar (lambda (p)
+                          (let ((name (car p)))
+                            (list name (symbol-name name)
+                                  `(progn (maf-use-bindings-mode 1)
+                                          (maf-bindings-set-profile ',name)))))
+                        (reverse maf-bindings--profiles)))
+        :current (lambda (raw) (and raw maf-bindings-profile))))
+
 (when (require 'maf-module nil t)
   (maf-register-module 'maf-bindings #'maf-use-bindings-mode
                        "Key layouts as switchable profiles.
@@ -334,6 +350,7 @@ Every maf key lives in a binding profile — calc, native, or vim — over
 one shared base, compiled from declarations. Switch live with
 `maf-bindings-set-profile'; personal keys go in the per-profile user
 maps (maf-native-user-map and kin) with plain define-key. Disabled,
-maf binds no keys at all."))
+maf binds no keys at all."
+                       nil #'maf-bindings--module-values))
 
 (provide 'maf-bindings)

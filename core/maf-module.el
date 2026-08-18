@@ -101,7 +101,7 @@ the load order in maf.el that should not decide how the option reads."
                   (sort (copy-sequence maf-module-registry)
                         (lambda (a b) (string< (car a) (car b)))))))
 
-(defun maf-register-module (name mode &optional description keys)
+(defun maf-register-module (name mode &optional description keys values-fn)
   "Register module NAME with its global minor mode MODE.
 DESCRIPTION is the help text the module gives for itself — a summary
 line, a blank line, then a short paragraph (see
@@ -110,7 +110,9 @@ line, a blank line, then a short paragraph (see
 checkbox in Customize. KEYS names the entry keys MODE binds while on,
 as they are shown to the user (see `maf-module-registry'), or nil for
 a module with none; the menu shows it beside the name heading the
-echoed help.
+echoed help. VALUES-FN, for the rare module that is more than a
+toggle, returns a plist of dial row overrides — :values and :current —
+built fresh at each menu build; absent, the row is the plain on/off.
 
 Records the entry in `maf-module-registry' and adds
 `maf-module--reconcile' to MODE's hook, so toggling MODE keeps
@@ -123,7 +125,8 @@ option offers exactly the modules that have registered — see
 `maf-module--custom-type'. Registering is the only thing that changes
 the registry, so recomputing here keeps the type current without
 conf.el naming a single module."
-  (setf (alist-get name maf-module-registry) (list mode description keys))
+  (setf (alist-get name maf-module-registry)
+        (list mode description keys values-fn))
   (put 'maf-modules 'custom-type (maf-module--custom-type))
   (add-hook (intern (concat (symbol-name mode) "-hook"))
             #'maf-module--reconcile))
@@ -194,23 +197,28 @@ the row already shows."
 The registry is in reverse registration order, an artifact of the load
 order in maf.el that should not decide how the menu reads."
   (mapcar (lambda (entry)
-            (pcase-let ((`(,name ,mode ,description ,keys) entry))
+            (pcase-let ((`(,name ,mode ,description ,keys ,values-fn) entry))
               (cons name
-                    (list :group "Modules"
-                          :label (symbol-name name)
-                          :doc (maf-module--doc
-                                name description
-                                ;; Prefer the live answer: the bindings
-                                ;; registry knows the module's keys in
-                                ;; the *active profile*, suppressions
-                                ;; and all; the registered static
-                                ;; string is the fallback for modules
-                                ;; not yet declaring through it.
-                                (or (and (fboundp 'maf-bindings-module-display-keys)
-                                         (maf-bindings-module-display-keys name))
-                                    keys))
-                          :values `((t   "on"  (,mode 1))
-                                    (nil "off" (,mode -1)))))))
+                    (append
+                     (list :group "Modules"
+                           :label (symbol-name name)
+                           :doc (maf-module--doc
+                                 name description
+                                 ;; Prefer the live answer: the bindings
+                                 ;; registry knows the module's keys in
+                                 ;; the *active profile*, suppressions
+                                 ;; and all; the registered static
+                                 ;; string is the fallback for modules
+                                 ;; not yet declaring through it.
+                                 (or (and (fboundp 'maf-bindings-module-display-keys)
+                                          (maf-bindings-module-display-keys name))
+                                     keys)))
+                     ;; A module that is more than a toggle brings its
+                     ;; own values — rebuilt each time, so a value set
+                     ;; that grows (binding profiles) stays current.
+                     (or (and values-fn (funcall values-fn))
+                         `(:values ((t   "on"  (,mode 1))
+                                    (nil "off" (,mode -1)))))))))
           (sort (copy-sequence maf-module-registry)
                 (lambda (a b) (string< (car a) (car b))))))
 

@@ -131,6 +131,10 @@
     binding is still the one maf installed
   - key displays (module help, dial legends) derive keys from the active
     profile — no static key strings
+  - the *maf-modules* row for maf-bindings is a profile picker, not a
+    toggle: `off | calc | native | vim | ...` with the user's custom
+    profiles listed too (they appear when the menu opens). off is the
+    module off — zero maf keys, stock calc, commands by M-x
   - the registry compiler validates at build time: a key cannot be both
     a command and a live prefix in one profile; module/profile and
     module/module key conflicts are errors, not precedence accidents
