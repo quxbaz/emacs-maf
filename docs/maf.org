@@ -29,10 +29,7 @@
     - [ ] factor
     - [ ] target-line
 
-* NOW [0/2]
-** IN-PROGRESS stack mode
-   - [ ] bind command to jump to next SPC character
-     - should work in stack and editplus
+* NOW
 ** bindings
    three binding modes, each its own heading below: calc-native, maf-native,
    vim-flavored
