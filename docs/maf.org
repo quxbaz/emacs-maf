@@ -30,7 +30,7 @@
     - [ ] target-line
 
 * NOW
-** IN-PROGRESS bindings [[file:bindings.org][(bindings.org)]]
+** IN-PROGRESS [[file:bindings.org][bindings.org]]
 
 * later::plotting module
   - [ ] my/calc-graph-quick / -with-range (g l / g i) — plot the top entry straight to
