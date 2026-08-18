@@ -1,9 +1,9 @@
 #+title: bindings module plan
 
 * concepts
-  - the =maf-bindings= module controls whether maf bindings are active at all
-  - a *profile* selects the key layout: =calc-native=, =maf-native= (default),
-    =vim-style=
+  - the `maf-bindings` module controls whether maf bindings are active at all
+  - a *profile* selects the key layout: `calc-native`, `maf-native` (default),
+    `vim-style`
   - the bindings are what's native, not the commands: every profile runs
     mafcmds — calc-native means calc's *layout*, maf's *commands*
 
@@ -25,7 +25,7 @@
       (maf-bindings-define '(native vim) "x" #'mafcmd-expand)  ; displacement
       (maf-bindings-define '(vim) "w" #'maf-forward-noun)      ; vim delta
     #+end_src
-  - =maf-mode-map= stays the one registered map (stable dispatcher);
+  - `maf-mode-map` stays the one registered map (stable dispatcher);
     switching = repointing its parent, live, nothing rebuilt:
     #+begin_src elisp
       (maf-set-binding-profile 'calc)
@@ -47,14 +47,14 @@
       (define-key maf-bindings-common-user-map (kbd "<f6>") #'maf-timeline)
     #+end_src
   - removing a default needs explicit support — nil exposes the layer
-    below, =undefined= blocks calc too:
+    below, `undefined` blocks calc too:
     #+begin_src elisp
       (maf-unbind-key 'native ">")   ; > falls through to calc
     #+end_src
 
 * rules
   - modules declare their keys to the binding system; no raw define-key
-    into =maf-mode-map= (a toggle must never erase a user override)
+    into `maf-mode-map` (a toggle must never erase a user override)
   - profiles govern the stack map and the digit-map overrides only;
     maf-edit, timeline, formulas, options keep their own fixed maps
   - digit-map changes are tracked installs: uninstalling restores calc's
@@ -79,8 +79,8 @@
   - design the relocation table before implementing; this profile lands
     last
 ** stolen-key inventory (what each key holds in maf-native today)
-   - =h= — calc-help-prefix (the whole h help family)
-   - =j= — the selection prefix, close to maf's core:
+   - `h` — calc-help-prefix (the whole h help family)
+   - `j` — the selection prefix, close to maf's core:
      - maf's own: mafcmd-raise (j j), mafcmd-isolate (j i),
        mafcmd-unpack (j U), maf-merge (j M), maf-distribute (j D),
        maf-jump-equals (j e), maf-commute-left/right (j l / j r)
@@ -90,7 +90,7 @@
        evaluate/expand-formula, calc-rewrite-selection,
        calc-enter/edit/copy/del-selection,
        calc-enable/show/clear/break-selections, calc-unselect, calc-conj
-   - =k= — the combinatorics prefix:
+   - `k` — the combinatorics prefix:
      - mafcmd siblings shadowing calc: choose, gcd, lcm, prfac,
        nextprime, totient, moebius, euler, bern, random, shuffle,
        utpt/utpp/utpc
@@ -98,7 +98,7 @@
        mafcmd-factor-powers (k d)
      - calc-only leftovers: calc-keep-args (k K), calc-prime-test,
        calc-random-again, calc-extended-gcd, calc-utpn/utpf/utpb
-   - =l= — maf's own invented prefix, layered over calc's log-units
+   - `l` — maf's own invented prefix, layered over calc's log-units
      prefix:
      - maf's own: mafcmd-factor-by (l f), mafcmd-factor-gcd (l F),
        mafcmd-collect-fractions (l t), mafcmd-float (l l),
@@ -107,8 +107,8 @@
        mafcmd-swap-vars (l x), mafcmd-unique-groups (l g)
      - calc's log-units family: calc-lu-plus/minus/times/divide/quant,
        calc-db, calc-np, calc-freq, calc-midi, calc-spn
-   - =w= — calc-why (single command)
-   - =b= — the binary/financial prefix:
+   - `w` — calc-why (single command)
+   - `b` — the binary/financial prefix:
      - mafcmd table rows: and, or, xor, diff, not, clip, lsh, rsh,
        ash, rash, rot, vpack, vunpack, irr, npv, relch
      - calc-only: calc-word-size (b w), calc-percent-change,
