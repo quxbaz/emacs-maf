@@ -62,8 +62,10 @@
     #+end_src
     suppressions live in the registry; the compiler omits the default
     from the generated map, so lookup falls through naturally, C-h k
-    names calc's real command, and the call itself triggers the
-    recompile. Scope: suppression removes *generated key declarations*
+    names the effective lower command (calc's own, or the maf sibling
+    where a base remap applies), and the call itself triggers the
+    recompile. `maf-bindings-restore` is the inverse — it drops the
+    suppression and the profile default returns. Scope: suppression removes *generated key declarations*
     — profile defaults and module declarations alike, for that profile;
     a suppressed prefix key (j) removes every generated descendant and
     exposes calc's whole prefix. Base remaps are not key declarations
@@ -97,9 +99,12 @@
     into `maf-mode-map` (a toggle must never erase a user override).
     Module targets are explicit profile names, `:all` deliberately —
     strictness governs modules too: under strict, the calc profile gets
-    no module keys at all; under curated additions, only keys that
-    displace nothing (options' ? shadows calc-help, so not there either
-    way). Follows the strictness ruling below
+    no direct module key declarations, though a module command that is
+    a genuine calc sibling may still arrive as a remap (audited like
+    base remaps — an escape-hatch original is a reason not to); under
+    curated additions, also keys that displace nothing (options' ?
+    shadows calc-help, so not there either way). Follows the strictness
+    ruling below
   - registrations are owned and replaced as whole sets, so a reload is
     safe by construction: defprofile replaces that profile's default
     set, a module registration replaces that module's set, generated
