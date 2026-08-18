@@ -12,9 +12,10 @@
 ;;
 ;; What is here now are the four delimiter gestures, TAB, M-o, C-RET
 ;; and the shifted arrows, the function keys L, Q, |, S, C, T and B,
-;; the exponent keys M-2 through M-9 and :, P for the constant pi, and
+;; the exponent keys M-2 through M-9 and :, P for the constant pi,
 ;; DEL and C-d, which delete a power whole from either side of its
-;; operator.
+;; operator, and S-SPC, which keeps the stack's space motion
+;; (`maf-forward-space') alive over the editable text.
 ;;
 ;; TAB escapes. Typing a formula runs forward past closing delimiters
 ;; constantly — sqrt(x^2+1), f(g(x)) — and reaching the far side of one
@@ -1997,6 +1998,12 @@ Enabled, and while a maf-edit session is up:
 
   TAB  `maf-editplus-escape-group' — point jumps past the delimiter
        that closes the group it is in, one level per press
+  S-SPC
+       `maf-forward-space' — point hops onto the next space of the
+       entry text, the walk the stack gives the same key (it is the
+       one command in this list that is not the session's own: the
+       motion works on rendered and editable text alike, and the
+       session merely keeps its key)
   M-o  `maf-editplus-wrap-parens' — parentheses go around the term
        before point, and a further press widens that pair
   C-RET
@@ -2032,8 +2039,9 @@ Enabled, and while a maf-edit session is up:
 
 Disabled, the keys cede back to whatever the global map does with them
 \(`indent-for-tab-command', which has nothing to indent in an edited
-stack, `self-insert-command' for the printable ones, `digit-argument'
-for the meta-digits, the shifted arrows' selection motion, plain
+stack, `self-insert-command' for the printable ones, S-SPC folding
+back to the plain space it shifts, `digit-argument' for the
+meta-digits, the shifted arrows' selection motion, plain
 `delete-backward-char' and `delete-char' for DEL and C-d, and nothing
 at all for M-o and C-RET, which Emacs 30 leaves free). M-o, C-RET and
 the shifted arrows run `mafcmd-mod-360', `mafcmd-let' and
@@ -2063,6 +2071,7 @@ running, and the module is a no-op for anyone not using maf-edit."
   :group 'maf
   (let ((on maf-use-editplus-mode))
     (dolist (b '(("TAB" . maf-editplus-escape-group)
+                 ("S-SPC" . maf-forward-space)
                  ("M-o" . maf-editplus-wrap-parens)
                  ("C-<return>" . maf-editplus-duplicate-group)
                  ("S-<up>"   . maf-editplus-toggle-brackets)
@@ -2107,7 +2116,8 @@ L/Q/| and S/C/T apply ln/sqrt/abs and sin/cos/tan (\\ is sqrt too, as
 on the stack), B applies log with its base written out — inherited
 from the entry's nearest log, 10 as the fallback, log(x, 10)
 committing as calc's log10(x) — M-2..M-9 and : raise to a power (W
-squares too, as on the stack), P types pi, and DEL and C-d delete a
-power whole from either side of its operator."))
+squares too, as on the stack), P types pi, DEL and C-d delete a power
+whole from either side of its operator, and S-SPC keeps the stack's
+hop to the next space working over the editable text."))
 
 (provide 'maf-editplus)

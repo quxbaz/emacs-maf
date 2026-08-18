@@ -1624,6 +1624,89 @@ two motions retrace each other."
   (interactive "p")
   (maf--noun-move (- (or n 1))))
 
+(defun maf--space-furniture-p (pos)
+  "Non-nil when the space at POS is furniture rather than formula text.
+Three kinds of it: any machine-owned character of a maf-edit session
+\(the `maf-edit-prefix' text property; reading it needs nothing from
+the module, a rendered stack line simply never carries it), the
+line-number prefix's padding — the margin of \"2:  6 x\" — and a
+line's leading indentation, nothing but spaces and machine-owned text
+back to its start: the home line's own margin, and the layout the Big
+language draws a multi-line entry with."
+  (or (get-text-property pos 'maf-edit-prefix)
+      (save-excursion
+        (goto-char pos)
+        (beginning-of-line)
+        (and (looking-at " *[0-9]+: +")
+             (< pos (match-end 0))))
+      (save-excursion
+        (goto-char pos)
+        (catch 'text
+          (while (> (point) (line-beginning-position))
+            (backward-char)
+            (unless (or (eq (char-after) ?\s)
+                        (get-text-property (point) 'maf-edit-prefix))
+              (throw 'text nil)))
+          t))))
+
+(defun maf--space-stop-p (pos)
+  "Non-nil when the space motion may stop at POS.
+A stop is the first space of a run of them: the space at POS must be
+formula text (`maf--space-furniture-p'), with no such space just before
+it — a run is one gap in the formula, however wide the rendering draws
+it, so it is one stop."
+  (and (eq (char-after pos) ?\s)
+       (not (maf--space-furniture-p pos))
+       (not (and (> pos (point-min))
+                 (eq (char-after (1- pos)) ?\s)
+                 (not (maf--space-furniture-p (1- pos)))))))
+
+(defun maf--space-position (dir)
+  "Position of the nearest space stop in direction DIR, or nil.
+DIR is 1 forward, -1 back. Strictly past point, so the stop point
+already sits on is never its own answer; from inside a run of spaces,
+the step back lands on the run's first, as `backward-word' lands on a
+word's start. The scan crosses lines, over the whole buffer."
+  (save-excursion
+    (let ((from (point))
+          (hit nil))
+      (while (and (not hit)
+                  (if (> dir 0)
+                      (search-forward " " nil t)
+                    (search-backward " " nil t)))
+        (let ((pos (match-beginning 0)))
+          (when (and (if (> dir 0) (> pos from) (< pos from))
+                     (maf--space-stop-p pos))
+            (setq hit pos))))
+      hit)))
+
+(defun maf-forward-space (&optional n)
+  "Move point onto the next space between the parts of a formula.
+
+  2:  |6 x + 12  =>  2:  6| x + 12  =>  2:  6 x| + 12
+
+Each press hops one gap along, so the formula is crossed in a few
+keystrokes rather than a column at a time — the complement of
+`maf-forward-noun', which walks the terms the gaps lie between. Point
+lands on the space itself.
+
+A run of spaces is one gap and one stop, however wide the rendering
+draws it, and the furniture around the formulas is no stop at all: the
+line-number margin of the stack display, and the machine-owned prefix
+of a maf-edit session, are stepped over — so the walk runs from the
+last gap of one entry to the first of the next, and works the same
+over the editable text of an edit session. A numeric prefix N moves
+over that many gaps, backward when negative; past the last gap the
+motion signals rather than moving."
+  (interactive "p")
+  (let* ((count (or n 1))
+         (dir (if (< count 0) -1 1)))
+    (dotimes (_ (abs count))
+      (let ((pos (maf--space-position dir)))
+        (unless pos
+          (user-error "No space %s point" (if (> dir 0) "after" "before")))
+        (goto-char pos)))))
+
 (defun maf--home-drop-mark (pos)
   "Drop the mark at POS that `maf-go-home' just returned to.
 The mark the trip out pushed is spent once point is back on it, so it
