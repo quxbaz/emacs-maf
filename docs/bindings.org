@@ -201,9 +201,9 @@
   bindings are carried through the registry declared for *all three
   profiles*, so every profile behaves identically — switching works but
   changes nothing — until the content phases differentiate them.
-  - [ ] 1. snapshot current behavior in step tests: effective bindings,
+  - [X] 1. snapshot current behavior in step tests: effective bindings,
     remaps, prefix descendants, module on/off, digit-entry, real
-    key-binding answers in a calc buffer
+    key-binding answers in a calc buffer (tests/bindings-snapshot.el)
   - [ ] 2. registry + compiler: base + three profile maps + user maps +
     compiled suppressions; every profile reproduces today's map exactly
     (behavior, not bytes); conflict validation
