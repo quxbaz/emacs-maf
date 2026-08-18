@@ -46,11 +46,19 @@
       (define-key maf-bindings-vim-user-map (kbd "g") #'maf-go-home)
       (define-key maf-bindings-common-user-map (kbd "<f6>") #'maf-timeline)
     #+end_src
-  - removing a default needs explicit support — nil exposes what lies
-    below, `undefined` blocks calc too:
+  - principle: the user surface is plain elisp — real keymaps,
+    `define-key`, `kbd`; no maf-specific bind API
+  - removing a default is the one thing keymaps cannot say — nil exposes
+    what lies below, `undefined` blocks calc too — so a sentinel command
+    says it, still through define-key:
     #+begin_src elisp
-      (maf-bindings-unbind 'native ">")   ; > falls through to calc
+      ;; > falls through to whatever it runs without maf
+      (define-key maf-bindings-native-user-map
+                  (kbd ">") #'maf-bindings-passthrough)
     #+end_src
+  - `maf-bindings-unbind` is optional sugar for exactly that define-key
+  - known costs: C-h k names the sentinel, not the command it lands on;
+    suppressing a whole prefix key (j) needs special handling
 
 * rules
   - modules declare their keys to the binding system; no raw define-key
