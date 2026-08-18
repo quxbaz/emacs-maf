@@ -165,27 +165,33 @@ state. Second value: the same list restricted to enabled modules."
               (when on (push (cons key cmd) enabled)))))))
     (list (nreverse all) (nreverse enabled))))
 
+(defun maf-bindings--key-vector (key)
+  "KEY parsed once, as a vector whatever `kbd' answered."
+  (let ((k (kbd key)))
+    (if (stringp k) (string-to-vector k) k)))
+
 (defun maf-bindings--validate (name defaults module-claims)
   "Signal on conflicting claims for profile NAME.
 Two owners on one key with different commands, or a key that is both
 a command and a live prefix of another claim, are errors — never
-precedence accidents."
-  (let ((claims (append defaults module-claims))
-        (seen (make-hash-table :test #'equal)))
-    (dolist (claim claims)
-      (let ((prior (gethash (car claim) seen)))
-        (when (and prior (not (eq prior (cdr claim))))
+precedence accidents. One `kbd' parse and one hash probe per claim
+plus one per proper prefix: this runs on every recompile, and a
+recompile runs on every module toggle, so it must cost nothing."
+  (let ((seen (make-hash-table :test #'equal)))
+    (dolist (claim (append defaults module-claims))
+      (let* ((kv (maf-bindings--key-vector (car claim)))
+             (prior (gethash kv seen)))
+        (when (and prior (not (eq (cdr prior) (cdr claim))))
           (error "maf-bindings: %s: key %S claimed as %s and %s"
-                 name (car claim) prior (cdr claim))))
-      (puthash (car claim) (cdr claim) seen))
-    (dolist (claim claims)
-      (let ((kv (kbd (car claim))))
-        (dolist (other claims)
-          (let ((ov (kbd (car other))))
-            (when (and (< (length kv) (length ov))
-                       (equal kv (seq-take ov (length kv))))
-              (error "maf-bindings: %s: %S is a command but a prefix of %S"
-                     name (car claim) (car other)))))))))
+                 name (car claim) (cdr prior) (cdr claim)))
+        (puthash kv claim seen)))
+    (maphash
+     (lambda (kv claim)
+       (dotimes (i (1- (length kv)))
+         (when-let ((short (gethash (seq-take kv (1+ i)) seen)))
+           (error "maf-bindings: %s: %S is a command but a prefix of %S"
+                  name (car short) (car claim)))))
+     seen)))
 
 (defun maf-bindings-compile ()
   "Rebuild every profile's generated map from the registry.
