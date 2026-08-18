@@ -1666,14 +1666,17 @@ it, so it is one stop."
 DIR is 1 forward, -1 back. Strictly past point, so the stop point
 already sits on is never its own answer; from inside a run of spaces,
 the step back lands on the run's first, as `backward-word' lands on a
-word's start. The scan crosses lines, over the whole buffer."
+word's start. The scan keeps to point's own line: the walk is along
+one line of formula text, and the line below is its own walk, not
+this one's next stop."
   (save-excursion
     (let ((from (point))
+          (bound (if (> dir 0) (line-end-position) (line-beginning-position)))
           (hit nil))
       (while (and (not hit)
                   (if (> dir 0)
-                      (search-forward " " nil t)
-                    (search-backward " " nil t)))
+                      (search-forward " " bound t)
+                    (search-backward " " bound t)))
         (let ((pos (match-beginning 0)))
           (when (and (if (> dir 0) (> pos from) (< pos from))
                      (maf--space-stop-p pos))
@@ -1693,11 +1696,11 @@ lands on the space itself.
 A run of spaces is one gap and one stop, however wide the rendering
 draws it, and the furniture around the formulas is no stop at all: the
 line-number margin of the stack display, and the machine-owned prefix
-of a maf-edit session, are stepped over — so the walk runs from the
-last gap of one entry to the first of the next, and works the same
-over the editable text of an edit session. A numeric prefix N moves
-over that many gaps, backward when negative; past the last gap the
-motion signals rather than moving."
+of a maf-edit session, are stepped over. The walk keeps to point's own
+line — past its last gap the motion signals rather than crossing into
+the entry below, and each line of a multi-line rendering is its own
+walk — and works the same over the editable text of an edit session.
+A numeric prefix N moves over that many gaps, backward when negative."
   (interactive "p")
   (let* ((count (or n 1))
          (dir (if (< count 0) -1 1)))

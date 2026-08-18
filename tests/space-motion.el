@@ -4,9 +4,9 @@
 ;; spaces is one stop (its first), furniture never is — the line-number
 ;; margin, a line's leading indentation (the home line, Big language
 ;; layout), and a session's machine-owned prefix — a numeric prefix
-;; counts gaps (backward when negative), and past the last gap the
-;; motion signals rather than moving. A step passes when it raises no
-;; error.
+;; counts gaps (backward when negative), and the walk keeps to point's
+;; own line: past its last gap the motion signals rather than crossing
+;; into the line below. A step passes when it raises no error.
 
 (maf-step
   ;; Two entries, so the motion has a margin to cross between them.
@@ -22,30 +22,41 @@
   (progn (execute-kbd-macro (kbd "S-SPC")) nil)
   (cl-assert (looking-at " y)$"))
 
-  ;; Crossing into the entry below steps over the line-number margin:
-  ;; its padding is furniture, and the first stop is the entry's own
-  ;; first gap.
+  ;; The walk keeps to the entry's own line: past its last gap the
+  ;; motion signals rather than crossing into the entry below.
+  (cl-assert (eq 'signalled
+                 (condition-case nil
+                     (progn (call-interactively 'maf-forward-space) 'moved)
+                   (user-error 'signalled))))
+
+  ;; The entry below is its own walk, entered by moving there; its
+  ;; line-number margin is furniture, so the first stop is the entry's
+  ;; own first gap.
+  (progn (forward-line 1) (beginning-of-line) nil)
   (progn (execute-kbd-macro (kbd "S-SPC")) nil)
   (cl-assert (looking-at " x \\+ 12"))
   (cl-assert (= (calc-locate-cursor-element (point)) 1))
   (progn (execute-kbd-macro (kbd "S-SPC")) (execute-kbd-macro (kbd "S-SPC")) nil)
   (cl-assert (looking-at " 12$"))
 
-  ;; Past the last gap there is nowhere to go: the home line's leading
-  ;; spaces are indentation, not a gap, so the motion signals.
+  ;; Past the last gap there is nowhere to go.
   (cl-assert (eq 'signalled
                  (condition-case nil
                      (progn (call-interactively 'maf-forward-space) 'moved)
                    (user-error 'signalled))))
 
-  ;; Backward retraces the same stops, margin and all.
+  ;; Backward retraces the same stops and stays on the line the same
+  ;; way: before its first gap the motion signals.
   (let ((current-prefix-arg -1)) (call-interactively 'maf-forward-space))
   (cl-assert (looking-at " \\+ 12"))
   (let ((current-prefix-arg -1)) (call-interactively 'maf-forward-space))
   (cl-assert (looking-at " x \\+ 12"))
-  (let ((current-prefix-arg -2)) (call-interactively 'maf-forward-space))
-  (cl-assert (looking-at " sqrt"))
-  (cl-assert (= (calc-locate-cursor-element (point)) 2))
+  (cl-assert (eq 'signalled
+                 (condition-case nil
+                     (progn (let ((current-prefix-arg -1))
+                              (call-interactively 'maf-forward-space))
+                            'moved)
+                   (user-error 'signalled))))
 
   ;; A positive prefix moves that many gaps at once, and before the
   ;; first gap the backward motion signals in turn.
@@ -61,10 +72,10 @@
                    (user-error 'signalled))))
   (calc-pop (calc-stack-size))
 
-  ;; Big language: the drawing's own spaces are what there is to walk.
-  ;; A line's leading layout indentation is furniture, so the fraction
-  ;; bar's line and the radical's overbar line — leading spaces and no
-  ;; gap — are crossed without a stop.
+  ;; Big language: the drawing's own spaces are what there is to walk,
+  ;; one drawn line at a time — the numerator's line ends its walk, and
+  ;; the denominator's line is entered by moving there, its leading
+  ;; layout indentation furniture as ever.
   (maf-push "(a + 1) / sqrt(b 2)")
   (call-interactively 'maf-toggle-big-language)
   (cl-assert (eq calc-language 'big))
@@ -73,6 +84,11 @@
   (cl-assert (looking-at " \\+ 1$"))
   (progn (execute-kbd-macro (kbd "S-SPC")) nil)
   (cl-assert (looking-at " 1$"))
+  (cl-assert (eq 'signalled
+                 (condition-case nil
+                     (progn (call-interactively 'maf-forward-space) 'moved)
+                   (user-error 'signalled))))
+  (progn (goto-char (point-min)) (search-forward "√") (backward-char 1) nil)
   (progn (execute-kbd-macro (kbd "S-SPC")) nil)
   (cl-assert (looking-at " b 2$"))
   (progn (execute-kbd-macro (kbd "S-SPC")) nil)
@@ -95,12 +111,17 @@
   (cl-assert maf-edit-mode)
 
   ;; The walk over the editable text: the machine-owned prefix is
-  ;; furniture by its text property, and the motion crosses into the
-  ;; entry below just as on the rendered stack.
+  ;; furniture by its text property, and the walk keeps to the line
+  ;; just as on the rendered stack — the entry below is its own walk.
   (progn (execute-kbd-macro (kbd "S-SPC")) nil)
   (cl-assert (looking-at " \\+ 2 x$"))
   (progn (execute-kbd-macro (kbd "S-SPC")) (execute-kbd-macro (kbd "S-SPC")) nil)
   (cl-assert (looking-at " x$"))
+  (cl-assert (eq 'signalled
+                 (condition-case nil
+                     (progn (call-interactively 'maf-forward-space) 'moved)
+                   (user-error 'signalled))))
+  (progn (forward-line 1) (beginning-of-line) nil)
   (progn (execute-kbd-macro (kbd "S-SPC")) nil)
   (cl-assert (looking-at " - 4$"))
 
