@@ -21,9 +21,12 @@
 ;; user's own profile would use. In the skeleton every declaration
 ;; below targets all three, so the profiles behave identically until
 ;; the content phases differentiate them (docs/bindings.org).
-(maf-bindings-defprofile 'calc)
-(maf-bindings-defprofile 'native)
-(maf-bindings-defprofile 'vim)
+(maf-bindings-defprofile 'calc :description
+  "Calc's own layout, maf's commands: siblings on the keys calc uses.")
+(maf-bindings-defprofile 'native :description
+  "maf's opinionated layout — the default.")
+(maf-bindings-defprofile 'vim :description
+  "The native layout with vim-style navigation keys.")
 
 ;; The mafcmd table's key column, declared here where the profile
 ;; defaults are owned: reloading this file rebuilds the whole set.

@@ -80,11 +80,13 @@ maf-<name>-user-map: short, since it is what users type."
   "Register profile NAME, replacing its default declarations as a set.
 OPTS may carry :clone SOURCE, seeding the defaults with a copy of
 SOURCE's current default declarations — a snapshot, not a link; later
-changes to SOURCE do not flow. The profile's user map variable
+changes to SOURCE do not flow — and :description, a short line on what
+the layout is, shown when the module menu steps onto the profile. The profile's user map variable
 \(maf-NAME-user-map) is created if absent and never touched again, and
 its suppression list survives redefinition: both are user state, not
 declarations. Returns NAME."
   (let* ((clone (plist-get opts :clone))
+         (description (plist-get opts :description))
          (seed (and clone (copy-alist (plist-get (maf-bindings--profile clone)
                                                  :defaults))))
          (entry (assq name maf-bindings--profiles))
@@ -92,11 +94,16 @@ declarations. Returns NAME."
     (unless (boundp user-sym)
       (set user-sym (make-sparse-keymap)))
     (if entry
-        (setcdr entry (plist-put (cdr entry) :defaults seed))
+        (setcdr entry (plist-put
+                       (plist-put (cdr entry) :defaults seed)
+                       :description
+                       (or description
+                           (plist-get (cdr entry) :description))))
       (let ((map (make-sparse-keymap)))
         (set-keymap-parent map maf-bindings-base-map)
         (push (cons name (list :map map :user-map user-sym
-                               :defaults seed :suppressed nil))
+                               :defaults seed :suppressed nil
+                               :description description))
               maf-bindings--profiles)))
     ;; Mark, without flushing: the define calls that follow a
     ;; defprofile batch onto the same compile.
@@ -386,7 +393,16 @@ moment it is registered."
                                   `(progn (maf-use-bindings-mode 1)
                                           (maf-bindings-set-profile ',name)))))
                         (reverse maf-bindings--profiles)))
-        :current (lambda (raw) (and raw maf-bindings-profile))))
+        :current (lambda (raw) (and raw maf-bindings-profile))
+        :describe #'maf-bindings--describe-value))
+
+(defun maf-bindings--describe-value (value)
+  "The short description echoed when the menu steps onto VALUE.
+A profile's own :description, or the meaning of off."
+  (if (null value)
+      "No maf keys at all — stock calc; commands stay reachable by M-x."
+    (or (plist-get (maf-bindings--profile value) :description)
+        "A user-defined profile.")))
 
 (when (require 'maf-module nil t)
   (maf-register-module 'maf-bindings #'maf-use-bindings-mode

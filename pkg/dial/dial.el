@@ -45,6 +45,11 @@
 ;;            no example applies. Called after a step has applied the
 ;;            value, so it may read live state; only stepping echoes
 ;;            it — see `dial--example'.
+;;   :describe Function mapping a value key to a short description of
+;;            what the value means, echoed on stepping as the value's
+;;            label over the text. For rows whose values are choices
+;;            to explain rather than settings to sample; wins over
+;;            :example when both are present — see `dial--describe'.
 ;;   :vars    Other IDs the row speaks for, when one setting is spread
 ;;            over several. They count towards whether the row has
 ;;            moved off its default.
@@ -803,6 +808,22 @@ Signals on a group separator, whose id names no setting."
 ;; until the prompt was answered. So a prompting value is stepped onto
 ;; and left alone, and `dial-set' is what runs it.
 
+(defun dial--describe (spec value)
+  "The description echo for stepping onto VALUE, or nil.
+Nil without a :describe function, and nil when the function answers
+nil. The value's label heads the text —
+
+  native
+
+  maf's opinionated layout (the default)
+
+— so the echo names where the step landed before saying what it means."
+  (when-let* ((fn (plist-get spec :describe))
+              (text (funcall fn (car value))))
+    (format "%s
+
+%s" (nth 1 value) text)))
+
 (defun dial--example (spec value)
   "Return the example echoed after stepping SPEC's item to value entry VALUE.
 Nil without an :example function, and nil when the function answers nil
@@ -867,7 +888,8 @@ runs that one."
                      (dial--key #'dial-set "RET")))
         (setq dial--pending nil)
         (dial--apply (nth 2 value))
-        (dial--redraw id spec (dial--example spec value))))))
+        (dial--redraw id spec (or (dial--describe spec value)
+                                  (dial--example spec value)))))))
 
 (defun dial-previous-value (&optional n)
   "Set this row's setting to its previous value, or the one N values back."
