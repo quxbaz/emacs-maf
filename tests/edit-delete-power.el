@@ -31,15 +31,14 @@
                     "x"))
   (call-interactively 'maf-edit-discard)
 
-  ;; An exponent in a group goes whole, and the base's own pair goes
-  ;; with it — alone in the entry, the parens carried the power and
-  ;; nothing else.
+  ;; An exponent in a group goes whole; the base keeps its pair —
+  ;; the parens group, and deleting the power has no claim on them.
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "(x + 1)^(a + b)") nil)
   (progn (maf-edit-move-beginning-of-line 1) (forward-char 8) nil)
   (progn (execute-kbd-macro (kbd "DEL")) nil)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
-                    "x + 1"))
+                    "(x + 1)"))
   (call-interactively 'maf-edit-discard)
 
   ;; Beside an operator the pair still groups, so it stays: 2*x+1 is a
@@ -52,14 +51,13 @@
                     "2*(x+1)"))
   (call-interactively 'maf-edit-discard)
 
-  ;; Inside a call the argument is one element, so the pair is
-  ;; furniture there too.
+  ;; Inside a call the same: the power goes, the pair stays.
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "ln((a+b)^2)") nil)
   (progn (maf-edit-move-beginning-of-line 1) (forward-char 9) nil)
   (progn (execute-kbd-macro (kbd "DEL")) nil)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
-                    "ln(a+b)"))
+                    "ln((a+b))"))
   (call-interactively 'maf-edit-discard)
 
   ;; Powers fold right, so the first caret heads the whole tower and
@@ -129,9 +127,9 @@
                     "x"))
   (call-interactively 'maf-edit-discard)
 
-  ;; The inverse of the raise: `:' on the operator writes the pair
-  ;; that keeps the text honest, and DEL on the caret takes it back
-  ;; out, point back where the raise found it.
+  ;; Un-raising a raise: `:' on the operator writes the pair that
+  ;; keeps the text honest; DEL on the caret takes back the power but
+  ;; leaves the pair — grouping stays until the writer removes it.
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "a+b") nil)
   (progn (maf-edit-move-beginning-of-line 1) (forward-char 1) nil)
@@ -143,7 +141,7 @@
   (progn (forward-char 1) nil)
   (progn (execute-kbd-macro (kbd "DEL")) nil)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
-                    "a+b"))
+                    "(a+b)"))
   (call-interactively 'maf-edit-discard)
 
   ;; What deletes is a power the entry reads: a caret inside a string
@@ -167,14 +165,13 @@
                     "1 / (x - 1)"))
   (call-interactively 'maf-edit-discard)
 
-  ;; And the base's own pair goes forward as it does backward, where
-  ;; it stands alone in the entry.
+  ;; And the pair stays forward as it does backward.
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "(a+b)^2") nil)
   (progn (maf-edit-move-beginning-of-line 1) (forward-char 5) nil)
   (progn (execute-kbd-macro (kbd "C-d")) nil)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
-                    "a+b"))
+                    "(a+b)"))
   (call-interactively 'maf-edit-discard)
 
   ;; Either star of `**' is the operator: deleting forward into its

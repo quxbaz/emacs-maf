@@ -1855,34 +1855,17 @@ no child of the power covers it. Anything else under the character —
 an atom holding a stray caret, a string — is not a power, and nil
 comes back with nothing deleted.
 
-The operator and its exponent go together, and the base's bare pair
-goes too where it stands alone as one element of the entry
-\(`maf-editplus--whole-element-p'). Point lands after the base.
-
-A power still missing its exponent — (1 + r)^| backspaced mid-typing —
-gives back only its operator: the pair was written before the caret
-was, so the caret's deletion has no claim on it."
+The operator and its exponent go together; the base keeps whatever it
+wears — a pair of parens around it was typed or written for grouping,
+and deleting the power has no claim on it. Point lands after the
+base."
   (let ((node (maf-editplus--node-at
                (maf-editplus--parse limit (overlay-end entry))
                op)))
     (when (and node (equal (maf-editplus--node-kind node) "^"))
-      (let* ((base (car (maf-editplus--node-children node)))
-             (exponent (cadr (maf-editplus--node-children node)))
-             (bs (maf-editplus--node-start base))
-             (be (maf-editplus--node-end base)))
-        (delete-region op (maf-editplus--node-end node))
-        (goto-char op)
-        (when (and exponent
-                   (maf-editplus--node-parenthesized-p base)
-                   (maf-editplus--whole-element-p
-                    bs be limit (overlay-end entry)))
-          ;; Closer first, as in `maf-editplus--wrap-node', so the
-          ;; opener's position still holds; point then belongs at the
-          ;; end of the unwrapped base.
-          (delete-region (1- be) be)
-          (delete-region bs (1+ bs))
-          (goto-char (- be 2)))
-        t))))
+      (delete-region op (maf-editplus--node-end node))
+      (goto-char op)
+      t)))
 
 (defun maf-editplus-delete-backward (n)
   "Delete backward; a power's operator takes its exponent with it.
@@ -1898,18 +1881,11 @@ the right:
   x^|2^3      =>  x          (the exponent of the first caret)
   x^2^|3      =>  x^2
 
-Parentheses the base carried for the power's sake go with it, when
-dropping them cannot regroup what is around them — the pair stands
-alone as one element of the entry, nothing but a delimiter, a comma
-or the entry's own ends beside it (`maf-editplus--whole-element-p'):
+The base keeps its parentheses: a pair around it groups, and deleting
+the power is not a claim on the grouping —
 
-  (x + 1)^|(a + b)  =>  x + 1
-  ln((a+b)^|2)      =>  ln(a+b)
-  2*(x+1)^|2        =>  2*(x+1)    (the pair still groups)
-
-which makes the key the inverse of `maf-editplus-raise-power': the
-parentheses that key writes to keep the text honest are the ones this
-one takes back out.
+  (x + 1)^|(a + b)  =>  (x + 1)
+  2*(x+1)^|2        =>  2*(x+1)
 
 What the caret heads is the parse's answer (`maf-editplus--parse'),
 so a `^' the entry does not read as a power — inside a string, or
@@ -1946,13 +1922,13 @@ something else:
 
   1 / (x|^2 - 1)  =>  1 / (x - 1)
   x|^2^3          =>  x
-  (a+b)|^2        =>  a+b
-  2*(x+1)|^2      =>  2*(x+1)    (the pair still groups)
+  (a+b)|^2        =>  (a+b)
+  2*(x+1)|^2      =>  2*(x+1)
 
 The rules are the backward key's own (`maf-editplus--delete-power-at'):
 the parse names the power the operator heads, the exponent goes whole
-whatever its shape, and the base's bare pair goes where it stands
-alone as one element of the entry. Point lands after the base. On any
+whatever its shape, and the base keeps its parentheses. Point lands
+after the base. On any
 other character the key is what C-d always was — plain forward
 deletion, one character per press, N of them with an argument.
 
