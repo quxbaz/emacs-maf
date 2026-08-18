@@ -209,7 +209,7 @@
     (behavior, not bytes); conflict validation (core/maf-bindings.el,
     tests/bindings-registry.el; the reproduce-today check lands with
     the phase-3 conversion)
-  - [ ] 3. one atomic landing: module + digit-map declaration conversion
+  - [X] 3. one atomic landing: module + digit-map declaration conversion
     (tracked installs), then dispatcher, profile defcustom + switch
     command, live switching, and profile-aware key displays. Not split:
     raw module define-keys under the dispatcher would outrank user maps

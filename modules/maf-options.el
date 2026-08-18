@@ -757,8 +757,11 @@ through the module system; see `maf-modules'."
       ;; ? shadows calc-help: the settings menu is the glanceable
       ;; answer to "what state am I in", which is most of what the
       ;; help key gets asked; calc's help summary stays on h.
-      (define-key maf-mode-map (kbd "?") #'maf-options)
-    (define-key maf-mode-map (kbd "?") nil)))
+      (maf-bindings--refresh)
+    (maf-bindings--refresh)))
+
+(maf-bindings-module-keys 'maf-options 'maf-use-options-mode
+  '(((calc native vim) "?" maf-options)))
 
 ;; Register with the module system when it is present; the mode above
 ;; works on its own without it.

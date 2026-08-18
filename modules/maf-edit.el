@@ -1439,16 +1439,15 @@ modules it installs no hook or advice — just these bindings, plus the
 on-demand `maf-edit-mode' editing session they lead into."
   :global t
   :group 'maf
-  (if maf-use-edit-mode
-      (progn
-        (define-key maf-mode-map (kbd "SPC") #'maf-edit)
-        (define-key maf-mode-map (kbd "`") #'maf-edit-add-entry-at-home)
-        (define-key maf-mode-map (kbd "C-o") #'maf-edit-add-entry-above)
-        (define-key maf-mode-map (kbd "(") #'maf-edit-add-vector))
-    (define-key maf-mode-map (kbd "SPC") nil)
-    (define-key maf-mode-map (kbd "`") nil)
-    (define-key maf-mode-map (kbd "C-o") nil)
-    (define-key maf-mode-map (kbd "(") nil)))
+  ;; The keys are declared below; the toggle only recompiles them in
+  ;; or out (see core/maf-bindings.el).
+  (maf-bindings--refresh))
+
+(maf-bindings-module-keys 'maf-edit 'maf-use-edit-mode
+  '(((calc native vim) "SPC" maf-edit)
+    ((calc native vim) "`" maf-edit-add-entry-at-home)
+    ((calc native vim) "C-o" maf-edit-add-entry-above)
+    ((calc native vim) "(" maf-edit-add-vector)))
 
 ;; Register with the module system when it is present; the mode above
 ;; works on its own without it.

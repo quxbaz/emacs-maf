@@ -467,17 +467,19 @@ The recording rides two pieces of advice, on `maf-edit-commit' and on
         (advice-add 'maf-digit-start :around #'maf-recall--record-digit)
         (advice-add 'calc-algebraic-entry :around
                     #'maf-recall--record-algebraic)
-        (define-key maf-mode-map (kbd "M-p") #'maf-recall-previous)
-        (define-key maf-mode-map (kbd "M-n") #'maf-recall-next)
+        (maf-bindings--refresh)
         (define-key maf-edit-mode-map (kbd "M-p") #'maf-recall-previous)
         (define-key maf-edit-mode-map (kbd "M-n") #'maf-recall-next))
     (advice-remove 'maf-edit-commit #'maf-recall--record-edit)
     (advice-remove 'maf-digit-start #'maf-recall--record-digit)
     (advice-remove 'calc-algebraic-entry #'maf-recall--record-algebraic)
-    (define-key maf-mode-map (kbd "M-p") nil)
-    (define-key maf-mode-map (kbd "M-n") nil)
+    (maf-bindings--refresh)
     (define-key maf-edit-mode-map (kbd "M-p") nil)
     (define-key maf-edit-mode-map (kbd "M-n") nil)))
+
+(maf-bindings-module-keys 'maf-recall 'maf-use-recall-mode
+  '(((calc native vim) "M-p" maf-recall-previous)
+    ((calc native vim) "M-n" maf-recall-next)))
 
 ;; Register with the module system when it is present; the mode above
 ;; works on its own without it.

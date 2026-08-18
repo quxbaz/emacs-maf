@@ -14,6 +14,7 @@
 (require 'seq)
 (require 'maf-lib)
 (require 'maf-defcmd)
+(require 'maf-bindings)
 
 ;; These live in lazily-loaded calc modules; calc-ext's autoload registry
 ;; resolves them at runtime, but the byte compiler needs declarations.
@@ -128,7 +129,7 @@ position the user was on survives the abort. At home, or with
     (calc-set-command-flag 'no-align))
   (abort-recursive-edit))
 
-(define-key calc-digit-map "\C-g" #'maf-digit-quit)
+(maf-bindings-digit-define "C-g" #'maf-digit-quit #'abort-recursive-edit)
 
 (defun maf--incomplete-entry-p ()
   "Non-nil while calc is entering an incomplete object.
@@ -166,7 +167,7 @@ on `:'."
     (let ((last-command-event ?:))
       (calcDigit-key))))
 
-(define-key calc-digit-map ";" #'maf-digit-colon)
+(maf-bindings-digit-define ";" #'maf-digit-colon #'calcDigit-nondigit)
 
 (defun maf--digit-shortcuts-live-p ()
   "Non-nil when maf's shortcuts in the digit-entry map apply.
@@ -274,8 +275,8 @@ off in the calc buffer the entry belongs to."
           (maf--digit-entry-keep-point))
         (exit-minibuffer)))))
 
-(define-key calc-digit-map "n" #'maf-digit-pi)
-(define-key calc-digit-map "P" #'maf-digit-pi)
+(maf-bindings-digit-define "n" #'maf-digit-pi #'calcDigit-key)
+(maf-bindings-digit-define "P" #'maf-digit-pi #'calcDigit-letter)
 
 (defun maf-digit-equal-to ()
   "End the digit entry on `e' and equate with the number entered.
@@ -319,7 +320,7 @@ there e-notation is untouched."
     (setq this-command 'calcDigit-nondigit)
     (calcDigit-nondigit)))
 
-(define-key calc-digit-map "e" #'maf-digit-equal-to)
+(maf-bindings-digit-define "e" #'maf-digit-equal-to #'calcDigit-key)
 
 (defun maf-digit-mod-360 ()
   "End the digit entry on `o' and reduce the number modulo 360.
@@ -356,7 +357,7 @@ superseded by the 8# prefix."
           last-command-event ?\M-o)
     (calcDigit-nondigit)))
 
-(define-key calc-digit-map "o" #'maf-digit-mod-360)
+(maf-bindings-digit-define "o" #'maf-digit-mod-360 #'calcDigit-key)
 
 (defvar maf--digit-jump-level nil
   "Stack level a finished digit entry should send point to, or nil.
@@ -436,7 +437,7 @@ place to leave from; and with `maf-mode' off in the calc buffer."
         (delete-minibuffer-contents)
         (exit-minibuffer))))))
 
-(define-key calc-digit-map "j" #'maf-digit-jump)
+(maf-bindings-digit-define "j" #'maf-digit-jump #'calcDigit-letter)
 
 (defun maf-digit-commit-contextual ()
   "Commit the digit entry into the sub-formula at point, on RET.
@@ -470,7 +471,8 @@ unshifted twin SPC keeps doing everywhere."
   (setq this-command 'calcDigit-nondigit)
   (calcDigit-nondigit))
 
-(define-key calc-digit-map (kbd "RET") #'maf-digit-commit-contextual)
+(maf-bindings-digit-define "RET" #'maf-digit-commit-contextual
+                           #'calcDigit-nondigit)
 
 (defun maf--digit-take-jump ()
   "Send point to the level `maf-digit-jump' asked for, if it asked.
@@ -538,7 +540,7 @@ the fresh binding `calc-do' makes later."
         (maf--digit-commit-in-place t))
     (calcDigit-nondigit)))
 
-(define-key calc-digit-map (kbd "C-<return>") #'maf-digit-commit-here)
+(maf-bindings-digit-define "C-<return>" #'maf-digit-commit-here nil)
 
 ;; Digit entry had an add-below gesture of its own here — S-<return>,
 ;; the mirror of `maf-edit-add-entry-below's key in stack mode. The

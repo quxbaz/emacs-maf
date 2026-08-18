@@ -198,7 +198,17 @@ order in maf.el that should not decide how the menu reads."
               (cons name
                     (list :group "Modules"
                           :label (symbol-name name)
-                          :doc (maf-module--doc name description keys)
+                          :doc (maf-module--doc
+                                name description
+                                ;; Prefer the live answer: the bindings
+                                ;; registry knows the module's keys in
+                                ;; the *active profile*, suppressions
+                                ;; and all; the registered static
+                                ;; string is the fallback for modules
+                                ;; not yet declaring through it.
+                                (or (and (fboundp 'maf-bindings-module-display-keys)
+                                         (maf-bindings-module-display-keys name))
+                                    keys))
                           :values `((t   "on"  (,mode 1))
                                     (nil "off" (,mode -1)))))))
           (sort (copy-sequence maf-module-registry)

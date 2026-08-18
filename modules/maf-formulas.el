@@ -826,9 +826,12 @@ and the variable registration follow the mode. See `maf-modules'."
   (if maf-use-formulas-mode
       (progn
         (maf-formulas--register-vars)
-        (define-key maf-mode-map (kbd "s o") #'maf-formulas))
+        (maf-bindings--refresh))
     (maf-formulas--unregister-vars)
-    (define-key maf-mode-map (kbd "s o") nil)))
+    (maf-bindings--refresh)))
+
+(maf-bindings-module-keys 'maf-formulas 'maf-use-formulas-mode
+  '(((calc native vim) "s o" maf-formulas)))
 
 (when (require 'maf-module nil t)
   (maf-register-module 'maf-formulas #'maf-use-formulas-mode

@@ -591,13 +591,16 @@ recorded stay browsable. Managed through the module system; see
       (progn
         (advice-add 'calc-record :after #'maf-timeline--stash-prefix)
         (add-hook 'post-command-hook #'maf-timeline--capture)
-        (define-key maf-mode-map (kbd "t d") #'maf-timeline)
+        (maf-bindings--refresh)
         ;; Baseline the current stack so the first change diffs against it.
         (maf-timeline--capture))
     (remove-hook 'post-command-hook #'maf-timeline--capture)
     (advice-remove 'calc-record #'maf-timeline--stash-prefix)
-    ;; Cede the key back to calc's trail display.
-    (define-key maf-mode-map (kbd "t d") nil)))
+    ;; The recompile cedes the key back to calc's trail display.
+    (maf-bindings--refresh)))
+
+(maf-bindings-module-keys 'maf-timeline 'maf-use-timeline-mode
+  '(((calc native vim) "t d" maf-timeline)))
 
 ;; Register with the module system when it is present; the mode above
 ;; works on its own without it.

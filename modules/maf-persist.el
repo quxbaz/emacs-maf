@@ -265,13 +265,12 @@ See `maf-stack-session-name' for how sessions are named, and
         ;; calc itself — its t prefix is the trail (t b d f h i k m n o
         ;; p r s y) and the date/time commands on the capitals — so
         ;; nothing is shadowed and there is nothing to cede back.
-        (define-key maf-mode-map (kbd "t l") #'maf-restore-stack-from)
+        (maf-bindings--refresh)
         ;; The load key's companion: update this session's save file now,
         ;; for a checkpoint the idle timer has not reached yet. t u is
         ;; free in calc too, and the right hand takes it without leaving
         ;; the prefix's own hand — t s, the mnemonic key, is calc's
         ;; trail isearch, whose t r twin would be left behind.
-        (define-key maf-mode-map (kbd "t u") #'maf-save-stack)
         (when maf--stack-save-timer (cancel-timer maf--stack-save-timer))
         (setq maf--stack-save-timer
               (run-with-idle-timer maf-stack-save-interval t #'maf-save-stack))
@@ -280,8 +279,7 @@ See `maf-stack-session-name' for how sessions are named, and
           (with-current-buffer buf (maf-restore-stack))))
     (remove-hook 'kill-emacs-hook #'maf--stack-shutdown)
     (remove-hook 'calc-mode-hook #'maf-restore-stack)
-    (define-key maf-mode-map (kbd "t l") nil)
-    (define-key maf-mode-map (kbd "t u") nil)
+    (maf-bindings--refresh)
     (when maf--stack-save-timer
       (cancel-timer maf--stack-save-timer)
       (setq maf--stack-save-timer nil))
@@ -290,6 +288,10 @@ See `maf-stack-session-name' for how sessions are named, and
 
 ;; Register with the module system when it is present; the mode above
 ;; works on its own without it.
+(maf-bindings-module-keys 'maf-persist 'maf-persist-mode
+  '(((calc native vim) "t l" maf-restore-stack-from)
+    ((calc native vim) "t u" maf-save-stack)))
+
 (when (require 'maf-module nil t)
   (maf-register-module 'maf-persist #'maf-persist-mode
                        "Save and restore the stack across Emacs sessions.

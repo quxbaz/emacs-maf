@@ -97,7 +97,11 @@ prefix — as absent as nil, for these assertions."
   ;; The digit tracker: installs only onto the declared stock binding,
   ;; leaves a user's own customization alone, and restores only what it
   ;; installed. Driven on a scratch key of calc-digit-map.
-  (let ((stock (lookup-key calc-digit-map "Z")))
+  ;; The declaration and installed lists are let-bound to the scratch
+  ;; entry alone, so the sync cannot disturb the real overrides.
+  (let ((stock (lookup-key calc-digit-map "Z"))
+        (maf-bindings--digit nil)
+        (maf-bindings--digit-installed nil))
     (unwind-protect
         (progn
           (maf-bindings-digit-define "Z" #'ignore stock)

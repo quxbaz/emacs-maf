@@ -208,10 +208,17 @@ references them stays live."
 
 ;;; The dispatcher
 
-(defvar maf-bindings-profile 'native
+(defcustom maf-bindings-profile 'native
   "The active binding profile's name.
-Set before maf loads, or switch live with `maf-bindings-set-profile';
-a plain setq after load does not re-apply.")
+Set before maf loads, switch live with `maf-bindings-set-profile', or
+set through Customize; a plain setq after load does not re-apply."
+  :type '(choice (const calc) (const native) (const vim)
+                 (symbol :tag "Custom profile"))
+  :set (lambda (sym val)
+         (set-default sym val)
+         (when (and (featurep 'maf-bindings) maf-bindings--active)
+           (maf-bindings--refresh)))
+  :group 'maf)
 
 (defun maf-bindings--apply ()
   "Point `maf-mode-map' at the active profile.
@@ -280,5 +287,53 @@ current binding is still the one maf installed."
           (define-key calc-digit-map (kbd key) (cdr saved)))
         (setq maf-bindings--digit-installed
               (delq saved maf-bindings--digit-installed))))))
+
+(defun maf-bindings-module-display-keys (module)
+  "MODULE's entry keys in the active profile, as a display string.
+Derived from the module's declarations rather than stored, so a
+profile switch or a suppression is always reflected. Nil when the
+module declared no keys, or none reach the active profile."
+  (let ((entry (cdr (assq module maf-bindings--modules)))
+        (suppressed (ignore-errors
+                      (plist-get (maf-bindings--profile maf-bindings-profile)
+                                 :suppressed)))
+        keys)
+    (dolist (spec (plist-get entry :keys))
+      (pcase-let ((`(,profiles ,key ,_cmd) spec))
+        (when (and (or (eq profiles :all) (memq maf-bindings-profile profiles))
+                   (not (maf-bindings--suppressed-p key suppressed)))
+          (push key keys))))
+    (and keys (mapconcat #'identity (nreverse keys) ", "))))
+
+;;; Module
+
+;;;###autoload
+(define-minor-mode maf-use-bindings-mode
+  "Global minor mode putting maf's key layout on `maf-mode-map'.
+Enabled, the active profile's compiled bindings — with the user maps
+above them — become `maf-mode-map's parent, and the digit-entry
+overrides install. Disabled, maf binds nothing at all: every key falls
+through to calc, and commands stay reachable by name. Managed through
+the module system; see `maf-modules'."
+  :global t
+  :group 'maf
+  (if maf-use-bindings-mode
+      (progn (setq maf-bindings--active t)
+             (maf-bindings--refresh))
+    (setq maf-bindings--active nil)
+    (set-keymap-parent maf-mode-map nil)
+    (maf-bindings--digit-sync)))
+
+;; Register with the module system when it is present; the mode above
+;; works on its own without it.
+(when (require 'maf-module nil t)
+  (maf-register-module 'maf-bindings #'maf-use-bindings-mode
+                       "Key layouts as switchable profiles.
+
+Every maf key lives in a binding profile — calc, native, or vim — over
+one shared base, compiled from declarations. Switch live with
+`maf-bindings-set-profile'; personal keys go in the per-profile user
+maps (maf-native-user-map and kin) with plain define-key. Disabled,
+maf binds no keys at all."))
 
 (provide 'maf-bindings)

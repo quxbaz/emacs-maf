@@ -43,6 +43,19 @@
 ;; Also defvar'd in maf.el next to the minor mode; whichever file loads first
 ;; creates the map and the other defvar is a no-op. Declared here too so this
 ;; file can install the generated bindings below.
+(defvar maf-cmds--table-keys nil
+  "The (KEY . COMMAND) rows the mafcmd table declares.
+Collected here rather than bound: src/bindings.el owns the profile
+declarations and reads this list, so a reload of either file leaves
+one source of truth.")
+
+(defun maf-cmds--table-key (key command)
+  "Record KEY -> COMMAND as a table row, replacing a prior KEY row."
+  (let ((cell (assoc key maf-cmds--table-keys)))
+    (if cell (setcdr cell command)
+      (setq maf-cmds--table-keys
+            (append maf-cmds--table-keys (list (cons key command)))))))
+
 (defvar maf-mode-map (make-sparse-keymap)
   "Keymap for `maf-mode'.")
 
@@ -104,7 +117,7 @@ variant's own variable governs only its direct invocation."
                           (list ',func expr
                                 ,@(when (eq arity 'binary) '(arg)))))))
              (when key
-               (list `(define-key maf-mode-map (kbd ,key) #',name))))))
+               (list `(maf-cmds--table-key ,key #',name))))))
         specs)))
 
 (maf-defcmds

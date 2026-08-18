@@ -41,7 +41,8 @@
 (require 'maf-cmds)
 (require 'maf-math "math")
 (require 'maf-stack "stack")
-(require 'maf-bindings "bindings")
+(require 'maf-bindings)                 ; core: registry and dispatcher
+(require 'maf-bindings-decls "bindings")
 (require 'maf-minibuffer "minibuffer")
 
 ;; Feature modules (modules/). Loading each only registers its toggle
