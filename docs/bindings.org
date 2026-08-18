@@ -28,7 +28,7 @@
   - `maf-mode-map` stays the one registered map (stable dispatcher);
     switching = repointing its parent, live, nothing rebuilt:
     #+begin_src elisp
-      (maf-set-binding-profile 'calc)
+      (maf-bindings-set-profile 'calc)
     #+end_src
 
 * lookup order (per profile)
@@ -42,14 +42,14 @@
 * user configuration
   - user maps are never written or rebuilt by maf; they survive switches
     #+begin_src elisp
-      (setq maf-binding-profile 'vim)
+      (setq maf-bindings-profile 'vim)
       (define-key maf-bindings-vim-user-map (kbd "g") #'maf-go-home)
       (define-key maf-bindings-common-user-map (kbd "<f6>") #'maf-timeline)
     #+end_src
-  - removing a default needs explicit support — nil exposes the layer
+  - removing a default needs explicit support — nil exposes what lies
     below, `undefined` blocks calc too:
     #+begin_src elisp
-      (maf-unbind-key 'native ">")   ; > falls through to calc
+      (maf-bindings-unbind 'native ">")   ; > falls through to calc
     #+end_src
 
 * rules
