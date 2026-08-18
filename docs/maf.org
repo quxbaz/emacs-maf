@@ -133,8 +133,10 @@
     \"set grid / set nokey\"
   - [ ] g i (my/calc-graph-quick-with-range) interval form a:b should work with spaces 'a b'
 
-* alter::rework preview
-  it feels awkward in actual usage
+* later
+** rework preview
+   it feels awkward in actual usage
+** modules suboptions
 
 * maybe
 ** TODO preview entry as latex
