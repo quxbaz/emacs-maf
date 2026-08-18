@@ -193,9 +193,10 @@
        calc-fin-pv/fv/pmt/nper/rate/sln/syd/ddb
 
 * profile:native
-  What today's layout is, beyond calc's own keys — the raw material for
-  the remap audit and displacement classification (see later:). The
-  bulk first:
+  What today's layout is, beyond calc's own keys. The shadowing and
+  additions groups below are declared `'(native vim)` — the calc
+  profile carries only the sibling groups (and, pending the module
+  strictness ruling, the module keys). The bulk first:
   - the mafcmd table: ~200 contextual siblings shadowing their calc
     originals on calc's own keys (the key column in src/maf-cmds.el)
   - base remaps: undo, undo-redo, calc-undo, calc-redo → maf-undo/redo
@@ -282,10 +283,11 @@
   the profile's own defaults (declaration-level clone)
 
 * phases — skeleton first
-  Build the architecture now; decide no new binding content. Today's
-  bindings are carried through the registry declared for *all three
-  profiles*, so every profile behaves identically — switching works but
-  changes nothing — until the content phases differentiate them.
+  Build the architecture now; decide no new binding content. The
+  skeleton carried today's bindings into all three profiles
+  identically; since then the calc profile has been differentiated —
+  it keeps the sibling groups only (see profile:native) — while vim
+  still equals native until its own content phase.
   - [X] 1. snapshot current behavior in step tests: effective bindings,
     remaps, prefix descendants, module on/off, digit-entry, real
     key-binding answers in a calc buffer (tests/bindings-snapshot.el)
@@ -307,7 +309,8 @@
 
 * later: profile content (out of scope for the skeleton)
   - [ ] audit the remap allowlist and fill the calc profile
-  - [ ] classify today's native-profile bindings: remap-covered vs
-    displacement delta
+  - [X] classify today's native-profile bindings: remap-covered vs
+    displacement delta (the profile:native inventory; the shadowing and
+    additions groups now target native+vim only)
   - [ ] user-defined profiles (displays land earlier, with the switcher)
   - [ ] vim: motion semantics, relocation table, then the profile

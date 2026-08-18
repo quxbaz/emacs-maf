@@ -394,6 +394,8 @@ moment it is registered."
                                           (maf-bindings-set-profile ',name)))))
                         (reverse maf-bindings--profiles)))
         :current (lambda (raw) (and raw maf-bindings-profile))
+        ;; d (dial-reset) puts the row back on the shipped default.
+        :default 'native
         :describe #'maf-bindings--describe-value))
 
 (defun maf-bindings--describe-value (value)
