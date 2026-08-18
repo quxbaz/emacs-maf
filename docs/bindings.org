@@ -89,6 +89,18 @@
   - ships after the built-ins work: custom profiles need the
     profile-aware displays, so both land together
 
+* migrating an init
+  - a direct `(define-key maf-mode-map ...)` in an init still works —
+    the map's own entries outrank the parent composition — but it is
+    outside the system: it survives profile switches indiscriminately
+    and suppression cannot see it. Move it to the profile's user map
+    (or `maf-common-user-map`):
+    #+begin_src elisp
+      ;; before                                  after
+      (define-key maf-mode-map (kbd "g") #'maf-go-home)
+      (define-key maf-native-user-map (kbd "g") #'maf-go-home)
+    #+end_src
+
 * rules
   - dogfooding: the built-in profiles are declared through the same
     public API a user would use — `maf-bindings-defprofile` +
@@ -215,8 +227,10 @@
     raw module define-keys under the dispatcher would outrank user maps
     and falsify the lookup order, and a user's first rebind in a user
     map falsifies static key displays
-  - [ ] 4. document user configuration and migration from direct
-    maf-mode-map bindings
+  - [X] 4. document user configuration and migration from direct
+    maf-mode-map bindings (the user-configuration and migrating-an-init
+    sections above; the live surface is documented in the defcustom,
+    mode, and command docstrings)
 
 * later: profile content (out of scope for the skeleton)
   - [ ] audit the remap allowlist and fill the calc profile
