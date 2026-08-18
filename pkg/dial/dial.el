@@ -929,7 +929,12 @@ setting whose reset does more than that says so."
           ((and dial--write-fn dial--default-fn)
            (funcall dial--write-fn id (dial--default id)))
           (t (user-error "No default to reset to")))
-    (dial--redraw id spec)))
+    ;; Landing on a named value echoes as stepping onto it would —
+    ;; the description or example belongs to the value, not the path
+    ;; that reached it.
+    (dial--redraw id spec (and entry
+                               (or (dial--describe spec entry)
+                                   (dial--example spec entry))))))
 
 (defun dial-save ()
   "Persist every setting's current value, however the consumer does that."
