@@ -62,8 +62,14 @@
     #+end_src
     suppressions live in the registry; the compiler omits the default
     from the generated map, so lookup falls through naturally, C-h k
-    names calc's real command, a suppressed prefix key (j) exposes
-    calc's whole prefix, and the call itself triggers the recompile
+    names calc's real command, and the call itself triggers the
+    recompile. Scope: suppression removes *generated key declarations*
+    — profile defaults and module declarations alike, for that profile;
+    a suppressed prefix key (j) removes every generated descendant and
+    exposes calc's whole prefix. Base remaps are not key declarations
+    and still apply: suppression exposes calc's *layout*, but a calc
+    command with a maf sibling still runs the sibling — suppressing +
+    can never produce raw calc-plus
   - users can declare their own profiles — a profile is just a
     registered name plus two maps over base, nothing about the built-in
     three is special:
@@ -90,9 +96,10 @@
   - modules declare their keys to the binding system; no raw define-key
     into `maf-mode-map` (a toggle must never erase a user override).
     Module targets are explicit profile names, `:all` deliberately —
-    strictness governs modules too: the calc profile gets a module key
-    only when it displaces nothing (options' ? shadows calc-help, so
-    not there)
+    strictness governs modules too: under strict, the calc profile gets
+    no module keys at all; under curated additions, only keys that
+    displace nothing (options' ? shadows calc-help, so not there either
+    way). Follows the strictness ruling below
   - registrations are owned and replaced as whole sets, so a reload is
     safe by construction: defprofile replaces that profile's default
     set, a module registration replaces that module's set, generated
@@ -197,8 +204,10 @@
     (behavior, not bytes); conflict validation
   - [ ] 3. one atomic landing: module + digit-map declaration conversion
     (tracked installs), then dispatcher, profile defcustom + switch
-    command, live switching. Not split: raw module define-keys under the
-    dispatcher would outrank user maps and falsify the lookup order
+    command, live switching, and profile-aware key displays. Not split:
+    raw module define-keys under the dispatcher would outrank user maps
+    and falsify the lookup order, and a user's first rebind in a user
+    map falsifies static key displays
   - [ ] 4. document user configuration and migration from direct
     maf-mode-map bindings
 
@@ -206,6 +215,5 @@
   - [ ] audit the remap allowlist and fill the calc profile
   - [ ] classify today's native-profile bindings: remap-covered vs
     displacement delta
-  - [ ] profile-aware key displays + user-defined profiles (gated on the
-    displays; land together)
+  - [ ] user-defined profiles (displays land earlier, with the switcher)
   - [ ] vim: motion semantics, relocation table, then the profile
