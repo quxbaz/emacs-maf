@@ -40,7 +40,6 @@
    it should be,
    => (1 + r^2)
    because `r` is the smallest expression preceeding point
-** TODO rework preview. it's a bit awkward at the moment and isn't where you need it to be for it to be useful.
 ** bindings
    three binding modes, each its own heading below: calc-native, maf-native,
    vim-flavored
@@ -133,6 +132,9 @@
   - [ ] gnuplot session defaults (index.el) — resolution 1000, qt device, seeded
     \"set grid / set nokey\"
   - [ ] g i (my/calc-graph-quick-with-range) interval form a:b should work with spaces 'a b'
+
+* alter::rework preview
+  it feels awkward in actual usage
 
 * maybe
 ** TODO preview entry as latex
