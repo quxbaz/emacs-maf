@@ -31,7 +31,7 @@
 
 * NOW [0/3]
 ** TODO stack mode
-   - [ ] bind command to jump to next SPC character
+   - [X] bind command to jump to next SPC character
      - should work in stack and editplus
 ** TODO fix bug with wrap functions (:, C, T, Q, etc) in editplus
    1: (1 + r|)
