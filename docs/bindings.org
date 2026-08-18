@@ -204,9 +204,11 @@
   - [X] 1. snapshot current behavior in step tests: effective bindings,
     remaps, prefix descendants, module on/off, digit-entry, real
     key-binding answers in a calc buffer (tests/bindings-snapshot.el)
-  - [ ] 2. registry + compiler: base + three profile maps + user maps +
+  - [X] 2. registry + compiler: base + three profile maps + user maps +
     compiled suppressions; every profile reproduces today's map exactly
-    (behavior, not bytes); conflict validation
+    (behavior, not bytes); conflict validation (core/maf-bindings.el,
+    tests/bindings-registry.el; the reproduce-today check lands with
+    the phase-3 conversion)
   - [ ] 3. one atomic landing: module + digit-map declaration conversion
     (tracked installs), then dispatcher, profile defcustom + switch
     command, live switching, and profile-aware key displays. Not split:
