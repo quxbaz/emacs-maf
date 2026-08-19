@@ -262,14 +262,14 @@
    - [X] `O` mafcmd-commute ← calc-option
    - [X] `j l` maf-commute-left ← calc-select-less
    - [X] `j r` maf-commute-right ← calc-rewrite-selection
-   - [ ] `j D` maf-distribute ← calc-sel-distribute (prompt-free version
+   - [X] `j D` maf-distribute ← calc-sel-distribute (prompt-free version
      of the same operation)
      - resolved (2026-08-19): not folded into `x` — expand-all and
        expand-by-a-step are a useful distinction (`x` full depth over
        the target, `j D` one step at the site). A fold is mechanically
        sound (expand no-op => DistribRules), kept for later. `j x`
        added as a second key on expand's letter
-   - [ ] `j M` maf-merge ← calc-sel-merge (prompt-free version of the
+   - [X] `j M` maf-merge ← calc-sel-merge (prompt-free version of the
      same operation)
    - [ ] `v L` mafcmd-flatten ← calc-mlud
    - [X] `M` mafcmd-map-flag ← calc-more-recursion-depth
