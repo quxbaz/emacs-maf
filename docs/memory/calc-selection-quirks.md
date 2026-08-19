@@ -49,3 +49,16 @@ selection renderer (extent). Entries whose rendered length differs from the
 walker's length contain synthesized parens; divergence there (and at
 line-break gaps) is classified as `:quirks`, not failures. A clean run
 returns `:problem-exprs nil` with a handful of `:calc-quirks`.
+
+## A matrix's rows cannot be picked by point
+
+In the multi-line matrix rendering, calc maps every structural
+character — the rows' brackets and commas included — to the whole
+matrix: `calc-find-selected-part` answers the full `[[1, 2], [3, 4]]`
+wherever point sits short of an actual element. So no cursor position
+names an inner row, and any point-targeted command (the `j l` / `j r`
+element shifts, for one) can act on a row's elements or on the whole
+matrix, but never on a row as a unit. A *non*-matrix nested vector
+renders flat, and there an inner vector's own comma resolves to it —
+`[[1, 2], [3, 4, 9], [5]]` moves whole sub-vectors fine. Mirrored for
+the usual reason: maf targets what calc's selection resolver answers.

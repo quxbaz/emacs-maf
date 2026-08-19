@@ -60,6 +60,7 @@
 (declare-function calc-auto-selection "calc-sel")
 (declare-function calc-find-assoc-parent-formula "calc-sel")
 (declare-function calc-find-parent-formula "calc-sel")
+(declare-function calc-replace-sub-formula "calc-sel")
 (declare-function calc-unselect "calc-sel")
 (declare-function calc-sel-jump-equals "calcsel2")
 (declare-function calc-var-value "calc-ext")
@@ -686,29 +687,64 @@ term where identity survives the rewrite (+ and * chains), falling back
 to its prior line and column otherwise.
 
 The term must sit inside a + - * / parent, where the shift preserves
-value: sums and products commute, and calc flips the sign crossing a - or
-the reciprocal crossing a /.  Any other parent is left untouched, because
+value — sums and products commute, and calc flips the sign crossing a -
+or the reciprocal crossing a / — or be an element of a vector, whose
+order is the vector's to give: the element moves through its neighbors,
+clamped at the ends. Any other parent is left untouched, because
 reordering its operands would change the value — a ^ (x^2 would become
 2^x), a vector concatenation, a function's arguments — or, for a relation,
 would reverse it (a < b to b < a, not b > a; swapping a relation's sides
 with the direction flip that keeps it true is `mafcmd-commute' (O)).
 
 With no such term under point — at home, on a whole entry, on a lone
-term, or on a term whose parent is not + - * / — the command does nothing
-rather than signaling calc's \"No term is selected\"."
+term, or on a term whose parent is not + - * / or a vector — the command
+does nothing rather than signaling calc's \"No term is selected\"."
   (maf--with-calc-buffer
     (let ((m (calc-locate-cursor-element (point))))
       (when (> m 0)
         (let* ((entry  (calc-top m 'entry))
                (expr   (car entry))
                (sel    (ignore-errors (calc-auto-selection entry)))
+               (direct (and (consp sel)
+                            (calc-find-parent-formula expr sel)))
                (parent (and (consp sel)
                             (calc-find-assoc-parent-formula expr sel))))
-          ;; Only commute within an arithmetic chain, where calc's shift is
-          ;; value-preserving. Every other binary parent — ^, | (concat), a
-          ;; relation, a function call — would have its operands reordered
-          ;; by calc without regard to meaning, so reject it.
-          (when (memq (car-safe parent) '(+ - * /))
+          (cond
+           ;; A vector element: shift its position. Calc has no rewrite
+           ;; for this — its commute knows only arithmetic chains — so
+           ;; the reorder is maf's own list surgery, sharing the
+           ;; arithmetic branch's point-follow and undo shape. The
+           ;; moved element keeps its cons, so the anchor finds it.
+           ((eq (car-safe direct) 'vec)
+            (let* ((elems (cdr direct))
+                   (idx (- (length elems) (length (memq sel elems))))
+                   (delta (if (eq dir 'left) (- arg) arg))
+                   (new-idx (min (max (+ idx delta) 0)
+                                 (1- (length elems)))))
+              ;; Already at the end it is pushed toward: nothing to do,
+              ;; as with calc's "term is already leftmost".
+              (unless (= new-idx idx)
+                (let* ((rest (remq sel elems))
+                       (new (calc-replace-sub-formula
+                             expr direct
+                             (cons 'vec (append (seq-take rest new-idx)
+                                                (list sel)
+                                                (nthcdr new-idx rest)))))
+                       (snapshot (maf--point-snapshot))
+                       (calc-keep-selection nil))
+                  ;; One undoable unit, as in the selection commands.
+                  (calc-wrapper
+                   (calc-pop-push-record-list 1 "cmut" (list new)
+                                              m (list nil)))
+                  (or (maf--anchor-on-node m sel)
+                      (maf--point-restore snapshot))
+                  (maf--undo-record-cmd-point snapshot)))))
+           ;; An arithmetic chain, where calc's shift is
+           ;; value-preserving. Every other binary parent — ^, |
+           ;; (concat), a relation, a function call — would have its
+           ;; operands reordered by calc without regard to meaning, so
+           ;; fall through to nothing.
+           ((memq (car-safe parent) '(+ - * /))
             (let ((snapshot (maf--point-snapshot))
                   ;; Leave no lingering selection behind: maf resolves the
                   ;; term from point each time, as the subexpr target does.
@@ -722,7 +758,7 @@ rather than signaling calc's \"No term is selected\"."
               (or (maf--anchor-on-node m sel)
                   (maf--point-restore snapshot))
               ;; A single undo reverts point along with the stack.
-              (maf--undo-record-cmd-point snapshot))))))))
+              (maf--undo-record-cmd-point snapshot)))))))))
 
 (defun maf-commute-left (arg)
   "Move the term under point one place left through its associative chain.
@@ -736,9 +772,16 @@ division a multiplication by its reciprocal, so the value is preserved.
 Repeat to walk the term further left; with the entry below the top, the
 lower entry is acted on in place.
 
+An element of a vector shifts its position the same way, the order
+being the vector's own to give, and the walk stops at the ends.  A
+composite element moves whole from its operator or comma — the comma
+of [3, 4] moves that row.
+
+  [a, b|, c]  =>  [b|, a, c]
+
 A numeric prefix N shifts N places (a negative N shifts right).  At home,
-on a whole entry, or on a term outside any + or * chain — nothing to
-move — the command does nothing.
+on a whole entry, or on a term outside any + or * chain or vector —
+nothing to move — the command does nothing.
 
   a - b|      =>  -b| + a
   a / b|      =>  (1/b)| a"
@@ -752,9 +795,10 @@ move — the command does nothing.
 
 The mirror of `maf-commute-left': point selects the term under the cursor
 and follows it right, with the same sign handling when it crosses a minus
-or a division.  A numeric prefix N shifts N places (a negative N shifts
-left).  At home, on a whole entry, or on a term outside any + or * chain,
-the command does nothing."
+or a division, and the same positional shift for a vector's element
+([a|, b, c] gives [b, a|, c]).  A numeric prefix N shifts N places (a
+negative N shifts left).  At home, on a whole entry, or on a term
+outside any + or * chain or vector, the command does nothing."
   (interactive "p")
   (maf--commute 'right arg))
 

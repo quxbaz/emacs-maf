@@ -141,6 +141,51 @@
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "-y + x = z"))
   (calc-pop 1)
 
+  ;; --- Vector elements shift position ---
+
+  ;; An element moves through its neighbors, point riding along.
+  (maf-push "[a, b, c]")
+  (progn (goto-char (point-min)) (search-forward "b") (backward-char 1))
+  (call-interactively 'maf-commute-right)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "[a, c, b]"))
+  (cl-assert (eq (char-after) ?b))
+  ;; Already rightmost: clamped, a quiet no-op.
+  (call-interactively 'maf-commute-right)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "[a, c, b]"))
+  ;; A prefix walks several places at once.
+  (let ((current-prefix-arg 2)) (call-interactively 'maf-commute-left))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "[b, a, c]"))
+  (cl-assert (eq (char-after) ?b))
+  ;; One undo takes back exactly one shift.
+  (maf-undo 1)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "[a, c, b]"))
+  (calc-pop 1)
+
+  ;; Inside a composite element the arithmetic chain still wins: the
+  ;; term commutes within its sum, the element stays put.
+  (maf-push "[a, b + c, d]")
+  (progn (goto-char (point-min)) (search-forward "b") (backward-char 1))
+  (call-interactively 'maf-commute-right)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "[a, c + b, d]"))
+  (calc-pop 1)
+
+  ;; A composite element moves whole from its comma (calc's selection
+  ;; maps an inner vector's comma to the vector).
+  (maf-push "[[1, 2], [3, 4, 9], [5]]")
+  (progn (goto-char (point-min)) (search-forward "3,") (backward-char 1))
+  (call-interactively 'maf-commute-left)
+  (cl-assert (string= (math-format-value (calc-top 1 'full))
+                      "[[3, 4, 9], [1, 2], [5]]"))
+  (calc-pop 1)
+
+  ;; A vector nested in a larger expression shifts in place.
+  (maf-push "x + [a, b, c]")
+  (progn (goto-char (point-min)) (search-forward "b") (backward-char 1))
+  (call-interactively 'maf-commute-left)
+  (cl-assert (string= (math-format-value (calc-top 1 'full))
+                      "x + [b, a, c]"))
+  (calc-pop 1)
+
   ;; --- Stack position: a lower entry is acted on in place ---
 
   (maf-push "x + y + z")     ; index 2 after the next push
