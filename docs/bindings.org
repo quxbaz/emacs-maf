@@ -211,8 +211,15 @@
   additions groups below are declared `'(native)` — src/bindings.el is
   the native layout's file. calc and vim carry only the sibling groups
   (and, pending the module strictness ruling, the module keys); vim
-  stays identical to calc until its content phase lays it out. The
-  bulk first:
+  stays identical to calc until its content phase lays it out.
+
+  Policy (2026-08-19): `k` and `l` are native's custom-command
+  prefixes. A maf command may take a weak key there without a thematic
+  case — `k s` complete-square and `k d` factor-powers are such claims
+  — and new custom bindings reach for these two prefixes first. The
+  sitting residents (combinatorics siblings under k, log-units under
+  l) keep their stock keys until a custom command actually claims one:
+  eviction is lazy, per key, never a sweep. The bulk first:
   - the mafcmd table: ~200 contextual siblings shadowing their calc
     originals on calc's own keys (the key column in src/maf-cmds.el)
   - base remaps: undo, undo-redo, calc-undo, calc-redo → maf-undo/redo
@@ -245,8 +252,10 @@
    - [X] `>` mafcmd-increment ← calc-scroll-right
    - [X] `x` mafcmd-expand ← calc-execute-extended-command
    - [ ] `X` mafcmd-log-exp ← calc-call-last-kbd-macro
-   - [ ] `k s` mafcmd-complete-square ← calc-stirling-number
-   - [ ] `k d` mafcmd-factor-powers ← calc-double-factorial
+   - [X] `k s` mafcmd-complete-square ← calc-stirling-number (a custom
+     prefix claim — see the k/l policy above)
+   - [X] `k d` mafcmd-factor-powers ← calc-double-factorial (a custom
+     prefix claim; my/calc's key for the command too)
    - [ ] `l f` mafcmd-factor-by ← calc-freq
    - [X] `i` mafcmd-solve-for ← calc-info
    - [X] `e` mafcmd-equal-to ← calcDigit-start
@@ -312,6 +321,26 @@
    - [ ] `C-M-u` maf-up-expression
    - [ ] `C-M-k` maf-reset
    - [ ] `C-M-l` maf-reset-settings
+** defined but unbound (M-x only)
+   Stack commands with no key in native and no flag route from a bound
+   key. Not listed: the ~67 flag-route variants (arcsin under I S,
+   vmedian under H u M, identify under I k k, append under H |, ...) —
+   those are reachable; entry points (maf-calc, maf-calc-direct),
+   module toggles (the m c menu's job), and lib helpers. Generated
+   against the sources 2026-08-19.
+   - mafcmd-idiv — integer division; its stock \ went to mafcmd-sqrt
+   - mafcmd-lud — LU decomposition; its stock v L went to
+     mafcmd-flatten
+   - mafcmd-arg — complex argument; its stock G went to maf-go-home
+   - mafcmd-map, mafcmd-map-stack — explicit mapping commands; the M
+     flag is the bound workflow
+   - maf-dup, maf-dup-here, maf-clear-selections — split-out halves of
+     RET's maf-dup-or-clear-selections
+   - maf-edit-add-entry-below — deliberately unbound; C-o one entry
+     down covers the gesture (see src/bindings.el)
+   - maf-restore-stack — t l runs the choose-a-session variant
+     (maf-restore-stack-from)
+   - maf-timeline-clear
 
 * free and weak keys (native)
   Candidate homes for future single-key bindings, generated against
@@ -375,7 +404,10 @@
   only — maf-persist is a separate concern); user profile seeding for
   the profile's own defaults (declaration-level clone); bindings module
   off keeps one bootstrap key — `m c`, the escape map — because
-  re-enabling by M-x alone is too hidden a way back
+  re-enabling by M-x alone is too hidden a way back; k and l are
+  native's custom-command prefixes (the profile:native policy) — k s
+  and k d stay where the fingers know them, and prefix residents are
+  evicted lazily, only when a custom command claims the key
 
 * phases — skeleton first
   Build the architecture now; decide no new binding content. The
