@@ -254,8 +254,9 @@
    - [ ] `j l` maf-commute-left ← calc-select-less
    - [ ] `j r` maf-commute-right ← calc-rewrite-selection
    - [ ] `j D` maf-distribute ← calc-sel-distribute (prompt-free version
-     - can this be folded into `x`, `mafcmd-expand`?
      of the same operation)
+     - can this be folded into `x`, `mafcmd-expand`? does it make sense? does it
+       cause any issues or ambiguity?
    - [ ] `j M` maf-merge ← calc-sel-merge (prompt-free version of the
      same operation)
    - [ ] `v L` mafcmd-flatten ← calc-mlud
