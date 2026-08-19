@@ -44,6 +44,26 @@ prefix — as absent as nil, for these assertions."
                  'ignore))
   (define-key maf-bindings-base-map [remap forward-char] nil)
 
+  ;; The escape hatch: the escape map is base's parent, so m c reaches
+  ;; the module menu through every compiled map — a toy profile that
+  ;; never declared it included — and it stays as `maf-mode-map's whole
+  ;; parent while the module is off, so the menu is never further away
+  ;; than m c whatever the binding state.
+  (cl-assert (eq (keymap-parent maf-bindings-base-map)
+                 maf-bindings-escape-map))
+  (cl-assert (eq (maf-test-br--lookup 'test-a "m c") 'maf-list-modules))
+  (let ((was maf-use-bindings-mode))
+    (unwind-protect
+        (progn
+          (maf-use-bindings-mode -1)
+          (cl-assert (eq (keymap-parent maf-mode-map)
+                         maf-bindings-escape-map))
+          (cl-assert (eq (lookup-key maf-mode-map (kbd "m c"))
+                         'maf-list-modules))
+          ;; ...and nothing else: a profile key is gone while off.
+          (cl-assert (not (commandp (lookup-key maf-mode-map (kbd "k k"))))))
+      (when was (maf-use-bindings-mode 1))))
+
   ;; Redeclaring the same key in the same profile replaces (one owner,
   ;; last say); redefprofile replaces the whole default set.
   (maf-bindings-define '(test-a) "y" #'ignore)

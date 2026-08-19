@@ -18,6 +18,13 @@
     some calc originals reachable as escape hatches (j E vs j e), and a
     remap would silently convert them. Excluding from the allowlist *is*
     the escape hatch — no wrapper commands
+  - beneath base sits the *escape map*, base's parent: the keys that
+    exist in every profile and even with the module off. It holds one —
+    `m c`, the module menu (`maf-list-modules`) — the deliberate
+    exception to the calc profile's untouched-layout promise and to
+    off's zero keys, because that buffer is where profiles and modules
+    are turned back on; anywhere less durable and the way back is M-x
+    by name
   - profile deltas are declared, and a declaration may target several
     profiles (source-level sharing, not inheritance):
     #+begin_src elisp
@@ -35,7 +42,9 @@
   2. enabled-module declarations
   3. profile defaults (minus compiled suppressions)
   4. base remaps
-  5. calc's own map
+  5. the escape map (`m c`, the module menu) — also the *whole* map
+     while the module is off
+  6. calc's own map
 
 * user configuration
   - user maps are never written or rebuilt by maf; they survive
@@ -134,13 +143,16 @@
   - the *maf-modules* row for maf-bindings is a profile picker, not a
     toggle: `off | calc | native | vim | ...` with the user's custom
     profiles listed too (they appear when the menu opens). off is the
-    module off — zero maf keys, stock calc, commands by M-x
+    module off — stock calc, no maf keys but the escape map's `m c`,
+    the way back to this menu
   - the registry compiler validates at build time: a key cannot be both
     a command and a live prefix in one profile; module/profile and
     module/module key conflicts are errors, not precedence accidents
 
 * calc profile
-  - promise: zero surprises for a calc user; layout untouched
+  - promise: zero surprises for a calc user; layout untouched. The one
+    exception is the escape map's `m c` (unbound in calc itself) —
+    every profile carries it, this one included
   - siblings run via base remaps on calc's own keys (+, a x, a S, ...)
   - keys whose calc command has no sibling stay calc's (x, h, scrolling)
   - no navigation bindings: silence means stock calc/emacs lookup
@@ -204,6 +216,8 @@
   - the mafcmd table: ~200 contextual siblings shadowing their calc
     originals on calc's own keys (the key column in src/maf-cmds.el)
   - base remaps: undo, undo-redo, calc-undo, calc-redo → maf-undo/redo
+  - the escape map beneath base: `m c` maf-list-modules — in every
+    profile and with the module off, not a native addition
   - module keys: `SPC` \` `C-o` `(` (edit), `?` (options), `t d`
     (timeline), `t l` `t u` (persist), `M-p` `M-n` (recall), `s o`
     (formulas)
@@ -263,8 +277,7 @@
    - assorted: `k k` mafcmd-evaluate, `S-<up>` / `S-<down>`
      mafcmd-toggle-op, `C-<return>` mafcmd-let, `C-|` mafcmd-bracket,
      `f l` mafcmd-cath, `r r` maf-recall-variable, `v RET` maf-index,
-     `m c` maf-list-modules, `C-M-k` maf-reset, `C-M-l`
-     maf-reset-settings
+     `C-M-k` maf-reset, `C-M-l` maf-reset-settings
 
 * free and weak keys (native)
   Candidate homes for future single-key bindings, generated against
@@ -314,8 +327,6 @@
   - [ ] calc profile strictness: strict (only sibling remaps — matches
     the written promise; recommended) vs curated additions on unbound
     keys
-  - [ ] bindings module off: truly zero maf keys (M-x is the way back;
-    recommended) vs a bootstrap key for the module menu
   - [ ] vim motion semantics: h/l by char or noun? j/k by line or entry?
     w/b = noun motion?
   - [ ] vim relocation table for the h/j/k/l/w/b families
@@ -328,7 +339,9 @@
   resolved: module-vs-profile precedence (conflicts are compiler errors,
   so precedence rarely decides anything); profile persistence (customize
   only — maf-persist is a separate concern); user profile seeding for
-  the profile's own defaults (declaration-level clone)
+  the profile's own defaults (declaration-level clone); bindings module
+  off keeps one bootstrap key — `m c`, the escape map — because
+  re-enabling by M-x alone is too hidden a way back
 
 * phases — skeleton first
   Build the architecture now; decide no new binding content. The

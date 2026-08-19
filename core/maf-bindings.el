@@ -15,7 +15,9 @@
 ;;   3. profile defaults minus         > modules written after
 ;;      suppressions                  /  defaults
 ;;   4. `maf-bindings-base-map' (remaps), the compiled map's parent
-;;   5. calc's own map, by minor-mode order
+;;   5. `maf-bindings-escape-map' (the module menu key), base's parent —
+;;      also the whole map while the module is off
+;;   6. calc's own map, by minor-mode order
 ;;
 ;; The built-in profiles are declared through this same public API from
 ;; src/bindings.el — no privileged path.
@@ -27,7 +29,21 @@
   "The one map every profile inherits: audited command remaps only.
 A remap claims no key, so nothing here can collide with a profile's
 layout; a calc command with a maf sibling runs the sibling on whatever
-key reaches it. Empty until the allowlist audit (docs/bindings.org).")
+key reaches it. Empty until the allowlist audit (docs/bindings.org).
+Its own parent is `maf-bindings-escape-map'.")
+
+(defvar maf-bindings-escape-map (make-sparse-keymap)
+  "The way back in: the keys that exist whatever the binding state.
+Parent of `maf-bindings-base-map', so every profile inherits it, and
+`maf-mode-map's parent while the bindings module is off, when nothing
+else of maf's is bound at all. Holds only the module menu's key
+\(src/bindings.el) — the deliberate exception to the calc profile's
+untouched-layout promise and to off's no-keys promise: this is how
+profiles and modules are turned back on without hunting the command
+down by name.")
+
+;; Outside the defvars so a reload re-wires it.
+(set-keymap-parent maf-bindings-base-map maf-bindings-escape-map)
 
 (defvar maf-common-user-map (make-sparse-keymap)
   "User bindings that apply in every profile.
@@ -365,16 +381,17 @@ module declared no keys, or none reach the active profile."
   "Global minor mode putting maf's key layout on `maf-mode-map'.
 Enabled, the active profile's compiled bindings — with the user maps
 above them — become `maf-mode-map's parent, and the digit-entry
-overrides install. Disabled, maf binds nothing at all: every key falls
-through to calc, and commands stay reachable by name. Managed through
-the module system; see `maf-modules'."
+overrides install. Disabled, every key falls through to calc and
+commands stay reachable by name; the one key maf keeps is
+`maf-bindings-escape-map's m c, the module menu, the way back in.
+Managed through the module system; see `maf-modules'."
   :global t
   :group 'maf
   (if maf-use-bindings-mode
       (progn (setq maf-bindings--active t)
              (maf-bindings--flush))
     (setq maf-bindings--active nil)
-    (set-keymap-parent maf-mode-map nil)
+    (set-keymap-parent maf-mode-map maf-bindings-escape-map)
     (maf-bindings--digit-sync)))
 
 ;; Register with the module system when it is present; the mode above
@@ -402,7 +419,7 @@ moment it is registered."
   "The short description echoed when the menu steps onto VALUE.
 A profile's own :description, or the meaning of off."
   (if (null value)
-      "No maf keys at all — stock calc; commands stay reachable by M-x."
+      "Stock calc — no maf keys except m c, the way back to this menu."
     (or (plist-get (maf-bindings--profile value) :description)
         "A user-defined profile.")))
 
@@ -414,7 +431,7 @@ Every maf key lives in a binding profile — calc, native, or vim — over
 one shared base, compiled from declarations. Switch live with
 `maf-bindings-set-profile'; personal keys go in the per-profile user
 maps (maf-native-user-map and kin) with plain define-key. Disabled,
-maf binds no keys at all."
+maf binds no keys but m c, the way back to this menu."
                        nil #'maf-bindings--module-values))
 
 (provide 'maf-bindings)
