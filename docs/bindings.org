@@ -241,51 +241,74 @@
    - [X] `x` mafcmd-expand ← calc-execute-extended-command
    - [ ] `X` mafcmd-log-exp ← calc-call-last-kbd-macro
    - [X] `i` mafcmd-solve-for ← calc-info
-   - [X] `e` mafcmd-equal-to ← calcDigit-start (`=` stays unbound here:
-     calc-evaluate by fallthrough)
+   - [X] `e` mafcmd-equal-to ← calcDigit-start
    - [X] `@` maf-toggle-simplify ← calcDigit-start
    - [X] `o` mafcmd-inv ← calc-realign
    - [ ] `&` maf-toggle-big-language ← calc-inv
    - [ ] `G` maf-go-home ← calc-argument
-   - [X] `<` mafcmd-decrement, `>` mafcmd-increment ← calc-scroll-left/right
+   - [X] `<` mafcmd-decrement ← calc-scroll-left
+   - [X] `>` mafcmd-increment ← calc-scroll-right
    - [ ] `N` mafcmd-negate ← calc-eval-num
    - [X] `O` mafcmd-commute ← calc-option
    - [X] `M` mafcmd-map-flag ← calc-more-recursion-depth
    - [X] `,` maf-quick-variable ← calc-comma
    - [X] `p` maf-browse-variables ← calc-precision
    - [X] `\` mafcmd-sqrt ← calc-idiv
-   - [ ] `k s` mafcmd-complete-square ← calc-stirling-number;
-     `k d` mafcmd-factor-powers ← calc-double-factorial
-   - [ ] `l f` mafcmd-factor-by ← calc-freq; `l d` mafcmd-to-degrees ←
-     calc-db
-   - [ ] `j l` maf-commute-left ← calc-select-less; `j r` maf-commute-right
-     ← calc-rewrite-selection; `j e` maf-jump-equals ←
-     calc-enable-selections
-   - [ ] `j D` maf-distribute ← calc-sel-distribute; `j M` maf-merge ←
-     calc-sel-merge (prompt-free versions of the same operations)
+   - [ ] `k s` mafcmd-complete-square ← calc-stirling-number
+   - [ ] `k d` mafcmd-factor-powers ← calc-double-factorial
+   - [ ] `l f` mafcmd-factor-by ← calc-freq
+   - [ ] `l d` mafcmd-to-degrees ← calc-db
+   - [ ] `j l` maf-commute-left ← calc-select-less
+   - [ ] `j r` maf-commute-right ← calc-rewrite-selection
+   - [ ] `j e` maf-jump-equals ← calc-enable-selections
+   - [ ] `j D` maf-distribute ← calc-sel-distribute (prompt-free version
+     of the same operation)
+   - [ ] `j M` maf-merge ← calc-sel-merge (prompt-free version of the
+     same operation)
    - [ ] `M-k` mafcmd-coordinate-toggle ← calc-copy-as-kill
-   - [ ] `v L` mafcmd-flatten ← calc-mlud; `f L` mafcmd-unit-cath ←
-     calc-lnp1
+   - [ ] `v L` mafcmd-flatten ← calc-mlud
+   - [ ] `f L` mafcmd-unit-cath ← calc-lnp1
 ** additions (keys calc leaves unbound)
    - [ ] `W` mafcmd-sqr
-   - [ ] solving and algebra: `M-i` mafcmd-auto-solve, `j i` mafcmd-isolate,
-     `j j` mafcmd-raise, `M-r` mafcmd-poly-roots, `a L` mafcmd-poly-lcm,
-     `a k` mafcmd-abs-ineq, `M-.` mafcmd-remove-equal
-   - [ ] the l prefix: `l F` factor-gcd, `l t` collect-fractions, `l l`
-     float, `l c` frac, `l r` to-radians, `l v` inverse-function,
-     `l x` swap-vars, `l g` unique-groups
-   - [ ] angles: `M-o` mafcmd-mod-360, `M-l` mafcmd-ref-angle, `M-s`
-     mafcmd-supplement, `M-c` mafcmd-complement
-   - [ ] stack motion and shape: `<tab>` maf-swap-up, `S-<return>`
-     maf-roll-to-top, `C-M-<backspace>` (and aliases) maf-roll-to-bottom,
-     `M-<up>` / `M-<down>` maf-carry-up/down, `M-<return>` maf-dup-below
-   - [ ] entry motion: `M-m` maf-beginning-of-entry, `M-f` / `M-b`
-     maf-forward/backward-noun, `S-SPC` maf-forward-space, `C-M-u`
-     maf-up-expression
-   - [ ] assorted: `k k` mafcmd-evaluate, `S-<up>` / `S-<down>`
-     mafcmd-toggle-op, `C-<return>` mafcmd-let, `C-|` mafcmd-bracket,
-     `f l` mafcmd-cath, `r r` maf-recall-variable, `v RET` maf-index,
-     `C-M-k` maf-reset, `C-M-l` maf-reset-settings
+   - [ ] `M-i` mafcmd-auto-solve
+   - [ ] `j i` mafcmd-isolate
+   - [ ] `j j` mafcmd-raise
+   - [ ] `M-r` mafcmd-poly-roots
+   - [ ] `a L` mafcmd-poly-lcm
+   - [ ] `a k` mafcmd-abs-ineq
+   - [ ] `M-.` mafcmd-remove-equal
+   - [ ] `l F` factor-gcd
+   - [ ] `l t` collect-fractions
+   - [ ] `l l` float
+   - [ ] `l c` frac
+   - [ ] `l r` to-radians
+   - [ ] `l v` inverse-function
+   - [ ] `l x` swap-vars
+   - [ ] `l g` unique-groups
+   - [ ] `M-o` mafcmd-mod-360
+   - [ ] `M-l` mafcmd-ref-angle
+   - [ ] `M-s` mafcmd-supplement
+   - [ ] `M-c` mafcmd-complement
+   - [ ] `<tab>` maf-swap-up
+   - [ ] `S-<return>` maf-roll-to-top
+   - [ ] `C-M-<backspace>` (and aliases) maf-roll-to-bottom
+   - [ ] `M-<up>` maf-carry-up
+   - [ ] `M-<down>` maf-carry-down
+   - [ ] `M-<return>` maf-dup-below
+   - [ ] `M-m` maf-beginning-of-entry
+   - [ ] `M-f` maf-forward-noun
+   - [ ] `M-b` maf-backward-noun
+   - [ ] `S-SPC` maf-forward-space
+   - [ ] `C-M-u` maf-up-expression
+   - [ ] `k k` mafcmd-evaluate
+   - [ ] `S-<up>` / `S-<down>` mafcmd-toggle-op
+   - [ ] `C-<return>` mafcmd-let
+   - [ ] `C-|` mafcmd-bracket
+   - [ ] `f l` mafcmd-cath
+   - [ ] `r r` maf-recall-variable
+   - [ ] `v RET` maf-index
+   - [ ] `C-M-k` maf-reset
+   - [ ] `C-M-l` maf-reset-settings
 
 * free and weak keys (native)
   Candidate homes for future single-key bindings, generated against
