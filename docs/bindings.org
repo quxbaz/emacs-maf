@@ -222,15 +222,21 @@
     (timeline), `t l` `t u` (persist), `M-p` `M-n` (recall), `s o`
     (formulas)
 ** contextual siblings on their own calc key (outside the table)
-   - `A` mafcmd-abs, `f h` mafcmd-hypot, `a b` mafcmd-substitute,
-     `a .` mafcmd-remove-equal, `v u` mafcmd-unpack (also `j U`,
-     `j M-U` over calc-sel-unpack), `P` maf-pi
-   - `U` maf-undo, `D` maf-redo, `C-d` / `DEL` maf-del, `C-k` maf-kill,
-     `M-w` maf-copy, `C-y` maf-yank, `RET` maf-dup-or-clear-selections,
-     `TAB` maf-swap-up, `M-RET` maf-dup-below
-   - `r 0`..`r 9` maf-recall-quick (over calc-recall-quick)
-   - the digit starters `_` `0`..`9` `.` `#` maf-digit-start (over
-     calcDigit-start)
+   - `A` mafcmd-abs ← calc-abs, `f h` mafcmd-hypot ← calc-hypot,
+     `a b` mafcmd-substitute ← calc-substitute,
+     `a .` mafcmd-remove-equal ← calc-remove-equal,
+     `v u` mafcmd-unpack ← calc-unpack (also `j U`, `j M-U` ←
+     calc-sel-unpack), `P` maf-pi ← calc-pi
+   - `U` maf-undo ← calc-undo, `D` maf-redo ← calc-redo,
+     `C-d` / `DEL` maf-del ← calc-pop, `C-k` maf-kill ← calc-kill,
+     `M-w` maf-copy ← calc-copy-region-as-kill,
+     `C-y` maf-yank ← calc-yank,
+     `RET` maf-dup-or-clear-selections ← calc-enter,
+     `TAB` maf-swap-up ← calc-roll-down,
+     `M-RET` maf-dup-below ← calc-last-args
+   - `r 0`..`r 9` maf-recall-quick ← calc-recall-quick
+   - the digit starters `_` `0`..`9` `.` `#` maf-digit-start ←
+     calcDigit-start
 ** shadowing (key taken from an unrelated calc command)
    - `x` mafcmd-expand ← calc-execute-extended-command
    - `X` mafcmd-log-exp ← calc-call-last-kbd-macro
