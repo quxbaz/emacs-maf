@@ -253,7 +253,7 @@
    - [X] `M` mafcmd-map-flag ← calc-more-recursion-depth
    - [ ] `,` maf-quick-variable ← calc-comma
    - [X] `p` maf-browse-variables ← calc-precision
-   - [X] `\` mafcmd-sqrt ← calc-idiv;
+   - [X] `\` mafcmd-sqrt ← calc-idiv
    - [ ] `W` mafcmd-sqr ← undefined
    - [ ] `k s` mafcmd-complete-square ← calc-stirling-number;
      `k d` mafcmd-factor-powers ← calc-double-factorial
