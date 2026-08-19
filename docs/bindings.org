@@ -251,10 +251,9 @@
    - [ ] `N` mafcmd-negate ← calc-eval-num
    - [X] `O` mafcmd-commute ← calc-option
    - [X] `M` mafcmd-map-flag ← calc-more-recursion-depth
-   - [ ] `,` maf-quick-variable ← calc-comma
+   - [X] `,` maf-quick-variable ← calc-comma
    - [X] `p` maf-browse-variables ← calc-precision
    - [X] `\` mafcmd-sqrt ← calc-idiv
-   - [ ] `W` mafcmd-sqr ← undefined
    - [ ] `k s` mafcmd-complete-square ← calc-stirling-number;
      `k d` mafcmd-factor-powers ← calc-double-factorial
    - [ ] `l f` mafcmd-factor-by ← calc-freq; `l d` mafcmd-to-degrees ←
@@ -268,6 +267,7 @@
    - [ ] `v L` mafcmd-flatten ← calc-mlud; `f L` mafcmd-unit-cath ←
      calc-lnp1
 ** additions (keys calc leaves unbound)
+   - [ ] `W` mafcmd-sqr
    - [ ] solving and algebra: `M-i` mafcmd-auto-solve, `j i` mafcmd-isolate,
      `j j` mafcmd-raise, `M-r` mafcmd-poly-roots, `a L` mafcmd-poly-lcm,
      `a k` mafcmd-abs-ineq, `M-.` mafcmd-remove-equal
