@@ -241,8 +241,8 @@
    - `x` mafcmd-expand ← calc-execute-extended-command
    - `X` mafcmd-log-exp ← calc-call-last-kbd-macro
    - `i` mafcmd-solve-for ← calc-info
-   - `=` mafcmd-equal-to ← calc-evaluate; `e` mafcmd-equal-to ←
-     calcDigit-start
+   - `e` mafcmd-equal-to ← calcDigit-start (`=` stays unbound here:
+     calc-evaluate by fallthrough)
    - `@` maf-toggle-simplify ← calcDigit-start
    - `o` mafcmd-inv ← calc-realign; `&` maf-toggle-big-language ←
      calc-inv; `G` maf-go-home ← calc-argument
