@@ -244,16 +244,17 @@
    - [X] `e` mafcmd-equal-to ← calcDigit-start (`=` stays unbound here:
      calc-evaluate by fallthrough)
    - [X] `@` maf-toggle-simplify ← calcDigit-start
-   - [ ] `o` mafcmd-inv ← calc-realign
+   - [X] `o` mafcmd-inv ← calc-realign
    - [ ] `&` maf-toggle-big-language ← calc-inv
    - [ ] `G` maf-go-home ← calc-argument
-   - [ ] `<` mafcmd-decrement, `>` mafcmd-increment ← calc-scroll-left/right
+   - [X] `<` mafcmd-decrement, `>` mafcmd-increment ← calc-scroll-left/right
    - [ ] `N` mafcmd-negate ← calc-eval-num
-   - [ ] `O` mafcmd-commute ← calc-option
-   - [ ] `M` mafcmd-map-flag ← calc-more-recursion-depth
+   - [X] `O` mafcmd-commute ← calc-option
+   - [X] `M` mafcmd-map-flag ← calc-more-recursion-depth
    - [ ] `,` maf-quick-variable ← calc-comma
-   - [ ] `p` maf-browse-variables ← calc-precision
-   - [ ] `\` mafcmd-sqrt ← calc-idiv; `W` mafcmd-sqr ← undefined
+   - [X] `p` maf-browse-variables ← calc-precision
+   - [X] `\` mafcmd-sqrt ← calc-idiv;
+   - [ ] `W` mafcmd-sqr ← undefined
    - [ ] `k s` mafcmd-complete-square ← calc-stirling-number;
      `k d` mafcmd-factor-powers ← calc-double-factorial
    - [ ] `l f` mafcmd-factor-by ← calc-freq; `l d` mafcmd-to-degrees ←
