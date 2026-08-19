@@ -282,6 +282,7 @@
    - [ ] `a L` mafcmd-poly-lcm
    - [ ] `M-i` mafcmd-auto-solve
    - [ ] `M-r` mafcmd-poly-roots
+   - [ ] `a l` mafcmd-roots (alias of its stock `a P`; my/calc's key)
    - [ ] `j i` mafcmd-isolate
    - [ ] `a k` mafcmd-abs-ineq
    - [ ] `M-.` mafcmd-remove-equal
