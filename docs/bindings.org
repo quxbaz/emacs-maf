@@ -260,8 +260,8 @@
    - [X] `i` mafcmd-solve-for ← calc-info
    - [X] `e` mafcmd-equal-to ← calcDigit-start
    - [X] `O` mafcmd-commute ← calc-option
-   - [ ] `j l` maf-commute-left ← calc-select-less
-   - [ ] `j r` maf-commute-right ← calc-rewrite-selection
+   - [X] `j l` maf-commute-left ← calc-select-less
+   - [X] `j r` maf-commute-right ← calc-rewrite-selection
    - [ ] `j D` maf-distribute ← calc-sel-distribute (prompt-free version
      of the same operation)
      - can this be folded into `x` or `X`, `mafcmd-expand`? does it make sense?
