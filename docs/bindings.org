@@ -238,57 +238,64 @@
    - the digit starters `_` `0`..`9` `.` `#` maf-digit-start ←
      calcDigit-start
 ** shadowing (key taken from an unrelated calc command)
-   - [X] `x` mafcmd-expand ← calc-execute-extended-command
-   - [ ] `X` mafcmd-log-exp ← calc-call-last-kbd-macro
-   - [X] `i` mafcmd-solve-for ← calc-info
-   - [X] `e` mafcmd-equal-to ← calcDigit-start
-   - [X] `@` maf-toggle-simplify ← calcDigit-start
+   - [X] `N` mafcmd-negate ← calc-eval-num
    - [X] `o` mafcmd-inv ← calc-realign
-   - [ ] `&` maf-toggle-big-language ← calc-inv
-   - [ ] `G` maf-go-home ← calc-argument
+   - [X] `\` mafcmd-sqrt ← calc-idiv
    - [X] `<` mafcmd-decrement ← calc-scroll-left
    - [X] `>` mafcmd-increment ← calc-scroll-right
-   - [ ] `N` mafcmd-negate ← calc-eval-num
-   - [X] `O` mafcmd-commute ← calc-option
-   - [X] `M` mafcmd-map-flag ← calc-more-recursion-depth
-   - [X] `,` maf-quick-variable ← calc-comma
-   - [X] `p` maf-browse-variables ← calc-precision
-   - [X] `\` mafcmd-sqrt ← calc-idiv
+   - [X] `x` mafcmd-expand ← calc-execute-extended-command
+   - [ ] `X` mafcmd-log-exp ← calc-call-last-kbd-macro
    - [ ] `k s` mafcmd-complete-square ← calc-stirling-number
    - [ ] `k d` mafcmd-factor-powers ← calc-double-factorial
    - [ ] `l f` mafcmd-factor-by ← calc-freq
-   - [ ] `l d` mafcmd-to-degrees ← calc-db
+   - [X] `i` mafcmd-solve-for ← calc-info
+   - [X] `e` mafcmd-equal-to ← calcDigit-start
+   - [X] `O` mafcmd-commute ← calc-option
    - [ ] `j l` maf-commute-left ← calc-select-less
    - [ ] `j r` maf-commute-right ← calc-rewrite-selection
-   - [ ] `j e` maf-jump-equals ← calc-enable-selections
    - [ ] `j D` maf-distribute ← calc-sel-distribute (prompt-free version
      of the same operation)
    - [ ] `j M` maf-merge ← calc-sel-merge (prompt-free version of the
      same operation)
-   - [ ] `M-k` mafcmd-coordinate-toggle ← calc-copy-as-kill
    - [ ] `v L` mafcmd-flatten ← calc-mlud
+   - [X] `M` mafcmd-map-flag ← calc-more-recursion-depth
+   - [X] `,` maf-quick-variable ← calc-comma
+   - [X] `p` maf-browse-variables ← calc-precision
+   - [ ] `l d` mafcmd-to-degrees ← calc-db
    - [ ] `f L` mafcmd-unit-cath ← calc-lnp1
+   - [ ] `M-k` mafcmd-coordinate-toggle ← calc-copy-as-kill
+   - [ ] `G` maf-go-home ← calc-argument
+   - [ ] `j e` maf-jump-equals ← calc-enable-selections
+   - [X] `@` maf-toggle-simplify ← calcDigit-start
+   - [ ] `&` maf-toggle-big-language ← calc-inv
 ** additions (keys calc leaves unbound)
    - [ ] `W` mafcmd-sqr
-   - [ ] `M-i` mafcmd-auto-solve
-   - [ ] `j i` mafcmd-isolate
-   - [ ] `j j` mafcmd-raise
-   - [ ] `M-r` mafcmd-poly-roots
-   - [ ] `a L` mafcmd-poly-lcm
-   - [ ] `a k` mafcmd-abs-ineq
-   - [ ] `M-.` mafcmd-remove-equal
-   - [ ] `l F` factor-gcd
-   - [ ] `l t` collect-fractions
+   - [ ] `k k` mafcmd-evaluate
+   - [ ] `C-<return>` mafcmd-let
    - [ ] `l l` float
    - [ ] `l c` frac
-   - [ ] `l r` to-radians
+   - [ ] `l F` factor-gcd
+   - [ ] `l t` collect-fractions
    - [ ] `l v` inverse-function
+   - [ ] `a L` mafcmd-poly-lcm
+   - [ ] `M-i` mafcmd-auto-solve
+   - [ ] `M-r` mafcmd-poly-roots
+   - [ ] `j i` mafcmd-isolate
+   - [ ] `a k` mafcmd-abs-ineq
+   - [ ] `M-.` mafcmd-remove-equal
    - [ ] `l x` swap-vars
+   - [ ] `j j` mafcmd-raise
+   - [ ] `S-<up>` / `S-<down>` mafcmd-toggle-op
+   - [ ] `C-|` mafcmd-bracket
+   - [ ] `v RET` maf-index
    - [ ] `l g` unique-groups
+   - [ ] `r r` maf-recall-variable
    - [ ] `M-o` mafcmd-mod-360
    - [ ] `M-l` mafcmd-ref-angle
    - [ ] `M-s` mafcmd-supplement
    - [ ] `M-c` mafcmd-complement
+   - [ ] `l r` to-radians
+   - [ ] `f l` mafcmd-cath
    - [ ] `<tab>` maf-swap-up
    - [ ] `S-<return>` maf-roll-to-top
    - [ ] `C-M-<backspace>` (and aliases) maf-roll-to-bottom
@@ -300,13 +307,6 @@
    - [ ] `M-b` maf-backward-noun
    - [ ] `S-SPC` maf-forward-space
    - [ ] `C-M-u` maf-up-expression
-   - [ ] `k k` mafcmd-evaluate
-   - [ ] `S-<up>` / `S-<down>` mafcmd-toggle-op
-   - [ ] `C-<return>` mafcmd-let
-   - [ ] `C-|` mafcmd-bracket
-   - [ ] `f l` mafcmd-cath
-   - [ ] `r r` maf-recall-variable
-   - [ ] `v RET` maf-index
    - [ ] `C-M-k` maf-reset
    - [ ] `C-M-l` maf-reset-settings
 
