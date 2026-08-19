@@ -266,6 +266,50 @@
      `m c` maf-list-modules, `C-M-k` maf-reset, `C-M-l`
      maf-reset-settings
 
+* free and weak keys (native)
+  Candidate homes for future single-key bindings, generated against
+  native's compiled map plus calc's own (2026-08-19). "Weak" = bound to
+  something rarely pressed; the cost of taking it is noted. Sorted by
+  priority: single letters, then capitals, then punctuation, then
+  modified keys.
+** single letters
+   - `w` — calc-why: its information arrives by itself via
+     calc-auto-why, and M-x calc-why remains. The cheapest key in the
+     buffer; every other lowercase letter is a live prefix family or a
+     real command
+   - `y` — calc-copy-to-buffer: niche (yank result into another
+     buffer), but no reflex replacement exists. Second choice
+   - `g` — calc's graph prefix: weak today, but the plotting module
+     (later::plotting in maf.org) will want it. Do not spend
+   - reserved, never take: `z` / `Z` (calc's user-definition prefixes),
+     `q` (quit is a reflex), `h` (help family)
+** capitals
+   - none free. `W` was the last one and mafcmd-sqr took it
+   - `K` — calc-keep-args: weak-ish, but it is a fancy prefix that
+     chains with maf's own M flag (a carrier in maf--map-flag-carriers)
+     — take only with that machinery adjusted
+   - `Y` — calc reserves it for users; not maf's to spend
+** punctuation
+   - `{` / `}` — calc-scroll-down/up: C-v / M-v cover scrolling; same
+     trade already made when < > took calc's horizontal pair
+   - `~` — calc-num-prefix: near-free, but a stretch to reach —
+     fine for something occasional, wrong for a repeat-heavy command
+   - `:` — calc-fdiv: moderate — fraction division is real but the
+     fraction is also typed in digit entry (1 : 3). Cautious
+   - not weak, despite looks: `;` (calc-semi, matrix entry punctuation
+     — the [ ] lesson)
+** modified keys
+   - free meta: `M-a` `M-d` `M-e` `M-g` `M-h` `M-j` `M-q` `M-t` `M-z`
+   - cautious meta: `M-v` (scrolling's other half), `M-y` (yank-pop
+     pairs with maf-yank's C-y); never `M-x`
+   - free-ish control: `C-t` (transpose-chars has no stack meaning),
+     `C-z` (suspend, commonly rebound anyway); cautious: `C-l`
+     (recenter), `C-q` (quoted-insert), `C-r` / `C-s` (isearch over the
+     stack is real), `C-j` (calc-over — an RPN staple, weak only for
+     algebraic-entry users)
+   - never: `C-a/b/e/f/n/p` (cursor motion the stack buffer lives on),
+     `C-c` (mode-prefix convention), `C-g` `C-u` `C-h` `C-x`
+
 * open decisions
   - [ ] calc profile strictness: strict (only sibling remaps — matches
     the written promise; recommended) vs curated additions on unbound
