@@ -238,14 +238,15 @@
    - the digit starters `_` `0`..`9` `.` `#` maf-digit-start ←
      calcDigit-start
 ** shadowing (key taken from an unrelated calc command)
-   - [ ] `x` mafcmd-expand ← calc-execute-extended-command
+   - [X] `x` mafcmd-expand ← calc-execute-extended-command
    - [ ] `X` mafcmd-log-exp ← calc-call-last-kbd-macro
-   - [ ] `i` mafcmd-solve-for ← calc-info
-   - [ ] `e` mafcmd-equal-to ← calcDigit-start (`=` stays unbound here:
+   - [X] `i` mafcmd-solve-for ← calc-info
+   - [X] `e` mafcmd-equal-to ← calcDigit-start (`=` stays unbound here:
      calc-evaluate by fallthrough)
-   - [ ] `@` maf-toggle-simplify ← calcDigit-start
-   - [ ] `o` mafcmd-inv ← calc-realign; `&` maf-toggle-big-language ←
-     calc-inv; `G` maf-go-home ← calc-argument
+   - [X] `@` maf-toggle-simplify ← calcDigit-start
+   - [ ] `o` mafcmd-inv ← calc-realign
+   - [ ] `&` maf-toggle-big-language ← calc-inv
+   - [ ] `G` maf-go-home ← calc-argument
    - [ ] `<` mafcmd-decrement, `>` mafcmd-increment ← calc-scroll-left/right
    - [ ] `N` mafcmd-negate ← calc-eval-num
    - [ ] `O` mafcmd-commute ← calc-option
