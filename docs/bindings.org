@@ -309,7 +309,7 @@
    - [X] `a k` mafcmd-abs-ineq
    - [X] `M-.` mafcmd-remove-equal
    - [X] `l x` swap-vars
-   - [ ] `j j` mafcmd-raise
+   - [X] `j j` mafcmd-raise
    - [ ] `j x` maf-distribute (second key beside `j D`, on expand's
      letter: `x` expands all, `j x` one step at point)
    - [ ] `j f` maf-merge (second key beside `j M`, on factor's letter:
