@@ -1,4 +1,4 @@
-;; mafcmd-collect-fractions (l t): the resolved expression's additive
+;; mafcmd-collect-fractions (l c): the resolved expression's additive
 ;; terms combined over their least common denominator, committed as a
 ;; single undistributed fraction. Covers the denominator shapes calc
 ;; produces — literal ratios, divisions, factors of a product,

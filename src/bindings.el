@@ -52,7 +52,9 @@
 (maf-bindings-define '(native) "k d" #'mafcmd-factor-powers)
 (maf-bindings-define '(native) "l f" #'mafcmd-factor-by)
 (maf-bindings-define '(native) "l F" #'mafcmd-factor-gcd)
-(maf-bindings-define '(native) "l t" #'mafcmd-collect-fractions)
+;; c for collect. The key returns to service after the float/frac
+;; toggle freed it: frac kept its name and flags, and t said nothing.
+(maf-bindings-define '(native) "l c" #'mafcmd-collect-fractions)
 ;; The float/frac toggle: any float in the target converts toward
 ;; exact, otherwise fractions float — see `mafcmd-float-frac'. The
 ;; fixed directions stay reachable through it: I forces the float, H
