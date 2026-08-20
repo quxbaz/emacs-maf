@@ -263,7 +263,10 @@ live."
      (if keys
          (propertize (format " (%s)" keys) 'face 'maf-module-keys)
        "")
-     " — " (if (maf-module--state name) "on" "off")
+     ;; The state wears `dial-value', the purple the live value wears
+     ;; on the row, so the heading reads as the row does.
+     " — " (propertize (if (maf-module--state name) "on" "off")
+                       'face 'dial-value)
      (if description (concat "\n\n" description) "")
      "\n\n"
      (mapconcat (pcase-lambda (`(,symbol . ,text))
