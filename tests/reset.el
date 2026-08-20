@@ -1,7 +1,9 @@
 ;; `maf-reset' and `maf-reset-settings' (src/stack.el). The contract:
-;; reset empties the session — stack, undo/redo, trail, timeline — and
-;; re-reads `calc-settings-file'; reset-settings restores the modes
-;; from that file and leaves the session standing. A prefix argument
+;; reset empties the session — stack, undo/redo, trail — and re-reads
+;; `calc-settings-file'; reset-settings restores the modes from that
+;; file and leaves the session standing. The timeline survives both:
+;; it is a log of what happened, not part of the session, and only
+;; `maf-timeline-clear' empties it. A prefix argument
 ;; means "calc's factory defaults" for both, and then the settings file
 ;; is deliberately not read, since loading it would put the saved modes
 ;; straight back.
@@ -47,6 +49,14 @@
   (cl-assert calc-undo-list)
   (cl-assert (> (buffer-size (get-buffer "*Calc Trail*")) 0))
 
+  ;; Give the timeline a state to keep across the reset, when the
+  ;; module is loaded. A direct capture is what the post-command hook
+  ;; would have done; it records only if the stack changed, so this is
+  ;; harmless when hooks already captured the pushes above.
+  (when (fboundp 'maf-timeline--capture)
+    (maf-timeline--capture)
+    (cl-assert maf-timeline--states))
+
   ;; One command clears the lot.
   (call-interactively 'maf-reset)
   (cl-assert (= (calc-stack-size) 0))
@@ -67,10 +77,10 @@
   (cl-assert (eq (key-binding (kbd "C-M-k")) 'maf-reset))
   (cl-assert (eq (key-binding (kbd "C-M-l")) 'maf-reset-settings))
 
-  ;; The timeline is emptied too — it is what the trail used to be, so a
-  ;; reset that left it standing would leave the session recoverable.
-  (cl-assert (or (not (fboundp 'maf-timeline-clear))
-                 (null maf-timeline--states)))
+  ;; The timeline survives — it is a log of what happened, not part of
+  ;; the session, and stays browsable after the wipe.
+  (cl-assert (or (not (fboundp 'maf-timeline--capture))
+                 maf-timeline--states))
 
   ;; --- maf-reset with a prefix: factory defaults ---
 

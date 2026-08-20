@@ -550,7 +550,9 @@ The timeline is a log of what happened rather than part of the calc
 state, so nothing here is undoable and the stack is untouched — the
 next change starts a fresh log, baselined against the stack as it
 stands. Recording carries on if it was on; this only empties what was
-recorded. `maf-reset' calls it as part of wiping a session.
+recorded. Nothing else empties the log — `maf-reset' wipes the session
+but deliberately leaves the timeline standing — so this is the one way
+to discard it.
 
 Deliberately unbound in the browser: wiping the whole log a fingerslip
 away from \\`r' would be far worse than \\`D''s one state at a time.
