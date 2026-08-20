@@ -192,8 +192,8 @@
    - `l` — maf's own invented prefix, layered over calc's log-units
      prefix:
      - maf's own: mafcmd-factor-by (l f), mafcmd-factor-gcd (l F),
-       mafcmd-collect-fractions (l t), mafcmd-float-frac (l l, the
-       float/frac toggle; float and frac stay commands, l c unbound),
+       mafcmd-collect-fractions (l c), mafcmd-float-frac (l l, the
+       float/frac toggle; float and frac stay commands),
        mafcmd-to-degrees (l d), mafcmd-to-radians (l r),
        mafcmd-inverse-function (l v), mafcmd-swap-vars (l x),
        mafcmd-unique-groups (l g)
@@ -292,11 +292,13 @@
    - [X] `l l` mafcmd-float-frac (2026-08-20: the float/frac toggle —
      floats toward fractions first, fractions to floats otherwise,
      direction echoed; I forces float, H float-all, frac's tolerance
-     on the prefix arg. `l c` unbound; mafcmd-float and mafcmd-frac
-     stay defined, reachable by name and the flags)
-   - [ ] `l F` factor-gcd
-   - [ ] `l t` collect-fractions
-   - [ ] `l v` inverse-function
+     on the prefix arg. mafcmd-float and mafcmd-frac stay defined,
+     reachable by name and the flags; `l c` passed to
+     collect-fractions)
+   - [X] `l F` factor-gcd
+   - [X] `l c` collect-fractions (2026-08-20: moved off `l t` onto the
+     key the float/frac toggle freed — c for collect)
+   - [X] `l v` inverse-function
    - [ ] `a L` mafcmd-poly-lcm
    - [ ] `M-i` mafcmd-auto-solve
    - [ ] `M-r` mafcmd-poly-roots
@@ -312,28 +314,28 @@
      the inverse of `j x` on the letters of calc's a x / a f pair)
    - [ ] `S-<up>` / `S-<down>` mafcmd-toggle-op
    - [ ] `C-|` mafcmd-bracket
-   - [ ] `v RET` maf-index
+   - [X] `v RET` maf-index
    - [ ] `l g` unique-groups
    - [ ] `r r` maf-recall-variable
    - [ ] `M-o` mafcmd-mod-360
    - [ ] `M-l` mafcmd-ref-angle
    - [ ] `M-s` mafcmd-supplement
    - [ ] `M-c` mafcmd-complement
-   - [ ] `l r` to-radians
+   - [X] `l r` to-radians
    - [ ] `f l` mafcmd-cath
-   - [ ] `<tab>` maf-swap-up
-   - [ ] `S-<return>` maf-roll-to-top
+   - [X] `<tab>` maf-swap-up
+   - [X] `S-<return>` maf-roll-to-top
    - [ ] `C-M-<backspace>` (and aliases) maf-roll-to-bottom
-   - [ ] `M-<up>` maf-carry-up
-   - [ ] `M-<down>` maf-carry-down
+   - [X] `M-<up>` maf-carry-up
+   - [X] `M-<down>` maf-carry-down
    - [ ] `M-<return>` maf-dup-below
-   - [ ] `M-m` maf-beginning-of-entry
-   - [ ] `M-f` maf-forward-noun
-   - [ ] `M-b` maf-backward-noun
-   - [ ] `S-SPC` maf-forward-space
-   - [ ] `C-M-u` maf-up-expression
-   - [ ] `C-M-k` maf-reset
-   - [ ] `C-M-l` maf-reset-settings
+   - [X] `M-m` maf-beginning-of-entry
+   - [X] `M-f` maf-forward-noun
+   - [X] `M-b` maf-backward-noun
+   - [X] `S-SPC` maf-forward-space
+   - [X] `C-M-u` maf-up-expression
+   - [X] `C-M-k` maf-reset
+   - [X] `C-M-l` maf-reset-settings
 ** defined but unbound (M-x only)
    Stack commands with no key in native and no flag route from a bound
    key. Not listed: the ~67 flag-route variants (arcsin under I S,
