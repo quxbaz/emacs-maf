@@ -13,7 +13,7 @@
 
 (maf-step
   ;; Both spellings of the key, as the terminal cannot deliver the GUI
-  ;; event. The stack's own M-RET (`maf-dup-below') duplicates too,
+  ;; event. The stack's own M-RET (`maf-dup-go') duplicates too,
   ;; though its copy lands on top rather than below.
   (cl-assert (eq (lookup-key maf-edit-mode-map (kbd "M-<return>"))
                  'maf-edit-dup-entry))

@@ -2948,7 +2948,7 @@ argument, C-u RET."
   (interactive)
   (maf-dup t))
 
-(defun maf-dup-below ()
+(defun maf-dup-go ()
   "Duplicate the item at point, pushing the copy onto the top of the stack.
 
   3:  a + b       4:  a + b

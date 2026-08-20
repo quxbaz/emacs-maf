@@ -1,4 +1,4 @@
-;; `maf-dup-below' is a real command (src/stack.el), so these steps drive
+;; `maf-dup-go' is a real command (src/stack.el), so these steps drive
 ;; it directly. A step passes when it raises no error. The contract: the
 ;; subject point names — sub-formula, selection, region run, whole entry
 ;; — is copied verbatim onto the top of the stack, and point travels to
@@ -9,7 +9,7 @@
   ;; (each one level up), and point travels to the copy.
   (maf-push "w") (maf-push "x") (maf-push "y") (maf-push "z")  ; 4:w 3:x 2:y 1:z
   (progn (goto-char (point-min)) (forward-line 1) (end-of-line))   ; on 3: x
-  (call-interactively 'maf-dup-below)
+  (call-interactively 'maf-dup-go)
   (cl-assert (equal (mapcar (lambda (i) (math-format-value (calc-top i 'full)))
                             (number-sequence 1 5))
                     '("x" "z" "y" "x" "w")))   ; copy on top, original at 4
@@ -24,7 +24,7 @@
   ;; The copy is structurally identical to the source, not a re-read.
   (maf-push "a + b c") (maf-push "z")
   (progn (goto-char (point-min)) (end-of-line))
-  (call-interactively 'maf-dup-below)
+  (call-interactively 'maf-dup-go)
   (cl-assert (equal (calc-top 1 'full) (calc-top 3 'full)))
   (calc-pop (calc-stack-size))
 
@@ -35,7 +35,7 @@
   (maf-push "(a + b) c") (maf-push "z")
   (progn (goto-char (point-min)) (beginning-of-line)
          (search-forward "a") (backward-char 1))
-  (call-interactively 'maf-dup-below)
+  (call-interactively 'maf-dup-go)
   (cl-assert (equal (mapcar (lambda (i) (math-format-value (calc-top i 'full)))
                             (number-sequence 1 3))
                     '("a" "z" "(a + b) c")))
@@ -51,7 +51,7 @@
   (maf-push "a + b") (maf-push "z")
   (progn (goto-char (point-min)) (beginning-of-line)
          (search-forward "+") (backward-char 1))
-  (call-interactively 'maf-dup-below)
+  (call-interactively 'maf-dup-go)
   (cl-assert (equal (mapcar (lambda (i) (math-format-value (calc-top i 'full)))
                             (number-sequence 1 3))
                     '("a + b" "z" "a + b")))
@@ -63,7 +63,7 @@
   (maf-push "(a + b) c") (maf-push "z")
   (progn (goto-char (point-min)) (beginning-of-line)
          (search-forward "+") (backward-char 1) (calc-select-here nil))
-  (call-interactively 'maf-dup-below)
+  (call-interactively 'maf-dup-go)
   (cl-assert (string= (math-format-value (maf--strip-encasing (calc-top 1 'full)))
                       "a + b"))
   (cl-assert (= (calc-locate-cursor-element (point)) 1))
@@ -78,7 +78,7 @@
          (search-forward "b + c" (line-end-position))
          (goto-char (match-beginning 0))
          (push-mark (match-end 0) t t)
-         (call-interactively 'maf-dup-below))
+         (call-interactively 'maf-dup-go))
   (cl-assert (equal (mapcar (lambda (i) (math-format-value (calc-top i 'full)))
                             (number-sequence 1 3))
                     '("b + c" "z" "a + b + c")))
@@ -91,7 +91,7 @@
   (progn (goto-char (point-min)) (beginning-of-line)
          (search-forward "+") (backward-char 1) (calc-select-here nil)
          (goto-char (point-max)) (forward-line 0))
-  (call-interactively 'maf-dup-below)
+  (call-interactively 'maf-dup-go)
   (cl-assert (equal (mapcar (lambda (i) (math-format-value
                                          (maf--strip-encasing (calc-top i 'full))))
                             (number-sequence 1 3))
@@ -104,7 +104,7 @@
   ;; a relation copies whole, not once per side
   (maf-push "x = y") (maf-push "z")
   (progn (goto-char (point-min)) (end-of-line))
-  (call-interactively 'maf-dup-below)
+  (call-interactively 'maf-dup-go)
   (cl-assert (equal (mapcar (lambda (i) (math-format-value (calc-top i 'full)))
                             (number-sequence 1 3))
                     '("x = y" "z" "x = y")))
@@ -118,7 +118,7 @@
   (progn (goto-char (point-min)) (forward-line 1)
          (beginning-of-line) (forward-char 4))
   (cl-assert (looking-at "-"))                  ; the fraction bar, row 1
-  (call-interactively 'maf-dup-below)
+  (call-interactively 'maf-dup-go)
   (cl-assert (= (calc-locate-cursor-element (point)) 1))   ; the copy
   (cl-assert (looking-at "-"))                  ; same row within it
   (cl-assert (= (current-column) 4))
@@ -128,7 +128,7 @@
   ;; on the top entry the copy stacks right on it, and point steps down
   (maf-push "p") (maf-push "q")                 ; 2:p 1:q
   (progn (calc-cursor-stack-index 1) (end-of-line))
-  (call-interactively 'maf-dup-below)
+  (call-interactively 'maf-dup-go)
   (cl-assert (equal (mapcar (lambda (i) (math-format-value (calc-top i 'full)))
                             (number-sequence 1 3))
                     '("q" "q" "p")))
@@ -139,7 +139,7 @@
   ;; at home the top entry is the subject, as `maf-dup' does there
   (maf-push "p") (maf-push "q")
   (progn (goto-char (point-max)) (forward-line 0))
-  (call-interactively 'maf-dup-below)
+  (call-interactively 'maf-dup-go)
   (cl-assert (equal (mapcar (lambda (i) (math-format-value (calc-top i 'full)))
                             (number-sequence 1 3))
                     '("q" "q" "p")))
@@ -149,14 +149,14 @@
   ;; an empty stack has nothing to duplicate
   (cl-assert (string-match-p "Stack is empty"
                              (condition-case e
-                                 (progn (call-interactively 'maf-dup-below) "")
+                                 (progn (call-interactively 'maf-dup-go) "")
                                (error (error-message-string e)))))
 
   ;; --- keep-args makes no difference: the copy is verbatim either way ---
   (maf-push "a") (maf-push "b")                 ; 2:a 1:b
   (progn (goto-char (point-min)) (end-of-line))
   (let ((calc-keep-args-flag t))
-    (call-interactively 'maf-dup-below))
+    (call-interactively 'maf-dup-go))
   (cl-assert (equal (mapcar (lambda (i) (math-format-value (calc-top i 'full)))
                             (number-sequence 1 3))
                     '("a" "b" "a")))
@@ -165,7 +165,7 @@
   ;; --- a single undo reverts the copy and restores point ---
   (maf-push "w") (maf-push "x") (maf-push "y") (maf-push "z")
   (progn (goto-char (point-min)) (forward-line 1) (end-of-line))
-  (call-interactively 'maf-dup-below)
+  (call-interactively 'maf-dup-go)
   (cl-assert (= (calc-stack-size) 5))
   ;; last-command is set as the command loop would (the harness can't),
   ;; so the undo takes the pre-command-point path rather than the chained

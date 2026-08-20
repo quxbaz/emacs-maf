@@ -151,7 +151,7 @@ that never touched it.")
     (define-key map (kbd "C-j") #'maf-edit-newline)
     (define-key map (kbd "C-c C-k") #'maf-edit-discard)
     ;; The entry at point copies into the slot below it. The same key
-    ;; out in the stack (`maf-dup-below') duplicates too, though its
+    ;; out in the stack (`maf-dup-go') duplicates too, though its
     ;; copy lands on top as calc convention has it. The GUI event and
     ;; the terminal form both, as there is no calc M-RET to shadow.
     (define-key map (kbd "M-<return>") #'maf-edit-dup-entry)
@@ -1242,7 +1242,7 @@ numeric prefix argument makes N copies.
                         1:  [ [ 1, 2 ]
                               [ 3, 4 ] ]
 
-The in-session sibling of `maf-dup-below', the same key out in the
+The in-session sibling of `maf-dup-go', the same key out in the
 stack — though there the copy lands on top, as calc convention has it,
 while a session's natural slot is right below the source. Both work on
 the entry, never on the screen line: a

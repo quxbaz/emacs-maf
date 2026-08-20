@@ -277,8 +277,8 @@
 ;; `maf-dup-here' — the keep-point variant of RET's duplicate — held
 ;; this key until the entry-duplicate took it; it now rides RET's prefix
 ;; argument (C-u RET), and stays reachable by name.
-(maf-bindings-define '(calc native vim) "M-<return>" #'maf-dup-below)
-(maf-bindings-define '(calc native vim) "M-RET" #'maf-dup-below)
+(maf-bindings-define '(calc native vim) "M-<return>" #'maf-dup-go)
+(maf-bindings-define '(calc native vim) "M-RET" #'maf-dup-go)
 ;; S-<return> is the restack (bound above, beside the bury). It was the
 ;; edit module's add-entry-below, which is unbound now and reachable by
 ;; name: C-o opens an entry above point, and above the entry below point
