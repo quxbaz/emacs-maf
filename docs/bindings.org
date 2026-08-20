@@ -192,10 +192,11 @@
    - `l` — maf's own invented prefix, layered over calc's log-units
      prefix:
      - maf's own: mafcmd-factor-by (l f), mafcmd-factor-gcd (l F),
-       mafcmd-collect-fractions (l t), mafcmd-float (l l),
-       mafcmd-frac (l c), mafcmd-to-degrees (l d),
-       mafcmd-to-radians (l r), mafcmd-inverse-function (l v),
-       mafcmd-swap-vars (l x), mafcmd-unique-groups (l g)
+       mafcmd-collect-fractions (l t), mafcmd-float-frac (l l, the
+       float/frac toggle; float and frac stay commands, l c unbound),
+       mafcmd-to-degrees (l d), mafcmd-to-radians (l r),
+       mafcmd-inverse-function (l v), mafcmd-swap-vars (l x),
+       mafcmd-unique-groups (l g)
      - calc's log-units family: calc-lu-plus/minus/times/divide/quant,
        calc-db, calc-np, calc-freq, calc-midi, calc-spn
    - `w` — calc-why (single command)
@@ -279,15 +280,15 @@
    - [X] `p` maf-browse-variables ← calc-precision
    - [X] `l d` mafcmd-to-degrees ← calc-db
    - [X] `f L` mafcmd-unit-cath ← calc-lnp1
-   - [ ] `M-k` mafcmd-coordinate-toggle ← calc-copy-as-kill
+   - [X] `M-k` mafcmd-coordinate-toggle ← calc-copy-as-kill
    - [X] `G` maf-go-home ← calc-argument
    - [X] `j e` maf-jump-equals ← calc-enable-selections
    - [X] `@` maf-toggle-simplify ← calcDigit-start
-   - [ ] `&` maf-toggle-big-language ← calc-inv
+   - [X] `&` maf-toggle-big-language ← calc-inv
 ** additions (keys calc leaves unbound)
-   - [ ] `W` mafcmd-sqr
-   - [ ] `k k` mafcmd-evaluate
-   - [ ] `C-<return>` mafcmd-let
+   - [X] `W` mafcmd-sqr
+   - [X] `k k` mafcmd-evaluate
+   - [X] `C-<return>` mafcmd-let
    - [ ] `l l` mafcmd-float-frac (2026-08-20: the float/frac toggle —
      floats toward fractions first, fractions to floats otherwise,
      direction echoed; I forces float, H float-all, frac's tolerance
