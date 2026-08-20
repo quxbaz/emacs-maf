@@ -360,9 +360,12 @@
 ;; entry C-<return> is calc's own map, where it stays
 ;; `maf-digit-commit-here' (src/minibuffer.el).
 (maf-bindings-define '(native) "C-<return>" #'mafcmd-let)
-;; Polynomial roots by factoring, with multiplicity. M-r is unbound in
-;; calc itself.
-(maf-bindings-define '(native) "M-r" #'mafcmd-poly-roots)
+;; Polynomial roots by factoring, with multiplicity. On the l prefix
+;; with the other maf-only algebra keys; l t is unbound in calc
+;; itself, free since collect-fractions moved to its own letter on
+;; l c. It sat on M-r until 2026-08-20; that key falls through to
+;; whatever the global map holds.
+(maf-bindings-define '(native) "l t" #'mafcmd-poly-roots)
 ;; A comfortable alias for the roots vector beside its stock a P (the
 ;; roots row in maf-cmds.el). a l is unbound in calc itself; the same
 ;; key held calc-poly-roots in the my/calc config this layout grew
