@@ -36,9 +36,6 @@
 (declare-function calc-unread-command "calc")
 (declare-function calc-change-mode "calc-mode")
 (declare-function calc-reset "calc-ext")
-;; The timeline is a feature module, optional by design; `maf-reset'
-;; calls this only when it is loaded.
-(declare-function maf-timeline-clear "maf-timeline")
 ;; The module system is optional; `maf--reset-calc' calls this only when
 ;; it is loaded, to re-apply the module list across a reset.
 (declare-function maf-modules-apply "maf-module")
@@ -1551,11 +1548,13 @@ Returns non-nil if the file was loaded."
 (defun maf-reset (&optional defaults)
   "Reset calc to a clean slate: empty stack, empty history, fresh settings.
 
-Clears the stack, calc's undo and redo lists, the trail, and the maf
-stack timeline, restores the mode settings saved in
-`calc-settings-file', then re-reads the rest of that file (see
-`maf--reset-load-settings'). What survives is what lives outside the
-calc buffer: stored variables, the formula library, the kill ring.
+Clears the stack, calc's undo and redo lists, and the trail, restores
+the mode settings saved in `calc-settings-file', then re-reads the
+rest of that file (see `maf--reset-load-settings'). What survives is
+what lives outside the calc buffer: stored variables, the formula
+library, the kill ring — and the maf stack timeline, which is a log
+of what happened rather than part of the session, and stays browsable
+across the reset. `maf-timeline-clear' empties it separately.
 
 With a prefix argument DEFAULTS, restore calc's factory default modes
 instead of the saved ones — and then leave the settings file alone,
@@ -1567,11 +1566,6 @@ Nothing here is undoable: the undo list is one of the things cleared."
   (maf--with-calc-buffer
     (maf--reset-calc (if defaults 0 nil))
     (maf--reset-clear-trail)
-    ;; The timeline is a module and may not be loaded; it is also what
-    ;; the trail used to be for, so a reset that left it standing would
-    ;; leave the whole session recoverable from it.
-    (when (fboundp 'maf-timeline-clear)
-      (maf-timeline-clear))
     (message (if (and (not defaults) (maf--reset-load-settings))
                  "Calc reset; settings reloaded"
                "Calc reset"))))
