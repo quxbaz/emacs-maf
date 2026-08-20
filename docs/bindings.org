@@ -241,7 +241,7 @@
      `C-y` maf-yank ← calc-yank,
      `RET` maf-dup-or-clear-selections ← calc-enter,
      `TAB` / `C-t` maf-swap-up ← calc-roll-down,
-     `M-RET` maf-dup-below ← calc-last-args
+     `M-RET` maf-dup-go ← calc-last-args
    - `r 0`..`r 9` maf-recall-quick ← calc-recall-quick
    - the digit starters `_` `0`..`9` `.` `#` maf-digit-start ←
      calcDigit-start
@@ -330,7 +330,10 @@
    - [X] `C-M-<backspace>` (and aliases) maf-roll-to-bottom
    - [X] `M-<up>` maf-carry-up
    - [X] `M-<down>` maf-carry-down
-   - [X] `M-<return>` maf-dup-below
+   - [X] `M-<return>` maf-dup-go (2026-08-20: the copy now lands on
+     top of the stack, calc's convention, rather than below the
+     source; point travels with it, a mark holding the origin.
+     Renamed from maf-dup-below to say so)
    - [X] `M-m` maf-beginning-of-entry
    - [X] `M-f` maf-forward-noun
    - [X] `M-b` maf-backward-noun

@@ -1,46 +1,47 @@
-;; `maf-dup-below' is a real command (src/stack.el), so these steps drive
+;; `maf-dup-go' is a real command (src/stack.el), so these steps drive
 ;; it directly. A step passes when it raises no error. The contract: the
 ;; subject point names — sub-formula, selection, region run, whole entry
-;; — is copied verbatim into the slot directly below the entry it came
-;; from, point travels to the copy, and the push and the roll are one
-;; undoable gesture.
+;; — is copied verbatim onto the top of the stack, and point travels to
+;; the copy, leaving a mark at the origin.
 
 (maf-step
-  ;; mid-stack: the copy takes the level point was on and the original
-  ;; bumps up one, so the two sit adjacent on screen. Entries below the
-  ;; insertion keep their levels.
+  ;; mid-stack: the copy lands on top, the originals keep their order
+  ;; (each one level up), and point travels to the copy.
   (maf-push "w") (maf-push "x") (maf-push "y") (maf-push "z")  ; 4:w 3:x 2:y 1:z
   (progn (goto-char (point-min)) (forward-line 1) (end-of-line))   ; on 3: x
-  (call-interactively 'maf-dup-below)
+  (call-interactively 'maf-dup-go)
   (cl-assert (equal (mapcar (lambda (i) (math-format-value (calc-top i 'full)))
                             (number-sequence 1 5))
-                    '("z" "y" "x" "x" "w")))   ; copy at level 3, original at 4
+                    '("x" "z" "y" "x" "w")))   ; copy on top, original at 4
   (cl-assert (= (calc-stack-size) 5))
-  ;; point travelled to the copy, not the original (now at level 4)
-  (cl-assert (= (calc-locate-cursor-element (point)) 3))
+  ;; point travelled to the copy on top, not the original (now at level 4)
+  (cl-assert (= (calc-locate-cursor-element (point)) 1))
+  ;; the mark holds the origin: a single pop returns to the original
+  (progn (pop-to-mark-command)
+         (cl-assert (= (calc-locate-cursor-element (point)) 4)))
   (calc-pop (calc-stack-size))
 
   ;; The copy is structurally identical to the source, not a re-read.
   (maf-push "a + b c") (maf-push "z")
   (progn (goto-char (point-min)) (end-of-line))
-  (call-interactively 'maf-dup-below)
-  (cl-assert (equal (calc-top 2 'full) (calc-top 3 'full)))
+  (call-interactively 'maf-dup-go)
+  (cl-assert (equal (calc-top 1 'full) (calc-top 3 'full)))
   (calc-pop (calc-stack-size))
 
   ;; --- point picks the subject, as it does everywhere else in maf ---
 
-  ;; subexpr: the sub-formula under point is lifted out into the slot
-  ;; below its entry, as `maf-dup' would lift it onto the top.
+  ;; subexpr: the sub-formula under point is lifted out onto the top,
+  ;; as `maf-dup' would lift it.
   (maf-push "(a + b) c") (maf-push "z")
   (progn (goto-char (point-min)) (beginning-of-line)
          (search-forward "a") (backward-char 1))
-  (call-interactively 'maf-dup-below)
+  (call-interactively 'maf-dup-go)
   (cl-assert (equal (mapcar (lambda (i) (math-format-value (calc-top i 'full)))
                             (number-sequence 1 3))
-                    '("z" "a" "(a + b) c")))
+                    '("a" "z" "(a + b) c")))
   ;; the copy stands on its own, so there is no place within the entry
   ;; to keep: point lands at the start of the copy's formula text
-  (cl-assert (= (calc-locate-cursor-element (point)) 2))
+  (cl-assert (= (calc-locate-cursor-element (point)) 1))
   (cl-assert (= (current-column) 4))
   (cl-assert (looking-at "a"))
   (calc-pop (calc-stack-size))
@@ -50,11 +51,11 @@
   (maf-push "a + b") (maf-push "z")
   (progn (goto-char (point-min)) (beginning-of-line)
          (search-forward "+") (backward-char 1))
-  (call-interactively 'maf-dup-below)
+  (call-interactively 'maf-dup-go)
   (cl-assert (equal (mapcar (lambda (i) (math-format-value (calc-top i 'full)))
                             (number-sequence 1 3))
-                    '("z" "a + b" "a + b")))
-  (cl-assert (= (calc-locate-cursor-element (point)) 2))
+                    '("a + b" "z" "a + b")))
+  (cl-assert (= (calc-locate-cursor-element (point)) 1))
   (cl-assert (looking-at "\\+"))
   (calc-pop (calc-stack-size))
 
@@ -62,10 +63,10 @@
   (maf-push "(a + b) c") (maf-push "z")
   (progn (goto-char (point-min)) (beginning-of-line)
          (search-forward "+") (backward-char 1) (calc-select-here nil))
-  (call-interactively 'maf-dup-below)
-  (cl-assert (string= (math-format-value (maf--strip-encasing (calc-top 2 'full)))
+  (call-interactively 'maf-dup-go)
+  (cl-assert (string= (math-format-value (maf--strip-encasing (calc-top 1 'full)))
                       "a + b"))
-  (cl-assert (= (calc-locate-cursor-element (point)) 2))
+  (cl-assert (= (calc-locate-cursor-element (point)) 1))
   (calc-clear-selections)
   (calc-pop (calc-stack-size))
 
@@ -77,24 +78,24 @@
          (search-forward "b + c" (line-end-position))
          (goto-char (match-beginning 0))
          (push-mark (match-end 0) t t)
-         (call-interactively 'maf-dup-below))
+         (call-interactively 'maf-dup-go))
   (cl-assert (equal (mapcar (lambda (i) (math-format-value (calc-top i 'full)))
                             (number-sequence 1 3))
-                    '("z" "b + c" "a + b + c")))
-  (cl-assert (= (calc-locate-cursor-element (point)) 2))
+                    '("b + c" "z" "a + b + c")))
+  (cl-assert (= (calc-locate-cursor-element (point)) 1))
   (calc-pop (calc-stack-size))
 
-  ;; the copy goes below the entry the subject came from, not below
-  ;; point: a selection names its own entry, wherever point rests
+  ;; a selection names its own entry, wherever point rests: the subject
+  ;; comes from the selected entry, the copy still lands on top
   (maf-push "(a + b) c") (maf-push "z")
   (progn (goto-char (point-min)) (beginning-of-line)
          (search-forward "+") (backward-char 1) (calc-select-here nil)
          (goto-char (point-max)) (forward-line 0))
-  (call-interactively 'maf-dup-below)
+  (call-interactively 'maf-dup-go)
   (cl-assert (equal (mapcar (lambda (i) (math-format-value
                                          (maf--strip-encasing (calc-top i 'full))))
                             (number-sequence 1 3))
-                    '("z" "a + b" "(a + b) c")))
+                    '("a + b" "z" "(a + b) c")))
   ;; point was at home, never on the entry that was copied, so it stays
   (cl-assert (maf--at-home-p))
   (calc-clear-selections)
@@ -103,10 +104,10 @@
   ;; a relation copies whole, not once per side
   (maf-push "x = y") (maf-push "z")
   (progn (goto-char (point-min)) (end-of-line))
-  (call-interactively 'maf-dup-below)
+  (call-interactively 'maf-dup-go)
   (cl-assert (equal (mapcar (lambda (i) (math-format-value (calc-top i 'full)))
                             (number-sequence 1 3))
-                    '("z" "x = y" "x = y")))
+                    '("x = y" "z" "x = y")))
   (calc-pop (calc-stack-size))
 
   ;; A multi-line rendering: the fraction bar is the whole entry's own
@@ -117,19 +118,17 @@
   (progn (goto-char (point-min)) (forward-line 1)
          (beginning-of-line) (forward-char 4))
   (cl-assert (looking-at "-"))                  ; the fraction bar, row 1
-  (call-interactively 'maf-dup-below)
-  (cl-assert (= (calc-locate-cursor-element (point)) 2))   ; the copy
+  (call-interactively 'maf-dup-go)
+  (cl-assert (= (calc-locate-cursor-element (point)) 1))   ; the copy
   (cl-assert (looking-at "-"))                  ; same row within it
   (cl-assert (= (current-column) 4))
   (calc-normal-language)
   (calc-pop (calc-stack-size))
 
-  ;; --- degenerate placements: nothing below, so the copy lands on top ---
-
-  ;; on the top entry there is only the home line beneath it
+  ;; on the top entry the copy stacks right on it, and point steps down
   (maf-push "p") (maf-push "q")                 ; 2:p 1:q
   (progn (calc-cursor-stack-index 1) (end-of-line))
-  (call-interactively 'maf-dup-below)
+  (call-interactively 'maf-dup-go)
   (cl-assert (equal (mapcar (lambda (i) (math-format-value (calc-top i 'full)))
                             (number-sequence 1 3))
                     '("q" "q" "p")))
@@ -140,7 +139,7 @@
   ;; at home the top entry is the subject, as `maf-dup' does there
   (maf-push "p") (maf-push "q")
   (progn (goto-char (point-max)) (forward-line 0))
-  (call-interactively 'maf-dup-below)
+  (call-interactively 'maf-dup-go)
   (cl-assert (equal (mapcar (lambda (i) (math-format-value (calc-top i 'full)))
                             (number-sequence 1 3))
                     '("q" "q" "p")))
@@ -150,29 +149,29 @@
   ;; an empty stack has nothing to duplicate
   (cl-assert (string-match-p "Stack is empty"
                              (condition-case e
-                                 (progn (call-interactively 'maf-dup-below) "")
+                                 (progn (call-interactively 'maf-dup-go) "")
                                (error (error-message-string e)))))
 
   ;; --- keep-args makes no difference: the copy is verbatim either way ---
   (maf-push "a") (maf-push "b")                 ; 2:a 1:b
   (progn (goto-char (point-min)) (end-of-line))
   (let ((calc-keep-args-flag t))
-    (call-interactively 'maf-dup-below))
+    (call-interactively 'maf-dup-go))
   (cl-assert (equal (mapcar (lambda (i) (math-format-value (calc-top i 'full)))
                             (number-sequence 1 3))
-                    '("b" "a" "a")))
+                    '("a" "b" "a")))
   (calc-pop (calc-stack-size))
 
-  ;; --- the push and the roll are one undoable gesture ---
+  ;; --- a single undo reverts the copy and restores point ---
   (maf-push "w") (maf-push "x") (maf-push "y") (maf-push "z")
   (progn (goto-char (point-min)) (forward-line 1) (end-of-line))
-  (call-interactively 'maf-dup-below)
+  (call-interactively 'maf-dup-go)
   (cl-assert (= (calc-stack-size) 5))
   ;; last-command is set as the command loop would (the harness can't),
   ;; so the undo takes the pre-command-point path rather than the chained
   ;; one a leftover `maf-undo' from an earlier test would select.
   (progn (setq last-command nil) (call-interactively 'maf-undo))
-  (cl-assert (= (calc-stack-size) 4))           ; a single undo, not two
+  (cl-assert (= (calc-stack-size) 4))
   (cl-assert (equal (mapcar (lambda (i) (math-format-value (calc-top i 'full)))
                             (number-sequence 1 4))
                     '("z" "y" "x" "w")))

@@ -327,22 +327,6 @@ preceded this command."
                                (cddr calc-undo-list))))
   (setq maf--digit-entry-handoff nil))
 
-(defun maf--roll-top-below (m)
-  "Roll the just-pushed top of the stack down to level M.
-The push grew the stack by one, so whatever was at level M sits at M+1
-now; rolling the new top down to M lands it directly below that entry
-on screen. M of 1 — the top entry, or home — needs no roll, the push
-already put it where it belongs.
-
-The roll is folded into the push's undo group, so a single `maf-undo'
-reverts the whole gesture rather than stranding the copy on top."
-  (when (> m 1)
-    (calc-wrapper (calc-roll-down m))
-    (when (cdr calc-undo-list)
-      (setq calc-undo-list (cons (append (car calc-undo-list)
-                                         (cadr calc-undo-list))
-                                 (cddr calc-undo-list))))))
-
 (defun maf-push (expr)
   "Parse algebraic EXPR and push it onto the calc stack.
 A convenience over pushing a raw calc s-expression: instead of

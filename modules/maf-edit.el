@@ -150,8 +150,9 @@ that never touched it.")
     ;; RET. It is also the newline key everywhere else in Emacs.
     (define-key map (kbd "C-j") #'maf-edit-newline)
     (define-key map (kbd "C-c C-k") #'maf-edit-discard)
-    ;; The entry at point copies into the slot below it, the gesture
-    ;; M-RET makes out in the stack (`maf-dup-below'). The GUI event and
+    ;; The entry at point copies into the slot below it. The same key
+    ;; out in the stack (`maf-dup-go') duplicates too, though its
+    ;; copy lands on top as calc convention has it. The GUI event and
     ;; the terminal form both, as there is no calc M-RET to shadow.
     (define-key map (kbd "M-<return>") #'maf-edit-dup-entry)
     (define-key map (kbd "M-RET") #'maf-edit-dup-entry)
@@ -1241,8 +1242,10 @@ numeric prefix argument makes N copies.
                         1:  [ [ 1, 2 ]
                               [ 3, 4 ] ]
 
-The in-session twin of `maf-dup-below', which does the same to the
-stack itself. Both work on the entry, never on the screen line: a
+The in-session sibling of `maf-dup-go', the same key out in the
+stack — though there the copy lands on top, as calc convention has it,
+while a session's natural slot is right below the source. Both work on
+the entry, never on the screen line: a
 line-based duplicate would cut a matrix across its rows, and would
 have to read every copy back from whatever the display shows."
   (interactive "p")
