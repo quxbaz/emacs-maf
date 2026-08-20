@@ -195,8 +195,8 @@
        mafcmd-collect-fractions (l c), mafcmd-float-frac (l l, the
        float/frac toggle; float and frac stay commands),
        mafcmd-to-degrees (l d), mafcmd-to-radians (l r),
-       mafcmd-inverse-function (l v), mafcmd-swap-vars (l x),
-       mafcmd-unique-groups (l g)
+       mafcmd-poly-roots (l t), mafcmd-inverse-function (l v),
+       mafcmd-swap-vars (l x), mafcmd-unique-groups (l g)
      - calc's log-units family: calc-lu-plus/minus/times/divide/quant,
        calc-db, calc-np, calc-freq, calc-midi, calc-spn
    - `w` — calc-why (single command)
@@ -300,13 +300,15 @@
      key the float/frac toggle freed — c for collect)
    - [X] `l v` inverse-function
    - [ ] `a L` mafcmd-poly-lcm
-   - [ ] `M-i` mafcmd-auto-solve
-   - [ ] `M-r` mafcmd-poly-roots
-   - [ ] `a l` mafcmd-roots (alias of its stock `a P`; my/calc's key)
-   - [ ] `j i` mafcmd-isolate
-   - [ ] `a k` mafcmd-abs-ineq
-   - [ ] `M-.` mafcmd-remove-equal
-   - [ ] `l x` swap-vars
+   - [X] `M-i` mafcmd-auto-solve
+   - [ ] `l t` mafcmd-poly-roots (2026-08-20: moved off `M-r` onto the
+     key collect-fractions vacated; M-r falls through to the global
+     map)
+   - [X] `a l` mafcmd-roots (alias of its stock `a P`; my/calc's key)
+   - [X] `j i` mafcmd-isolate
+   - [X] `a k` mafcmd-abs-ineq
+   - [X] `M-.` mafcmd-remove-equal
+   - [X] `l x` swap-vars
    - [ ] `j j` mafcmd-raise
    - [ ] `j x` maf-distribute (second key beside `j D`, on expand's
      letter: `x` expands all, `j x` one step at point)
