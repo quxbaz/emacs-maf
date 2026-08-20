@@ -273,15 +273,15 @@
      same operation)
      - `j f` added (2026-08-20) as a second key on factor's letter,
        mirroring `j x` for the distribute
-   - [ ] `v L` mafcmd-flatten ← calc-mlud
+   - [X] `v L` mafcmd-flatten ← calc-mlud
    - [X] `M` mafcmd-map-flag ← calc-more-recursion-depth
    - [X] `,` maf-quick-variable ← calc-comma
    - [X] `p` maf-browse-variables ← calc-precision
-   - [ ] `l d` mafcmd-to-degrees ← calc-db
-   - [ ] `f L` mafcmd-unit-cath ← calc-lnp1
+   - [X] `l d` mafcmd-to-degrees ← calc-db
+   - [X] `f L` mafcmd-unit-cath ← calc-lnp1
    - [ ] `M-k` mafcmd-coordinate-toggle ← calc-copy-as-kill
-   - [ ] `G` maf-go-home ← calc-argument
-   - [ ] `j e` maf-jump-equals ← calc-enable-selections
+   - [X] `G` maf-go-home ← calc-argument
+   - [X] `j e` maf-jump-equals ← calc-enable-selections
    - [X] `@` maf-toggle-simplify ← calcDigit-start
    - [ ] `&` maf-toggle-big-language ← calc-inv
 ** additions (keys calc leaves unbound)
