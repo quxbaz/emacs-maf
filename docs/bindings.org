@@ -299,9 +299,9 @@
    - [X] `l c` collect-fractions (2026-08-20: moved off `l t` onto the
      key the float/frac toggle freed — c for collect)
    - [X] `l v` inverse-function
-   - [ ] `a L` mafcmd-poly-lcm
+   - [X] `a L` mafcmd-poly-lcm
    - [X] `M-i` mafcmd-auto-solve
-   - [ ] `l t` mafcmd-poly-roots (2026-08-20: moved off `M-r` onto the
+   - [X] `l t` mafcmd-poly-roots (2026-08-20: moved off `M-r` onto the
      key collect-fractions vacated; M-r falls through to the global
      map)
    - [X] `a l` mafcmd-roots (alias of its stock `a P`; my/calc's key)
@@ -310,27 +310,27 @@
    - [X] `M-.` mafcmd-remove-equal
    - [X] `l x` swap-vars
    - [X] `j j` mafcmd-raise
-   - [ ] `j x` maf-distribute (second key beside `j D`, on expand's
+   - [X] `j x` maf-distribute (second key beside `j D`, on expand's
      letter: `x` expands all, `j x` one step at point)
-   - [ ] `j f` maf-merge (second key beside `j M`, on factor's letter:
+   - [X] `j f` maf-merge (second key beside `j M`, on factor's letter:
      the inverse of `j x` on the letters of calc's a x / a f pair)
-   - [ ] `S-<up>` / `S-<down>` mafcmd-toggle-op
-   - [ ] `C-|` mafcmd-bracket
+   - [X] `S-<up>` / `S-<down>` mafcmd-toggle-op
+   - [X] `C-|` mafcmd-bracket
    - [X] `v RET` maf-index
-   - [ ] `l g` unique-groups
-   - [ ] `r r` maf-recall-variable
-   - [ ] `M-o` mafcmd-mod-360
-   - [ ] `M-l` mafcmd-ref-angle
-   - [ ] `M-s` mafcmd-supplement
-   - [ ] `M-c` mafcmd-complement
+   - [X] `l g` unique-groups
+   - [X] `r r` maf-recall-variable
+   - [X] `M-o` mafcmd-mod-360
+   - [X] `M-l` mafcmd-ref-angle
+   - [X] `M-s` mafcmd-supplement
+   - [X] `M-c` mafcmd-complement
    - [X] `l r` to-radians
-   - [ ] `f l` mafcmd-cath
+   - [X] `f l` mafcmd-cath
    - [X] `<tab>` / `C-t` maf-swap-up
    - [X] `S-<return>` maf-roll-to-top
-   - [ ] `C-M-<backspace>` (and aliases) maf-roll-to-bottom
+   - [X] `C-M-<backspace>` (and aliases) maf-roll-to-bottom
    - [X] `M-<up>` maf-carry-up
    - [X] `M-<down>` maf-carry-down
-   - [ ] `M-<return>` maf-dup-below
+   - [X] `M-<return>` maf-dup-below
    - [X] `M-m` maf-beginning-of-entry
    - [X] `M-f` maf-forward-noun
    - [X] `M-b` maf-backward-noun
