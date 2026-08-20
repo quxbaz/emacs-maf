@@ -153,9 +153,10 @@ skipped until its file loads and the next apply enables it."
 ;; `maf-module--reconcile' keeps `maf-modules' in step just as an
 ;; `M-x' toggle would. The description a module gives for itself is
 ;; the row's :doc, echoed as point rests on it — dial's convention,
-;; where the old menu spent a column on it. The echo area is the whole
-;; help surface here, which is why a description is a summary line and
-;; a paragraph rather than the one line an options row carries: a row
+;; where the old menu spent a column on it. The echo area is the
+;; resting help surface here, which is why a description is a summary
+;; line and a paragraph rather than the one line an options row
+;; carries: a row
 ;; names a module you have never heard of, and the name plus "on/off"
 ;; says nothing about whether you want it. The name heads the echoed
 ;; text (see `maf-module--doc'), so help outliving the move off its
@@ -164,6 +165,11 @@ skipped until its file loads and the next apply enables it."
 ;; the row and nothing after — provided it stays small enough to fit,
 ;; which is why a description keeps to a summary and three or four
 ;; lines under it.
+;;
+;; What outgrows even that — the minor mode's own docstring, the live
+;; on/off state — is a keypress away instead: w or ? (`dial-describe')
+;; displays the module's full story in another window, built fresh by
+;; `maf-module--details' at each ask.
 
 (defun maf-module--state (name)
   "Non-nil when module NAME's mode is on."
@@ -177,6 +183,15 @@ skipped until its file loads and the next apply enables it."
     (((class color) (background light)) :foreground "#595f66"))
   "Face for a module's entry keys in the menu's echoed help."
   :group 'maf)
+
+(defun maf-module--keys (name keys)
+  "The entry keys shown for module NAME, preferring the live answer.
+The bindings registry knows the module's keys in the *active
+profile*, suppressions and all; the registered static KEYS is the
+fallback for modules not yet declaring through it."
+  (or (and (fboundp 'maf-bindings-module-display-keys)
+           (maf-bindings-module-display-keys name))
+      keys))
 
 (defun maf-module--doc (name description keys)
   "Build the help echoed for module NAME from its DESCRIPTION and KEYS.
@@ -196,6 +211,67 @@ the row already shows."
                  "")
                "\n\n" description)))
 
+(defun maf-module--mode-doc (mode)
+  "MODE's docstring without the minor-mode boilerplate, or nil.
+The generated tails — \"With prefix ARG...\", \"If called from
+Lisp...\", \"This is a global minor mode...\" — are the same lecture
+on toggling under every mode, so in a buffer describing one module
+they are cut, leaving what the mode's author wrote. Nil for a mode
+with no docstring, or one that is nothing but the lecture."
+  (when-let ((doc (documentation mode)))
+    (let* ((cut (string-match
+                 (concat "\n?\n\\(?:This is a \\(?:global \\)?minor mode\\."
+                         "\\|If called \\(?:interactively\\|from Lisp\\)"
+                         "\\|With prefix ARG\\)")
+                 doc))
+           (text (string-trim (if cut (substring doc 0 cut) doc))))
+      (and (not (string-empty-p text)) text))))
+
+(defun maf-module--mode-sections (mode)
+  "The (SYMBOL . TEXT) docstring sections shown for module mode MODE.
+MODE's own first. A globalized mode defined without a docstring gets
+nothing but generated text, whose \"See ... for more information\"
+names the buffer-local mode it drives — where the real writing lives
+— so that mode's docstring follows as a second section when the
+pointer is there to chase."
+  (let ((sections (list (cons mode (or (maf-module--mode-doc mode)
+                                       "Not documented."))))
+        (doc (documentation mode)))
+    (when (and doc
+               (string-match "See [`‘]\\([^'’]+\\)['’] for more information"
+                             doc))
+      (when-let* ((local (intern-soft (match-string 1 doc)))
+                  ((fboundp local))
+                  (ldoc (maf-module--mode-doc local)))
+        (setq sections (nconc sections (list (cons local ldoc))))))
+    sections))
+
+(defun maf-module--details (name)
+  "Build the verbose text \\<dial-mode-map>\\[dial-describe] shows for module NAME.
+Everything the registry and the mode itself can say, at full length:
+the heading line the echoed help uses — name and entry keys, plus the
+live on/off state the echo leaves to the row — then the description
+as the module wrote it, then the mode docstrings, the part that
+outgrows any echo (see `maf-module--mode-sections'). Built fresh at
+each show, so the state, the keys, and the docstrings are all read
+live."
+  (pcase-let* ((`(,mode ,description ,keys)
+                (alist-get name maf-module-registry))
+               (keys (maf-module--keys name keys)))
+    (concat
+     (propertize (symbol-name name) 'face 'bold)
+     (if keys
+         (propertize (format " (%s)" keys) 'face 'maf-module-keys)
+       "")
+     " — " (if (maf-module--state name) "on" "off")
+     (if description (concat "\n\n" description) "")
+     "\n\n"
+     (mapconcat (pcase-lambda (`(,symbol . ,text))
+                  (concat (propertize (symbol-name symbol) 'face 'bold)
+                          "\n\n" text))
+                (maf-module--mode-sections mode)
+                "\n\n"))))
+
 (defun maf-module--items ()
   "Compile `maf-module-registry' into dial items, sorted by name.
 The registry is in reverse registration order, an artifact of the load
@@ -208,15 +284,9 @@ order in maf.el that should not decide how the menu reads."
                            :label (symbol-name name)
                            :doc (maf-module--doc
                                  name description
-                                 ;; Prefer the live answer: the bindings
-                                 ;; registry knows the module's keys in
-                                 ;; the *active profile*, suppressions
-                                 ;; and all; the registered static
-                                 ;; string is the fallback for modules
-                                 ;; not yet declaring through it.
-                                 (or (and (fboundp 'maf-bindings-module-display-keys)
-                                          (maf-bindings-module-display-keys name))
-                                     keys)))
+                                 (maf-module--keys name keys))
+                           :details (lambda (_id)
+                                      (maf-module--details name)))
                      ;; A module that is more than a toggle brings its
                      ;; own values — rebuilt each time, so a value set
                      ;; that grows (binding profiles) stays current.
@@ -235,6 +305,7 @@ module is the whole interface.")
 ;; Set outside the defvar so a reload applies edits to the list.
 (setq maf-module--controls
       '(((dial-next-value dial-previous-value) "toggle" "TAB" "SPC")
+        (dial-describe "details" "w" "?")
         (dial-refresh "refresh")
         (quit-window "quit")))
 
@@ -244,7 +315,10 @@ module is the whole interface.")
 Each registered module is a row; TAB or SPC flips the one on the
 current line, and what that module is for echoes as point rests on it
 — its name, a line saying what it does, and a paragraph on what that
-means in practice (see `dial-mode' and `maf-module-registry'). The
+means in practice (see `dial-mode' and `maf-module-registry').
+\\<dial-mode-map>\\[dial-describe] goes further: the module's full
+details — state, description, and its minor mode's own docstring —
+shown in another window (see `maf-module--details'). The
 buffer is dial's, keys and all — flipping is dial's value stepping,
 which on a two-value row is a toggle — and this command only supplies
 the registry."
