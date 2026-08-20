@@ -288,7 +288,9 @@ it holds text. Point then lands after the line's prefix run."
   "Insert the fraction colon, N times, on the unmodified `;' key.
 Fractions are common enough in an edited entry to deserve a key with
 no modifier, so `;' types `:' here as it does in digit entry
-\(`maf-digit-colon'): 3 ; 4 reads back as the fraction 3:4."
+\(`maf-digit-colon'): 3 ; 4 reads back as the fraction 3:4. A colon
+whose operands are no fraction's commits as the quotient it meant —
+1:x is 1/x (`maf-edit--colon-quotient')."
   (interactive "p")
   (self-insert-command n ?:))
 
@@ -424,6 +426,135 @@ and x=1,y=2 the vector of both equations."
   (if (maf-edit--top-level-comma-p text)
       (concat "[" text "]")
     text))
+
+;;; Colon quotients
+
+(defun maf-edit--string-regions (text)
+  "String-literal spans of TEXT, as a list of (START . END) conses.
+END is exclusive. An unclosed quote runs to the end of the text — the
+same safe way to be wrong as in `maf-edit--top-level-comma-p': the
+rest is treated as literal text rather than syntax."
+  (let ((i 0) (n (length text)) (regions nil))
+    (while (< i n)
+      (if (not (eq (aref text i) ?\"))
+          (setq i (1+ i))
+        (let ((start i))
+          (setq i (1+ i))
+          (while (and (< i n) (not (eq (aref text i) ?\")))
+            (setq i (if (eq (aref text i) ?\\) (+ i 2) (1+ i))))
+          (setq i (min n (1+ i)))
+          (push (cons start i) regions))))
+    (nreverse regions)))
+
+(defun maf-edit--colon-operand-back (text i)
+  "Start of the operand ending just before index I in TEXT, or nil.
+An atom — a run of name characters, with a number's own punctuation —
+or a balanced group taken whole, together with the name run heading
+it, so f(2) is one operand and not an argument list with a stray f
+beside it. Nil when nothing usable ends there."
+  (let ((j i))
+    (when (and (> j 0) (memq (aref text (1- j)) '(?\) ?\] ?\})))
+      (let ((depth 0))
+        (while (and (> j 0) (not (and (zerop depth) (< j i))))
+          (setq j (1- j))
+          (pcase (aref text j)
+            ((or ?\) ?\] ?\}) (setq depth (1+ depth)))
+            ((or ?\( ?\[ ?\{) (setq depth (1- depth)))))
+        (when (or (> depth 0) (= j i))
+          (setq j nil))))
+    (when j
+      (while (and (> j 0)
+                  (string-match-p "[[:alnum:]_.#]"
+                                  (string (aref text (1- j)))))
+        (setq j (1- j)))
+      (and (< j i) j))))
+
+(defun maf-edit--colon-operand-fwd (text i)
+  "End of the operand starting at index I in TEXT, or nil.
+The forward mirror of `maf-edit--colon-operand-back', plus one leading
+sign — calc's fraction never takes one, so 1:-2 was refused anyway and
+the quotient reading is the only one there is. A name run keeps the
+group that follows it, so sqrt(2) is one operand. Nil when nothing
+usable starts there, an unclosed group included."
+  (let ((n (length text)) (j i))
+    (when (and (< j n) (memq (aref text j) '(?- ?+)))
+      (setq j (1+ j)))
+    (while (and (< j n)
+                (string-match-p "[[:alnum:]_.#]" (string (aref text j))))
+      (setq j (1+ j)))
+    (if (and (< j n) (memq (aref text j) '(?\( ?\[ ?\{)))
+        (let ((depth 0) (end nil))
+          (while (and (< j n) (not end))
+            (pcase (aref text j)
+              ((or ?\( ?\[ ?\{) (setq depth (1+ depth)))
+              ((or ?\) ?\] ?\}) (setq depth (1- depth))
+               (when (zerop depth) (setq end (1+ j)))))
+            (setq j (1+ j)))
+          end)
+      (and (> j i)
+           (not (and (= j (1+ i)) (memq (aref text i) '(?- ?+))))
+           j))))
+
+(defun maf-edit--colon-eligible (text i)
+  "The operand bounds around the colon at I, when it can be a quotient.
+A cons of the left operand's start and the right operand's end, or
+nil. Half of `::' or `:=' is punctuation, not a fraction gone wrong;
+a colon between two runs of digits is the fraction calc already
+reads, mixed numbers (1:2:3) included, and is left to it."
+  (and (not (and (> i 0) (eq (aref text (1- i)) ?:)))
+       (not (memq (and (< (1+ i) (length text)) (aref text (1+ i)))
+                  '(?: ?=)))
+       (let ((start (maf-edit--colon-operand-back text i))
+             (end (maf-edit--colon-operand-fwd text (1+ i))))
+         (and start end
+              (not (and (string-match-p "\\`[0-9]+\\'"
+                                        (substring text start i))
+                        (string-match-p "\\`[0-9]+\\'"
+                                        (substring text (1+ i) end))))
+              (cons start end)))))
+
+(defun maf-edit--colon-quotient (text)
+  "TEXT with each colon no fraction can claim rewritten as a quotient.
+Nil when there is nothing to rewrite. Calc's colon spells an exact
+fraction and takes nothing but integers — 1:x is a syntax error, when
+the writer plainly meant the quotient — so each such colon becomes a
+slash, parenthesized to keep the fraction's tight grip: x^2:y is
+x^(2/y), the grouping the colon promised, not (x^2)/y.
+
+Only for text already refused: the caller retries with this reading
+after `math-read-expr' fails, so a fraction that parses — and any
+other text that means something as written — is never reread. A colon
+between two runs of digits is such a fraction and stays, mixed
+numbers (1:2:3) included; half of `::' or `:=' stays; a colon inside
+a string literal is just text; and a colon with no operand on either
+side is left for the error message to point at."
+  (let ((rewrote nil)
+        (again t))
+    (while again
+      (setq again nil)
+      (let ((strings (maf-edit--string-regions text))
+            (i (length text)))
+        (while (and (not again) (> i 0))
+          (setq i (1- i))
+          (when (and (eq (aref text i) ?:)
+                     (not (seq-find (lambda (r)
+                                      (and (>= i (car r)) (< i (cdr r))))
+                                    strings)))
+            (let ((bounds (maf-edit--colon-eligible text i)))
+              (when bounds
+                (setq text (concat (substring text 0 (car bounds))
+                                   "("
+                                   (substring text (car bounds) i)
+                                   "/"
+                                   (substring text (1+ i) (cdr bounds))
+                                   ")"
+                                   (substring text (cdr bounds)))
+                      rewrote t
+                      ;; An operand can hold colons of its own —
+                      ;; f(a:b):x — now at shifted indices: rescan the
+                      ;; rewritten text rather than walk on by them.
+                      again t)))))))
+    (and rewrote text)))
 
 ;;; Structural newline classification
 
@@ -1319,6 +1450,12 @@ not, so commit supplies them (`maf-edit--implicit-vector'). Only a
 comma at the top level counts, so an argument list and a vector
 already written out are untouched.
 
+A colon calc refuses commits as a quotient: the fraction colon takes
+nothing but integers, so 1:x is a syntax error where the writer
+plainly meant 1/x, and commit retries it as one
+\(`maf-edit--colon-quotient'). Only an entry that failed to parse is
+retried, so 1:2 stays the exact fraction it is.
+
 If any entry fails to parse the commit is blocked: the offenders are
 underlined and editing continues, with point sent to the first
 offender — unless it is already inside one, where it stays put and
@@ -1347,6 +1484,19 @@ session `maf-edit' opened there."
           (let ((v (math-read-expr
                     (maf-edit--implicit-vector
                      (funcall maf-edit-parse-text-function text)))))
+            ;; A colon calc refused gets a second reading as a quotient
+            ;; (`maf-edit--colon-quotient') — only ever for text already
+            ;; refused whole, so nothing that parses is reread. A retry
+            ;; that fails too changes nothing, and the error reported is
+            ;; the original text's own.
+            (when (eq (car-safe v) 'error)
+              (let ((again (maf-edit--colon-quotient text)))
+                (when again
+                  (let ((v2 (math-read-expr
+                             (maf-edit--implicit-vector
+                              (funcall maf-edit-parse-text-function again)))))
+                    (unless (eq (car-safe v2) 'error)
+                      (setq v v2))))))
             (if (eq (car-safe v) 'error)
                 (push (cons o (if (zerop (maf-edit--string-net-depth text))
                                   (nth 2 v)
