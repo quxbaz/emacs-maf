@@ -252,7 +252,7 @@
    - [X] `<` mafcmd-decrement ← calc-scroll-left
    - [X] `>` mafcmd-increment ← calc-scroll-right
    - [X] `x` mafcmd-expand ← calc-execute-extended-command
-   - [ ] `X` mafcmd-log-exp ← calc-call-last-kbd-macro
+   - [X] `X` mafcmd-log-exp ← calc-call-last-kbd-macro
    - [X] `k s` mafcmd-complete-square ← calc-stirling-number (a custom
      prefix claim — see the k/l policy above)
    - [X] `k d` mafcmd-factor-powers ← calc-double-factorial (a custom
