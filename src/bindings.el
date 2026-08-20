@@ -220,6 +220,9 @@
 ;; and GUI events.
 (maf-bindings-define '(calc native vim) "TAB" #'maf-swap-up)
 (maf-bindings-define '(calc native vim) "<tab>" #'maf-swap-up)
+;; C-t as a second key for the swap, on transpose-chars' mnemonic.
+;; Shadows only the global transpose-chars, useless in a calc buffer.
+(maf-bindings-define '(calc native vim) "C-t" #'maf-swap-up)
 ;; Send the entry at point all the way down the stack, the long-range
 ;; counterpart of TAB's one-step swap. Reaching this key on a terminal
 ;; needs the decode entry installed at the end of this file, and a

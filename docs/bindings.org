@@ -240,7 +240,7 @@
      `M-w` maf-copy ← calc-copy-region-as-kill,
      `C-y` maf-yank ← calc-yank,
      `RET` maf-dup-or-clear-selections ← calc-enter,
-     `TAB` maf-swap-up ← calc-roll-down,
+     `TAB` / `C-t` maf-swap-up ← calc-roll-down,
      `M-RET` maf-dup-below ← calc-last-args
    - `r 0`..`r 9` maf-recall-quick ← calc-recall-quick
    - the digit starters `_` `0`..`9` `.` `#` maf-digit-start ←
@@ -325,7 +325,7 @@
    - [ ] `M-c` mafcmd-complement
    - [X] `l r` to-radians
    - [ ] `f l` mafcmd-cath
-   - [X] `<tab>` maf-swap-up
+   - [X] `<tab>` / `C-t` maf-swap-up
    - [X] `S-<return>` maf-roll-to-top
    - [ ] `C-M-<backspace>` (and aliases) maf-roll-to-bottom
    - [X] `M-<up>` maf-carry-up
