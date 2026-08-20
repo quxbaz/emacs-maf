@@ -301,14 +301,17 @@ order in maf.el that should not decide how the menu reads."
 
 (defvar maf-module--controls nil
   "The module menu's controls line.
-Dial's default names controls this buffer has no use for — resetting,
-filtering by changed, a save — so the line is written out: flipping a
-module is the whole interface.")
+Dial's default names controls this buffer has no use for — filtering
+by changed, a save — so the line is written out: flipping a module is
+most of the interface. Reset stays on it for the rare row that
+carries a :default of its own (the maf-bindings profile picker);
+dial's availability gate drops it again should no such row remain.")
 
 ;; Set outside the defvar so a reload applies edits to the list.
 (setq maf-module--controls
       '(((dial-next-value dial-previous-value) "toggle" "TAB" "SPC")
         (dial-describe "details" "w" "?")
+        (dial-reset "reset")
         (dial-refresh "refresh")
         (quit-window "quit")))
 
