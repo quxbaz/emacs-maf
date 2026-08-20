@@ -23,6 +23,11 @@
 ;;   :doc     What the row is for, echoed when point rests on it.
 ;;            A line is the usual size; a consumer whose rows need
 ;;            more may send several, the echo area growing to fit.
+;;   :details Fuller text about the row, shown in another window on
+;;            demand — see `dial-describe' — for what outgrows even a
+;;            several-line :doc. A string, or a function (ID) -> string
+;;            called at each show, so it may read live state. A row
+;;            without one is described by its :doc.
 ;;   :values  ((VALUE LABEL SETTER PROP...) ...) for an option with a
 ;;            fixed domain. VALUE is what the option's current key
 ;;            equals when it is set that way; SETTER is an opaque form
@@ -387,6 +392,12 @@ format is built rather than written out."
 (define-key dial-mode-map (kbd "K")    #'dial-toggle-keys)
 (define-key dial-mode-map (kbd "S")    #'dial-save)
 (define-key dial-mode-map (kbd "g")    #'dial-refresh)
+;; Shadows `special-mode''s ? (`describe-mode'): in a dial buffer the
+;; question one asks is about the row, not the mode — the controls
+;; line already summarizes the mode's keys. w seconds it on the home
+;; row, beside the h/j/k/l motion.
+(define-key dial-mode-map (kbd "?")    #'dial-describe)
+(define-key dial-mode-map (kbd "w")    #'dial-describe)
 ;; h/l alongside TAB, as j/k sit alongside n/p: the values run across
 ;; the row, so stepping them is the horizontal motion.
 (define-key dial-mode-map (kbd "l")    #'dial-next-value)
@@ -421,6 +432,7 @@ own.")
         (dial-toggle-keys "keys")
         (dial-save "save")
         ((dial-next-group dial-previous-group) "group" "M-n" "M-p")
+        (dial-describe "details" "w" "?")
         (dial-refresh "refresh")
         (quit-window "quit")))
 
@@ -511,6 +523,11 @@ works only with one."
     ('dial-toggle-keys (and dial--keys-name t))
     ('dial-toggle-changed-only (and dial--default-fn t))
     ('dial-reset (dial--any-reset-p))
+    ('dial-describe (and (seq-some (lambda (entry)
+                                     (or (plist-get (cdr entry) :details)
+                                         (plist-get (cdr entry) :doc)))
+                                   dial-items)
+                         t))
     (_ t)))
 
 (defun dial--controls-line ()
@@ -966,6 +983,36 @@ buffer rather than narrow it."
   (dial--print t)
   (message "Showing %s settings"
            (if dial--changed-only "changed" "all")))
+
+(defun dial-describe ()
+  "Show the current row's details in another window.
+The help echoed as point rests on a row is transient — the next
+message replaces it — and sized to the echo area. This puts the row's
+full text in a buffer instead, displayed without leaving the list, so
+it stands while the rows are worked. The text is the row's :details,
+built fresh when it is a function so it can read live state, or its
+echoed :doc for a row that carries nothing fuller; a row with neither
+has nothing to show and says so.
+
+One details buffer per dial buffer, named after its mode-line name,
+so asking about another row replaces the text rather than piling up
+buffers — and two dial buffers open at once keep separate ones."
+  (interactive)
+  (pcase-let* ((`(,id . ,spec) (dial--item))
+               (details (plist-get spec :details))
+               (text (cond ((functionp details) (funcall details id))
+                           (details details)
+                           (t (plist-get spec :doc)))))
+    (unless text (user-error "No details for this setting"))
+    (let ((buffer (get-buffer-create
+                   (format "*%s details*" (format-mode-line mode-name)))))
+      (with-current-buffer buffer
+        (let ((inhibit-read-only t))
+          (erase-buffer)
+          (insert text)
+          (goto-char (point-min)))
+        (special-mode))
+      (display-buffer buffer))))
 
 ;;; Opening
 
