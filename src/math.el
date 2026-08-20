@@ -754,6 +754,17 @@ than commit a rearrangement that does not hold."
                 (maf--literal
                   (if (math-zerop num) 0 (calcFunc-div num lcd)))))))))))
 
+(defun maf--contains-type-p (expr type)
+  "Non-nil when EXPR is or contains a composite whose head is TYPE.
+Bare structural search, no evaluation: (frac 3 4) is found under a
+TYPE of `frac', (float 75 -2) under `float', however deep either sits.
+Only heads are compared, so the plain integers inside those forms are
+never mistaken for parts of their own."
+  (or (eq (car-safe expr) type)
+      (and (consp expr)
+           (cl-some (lambda (part) (maf--contains-type-p part type))
+                    (cdr expr)))))
+
 (defun maf--float-fracs (expr)
   "Float the fractions in EXPR, leaving integers exact.
 Unlike `calcFunc-pfloat', which pervasively floats every number

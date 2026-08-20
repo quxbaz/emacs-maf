@@ -288,8 +288,11 @@
    - [ ] `W` mafcmd-sqr
    - [ ] `k k` mafcmd-evaluate
    - [ ] `C-<return>` mafcmd-let
-   - [ ] `l l` float
-   - [ ] `l c` frac
+   - [ ] `l l` mafcmd-float-frac (2026-08-20: the float/frac toggle —
+     floats toward fractions first, fractions to floats otherwise,
+     direction echoed; I forces float, H float-all, frac's tolerance
+     on the prefix arg. `l c` unbound; mafcmd-float and mafcmd-frac
+     stay defined, reachable by name and the flags)
    - [ ] `l F` factor-gcd
    - [ ] `l t` collect-fractions
    - [ ] `l v` inverse-function

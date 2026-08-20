@@ -257,10 +257,11 @@ variant's own variable governs only its direct invocation."
   (irrb unary calcFunc-irrb)
   (npvb binary calcFunc-npvb)
   ;; conversions (calc-c-oper-keys). Float/fraction conversion lives in
-  ;; stack.el: mafcmd-float (l l) floats fractions only, H routes to
-  ;; the pervasive mafcmd-float-all, and mafcmd-frac (l c) converts
-  ;; floats to fractions with a tolerance prefix arg. Float and frac
-  ;; are I-linked.
+  ;; stack.el: mafcmd-float-frac (l l) toggles by the target's content
+  ;; — floats convert toward fractions first, fractions float
+  ;; otherwise — with mafcmd-float, mafcmd-frac, and the pervasive
+  ;; mafcmd-float-all behind it on the I and H flags and by name.
+  ;; Frac keeps its tolerance prefix arg; float and frac are I-linked.
   (deg unary calcFunc-deg "c d")
   (rad unary calcFunc-rad "c r")
   (hms unary calcFunc-hms "c h")

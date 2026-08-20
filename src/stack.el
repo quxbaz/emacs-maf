@@ -22,6 +22,7 @@
 (declare-function calc-push "calc-ext")
 (declare-function calc-push-list "calc-ext")
 (declare-function calcFunc-pfloat "calc-stuff")
+(declare-function calc-clear-command-flag "calc-ext")
 (declare-function calc-pi "calc-math")
 (declare-function calc-roll-down "calc-misc")
 (declare-function calc-locate-cursor-element "calc-yank")
@@ -1125,6 +1126,60 @@ point, each side of an equation, the top entry at home.
   (commit (math-normalize
            (list 'calcFunc-pfrac expr
                  (prefix-numeric-value (or current-prefix-arg 0))))))
+
+(maf-defcmd mafcmd-float-frac (expr _arg commit)
+  "Toggle the resolved expression between floats and fractions.
+
+  0.75 x + 2  =>  3:4 x + 2   (floats present: toward exact)
+  3:4 x + 2   =>  0.75 x + 2  (fractions only: toward floats)
+
+With the Inverse flag, `mafcmd-float' runs instead — fractions to
+floats, whatever the target holds. With the Hyperbolic flag,
+`mafcmd-float-all' floats pervasively, integers included.
+
+Any float in the target decides the direction: floats convert to
+fractions, exactness winning when both kinds are present, and only a
+target with no floats floats its fractions. The kind landed on is
+echoed. A numeric prefix argument gives the tolerance when the
+conversion goes toward fractions, as in `mafcmd-frac'. A target with
+neither floats nor fractions refuses. Point picks the target as
+usual: a sub-formula at point, the top entry at home — an equation is
+taken whole, the direction decided once for both sides, so they
+cannot flip opposite ways.
+
+  0.5 y + 1:4 x      =>  1:2 y + 1:4 x   (mixed: exactness wins)
+  0.5 = 1:2          =>  1:2 = 1:2       (one direction for both sides)
+  C-u 3 3.14159      =>  22:7            (3 significant figures)
+  0.75| x + 1:2      =>  3:4 x + 1:2     (sub-formula at point)"
+  :arity unary
+  :prefix "ff"
+  :map -1
+  :inverse mafcmd-float
+  :hyperbolic mafcmd-float-all
+  (let* ((direction (cond ((maf--contains-type-p expr 'float) 'frac)
+                          ((maf--contains-type-p expr 'frac) 'float)
+                          (t (user-error
+                              "No floats or fractions to toggle"))))
+         (convert (if (eq direction 'frac)
+                      (let ((tol (prefix-numeric-value
+                                  (or current-prefix-arg 0))))
+                        (lambda (side)
+                          (math-normalize
+                           (list 'calcFunc-pfrac side tol))))
+                    #'maf--float-fracs)))
+    ;; A relation converts side by side, its head untouched: one
+    ;; normalize over the whole would evaluate a relation whose sides
+    ;; the conversion made equal (0.5 = 1:2 must give 1:2 = 1:2, not
+    ;; 1). The direction is still the one decision above.
+    (commit (if (maf--relation-p expr)
+                (cons (car expr) (mapcar convert (cdr expr)))
+              (funcall convert expr)))
+    (message "Toggled to %s"
+             (if (eq direction 'frac) "fractions" "floats"))
+    ;; The conversion's inner routines can raise the clear-message
+    ;; flag, whose epilogue in `calc-do' blanks the echo area on the
+    ;; way out; stand it down so the direction stays said.
+    (calc-clear-command-flag 'clear-message)))
 
 (maf-defcmd mafcmd-evaluate (expr _arg commit)
   "Evaluate the resolved expression numerically.

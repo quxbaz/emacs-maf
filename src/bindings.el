@@ -53,8 +53,11 @@
 (maf-bindings-define '(native) "l f" #'mafcmd-factor-by)
 (maf-bindings-define '(native) "l F" #'mafcmd-factor-gcd)
 (maf-bindings-define '(native) "l t" #'mafcmd-collect-fractions)
-(maf-bindings-define '(native) "l l" #'mafcmd-float)
-(maf-bindings-define '(native) "l c" #'mafcmd-frac)
+;; The float/frac toggle: any float in the target converts toward
+;; exact, otherwise fractions float — see `mafcmd-float-frac'. The
+;; fixed directions stay reachable through it: I forces the float, H
+;; the pervasive float-all, and frac's tolerance rides the prefix arg.
+(maf-bindings-define '(native) "l l" #'mafcmd-float-frac)
 ;; Numeric evaluation; k k is unbound in calc itself. I k k routes to
 ;; mafcmd-identify, the closed-form match for a float.
 (maf-bindings-define '(native) "k k" #'mafcmd-evaluate)
