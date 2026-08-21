@@ -151,6 +151,10 @@
 ;; level the number named, the prefix's reading one level out.
 ;; Shadows calc-call-last-kbd-macro.
 (maf-bindings-define '(native) "X" #'mafcmd-log-exp)
+;; And a family key on its initials, l e — which the vim mirror
+;; carries as o e, the command's home there since vim's X is the
+;; relocated expand. l e is unbound in calc's log-units prefix.
+(maf-bindings-define '(native) "l e" #'mafcmd-log-exp)
 ;; A single-key alias for expand, which also keeps its table key a x.
 ;; Shadows calc-execute-extended-command.
 (maf-bindings-define '(native) "x" #'mafcmd-expand)
@@ -596,6 +600,21 @@
 ;; mafcmd-log-exp cedes the key — reachable by name in vim; its
 ;; native home is untouched.
 (maf-bindings-define '(vim) "X" #'mafcmd-expand)
+;; maf's custom-letter family — native's l prefix — rides o in vim,
+;; where l is a motion: the same second letters, o l float-frac where
+;; native says l l. Mirrored from native's registered l declarations
+;; at this point in the load, so a key added to the family above
+;; lands in both profiles without naming vim.
+(pcase-dolist (`(,key . ,command)
+               (plist-get (maf-bindings--profile 'native) :defaults))
+  (when (string-prefix-p "l " key)
+    (maf-bindings-define '(vim) (concat "o " (substring key 2)) command)))
+;; The family displaces the inherited commands on o's case pair, and
+;; they trade places one step over: the commute (native's O) takes
+;; the family's free doubled slot o o (native binds no l o), and the
+;; displaced reciprocal takes the capital O the commute vacates.
+(maf-bindings-define '(vim) "o o" #'mafcmd-commute)
+(maf-bindings-define '(vim) "O" #'mafcmd-inv)
 
 ;; Everything declared; compile, and apply when the module is live.
 (maf-bindings--refresh)

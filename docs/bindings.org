@@ -211,6 +211,9 @@
    - [X] `>` mafcmd-increment ← calc-scroll-right
    - [X] `x` mafcmd-expand ← calc-execute-extended-command
    - [X] `X` mafcmd-log-exp ← calc-call-last-kbd-macro
+     - `l e` added (2026-08-21) as a family key on its initials — and
+       the vim mirror carries it as `o e`, the command's home there
+       since vim's X is the relocated expand
    - [X] `k s` mafcmd-complete-square ← calc-stirling-number (a custom
      prefix claim — see the k/l policy above)
    - [X] `k d` mafcmd-factor-powers ← calc-double-factorial (a custom
@@ -368,11 +371,16 @@
      shift keeps the fingers' map. Displaces mafcmd-conj (J), which
      has no flag route — rehome under a custom prefix (k j or l j,
      the k/l policy's kind of claim) or accept M-x
-   - [ ] `l` — maf's custom prefix moves to `L` the same way: L l
-     float-frac, L c collect-fractions, L t poly-roots, L f / L F
-     factoring, L d / L r angle conversions, L v, L x, L g. Displaces
-     mafcmd-ln (L), which keeps its I E flag route and its name;
-     calc's log-units family beneath drops to M-x
+   - [X] `l` — resolved 2026-08-21: the family rides `o` (right-hand
+     home row, the most l-like key under the fingers), second letters
+     intact — o l float-frac, o c collect-fractions, o t poly-roots —
+     mirrored in src/bindings.el from native's own l declarations, so
+     a key added to the family lands in both profiles. The commands
+     displaced from o's case pair trade places one step over: the
+     commute takes the family's free doubled slot o o (native binds
+     no l o), the reciprocal the capital O the commute vacates. The
+     earlier L proposal is dead; L stays ln, calc's log-units drop to
+     M-x in vim
    - [ ] `k` — the harder twin. Either (a) the family moves to `K`,
      which requires adjusting the keep-args carrier machinery first
      (the free-keys note on K already contemplates exactly this), or
@@ -506,10 +514,10 @@
   - [X] vim motion semantics (resolved 2026-08-20): h/l by char, j/k
     by line, w/b by noun — each key doing what its Emacs cousin does;
     see profile:vim
-  - [ ] vim relocation table for the h/j/k/l/w/b families (proposed in
-    profile:vim: j→J and l→L wholesale, b→B, h and w dropped, k the
-    open structural decision). h/w/b approved 2026-08-20; what
-    remains to decide is j/k/l — the keys holding real families
+  - [ ] vim relocation table for the h/j/k/l/w/b families. h/w/b
+    approved 2026-08-20, l resolved onto o 2026-08-21 (see
+    profile:vim); what remains is j (→J proposed) and k (the open
+    structural decision), plus implementing b→B
   - [ ] digit-entry customization surface: per-profile digit declarations
     for users, or a documented API?
   - [ ] custom profiles and module keys: with explicit module targets, a

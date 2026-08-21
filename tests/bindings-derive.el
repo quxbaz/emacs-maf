@@ -57,6 +57,19 @@
   (cl-assert (null (key-binding (kbd "k k"))))
   (cl-assert (null (key-binding (kbd "b a"))))
 
+  ;; The custom-letter family rides o in vim, second letters intact,
+  ;; mirrored from native's l declarations. The commands it displaces
+  ;; from o's case pair trade places one step over: commute on the
+  ;; doubled o o, the reciprocal on the capital O commute vacates.
+  (cl-assert (eq (key-binding (kbd "o l")) 'mafcmd-float-frac))
+  (cl-assert (eq (key-binding (kbd "o c")) 'mafcmd-collect-fractions))
+  (cl-assert (eq (key-binding (kbd "o t")) 'mafcmd-poly-roots))
+  (cl-assert (eq (key-binding (kbd "o F")) 'mafcmd-factor-gcd))
+  (cl-assert (eq (key-binding (kbd "o o")) 'mafcmd-commute))
+  (cl-assert (eq (key-binding (kbd "O")) 'mafcmd-inv))
+  ;; Log-exp, whose X went to expand here, rides the family: o e.
+  (cl-assert (eq (key-binding (kbd "o e")) 'mafcmd-log-exp))
+
   ;; Module keys ride their own targeting, not the derivation.
   (cl-assert (eq (key-binding (kbd "M-h")) 'maf-timeline))
 
@@ -67,6 +80,9 @@
   (cl-assert (eq (key-binding (kbd "j D")) 'calc-sel-distribute))
   (maf-bindings-set-profile 'native)
   (cl-assert (eq (key-binding (kbd "x")) 'mafcmd-expand))
+  (cl-assert (eq (key-binding (kbd "o")) 'mafcmd-inv))
+  (cl-assert (eq (key-binding (kbd "O")) 'mafcmd-commute))
+  (cl-assert (null (key-binding (kbd "o l"))))
   (cl-assert (eq (key-binding (kbd "l l")) 'mafcmd-float-frac))
   (cl-assert (eq (key-binding (kbd "j x")) 'maf-distribute))
   (cl-assert (keymapp (key-binding (kbd "j")))))
