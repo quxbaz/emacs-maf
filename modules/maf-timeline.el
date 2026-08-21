@@ -601,8 +601,12 @@ recorded stay browsable. Managed through the module system; see
     ;; The recompile cedes the key back to calc's trail display.
     (maf-bindings--refresh)))
 
+;; M-h beside t d: h for history, a single chord for the browse the
+;; timeline is for. It shadows only the global `mark-paragraph', which
+;; has no meaning in the stack buffer.
 (maf-bindings-module-keys 'maf-timeline 'maf-use-timeline-mode
-  '(((calc native vim) "t d" maf-timeline)))
+  '(((calc native vim) "t d" maf-timeline)
+    ((calc native vim) "M-h" maf-timeline)))
 
 ;; Register with the module system when it is present; the mode above
 ;; works on its own without it.
@@ -615,6 +619,6 @@ Every command that changes the stack records a snapshot. The
 changed highlighted: u and i step through them, RET pushes the entry
 at point onto the live stack, r restores the whole state, D deletes
 a state from the log."
-                       "t d"))
+                       "t d, M-h"))
 
 (provide 'maf-timeline)

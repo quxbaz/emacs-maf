@@ -226,7 +226,7 @@
   - base remaps: undo, undo-redo, calc-undo, calc-redo → maf-undo/redo
   - the escape map beneath base: `m c` maf-list-modules — in every
     profile and with the module off, not a native addition
-  - module keys: `SPC` \` `C-o` `(` (edit), `?` (options), `t d`
+  - module keys: `SPC` \` `C-o` `(` (edit), `?` (options), `t d` `M-h`
     (timeline), `t l` `t u` (persist), `M-p` `M-n` (recall), `s o`
     (formulas)
 ** contextual siblings on their own calc key (outside the table)
