@@ -37,8 +37,10 @@
   (cl-assert (eq (key-binding (kbd "b")) 'maf-backward-noun))
 
   ;; Vim's delete reflex: x runs C-d's command, displacing the
-  ;; inherited single-key expand — which keeps its table key a x.
+  ;; inherited single-key expand — which moves up a case to X and
+  ;; keeps its table key a x. Log-exp cedes X, name-only in vim.
   (cl-assert (eq (key-binding (kbd "x")) 'maf-del))
+  (cl-assert (eq (key-binding (kbd "X")) 'mafcmd-expand))
   (cl-assert (eq (key-binding (kbd "a x")) 'mafcmd-expand))
 
   ;; Native's layout flows through the derivation: table siblings,

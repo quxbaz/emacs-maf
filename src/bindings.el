@@ -592,6 +592,10 @@
 ;; inherited single-key expand, which keeps its table key a x and
 ;; its name.
 (maf-bindings-define '(vim) "x" #'maf-del)
+;; The displaced expand moves up a case: X, whose inherited resident
+;; mafcmd-log-exp cedes the key — reachable by name in vim; its
+;; native home is untouched.
+(maf-bindings-define '(vim) "X" #'mafcmd-expand)
 
 ;; Everything declared; compile, and apply when the module is live.
 (maf-bindings--refresh)
