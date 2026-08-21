@@ -84,6 +84,11 @@
 (maf-bindings-define '(native) "l r" #'mafcmd-to-radians)
 ;; M-o is unbound in calc itself; H M-o runs the mod-180 variant.
 (maf-bindings-define '(native) "M-o" #'mafcmd-mod-360)
+;; And a family key on w, for wrapping the angle into range — which
+;; the vim mirror carries as o w, the command's home there since
+;; vim's M-o is the float/frac toggle. l w is unbound in calc's
+;; log-units prefix; nothing cedes anything.
+(maf-bindings-define '(native) "l w" #'mafcmd-mod-360)
 ;; Reference angle. M-l is unbound in calc itself (it shadows the global
 ;; downcase-word, which has no place in the stack buffer).
 (maf-bindings-define '(native) "M-l" #'mafcmd-ref-angle)
@@ -607,7 +612,10 @@
 ;; lands in both profiles without naming vim.
 (pcase-dolist (`(,key . ,command)
                (plist-get (maf-bindings--profile 'native) :defaults))
-  (when (string-prefix-p "l " key)
+  ;; Minus the doubled l l: the toggle's vim home is M-o (below),
+  ;; and a spare o l would only shadow the finger slip it invites.
+  (when (and (string-prefix-p "l " key)
+             (not (equal key "l l")))
     (maf-bindings-define '(vim) (concat "o " (substring key 2)) command)))
 ;; The family displaces the inherited commands on o's case pair, and
 ;; they trade places one step over: the commute (native's O) takes
@@ -615,6 +623,12 @@
 ;; displaced reciprocal takes the capital O the commute vacates.
 (maf-bindings-define '(vim) "o o" #'mafcmd-commute)
 (maf-bindings-define '(vim) "O" #'mafcmd-inv)
+;; The float/frac toggle, the family's daily key, gets a single
+;; chord: M-o, meta of the family's letter, tappable in a hold the
+;; way native's l l is — its only vim home; the mirror above skips
+;; l l. Displaces the inherited mod-360, which rides the family on
+;; o w instead (l w above).
+(maf-bindings-define '(vim) "M-o" #'mafcmd-float-frac)
 
 ;; Everything declared; compile, and apply when the module is live.
 (maf-bindings--refresh)

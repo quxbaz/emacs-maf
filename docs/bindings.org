@@ -262,6 +262,10 @@
    - [X] `l v` inverse-function
    - [X] `a L` mafcmd-poly-lcm
    - [X] `M-i` mafcmd-auto-solve
+   - [X] `l w` mafcmd-mod-360 (2026-08-21: a family key on w, wrapping
+     the angle into range, beside M-o; the vim mirror carries it as
+     `o w`, the command's home there since vim's M-o is the
+     float/frac toggle)
    - [X] `l t` mafcmd-poly-roots (2026-08-20: moved off `M-r` onto the
      key collect-fractions vacated; M-r falls through to the global
      map)
@@ -354,8 +358,14 @@
      M-b motions on vim's word keys (M-f / M-b stay bound too)
    - [X] `x` — maf-del, C-d's command: vim's delete reflex
      (2026-08-21). The displaced single-key expand moves up a case to
-     `X`, whose inherited resident mafcmd-log-exp cedes it (name-only
-     in vim); expand's table key `a x` stays too
+     `X`, whose inherited resident mafcmd-log-exp cedes it (rehomed
+     on the family's `o e`); expand's table key `a x` stays too
+   - [X] `M-o` — mafcmd-float-frac (2026-08-21): the toggle's single
+     chord, meta of the family's letter, tappable in a hold the way
+     native's l l is — its only vim home, the mirror skipping l l.
+     Displaces the inherited mod-360, which rides the family
+     instead: `o w`, wrapping the angle into range (`l w` through the
+     mirror)
    - already vim-shaped for free: `G` is maf-go-home in native
    - deliberately no `0` / `$` / `gg`: digits are digit-entry
      starters, $ is auto-algebraic entry, g is reserved for the
@@ -373,7 +383,8 @@
      the k/l policy's kind of claim) or accept M-x
    - [X] `l` — resolved 2026-08-21: the family rides `o` (right-hand
      home row, the most l-like key under the fingers), second letters
-     intact — o l float-frac, o c collect-fractions, o t poly-roots —
+     intact — o c collect-fractions, o t poly-roots (minus l l: the
+     toggle rides M-o there) —
      mirrored in src/bindings.el from native's own l declarations, so
      a key added to the family lands in both profiles. The commands
      displaced from o's case pair trade places one step over: the

@@ -61,7 +61,6 @@
   ;; mirrored from native's l declarations. The commands it displaces
   ;; from o's case pair trade places one step over: commute on the
   ;; doubled o o, the reciprocal on the capital O commute vacates.
-  (cl-assert (eq (key-binding (kbd "o l")) 'mafcmd-float-frac))
   (cl-assert (eq (key-binding (kbd "o c")) 'mafcmd-collect-fractions))
   (cl-assert (eq (key-binding (kbd "o t")) 'mafcmd-poly-roots))
   (cl-assert (eq (key-binding (kbd "o F")) 'mafcmd-factor-gcd))
@@ -69,6 +68,14 @@
   (cl-assert (eq (key-binding (kbd "O")) 'mafcmd-inv))
   ;; Log-exp, whose X went to expand here, rides the family: o e.
   (cl-assert (eq (key-binding (kbd "o e")) 'mafcmd-log-exp))
+  ;; The float/frac toggle's single chord, on the family's meta
+  ;; letter; the inherited mod-360 cedes it and rides the family
+  ;; instead — o w, wrapping the angle into range, native's l w
+  ;; through the mirror. M-o is the toggle's only vim home: the
+  ;; mirror skips l l.
+  (cl-assert (eq (key-binding (kbd "M-o")) 'mafcmd-float-frac))
+  (cl-assert (eq (key-binding (kbd "o w")) 'mafcmd-mod-360))
+  (cl-assert (null (key-binding (kbd "o l"))))
 
   ;; Module keys ride their own targeting, not the derivation.
   (cl-assert (eq (key-binding (kbd "M-h")) 'maf-timeline))
@@ -82,6 +89,7 @@
   (cl-assert (eq (key-binding (kbd "x")) 'mafcmd-expand))
   (cl-assert (eq (key-binding (kbd "o")) 'mafcmd-inv))
   (cl-assert (eq (key-binding (kbd "O")) 'mafcmd-commute))
+  (cl-assert (eq (key-binding (kbd "M-o")) 'mafcmd-mod-360))
   (cl-assert (null (key-binding (kbd "o l"))))
   (cl-assert (eq (key-binding (kbd "l l")) 'mafcmd-float-frac))
   (cl-assert (eq (key-binding (kbd "j x")) 'maf-distribute))
