@@ -157,56 +157,6 @@
   - keys whose calc command has no sibling stay calc's (x, h, scrolling)
   - no navigation bindings: silence means stock calc/emacs lookup
 
-* vim profile
-  - not vim's command model, just its navigation keys
-  - currently the sibling set only — identical to the calc profile
-    until the motion semantics and relocation table are decided
-  - hjkl / wb become motions; everything under stolen prefixes must be
-    relocated or explicitly dropped (compiler-checked) — not yet: skeleton
-    keeps today's bindings
-  - design the relocation table before implementing; this profile lands
-    last
-** stolen-key inventory (what each key holds in the native profile today)
-   NOTE: do not bind any of this yet — in the skeleton, vim carries
-   today's bindings like every profile; the steals and relocations wait
-   for the relocation table.
-   - `h` — calc-help-prefix (the whole h help family)
-   - `j` — the selection prefix, close to maf's core:
-     - maf's own: mafcmd-raise (j j), mafcmd-isolate (j i),
-       mafcmd-unpack (j U), maf-merge (j M), maf-distribute (j D),
-       maf-jump-equals (j e), maf-commute-left/right (j l / j r)
-     - calc's selection machinery: calc-select-here/once/more/less/
-       next/previous/part, calc-sel-add/sub/mult/div-both-sides,
-       calc-sel-isolate/commute/distribute/merge/negate/invert/
-       evaluate/expand-formula, calc-rewrite-selection,
-       calc-enter/edit/copy/del-selection,
-       calc-enable/show/clear/break-selections, calc-unselect, calc-conj
-   - `k` — the combinatorics prefix:
-     - mafcmd siblings shadowing calc: choose, gcd, lcm, prfac,
-       nextprime, totient, moebius, euler, bern, random, shuffle,
-       utpt/utpp/utpc
-     - maf-only: mafcmd-evaluate (k k), mafcmd-complete-square (k s),
-       mafcmd-factor-powers (k d)
-     - calc-only leftovers: calc-keep-args (k K), calc-prime-test,
-       calc-random-again, calc-extended-gcd, calc-utpn/utpf/utpb
-   - `l` — maf's own invented prefix, layered over calc's log-units
-     prefix:
-     - maf's own: mafcmd-factor-by (l f), mafcmd-factor-gcd (l F),
-       mafcmd-collect-fractions (l c), mafcmd-float-frac (l l, the
-       float/frac toggle; float and frac stay commands),
-       mafcmd-to-degrees (l d), mafcmd-to-radians (l r),
-       mafcmd-poly-roots (l t), mafcmd-inverse-function (l v),
-       mafcmd-swap-vars (l x), mafcmd-unique-groups (l g)
-     - calc's log-units family: calc-lu-plus/minus/times/divide/quant,
-       calc-db, calc-np, calc-freq, calc-midi, calc-spn
-   - `w` — calc-why (single command)
-   - `b` — the binary/financial prefix:
-     - mafcmd table rows: and, or, xor, diff, not, clip, lsh, rsh,
-       ash, rash, rot, vpack, vunpack, irr, npv, relch
-     - calc-only: calc-word-size (b w), calc-percent-change,
-       calc-log (b B), calc-lshift/rshift-arith,
-       calc-fin-pv/fv/pmt/nper/rate/sln/syd/ddb
-
 * profile:native
   What today's layout is, beyond calc's own keys. The shadowing and
   additions groups below are declared `'(native)` — src/bindings.el is
@@ -314,6 +264,9 @@
      letter: `x` expands all, `j x` one step at point)
    - [X] `j f` maf-merge (second key beside `j M`, on factor's letter:
      the inverse of `j x` on the letters of calc's a x / a f pair)
+   - [X] `C-c C-c` mafcmd-esimplify (2026-08-20: second key beside its
+     table key `a s`, earned by frequency; the mode's slice of the C-c
+     convention, with its do-the-obvious-thing reflex)
    - [X] `S-<up>` / `S-<down>` mafcmd-toggle-op
    - [X] `C-|` mafcmd-bracket
    - [X] `v RET` maf-index
@@ -362,6 +315,120 @@
      (maf-restore-stack-from)
    - maf-timeline-clear
 
+* profile:vim
+  Vim's navigation keys over maf's commands — not vim's command model.
+  The profile is native's layout with six top-level keys re-purposed as
+  motions; everything else — the mafcmd table on calc's keys, the base
+  remaps, module keys, digit entry, and native's shadowing and
+  additions groups — carries over unchanged. Steals are top-level
+  only: a letter inside a prefix map (the f of j f, the k of k k) is
+  untouched by its letter's steal, so displaced families move whole or
+  stay whole. Currently the sibling set only — identical to the calc
+  profile until the motions and relocations below are settled and
+  implemented; this profile lands last.
+** motions (proposed)
+   The split mirrors vim's own: fine motion on h/l, structural motion
+   on w/b, vertical on j/k.
+   - [ ] `h` / `l` — backward-char / forward-char. By char, not noun:
+     noun-stepping is w/b's job, exactly vim's h-versus-w distinction
+   - [ ] `j` / `k` — by entry, not line: down/up one stack entry, the
+     stack's semantic line. Needs a new command pair (maf-entry-down /
+     maf-entry-up — nothing in src/stack.el moves by entry yet);
+     inside a multi-line entry (matrix, Big) they still step entries,
+     with C-n / C-p keeping literal line motion
+   - [ ] `w` / `b` — maf-forward-noun / maf-backward-noun: the M-f /
+     M-b motions on vim's word keys (M-f / M-b stay bound too)
+   - already vim-shaped for free: `G` is maf-go-home in native
+   - deliberately no `0` / `$` / `gg`: digits are digit-entry
+     starters, $ is auto-algebraic entry, g is reserved for the
+     plotting module; M-m stays beginning-of-entry
+** relocation table (proposed)
+   Everything under a stolen key is relocated or explicitly dropped —
+   the compiler checks the accounting. Dropped always leaves M-x, and
+   a flag route where one exists.
+   - [ ] `j` — the selection/structure family, maf's core, moves to a
+     `J` prefix wholesale: J j raise, J i isolate, J e jump-equals,
+     J l / J r commute, J D / J x distribute, J M / J f merge, J U
+     unpack, calc's selection machinery beneath. A one-letter case
+     shift keeps the fingers' map. Displaces mafcmd-conj (J), which
+     has no flag route — rehome under a custom prefix (k j or l j,
+     the k/l policy's kind of claim) or accept M-x
+   - [ ] `l` — maf's custom prefix moves to `L` the same way: L l
+     float-frac, L c collect-fractions, L t poly-roots, L f / L F
+     factoring, L d / L r angle conversions, L v, L x, L g. Displaces
+     mafcmd-ln (L), which keeps its I E flag route and its name;
+     calc's log-units family beneath drops to M-x
+   - [ ] `k` — the harder twin. Either (a) the family moves to `K`,
+     which requires adjusting the keep-args carrier machinery first
+     (the free-keys note on K already contemplates exactly this), or
+     (b) the calc combinatorics siblings drop to M-x and only maf's
+     own rehome: k k evaluate, k s complete-square, k d
+     factor-powers. Evaluate is the heavy one and needs a first-class
+     home either way — K K if (a); otherwise propose `=` or a
+     C-c chord
+   - [ ] `b` — the binary/financial prefix to `B`: B a / B o / B x
+     bitwise, the b-table rows, calc's financial family beneath
+     dropping to M-x. Displaces mafcmd-log (B), whose base-10 reading
+     stays on H L / I H E; the arbitrary-base log keeps only its name
+     — the one real loss in the table, flagged rather than hidden
+   - [ ] `h` — calc's help family drops: the global C-h family covers
+     describe-*, the m c menu is the discovery surface, and h s
+     summary / h t tutorial / h i info stay M-x
+   - [ ] `w` — calc-why drops: calc-auto-why already volunteers the
+     information, M-x calc-why remains (native spends this key
+     nowhere either — it is the free-keys list's cheapest key, which
+     vim spends on a motion instead)
+** phases
+   - [ ] 1. settle this section: motions and the relocation table
+     (the k decision is the only structural one)
+   - [ ] 2. write the missing motion pair (maf-entry-down / maf-entry-up),
+     native-neutral — they are ordinary commands any profile may bind
+   - [ ] 3. declare the profile: the '(vim) delta over the shared
+     declarations, drops compiler-checked against the accounting above
+   - [ ] 4. snapshot the result: a vim-profile row sweep beside the
+     native one in tests/bindings-snapshot.el, switching profiles in
+     the step test
+** stolen-key inventory (what each key holds in the native profile today)
+   NOTE: do not bind any of this yet — in the skeleton, vim carries
+   today's bindings like every profile; the steals and relocations wait
+   for the proposals above to settle.
+   - `h` — calc-help-prefix (the whole h help family)
+   - `j` — the selection prefix, close to maf's core:
+     - maf's own: mafcmd-raise (j j), mafcmd-isolate (j i),
+       mafcmd-unpack (j U), maf-merge (j M), maf-distribute (j D),
+       maf-jump-equals (j e), maf-commute-left/right (j l / j r)
+     - calc's selection machinery: calc-select-here/once/more/less/
+       next/previous/part, calc-sel-add/sub/mult/div-both-sides,
+       calc-sel-isolate/commute/distribute/merge/negate/invert/
+       evaluate/expand-formula, calc-rewrite-selection,
+       calc-enter/edit/copy/del-selection,
+       calc-enable/show/clear/break-selections, calc-unselect, calc-conj
+   - `k` — the combinatorics prefix:
+     - mafcmd siblings shadowing calc: choose, gcd, lcm, prfac,
+       nextprime, totient, moebius, euler, bern, random, shuffle,
+       utpt/utpp/utpc
+     - maf-only: mafcmd-evaluate (k k), mafcmd-complete-square (k s),
+       mafcmd-factor-powers (k d)
+     - calc-only leftovers: calc-keep-args (k K), calc-prime-test,
+       calc-random-again, calc-extended-gcd, calc-utpn/utpf/utpb
+   - `l` — maf's own invented prefix, layered over calc's log-units
+     prefix:
+     - maf's own: mafcmd-factor-by (l f), mafcmd-factor-gcd (l F),
+       mafcmd-collect-fractions (l c), mafcmd-float-frac (l l, the
+       float/frac toggle; float and frac stay commands),
+       mafcmd-to-degrees (l d), mafcmd-to-radians (l r),
+       mafcmd-poly-roots (l t), mafcmd-inverse-function (l v),
+       mafcmd-swap-vars (l x), mafcmd-unique-groups (l g)
+     - calc's log-units family: calc-lu-plus/minus/times/divide/quant,
+       calc-db, calc-np, calc-freq, calc-midi, calc-spn
+   - `w` — calc-why (single command)
+   - `b` — the binary/financial prefix:
+     - mafcmd table rows: and, or, xor, diff, not, clip, lsh, rsh,
+       ash, rash, rot, vpack, vunpack, irr, npv, relch
+     - calc-only: calc-word-size (b w), calc-percent-change,
+       calc-log (b B), calc-lshift/rshift-arith,
+       calc-fin-pv/fv/pmt/nper/rate/sln/syd/ddb
+
 * free and weak keys (native)
   Candidate homes for future single-key bindings, generated against
   native's compiled map plus calc's own (2026-08-19). "Weak" = bound to
@@ -407,15 +474,19 @@
      stack is real), `C-j` (calc-over — an RPN staple, weak only for
      algebraic-entry users)
    - never: `C-a/b/e/f/n/p` (cursor motion the stack buffer lives on),
-     `C-c` (mode-prefix convention), `C-g` `C-u` `C-h` `C-x`
+     bare `C-c` (mode-prefix convention — though `C-c C-<letter>` is
+     the mode's own slice of it, which is how `C-c C-c` went to the
+     simplify), `C-g` `C-u` `C-h` `C-x`
 
 * open decisions
   - [ ] calc profile strictness: strict (only sibling remaps — matches
     the written promise; recommended) vs curated additions on unbound
     keys
   - [ ] vim motion semantics: h/l by char or noun? j/k by line or entry?
-    w/b = noun motion?
-  - [ ] vim relocation table for the h/j/k/l/w/b families
+    w/b = noun motion? (proposals in profile:vim: char, entry, noun)
+  - [ ] vim relocation table for the h/j/k/l/w/b families (proposed in
+    profile:vim: j→J and l→L wholesale, b→B, h and w dropped, k the
+    open structural decision)
   - [ ] digit-entry customization surface: per-profile digit declarations
     for users, or a documented API?
   - [ ] custom profiles and module keys: with explicit module targets, a
