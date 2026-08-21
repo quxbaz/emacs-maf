@@ -395,11 +395,14 @@
    - not weak, despite looks: `;` (calc-semi, matrix entry punctuation
      — the [ ] lesson)
 ** modified keys
-   - free meta: `M-a` `M-d` `M-e` `M-g` `M-h` `M-j` `M-q` `M-t` `M-z`
+   - free meta: `M-a` `M-d` `M-e` `M-g` `M-j` `M-q` `M-t` `M-z`,
+     and `M-r` since poly-roots moved to l t (2026-08-20; `M-h` went
+     to the timeline the same day)
    - cautious meta: `M-v` (scrolling's other half), `M-y` (yank-pop
      pairs with maf-yank's C-y); never `M-x`
-   - free-ish control: `C-t` (transpose-chars has no stack meaning),
-     `C-z` (suspend, commonly rebound anyway); cautious: `C-l`
+   - free-ish control: `C-z` (suspend, commonly rebound anyway); `C-t`
+     was one until maf-swap-up took it as a second key (2026-08-20);
+     cautious: `C-l`
      (recenter), `C-q` (quoted-insert), `C-r` / `C-s` (isearch over the
      stack is real), `C-j` (calc-over — an RPN staple, weak only for
      algebraic-entry users)
