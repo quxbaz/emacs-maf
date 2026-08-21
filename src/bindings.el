@@ -63,6 +63,12 @@
 ;; Numeric evaluation; k k is unbound in calc itself. I k k routes to
 ;; mafcmd-identify, the closed-form match for a float.
 (maf-bindings-define '(native) "k k" #'mafcmd-evaluate)
+;; A second key for the extended simplify beside its table key a s,
+;; earned by sheer frequency. C-c C-c is the mode's slice of the C-c
+;; convention — unbound here, safe from user C-c <letter> keys — and
+;; carries its Emacs-wide "do the obvious thing" reflex: on a stack
+;; entry, that is cleaning it up.
+(maf-bindings-define '(native) "C-c C-c" #'mafcmd-esimplify)
 (maf-bindings-define '(native) "l d" #'mafcmd-to-degrees)
 (maf-bindings-define '(native) "l r" #'mafcmd-to-radians)
 ;; M-o is unbound in calc itself; H M-o runs the mod-180 variant.
