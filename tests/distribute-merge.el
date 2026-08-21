@@ -262,10 +262,12 @@ the same."
   (cl-assert (string= (dm-top) "sqrt(a b)"))
   (calc-pop (calc-stack-size))
 
+  ;; The merged exp lands as e^(a + b) — the maf-e-power module
+  ;; rewrites the committed result into the power form.
   (maf-push "exp(a) exp(b)")
   (dm-at "exp(b" 1)
   (call-interactively 'maf-merge)
-  (cl-assert (string= (dm-top) "exp(a + b)"))
+  (cl-assert (string= (dm-top) "e^(a + b)"))
   (calc-pop (calc-stack-size))
 
   ;; The gathered coefficients stay as the rules built them: the rule
@@ -398,10 +400,12 @@ the same."
   (cl-assert (maf--at-home-p))
   (calc-pop (calc-stack-size))
 
+  ;; Merged at home the exp product lands in the power form too (see
+  ;; the maf-e-power note above).
   (maf-push "exp(a) exp(b)")
   (goto-char (point-max))
   (call-interactively 'maf-merge)
-  (cl-assert (string= (dm-top) "exp(b + a)"))
+  (cl-assert (string= (dm-top) "e^(b + a)"))
   (calc-pop (calc-stack-size))
 
   ;; A fraction distributes at home too, on the same substitution the
