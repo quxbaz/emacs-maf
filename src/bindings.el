@@ -588,6 +588,10 @@
 (maf-bindings-define '(vim) "k" #'previous-line)
 (maf-bindings-define '(vim) "w" #'maf-forward-noun)
 (maf-bindings-define '(vim) "b" #'maf-backward-noun)
+;; And vim's delete reflex: x does what C-d does. Displaces the
+;; inherited single-key expand, which keeps its table key a x and
+;; its name.
+(maf-bindings-define '(vim) "x" #'maf-del)
 
 ;; Everything declared; compile, and apply when the module is live.
 (maf-bindings--refresh)

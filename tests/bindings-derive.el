@@ -36,10 +36,14 @@
   (cl-assert (eq (key-binding (kbd "w")) 'maf-forward-noun))
   (cl-assert (eq (key-binding (kbd "b")) 'maf-backward-noun))
 
+  ;; Vim's delete reflex: x runs C-d's command, displacing the
+  ;; inherited single-key expand — which keeps its table key a x.
+  (cl-assert (eq (key-binding (kbd "x")) 'maf-del))
+  (cl-assert (eq (key-binding (kbd "a x")) 'mafcmd-expand))
+
   ;; Native's layout flows through the derivation: table siblings,
   ;; shadowing, and additions alike, with no declaration naming vim.
   (cl-assert (eq (key-binding (kbd "+")) 'mafcmd-add))
-  (cl-assert (eq (key-binding (kbd "x")) 'mafcmd-expand))
   (cl-assert (eq (key-binding (kbd "i")) 'mafcmd-solve-for))
   (cl-assert (eq (key-binding (kbd "C-c C-c")) 'mafcmd-esimplify))
   (cl-assert (eq (key-binding (kbd "M-l")) 'mafcmd-ref-angle))
@@ -60,6 +64,7 @@
   (cl-assert (eq (key-binding (kbd "x")) 'calc-execute-extended-command))
   (cl-assert (eq (key-binding (kbd "j D")) 'calc-sel-distribute))
   (maf-bindings-set-profile 'native)
+  (cl-assert (eq (key-binding (kbd "x")) 'mafcmd-expand))
   (cl-assert (eq (key-binding (kbd "l l")) 'mafcmd-float-frac))
   (cl-assert (eq (key-binding (kbd "j x")) 'maf-distribute))
   (cl-assert (keymapp (key-binding (kbd "j")))))

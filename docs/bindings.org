@@ -349,6 +349,9 @@
      of a matrix or Big rendering
    - [X] `w` / `b` — maf-forward-noun / maf-backward-noun: the M-f /
      M-b motions on vim's word keys (M-f / M-b stay bound too)
+   - [X] `x` — maf-del, C-d's command: vim's delete reflex
+     (2026-08-21). Displaces the inherited single-key expand, which
+     keeps its table key `a x` and its name
    - already vim-shaped for free: `G` is maf-go-home in native
    - deliberately no `0` / `$` / `gg`: digits are digit-entry
      starters, $ is auto-algebraic entry, g is reserved for the
