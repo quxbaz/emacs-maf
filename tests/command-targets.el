@@ -160,7 +160,7 @@
     (call-interactively 'mafcmd-ln))
   (cl-assert (string= (math-format-value
                        (maf--strip-encasing (calc-top 1 'full)))
-                      "exp(x + 1)"))
+                      "e^(x + 1)"))
   (calc-pop (calc-stack-size))
 
   ;; Direct invocation of a variant consults its own variable — no

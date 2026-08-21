@@ -62,6 +62,7 @@
 (require 'maf-formulas)
 (require 'maf-selplus)
 (require 'maf-poly-order)
+(require 'maf-e-power)
 (require 'maf-options)
 
 ;;;###autoload
