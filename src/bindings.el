@@ -19,29 +19,32 @@
 
 ;; The three built-in profiles, declared through the same public API a
 ;; user's own profile would use. This file is the *native* layout:
-;; a declaration names another profile only when it is genuinely
-;; profile-agnostic — a maf sibling on calc's own key, which every
-;; profile carries. vim's own layout is designed in its content phase
-;; (docs/bindings.org), so until then it holds the sibling set only.
+;; a declaration names calc as well only when it is genuinely
+;; profile-agnostic — a maf sibling on calc's own key. vim never
+;; needs naming: it derives from native (below), so the whole native
+;; set reaches it at compile time, its own motions displacing what
+;; they overlap.
 (maf-bindings-defprofile 'calc :description
   "Calc's own layout, maf's commands: siblings on the keys calc uses.")
 (maf-bindings-defprofile 'native :description
   "maf's opinionated layout — the default.")
-(maf-bindings-defprofile 'vim :description
-  "Vim-style navigation keys — not yet laid out; the sibling set for now.")
+;; vim derives from native: at every compile its effective defaults
+;; are native's whole set beneath its own declarations, so native's
+;; layout — table keys, shadowing, additions — flows through without
+;; each declaration naming vim, and the motions below displace what
+;; they overlap (a motion on j drops the inherited j family whole).
+;; See `maf-bindings--effective-defaults'; the displaced families'
+;; new homes are the relocation table (profile:vim in
+;; docs/bindings.org).
+(maf-bindings-defprofile 'vim :derive 'native :description
+  "maf's layout under vim's navigation keys.")
 
 ;; The mafcmd table's key column, declared here where the profile
 ;; defaults are owned: reloading this file rebuilds the whole set.
-;; Rows under k and b skip the vim profile: those letters are motions
-;; there (see the vim motions below), and a motion cannot share a key
-;; with a live prefix. The rows stay reachable by name in vim until
-;; the relocation table (profile:vim in docs/bindings.org) rehomes
-;; the families.
+;; Not vim: the table reaches it through the derivation, where the
+;; motions prune the k and b rows.
 (pcase-dolist (`(,key . ,command) maf-cmds--table-keys)
-  (maf-bindings-define (if (string-match-p "\\`[kb] " key)
-                           '(calc native)
-                         '(calc native vim))
-                       key command))
+  (maf-bindings-define '(calc native) key command))
 
 ;; A second key for the square root, beside Q (mafcmd-sqrt in the
 ;; table): the root is reached for far more often than integer
@@ -182,7 +185,7 @@
 ;; multiplied by the symbolic constant; at home with no selection the
 ;; command defers to calc-pi's push. I/H reach gamma, e, and phi
 ;; through the flags, as in calc.
-(maf-bindings-define '(calc native vim) "P" #'maf-pi)
+(maf-bindings-define '(calc native) "P" #'maf-pi)
 ;; Recall a variable by picking it off a list of values. Shadows
 ;; calc-precision, whose only key this is: a mode setting that is set
 ;; once and then left alone, reachable by name afterwards, giving up
@@ -194,14 +197,14 @@
 ;; recall lives on s r, which keeps its key and its simplifying push).
 (maf-bindings-define '(native) "r r" #'maf-recall-variable)
 (dotimes (i 10)
-  (maf-bindings-define '(calc native vim) (format "r %d" i)
+  (maf-bindings-define '(calc native) (format "r %d" i)
                        #'maf-recall-quick))
 ;; The in-place editing entry keys (SPC / ` / C-o / "(") are
 ;; installed by the edit module when it is enabled (see
 ;; modules/edit.el), not here. ` shadows calc-edit, the command the
 ;; whole module replaces.
-(maf-bindings-define '(calc native vim) "U" #'maf-undo)
-(maf-bindings-define '(calc native vim) "D" #'maf-redo)
+(maf-bindings-define '(calc native) "U" #'maf-undo)
+(maf-bindings-define '(calc native) "D" #'maf-redo)
 ;; Catch every key that dispatches to undo/redo, so point handling
 ;; never depends on which undo key was pressed. Remapping is a single
 ;; step: calc-mode-map already remaps undo to calc-undo, and a key
@@ -214,29 +217,29 @@
 (define-key maf-bindings-base-map [remap calc-redo] #'maf-redo)
 ;; Contextual delete; C-d is unbound in calc itself, and backspace
 ;; shadows calc-pop, whose behavior maf-del keeps at home.
-(maf-bindings-define '(calc native vim) "C-d" #'maf-del)
-(maf-bindings-define '(calc native vim) "DEL" #'maf-del)
+(maf-bindings-define '(calc native) "C-d" #'maf-del)
+(maf-bindings-define '(calc native) "DEL" #'maf-del)
 ;; Line-based kill: the whole entry at point, onto the kill ring.
 ;; Shadows calc-kill, keeping its whole-entry semantics.
-(maf-bindings-define '(calc native vim) "C-k" #'maf-kill)
+(maf-bindings-define '(calc native) "C-k" #'maf-kill)
 ;; Copy, the non-destructive counterpart of C-k: the region when there
 ;; is one, else the entry at point. Shadows calc-copy-region-as-kill,
 ;; which rounds a region out to whole display lines, prefixes included;
 ;; maf-copy takes the region verbatim, as M-w does everywhere else.
 ;; Pressed twice it recopies as LaTeX.
-(maf-bindings-define '(calc native vim) "M-w" #'maf-copy)
+(maf-bindings-define '(calc native) "M-w" #'maf-copy)
 ;; Yank, completing the kill-ring trio. Shadows calc-yank to read a
 ;; number written with digit-group commas ("1,234,567") as one number
 ;; rather than three comma-separated entries; otherwise identical,
 ;; radix prefix included.
-(maf-bindings-define '(calc native vim) "C-y" #'maf-yank)
+(maf-bindings-define '(calc native) "C-y" #'maf-yank)
 ;; Shadows calc's TAB with the contextual swap. Bind both the terminal
 ;; and GUI events.
-(maf-bindings-define '(calc native vim) "TAB" #'maf-swap-up)
-(maf-bindings-define '(calc native vim) "<tab>" #'maf-swap-up)
+(maf-bindings-define '(calc native) "TAB" #'maf-swap-up)
+(maf-bindings-define '(calc native) "<tab>" #'maf-swap-up)
 ;; C-t as a second key for the swap, on transpose-chars' mnemonic.
 ;; Shadows only the global transpose-chars, useless in a calc buffer.
-(maf-bindings-define '(calc native vim) "C-t" #'maf-swap-up)
+(maf-bindings-define '(calc native) "C-t" #'maf-swap-up)
 ;; Send the entry at point all the way down the stack, the long-range
 ;; counterpart of TAB's one-step swap. Reaching this key on a terminal
 ;; needs the decode entry installed at the end of this file, and a
@@ -288,7 +291,7 @@
 ;; likewise switches mode rather than counting. The prefix reaches the
 ;; duplicate only: with a selection active the key clears, which has
 ;; nothing for a prefix to vary.
-(maf-bindings-define '(calc native vim) "RET" #'maf-dup-or-clear-selections)
+(maf-bindings-define '(calc native) "RET" #'maf-dup-or-clear-selections)
 ;; M-RET duplicates the whole entry into the slot just below it, the
 ;; in-place counterpart of RET's copy onto the top. Bind the GUI event
 ;; and the terminal form both, as calc has no M-RET.
@@ -296,8 +299,8 @@
 ;; `maf-dup-here' — the keep-point variant of RET's duplicate — held
 ;; this key until the entry-duplicate took it; it now rides RET's prefix
 ;; argument (C-u RET), and stays reachable by name.
-(maf-bindings-define '(calc native vim) "M-<return>" #'maf-dup-go)
-(maf-bindings-define '(calc native vim) "M-RET" #'maf-dup-go)
+(maf-bindings-define '(calc native) "M-<return>" #'maf-dup-go)
+(maf-bindings-define '(calc native) "M-RET" #'maf-dup-go)
 ;; S-<return> is the restack (bound above, beside the bury). It was the
 ;; edit module's add-entry-below, which is unbound now and reachable by
 ;; name: C-o opens an entry above point, and above the entry below point
@@ -314,7 +317,7 @@
 ;; in calc itself; a . is calc's own key for the operation, which the
 ;; table in maf-cmds.el no longer claims.
 (maf-bindings-define '(native) "M-." #'mafcmd-remove-equal)
-(maf-bindings-define '(calc native vim) "a ." #'mafcmd-remove-equal)
+(maf-bindings-define '(calc native) "a ." #'mafcmd-remove-equal)
 
 ;; The simplification toggle takes @ from the digit-entry starters
 ;; below; inside digit entry @ still means degrees, since the entry
@@ -362,7 +365,7 @@
 ;; Substitution, on calc's own key for it: mafcmd-substitute shadows
 ;; calc-substitute, keeping the two prompts and adding a default for
 ;; the first, a contextual subject, and $ for the stack.
-(maf-bindings-define '(calc native vim) "a b" #'mafcmd-substitute)
+(maf-bindings-define '(calc native) "a b" #'mafcmd-substitute)
 ;; Quick substitution: apply an assignment from the stack to the
 ;; contextual subject. C-<return> is the one-hand chord a substitution
 ;; is worth, and the edit module's quick-add gave the key up for it
@@ -407,10 +410,10 @@
 ;; the contextual command takes the selection's entry whole instead.
 ;; Shadowing both keeps one unpack behavior in the buffer.
 (maf-bindings-define '(native) "M-u" #'mafcmd-unpack)
-(maf-bindings-define '(calc native vim) "v u" #'mafcmd-unpack)
-;; Not in vim, where j is a motion — the unpack keeps M-u and v u
-;; there; the family's rehoming is the open relocation decision
-;; (profile:vim in docs/bindings.org).
+(maf-bindings-define '(calc native) "v u" #'mafcmd-unpack)
+;; In vim these arrive by derivation and the j motion prunes them —
+;; the unpack keeps M-u and v u there until the relocation table
+;; rehomes the j family (profile:vim in docs/bindings.org).
 (maf-bindings-define '(calc native) "j U" #'mafcmd-unpack)
 (maf-bindings-define '(calc native) "j M-U" #'mafcmd-unpack)
 
@@ -454,7 +457,7 @@
 ;; where lnp1 keeps its place as expm1's Inverse variant (I f E) and
 ;; stays reachable by name. mafcmd-cath and mafcmd-hypot are each other's
 ;; Inverse variant, so I f l is the hypotenuse and I f h the leg.
-(maf-bindings-define '(calc native vim) "f h" #'mafcmd-hypot)
+(maf-bindings-define '(calc native) "f h" #'mafcmd-hypot)
 (maf-bindings-define '(native) "f l" #'mafcmd-cath)
 (maf-bindings-define '(native) "f L" #'mafcmd-unit-cath)
 
@@ -462,7 +465,7 @@
 ;; in maf-cmds.el for the reason f h did: its vector-norm case needs the
 ;; expression raw, before a row's normalize can float an exact entry —
 ;; see `mafcmd-abs'.
-(maf-bindings-define '(calc native vim) "A" #'mafcmd-abs)
+(maf-bindings-define '(calc native) "A" #'mafcmd-abs)
 
 ;; Coordinate naming, cycling the name sets on repeat. Shadows
 ;; calc-copy-as-kill; maf-copy (M-w) copies the region or the entry,
@@ -472,7 +475,7 @@
 ;; The digit-entry starters, mirroring calc-mode-map's calcDigit-start
 ;; set minus @, which maf-toggle-simplify shadows.
 (mapc (lambda (x)
-        (maf-bindings-define '(calc native vim)
+        (maf-bindings-define '(calc native)
                              (char-to-string x) #'maf-digit-start))
       "_0123456789.#")
 
@@ -576,9 +579,9 @@
 ;; Vim's navigation keys over maf's commands (profile:vim in
 ;; docs/bindings.org): each key does what its Emacs cousin does —
 ;; fine motion on h/l as C-b/C-f, vertical on j/k as C-n/C-p, noun
-;; motion on w/b as M-f/M-b, which stay bound too. The k and b table
-;; rows and the j U unpack skip vim above for exactly these keys; the
-;; displaced j/k/l/b families await the relocation table.
+;; motion on w/b as M-f/M-b, which stay bound too. Everything else is
+;; native's, by derivation; these own claims displace the inherited
+;; families they overlap, whose new homes await the relocation table.
 (maf-bindings-define '(vim) "h" #'backward-char)
 (maf-bindings-define '(vim) "l" #'forward-char)
 (maf-bindings-define '(vim) "j" #'next-line)

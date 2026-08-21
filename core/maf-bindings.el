@@ -25,6 +25,15 @@
 (require 'cl-lib)
 (require 'seq)
 
+;; Owned by maf.el (also defvar'd in maf-cmds.el and src/bindings.el);
+;; the dispatcher below repoints its parent.
+(defvar maf-mode-map)
+;; Calc's; the digit-entry overrides below install into it.
+(defvar calc-digit-map)
+;; Loaded at the bottom, guarded — the registry works without the
+;; module system; registration only makes it list-managed.
+(declare-function maf-register-module "maf-module")
+
 (defvar maf-bindings-base-map (make-sparse-keymap)
   "The one map every profile inherits: audited command remaps only.
 A remap claims no key, so nothing here can collide with a profile's
@@ -54,9 +63,12 @@ profile's own user map.")
   "Alist NAME -> plist of the registered profiles.
 Keys: :map (the compiled keymap, identity stable across recompiles),
 :user-map (symbol of the profile's user map variable), :defaults
-\(alist KEY-STRING -> COMMAND, declaration order), :suppressed (list of
-KEY-STRING). Defaults are replaced as a set by `maf-bindings-defprofile'
-\(reload safety); suppressions are user state and survive it.")
+\(alist KEY-STRING -> COMMAND, declaration order), :derive (profile
+name whose effective defaults compile beneath this profile's own —
+see `maf-bindings--effective-defaults' — or nil), :suppressed (list
+of KEY-STRING). Defaults and the derivation are replaced as a set by
+`maf-bindings-defprofile' (reload safety); suppressions are user
+state and survive it.")
 
 (defvar maf-bindings--modules nil
   "Alist MODULE -> plist of module key declarations.
@@ -97,11 +109,18 @@ maf-<name>-user-map: short, since it is what users type."
 OPTS may carry :clone SOURCE, seeding the defaults with a copy of
 SOURCE's current default declarations — a snapshot, not a link; later
 changes to SOURCE do not flow — and :description, a short line on what
-the layout is, shown when the module menu steps onto the profile. The profile's user map variable
-\(maf-NAME-user-map) is created if absent and never touched again, and
-its suppression list survives redefinition: both are user state, not
-declarations. Returns NAME."
+the layout is, shown when the module menu steps onto the profile.
+:derive SOURCE is the live counterpart of :clone: at every compile
+the profile's effective defaults are SOURCE's, beneath its own — see
+`maf-bindings--effective-defaults' for how an own declaration
+displaces what it overlaps. A declaration like the defaults, so a
+defprofile without it drops an earlier derivation; :clone of a
+deriving profile copies its own declarations only. The profile's user
+map variable (maf-NAME-user-map) is created if absent and never
+touched again, and its suppression list survives redefinition: both
+are user state, not declarations. Returns NAME."
   (let* ((clone (plist-get opts :clone))
+         (derive (plist-get opts :derive))
          (description (plist-get opts :description))
          (seed (and clone (copy-alist (plist-get (maf-bindings--profile clone)
                                                  :defaults))))
@@ -111,14 +130,17 @@ declarations. Returns NAME."
       (set user-sym (make-sparse-keymap)))
     (if entry
         (setcdr entry (plist-put
-                       (plist-put (cdr entry) :defaults seed)
+                       (plist-put
+                        (plist-put (cdr entry) :defaults seed)
+                        :derive derive)
                        :description
                        (or description
                            (plist-get (cdr entry) :description))))
       (let ((map (make-sparse-keymap)))
         (set-keymap-parent map maf-bindings-base-map)
         (push (cons name (list :map map :user-map user-sym
-                               :defaults seed :suppressed nil
+                               :defaults seed :derive derive
+                               :suppressed nil
                                :description description))
               maf-bindings--profiles)))
     ;; Mark, without flushing: the define calls that follow a
@@ -207,6 +229,47 @@ state. Second value: the same list restricted to enabled modules."
   (let ((k (kbd key)))
     (if (stringp k) (string-to-vector k) k)))
 
+(defun maf-bindings--keys-overlap-p (kv1 kv2)
+  "Non-nil when one key vector is the other, or a proper prefix of it."
+  (let ((n (min (length kv1) (length kv2))))
+    (equal (seq-take kv1 n) (seq-take kv2 n))))
+
+(defun maf-bindings--effective-defaults (name &optional seen)
+  "Profile NAME's default claims, its derivation source's beneath its own.
+A profile registered with :derive (see `maf-bindings-defprofile')
+inherits the source's effective defaults — resolved at every compile,
+so later changes to the source flow through, unlike :clone's
+snapshot. An inherited claim is dropped when its key overlaps one of
+the profile's own — the same key, or one a prefix of the other — so
+an own command displaces an inherited prefix family whole (a motion
+on j drops every inherited j descendant), and an own two-key
+declaration displaces an inherited command on its first key. What
+survives sits beneath the own claims; the sets are disjoint by
+construction, so the validator sees no conflict between them.
+Suppressions do not travel: they are user state, applied by each
+profile's own compile. SEEN carries the derivation path, to refuse a
+cycle instead of looping."
+  (when (memq name seen)
+    (error "maf-bindings: profile derivation cycle through `%s'" name))
+  (let* ((entry (maf-bindings--profile name))
+         (own (plist-get entry :defaults))
+         (source (plist-get entry :derive)))
+    (if (null source)
+        own
+      (let ((inherited (maf-bindings--effective-defaults
+                        source (cons name seen)))
+            (own-kvs (mapcar (lambda (claim)
+                               (maf-bindings--key-vector (car claim)))
+                             own)))
+        (append (seq-remove
+                 (lambda (claim)
+                   (let ((kv (maf-bindings--key-vector (car claim))))
+                     (seq-some (lambda (okv)
+                                 (maf-bindings--keys-overlap-p kv okv))
+                               own-kvs)))
+                 inherited)
+                own)))))
+
 (defun maf-bindings--validate (name defaults module-claims)
   "Signal on conflicting claims for profile NAME.
 Two owners on one key with different commands, or a key that is both
@@ -237,7 +300,7 @@ references them stays live."
   (cl-incf maf-bindings--compile-count)
   (dolist (p maf-bindings--profiles)
     (pcase-let* ((`(,name . ,entry) p)
-                 (defaults (plist-get entry :defaults))
+                 (defaults (maf-bindings--effective-defaults name))
                  (suppressed (plist-get entry :suppressed))
                  (`(,all-mods ,on-mods) (maf-bindings--module-claims name))
                  (map (plist-get entry :map)))

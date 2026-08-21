@@ -8,7 +8,12 @@
 
 * architecture: hub and spokes
   - one shared *base map*; each profile map is an independent sibling
-    inheriting from base — no profile references another profile
+    inheriting from base — no profile references another profile's
+    *map*. The one sanctioned relationship is *derivation*, resolved
+    at compile time: a profile registered with :derive compiles the
+    source's effective defaults beneath its own declarations, an own
+    claim displacing whatever it overlaps (vim derives from native
+    this way). The compiled maps stay independent siblings
   - base holds *command remaps only*, so it claims no keys and cannot
     collide with any profile's layout:
     #+begin_src elisp
@@ -26,9 +31,12 @@
     are turned back on; anywhere less durable and the way back is M-x
     by name
   - profile deltas are declared, and a declaration may target several
-    profiles (source-level sharing, not inheritance):
+    profiles (source-level sharing); a profile that is another plus a
+    delta says so once with :derive instead of every declaration
+    naming it:
     #+begin_src elisp
-      (maf-bindings-define '(native vim) "x" #'mafcmd-expand)
+      (maf-bindings-define '(calc native) "x" #'mafcmd-expand)
+      (maf-bindings-defprofile 'vim :derive 'native)
       (maf-bindings-define '(vim) "w" #'maf-forward-noun)
     #+end_src
   - `maf-mode-map` stays the one registered map (stable dispatcher);
@@ -317,15 +325,16 @@
 
 * profile:vim
   Vim's navigation keys over maf's commands — not vim's command model.
-  The profile is native's layout with six top-level keys re-purposed as
-  motions; everything else — the mafcmd table on calc's keys, the base
-  remaps, module keys, digit entry, and native's shadowing and
-  additions groups — carries over unchanged. Steals are top-level
-  only: a letter inside a prefix map (the f of j f, the k of k k) is
-  untouched by its letter's steal, so displaced families move whole or
-  stay whole. Currently the sibling set only — identical to the calc
-  profile until the motions and relocations below are settled and
-  implemented; this profile lands last.
+  The profile *derives from native* (2026-08-21: `:derive 'native` in
+  src/bindings.el, resolved at every compile — see
+  `maf-bindings--effective-defaults'): native's whole layout — the
+  mafcmd table, shadowing, additions — flows through with no
+  declaration naming vim, and vim's own claims displace whatever they
+  overlap, so a motion on j drops the inherited j family whole. Base
+  remaps, module keys, and digit entry reach vim on their own paths,
+  as they always did. What the motions displace still needs relocated
+  homes — families keep their second letters when they move, so they
+  relocate whole.
 ** motions (decided 2026-08-20, implemented in src/bindings.el)
    The split mirrors vim's own: fine motion on h/l, vertical on j/k,
    structural motion on w/b. Each key does what its Emacs cousin does
@@ -385,11 +394,14 @@
      (2026-08-20, plain Emacs motions — no new commands needed); the
      relocation table remains, j/k/l the open families and the k
      decision the only structural one
-   - [X] 2. declare the motions: the '(vim) delta in src/bindings.el.
-     The k and b table rows and j U skip vim for now — reachable by
-     name until the relocation table rehomes them
-   - [ ] 3. relocate the displaced families per the table above,
-     drops compiler-checked against its accounting
+   - [X] 2. declare the motions: the '(vim) delta in src/bindings.el
+   - [X] 2b. derivation (2026-08-21): vim registered :derive 'native,
+     so the whole native layout flows through and the motions prune
+     what they overlap — replacing the interim per-declaration
+     vim-skipping (the k/b table filter, the j U retarget).
+     tests/bindings-derive.el pins the merge rules and the profile
+   - [ ] 3. relocate the displaced families per the table above —
+     they are pruned in vim today, reachable by name only
    - [ ] 4. snapshot the result: a vim-profile row sweep beside the
      native one in tests/bindings-snapshot.el, switching profiles in
      the step test
