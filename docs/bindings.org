@@ -326,17 +326,19 @@
   stay whole. Currently the sibling set only — identical to the calc
   profile until the motions and relocations below are settled and
   implemented; this profile lands last.
-** motions (proposed)
-   The split mirrors vim's own: fine motion on h/l, structural motion
-   on w/b, vertical on j/k.
-   - [ ] `h` / `l` — backward-char / forward-char. By char, not noun:
-     noun-stepping is w/b's job, exactly vim's h-versus-w distinction
-   - [ ] `j` / `k` — by entry, not line: down/up one stack entry, the
-     stack's semantic line. Needs a new command pair (maf-entry-down /
-     maf-entry-up — nothing in src/stack.el moves by entry yet);
-     inside a multi-line entry (matrix, Big) they still step entries,
-     with C-n / C-p keeping literal line motion
-   - [ ] `w` / `b` — maf-forward-noun / maf-backward-noun: the M-f /
+** motions (decided 2026-08-20, implemented in src/bindings.el)
+   The split mirrors vim's own: fine motion on h/l, vertical on j/k,
+   structural motion on w/b. Each key does what its Emacs cousin does
+   — no new motion commands were needed.
+   - [X] `h` / `l` — backward-char / forward-char (C-b / C-f). By
+     char, not noun: noun-stepping is w/b's job, exactly vim's
+     h-versus-w distinction
+   - [X] `j` / `k` — next-line / previous-line (C-n / C-p). By line,
+     not entry: the earlier by-entry proposal (a maf-entry-down/up
+     pair) was passed over for the plain line motion — entries are
+     one line in the common case, and line motion also walks the rows
+     of a matrix or Big rendering
+   - [X] `w` / `b` — maf-forward-noun / maf-backward-noun: the M-f /
      M-b motions on vim's word keys (M-f / M-b stay bound too)
    - already vim-shaped for free: `G` is maf-go-home in native
    - deliberately no `0` / `$` / `gg`: digits are digit-entry
@@ -379,12 +381,15 @@
      nowhere either — it is the free-keys list's cheapest key, which
      vim spends on a motion instead)
 ** phases
-   - [ ] 1. settle this section: motions and the relocation table
-     (the k decision is the only structural one)
-   - [ ] 2. write the missing motion pair (maf-entry-down / maf-entry-up),
-     native-neutral — they are ordinary commands any profile may bind
-   - [ ] 3. declare the profile: the '(vim) delta over the shared
-     declarations, drops compiler-checked against the accounting above
+   - [ ] 1. settle this section: motions decided and implemented
+     (2026-08-20, plain Emacs motions — no new commands needed); the
+     relocation table remains, j/k/l the open families and the k
+     decision the only structural one
+   - [X] 2. declare the motions: the '(vim) delta in src/bindings.el.
+     The k and b table rows and j U skip vim for now — reachable by
+     name until the relocation table rehomes them
+   - [ ] 3. relocate the displaced families per the table above,
+     drops compiler-checked against its accounting
    - [ ] 4. snapshot the result: a vim-profile row sweep beside the
      native one in tests/bindings-snapshot.el, switching profiles in
      the step test
@@ -482,8 +487,9 @@
   - [ ] calc profile strictness: strict (only sibling remaps — matches
     the written promise; recommended) vs curated additions on unbound
     keys
-  - [ ] vim motion semantics: h/l by char or noun? j/k by line or entry?
-    w/b = noun motion? (proposals in profile:vim: char, entry, noun)
+  - [X] vim motion semantics (resolved 2026-08-20): h/l by char, j/k
+    by line, w/b by noun — each key doing what its Emacs cousin does;
+    see profile:vim
   - [ ] vim relocation table for the h/j/k/l/w/b families (proposed in
     profile:vim: j→J and l→L wholesale, b→B, h and w dropped, k the
     open structural decision). h/w/b approved 2026-08-20; what

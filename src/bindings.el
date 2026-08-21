@@ -32,8 +32,16 @@
 
 ;; The mafcmd table's key column, declared here where the profile
 ;; defaults are owned: reloading this file rebuilds the whole set.
+;; Rows under k and b skip the vim profile: those letters are motions
+;; there (see the vim motions below), and a motion cannot share a key
+;; with a live prefix. The rows stay reachable by name in vim until
+;; the relocation table (profile:vim in docs/bindings.org) rehomes
+;; the families.
 (pcase-dolist (`(,key . ,command) maf-cmds--table-keys)
-  (maf-bindings-define '(calc native vim) key command))
+  (maf-bindings-define (if (string-match-p "\\`[kb] " key)
+                           '(calc native)
+                         '(calc native vim))
+                       key command))
 
 ;; A second key for the square root, beside Q (mafcmd-sqrt in the
 ;; table): the root is reached for far more often than integer
@@ -400,8 +408,11 @@
 ;; Shadowing both keeps one unpack behavior in the buffer.
 (maf-bindings-define '(native) "M-u" #'mafcmd-unpack)
 (maf-bindings-define '(calc native vim) "v u" #'mafcmd-unpack)
-(maf-bindings-define '(calc native vim) "j U" #'mafcmd-unpack)
-(maf-bindings-define '(calc native vim) "j M-U" #'mafcmd-unpack)
+;; Not in vim, where j is a motion — the unpack keeps M-u and v u
+;; there; the family's rehoming is the open relocation decision
+;; (profile:vim in docs/bindings.org).
+(maf-bindings-define '(calc native) "j U" #'mafcmd-unpack)
+(maf-bindings-define '(calc native) "j M-U" #'mafcmd-unpack)
 
 ;; Push an index vector [1..n], the size prompted for — the legacy
 ;; config's v RET. The contextual mafcmd-index keeps v x; this is the
@@ -559,6 +570,21 @@
 ;; The hook has already run for a terminal that exists by now.
 (unless (display-graphic-p)
   (maf--tty-setup-keys))
+
+;;; The vim profile's motions
+
+;; Vim's navigation keys over maf's commands (profile:vim in
+;; docs/bindings.org): each key does what its Emacs cousin does —
+;; fine motion on h/l as C-b/C-f, vertical on j/k as C-n/C-p, noun
+;; motion on w/b as M-f/M-b, which stay bound too. The k and b table
+;; rows and the j U unpack skip vim above for exactly these keys; the
+;; displaced j/k/l/b families await the relocation table.
+(maf-bindings-define '(vim) "h" #'backward-char)
+(maf-bindings-define '(vim) "l" #'forward-char)
+(maf-bindings-define '(vim) "j" #'next-line)
+(maf-bindings-define '(vim) "k" #'previous-line)
+(maf-bindings-define '(vim) "w" #'maf-forward-noun)
+(maf-bindings-define '(vim) "b" #'maf-backward-noun)
 
 ;; Everything declared; compile, and apply when the module is live.
 (maf-bindings--refresh)
