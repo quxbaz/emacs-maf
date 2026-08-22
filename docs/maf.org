@@ -7,13 +7,6 @@
 
 * NOW
   - *maf-modules*
-  - vi-style profile
-    - [ ] is there a solution to the vi _ issue?
-      - the issue is that _ is a core binding in vi
-      - but it's also a core binding in calc
-      - so we're at odds
-  - [ ] rename maf-timeline to maf-history
-    - fits better with the M-h binding
   - [ ] find better binding for simplify (`a s`)
 
 * major features [8/9]
