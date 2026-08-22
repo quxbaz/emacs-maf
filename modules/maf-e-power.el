@@ -104,6 +104,6 @@ comes back as x = exp(2) where paper writes e^2. Symbolic exp forms
 are rewritten into powers of the constant e as results normalize.
 Numeric work never changes: exp of a float still computes to a
 number, and N still floats e^2 to 7.389."
-                       nil "Display"))
+                       nil "Rewrite"))
 
 (provide 'maf-e-power)
