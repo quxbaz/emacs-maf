@@ -292,12 +292,20 @@ live."
                 (maf-module--mode-sections mode)
                 "\n\n"))))
 
+(defvar maf-module--group-order
+  '("Prefs" "Display" "Rewrite" "Editing" "Memory")
+  "The menu's groups in reading order.
+A group not listed here files after all of these, alphabetically —
+so a new group still shows up without an edit here, just not in a
+chosen spot.")
+
 (defun maf-module--items ()
   "Compile `maf-module-registry' into dial items, grouped and sorted.
 Each module files under the group it registered — the menu's sections
-— and reads alphabetically within it. The registry itself is in
-reverse registration order, an artifact of the load order in maf.el
-that should not decide how the menu reads."
+— and reads alphabetically within it. The groups themselves follow
+`maf-module--group-order'. The registry itself is in reverse
+registration order, an artifact of the load order in maf.el that
+should not decide how the menu reads."
   (mapcar (lambda (entry)
             (pcase-let ((`(,name ,mode ,description ,keys ,group ,values-fn)
                          entry))
@@ -328,15 +336,16 @@ that should not decide how the menu reads."
           (sort (copy-sequence maf-module-registry)
                 (lambda (a b)
                   ;; Group first, name within: dial sections are runs
-                  ;; of adjacent rows, so a group must sit together.
-                  ;; Prefs is pinned to the front — the modules that
-                  ;; shape maf itself lead the menu — and the rest of
-                  ;; the groups read alphabetically.
-                  (let ((ga (or (nth 4 a) "Modules"))
-                        (gb (or (nth 4 b) "Modules")))
+                  ;; of adjacent rows, so a group must sit together —
+                  ;; in the order `maf-module--group-order' lays out.
+                  (let* ((ga (or (nth 4 a) "Modules"))
+                         (gb (or (nth 4 b) "Modules"))
+                         (ia (seq-position maf-module--group-order ga))
+                         (ib (seq-position maf-module--group-order gb)))
                     (cond ((string= ga gb) (string< (car a) (car b)))
-                          ((string= ga "Prefs") t)
-                          ((string= gb "Prefs") nil)
+                          ((and ia ib) (< ia ib))
+                          (ia t)
+                          (ib nil)
                           (t (string< ga gb))))))))
 
 (defvar maf-module--controls nil
