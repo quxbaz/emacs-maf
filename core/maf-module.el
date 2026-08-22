@@ -173,9 +173,10 @@ skipped until its file loads and the next apply enables it."
 ;; lines under it.
 ;;
 ;; What outgrows even that — the minor mode's own docstring, the live
-;; on/off state — is a keypress away instead: w or ? (`dial-describe')
-;; displays the module's full story in another window, built fresh by
-;; `maf-module--details' at each ask.
+;; on/off state — is a keypress away instead: ? (`dial-describe')
+;; displays the module's full story in another window, w
+;; (`dial-describe-visit') selects it too, and either is built fresh
+;; by `maf-module--details' at each ask.
 
 (defun maf-module--state (name)
   "Non-nil when module NAME's mode is on."
@@ -346,7 +347,7 @@ dial's availability gate drops it again should no such row remain.")
 ;; Set outside the defvar so a reload applies edits to the list.
 (setq maf-module--controls
       '(((dial-next-value dial-previous-value) "toggle" "TAB" "SPC")
-        (dial-describe "details" "w" "?")
+        ((dial-describe-visit dial-describe) "details" "w" "?")
         (dial-reset "reset")
         (dial-refresh "refresh")
         (quit-window "quit" "q" "RET")))
