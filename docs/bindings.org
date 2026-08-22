@@ -266,6 +266,10 @@
      the angle into range, beside M-o; the vim mirror carries it as
      `o w`, the command's home there since vim's M-o is the
      float/frac toggle)
+   - [X] `l j` mafcmd-conj (2026-08-21: a family key on its initial,
+     beside its table key J; the vim mirror carries it as `o j`, the
+     command's home there since vim's J is the relocated
+     selection/structure family)
    - [X] `l t` mafcmd-poly-roots (2026-08-20: moved off `M-r` onto the
      key collect-fractions vacated; M-r falls through to the global
      map)
@@ -374,13 +378,16 @@
    Everything under a stolen key is relocated or explicitly dropped —
    the compiler checks the accounting. Dropped always leaves M-x, and
    a flag route where one exists.
-   - [ ] `j` — the selection/structure family, maf's core, moves to a
-     `J` prefix wholesale: J j raise, J i isolate, J e jump-equals,
-     J l / J r commute, J D / J x distribute, J M / J f merge, J U
-     unpack, calc's selection machinery beneath. A one-letter case
-     shift keeps the fingers' map. Displaces mafcmd-conj (J), which
-     has no flag route — rehome under a custom prefix (k j or l j,
-     the k/l policy's kind of claim) or accept M-x
+   - [X] `j` — resolved 2026-08-21: the family rides its capital `J`,
+     second letters intact one shift over — J i isolate, J x
+     distribute, J f merge, J e jump-equals, J j raise — mirrored in
+     src/bindings.el from native's own j declarations. Chosen over a
+     u home tried the same day: the case shift preserves the
+     fingers' map exactly at the cost of one key, and leaves the u
+     prefix untouched. Displaces mafcmd-conj (J), which rides the
+     custom-letter family on its initial — o j in vim, native's
+     `l j` through the mirror. Calc's selection machinery under j
+     still dies with the motion, native the escape hatch
    - [X] `l` — resolved 2026-08-21: the family rides `o` (right-hand
      home row, the most l-like key under the fingers), second letters
      intact — o c collect-fractions, o t poly-roots (minus l l: the
@@ -527,7 +534,7 @@
     see profile:vim
   - [ ] vim relocation table for the h/j/k/l/w/b families. h/w/b
     approved 2026-08-20, l resolved onto o 2026-08-21 (see
-    profile:vim); what remains is j (→J proposed) and k (the open
+    profile:vim), j onto J 2026-08-21; what remains is k (the open
     structural decision), plus implementing b→B
   - [ ] digit-entry customization surface: per-profile digit declarations
     for users, or a documented API?

@@ -89,6 +89,11 @@
 ;; vim's M-o is the float/frac toggle. l w is unbound in calc's
 ;; log-units prefix; nothing cedes anything.
 (maf-bindings-define '(native) "l w" #'mafcmd-mod-360)
+;; The conjugate on its initial, l j — which the vim mirror carries
+;; as o j, the command's home there since vim's J is the relocated
+;; selection/structure family. l j is unbound in calc's log-units
+;; prefix; conj keeps its table key J in native.
+(maf-bindings-define '(native) "l j" #'mafcmd-conj)
 ;; Reference angle. M-l is unbound in calc itself (it shadows the global
 ;; downcase-word, which has no place in the stack buffer).
 (maf-bindings-define '(native) "M-l" #'mafcmd-ref-angle)
@@ -629,6 +634,17 @@
 ;; l l. Displaces the inherited mod-360, which rides the family on
 ;; o w instead (l w above).
 (maf-bindings-define '(vim) "M-o" #'mafcmd-float-frac)
+;; The selection/structure family — native's j prefix — rides its
+;; capital in vim, where the lowercase is a motion: the same second
+;; letters one shift over (J i isolate, J x distribute, J f merge,
+;; J e jump-equals), mirrored from native's registered j declarations
+;; so a key added to the family lands in both profiles. Displaces the
+;; inherited mafcmd-conj from J; it rides the custom-letter family on
+;; its initial instead — o j, native's l j through the mirror above.
+(pcase-dolist (`(,key . ,command)
+               (plist-get (maf-bindings--profile 'native) :defaults))
+  (when (string-prefix-p "j " key)
+    (maf-bindings-define '(vim) (concat "J " (substring key 2)) command)))
 
 ;; Everything declared; compile, and apply when the module is live.
 (maf-bindings--refresh)

@@ -77,6 +77,20 @@
   (cl-assert (eq (key-binding (kbd "o w")) 'mafcmd-mod-360))
   (cl-assert (null (key-binding (kbd "o l"))))
 
+  ;; The selection/structure family rides its capital in vim, second
+  ;; letters intact, mirrored from native's j declarations. The
+  ;; conjugate it displaces from J rides the custom-letter family on
+  ;; its initial: o j. The u prefix is untouched.
+  (cl-assert (eq (key-binding (kbd "J i")) 'mafcmd-isolate))
+  (cl-assert (eq (key-binding (kbd "J x")) 'maf-distribute))
+  (cl-assert (eq (key-binding (kbd "J f")) 'maf-merge))
+  (cl-assert (eq (key-binding (kbd "J e")) 'maf-jump-equals))
+  (cl-assert (eq (key-binding (kbd "J j")) 'mafcmd-raise))
+  (cl-assert (eq (key-binding (kbd "J U")) 'mafcmd-unpack))
+  (cl-assert (eq (key-binding (kbd "o j")) 'mafcmd-conj))
+  (cl-assert (eq (key-binding (kbd "u M")) 'mafcmd-vmean))
+  (cl-assert (eq (key-binding (kbd "u c")) 'calc-convert-units))
+
   ;; Module keys ride their own targeting, not the derivation.
   (cl-assert (eq (key-binding (kbd "M-h")) 'maf-timeline))
 
@@ -93,4 +107,6 @@
   (cl-assert (null (key-binding (kbd "o l"))))
   (cl-assert (eq (key-binding (kbd "l l")) 'mafcmd-float-frac))
   (cl-assert (eq (key-binding (kbd "j x")) 'maf-distribute))
+  (cl-assert (eq (key-binding (kbd "J")) 'mafcmd-conj))
+  (cl-assert (eq (key-binding (kbd "l j")) 'mafcmd-conj))
   (cl-assert (keymapp (key-binding (kbd "j")))))
