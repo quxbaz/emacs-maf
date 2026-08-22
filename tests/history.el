@@ -80,6 +80,14 @@
     (call-interactively (lookup-key maf-history-mode-map (kbd "G")))
     (cl-assert (zerop maf-history--index)))
 
+  ;; Invoking maf-history always lands on the newest state, wherever a
+  ;; previous browse left the view.
+  (with-current-buffer (maf-history--buffer)
+    (call-interactively 'maf-history-previous))
+  (save-window-excursion (call-interactively 'maf-history))
+  (with-current-buffer (maf-history--buffer)
+    (cl-assert (zerop maf-history--index)))
+
   ;; C-RET on an entry of an older state pushes it onto the live stack —
   ;; a copy — and the view stays on that state as the log grows under it.
   ;; (RET is the same push followed by quit-window, which would quit the

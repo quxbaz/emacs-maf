@@ -422,10 +422,15 @@ the whole log. \\[quit-window] buries the buffer."
 ;;;###autoload
 (defun maf-history ()
   "Show the stack history buffer in a window below calc, and select it.
-Already visible, the window is selected as it stands. Without a calc
-window the buffer opens below the selected window."
+The view always starts on the newest state, wherever a previous browse
+left it. Already visible, the window is selected as it stands. Without
+a calc window the buffer opens below the selected window."
   (interactive)
   (let ((buf (maf-history--buffer)))
+    (with-current-buffer buf
+      (unless (zerop maf-history--index)
+        (setq maf-history--index 0)
+        (maf-history--render)))
     (select-window
      (or (get-buffer-window buf)
          (let* ((calc-buf (maf--find-calc-buffer))
