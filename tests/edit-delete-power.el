@@ -127,13 +127,13 @@
                     "x"))
   (call-interactively 'maf-edit-discard)
 
-  ;; Un-raising a raise: `:' on the operator writes the pair that
+  ;; Un-raising a raise: ' on the operator writes the pair that
   ;; keeps the text honest; DEL on the caret takes back the power but
   ;; leaves the pair — grouping stays until the writer removes it.
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "a+b") nil)
   (progn (maf-edit-move-beginning-of-line 1) (forward-char 1) nil)
-  (progn (execute-kbd-macro ":") nil)
+  (progn (execute-kbd-macro "'") nil)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
                     "(a+b)^2"))
   ;; The raise leaves point on the caret; the backspace is pressed
@@ -216,7 +216,7 @@
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "(1 + r") nil)
   (progn (forward-char 1) nil)
-  (progn (execute-kbd-macro ":") nil)
+  (progn (execute-kbd-macro "'") nil)
   (progn (execute-kbd-macro (kbd "DEL")) nil)
   (progn (execute-kbd-macro (kbd "DEL")) nil)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))

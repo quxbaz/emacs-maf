@@ -1,10 +1,10 @@
 ;; Raising to a power inside a maf-edit session: M-2 through M-9 write
-;; the exponent named by the key (`maf-editplus-insert-power'), and `:'
+;; the exponent named by the key (`maf-editplus-insert-power'), and '
 ;; writes ^2 and then counts it up, one press per power
 ;; (`maf-editplus-raise-power'). A step passes when it raises no error.
 ;;
 ;; The contract: the meta-digits never look at anything, so an exponent
-;; already there stacks into a tower; `:' raises the sub-expression
+;; already there stacks into a tower; ' raises the sub-expression
 ;; point names, as L and Q wrap the one point names
 ;; (`edit-subexpr-target.el'), and counts an exponent up in place when
 ;; the node it named is already a power written in digits. At the end of
@@ -19,9 +19,11 @@
                  'maf-editplus-insert-power))
   (cl-assert (eq (lookup-key maf-edit-mode-map (kbd "M-9"))
                  'maf-editplus-insert-power))
-  (cl-assert (eq (lookup-key maf-edit-mode-map (kbd ":"))
+  (cl-assert (eq (lookup-key maf-edit-mode-map (kbd "'"))
                  'maf-editplus-raise-power))
-  ;; `;' still types the character `:' gave up, so nothing is lost.
+  ;; `:' claims no command here — it self-inserts — and `;' still
+  ;; types the fraction colon as it does in digit entry.
+  (cl-assert (not (lookup-key maf-edit-mode-map (kbd ":"))))
   (cl-assert (eq (lookup-key maf-edit-mode-map (kbd ";"))
                  'maf-edit-insert-colon))
   ;; W is the square here as on the stack, a second key for the same
@@ -53,28 +55,28 @@
                     "x^3^9"))
   (call-interactively 'maf-edit-discard)
 
-  ;; `:' opens at the square and counts up from there, a press a power.
+  ;; ' opens at the square and counts up from there, a press a power.
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "x") nil)
-  (progn (execute-kbd-macro ":") nil)
+  (progn (execute-kbd-macro "'") nil)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
                     "x^2"))
-  (progn (execute-kbd-macro ":") nil)
-  (progn (execute-kbd-macro ":") nil)
+  (progn (execute-kbd-macro "'") nil)
+  (progn (execute-kbd-macro "'") nil)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
                     "x^4"))
   ;; Past a single digit as well — the whole run is the exponent.
-  (progn (execute-kbd-macro (kbd "C-u 6 :")) nil)
+  (progn (execute-kbd-macro (kbd "C-u 6 '")) nil)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
                     "x^10"))
   (call-interactively 'maf-edit-discard)
 
   ;; The two keys compose: M-9 leaves point after the digit, which is
-  ;; where `:' looks for one to count up.
+  ;; where ' looks for one to count up.
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "x") nil)
   (progn (execute-kbd-macro (kbd "M-9")) nil)
-  (progn (execute-kbd-macro ":") nil)
+  (progn (execute-kbd-macro "'") nil)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
                     "x^10"))
   (call-interactively 'maf-edit-discard)
@@ -83,7 +85,7 @@
   ;; exponent: they are squared, not counted up.
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "12") nil)
-  (progn (execute-kbd-macro ":") nil)
+  (progn (execute-kbd-macro "'") nil)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
                     "12^2"))
   (call-interactively 'maf-edit-discard)
@@ -91,7 +93,7 @@
   ;; Neither is an exponent point has since typed past.
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "x^2*y") nil)
-  (progn (execute-kbd-macro ":") nil)
+  (progn (execute-kbd-macro "'") nil)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
                     "x^2*y^2"))
   (call-interactively 'maf-edit-discard)
@@ -102,12 +104,12 @@
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "a+b*c") nil)
   (progn (maf-edit-move-beginning-of-line 1) (forward-char 2) nil)
-  (progn (execute-kbd-macro ":") nil)
+  (progn (execute-kbd-macro "'") nil)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
                     "a+b^2*c"))
   ;; Point is left on the caret, so the next press counts the power up
   ;; instead of squaring the exponent it just wrote.
-  (progn (execute-kbd-macro ":") nil)
+  (progn (execute-kbd-macro "'") nil)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
                     "a+b^3*c"))
   (call-interactively 'maf-edit-discard)
@@ -117,10 +119,10 @@
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "a+b*c") nil)
   (progn (maf-edit-move-beginning-of-line 1) (forward-char 3) nil)
-  (progn (execute-kbd-macro ":") nil)
+  (progn (execute-kbd-macro "'") nil)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
                     "a+(b*c)^2"))
-  (progn (execute-kbd-macro ":") nil)
+  (progn (execute-kbd-macro "'") nil)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
                     "a+(b*c)^3"))
   (call-interactively 'maf-edit-discard)
@@ -136,13 +138,13 @@
          (set-mark (point))
          (forward-char 2)
          (activate-mark)
-         (execute-kbd-macro ":")
+         (execute-kbd-macro "'")
          nil)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
                     "ln((xy)^2)"))
   ;; Point lands on the caret, the region spent, so the next press
   ;; counts the power up.
-  (progn (execute-kbd-macro ":") nil)
+  (progn (execute-kbd-macro "'") nil)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
                     "ln((xy)^3)"))
   (call-interactively 'maf-edit-discard)
@@ -154,11 +156,11 @@
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "ln(xy)") nil)
   (progn (backward-char 1) nil)
-  (progn (execute-kbd-macro ":") nil)
+  (progn (execute-kbd-macro "'") nil)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
                     "ln((xy)^2)"))
   ;; Point on the caret, so the next press counts the power up.
-  (progn (execute-kbd-macro ":") nil)
+  (progn (execute-kbd-macro "'") nil)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
                     "ln((xy)^3)"))
   (call-interactively 'maf-edit-discard)
@@ -168,7 +170,7 @@
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "xy+1") nil)
   (progn (maf-edit-move-beginning-of-line 1) nil)
-  (progn (execute-kbd-macro ":") nil)
+  (progn (execute-kbd-macro "'") nil)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
                     "(xy)^2+1"))
   (call-interactively 'maf-edit-discard)
@@ -179,21 +181,21 @@
   ;; it stands.
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "{foo}") nil)
-  (progn (execute-kbd-macro ":") nil)
+  (progn (execute-kbd-macro "'") nil)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
                     "{foo}^2"))
   (call-interactively 'maf-edit-discard)
 
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "P") nil)
-  (progn (execute-kbd-macro ":") nil)
+  (progn (execute-kbd-macro "'") nil)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
                     "pi^2"))
   (call-interactively 'maf-edit-discard)
 
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "2.5") nil)
-  (progn (execute-kbd-macro ":") nil)
+  (progn (execute-kbd-macro "'") nil)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
                     "2.5^2"))
   (call-interactively 'maf-edit-discard)
@@ -204,11 +206,11 @@
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "ln(x y)") nil)
   (progn (backward-char 1) nil)
-  (progn (execute-kbd-macro ":") nil)
+  (progn (execute-kbd-macro "'") nil)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
                     "ln(x y^2)"))
   ;; And the next press still counts that power up.
-  (progn (execute-kbd-macro ":") nil)
+  (progn (execute-kbd-macro "'") nil)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
                     "ln(x y^3)"))
   (call-interactively 'maf-edit-discard)
@@ -218,7 +220,7 @@
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "sqrt(3)+1") nil)
   (progn (maf-edit-move-beginning-of-line 1) nil)
-  (progn (execute-kbd-macro ":") nil)
+  (progn (execute-kbd-macro "'") nil)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
                     "sqrt(3)^2+1"))
   (call-interactively 'maf-edit-discard)
@@ -226,7 +228,7 @@
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "(a+b)*c") nil)
   (progn (maf-edit-move-beginning-of-line 1) nil)
-  (progn (execute-kbd-macro ":") nil)
+  (progn (execute-kbd-macro "'") nil)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
                     "(a+b)^2*c"))
   (call-interactively 'maf-edit-discard)
@@ -237,7 +239,7 @@
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "x^2*y") nil)
   (progn (maf-edit-move-beginning-of-line 1) (forward-char 1) nil)
-  (progn (execute-kbd-macro ":") nil)
+  (progn (execute-kbd-macro "'") nil)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
                     "x^3*y"))
   (call-interactively 'maf-edit-discard)
@@ -245,7 +247,7 @@
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "x^y*z") nil)
   (progn (maf-edit-move-beginning-of-line 1) (forward-char 1) nil)
-  (progn (execute-kbd-macro ":") nil)
+  (progn (execute-kbd-macro "'") nil)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
                     "(x^y)^2*z"))
   (call-interactively 'maf-edit-discard)
@@ -255,7 +257,7 @@
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "-a*b") nil)
   (progn (maf-edit-move-beginning-of-line 1) nil)
-  (progn (execute-kbd-macro ":") nil)
+  (progn (execute-kbd-macro "'") nil)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
                     "(-a)^2*b"))
   (call-interactively 'maf-edit-discard)
@@ -265,7 +267,7 @@
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "a+b") nil)
   (progn (maf-edit-move-beginning-of-line 1) (forward-char 1) nil)
-  (progn (execute-kbd-macro ":") nil)
+  (progn (execute-kbd-macro "'") nil)
   (call-interactively 'maf-edit-commit)
   (cl-assert (equal (calc-top 1)
                     '(^ (+ (var a var-a) (var b var-b)) 2)))
@@ -283,8 +285,8 @@
 
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "2") nil)
-  (progn (execute-kbd-macro ":") nil)
-  (progn (execute-kbd-macro ":") nil)
+  (progn (execute-kbd-macro "'") nil)
+  (progn (execute-kbd-macro "'") nil)
   (call-interactively 'maf-edit-commit)
   (cl-assert (equal (calc-top 1) '(^ 2 3)))
   (calc-pop (calc-stack-size))
@@ -294,7 +296,7 @@
   ;; group — (1 + r|) squares the r just typed.
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "(1 + r") nil)
-  (progn (execute-kbd-macro ":") nil)
+  (progn (execute-kbd-macro "'") nil)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
                     "(1 + r^2)"))
   (call-interactively 'maf-edit-discard)

@@ -546,7 +546,7 @@
   ;; The end of the entry is the boundary between the two rules: there
   ;; is no character under point, and the smallest complete unit
   ;; ending at point is the argument — the last factor, exactly what a
-  ;; power typed here would take, so the wraps and `:' read the
+  ;; power typed here would take, so the wraps and ' read the
   ;; position as one.
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "a+b*c") nil)
