@@ -1993,80 +1993,30 @@ what goes in."
 ;;; The module
 
 (define-minor-mode maf-use-editplus-mode
-  "Global minor mode installing the in-session keys into `maf-edit-mode-map'.
-Enabled, and while a maf-edit session is up:
+  "Add formula-editing shortcuts to maf-edit.
 
-  TAB  `maf-editplus-escape-group' — point jumps past the delimiter
-       that closes the group it is in, one level per press
-  S-SPC
-       `maf-forward-space' — point hops onto the next space of the
-       entry text, the walk the stack gives the same key (it is the
-       one command in this list that is not the session's own: the
-       motion works on rendered and editable text alike, and the
-       session merely keeps its key)
-  M-o  `maf-editplus-wrap-parens' — parentheses go around the term
-       before point, and a further press widens that pair
-  C-RET
-       `maf-editplus-duplicate-group' — the group at point is written
-       again just after itself, point landing in the copy
-  S-up, S-down
-       `maf-editplus-toggle-brackets' — the group at point trades its
-       parens for brackets, or back; one end only on an interval
-  L    `maf-editplus-wrap-ln' — the sub-expression point names becomes
-       the argument of an ln call, or the term before point at the end
-       of the entry
-  Q, \\ `maf-editplus-wrap-sqrt' — and of a sqrt call; two keys, as
-       on the stack, where \\ is the root beside Q
-  |    `maf-editplus-wrap-abs' — and of an abs call
-  S    `maf-editplus-wrap-sin' — and of a sin call
-  C    `maf-editplus-wrap-cos' — and of a cos call
-  T    `maf-editplus-wrap-tan' — and of a tan call
-  B    `maf-editplus-wrap-log' — and of a log call with its base
-       written out: the nearest log at or before the target lends its
-       base, 10 is the fallback, and a numeric prefix names one
-       outright; log(x, 10) commits as calc's log10(x)
-  M-2..M-9
-       `maf-editplus-insert-power' — `^' and the digit pressed
-  :, W `maf-editplus-raise-power' — the sub-expression point names
-       squared, counting up a press at a time; W is the square on the
-       stack too
-  P    `maf-editplus-insert-pi' — the constant pi, typed as one key
-  DEL, C-d
-       `maf-editplus-delete-backward' and `maf-editplus-delete-forward'
-       — deleting a power's operator from either side deletes the
-       exponent with it, and the parentheses the base then no longer
-       needs; anywhere else the keys delete as ever
+These keys work only while a maf-edit session is active:
 
-Disabled, the keys cede back to whatever the global map does with them
-\(`indent-for-tab-command', which has nothing to indent in an edited
-stack, `self-insert-command' for the printable ones, S-SPC folding
-back to the plain space it shifts, `digit-argument' for the
-meta-digits, the shifted arrows' selection motion, plain
-`delete-backward-char' and `delete-char' for DEL and C-d, and nothing
-at all for M-o and C-RET, which Emacs 30 leaves free). M-o, C-RET and
-the shifted arrows run `mafcmd-mod-360', `mafcmd-let' and
-`mafcmd-toggle-op' in `maf-mode-map', which is not competition:
-maf-mode is off for the duration of an edit session. Neither is the
-RET family of the session's own map — RET commits and S-RET breaks the
-line, and the control chord was free beside them.
-The arrows are the same gesture on the stack as here, a toggle between
-two spellings of one thing, and as there both directions run it — a
-toggle is its own inverse, so there is no second direction to give.
+  TAB           Move past the closing parenthesis or bracket.
+  S-SPC         Move to the next space.
+  M-o           Put parentheses around the term before point.
+  C-RET         Duplicate the group at point.
+  S-up/S-down   Change parentheses to brackets, or back.
+  L, Q, \\, |   Wrap the target in ln, sqrt, or abs.
+  S/C/T         Wrap the target in sin, cos, or tan.
+  B             Wrap the target in log with an explicit base.
+  M-2..M-9      Type ^2 through ^9.
+  : or W        Square the target; repeat to raise the power.
+  P             Type pi.
+  DEL/C-d       Delete a whole power when deleting next to ^.
 
-L, Q, \\, |, S, C, T, B, :, W and P are unmodified printable keys, as
-`maf-edit-insert-colon' already is: each costs its self-insertion for
-the length of a session — \\ its integer division, which the stack
-has given up too — and there is no cheap way back to the character — \\[quoted-insert] is not one, since pausing to read a
-character re-locks the calc buffer under the session and the insert
-that follows fails (`maf-edit-insert-semicolon' exists for that
-reason). Yanking one in is what is left. `:' is the cheapest of them,
-`;' typing it anyway; the rest is the legacy config's trade, where the
-wrap helpers were plain capitals too. The meta-digits cost the numeric
-prefix its short form, leaving \\[universal-argument].
+For example, press Q on x in x+1 to get sqrt(x)+1. Press W on x to
+get x^2, then press it again to get x^3. B uses base 10 unless an
+earlier nearby log supplies another base or you give a numeric prefix.
 
-This is the `maf-editplus' module (see `maf-modules'). The keys only
-live in maf-edit's own map, so they are inert unless a session is
-running, and the module is a no-op for anyone not using maf-edit."
+The single-character shortcuts replace normal insertion of those
+characters during the edit session. Yank a literal character if needed.
+Turning this mode off restores the ordinary editing keys."
   :global t
   :group 'maf
   (let ((on maf-use-editplus-mode))
@@ -2107,18 +2057,11 @@ running, and the module is a no-op for anyone not using maf-edit."
 ;; works on its own without it.
 (when (require 'maf-module nil t)
   (maf-register-module 'maf-editplus #'maf-use-editplus-mode
-                       "Extra keys for typing formulas inside maf-edit.
+                       "Add shortcuts for writing formulas inside maf-edit.
 
-TAB runs point past the delimiter closing the group it stands in, and
-M-o wraps the term before point in parens, widening a step per press.
-Then C-RET duplicates an entry, S-up/S-down retype its delimiters,
-L/Q/| and S/C/T apply ln/sqrt/abs and sin/cos/tan (\\ is sqrt too, as
-on the stack), B applies log with its base written out — inherited
-from the entry's nearest log, 10 as the fallback, log(x, 10)
-committing as calc's log10(x) — M-2..M-9 and : raise to a power (W
-squares too, as on the stack), P types pi, DEL and C-d delete a power
-whole from either side of its operator, and S-SPC keeps the stack's
-hop to the next space working over the editable text."
+For example, Q wraps x as sqrt(x), W changes x to x^2, and M-3 types
+^3. TAB moves out of parentheses, M-o adds them, and DEL or C-d
+removes a whole power cleanly. These keys work only while editing."
                        nil "Editing"))
 
 (provide 'maf-editplus)

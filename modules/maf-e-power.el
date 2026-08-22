@@ -69,21 +69,17 @@ already collapsed for powers it builds itself."
 
 ;;;###autoload
 (define-minor-mode maf-use-e-power-mode
-  "Global minor mode writing the symbolic exponential as a power of e.
-Enabled, every symbolic exp(x) coming out of normalization is
-rewritten to e^x, so solving ln(x) = 2 lands as x = e^2 rather than
-x = exp(2). Numeric work is untouched — exp of a float computes to a
-number before any exp form survives — and calc's identities still
-hold on the power form: ln(e^2) simplifies to 2, N floats e^2.
-Disabled, formulas keep the exp(x) function form calc produces;
-already-rewritten entries on the stack stay as they are either way.
+  "Write symbolic exponentials as powers of e.
 
-The rewrite rides one filter on `math-normalize' — the funnel for
-internally computed formulas — and on `calc-normalize', which catches
-the top level of a commit under the fancy simplify modes ('alg,
-'units). It stands aside under `calc-simplify-mode' 'none and during
-symbolic integration, where the integrator matches on the exp form.
-This is the `maf-e-power' module (see `maf-modules')."
+For example, Calc normally solves ln(x) = 2 as x = exp(2). With this
+mode on, the result is shown as x = e^2 instead.
+
+This changes symbolic formulas only. Decimal calculations still
+produce numbers, and N still changes e^2 to about 7.389. The rewrite
+is paused during symbolic integration and when simplification is off.
+
+Turning the mode off affects new results only. Formulas already on the
+stack keep their current form."
   :global t
   :group 'maf
   (if maf-use-e-power-mode
@@ -97,13 +93,10 @@ This is the `maf-e-power' module (see `maf-modules')."
 ;; works on its own without it.
 (when (require 'maf-module nil t)
   (maf-register-module 'maf-e-power #'maf-use-e-power-mode
-                       "Write the exponential function as a power of e: exp(2) becomes e^2.
+                       "Write exp(x) as e^x in symbolic results.
 
-Calc prints the symbolic exponential as a function call, so a solve
-comes back as x = exp(2) where paper writes e^2. Symbolic exp forms
-are rewritten into powers of the constant e as results normalize.
-Numeric work never changes: exp of a float still computes to a
-number, and N still floats e^2 to 7.389."
+For example, solving ln(x) = 2 gives x = e^2 instead of x = exp(2).
+Numeric results do not change: N still turns e^2 into about 7.389."
                        nil "Rewrite"))
 
 (provide 'maf-e-power)

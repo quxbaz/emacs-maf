@@ -130,19 +130,15 @@ running."
 
 ;;;###autoload
 (define-minor-mode maf-use-poly-order-mode
-  "Global minor mode keeping polynomial sums in descending degree.
-Enabled, every sum `math-normalize' produces that is a polynomial in
-exactly one variable has its terms reordered leading-term first, so
-1 + x + x^2 always reads x^2 + x + 1. Multi-variable sums and
-everything under `calc-simplify-mode' 'none are left alone. Disabled,
-formulas keep whatever order calc produced; already-sorted entries on
-the stack stay as they are either way.
+  "Put the highest power first in one-variable polynomials.
 
-The reordering rides one filter on `math-normalize' — the funnel for
-internally computed formulas — and on `calc-normalize', which catches
-the top level of a commit under the fancy simplify modes ('alg,
-'units) where `math-simplify' can hand a sum back without a final
-normalize. This is the `maf-poly-order' module (see `maf-modules')."
+For example, Calc's 1 + x + x^2 is reordered to x^2 + x + 1. Only the
+order changes; the value does not. Expressions with more than one
+variable, such as x+y^2, are left alone.
+
+No reordering happens when Calc simplification is off. Turning this
+mode off affects new results only; entries already on the stack keep
+their current order."
   :global t
   :group 'maf
   (if maf-use-poly-order-mode
@@ -158,10 +154,9 @@ normalize. This is the `maf-poly-order' module (see `maf-modules')."
   (maf-register-module 'maf-poly-order #'maf-use-poly-order-mode
                        "Keep one-variable polynomials in descending degree.
 
-Calc has no canonical order for a sum's terms and tends to leave
-polynomials ascending: x + x^2 + 1 where paper puts x^2 first. Sums
-in one variable are reordered by falling degree; multi-variable sums
-are left alone. Only the order moves, never the value."
+For example, 1 + x + x^2 becomes x^2 + x + 1. Expressions with more
+than one variable are left alone. Only the order changes, never the
+value."
                        nil "Rewrite"))
 
 (provide 'maf-poly-order)

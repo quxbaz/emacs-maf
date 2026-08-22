@@ -554,33 +554,26 @@ stay unsplit."
 ;;; The module
 
 (define-minor-mode maf-use-editvars-mode
-  "Global minor mode reading maf-edit entries as handwritten algebra.
-Enabled, and in a Normal-language calc buffer, a run of letters typed
-in a maf-edit session is a product of one-letter factors — 2xy is
-2*x*y — and a multi-letter identifier is written in braces: {cm},
-{foo}. A name in front of `(' is still a function call, so xy(5)
-calls xy while {xy}(5) multiplies by 5.
+  "Read text in maf-edit like handwritten algebra.
 
-The rule applies to every letter run alike, with no exemption for
-names calc happens to know — {cm} is quoted exactly as {foo} is —
-save the short list in `maf-editvars-exempt-names': pi, by default,
-which stays one name bare, so 2pi is twice the constant. Quoted
-names and exempt runs are coloured — gold for one the unit table
-recognises — but for a quoted name the colour only reports what the
-braces already decided.
+In Calc's Normal language, adjacent letters become separate factors:
 
-Braces around anything but a bare name are still calc's vector
-syntax, so {1, 2} is the vector; only {x} — the name x — differs from
-what calc would read, and [x] still writes that vector.
+  2xy    means 2*x*y
+  2pi    means 2*pi
 
-The text a session starts with is rewritten into the dialect as the
-session opens, so an expression loaded from the stack survives being
-edited and committed. Disabled, and in every language but Normal,
-entries are read as plain calc input and nothing here applies.
+Use braces when several letters should stay one name:
 
-This is the `maf-editvars' module (see `maf-modules'), one of the
-defaults. It affects maf-edit sessions only — the stack, the trail,
-and algebraic entry at calc's own prompt are untouched."
+  {cost} means the variable named cost
+  {cm}   means the unit named cm
+
+A bare name followed by parentheses is a function call. For example,
+f(x) calls f, while {fx}(2) means fx*2. Braces still make vectors when
+they contain more than a name, so {1, 2} remains a vector.
+
+This syntax applies only inside maf-edit and only in Normal language.
+Turning the mode off restores Calc's usual input rules. The names in
+`maf-editvars-exempt-names', including pi by default, stay whole
+without braces."
   :global t
   :group 'maf
   (if maf-use-editvars-mode
@@ -598,12 +591,9 @@ and algebraic entry at calc's own prompt are untouched."
   (maf-register-module 'maf-editvars #'maf-use-editvars-mode
                        "Read maf-edit text the way algebra is written by hand.
 
-Calc reads a run of letters as one variable, so xy is a single name.
-Here every run splits into factors — 2xy is 2*x*y — and braces quote
-one identifier whole: {cm} is the unit, {xy} the variable. The
-exception is pi, ubiquitous enough to stay whole bare: 2pi is twice
-the constant (`maf-editvars-exempt-names'). An input dialect for edit
-sessions; the stack keeps calc's own syntax."
+For example, 2xy means 2*x*y. Write {cost} when several letters should
+be one variable, or {cm} for the unit cm. The name pi stays whole, so
+2pi means 2*pi. This syntax applies only while using maf-edit."
                        nil "Editing"))
 
 (provide 'maf-editvars)

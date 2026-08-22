@@ -807,20 +807,19 @@ filter when narrowed and quits otherwise."
 
 ;;;###autoload
 (define-minor-mode maf-use-formulas-mode
-  "Global minor mode making the saved formulas available.
-Enabled, every formula is registered as a calc `var-eq-<name>' variable
-so calc's own recall and rewrite see them (`maf-formulas-user',
-populated from `maf-formulas-file', is the single source), and the menu
-gets its key.
+  "Make your saved formulas available in Calc.
 
-The key is `s o', beside calc's own store and recall on the same prefix
-\(s s, s r): a formula is registered as a calc variable, so the menu
-belongs where saved things already live. It is unbound in calc itself,
-so nothing is shadowed and there is nothing to cede back.
+Press s o to open *maf-formulas*. Formulas are grouped by category.
+RET pushes the formula at point onto the stack, and o shows or hides
+its explanation and variable names.
 
-The `maf-formulas' menu is written to work whenever this file is
-loaded, so it stays reachable by name with the mode off; only the key
-and the variable registration follow the mode. See `maf-modules'."
+For example, a saved formula named distance can be inserted from the
+menu instead of typed again. While this mode is on, Calc can also use
+saved formulas as variables in recall and rewrite commands.
+
+The formulas come from `maf-formulas-file'. Turning the mode off
+removes the key and Calc variable registrations, but does not change
+that file. You can still open the menu with M-x maf-formulas."
   :global t
   :group 'maf
   (if maf-use-formulas-mode
@@ -837,10 +836,9 @@ and the variable registration follow the mode. See `maf-modules'."
   (maf-register-module 'maf-formulas #'maf-use-formulas-mode
                        "Keep a library of formulas and push them onto the stack.
 
-The *maf-formulas* menu lists saved formulas by category, each beside
-its form; RET pushes the one at point onto the stack, `o' opens a
-detail pane — Big display, what it is for, what each variable means.
-The library is a file of your own (`maf-formulas-file')."
+Press s o to open your formula library. RET pushes the formula at
+point onto the stack; o shows its purpose and variable names. The
+library is stored in `maf-formulas-file'."
                        "s o" "Memory"))
 
 (provide 'maf-formulas)

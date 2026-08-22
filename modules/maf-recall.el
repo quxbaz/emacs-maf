@@ -448,17 +448,17 @@ displaced."
 ;;; The module
 
 (define-minor-mode maf-use-recall-mode
-  "Global minor mode putting the recall ring on M-p / M-n.
-Enabled, entries you type are recorded — new entries committed from a
-maf-edit session, and numbers a digit entry pushes as an entry of
-their own — and M-p / M-n walk back through them, in an edit session
-or out on the stack. Disabled, nothing is recorded and the keys cede
-back to whatever the global map does with them; the ring itself
-survives, so toggling the module off and on again loses nothing.
+  "Recall entries you typed earlier with M-p and M-n.
 
-The recording rides two pieces of advice, on `maf-edit-commit' and on
-`maf--digit-push'. This is the `maf-recall' module (see
-`maf-modules')."
+For example, after entering 2x+1 and using it in a calculation, press
+M-p to bring 2x+1 back. Press M-p again for an older entry or M-n to
+move forward. In maf-edit, the recalled text is inserted into the edit
+session. On the stack, it is pushed as a new entry.
+
+The recall ring stores what you typed through digit entry, algebraic
+entry, or maf-edit. It does not store calculated results. Turning the
+mode off stops recording and removes the keys, but keeps the existing
+ring for when the mode is turned on again."
   :global t
   :group 'maf
   (if maf-use-recall-mode
@@ -487,10 +487,9 @@ The recording rides two pieces of advice, on `maf-edit-commit' and on
   (maf-register-module 'maf-recall #'maf-use-recall-mode
                        "Bring back an entry you typed earlier.
 
-M-p and M-n walk back through the entries you have typed and put one
-where you are: into the edit session you are in, or onto the stack as
-a fresh entry. The ring holds what you typed, never what was
-computed, so an entry a calculation ate is typed only once."
+For example, after entering 2x+1, press M-p to bring it back and M-n
+to move forward again. Recall stores what you typed, not calculated
+results. It works both on the stack and inside maf-edit."
                        "M-p, M-n" "Memory"))
 
 (provide 'maf-recall)

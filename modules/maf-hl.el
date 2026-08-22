@@ -76,14 +76,16 @@ or EOL, where no sub-formula is under point, the whole entry is marked."
 
 ;;;###autoload
 (define-minor-mode maf-hl-mode
-  "Highlight the sub-formula under point in a calc buffer.
-As point moves over a stack entry, the innermost sub-formula containing
-point is shown with the `maf-hl' face. At the line prefix or end of line
-— where no sub-formula sits under point — the whole entry is marked, the
-subject the entry target would act on. A matrix or other multi-line
-entry is not highlighted. Under the Big display language `maf-use-hl-mode'
-disables this mode entirely, since a sub-formula there has no single
-flat range to mark."
+  "Show which part of a formula the next command will use.
+
+The smallest formula around point is highlighted. For example, with
+point on x in 2*(x+1), x is highlighted, so a contextual command will
+act on x. Move point onto + to highlight x+1 instead. At the line
+number or end of the line, the whole stack entry is highlighted.
+
+This is only a visual guide; it does not select or change anything.
+Multi-line entries are not highlighted, and the mode pauses while Calc
+uses Big display."
   :lighter " hl"
   :group 'maf
   (if maf-hl-mode
@@ -135,10 +137,9 @@ Big mode and returns when the display goes back to normal."
   (maf-register-module 'maf-hl #'maf-use-hl-mode
                        "Highlight the sub-formula under point.
 
-The innermost sub-formula around point is highlighted as the cursor
-moves, so what a contextual command would act on is visible before
-you press the key. Nothing is selected and nothing is changed — the
-highlight only shows you where you are standing."
+For example, putting point on x in 2*(x+1) highlights x; moving onto +
+highlights x+1. This shows what a contextual command will use. It does
+not select or change the formula."
                        nil "Display"))
 
 (provide 'maf-hl)

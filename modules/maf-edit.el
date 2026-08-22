@@ -1565,31 +1565,24 @@ session `maf-edit' opened there."
 ;;; The module
 
 (define-minor-mode maf-use-edit-mode
-  "Global minor mode making maf-edit's entry keys live in `maf-mode-map'.
-Enabled, SPC / ` / C-o / ( run the maf-edit entry commands; disabled,
-they cede back to calc. SPC shadows one of calc-enter's two keys (RET
-still runs it) and enters editing, where `maf-edit-mode-map's RET
-commits; the rest are the quick-add gestures. ` opens an entry at the
-bottom of the stack taken as a trip home — point lands home and a mark
-holds the place it left. It shadows calc-edit, whose whole job the
-module takes over: SPC edits the stack in place instead of in a
-separate buffer. C-o opens an entry above point — at home, at the
-bottom of the stack — and takes the key open-line holds outside calc.
-( opens a bracketed vector entry at the bottom, shadowing
-calc-begin-complex — a complex number is still one entry away as
-(a, b) typed into any of these gestures, while [ keeps
-calc-begin-vector for the digit-entry route.
+  "Edit Calc stack entries as ordinary text.
 
-`maf-edit-add-entry-below', C-o's downward twin, has no key here: it
-held S-<return> until the restack took that key, and above the entry
-below point is where it opened anyway. It stays reachable by name, and
-S-<return> still means newline inside `maf-edit-mode-map' — the two
-never compete, since maf-mode is off for the duration of an edit
-session.
+With this mode on:
 
-This is the `edit' module (see `maf-modules'). Unlike the other
-modules it installs no hook or advice — just these bindings, plus the
-on-demand `maf-edit-mode' editing session they lead into."
+  SPC  Edit the entry at point.
+  `    Go to the bottom of the stack and add an entry there.
+  C-o  Add an entry above the one at point.
+  (    Add an empty vector at the bottom of the stack.
+
+While editing, change formulas directly in the Calc buffer. For
+example, change x+1 to x+2 without deleting and re-entering the stack
+item. RET saves all edits; C-c C-k discards them. S-RET splits one
+entry into two, and deleting the newline between two entries joins
+them.
+
+In-place editing is unavailable in Big display and while a Calc
+selection is active. Turning this mode off removes its entry keys but
+does not change the stack."
   :global t
   :group 'maf
   ;; The keys are declared below; the toggle only recompiles them in
@@ -1608,10 +1601,9 @@ on-demand `maf-edit-mode' editing session they lead into."
   (maf-register-module 'maf-edit #'maf-use-edit-mode
                        "Edit the stack in place as plain text.
 
-SPC (or `, C-o, \"(\") turns the calc buffer into ordinary editable
-text, and the same key commits it back — a formula is fixed where it
-stands. Newlines are the structural gestures: one at a balanced point
-splits an entry, joining two entries' lines merges them."
+Press SPC to edit the entry at point, then RET to save it. For
+example, change x+1 to x+2 directly on the stack. S-RET splits an
+entry; deleting the newline between two entries joins them."
                        "SPC, `, C-o, \"(\"" "Editing"))
 
 (provide 'maf-edit)

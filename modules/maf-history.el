@@ -580,13 +580,18 @@ Reach it as \\[maf-history-clear]."
 
 ;;;###autoload
 (define-minor-mode maf-use-history-mode
-  "Global minor mode recording a browsable history of calc stack states.
-Enabled, every stack change is snapshotted (see this file's commentary)
-and `\\[maf-history]' — bound to \\`t d' in `maf-mode' buffers — opens
-the *maf-history* browser. Disabled, recording stops and the \\`t d'
-key falls back to calc's own `calc-trail-display'; states already
-recorded stay browsable. Managed through the module system; see
-`maf-modules'."
+  "Record and browse earlier versions of the Calc stack.
+
+Each command that changes the stack saves a snapshot. Press M-h or
+t d to open *maf-history*. There, u and i move through snapshots, RET
+pushes the entry at point onto the current stack, r restores the whole
+snapshot, and D deletes it from the history.
+
+For example, after several calculations you can return to the stack as
+it looked before the last three commands, or copy just one old entry.
+
+Turning this mode off stops recording. Snapshots already recorded stay
+available until they are deleted or Emacs exits."
   :global t
   :group 'maf
   (if maf-use-history-mode
@@ -614,11 +619,9 @@ recorded stay browsable. Managed through the module system; see
   (maf-register-module 'maf-history #'maf-use-history-mode
                        "Browse past stack states and bring any of them back.
 
-Every command that changes the stack records a snapshot. The
-*maf-history* buffer shows one state at a time with the entries that
-changed highlighted: u and i step through them, RET pushes the entry
-at point onto the live stack, r restores the whole state, D deletes
-a state from the log."
+Every stack change records a snapshot. Press M-h or t d to browse
+them. Use u and i to move through time, RET to copy one old entry, or
+r to restore the whole stack."
                        "t d, M-h" "Memory"))
 
 (provide 'maf-history)

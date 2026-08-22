@@ -745,12 +745,16 @@ where values live, how a setter runs, what the defaults are."
 
 ;;;###autoload
 (define-minor-mode maf-use-options-mode
-  "Global minor mode giving calc's settings a single browsable buffer.
-Enabled, `\\[maf-options]' — bound to \\`?' in `maf-mode' buffers —
-opens the *maf-options* menu, where every setting in
-`maf-options-registry' shows its current value and can be set without
-recalling its key. Calc's own option keys are untouched. Managed
-through the module system; see `maf-modules'."
+  "Browse and change Calc settings in one menu.
+
+Press ? in a maf Calc buffer to open *maf-options*. Each row names a
+setting, shows its current value, and lists the available choices. For
+example, you can change the angle mode from radians to degrees without
+remembering Calc's prefix key.
+
+Turning this mode off removes the ? binding. It does not reset any
+settings or change Calc's original option keys. The menu remains
+available through M-x maf-options."
   :global t
   :group 'maf
   (if maf-use-options-mode
@@ -769,10 +773,9 @@ through the module system; see `maf-modules'."
   (maf-register-module 'maf-options #'maf-use-options-mode
                        "Browse and set all of calc's options from one buffer.
 
-Calc's settings are spread over six prefix maps and some ninety key
-bindings. The *maf-options* buffer gathers them into one table, each
-row showing the option's current value and the values it can take, so
-a setting can be found by reading rather than recalled by key."
+Press ? to open a table of Calc settings. Each row shows the current
+value and the available choices, so you can change a setting without
+remembering its Calc key."
                        "?" "Prefs"))
 
 ;;; Not in the registry

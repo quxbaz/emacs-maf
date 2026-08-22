@@ -399,17 +399,16 @@ always did."
 
 ;;;###autoload
 (define-minor-mode maf-preview-mode
-  "Show the entry at point rendered in the Big display language.
-As point moves over the stack, a panel at the top-right of the calc
-window shows the active entry in 2D Big form, while the stack itself
-stays in the normal one-line display. The panel is display-only — it
-never takes focus and the window manager ignores it. It is hidden while
-the whole buffer is already in Big display and during an in-place edit
-session.
+  "Show the stack entry at point in Calc's two-dimensional display.
 
-On a graphical frame with the `posframe' package the panel is a child
-frame; otherwise — on a text terminal, or without posframe — it is
-drawn inside the window itself, over the stack lines it covers."
+The stack stays compact, with one entry per line, while a panel in the
+top-right shows the current entry as it would look in Big display. For
+example, (x+1)/2 is shown with x+1 above a fraction bar and 2 below it.
+
+The panel is for viewing only and never takes keyboard focus. It hides
+while the whole Calc buffer uses Big display and while maf-edit is
+active. On graphical frames it uses `posframe' when available;
+otherwise it is drawn inside the Calc window."
   :lighter " preview"
   :group 'maf
   (if maf-preview-mode
@@ -458,10 +457,9 @@ The per-buffer arm of `maf-use-preview-mode'."
   (maf-register-module 'maf-preview #'maf-use-preview-mode
                        "Show the entry at point in a big 2D display.
 
-A panel floating over the top-right of the calc window renders the
-entry you are on — as it stands, unsimplified — in calc's Big
-display, where fractions stack and exponents rise. The stack itself
-stays one line per entry, where moving and editing are convenient."
+A panel shows the current entry as it would look in Calc's Big
+display. For example, (x+1)/2 is drawn as a vertical fraction. The
+stack itself stays compact, with one entry per line."
                        nil "Display"))
 
 (provide 'maf-preview)

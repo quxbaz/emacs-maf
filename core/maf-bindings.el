@@ -441,13 +441,20 @@ module declared no keys, or none reach the active profile."
 
 ;;;###autoload
 (define-minor-mode maf-use-bindings-mode
-  "Global minor mode putting maf's key layout on `maf-mode-map'.
-Enabled, the active profile's compiled bindings — with the user maps
-above them — become `maf-mode-map's parent, and the digit-entry
-overrides install. Disabled, every key falls through to calc and
-commands stay reachable by name; the one key maf keeps is
-`maf-bindings-escape-map's m c, the module menu, the way back in.
-Managed through the module system; see `maf-modules'."
+  "Turn maf's key bindings on or off.
+
+When this mode is on, maf uses the layout named by
+`maf-bindings-profile'. The built-in choices are `native' (maf's
+default layout), `calc' (keys closer to stock Calc), and `vim' (maf's
+layout with Vim-style movement). You can change profiles in the
+*maf-modules* buffer or with `maf-bindings-set-profile'.
+
+When this mode is off, Calc handles its keys normally. The one key maf
+keeps is m c, so you can return to the module menu and turn bindings
+back on. Maf commands remain available through M-x.
+
+Personal bindings belong in the user map for the chosen profile, such
+as `maf-native-user-map'."
   :global t
   :group 'maf
   (if maf-use-bindings-mode
@@ -488,13 +495,11 @@ A profile's own :description, or the meaning of off."
 
 (when (require 'maf-module nil t)
   (maf-register-module 'maf-bindings #'maf-use-bindings-mode
-                       "Key layouts as switchable profiles.
+                       "Choose which keys maf uses.
 
-Every maf key lives in a binding profile — calc, native, or vim — over
-one shared base, compiled from declarations. Switch live with
-`maf-bindings-set-profile'; personal keys go in the per-profile user
-maps (maf-native-user-map and kin) with plain define-key. Disabled,
-maf binds no keys but m c, the way back to this menu."
+Select native for maf's default keys, calc for a layout closer to
+stock Calc, or vim for Vim-style movement. Select off to use Calc's
+keys unchanged. The m c key always returns to this menu."
                        nil "Prefs" #'maf-bindings--module-values))
 
 (provide 'maf-bindings)

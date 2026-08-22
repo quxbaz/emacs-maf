@@ -242,17 +242,21 @@ records it under this session's own name."
 
 ;;;###autoload
 (define-minor-mode maf-persist-mode
-  "Global minor mode persisting the calc stack across Emacs sessions.
-Each session saves its stack under its own name — at Emacs exit, and
-after every `maf-stack-save-interval' idle seconds when it changed —
-and restores it when its first calc buffer opens. Sessions never
-write each other's files, so running several at once loses nothing;
-`\\[maf-restore-stack-from]' — bound to \\`t l' in `maf-mode' buffers
-while this mode is on — loads another session's stack explicitly, and
-`\\[maf-save-stack]' (\\`t u') saves this one's on demand rather than
-waiting for the timer.
-See `maf-stack-session-name' for how sessions are named, and
-`maf-stack-directory' for where the files live."
+  "Save the Calc stack and restore it in a later Emacs session.
+
+The stack is saved when Emacs exits and after it has been idle for
+`maf-stack-save-interval' seconds. It is restored when the first Calc
+buffer opens. For example, if you leave 12 and x+1 on the stack, they
+return the next time you start the same session.
+
+Press t u to save immediately. Press t l to load a stack saved by a
+different session. Each session has its own file, so two running Emacs
+sessions do not overwrite each other.
+
+Only stack values are saved. Selections, undo history, and Calc's trail
+are not. Files are stored in `maf-stack-directory' under the name from
+`maf-stack-session-name'. Turning the mode off stops automatic saving
+but does not delete existing save files."
   :global t
   :group 'maf
   (if maf-persist-mode
@@ -296,10 +300,9 @@ See `maf-stack-session-name' for how sessions are named, and
   (maf-register-module 'maf-persist #'maf-persist-mode
                        "Save and restore the stack across Emacs sessions.
 
-Each session saves its own stack under its own name and reads it back
-when it starts, so several running at once never lose one another's.
-Saved files hold plain values: no selections, trail or undo history.
-It writes to disk, which is why it is off unless you ask for it."
+For example, values left on the stack return the next time you start
+the same session. Press t u to save now or t l to load another
+session's stack. Only values are saved, not selections or undo history."
                        "t l, t u" "Prefs"))
 
 (provide 'maf-persist)

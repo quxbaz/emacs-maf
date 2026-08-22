@@ -130,16 +130,16 @@ badge written over it would be both a nuisance and short-lived."
 
 ;;;###autoload
 (define-minor-mode maf-selplus-mode
-  "Selection extras for a calc buffer.
-While any stack entry carries a selection, a badge in the header line
-says so, along with the key that clears it — calc itself gives the
-state no indicator, and a forgotten selection quietly redirects every
-command that follows onto the selected sub-formula.
+  "Show when a Calc sub-formula is selected.
 
-The badge takes the header line for itself, displacing the line the
-buffer already has — calc's own banner — which comes back when the
-selection clears. While a maf-edit session is up the header line is
-that mode's banner, and the badge stays away."
+A badge appears in the header line while any stack entry has a
+selection. The badge also shows the key that clears it. For example,
+if x is selected in x+1, the badge reminds you that the next command
+will act on x instead of the whole entry.
+
+The usual Calc header returns when the selection is cleared. During a
+maf-edit session, maf-edit's header is shown instead. This mode only
+adds the badge; it does not change how selections work."
   :lighter " sel+"
   :group 'maf
   (if maf-selplus-mode
@@ -168,10 +168,9 @@ The per-buffer arm of `maf-use-selplus-mode'."
   (maf-register-module 'maf-selplus #'maf-use-selplus-mode
                        "Show a badge while a selection is standing.
 
-A selection is a mode in all but name — while one is active, keys act
-on the selected sub-formula rather than the entry — and calc gives it
-no indicator. The badge holds the calc header line for as long as any
-entry carries a selection, and names the key that clears it."
+A header-line badge appears while a sub-formula is selected and shows
+the key that clears it. For example, if x is selected in x+1, the
+badge reminds you that the next command will act on x."
                        nil "Display"))
 
 (provide 'maf-selplus)
