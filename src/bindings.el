@@ -94,6 +94,11 @@
 ;; selection/structure family. l j is unbound in calc's log-units
 ;; prefix; conj keeps its table key J in native.
 (maf-bindings-define '(native) "l j" #'mafcmd-conj)
+;; Complete the square on its letter — which the vim mirror carries
+;; as o s, the command's home there since vim's k is a motion; k s
+;; stays in native. A custom-prefix claim under the k/l policy:
+;; calc-spn cedes the key.
+(maf-bindings-define '(native) "l s" #'mafcmd-complete-square)
 ;; Reference angle. M-l is unbound in calc itself (it shadows the global
 ;; downcase-word, which has no place in the stack buffer).
 (maf-bindings-define '(native) "M-l" #'mafcmd-ref-angle)

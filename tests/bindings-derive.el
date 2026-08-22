@@ -92,8 +92,10 @@
   (cl-assert (eq (key-binding (kbd "u c")) 'calc-convert-units))
 
   ;; Numeric evaluation, homeless since k became a motion, on the
-  ;; last weak single letter.
+  ;; last weak single letter; complete-square rides the family on
+  ;; its own letter.
   (cl-assert (eq (key-binding (kbd "y")) 'mafcmd-evaluate))
+  (cl-assert (eq (key-binding (kbd "o s")) 'mafcmd-complete-square))
 
   ;; Module keys ride their own targeting, not the derivation.
   (cl-assert (eq (key-binding (kbd "M-h")) 'maf-timeline))

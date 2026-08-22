@@ -219,6 +219,10 @@
    - [X] `k d` mafcmd-factor-powers ← calc-double-factorial (a custom
      prefix claim; my/calc's key for the command too)
    - [X] `l f` mafcmd-factor-by ← calc-freq
+   - [X] `l s` mafcmd-complete-square ← calc-spn (2026-08-21: a
+     family key on the square's letter, beside its k s; the vim
+     mirror carries it as `o s`, the command's home there since
+     vim's k is a motion)
    - [X] `i` mafcmd-solve-for ← calc-info
    - [X] `e` mafcmd-equal-to ← calcDigit-start
    - [X] `O` mafcmd-commute ← calc-option
@@ -404,9 +408,9 @@
      in vim; native the escape hatch) and only maf's own three
      rehome. Evaluate is done — `y`, the last weak single letter,
      spent on the heaviest homeless command (I y still reaches
-     identify). Remaining: k s complete-square (`o q` via native
-     `l q` proposed, evicting calc-lu-quant) and k d factor-powers
-     (`o p` via native `l p` proposed, nothing beneath)
+     identify), and so is complete-square — `o s` via native `l s`,
+     evicting calc-spn. Remaining: k d factor-powers (`o p` via
+     native `l p` proposed, nothing beneath)
    - [X] `b` — approved steal (2026-08-20). The binary/financial prefix to `B`: B a / B o / B x
      bitwise, the b-table rows, calc's financial family beneath
      dropping to M-x. Displaces mafcmd-log (B), whose base-10 reading
@@ -534,9 +538,9 @@
     see profile:vim
   - [ ] vim relocation table for the h/j/k/l/w/b families. h/w/b
     approved 2026-08-20, l resolved onto o 2026-08-21 (see
-    profile:vim), j onto J 2026-08-21, k piecemeal (evaluate on y;
-    complete-square and factor-powers pending); plus implementing
-    b→B
+    profile:vim), j onto J 2026-08-21, k piecemeal (evaluate on y,
+    complete-square on o s; factor-powers pending); plus
+    implementing b→B
   - [ ] digit-entry customization surface: per-profile digit declarations
     for users, or a documented API?
   - [ ] custom profiles and module keys: with explicit module targets, a
