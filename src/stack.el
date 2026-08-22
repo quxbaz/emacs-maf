@@ -3370,7 +3370,18 @@ than signaling."
           ;; result identical to what was there.
           (when (and (consp sel) (maf--jump-relation (car entry) sel))
             (let ((snapshot (maf--point-snapshot))
-                  (var-JumpRules (maf--jump-rules)))
+                  (var-JumpRules (maf--jump-rules))
+                  ;; Calc's `calc-rewrite-selection' runs `calc-normalize'
+                  ;; over the rewrite's result, so whatever simplification
+                  ;; mode is in effect gets a pass at the moved term. Under
+                  ;; alg that pass re-derives the equation and can move a
+                  ;; *different* term than the one point named — jumping
+                  ;; the 27 of x^2 - 2 x - 8 = 27 lands on
+                  ;; x^2 - 2 x - 27 = 8, the 8 swapped across instead of
+                  ;; the 27 merely moved. Held to `none', the pass is
+                  ;; plain normalization and the result is the rewrite's
+                  ;; own, committed unsimplified as documented.
+                  (calc-simplify-mode 'none))
               ;; Calc's rewrite locates its entry from point, not from an
               ;; index, so point travels to the entry this resolved to
               ;; before the rewrite runs — from home, and from any other

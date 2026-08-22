@@ -4,8 +4,10 @@
 ;; only — see the ordered block below.
 ;;
 ;; Expected results are calc's own, unsimplified: JumpRules produce
-;; -a + y and y x, and maf commits what the rewrite gives rather than
-;; tidying it (verified against stock calc-sel-jump-equals).
+;; -a + y and x y, and maf commits what the rewrite gives rather than
+;; tidying it. Stock calc-sel-jump-equals instead hands the result to
+;; the session's simplify mode, which under alg can move a second term
+;; the gesture never named (see the constants case below).
 
 (defun jump-at (needle &optional back)
   "Put point on NEEDLE in the stack buffer, BACK chars before its end."
@@ -40,6 +42,21 @@
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "y - b = a"))
   (calc-pop (calc-stack-size))
 
+  ;; Constants on both sides: the committed result is the rewrite's own,
+  ;; unsimplified. Handed to the session's simplify mode instead, calc's
+  ;; post-rewrite normalization re-derives the equation under alg and
+  ;; swaps the *other* constant across — x^2 - 2 x - 27 = 8 — moving a
+  ;; term the gesture never named.
+  (maf-push "x^2 - 2 x - 8 = 27")
+  (jump-at "27")
+  (let ((calc-simplify-mode 'alg))
+    (call-interactively 'maf-jump-equals))
+  (cl-assert (string= (math-format-value (calc-top 1 'full))
+                      "x^2 - 2 x - 8 - 27 = 0"))
+  ;; Point followed the term to the far side.
+  (cl-assert (looking-at-p "27"))
+  (calc-pop (calc-stack-size))
+
   ;; Power: a selected exponent 2 crosses as a square root.
   (maf-push "a^2 = y")
   (jump-at "2 =" 3)
@@ -51,7 +68,7 @@
   (maf-push "a / x = y")
   (jump-at "/ x" 1)
   (call-interactively 'maf-jump-equals)
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "a = y x"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "a = x y"))
   (calc-pop (calc-stack-size))
 
   ;; != additive: maf's derived twin of the additive = rule. Stock
@@ -145,7 +162,7 @@
   (progn (jump-at "+ a") (calc-select-here nil) (calc-select-more nil))
   (call-interactively 'maf-jump-equals)
   (cl-assert (string= (math-format-value (calc-top 1 'full))
-                      "0 = -x - a + y"))
+                      "0 = -(x + a) + y"))
   (calc-pop (calc-stack-size))
 
   ;; The whole entry is not a term to move: it has no side to move to,
