@@ -4,10 +4,12 @@
 ;; (`maf-editplus--subexpr-node'). A step passes when it raises no error.
 ;;
 ;; The rule is the stack's rule. Point on an operand takes that operand;
-;; point on an operator — or on a delimiter, or on the space beside one
-;; — takes the node the operator heads, so the same keypress reaches a
-;; bigger piece by standing one character to the left. The parse is of
-;; the text, not of a value: it is calc's precedence, but nothing in it
+;; point on an operator — or on a delimiter — takes the node the
+;; operator heads, so the same keypress reaches a bigger piece by
+;; standing one character to the left. An operator's padding space is
+;; not the operator: with a complete unit ending at point it means that
+;; unit, exactly as the end of the entry does. The parse is of the
+;; text, not of a value: it is calc's precedence, but nothing in it
 ;; can fail, since the text is being typed.
 ;;
 ;; The end of the entry is the one place the old rule still holds —
@@ -159,6 +161,37 @@
   (call-interactively 'maf-editplus-wrap-ln)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
                     "ln(2 x)+1"))
+  (call-interactively 'maf-edit-discard)
+
+  ;; An operator's padding space is no operator of its own: a complete
+  ;; unit ending at point is the argument there, exactly as at the end
+  ;; of the entry. The sum stays reachable from the `+' itself.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (execute-kbd-macro "2 x + 1") nil)
+  (progn (maf-edit-move-beginning-of-line 1) (forward-char 3) nil)
+  (call-interactively 'maf-editplus-wrap-ln)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "2 ln(x) + 1"))
+  (call-interactively 'maf-edit-discard)
+
+  ;; From the space after the operator nothing complete ends at point
+  ;; — the operator is what is behind it — and the node holds.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (execute-kbd-macro "2 x + 1") nil)
+  (progn (maf-edit-move-beginning-of-line 1) (forward-char 5) nil)
+  (call-interactively 'maf-editplus-wrap-ln)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "ln(2 x + 1)"))
+  (call-interactively 'maf-edit-discard)
+
+  ;; The scene that asked for the rule: a re-edited formula, padded the
+  ;; way the stack renders it, point parked just after a factor.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (execute-kbd-macro "6 x + 12 = 18 y + 6") nil)
+  (progn (maf-edit-move-beginning-of-line 1) (forward-char 15) nil)
+  (call-interactively 'maf-editplus-wrap-ln)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "6 x + 12 = 18 ln(y) + 6"))
   (call-interactively 'maf-edit-discard)
 
   ;; A relation binds loosest of all: its own sign names both sides.

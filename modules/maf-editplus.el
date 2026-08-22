@@ -1208,7 +1208,15 @@ scan takes over, as at the end of the entry. A call's own closer
 names nothing even with no unit behind it (an empty call is the
 command's own answer); a bare pair's or a vector's closer with
 nothing complete behind point — an operator, the opener — still
-names the enclosure, there being no smaller expression to mean."
+names the enclosure, there being no smaller expression to mean.
+
+Nil likewise on padding whitespace with a complete unit ending at
+point: the space beside a spelled operator, or a wrapped line's
+break, is furniture, and a press there means the term just typed —
+2 x| + 1 names the x — with the same term-behind scan taking over.
+The one space that is not padding is a juxtaposed product's own
+operator glyph, told apart by what follows it: 2 |x runs on into an
+operand and names the product, the way any operator names its node."
   (let ((entry (maf-editplus--entry-at-point)))
     (when entry
       (let* ((limit (+ (overlay-start entry)
@@ -1226,12 +1234,31 @@ names the enclosure, there being no smaller expression to mean."
                              (setq at (maf-editplus--skip-fill-forward
                                        pos bound))
                              (maf-editplus--node-at tree at)))))
-            (unless (and node
-                         (= at (1- (maf-editplus--node-end node)))
-                         (memq (char-after at) maf-editplus--closers)
-                         (or (eq (maf-editplus--node-kind node) 'call)
-                             (maf-editplus--unit-before at limit)))
-              node)))))))
+            (cond
+             ((and node
+                   (= at (1- (maf-editplus--node-end node)))
+                   (memq (char-after at) maf-editplus--closers)
+                   (or (eq (maf-editplus--node-kind node) 'call)
+                       (maf-editplus--unit-before at limit)))
+              nil)
+             ;; Padding whitespace with a complete unit ending at
+             ;; point reads as the end of the entry does: the press
+             ;; means the term just typed — 2 x| + 1 names the x, not
+             ;; the sum whose padding point stands on. The one space
+             ;; that is not padding is a juxtaposed product's own
+             ;; operator glyph, told apart by what follows: 2 |x runs
+             ;; on into an operand, an operator's padding into the
+             ;; operator itself.
+             ((and node
+                   (memq (char-after at) '(?\s ?\t ?\n))
+                   (let ((next (maf-editplus--skip-fill-forward at bound)))
+                     (not (or (maf-editplus--atom-start-p next)
+                              (memq (char-after next)
+                                    maf-editplus--openers)
+                              (eq (char-after next) ?\"))))
+                   (maf-editplus--unit-before at limit))
+              nil)
+             (t node))))))))
 
 (defun maf-editplus--wrap-node (node name &optional tail)
   "Write a call to NAME around NODE; return where the call begins.
@@ -1460,6 +1487,8 @@ it:
   a+b|*c       =>  a+ln(b*c)      (point on an operator: its node)
   a|+b*c       =>  ln(a+b*c)      (the sum the + heads)
   |(a+b)*c     =>  ln(a+b)*c      (a bare pair is punctuation)
+  2 x| + 1     =>  2 ln(x) + 1    (padding space: the unit behind it)
+  2 |x + 1     =>  ln(2 x) + 1    (the space that is the product)
 
 At the end of the entry there is no character under point, and the
 smallest complete unit ending at point is the argument instead — the
