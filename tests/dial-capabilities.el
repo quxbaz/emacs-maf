@@ -287,6 +287,12 @@ From `point-min', not from point, which the open leaves on a row."
   ;; catching what `message' is handed rather than off the echo area.
   (with-current-buffer "*dial-test*"
     (let ((said nil))
+      ;; Neutralize inherited line-motion state. The buffer is not
+      ;; displayed, so `line-move-visual' cannot recompute its goal
+      ;; there and a stale `temporary-goal-column' from the live
+      ;; session would ride along, landing the plain next-line at a
+      ;; row's end and walking point off the row.
+      (setq last-command 'ignore temporary-goal-column 0)
       (cl-letf (((symbol-function 'message)
                  (lambda (fmt &rest args)
                    (when fmt (push (apply #'format fmt args) said)))))
