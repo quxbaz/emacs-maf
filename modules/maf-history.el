@@ -28,7 +28,7 @@
 ;; resolves them at runtime, but the byte compiler needs declarations.
 (declare-function math-format-value "calc-ext")
 
-;; The module installs its `t d' binding into this map, defined in
+;; The module installs its `M-h' binding into this map, defined in
 ;; maf.el / bindings.el and current by the time the module is enabled.
 (defvar maf-mode-map)
 
@@ -582,8 +582,8 @@ Reach it as \\[maf-history-clear]."
 (define-minor-mode maf-use-history-mode
   "Record and browse earlier versions of the Calc stack.
 
-Each command that changes the stack saves a snapshot. Press M-h or
-t d to open *maf-history*. There, u and i move through snapshots, RET
+Each command that changes the stack saves a snapshot. Press M-h to
+open *maf-history*. There, u and i move through snapshots, RET
 pushes the entry at point onto the current stack, r restores the whole
 snapshot, and D deletes it from the history.
 
@@ -603,15 +603,15 @@ available until they are deleted or Emacs exits."
         (maf-history--capture))
     (remove-hook 'post-command-hook #'maf-history--capture)
     (advice-remove 'calc-record #'maf-history--stash-prefix)
-    ;; The recompile cedes the key back to calc's trail display.
     (maf-bindings--refresh)))
 
-;; M-h beside t d: h for history, a single chord for the browse the
-;; history is for. It shadows only the global `mark-paragraph', which
-;; has no meaning in the stack buffer.
+;; M-h: h for history, a single chord for the browse the history is
+;; for. It shadows only the global `mark-paragraph', which has no
+;; meaning in the stack buffer. Calc's trail and its `t' bindings
+;; (t d and friends) stay untouched — the history is an alternative
+;; to the trail, not a replacement.
 (maf-bindings-module-keys 'maf-history 'maf-use-history-mode
-  '(((calc native vim) "t d" maf-history)
-    ((calc native vim) "M-h" maf-history)))
+  '(((calc native vim) "M-h" maf-history)))
 
 ;; Register with the module system when it is present; the mode above
 ;; works on its own without it.
@@ -619,9 +619,9 @@ available until they are deleted or Emacs exits."
   (maf-register-module 'maf-history #'maf-use-history-mode
                        "Browse past stack states and bring any of them back.
 
-Every stack change records a snapshot. Press M-h or t d to browse
-them. Use u and i to move through time, RET to copy one old entry, or
-r to restore the whole stack."
-                       "t d, M-h" "Memory"))
+Every stack change records a snapshot. Press M-h to browse them. Use
+u and i to move through time, RET to copy one old entry, or r to
+restore the whole stack."
+                       "M-h" "Memory"))
 
 (provide 'maf-history)
