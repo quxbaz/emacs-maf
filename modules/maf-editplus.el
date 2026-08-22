@@ -1263,6 +1263,39 @@ restructure text the writer is in the middle of."
 
 ;;; The common target
 
+(defun maf-editplus--number-end (pos bound)
+  "Position just past the number beginning at POS, no further than BOUND.
+POS must start a number: a digit, or the point of one written without
+its leading zero. Covers what calc's number syntax reaches past a
+bare digit run, as `maf-editvars--number-end' does over strings: the
+inner punctuation with a digit after it (2.5, calc's fraction 3:4), a
+radix form, whose digits run past nine (16#ff), and a float's
+exponent with its sign (1e5, 1.5e-3). A letter past all of that is
+where the number ends and a name begins — 24x ends at the x."
+  (let ((p pos))
+    (while (and (< p bound)
+                (or (maf-editplus--digit-p (char-after p))
+                    (and (memq (char-after p) maf-editplus--atom-inner)
+                         (maf-editplus--digit-p (char-after (1+ p))))))
+      (setq p (1+ p)))
+    (if (and (< p bound) (eq (char-after p) ?#))
+        (progn
+          (setq p (1+ p))
+          (while (and (< p bound)
+                      (or (maf-editplus--name-char-p (char-after p))
+                          (eq (char-after p) ?.)))
+            (setq p (1+ p))))
+      (when (and (< p bound) (memq (char-after p) '(?e ?E)))
+        (let ((q (1+ p)))
+          (when (and (< q bound) (memq (char-after q) '(?+ ?-)))
+            (setq q (1+ q)))
+          (when (and (< q bound) (maf-editplus--digit-p (char-after q)))
+            (setq p (1+ q))
+            (while (and (< p bound)
+                        (maf-editplus--digit-p (char-after p)))
+              (setq p (1+ p)))))))
+    p))
+
 (defun maf-editplus--unit-before (pos limit)
   "Bounds of the smallest complete unit ending exactly at POS, or nil.
 An atom with its own punctuation — a name, a number, a string literal
@@ -1270,7 +1303,13 @@ An atom with its own punctuation — a name, a number, a string literal
 quoted name, {cm}, is such a group. Nil when the character behind POS
 completes nothing: whitespace, an operator, the head of the entry. No
 whitespace is crossed on the way in: this is the unit a power typed
-at POS would bind to, and a power does not reach back across a space."
+at POS would bind to, and a power does not reach back across a space.
+
+A run that begins with a number and runs on into letters is that
+number times a name — calc reads 24x as 24 x — so the unit ending at
+POS is the name alone, exactly what the power typed there would bind
+to. The number's own letters stay its own: 24e3x is 24e3 times x
+\(`maf-editplus--number-end')."
   (when (> pos limit)
     (let ((c (char-before pos)))
       (cond
@@ -1305,6 +1344,14 @@ at POS would bind to, and a power does not reach back across a space."
           (while (and (> beg limit)
                       (maf-editplus--atom-char-p (1- beg)))
             (setq beg (1- beg)))
+          ;; A run led by a number is the number times the name after
+          ;; it, and the name is the smaller unit ending at POS.
+          (when (or (maf-editplus--digit-p (char-after beg))
+                    (and (eq (char-after beg) ?.)
+                         (maf-editplus--digit-p (char-after (1+ beg)))))
+            (let ((split (maf-editplus--number-end beg pos)))
+              (when (< split pos)
+                (setq beg split))))
           (cons beg pos)))))))
 
 (defun maf-editplus--resolve-target ()
@@ -1421,6 +1468,7 @@ typing carries on:
 
   x+2|         =>  x+ln(2)
   a+b*c|       =>  a+b*ln(c)
+  24x|         =>  24ln(x)        (24x is 24 times x: the x alone)
   27/sqrt(3)|  =>  27/ln(sqrt(3))
   ln(x)|       =>  ln(ln(x))
   x = |        =>  x = ln(|)
