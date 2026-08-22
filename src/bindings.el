@@ -156,16 +156,6 @@
 ;; both of which maf supplies from point instead.
 (maf-bindings-define '(native) "j D" #'maf-distribute)
 (maf-bindings-define '(native) "j M" #'maf-merge)
-;; A second key for the distribute, on expand's letter: x expands the
-;; whole target at full depth, j x expands one step at the site point
-;; picks — the deliberate distinction between expand-all and
-;; expand-by-a-step. j x is unbound in calc itself; j D stays too.
-(maf-bindings-define '(native) "j x" #'maf-distribute)
-;; And the merge mirrors it on factor's letter — the inverse pair on
-;; the letters calc gives the full-strength inverse pair (a x expand,
-;; a f factor): j x distributes one step at the site point picks, j f
-;; merges one step there. j f is unbound in calc itself; j M stays too.
-(maf-bindings-define '(native) "j f" #'maf-merge)
 ;; Inside digit entry j is a jump of its own: `maf-digit-jump'
 ;; (src/minibuffer.el) ends the entry and sends point to the stack
 ;; level the number named, the prefix's reading one level out.
