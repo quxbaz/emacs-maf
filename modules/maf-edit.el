@@ -384,6 +384,22 @@ negative."
         ((or ?\) ?\] ?\}) (setq d (1- d)))))
     d))
 
+(defun maf-edit--nothing-p (text)
+  "Non-nil when TEXT resolves to nothing and commits as no entry.
+Blank text is the emptied entry; so is text of nothing but balanced
+parentheses — the () deleting a group's contents leaves behind wraps
+nothing, and resolves to it. Only parentheses count: [] and {} are
+the empty vector, a value in its own right. Unbalanced parens stay
+parse errors — the safe way to be wrong, as everywhere in maf-edit."
+  (let ((d 0) (ok t))
+    (dotimes (i (length text))
+      (pcase (aref text i)
+        (?\( (setq d (1+ d)))
+        (?\) (if (zerop d) (setq ok nil) (setq d (1- d))))
+        ((or ?\s ?\t ?\n ?\r))
+        (_ (setq ok nil))))
+    (and ok (zerop d))))
+
 ;;; Implicit vectors
 
 (defun maf-edit--top-level-comma-p (text)
@@ -1444,6 +1460,10 @@ and committed exactly as written, never simplified — 1 + 2 + x stays
 module can commit a spelling calc prefers over the one the session
 wanted visible.
 
+An entry emptied to blank commits as deleted, and so does one left
+holding nothing but empty parentheses: () wraps nothing and resolves
+to it (`maf-edit--nothing-p').
+
 An entry whose commas are its own — 1,2,3 — commits as the vector
 [1, 2, 3]: the brackets are punctuation calc wants and the writer does
 not, so commit supplies them (`maf-edit--implicit-vector'). Only a
@@ -1475,7 +1495,7 @@ session `maf-edit' opened there."
     (dolist (o (maf-edit--overlays))
       (let ((text (maf-edit--entry-text o)))
         (cond
-         ((string-blank-p text))        ; emptied entry: deleted
+         ((maf-edit--nothing-p text))   ; emptied entry (or bare ()): deleted
          ((and (overlay-get o 'maf-edit-val)
                (equal text (overlay-get o 'maf-edit-text)))
           (push (overlay-get o 'maf-edit-val) vals)
