@@ -63,6 +63,7 @@
 (require 'maf-selplus)
 (require 'maf-poly-order)
 (require 'maf-e-power)
+(require 'maf-log-power)
 (require 'maf-options)
 
 ;;;###autoload
