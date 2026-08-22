@@ -603,6 +603,7 @@ Here every run splits into factors — 2xy is 2*x*y — and braces quote
 one identifier whole: {cm} is the unit, {xy} the variable. The
 exception is pi, ubiquitous enough to stay whole bare: 2pi is twice
 the constant (`maf-editvars-exempt-names'). An input dialect for edit
-sessions; the stack keeps calc's own syntax."))
+sessions; the stack keeps calc's own syntax."
+                       nil "Editing"))
 
 (provide 'maf-editvars)

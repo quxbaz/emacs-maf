@@ -161,6 +161,7 @@ normalize. This is the `maf-poly-order' module (see `maf-modules')."
 Calc has no canonical order for a sum's terms and tends to leave
 polynomials ascending: x + x^2 + 1 where paper puts x^2 first. Sums
 in one variable are reordered by falling degree; multi-variable sums
-are left alone. Only the order moves, never the value."))
+are left alone. Only the order moves, never the value."
+                       nil "Display"))
 
 (provide 'maf-poly-order)

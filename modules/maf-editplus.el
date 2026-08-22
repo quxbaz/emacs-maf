@@ -2118,6 +2118,7 @@ from the entry's nearest log, 10 as the fallback, log(x, 10)
 committing as calc's log10(x) — M-2..M-9 and : raise to a power (W
 squares too, as on the stack), P types pi, DEL and C-d delete a power
 whole from either side of its operator, and S-SPC keeps the stack's
-hop to the next space working over the editable text."))
+hop to the next space working over the editable text."
+                       nil "Editing"))
 
 (provide 'maf-editplus)

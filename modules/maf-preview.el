@@ -461,6 +461,7 @@ The per-buffer arm of `maf-use-preview-mode'."
 A panel floating over the top-right of the calc window renders the
 entry you are on — as it stands, unsimplified — in calc's Big
 display, where fractions stack and exponents rise. The stack itself
-stays one line per entry, where moving and editing are convenient."))
+stays one line per entry, where moving and editing are convenient."
+                       nil "Display"))
 
 (provide 'maf-preview)

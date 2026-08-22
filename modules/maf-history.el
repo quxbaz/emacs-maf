@@ -619,6 +619,6 @@ Every command that changes the stack records a snapshot. The
 changed highlighted: u and i step through them, RET pushes the entry
 at point onto the live stack, r restores the whole state, D deletes
 a state from the log."
-                       "t d, M-h"))
+                       "t d, M-h" "Memory"))
 
 (provide 'maf-history)

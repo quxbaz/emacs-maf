@@ -32,7 +32,7 @@
 (require 'maf-conf "conf")
 
 (defvar maf-module-registry nil
-  "Alist of (NAME MODE DESCRIPTION KEYS) for registered modules.
+  "Alist of (NAME MODE DESCRIPTION KEYS GROUP) for registered modules.
 NAME is a symbol naming the module; MODE is its global minor-mode
 function, which is also the variable holding the mode's state;
 DESCRIPTION is the module's help text, shown in the module menu (see
@@ -41,7 +41,11 @@ while on, written as they are shown to the user (\"s o\";
 \"t l, t u\" for several), or nil for a module with none. The menu
 puts KEYS beside the name heading the echoed help — the binding only
 exists while the mode is on, so the menu cannot look it up from the
-keymap for the modules one is reading about before enabling.
+keymap for the modules one is reading about before enabling. GROUP
+is the menu section the module files under — \"Display\",
+\"Editing\", \"Memory\", \"Session\" — or nil for the fallback
+\"Modules\" section; a name, not a taxonomy: a new module joins the
+group whose company reads best.
 
 A description is written in two parts: a first line saying in one
 short sentence what the module does, then a blank line, then a
@@ -101,7 +105,7 @@ the load order in maf.el that should not decide how the option reads."
                   (sort (copy-sequence maf-module-registry)
                         (lambda (a b) (string< (car a) (car b)))))))
 
-(defun maf-register-module (name mode &optional description keys values-fn)
+(defun maf-register-module (name mode &optional description keys group values-fn)
   "Register module NAME with its global minor mode MODE.
 DESCRIPTION is the help text the module gives for itself — a summary
 line, a blank line, then a short paragraph (see
@@ -110,9 +114,11 @@ line, a blank line, then a short paragraph (see
 checkbox in Customize. KEYS names the entry keys MODE binds while on,
 as they are shown to the user (see `maf-module-registry'), or nil for
 a module with none; the menu shows it beside the name heading the
-echoed help. VALUES-FN, for the rare module that is more than a
-toggle, returns a plist of dial row overrides — :values and :current —
-built fresh at each menu build; absent, the row is the plain on/off.
+echoed help. GROUP is the menu section the module files under (see
+`maf-module-registry'), or nil for the fallback section. VALUES-FN,
+for the rare module that is more than a toggle, returns a plist of
+dial row overrides — :values and :current — built fresh at each menu
+build; absent, the row is the plain on/off.
 
 Records the entry in `maf-module-registry' and adds
 `maf-module--reconcile' to MODE's hook, so toggling MODE keeps
@@ -126,7 +132,7 @@ option offers exactly the modules that have registered — see
 the registry, so recomputing here keeps the type current without
 conf.el naming a single module."
   (setf (alist-get name maf-module-registry)
-        (list mode description keys values-fn))
+        (list mode description keys group values-fn))
   (put 'maf-modules 'custom-type (maf-module--custom-type))
   (add-hook (intern (concat (symbol-name mode) "-hook"))
             #'maf-module--reconcile))
@@ -286,14 +292,17 @@ live."
                 "\n\n"))))
 
 (defun maf-module--items ()
-  "Compile `maf-module-registry' into dial items, sorted by name.
-The registry is in reverse registration order, an artifact of the load
-order in maf.el that should not decide how the menu reads."
+  "Compile `maf-module-registry' into dial items, grouped and sorted.
+Each module files under the group it registered — the menu's sections
+— and reads alphabetically within it. The registry itself is in
+reverse registration order, an artifact of the load order in maf.el
+that should not decide how the menu reads."
   (mapcar (lambda (entry)
-            (pcase-let ((`(,name ,mode ,description ,keys ,values-fn) entry))
+            (pcase-let ((`(,name ,mode ,description ,keys ,group ,values-fn)
+                         entry))
               (cons name
                     (append
-                     (list :group "Modules"
+                     (list :group (or group "Modules")
                            :label (symbol-name name)
                            :doc (maf-module--doc
                                  name description
@@ -316,7 +325,15 @@ order in maf.el that should not decide how the menu reads."
                                  (list :default
                                        (maf-module--default name)))))))))
           (sort (copy-sequence maf-module-registry)
-                (lambda (a b) (string< (car a) (car b))))))
+                (lambda (a b)
+                  ;; Group first, name within: dial sections are runs
+                  ;; of adjacent rows, so a group must sit together —
+                  ;; and the groups themselves read alphabetically.
+                  (let ((ga (or (nth 4 a) "Modules"))
+                        (gb (or (nth 4 b) "Modules")))
+                    (if (string= ga gb)
+                        (string< (car a) (car b))
+                      (string< ga gb)))))))
 
 (defvar maf-module--controls nil
   "The module menu's controls line.

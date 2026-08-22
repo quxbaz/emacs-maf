@@ -171,6 +171,7 @@ The per-buffer arm of `maf-use-selplus-mode'."
 A selection is a mode in all but name — while one is active, keys act
 on the selected sub-formula rather than the entry — and calc gives it
 no indicator. The badge holds the calc header line for as long as any
-entry carries a selection, and names the key that clears it."))
+entry carries a selection, and names the key that clears it."
+                       nil "Display"))
 
 (provide 'maf-selplus)

@@ -1612,6 +1612,6 @@ SPC (or `, C-o, \"(\") turns the calc buffer into ordinary editable
 text, and the same key commits it back — a formula is fixed where it
 stands. Newlines are the structural gestures: one at a balanced point
 splits an entry, joining two entries' lines merges them."
-                       "SPC, `, C-o, \"(\""))
+                       "SPC, `, C-o, \"(\"" "Editing"))
 
 (provide 'maf-edit)

@@ -138,6 +138,7 @@ Big mode and returns when the display goes back to normal."
 The innermost sub-formula around point is highlighted as the cursor
 moves, so what a contextual command would act on is visible before
 you press the key. Nothing is selected and nothing is changed — the
-highlight only shows you where you are standing."))
+highlight only shows you where you are standing."
+                       nil "Display"))
 
 (provide 'maf-hl)
