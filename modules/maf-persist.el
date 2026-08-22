@@ -300,6 +300,6 @@ Each session saves its own stack under its own name and reads it back
 when it starts, so several running at once never lose one another's.
 Saved files hold plain values: no selections, trail or undo history.
 It writes to disk, which is why it is off unless you ask for it."
-                       "t l, t u" "Memory"))
+                       "t l, t u" "Prefs"))
 
 (provide 'maf-persist)
