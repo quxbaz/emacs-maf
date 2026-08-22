@@ -7,7 +7,7 @@
 
 * NOW
   - *maf-modules*
-    - [ ] enter should quit
+    - [X] enter should quit
     - [ ] currently, default color is always shown (purple)
       - the non-default value should appear in gold
   - vi-style profile

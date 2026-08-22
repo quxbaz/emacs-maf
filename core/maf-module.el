@@ -313,7 +313,7 @@ dial's availability gate drops it again should no such row remain.")
         (dial-describe "details" "w" "?")
         (dial-reset "reset")
         (dial-refresh "refresh")
-        (quit-window "quit")))
+        (quit-window "quit" "q" "RET")))
 
 ;;;###autoload
 (defun maf-list-modules ()
@@ -332,6 +332,19 @@ the registry."
   (dial-open "*maf-modules*" (maf-module--items)
              :name "maf-modules"
              :controls maf-module--controls
-             :raw #'maf-module--state))
+             :raw #'maf-module--state
+             :init #'maf-module--menu-keys))
+
+(defun maf-module--menu-keys ()
+  "Give the menu's buffer its own keys over `dial-mode's.
+RET quits: dial's RET is `dial-set', the run-the-pending step for a
+value whose setter prompts — and no module row prompts, so here the
+key could only ever complain. Reading it as done-here instead suits
+the menu's use: drop in, flip a switch, leave."
+  (use-local-map
+   (let ((map (make-sparse-keymap)))
+     (set-keymap-parent map dial-mode-map)
+     (define-key map (kbd "RET") #'quit-window)
+     map)))
 
 (provide 'maf-module)
