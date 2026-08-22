@@ -252,7 +252,12 @@
    - [X] `&` maf-toggle-big-language ← calc-inv
 ** additions (keys calc leaves unbound)
    - [X] `W` mafcmd-sqr
-   - [X] `k k` mafcmd-evaluate
+   - [X] `k k` mafcmd-esimplify (2026-08-22: the extended simplify's
+     doubled-k chord beside its table key `a s` — the most-reached-for
+     command on the cheapest key; evaluate, which held it, moved to
+     `k v`)
+   - [X] `k v` mafcmd-evaluate (2026-08-22: moved off `k k`, ceded to
+     esimplify; `I k v` still reaches mafcmd-identify)
    - [X] `C-<return>` mafcmd-let
    - [X] `l l` mafcmd-float-frac (2026-08-20: the float/frac toggle —
      floats toward fractions first, fractions to floats otherwise,
@@ -292,8 +297,9 @@
    - [X] `j f` maf-merge (second key beside `j M`, on factor's letter:
      the inverse of `j x` on the letters of calc's a x / a f pair)
    - [X] `C-c C-c` mafcmd-esimplify (2026-08-20: second key beside its
-     table key `a s`, earned by frequency; the mode's slice of the C-c
-     convention, with its do-the-obvious-thing reflex)
+     table key `a s`, earned by frequency — since 2026-08-22 also on
+     `k k`; the mode's slice of the C-c convention, with its
+     do-the-obvious-thing reflex)
    - [X] `S-<up>` / `S-<down>` mafcmd-toggle-op
    - [X] `C-|` mafcmd-bracket
    - [X] `v RET` maf-index
@@ -324,7 +330,7 @@
 ** defined but unbound (M-x only)
    Stack commands with no key in native and no flag route from a bound
    key. Not listed: the ~67 flag-route variants (arcsin under I S,
-   vmedian under H u M, identify under I k k, append under H |, ...) —
+   vmedian under H u M, identify under I k v, append under H |, ...) —
    those are reachable; entry points (maf-calc, maf-calc-direct),
    module toggles (the m c menu's job), and lib helpers. Generated
    against the sources 2026-08-19.
@@ -469,8 +475,8 @@
      - mafcmd siblings shadowing calc: choose, gcd, lcm, prfac,
        nextprime, totient, moebius, euler, bern, random, shuffle,
        utpt/utpp/utpc
-     - maf-only: mafcmd-evaluate (k k), mafcmd-complete-square (k s),
-       mafcmd-factor-powers (k d)
+     - maf-only: mafcmd-esimplify (k k), mafcmd-evaluate (k v),
+       mafcmd-complete-square (k s), mafcmd-factor-powers (k d)
      - calc-only leftovers: calc-keep-args (k K), calc-prime-test,
        calc-random-again, calc-extended-gcd, calc-utpn/utpf/utpb
    - `l` — maf's own invented prefix, layered over calc's log-units
