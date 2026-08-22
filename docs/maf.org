@@ -8,7 +8,7 @@
 * NOW
   - *maf-modules*
     - [ ] rewrite detailed help text in simplier terms and use simple clarifying
-      examples when possible
+      examples when possible or useful
   - [ ] find better binding for simplify (`a s`)
 
 * major features [8/9]
