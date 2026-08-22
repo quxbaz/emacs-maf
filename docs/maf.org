@@ -8,8 +8,6 @@
 * NOW
   - *maf-modules*
   - vi-style profile
-    - [X] bind $ to end of line, if already on end of line, move top beginning
-      of line (first real character, not prefix area)
     - [ ] is there a solution to the vi _ issue?
       - the issue is that _ is a core binding in vi
       - but it's also a core binding in calc
