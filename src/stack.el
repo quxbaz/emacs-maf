@@ -626,19 +626,27 @@ top entry at home.
 
   a + b  =>  b + a
 
-The swap is structural — nothing simplifies — so non-commutative
-operators flip too, any function call swaps its first two arguments,
-and operands past the second stay in place. A binary relation keeps
-its meaning: the sides swap and the operator's direction reverses
-with them. With nothing to swap — an atom, a unary call, an interval
-— the expression commits unchanged. Point picks the target as usual:
-a sub-formula at point, the two sides of a relation entry, the top
+The swap preserves the value wherever the operator lets it: a sum or
+product just reorders, and a subtraction or division carries the
+second operand across as its inverse — negated into a sum, made a
+reciprocal in a product — folding it back into the operator on the
+return trip, so commuting twice restores the original. A binary
+relation keeps its meaning: the sides swap and the operator's
+direction reverses with them. Heads with no compensating form — a
+power, a function call, a vector — swap structurally as written,
+nothing simplifies, and operands past the second stay in place. With
+nothing to swap — an atom, a unary call, an interval — the
+expression commits unchanged. Point picks the target as usual: a
+sub-formula at point, the two sides of a relation entry, the top
 entry at home.
 
-  a - b      =>  b - a
-  2 (3 + x)  =>  (3 + x) 2   (no distribution)
-  log(x, b)  =>  log(b, x)
-  x < y      =>  y > x       (direction reverses: never y < x)"
+  a - b        =>  -b + a        (value kept: never b - a)
+  -b + a       =>  a - b         (the inverse folds back: round trip)
+  a - (b + c)  =>  -(b + c) + a  (crosses intact, and still round-trips)
+  a / b        =>  (1 / b) a
+  2 (3 + x)    =>  (3 + x) 2     (no distribution)
+  log(x, b)    =>  log(b, x)
+  x < y        =>  y > x         (direction reverses: never y < x)"
   :arity unary
   :prefix "comm"
   :map -1
@@ -655,6 +663,41 @@ entry at home.
            ((and (maf--relation-p expr) (= (length expr) 3))
             (list (maf--flip-relation-op (car expr))
                   (nth 2 expr) (nth 1 expr)))
+           ;; Subtraction and division: the second operand crosses to
+           ;; the front as its inverse, so the value is preserved —
+           ;; a - b gives -b + a, a / b gives (1 / b) a. The negation is
+           ;; a literal neg marker, never math-neg: math-neg rewrites
+           ;; compounds (-(b + c) into -b - c) beyond the fold's reach,
+           ;; and any eager folding loses a degenerate subtrahend — a
+           ;; zero, a negative, an already-negated term, all possible
+           ;; with simplification off. The marker costs nothing on the
+           ;; common shapes ((neg 2) still prints as -2), and only an
+           ;; untouched marker lets the fold below reverse every case.
+           ((and (eq (car-safe expr) '-) (= (length expr) 3))
+            (list '+ (list 'neg (nth 2 expr)) (nth 1 expr)))
+           ((and (eq (car-safe expr) '/) (= (length expr) 3))
+            (list '* (list '/ 1 (nth 2 expr)) (nth 1 expr)))
+           ;; The mirror images: a neg marker, a negative number, or a
+           ;; reciprocal leading a sum or product folds back into the
+           ;; operator when the swap carries it to second place, so
+           ;; commuting is a round trip (-b + a back to a - b, -2 + a
+           ;; back to a - 2) rather than a literal a + -b. Only the
+           ;; marker unfolds cons-exactly; a sum led by a bare negative
+           ;; number (built elsewhere — commuting emits markers) settles
+           ;; after one commute into the marker orbit, identical in
+           ;; display but not in cons.
+           ((and (eq (car-safe expr) '+) (= (length expr) 3)
+                 (let ((f (nth 1 expr)))
+                   (or (eq (car-safe f) 'neg)
+                       (and (Math-realp f) (Math-negp f)))))
+            (let ((f (nth 1 expr)))
+              (list '- (nth 2 expr)
+                    (if (eq (car-safe f) 'neg) (nth 1 f) (math-neg f)))))
+           ((and (eq (car-safe expr) '*) (= (length expr) 3)
+                 (let ((f (nth 1 expr)))
+                   (and (eq (car-safe f) '/) (= (length f) 3)
+                        (eq (nth 1 f) 1))))
+            (list '/ (nth 2 expr) (nth 2 (nth 1 expr))))
            ((and (not (Math-primp expr))
                  (not (eq (car expr) 'intv))
                  (>= (length expr) 3))

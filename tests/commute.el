@@ -12,10 +12,81 @@
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "(3 + x) 2"))
   (calc-pop (calc-stack-size))
 
-  ;; Non-commutative operator: swapped structurally, not algebraically.
+  ;; Subtraction: the second operand crosses negated, preserving the
+  ;; value — never the structural b - a. Commuting again folds the
+  ;; negation back into the operator: a round trip, not a + -b.
   (maf-push "a - b")
   (call-interactively 'mafcmd-commute)
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "b - a"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "-b + a"))
+  (call-interactively 'mafcmd-commute)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "a - b"))
+  (calc-pop (calc-stack-size))
+
+  ;; Division likewise: the divisor crosses as a reciprocal, and the
+  ;; reciprocal folds back on the second commute.
+  (maf-push "a / b")
+  (call-interactively 'mafcmd-commute)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "(1 / b) a"))
+  (call-interactively 'mafcmd-commute)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "a / b"))
+  (calc-pop (calc-stack-size))
+
+  ;; A compound subtrahend crosses intact — never distributed — so it
+  ;; still round-trips.
+  (maf-push "a - (b + c)")
+  (call-interactively 'mafcmd-commute)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "-(b + c) + a"))
+  (call-interactively 'mafcmd-commute)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "a - (b + c)"))
+  (calc-pop (calc-stack-size))
+  (maf-push "a - (b - c)")
+  (call-interactively 'mafcmd-commute)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "-(b - c) + a"))
+  (call-interactively 'mafcmd-commute)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "a - (b - c)"))
+  (calc-pop (calc-stack-size))
+
+  ;; Numeric operands read back the same (a neg marker prints as the
+  ;; bare negative) and still fold back: a - 2 never strands as a + -2.
+  (maf-push "a - 2")
+  (call-interactively 'mafcmd-commute)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "-2 + a"))
+  (call-interactively 'mafcmd-commute)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "a - 2"))
+  (calc-pop (calc-stack-size))
+  (maf-push "a / 2")
+  (call-interactively 'mafcmd-commute)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "(1/2) a"))
+  (call-interactively 'mafcmd-commute)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "a / 2"))
+  (calc-pop (calc-stack-size))
+
+  ;; With simplification off, degenerate subtrahends — a zero, a
+  ;; negative, an already-negated term — sit on the stack literally.
+  ;; The neg marker keeps even these an exact round trip, down to the
+  ;; internal form.
+  (let ((calc-simplify-mode 'none))
+    (calc-push '(- (var a var-a) 0)))
+  (call-interactively 'mafcmd-commute)
+  (cl-assert (equal (calc-top 1 'full) '(+ (neg 0) (var a var-a))))
+  (call-interactively 'mafcmd-commute)
+  (cl-assert (equal (calc-top 1 'full) '(- (var a var-a) 0)))
+  (calc-pop (calc-stack-size))
+  (let ((calc-simplify-mode 'none))
+    (calc-push '(- (var a var-a) -2)))
+  (call-interactively 'mafcmd-commute)
+  (cl-assert (equal (calc-top 1 'full) '(+ (neg -2) (var a var-a))))
+  (call-interactively 'mafcmd-commute)
+  (cl-assert (equal (calc-top 1 'full) '(- (var a var-a) -2)))
+  (calc-pop (calc-stack-size))
+  (let ((calc-simplify-mode 'none))
+    (calc-push '(- (var a var-a) (neg (var b var-b)))))
+  (call-interactively 'mafcmd-commute)
+  (cl-assert (equal (calc-top 1 'full)
+                    '(+ (neg (neg (var b var-b))) (var a var-a))))
+  (call-interactively 'mafcmd-commute)
+  (cl-assert (equal (calc-top 1 'full)
+                    '(- (var a var-a) (neg (var b var-b)))))
   (calc-pop (calc-stack-size))
 
   ;; Function call with more than two args: first two swap, the rest
