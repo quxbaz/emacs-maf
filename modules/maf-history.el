@@ -208,13 +208,9 @@ from the \"1:\" that `math-format-stack-value' hardcodes."
                        t t s)
       s)))
 
-(defun maf-history--header (total index label)
-  "Return the header line for state INDEX of TOTAL, produced by LABEL."
-  (if (zerop total)
-      "maf-history: no states yet"
-    (format "maf-history %d/%d%s"
-            (- total index) total
-            (if label (format " — %s" label) ""))))
+(defun maf-history--counter (total index)
+  "Return the position counter line for state INDEX of TOTAL."
+  (format "%d/%d" (- total index) total))
 
 (defun maf-history--strip-label (state)
   "Return the display string for STATE's label in the operation strip.
@@ -304,11 +300,11 @@ which carries the band face so its `:extend' reaches the window edge."
 
 (defun maf-history--render ()
   "Render the state at `maf-history--index' into the current buffer.
-A key legend (see `maf-history--legend') sits at the top, then a
-one-line operation strip (see `maf-history--strip'), then the stack
-state. Point keeps its line and column when the buffer had content; a
-fresh buffer gets point on the top-of-stack entry, the likeliest RET
-target."
+A key legend (see `maf-history--legend') sits at the top, then the
+position counter above a one-line operation strip (see
+`maf-history--strip'), then the stack state. Point keeps its line and
+column when the buffer had content; a fresh buffer gets point on the
+top-of-stack entry, the likeliest RET target."
   (let* ((total (length maf-history--states))
          (index (max 0 (min maf-history--index (max 0 (1- total)))))
          (state (nth index maf-history--states))
@@ -324,12 +320,13 @@ target."
          (inhibit-read-only t))
     (setq maf-history--index index)
     (erase-buffer)
-    ;; The legend, then the operation strip: a row of nearby operations
-    ;; beneath the header, above the stack state. Neither carries the
+    ;; The legend, then the position counter directly above the
+    ;; operation strip it counts through. None of these carry the
     ;; `maf-history-value' property, so RET ignores them.
     (insert (maf-history--legend) "\n")
     (when (> total 0)
-      (insert (maf-history--strip total index) "\n\n"))
+      (insert (maf-history--counter total index) "\n"
+              (maf-history--strip total index) "\n\n"))
     (cond
      ((null state)
       (insert (propertize "(no states yet)" 'face 'shadow) "\n"))
@@ -345,10 +342,9 @@ target."
             (when (and prev-values (not (member val prev-values)))
               (put-text-property start (point) 'face 'maf-history-changed)))
           (setq level (1- level))))))
-    ;; The current op is highlighted in the strip, so the header keeps
-    ;; only the position counter.
-    (setq header-line-format
-          (maf-history--header total index nil))
+    ;; The counter line carries the position and the strip highlights
+    ;; the current op, so the header is just the title.
+    (setq header-line-format "maf-history")
     (if fresh
         (progn (goto-char (point-max)) (forward-line -1))
       (goto-char (point-min))

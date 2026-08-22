@@ -33,15 +33,15 @@
   (cl-assert (= (length maf-history--states) 2))
 
   ;; The buffer renders the newest state like the stack itself, the
-  ;; entry the step produced highlighted, header showing position and
-  ;; the producing command. A key legend heads the buffer, dial-style;
-  ;; the operation strip sits above the stack, both steps labeled `new'
-  ;; (each added an entry).
+  ;; entry the step produced highlighted, the header holding just the
+  ;; title. A key legend heads the buffer, dial-style; the position
+  ;; counter sits above the operation strip, above the stack, both
+  ;; steps labeled `new' (each added an entry).
   (with-current-buffer (maf-history--buffer)
     (let ((text (buffer-substring-no-properties (point-min) (point-max))))
       (cl-assert (string-match-p "\\` h/l/u/i step .* r restore .* D delete " text))
-      (cl-assert (string-suffix-p "new · new\n\n2:  6 x + 12\n1:  a + b\n" text)))
-    (cl-assert (string-prefix-p "maf-history 2/2" header-line-format))
+      (cl-assert (string-suffix-p "2/2\nnew · new\n\n2:  6 x + 12\n1:  a + b\n" text)))
+    (cl-assert (equal header-line-format "maf-history"))
     (progn (goto-char (point-min)) (search-forward "a + b") (backward-char 1))
     (cl-assert (eq (get-text-property (point) 'face) 'maf-history-changed))
     ;; The unchanged entry carries no highlight.
@@ -53,14 +53,13 @@
   ;; is an error.
   (with-current-buffer (maf-history--buffer)
     (call-interactively 'maf-history-previous)
-    (cl-assert (string-suffix-p "new · new\n\n1:  6 x + 12\n"
+    (cl-assert (string-suffix-p "1/2\nnew · new\n\n1:  6 x + 12\n"
                                 (buffer-substring-no-properties (point-min) (point-max))))
-    (cl-assert (string-prefix-p "maf-history 1/2" header-line-format))
     (progn (goto-char (point-min)) (search-forward "6 x + 12") (backward-char 1))
     (cl-assert (null (get-text-property (point) 'face)))
     (cl-assert (not (ignore-errors (call-interactively 'maf-history-previous) t)))
     (call-interactively 'maf-history-next)
-    (cl-assert (string-prefix-p "maf-history 2/2" header-line-format))
+    (cl-assert (string-match-p "^2/2\nnew" (buffer-substring-no-properties (point-min) (point-max))))
     (cl-assert (not (ignore-errors (call-interactively 'maf-history-next) t))))
 
   ;; h/l are bound to older/newer navigation too, matching u/i. Driving
@@ -69,9 +68,9 @@
     (cl-assert (eq (lookup-key maf-history-mode-map (kbd "h")) 'maf-history-previous))
     (cl-assert (eq (lookup-key maf-history-mode-map (kbd "l")) 'maf-history-next))
     (call-interactively (lookup-key maf-history-mode-map (kbd "h")))
-    (cl-assert (string-prefix-p "maf-history 1/2" header-line-format))
+    (cl-assert (string-match-p "^1/2\nnew" (buffer-substring-no-properties (point-min) (point-max))))
     (call-interactively (lookup-key maf-history-mode-map (kbd "l")))
-    (cl-assert (string-prefix-p "maf-history 2/2" header-line-format)))
+    (cl-assert (string-match-p "^2/2\nnew" (buffer-substring-no-properties (point-min) (point-max)))))
 
   ;; C-RET on an entry of an older state pushes it onto the live stack —
   ;; a copy — and the view stays on that state as the log grows under it.
@@ -89,10 +88,9 @@
   (cl-assert (not (eq (calc-top 1 'full)
                       (car (nth 0 (nth 2 maf-history--states))))))
   (with-current-buffer (maf-history--buffer)
-    (cl-assert (string-prefix-p "maf-history 1/3" header-line-format))
     ;; Strip: the two original steps (new) plus the history insert (hist),
     ;; newest last; the view stays on the oldest, single-entry state.
-    (cl-assert (string-suffix-p "new · new · hist\n\n1:  6 x + 12\n"
+    (cl-assert (string-suffix-p "1/3\nnew · new · hist\n\n1:  6 x + 12\n"
                                 (buffer-substring-no-properties (point-min) (point-max)))))
 
   ;; r replaces the whole stack with the state shown, jumps the view to
@@ -105,7 +103,7 @@
   (cl-assert (= (calc-stack-size) 1))
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "6 x + 12"))
   (with-current-buffer (maf-history--buffer)
-    (cl-assert (string-prefix-p "maf-history 4/4" header-line-format)))
+    (cl-assert (string-match-p "^4/4\n" (buffer-substring-no-properties (point-min) (point-max)))))
 
   ;; A single undo reverts the restore, and lands in the log as its own
   ;; step.
