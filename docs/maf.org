@@ -7,9 +7,11 @@
 
 * NOW
   - *maf-modules*
-    - [ ] rewrite detailed help text in simplier terms and use simple clarifying
+    - [X] rewrite detailed help text in simpler terms and use simple clarifying
       examples when possible or useful
   - [ ] find better binding for simplify (`a s`)
+  - [ ] when maf-preview is toggled, it should show the preview for the current
+    entry immediately
 
 * major features [8/9]
   - [X] bindings module
