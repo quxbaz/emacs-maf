@@ -372,6 +372,10 @@
      (2026-08-21). The displaced single-key expand moves up a case to
      `X`, whose inherited resident mafcmd-log-exp cedes it (rehomed
      on the family's `o e`); expand's table key `a x` stays too
+   - [X] `$` — maf-end-of-line-bounce (2026-08-21): to the end of the
+     line, and from the end a bounce to the entry's start, M-m's
+     landing. Shadows the $-seeded algebraic entry, which ' still
+     opens
    - [X] `M-o` — mafcmd-float-frac (2026-08-21): the toggle's single
      chord, meta of the family's letter, tappable in a hold the way
      native's l l is — its only vim home, the mirror skipping l l.

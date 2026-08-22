@@ -97,6 +97,8 @@
   (cl-assert (eq (key-binding (kbd "y")) 'mafcmd-evaluate))
   (cl-assert (eq (key-binding (kbd "o s")) 'mafcmd-complete-square))
   (cl-assert (eq (key-binding (kbd "o D")) 'mafcmd-factor-powers))
+  ;; The line-edge reflex: $ to the end, bouncing to the entry start.
+  (cl-assert (eq (key-binding (kbd "$")) 'maf-end-of-line-bounce))
 
   ;; Module keys ride their own targeting, not the derivation.
   (cl-assert (eq (key-binding (kbd "M-h")) 'maf-timeline))

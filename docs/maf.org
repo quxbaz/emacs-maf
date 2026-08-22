@@ -11,7 +11,7 @@
     - [X] currently, default color is always shown (purple)
       - the non-default value should appear in gold
   - vi-style profile
-    - [ ] bind $ to end of line, if already on end of line, move top beginning
+    - [X] bind $ to end of line, if already on end of line, move top beginning
       of line (first real character, not prefix area)
     - [ ] is there a solution to the vi _ issue?
   - [ ] rename maf-timeline to maf-history

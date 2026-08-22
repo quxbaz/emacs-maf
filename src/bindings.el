@@ -661,6 +661,10 @@
 ;; cheapest key; I y still reaches mafcmd-identify through the
 ;; command's own flag route.
 (maf-bindings-define '(vim) "y" #'mafcmd-evaluate)
+;; Vim's line-edge reflex: $ to the end of the line, and from the end
+;; a bounce to the entry's start, M-m's landing. Shadows the $-seeded
+;; algebraic entry, which ' still opens.
+(maf-bindings-define '(vim) "$" #'maf-end-of-line-bounce)
 
 ;; Everything declared; compile, and apply when the module is live.
 (maf-bindings--refresh)

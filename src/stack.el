@@ -1612,6 +1612,21 @@ indentation."
       (goto-char (match-end 0))
     (skip-chars-forward " ")))
 
+(defun maf-end-of-line-bounce ()
+  "Move point to the end of the line, or bounce to the entry's start.
+
+  2:  6 x| + 12   =>  2:  6 x + 12|
+  2:  6 x + 12|   =>  2:  |6 x + 12
+
+Already at the end, point crosses to the other extreme instead: the
+beginning of the entry, right after the line-number prefix, where
+`maf-beginning-of-entry' lands. One key thus alternates between the
+two ends of the line."
+  (interactive)
+  (if (eolp)
+      (maf-beginning-of-entry)
+    (end-of-line)))
+
 (defconst maf--noun-regexp
   (concat
    ;; A radix number, whose # would otherwise split it in two: 16#ff.
