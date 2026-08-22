@@ -399,14 +399,14 @@
      no l o), the reciprocal the capital O the commute vacates. The
      earlier L proposal is dead; L stays ln, calc's log-units drop to
      M-x in vim
-   - [ ] `k` — the harder twin. Either (a) the family moves to `K`,
-     which requires adjusting the keep-args carrier machinery first
-     (the free-keys note on K already contemplates exactly this), or
-     (b) the calc combinatorics siblings drop to M-x and only maf's
-     own rehome: k k evaluate, k s complete-square, k d
-     factor-powers. Evaluate is the heavy one and needs a first-class
-     home either way — K K if (a); otherwise propose `=` or a
-     C-c chord
+   - [ ] `k` — resolved in shape (2026-08-21): no prefix for the
+     family. The calc combinatorics siblings drop to M-x (name-only
+     in vim; native the escape hatch) and only maf's own three
+     rehome. Evaluate is done — `y`, the last weak single letter,
+     spent on the heaviest homeless command (I y still reaches
+     identify). Remaining: k s complete-square (`o q` via native
+     `l q` proposed, evicting calc-lu-quant) and k d factor-powers
+     (`o p` via native `l p` proposed, nothing beneath)
    - [X] `b` — approved steal (2026-08-20). The binary/financial prefix to `B`: B a / B o / B x
      bitwise, the b-table rows, calc's financial family beneath
      dropping to M-x. Displaces mafcmd-log (B), whose base-10 reading
@@ -534,8 +534,9 @@
     see profile:vim
   - [ ] vim relocation table for the h/j/k/l/w/b families. h/w/b
     approved 2026-08-20, l resolved onto o 2026-08-21 (see
-    profile:vim), j onto J 2026-08-21; what remains is k (the open
-    structural decision), plus implementing b→B
+    profile:vim), j onto J 2026-08-21, k piecemeal (evaluate on y;
+    complete-square and factor-powers pending); plus implementing
+    b→B
   - [ ] digit-entry customization surface: per-profile digit declarations
     for users, or a documented API?
   - [ ] custom profiles and module keys: with explicit module targets, a

@@ -645,6 +645,12 @@
                (plist-get (maf-bindings--profile 'native) :defaults))
   (when (string-prefix-p "j " key)
     (maf-bindings-define '(vim) (concat "J " (substring key 2)) command)))
+;; Numeric evaluation, homeless here since k became a motion, spends
+;; the last weak single letter: y, whose calc-copy-to-buffer beneath
+;; has no reflex use. The heaviest homeless command takes the
+;; cheapest key; I y still reaches mafcmd-identify through the
+;; command's own flag route.
+(maf-bindings-define '(vim) "y" #'mafcmd-evaluate)
 
 ;; Everything declared; compile, and apply when the module is live.
 (maf-bindings--refresh)

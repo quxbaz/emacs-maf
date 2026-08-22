@@ -91,6 +91,10 @@
   (cl-assert (eq (key-binding (kbd "u M")) 'mafcmd-vmean))
   (cl-assert (eq (key-binding (kbd "u c")) 'calc-convert-units))
 
+  ;; Numeric evaluation, homeless since k became a motion, on the
+  ;; last weak single letter.
+  (cl-assert (eq (key-binding (kbd "y")) 'mafcmd-evaluate))
+
   ;; Module keys ride their own targeting, not the derivation.
   (cl-assert (eq (key-binding (kbd "M-h")) 'maf-timeline))
 
@@ -109,4 +113,5 @@
   (cl-assert (eq (key-binding (kbd "j x")) 'maf-distribute))
   (cl-assert (eq (key-binding (kbd "J")) 'mafcmd-conj))
   (cl-assert (eq (key-binding (kbd "l j")) 'mafcmd-conj))
+  (cl-assert (eq (key-binding (kbd "y")) 'calc-copy-to-buffer))
   (cl-assert (keymapp (key-binding (kbd "j")))))
