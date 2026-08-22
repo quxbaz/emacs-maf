@@ -292,10 +292,6 @@
    - [X] `M-.` mafcmd-remove-equal
    - [X] `l x` swap-vars
    - [X] `j j` mafcmd-raise
-   - [X] `j x` maf-distribute (second key beside `j D`, on expand's
-     letter: `x` expands all, `j x` one step at point)
-   - [X] `j f` maf-merge (second key beside `j M`, on factor's letter:
-     the inverse of `j x` on the letters of calc's a x / a f pair)
    - [X] `C-c C-c` mafcmd-esimplify (2026-08-20: second key beside its
      table key `a s`, earned by frequency — since 2026-08-22 also on
      `k k`; the mode's slice of the C-c convention, with its
