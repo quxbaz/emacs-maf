@@ -5573,16 +5573,24 @@ See `maf--map-flag-entry'."
   (let ((map (make-sparse-keymap)))
     (define-key map "$" #'maf--map-flag-stack)
     (define-key map "M" #'maf--map-flag-entry)
+    ;; The parent gathers digits as a prefix argument, but maf's
+    ;; digits start a numeric entry: give them the fall-through every
+    ;; other key gets, so M 1 + types the 1 and adds it plainly (the
+    ;; entry is a command with no reading of the flag, which drops
+    ;; it). An explicit prefix argument stays reachable through C-u.
+    (dotimes (d 10)
+      (define-key map (char-to-string (+ ?0 d))
+                  #'calc-fancy-prefix-other-key))
     map)
   "Keymap live for the keypress after \\`M', over calc's fancy-prefix map.
 Its parent is `calc-fancy-prefix-map', attached in `mafcmd-map-flag'
-once calc-ext has defined it, so the two keys here are the only change:
-$ and M run the formula-mapping commands, digits still gather a
-prefix argument, and any other key falls to
-`calc-fancy-prefix-other-key', which re-dispatches it normally with the
-flag still set. Chaining a fancy prefix drops this map with the
-re-dispatch, so \\`M I' keeps the flag but not the two keys — chain as
-\\`I M $' instead.")
+once calc-ext has defined it, so its changes are few: $ and M run the
+formula-mapping commands, a digit starts a numeric entry as it does
+outside the flag (C-u still reads a prefix argument), and any other
+key falls to `calc-fancy-prefix-other-key', which re-dispatches it
+normally with the flag still set. Chaining a fancy prefix drops this
+map with the re-dispatch, so \\`M I' keeps the flag but not the two
+keys — chain as \\`I M $' instead.")
 
 (defun maf--map-flag-expire ()
   "Sweep `maf-map-flag' once a command that does not read it has run.

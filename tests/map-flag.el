@@ -188,4 +188,27 @@
          (cl-assert (and maf-map-flag calc-inverse-flag))
          (execute-kbd-macro (kbd "C-f"))
          (cl-assert (null maf-map-flag))
-         (cl-assert (null calc-inverse-flag))))
+         (cl-assert (null calc-inverse-flag)))
+
+  ;; A digit after M starts a numeric entry, not a prefix argument.
+  ;; The entry is an ordinary command with no reading of the flag, so
+  ;; the flag drops and the operator applies plainly: M 1 + is x + 1,
+  ;; never digit-argument's "invalid operation".
+  (maf-push "x")
+  (goto-char (point-max))
+  (progn (execute-kbd-macro (kbd "M 1 +"))
+         (cl-assert (null maf-map-flag))
+         (cl-assert (string= (math-format-value (calc-top 1 'full))
+                             "x + 1")))
+  (calc-pop (calc-stack-size))
+
+  ;; An explicit prefix argument still rides the flag: C-u reaches
+  ;; universal-argument, a carrier, so M C-u 3 l l fracs to three
+  ;; significant figures per element.
+  (maf-push "[3.14159, 2.71828]")
+  (goto-char (point-max))
+  (progn (execute-kbd-macro (kbd "M C-u 3 l l"))
+         (cl-assert (null maf-map-flag))
+         (cl-assert (string= (math-format-value (calc-top 1 'full))
+                             "[22:7, 19:7]")))
+  (calc-pop (calc-stack-size)))
