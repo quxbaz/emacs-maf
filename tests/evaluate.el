@@ -74,19 +74,19 @@
                       "x = 2.82842712474"))
   (calc-pop 1)
 
-  ;; k k runs it from the keyboard.
+  ;; k v runs it from the keyboard.
   (maf-push "pi/2")
   (progn (calc-cursor-stack-index 0)
-         (execute-kbd-macro (kbd "k k")) nil)
+         (execute-kbd-macro (kbd "k v")) nil)
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "1.5707963268"))
   (calc-pop 1)
 
   ;;; Identify — the Inverse route.
 
-  ;; I k k identifies a float as a closed form.
+  ;; I k v identifies a float as a closed form.
   (maf-push "1.41421356237")
   (progn (calc-cursor-stack-index 0)
-         (execute-kbd-macro (kbd "I k k")) nil)
+         (execute-kbd-macro (kbd "I k v")) nil)
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "sqrt(2)"))
   (calc-pop 1)
 
