@@ -328,13 +328,16 @@ that should not decide how the menu reads."
           (sort (copy-sequence maf-module-registry)
                 (lambda (a b)
                   ;; Group first, name within: dial sections are runs
-                  ;; of adjacent rows, so a group must sit together —
-                  ;; and the groups themselves read alphabetically.
+                  ;; of adjacent rows, so a group must sit together.
+                  ;; Prefs is pinned to the front — the modules that
+                  ;; shape maf itself lead the menu — and the rest of
+                  ;; the groups read alphabetically.
                   (let ((ga (or (nth 4 a) "Modules"))
                         (gb (or (nth 4 b) "Modules")))
-                    (if (string= ga gb)
-                        (string< (car a) (car b))
-                      (string< ga gb)))))))
+                    (cond ((string= ga gb) (string< (car a) (car b)))
+                          ((string= ga "Prefs") t)
+                          ((string= gb "Prefs") nil)
+                          (t (string< ga gb))))))))
 
 (defvar maf-module--controls nil
   "The module menu's controls line.
