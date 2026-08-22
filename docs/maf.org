@@ -12,6 +12,8 @@
   - [ ] find better binding for simplify (`a s`)
   - [ ] when maf-preview is toggled, it should show the preview for the current
     entry immediately
+  - [ ] `a l` should take a variable
+  - [ ] `M-r` to get all roots
 
 * major features [8/9]
   - [X] bindings module
