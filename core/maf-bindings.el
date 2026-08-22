@@ -495,6 +495,6 @@ one shared base, compiled from declarations. Switch live with
 `maf-bindings-set-profile'; personal keys go in the per-profile user
 maps (maf-native-user-map and kin) with plain define-key. Disabled,
 maf binds no keys but m c, the way back to this menu."
-                       nil "Session" #'maf-bindings--module-values))
+                       nil "Settings" #'maf-bindings--module-values))
 
 (provide 'maf-bindings)

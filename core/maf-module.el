@@ -43,7 +43,7 @@ puts KEYS beside the name heading the echoed help — the binding only
 exists while the mode is on, so the menu cannot look it up from the
 keymap for the modules one is reading about before enabling. GROUP
 is the menu section the module files under — \"Display\",
-\"Editing\", \"Memory\", \"Session\" — or nil for the fallback
+\"Editing\", \"Memory\", \"Settings\" — or nil for the fallback
 \"Modules\" section; a name, not a taxonomy: a new module joins the
 group whose company reads best.
 
