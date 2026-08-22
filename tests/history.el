@@ -72,6 +72,14 @@
     (call-interactively (lookup-key maf-history-mode-map (kbd "l")))
     (cl-assert (string-match-p "^2/2\nnew" (buffer-substring-no-properties (point-min) (point-max)))))
 
+  ;; G reaches the newest state alongside >, and C-M-k clears the log.
+  (with-current-buffer (maf-history--buffer)
+    (cl-assert (eq (lookup-key maf-history-mode-map (kbd "G")) 'maf-history-newest))
+    (cl-assert (eq (lookup-key maf-history-mode-map (kbd "C-M-k")) 'maf-history-clear))
+    (call-interactively 'maf-history-previous)
+    (call-interactively (lookup-key maf-history-mode-map (kbd "G")))
+    (cl-assert (zerop maf-history--index)))
+
   ;; C-RET on an entry of an older state pushes it onto the live stack —
   ;; a copy — and the view stays on that state as the log grows under it.
   ;; (RET is the same push followed by quit-window, which would quit the

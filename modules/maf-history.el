@@ -378,6 +378,8 @@ its index shifted under it."
 (define-key maf-history-mode-map (kbd "M-n") #'maf-history-next)
 (define-key maf-history-mode-map (kbd "<") #'maf-history-oldest)
 (define-key maf-history-mode-map (kbd ">") #'maf-history-newest)
+;; G reaches the newest state too, the vim end-of-buffer key.
+(define-key maf-history-mode-map (kbd "G") #'maf-history-newest)
 ;; Line motion between entries, for picking a RET target.
 (define-key maf-history-mode-map (kbd "n") #'next-line)
 (define-key maf-history-mode-map (kbd "p") #'previous-line)
@@ -389,6 +391,9 @@ its index shifted under it."
 (define-key maf-history-mode-map (kbd "r") #'maf-history-restore)
 ;; Capital, so a fingerslip on the motion keys cannot reach a delete.
 (define-key maf-history-mode-map (kbd "D") #'maf-history-delete)
+;; A deliberate chord for wiping the whole log, well out of fingerslip
+;; range of the single-key commands.
+(define-key maf-history-mode-map (kbd "C-M-k") #'maf-history-clear)
 
 (define-derived-mode maf-history-mode special-mode "maf-history"
   "Major mode for browsing calc stack history.
@@ -400,8 +405,8 @@ to the ends. \\[maf-history-insert] pushes the entry at point onto
 the live stack and quits; \\[maf-history-insert-stay] pushes and
 stays, ready to insert more. \\[maf-history-restore] replaces the
 whole stack with the state shown and quits. \\[maf-history-delete]
-deletes the state shown from the log. \\[quit-window] buries the
-buffer."
+deletes the state shown from the log; \\[maf-history-clear] clears
+the whole log. \\[quit-window] buries the buffer."
   (setq truncate-lines t)
   (setq-local revert-buffer-function
               (lambda (&rest _) (maf-history--render))))
@@ -550,9 +555,9 @@ recorded. Nothing else empties the log — `maf-reset' wipes the session
 but deliberately leaves the history standing — so this is the one way
 to discard it.
 
-Deliberately unbound in the browser: wiping the whole log a fingerslip
-away from \\`r' would be far worse than \\`D''s one state at a time.
-Reach it as \\[maf-history-clear]."
+In the browser this is on \\`C-M-k' — a deliberate chord, so wiping
+the whole log stays well out of fingerslip range of \\`D''s one state
+at a time."
   (interactive)
   (let ((n (length maf-history--states)))
     (setq maf-history--states nil
@@ -581,7 +586,8 @@ Reach it as \\[maf-history-clear]."
 Each command that changes the stack saves a snapshot. Press M-h or
 t d to open *maf-history*. There, u and i move through snapshots, RET
 pushes the entry at point onto the current stack, r restores the whole
-snapshot, and D deletes it from the history.
+snapshot, D deletes it from the history, and C-M-k clears the whole
+log.
 
 For example, after several calculations you can return to the stack as
 it looked before the last three commands, or copy just one old entry.
