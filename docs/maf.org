@@ -7,13 +7,13 @@
 
 * NOW
   - *maf-modules*
-    - [X] enter should quit
-    - [X] currently, default color is always shown (purple)
-      - the non-default value should appear in gold
   - vi-style profile
     - [X] bind $ to end of line, if already on end of line, move top beginning
       of line (first real character, not prefix area)
     - [ ] is there a solution to the vi _ issue?
+      - the issue is that _ is a core binding in vi
+      - but it's also a core binding in calc
+      - so we're at odds
   - [ ] rename maf-timeline to maf-history
     - fits better with the M-h binding
   - [ ] find better binding for simplify (`a s`)
