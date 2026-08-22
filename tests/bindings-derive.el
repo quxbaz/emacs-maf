@@ -82,8 +82,10 @@
   ;; conjugate it displaces from J rides the custom-letter family on
   ;; its initial: o j. The u prefix is untouched.
   (cl-assert (eq (key-binding (kbd "J i")) 'mafcmd-isolate))
-  (cl-assert (eq (key-binding (kbd "J x")) 'maf-distribute))
-  (cl-assert (eq (key-binding (kbd "J f")) 'maf-merge))
+  (cl-assert (null (key-binding (kbd "J x"))))
+  (cl-assert (null (key-binding (kbd "J f"))))
+  (cl-assert (eq (key-binding (kbd "J D")) 'maf-distribute))
+  (cl-assert (eq (key-binding (kbd "J M")) 'maf-merge))
   (cl-assert (eq (key-binding (kbd "J e")) 'maf-jump-equals))
   (cl-assert (eq (key-binding (kbd "J j")) 'mafcmd-raise))
   (cl-assert (eq (key-binding (kbd "J U")) 'mafcmd-unpack))
@@ -115,7 +117,8 @@
   (cl-assert (eq (key-binding (kbd "M-o")) 'mafcmd-mod-360))
   (cl-assert (null (key-binding (kbd "o l"))))
   (cl-assert (eq (key-binding (kbd "l l")) 'mafcmd-float-frac))
-  (cl-assert (eq (key-binding (kbd "j x")) 'maf-distribute))
+  (cl-assert (null (key-binding (kbd "j x"))))
+  (cl-assert (eq (key-binding (kbd "j D")) 'maf-distribute))
   (cl-assert (eq (key-binding (kbd "J")) 'mafcmd-conj))
   (cl-assert (eq (key-binding (kbd "l j")) 'mafcmd-conj))
   (cl-assert (eq (key-binding (kbd "y")) 'calc-copy-to-buffer))
