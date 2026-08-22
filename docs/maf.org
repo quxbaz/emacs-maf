@@ -16,40 +16,12 @@
   - [ ] `M-r` to get all roots
 
 * review
-  x^2 - 2 x - 8 = 27
-  `j e` doesn't work properly here at the 27
-
-  () entry in edit mode should resolve to nothing
-
-  keep trail bindings (`t d`, etc)
-  *maf-history* doesn't replace trail, it offers an alternative, but the
-  existing trail should still be available
-
-  edit mode, rebind `:` -> `'`
-
-  *maf-history* bind C-M-k to delete all history
-  title should be maf-history
-  and the counter x/y should go above the row of actions
-  `G` should also go to end (keep `>` binding also)
-  start at the end on maf-history command`
-
-  remap `M :` to `M M`
-
-  `M <command>` doesn't process digit input correctly
-
-  remap simplify `a s` -> `k k`
-  (`c` is available also...)
-  remap previous `k k` -> `k v`
-
-  unbind `j x` and `j f`. we'll use the default values `j D` and `j M`
-
-  simplify should simplify these obvious types of expressions. why doesn't it?
-  3^log((x + 2) (x - 4), 3) = 27
-
-  editplus: 24x|
-  wrapping commands (sin, cos, tan, squaring, sqrt, etc) here actually should target just the `x`
-  we reverted this at some point, but i was wrong
-  `x` is the smallest expression preceeding point, so it's consistent with what we actually want and expect
+  - [ ] `M <command>` doesn't process digit input correctly
+  - [ ] editplus
+    24x|
+    wrapping commands (sin, cos, tan, squaring, sqrt, etc) here actually should target just the `x`
+    we reverted this at some point, but i was wrong
+    `x` is the smallest expression preceeding point, so it's consistent with what we actually want and expect
 
 * major features [8/9]
   - [X] bindings module
