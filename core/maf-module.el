@@ -176,6 +176,16 @@ skipped until its file loads and the next apply enables it."
   (let ((mode (car (alist-get name maf-module-registry))))
     (and (boundp mode) (symbol-value mode) t)))
 
+(defun maf-module--default (name)
+  "Module NAME's shipped state: t when `maf-modules' ships it enabled.
+Read from the option's standard value, not its current one — the
+current value is exactly what the menu is editing. This is each
+row's :default, so the live value wears `dial-value' on its shipped
+state and `dial-changed' once toggled away, and \\<dial-mode-map>\\[dial-reset] puts the
+shipped state back."
+  (and (memq name (eval (car (get 'maf-modules 'standard-value)) t))
+       t))
+
 (defface maf-module-keys
   ;; Quieter than the name beside it, but a step lighter than `shadow',
   ;; whose gray sinks into the echo area's ground.
@@ -292,10 +302,19 @@ order in maf.el that should not decide how the menu reads."
                                       (maf-module--details name)))
                      ;; A module that is more than a toggle brings its
                      ;; own values — rebuilt each time, so a value set
-                     ;; that grows (binding profiles) stays current.
-                     (or (and values-fn (funcall values-fn))
-                         `(:values ((t   "on"  (,mode 1))
-                                    (nil "off" (,mode -1)))))))))
+                     ;; that grows (binding profiles) stays current —
+                     ;; and may state its own :default (the profile
+                     ;; picker's is native); a plain toggle's default
+                     ;; is its shipped state, so the row can wear gold
+                     ;; once toggled away from it.
+                     (let ((values (or (and values-fn (funcall values-fn))
+                                       `(:values ((t   "on"  (,mode 1))
+                                                  (nil "off" (,mode -1)))))))
+                       (if (plist-member values :default)
+                           values
+                         (append values
+                                 (list :default
+                                       (maf-module--default name)))))))))
           (sort (copy-sequence maf-module-registry)
                 (lambda (a b) (string< (car a) (car b))))))
 

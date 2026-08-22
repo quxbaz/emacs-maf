@@ -8,7 +8,7 @@
 * NOW
   - *maf-modules*
     - [X] enter should quit
-    - [ ] currently, default color is always shown (purple)
+    - [X] currently, default color is always shown (purple)
       - the non-default value should appear in gold
   - vi-style profile
     - [ ] bind $ to end of line, if already on end of line, move top beginning
