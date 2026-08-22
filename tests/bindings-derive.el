@@ -96,6 +96,7 @@
   ;; its own letter.
   (cl-assert (eq (key-binding (kbd "y")) 'mafcmd-evaluate))
   (cl-assert (eq (key-binding (kbd "o s")) 'mafcmd-complete-square))
+  (cl-assert (eq (key-binding (kbd "o D")) 'mafcmd-factor-powers))
 
   ;; Module keys ride their own targeting, not the derivation.
   (cl-assert (eq (key-binding (kbd "M-h")) 'maf-timeline))

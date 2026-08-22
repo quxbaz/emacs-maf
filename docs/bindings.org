@@ -274,6 +274,10 @@
      beside its table key J; the vim mirror carries it as `o j`, the
      command's home there since vim's J is the relocated
      selection/structure family)
+   - [X] `l D` mafcmd-factor-powers (2026-08-21: a family key on D,
+     for the difference of squares, beside its k d; the vim mirror
+     carries it as `o D`, the command's home there since vim's k is
+     a motion)
    - [X] `l t` mafcmd-poly-roots (2026-08-20: moved off `M-r` onto the
      key collect-fractions vacated; M-r falls through to the global
      map)
@@ -408,9 +412,9 @@
      in vim; native the escape hatch) and only maf's own three
      rehome. Evaluate is done — `y`, the last weak single letter,
      spent on the heaviest homeless command (I y still reaches
-     identify), and so is complete-square — `o s` via native `l s`,
-     evicting calc-spn. Remaining: k d factor-powers (`o p` via
-     native `l p` proposed, nothing beneath)
+     identify), complete-square — `o s` via native `l s`, evicting
+     calc-spn — and factor-powers, `o D` via native `l D` on the
+     difference of squares' letter. The k relocation is complete
    - [X] `b` — approved steal (2026-08-20). The binary/financial prefix to `B`: B a / B o / B x
      bitwise, the b-table rows, calc's financial family beneath
      dropping to M-x. Displaces mafcmd-log (B), whose base-10 reading
@@ -538,9 +542,9 @@
     see profile:vim
   - [ ] vim relocation table for the h/j/k/l/w/b families. h/w/b
     approved 2026-08-20, l resolved onto o 2026-08-21 (see
-    profile:vim), j onto J 2026-08-21, k piecemeal (evaluate on y,
-    complete-square on o s; factor-powers pending); plus
-    implementing b→B
+    profile:vim), j onto J 2026-08-21, k piecemeal and complete
+    (evaluate on y, complete-square on o s, factor-powers on o D);
+    what remains is implementing b→B
   - [ ] digit-entry customization surface: per-profile digit declarations
     for users, or a documented API?
   - [ ] custom profiles and module keys: with explicit module targets, a

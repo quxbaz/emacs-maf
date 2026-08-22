@@ -99,6 +99,11 @@
 ;; stays in native. A custom-prefix claim under the k/l policy:
 ;; calc-spn cedes the key.
 (maf-bindings-define '(native) "l s" #'mafcmd-complete-square)
+;; Factor by power identities on D, for the difference of squares —
+;; which the vim mirror carries as o D, the command's home there
+;; since vim's k is a motion; k d stays in native. l D is unbound in
+;; calc's log-units prefix.
+(maf-bindings-define '(native) "l D" #'mafcmd-factor-powers)
 ;; Reference angle. M-l is unbound in calc itself (it shadows the global
 ;; downcase-word, which has no place in the stack buffer).
 (maf-bindings-define '(native) "M-l" #'mafcmd-ref-angle)
