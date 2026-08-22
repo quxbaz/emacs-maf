@@ -21,9 +21,9 @@
     (setq maf-history--index 0)
     (maf-history--render)
     (call-interactively 'maf-history-previous)
-    (cl-assert (string-prefix-p "maf-history 2/3" header-line-format))
+    (cl-assert (string-match-p "^2/3\n" (buffer-substring-no-properties (point-min) (point-max))))
     (call-interactively 'maf-history-delete)
-    (cl-assert (string-prefix-p "maf-history 1/2" header-line-format)))
+    (cl-assert (string-match-p "^1/2\n" (buffer-substring-no-properties (point-min) (point-max)))))
   (cl-assert (= (calc-stack-size) 3))
   (cl-assert (equal (mapcar (lambda (s) (math-format-value (car (nth 0 s))))
                             maf-history--states)
@@ -34,7 +34,7 @@
   (with-current-buffer (maf-history--buffer)
     (call-interactively 'maf-history-newest)
     (call-interactively 'maf-history-delete)
-    (cl-assert (string-prefix-p "maf-history 1/1" header-line-format)))
+    (cl-assert (string-match-p "^1/1\n" (buffer-substring-no-properties (point-min) (point-max)))))
   (maf-history--capture)
   (cl-assert (= (length maf-history--states) 1))
 
@@ -43,7 +43,13 @@
   (with-current-buffer (maf-history--buffer)
     (call-interactively 'maf-history-delete)
     (cl-assert (null maf-history--states))
-    (cl-assert (equal header-line-format "maf-history: no states yet"))
+    ;; No states: no counter line, the header just the title, the body
+    ;; saying so.
+    (cl-assert (equal header-line-format "maf-history"))
+    (cl-assert (string-match-p "\\` h/l/u/i step"
+                               (buffer-substring-no-properties (point-min) (point-max))))
+    (cl-assert (string-match-p "(no states yet)"
+                               (buffer-substring-no-properties (point-min) (point-max))))
     (cl-assert (not (ignore-errors (call-interactively 'maf-history-delete) t))))
 
   ;; Put the stack and the session's log back, re-rendering over it.

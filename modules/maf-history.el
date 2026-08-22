@@ -208,13 +208,9 @@ from the \"1:\" that `math-format-stack-value' hardcodes."
                        t t s)
       s)))
 
-(defun maf-history--header (total index label)
-  "Return the header line for state INDEX of TOTAL, produced by LABEL."
-  (if (zerop total)
-      "maf-history: no states yet"
-    (format "maf-history %d/%d%s"
-            (- total index) total
-            (if label (format " — %s" label) ""))))
+(defun maf-history--counter (total index)
+  "Return the position counter line for state INDEX of TOTAL."
+  (format "%d/%d" (- total index) total))
 
 (defun maf-history--strip-label (state)
   "Return the display string for STATE's label in the operation strip.
@@ -304,11 +300,11 @@ which carries the band face so its `:extend' reaches the window edge."
 
 (defun maf-history--render ()
   "Render the state at `maf-history--index' into the current buffer.
-A key legend (see `maf-history--legend') sits at the top, then a
-one-line operation strip (see `maf-history--strip'), then the stack
-state. Point keeps its line and column when the buffer had content; a
-fresh buffer gets point on the top-of-stack entry, the likeliest RET
-target."
+A key legend (see `maf-history--legend') sits at the top, then the
+position counter above a one-line operation strip (see
+`maf-history--strip'), then the stack state. Point keeps its line and
+column when the buffer had content; a fresh buffer gets point on the
+top-of-stack entry, the likeliest RET target."
   (let* ((total (length maf-history--states))
          (index (max 0 (min maf-history--index (max 0 (1- total)))))
          (state (nth index maf-history--states))
@@ -324,12 +320,13 @@ target."
          (inhibit-read-only t))
     (setq maf-history--index index)
     (erase-buffer)
-    ;; The legend, then the operation strip: a row of nearby operations
-    ;; beneath the header, above the stack state. Neither carries the
+    ;; The legend, then the position counter directly above the
+    ;; operation strip it counts through. None of these carry the
     ;; `maf-history-value' property, so RET ignores them.
     (insert (maf-history--legend) "\n")
     (when (> total 0)
-      (insert (maf-history--strip total index) "\n\n"))
+      (insert (maf-history--counter total index) "\n"
+              (maf-history--strip total index) "\n\n"))
     (cond
      ((null state)
       (insert (propertize "(no states yet)" 'face 'shadow) "\n"))
@@ -345,10 +342,9 @@ target."
             (when (and prev-values (not (member val prev-values)))
               (put-text-property start (point) 'face 'maf-history-changed)))
           (setq level (1- level))))))
-    ;; The current op is highlighted in the strip, so the header keeps
-    ;; only the position counter.
-    (setq header-line-format
-          (maf-history--header total index nil))
+    ;; The counter line carries the position and the strip highlights
+    ;; the current op, so the header is just the title.
+    (setq header-line-format "maf-history")
     (if fresh
         (progn (goto-char (point-max)) (forward-line -1))
       (goto-char (point-min))
@@ -382,6 +378,8 @@ its index shifted under it."
 (define-key maf-history-mode-map (kbd "M-n") #'maf-history-next)
 (define-key maf-history-mode-map (kbd "<") #'maf-history-oldest)
 (define-key maf-history-mode-map (kbd ">") #'maf-history-newest)
+;; G reaches the newest state too, the vim end-of-buffer key.
+(define-key maf-history-mode-map (kbd "G") #'maf-history-newest)
 ;; Line motion between entries, for picking a RET target.
 (define-key maf-history-mode-map (kbd "n") #'next-line)
 (define-key maf-history-mode-map (kbd "p") #'previous-line)
@@ -393,6 +391,9 @@ its index shifted under it."
 (define-key maf-history-mode-map (kbd "r") #'maf-history-restore)
 ;; Capital, so a fingerslip on the motion keys cannot reach a delete.
 (define-key maf-history-mode-map (kbd "D") #'maf-history-delete)
+;; A deliberate chord for wiping the whole log, well out of fingerslip
+;; range of the single-key commands.
+(define-key maf-history-mode-map (kbd "C-M-k") #'maf-history-clear)
 
 (define-derived-mode maf-history-mode special-mode "maf-history"
   "Major mode for browsing calc stack history.
@@ -404,8 +405,8 @@ to the ends. \\[maf-history-insert] pushes the entry at point onto
 the live stack and quits; \\[maf-history-insert-stay] pushes and
 stays, ready to insert more. \\[maf-history-restore] replaces the
 whole stack with the state shown and quits. \\[maf-history-delete]
-deletes the state shown from the log. \\[quit-window] buries the
-buffer."
+deletes the state shown from the log; \\[maf-history-clear] clears
+the whole log. \\[quit-window] buries the buffer."
   (setq truncate-lines t)
   (setq-local revert-buffer-function
               (lambda (&rest _) (maf-history--render))))
@@ -421,10 +422,15 @@ buffer."
 ;;;###autoload
 (defun maf-history ()
   "Show the stack history buffer in a window below calc, and select it.
-Already visible, the window is selected as it stands. Without a calc
-window the buffer opens below the selected window."
+The view always starts on the newest state, wherever a previous browse
+left it. Already visible, the window is selected as it stands. Without
+a calc window the buffer opens below the selected window."
   (interactive)
   (let ((buf (maf-history--buffer)))
+    (with-current-buffer buf
+      (unless (zerop maf-history--index)
+        (setq maf-history--index 0)
+        (maf-history--render)))
     (select-window
      (or (get-buffer-window buf)
          (let* ((calc-buf (maf--find-calc-buffer))
@@ -554,9 +560,9 @@ recorded. Nothing else empties the log — `maf-reset' wipes the session
 but deliberately leaves the history standing — so this is the one way
 to discard it.
 
-Deliberately unbound in the browser: wiping the whole log a fingerslip
-away from \\`r' would be far worse than \\`D''s one state at a time.
-Reach it as \\[maf-history-clear]."
+In the browser this is on \\`C-M-k' — a deliberate chord, so wiping
+the whole log stays well out of fingerslip range of \\`D''s one state
+at a time."
   (interactive)
   (let ((n (length maf-history--states)))
     (setq maf-history--states nil
@@ -585,7 +591,8 @@ Reach it as \\[maf-history-clear]."
 Each command that changes the stack saves a snapshot. Press M-h to
 open *maf-history*. There, u and i move through snapshots, RET
 pushes the entry at point onto the current stack, r restores the whole
-snapshot, and D deletes it from the history.
+snapshot, D deletes it from the history, and C-M-k clears the whole
+log.
 
 For example, after several calculations you can return to the stack as
 it looked before the last three commands, or copy just one old entry.
