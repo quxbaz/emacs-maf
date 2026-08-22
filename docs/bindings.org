@@ -148,8 +148,8 @@
     binding is still the one maf installed
   - key displays (module help, dial legends) derive keys from the active
     profile — no static key strings
-  - the *maf-modules* row for maf-bindings is a profile picker, not a
-    toggle: `off | calc | native | vim | ...` with the user's custom
+  - the *maf-modules* row for maf-bindings files under the menu's
+    Prefs group and is a profile picker, not a toggle: `off | calc | native | vim | ...` with the user's custom
     profiles listed too (they appear when the menu opens). off is the
     module off — stock calc, no maf keys but the escape map's `m c`,
     the way back to this menu
@@ -411,7 +411,7 @@
      no l o), the reciprocal the capital O the commute vacates. The
      earlier L proposal is dead; L stays ln, calc's log-units drop to
      M-x in vim
-   - [ ] `k` — resolved in shape (2026-08-21): no prefix for the
+   - [X] `k` — resolved in shape (2026-08-21): no prefix for the
      family. The calc combinatorics siblings drop to M-x (name-only
      in vim; native the escape hatch) and only maf's own three
      rehome. Evaluate is done — `y`, the last weak single letter,
@@ -419,11 +419,12 @@
      identify), complete-square — `o s` via native `l s`, evicting
      calc-spn — and factor-powers, `o D` via native `l D` on the
      difference of squares' letter. The k relocation is complete
-   - [X] `b` — approved steal (2026-08-20). The binary/financial prefix to `B`: B a / B o / B x
-     bitwise, the b-table rows, calc's financial family beneath
-     dropping to M-x. Displaces mafcmd-log (B), whose base-10 reading
-     stays on H L / I H E; the arbitrary-base log keeps only its name
-     — the one real loss in the table, flagged rather than hidden
+   - [X] `b` — approved steal (2026-08-20), and the family dropped
+     whole (2026-08-21): the binary/financial prefix goes to M-x, no
+     relocation — the prefix saw essentially no use. An earlier plan
+     to rehome it on `B` is dead; B keeps its inherited mafcmd-log.
+     Native remains the escape hatch, as for h and the selection
+     machinery
    - [X] `h` — approved steal (2026-08-20). Calc's help family drops: the global C-h family covers
      describe-*, the m c menu is the discovery surface, and h s
      summary / h t tutorial / h i info stay M-x
@@ -432,25 +433,27 @@
      nowhere either — it is the free-keys list's cheapest key, which
      vim spends on a motion instead)
 ** phases
-   - [ ] 1. settle this section: motions decided and implemented
-     (2026-08-20, plain Emacs motions — no new commands needed); the
-     relocation table remains, j/k/l the open families and the k
-     decision the only structural one
+   - [X] 1. settle this section (2026-08-21): motions decided and
+     implemented (2026-08-20, plain Emacs motions — no new commands
+     needed); the relocation table resolved — j onto J, l onto o, k
+     dissolved piecemeal, b dropped whole
    - [X] 2. declare the motions: the '(vim) delta in src/bindings.el
    - [X] 2b. derivation (2026-08-21): vim registered :derive 'native,
      so the whole native layout flows through and the motions prune
      what they overlap — replacing the interim per-declaration
      vim-skipping (the k/b table filter, the j U retarget).
      tests/bindings-derive.el pins the merge rules and the profile
-   - [ ] 3. relocate the displaced families per the table above —
-     they are pruned in vim today, reachable by name only
+   - [X] 3. relocate the displaced families per the table above:
+     j (the J mirror), l (the o mirror, M-o, o o / O), k (y, plus
+     o s / o D / o j through the l mirror); h, w, and b drop with no
+     relocation. Complete 2026-08-21
    - [ ] 4. snapshot the result: a vim-profile row sweep beside the
      native one in tests/bindings-snapshot.el, switching profiles in
      the step test
-** stolen-key inventory (what each key holds in the native profile today)
-   NOTE: do not bind any of this yet — in the skeleton, vim carries
-   today's bindings like every profile; the steals and relocations wait
-   for the proposals above to settle.
+** stolen-key inventory (what each key held in the native profile)
+   Historical reference for the steals, generated while vim still
+   carried today's bindings. The motions are live now and displace
+   these families by derivation.
    - `h` — calc-help-prefix (the whole h help family)
    - `j` — the selection prefix, close to maf's core:
      - maf's own: mafcmd-raise (j j), mafcmd-isolate (j i),
@@ -544,11 +547,11 @@
   - [X] vim motion semantics (resolved 2026-08-20): h/l by char, j/k
     by line, w/b by noun — each key doing what its Emacs cousin does;
     see profile:vim
-  - [ ] vim relocation table for the h/j/k/l/w/b families. h/w/b
-    approved 2026-08-20, l resolved onto o 2026-08-21 (see
-    profile:vim), j onto J 2026-08-21, k piecemeal and complete
-    (evaluate on y, complete-square on o s, factor-powers on o D);
-    what remains is implementing b→B
+  - [X] vim relocation table for the h/j/k/l/w/b families
+    (resolved 2026-08-21): h/w/b approved 2026-08-20 and dropped
+    whole — b's planned B rehome cancelled for disuse — l onto o,
+    j onto J, k piecemeal (evaluate on y, complete-square on o s,
+    factor-powers on o D). See profile:vim
   - [ ] digit-entry customization surface: per-profile digit declarations
     for users, or a documented API?
   - [ ] custom profiles and module keys: with explicit module targets, a
@@ -596,4 +599,5 @@
     displacement delta (the profile:native inventory; the shadowing and
     additions groups now target native+vim only)
   - [ ] user-defined profiles (displays land earlier, with the switcher)
-  - [ ] vim: motion semantics, relocation table, then the profile
+  - [ ] vim: the layout is settled and live; the phase-4 snapshot
+    sweep is what remains
