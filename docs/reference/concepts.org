@@ -398,7 +398,7 @@ the direction, and =I= already means the inverse variant) — and a
 vector subject runs the body
 once per element (=maf--defcmd-map-vec=; nested vectors recurse, the
 arg of a binary command shared across the runs). Any other subject
-refuses. Where =M := maps a formula you type and =M $= one from the
+refuses. Where =M M= maps a formula you type and =M $= one from the
 stack (=maf--map-flag-keys=, live for the keypress after =M=), =M=
 maps a command, with no operator table behind it the way
 calc's =V M= has.
