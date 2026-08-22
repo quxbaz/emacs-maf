@@ -551,8 +551,8 @@
 ;; toggles the modules cannot be a module itself.
 (define-key maf-bindings-escape-map (kbd "m c") #'maf-list-modules)
 
-;; The `t d' stack-timeline binding is installed by the maf-timeline
-;; module when it is enabled (see modules/maf-timeline.el), and the
+;; The `t d' stack-history binding is installed by the maf-history
+;; module when it is enabled (see modules/maf-history.el), and the
 ;; `s o' formula menu by maf-formulas the same way — not here.
 
 ;; A terminal cannot say "backspace with a modifier" as a character:

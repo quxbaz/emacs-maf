@@ -52,7 +52,7 @@
 ;; earlier as a dependency of the hl-verify debug helper; the require
 ;; here is idempotent and marks it as a module.)
 (require 'maf-hl)
-(require 'maf-timeline)
+(require 'maf-history)
 (require 'maf-persist)
 (require 'maf-edit)
 (require 'maf-editplus)
@@ -96,7 +96,7 @@ Otherwise delegates to calc interactively."
   "Toggle MAF mode.
 When enabled, provides contextual commands for manipulating Calc
 expressions on the stack and home line. Sub-formula highlighting, the
-stack timeline, and other major features are independent modules toggled
+stack history, and other major features are independent modules toggled
 through `maf-modules', not by this mode."
   :lighter " maf"
   :keymap maf-mode-map

@@ -97,7 +97,7 @@ any variable by name, whatever is excluded here."
 
 ;;; Modules (maf-module.el)
 
-(defcustom maf-modules '(maf-bindings maf-timeline maf-hl maf-edit
+(defcustom maf-modules '(maf-bindings maf-history maf-hl maf-edit
                          maf-editplus maf-editvars maf-recall maf-preview
                          maf-formulas maf-selplus maf-poly-order maf-e-power
                          maf-options)

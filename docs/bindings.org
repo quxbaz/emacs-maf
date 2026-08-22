@@ -65,7 +65,7 @@
       (setq maf-bindings-profile 'vim)   ; before maf loads;
       ;; after load: M-x maf-bindings-set-profile, or customize
       (define-key maf-vim-user-map (kbd "g") #'maf-go-home)
-      (define-key maf-common-user-map (kbd "<f6>") #'maf-timeline)
+      (define-key maf-common-user-map (kbd "<f6>") #'maf-history)
     #+end_src
   - principle: the user surface is plain elisp — real keymaps,
     `define-key`, `kbd` — for everything a keymap can express: adding,
@@ -140,7 +140,7 @@
     maps rebuild from the registry — a declaration deleted from source
     is gone after reload. User maps are never rebuilt
   - profiles govern the stack map and the digit-map overrides only;
-    maf-edit, timeline, formulas, options keep their own fixed maps
+    maf-edit, history, formulas, options keep their own fixed maps
   - digit-map changes are tracked installs: each declaration names the
     stock calc binding it expects to replace; install only when the
     current binding equals it (a user's direct customization is left
@@ -185,7 +185,7 @@
   - the escape map beneath base: `m c` maf-list-modules — in every
     profile and with the module off, not a native addition
   - module keys: `SPC` \` `C-o` `(` (edit), `?` (options), `t d` `M-h`
-    (timeline), `t l` `t u` (persist), `M-p` `M-n` (recall), `s o`
+    (history), `t l` `t u` (persist), `M-p` `M-n` (recall), `s o`
     (formulas)
 ** contextual siblings on their own calc key (outside the table)
    - `A` mafcmd-abs ← calc-abs, `f h` mafcmd-hypot ← calc-hypot,
@@ -340,7 +340,7 @@
      down covers the gesture (see src/bindings.el)
    - maf-restore-stack — t l runs the choose-a-session variant
      (maf-restore-stack-from)
-   - maf-timeline-clear
+   - maf-history-clear
 
 * profile:vim
   Vim's navigation keys over maf's commands — not vim's command model.
@@ -523,7 +523,7 @@
 ** modified keys
    - free meta: `M-a` `M-d` `M-e` `M-g` `M-j` `M-q` `M-t` `M-z`,
      and `M-r` since poly-roots moved to l t (2026-08-20; `M-h` went
-     to the timeline the same day)
+     to the history the same day)
    - cautious meta: `M-v` (scrolling's other half), `M-y` (yank-pop
      pairs with maf-yank's C-y); never `M-x`
    - free-ish control: `C-z` (suspend, commonly rebound anyway); `C-t`

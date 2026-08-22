@@ -101,7 +101,7 @@
   (cl-assert (eq (key-binding (kbd "$")) 'maf-end-of-line-bounce))
 
   ;; Module keys ride their own targeting, not the derivation.
-  (cl-assert (eq (key-binding (kbd "M-h")) 'maf-timeline))
+  (cl-assert (eq (key-binding (kbd "M-h")) 'maf-history))
 
   ;; The other profiles are untouched by vim's derivation.
   (maf-bindings-set-profile 'calc)

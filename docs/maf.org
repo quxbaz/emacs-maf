@@ -12,11 +12,11 @@
 * major features [8/9]
   - [X] bindings module
   - [X] Persistent sub-formula highlighting
-  - [X] Timeline module
+  - [X] History module (né timeline)
   - [X] Omni-options menu buffer
   - [X] Formulas module
   - [X] Modules manager
-  - [X] Use module architecture (maf-timeline, maf-edit)
+  - [X] Use module architecture (maf-history, maf-edit)
   - [X] Recall ring for typed entries (maf-recall)
   - [ ] Discovery document for useful features, behaviors, modules, etc
 

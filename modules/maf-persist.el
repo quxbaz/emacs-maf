@@ -259,8 +259,8 @@ See `maf-stack-session-name' for how sessions are named, and
       (progn
         (add-hook 'kill-emacs-hook #'maf--stack-shutdown)
         (add-hook 'calc-mode-hook #'maf-restore-stack)
-        ;; "Load a saved stack", beside the stack timeline on t d: both
-        ;; keys bring back an earlier stack, the timeline's from this
+        ;; "Load a saved stack", beside the stack history on t d: both
+        ;; keys bring back an earlier stack, the history's from this
         ;; session and this one's from any session. t l is unbound in
         ;; calc itself — its t prefix is the trail (t b d f h i k m n o
         ;; p r s y) and the date/time commands on the capitals — so

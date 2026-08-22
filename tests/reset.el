@@ -1,9 +1,9 @@
 ;; `maf-reset' and `maf-reset-settings' (src/stack.el). The contract:
 ;; reset empties the session — stack, undo/redo, trail — and re-reads
 ;; `calc-settings-file'; reset-settings restores the modes from that
-;; file and leaves the session standing. The timeline survives both:
+;; file and leaves the session standing. The history survives both:
 ;; it is a log of what happened, not part of the session, and only
-;; `maf-timeline-clear' empties it. A prefix argument
+;; `maf-history-clear' empties it. A prefix argument
 ;; means "calc's factory defaults" for both, and then the settings file
 ;; is deliberately not read, since loading it would put the saved modes
 ;; straight back.
@@ -49,13 +49,13 @@
   (cl-assert calc-undo-list)
   (cl-assert (> (buffer-size (get-buffer "*Calc Trail*")) 0))
 
-  ;; Give the timeline a state to keep across the reset, when the
+  ;; Give the history a state to keep across the reset, when the
   ;; module is loaded. A direct capture is what the post-command hook
   ;; would have done; it records only if the stack changed, so this is
   ;; harmless when hooks already captured the pushes above.
-  (when (fboundp 'maf-timeline--capture)
-    (maf-timeline--capture)
-    (cl-assert maf-timeline--states))
+  (when (fboundp 'maf-history--capture)
+    (maf-history--capture)
+    (cl-assert maf-history--states))
 
   ;; One command clears the lot.
   (call-interactively 'maf-reset)
@@ -77,10 +77,10 @@
   (cl-assert (eq (key-binding (kbd "C-M-k")) 'maf-reset))
   (cl-assert (eq (key-binding (kbd "C-M-l")) 'maf-reset-settings))
 
-  ;; The timeline survives — it is a log of what happened, not part of
+  ;; The history survives — it is a log of what happened, not part of
   ;; the session, and stays browsable after the wipe.
-  (cl-assert (or (not (fboundp 'maf-timeline--capture))
-                 maf-timeline--states))
+  (cl-assert (or (not (fboundp 'maf-history--capture))
+                 maf-history--states))
 
   ;; --- maf-reset with a prefix: factory defaults ---
 

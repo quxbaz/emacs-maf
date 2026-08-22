@@ -1,11 +1,11 @@
 ;; -*- lexical-binding: t; -*-
 ;;
-;; modules/maf-timeline.el
+;; modules/maf-history.el
 ;;
-;; Stack timeline module: a browsable timeline of whole stack states.
+;; Stack history module: a browsable history of whole stack states.
 ;; With the module on, every command that changes the stack records a
 ;; snapshot — whatever produced the change: maf commands, plain calc
-;; commands, digit entry, undo. The *maf-timeline* buffer shows one
+;; commands, digit entry, undo. The *maf-history* buffer shows one
 ;; snapshot at a time, rendered like the stack itself, with the
 ;; entries that changed highlighted; step through states with u/i,
 ;; press RET on an entry to push it onto the live stack, r to restore
@@ -13,12 +13,12 @@
 ;;
 ;; Recording costs one value-list comparison per command; a snapshot
 ;; shares all formula structure with the stack it was taken from, so
-;; keeping the timeline is cheap. States are deduplicated only
-;; consecutively: the timeline is a linear log, not an undo tree.
+;; keeping the history is cheap. States are deduplicated only
+;; consecutively: the history is a linear log, not an undo tree.
 ;;
-;; The feature is `maf-use-timeline-mode', a global minor mode registered
+;; The feature is `maf-use-history-mode', a global minor mode registered
 ;; with the module system; the browsing buffer runs in the
-;; `maf-timeline-mode' major mode.
+;; `maf-history-mode' major mode.
 
 (require 'calc)
 (require 'maf-lib)
@@ -32,77 +32,77 @@
 ;; maf.el / bindings.el and current by the time the module is enabled.
 (defvar maf-mode-map)
 
-(defface maf-timeline-changed
+(defface maf-history-changed
   '((t :inherit warning))
-  "Face for entries new in a timeline state relative to the state before it."
+  "Face for entries new in a history state relative to the state before it."
   :group 'maf)
 
-(defface maf-timeline-strip-current
+(defface maf-history-strip-current
   '((t :inherit warning :weight bold))
-  "Face for the current operation in the timeline strip."
+  "Face for the current operation in the history strip."
   :group 'maf)
 
-(defface maf-timeline-legend
+(defface maf-history-legend
   ;; The band dial's controls line wears (see `dial-controls'), copied
   ;; rather than inherited so the module does not require dial: the
   ;; legend should read like the *maf-options* one.
   '((((class color) (background dark))  :background "#1c2733" :extend t)
     (((class color) (background light)) :background "#e2eaf3" :extend t)
     (t :inverse-video t))
-  "Face for the key legend above the timeline."
+  "Face for the key legend above the history."
   :group 'maf)
 
-(defcustom maf-timeline-size 100
-  "Maximum number of stack states kept in the timeline.
+(defcustom maf-history-size 100
+  "Maximum number of stack states kept in the history.
 Recording past the limit drops the oldest states. A state shares all
 formula structure with the stack it was taken from, so even a large
-timeline stays cheap."
+history stays cheap."
   :type 'natnum
   :group 'maf)
 
-(defcustom maf-timeline-strip-radius 3
-  "Operations shown on each side of the current one in the timeline strip.
-The `*maf-timeline*' buffer shows a horizontal strip of nearby operation
+(defcustom maf-history-strip-radius 3
+  "Operations shown on each side of the current one in the history strip.
+The `*maf-history*' buffer shows a horizontal strip of nearby operation
 labels beneath its header; this is how many appear on each side of the
 current item."
   :type 'natnum
   :group 'maf)
 
-(defvar maf-timeline--states nil
-  "Recorded stack states, newest first, at most `maf-timeline-size'.
+(defvar maf-history--states nil
+  "Recorded stack states, newest first, at most `maf-history-size'.
 Each state is a list (VALUES LABEL): VALUES the stack's formula values
 top first, with `calc-encase-atoms' wrappers stripped, and LABEL what
 produced the state — the change's trail prefix (a string, \"fctr\"),
 else \"undo\"/\"redo\", else a structural classification of the change
-against the previous stack (see `maf-timeline--classify').")
+against the previous stack (see `maf-history--classify').")
 
-(defvar maf-timeline--last-raw nil
+(defvar maf-history--last-raw nil
   "Raw stack values at the last capture, for cheap change detection.")
 
-(defvar maf-timeline--record-prefix nil
+(defvar maf-history--record-prefix nil
   "Trail prefix of the current command's `calc-record' call, stashed.
 Nil when the command has not recorded; (PREFIX) when it has — PREFIX
 itself is nil for a plain entry, which the trail also leaves
-unlabeled. Consumed and cleared by `maf-timeline--capture', so a
+unlabeled. Consumed and cleared by `maf-history--capture', so a
 prefix never outlives the command that recorded it.")
 
-(defun maf-timeline--stash-prefix (_val &optional prefix)
-  "Stash PREFIX for `maf-timeline--capture'; advice on `calc-record'.
+(defun maf-history--stash-prefix (_val &optional prefix)
+  "Stash PREFIX for `maf-history--capture'; advice on `calc-record'.
 The interactive command running when a stack change lands is often
 noise — a minibuffer RET terminating an entry — while the trail prefix
 names the operation. The FIRST prefix of a command wins: a multi-value
 push records its first value with the real prefix and the rest with
 calc's \"...\" continuation marker, so keeping the first preserves the
 operation name instead of the meaningless continuation."
-  (unless maf-timeline--record-prefix
-    (setq maf-timeline--record-prefix (list prefix))))
+  (unless maf-history--record-prefix
+    (setq maf-history--record-prefix (list prefix))))
 
-(defvar-local maf-timeline--index 0
-  "Index into `maf-timeline--states' of the state shown, 0 the newest.")
+(defvar-local maf-history--index 0
+  "Index into `maf-history--states' of the state shown, 0 the newest.")
 
 ;;; Recording
 
-(defun maf-timeline--one-inserted-p (short long)
+(defun maf-history--one-inserted-p (short long)
   "Non-nil if LONG is SHORT with exactly one element inserted anywhere.
 Both are top-first value lists; comparison is by `equal'."
   (and (= (length long) (1+ (length short)))
@@ -114,7 +114,7 @@ Both are top-first value lists; comparison is by `equal'."
             (t (setq ok nil))))
          (and ok (null s)))))
 
-(defun maf-timeline--classify (old new)
+(defun maf-history--classify (old new)
   "Label the change from OLD to NEW stack values, both top-first lists.
 For a change with no trail prefix, name it structurally: `new' when one
 entry was added (the rest unchanged, wherever it landed), `edit' when
@@ -124,7 +124,7 @@ adding an entry from editing one — the common single-entry cases
 exactly, the rest best-effort."
   (let ((no (length old)) (nn (length new)))
     (cond
-     ((and (= nn (1+ no)) (maf-timeline--one-inserted-p old new)) "new")
+     ((and (= nn (1+ no)) (maf-history--one-inserted-p old new)) "new")
      ((and (= nn no)
            (= 1 (let ((d 0) (o old) (n new))
                   (while o
@@ -135,7 +135,7 @@ exactly, the rest best-effort."
      ((< nn no) "del")
      (t "change"))))
 
-(defun maf-timeline--capture ()
+(defun maf-history--capture ()
   "Record a stack snapshot when the stack changed; on `post-command-hook'.
 Change detection is one `equal' over the entries' value slots — shared
 structure makes that an `eq' per unchanged entry — so the hook costs
@@ -151,12 +151,12 @@ swallowed so a bad calc state can never get the hook disabled."
       (when buf
         (with-current-buffer buf
           (let ((raw (mapcar #'car (nthcdr calc-stack-top calc-stack)))
-                (prefix maf-timeline--record-prefix))
+                (prefix maf-history--record-prefix))
             ;; Consume the stash either way: a record without a stack
             ;; change was a trail message, not this change's prefix.
-            (setq maf-timeline--record-prefix nil)
-            (unless (equal raw maf-timeline--last-raw)
-              (let* ((old maf-timeline--last-raw)
+            (setq maf-history--record-prefix nil)
+            (unless (equal raw maf-history--last-raw)
+              (let* ((old maf-history--last-raw)
                      (trail (and prefix (car prefix)))
                      ;; maf-edit's "edit" prefix is a blanket label, so
                      ;; describe what it did structurally (new/edit/del);
@@ -166,32 +166,32 @@ swallowed so a bad calc state can never get the hook disabled."
                      (label
                       (cond
                        ((eq this-command 'maf-edit-commit)
-                        (maf-timeline--classify old raw))
+                        (maf-history--classify old raw))
                        ((memq this-command '(maf-undo calc-undo)) "undo")
                        ((memq this-command '(maf-redo calc-redo)) "redo")
                        ((and (stringp trail) (> (length trail) 0)) trail)
-                       (t (maf-timeline--classify old raw)))))
-                (setq maf-timeline--last-raw raw)
-                (maf-timeline--record (mapcar #'maf--strip-encasing raw)
+                       (t (maf-history--classify old raw)))))
+                (setq maf-history--last-raw raw)
+                (maf-history--record (mapcar #'maf--strip-encasing raw)
                                       label)))))))))
 
-(defun maf-timeline--record (values label)
+(defun maf-history--record (values label)
   "Record VALUES as the newest state, produced by the command LABEL.
 Skipped when VALUES matches the newest state — a selection was made or
 cleared, changing the entry conses but not the formulas — and when
-VALUES is an empty stack with no timeline yet, so the log never starts
+VALUES is an empty stack with no history yet, so the log never starts
 with an empty baseline."
-  (unless (or (and maf-timeline--states
-                   (equal values (nth 0 (car maf-timeline--states))))
-              (and (null values) (null maf-timeline--states)))
-    (push (list values label) maf-timeline--states)
-    (when-let ((cell (nthcdr (1- maf-timeline-size) maf-timeline--states)))
+  (unless (or (and maf-history--states
+                   (equal values (nth 0 (car maf-history--states))))
+              (and (null values) (null maf-history--states)))
+    (push (list values label) maf-history--states)
+    (when-let ((cell (nthcdr (1- maf-history-size) maf-history--states)))
       (setcdr cell nil))
-    (maf-timeline--refresh t)))
+    (maf-history--refresh t)))
 
 ;;; Rendering
 
-(defun maf-timeline--format-entry (val level)
+(defun maf-history--format-entry (val level)
   "Format VAL as calc would render it at stack level LEVEL.
 The rendering is calc's own — current language, float format, big
 mode — produced in the calc buffer; only the level number differs
@@ -208,15 +208,15 @@ from the \"1:\" that `math-format-stack-value' hardcodes."
                        t t s)
       s)))
 
-(defun maf-timeline--header (total index label)
+(defun maf-history--header (total index label)
   "Return the header line for state INDEX of TOTAL, produced by LABEL."
   (if (zerop total)
-      "maf-timeline: no states yet"
-    (format "maf-timeline %d/%d%s"
+      "maf-history: no states yet"
+    (format "maf-history %d/%d%s"
             (- total index) total
             (if label (format " — %s" label) ""))))
 
-(defun maf-timeline--strip-label (state)
+(defun maf-history--strip-label (state)
   "Return the display string for STATE's label in the operation strip.
 A trail-prefix string shows as-is and a command symbol as its name.
 States with no named operation read as `entry' — a plain entry (nil
@@ -228,28 +228,28 @@ multi-value push) — so unnamed steps stay legible and 1:1 with `u'/`i'."
           ((symbolp label) (symbol-name label))
           (t "entry"))))
 
-(defun maf-timeline--strip (total index)
+(defun maf-history--strip (total index)
   "Return the horizontal operation strip around INDEX of TOTAL states.
 Older operations to the left, newer to the right, the current one
-highlighted; `maf-timeline-strip-radius' slots show on each side, with
+highlighted; `maf-history-strip-radius' slots show on each side, with
 a `…' at an end when more states lie beyond the window."
-  (let* ((radius maf-timeline-strip-radius)
+  (let* ((radius maf-history-strip-radius)
          (hi (min (1- total) (+ index radius)))   ; oldest shown, leftmost
          (lo (max 0 (- index radius)))            ; newest shown, rightmost
          (parts nil)
          (i hi))
     ;; Walk older -> newer so `nreverse' yields left-to-right order.
     (while (>= i lo)
-      (let ((label (maf-timeline--strip-label (nth i maf-timeline--states))))
+      (let ((label (maf-history--strip-label (nth i maf-history--states))))
         (push (propertize label 'face
-                          (if (= i index) 'maf-timeline-strip-current 'shadow))
+                          (if (= i index) 'maf-history-strip-current 'shadow))
               parts))
       (setq i (1- i)))
     (concat (if (< hi (1- total)) "… " "")
             (string-join (nreverse parts) " · ")
             (if (> lo 0) " …" ""))))
 
-(defvar maf-timeline--controls nil
+(defvar maf-history--controls nil
   "Commands summarized on the legend line, in order.
 Each entry is (COMMAND VERB . PREFERRED-KEYS), the shape dial's
 controls line uses (see `dial-default-controls'): COMMAND one command
@@ -257,16 +257,16 @@ or a list that reads as one control, and the keys the ones to show
 for it, kept only while each still runs it.")
 
 ;; Set outside the defvar so a reload applies edits to the list.
-(setq maf-timeline--controls
-      '(((maf-timeline-previous maf-timeline-next) "step" "h" "l" "u" "i")
-        ((maf-timeline-oldest maf-timeline-newest) "ends" "<" ">")
-        (maf-timeline-insert "insert" "RET")
-        (maf-timeline-restore "restore" "r")
-        (maf-timeline-delete "delete" "D")
-        (maf-timeline-visit-calc "calc" "v")
+(setq maf-history--controls
+      '(((maf-history-previous maf-history-next) "step" "h" "l" "u" "i")
+        ((maf-history-oldest maf-history-newest) "ends" "<" ">")
+        (maf-history-insert "insert" "RET")
+        (maf-history-restore "restore" "r")
+        (maf-history-delete "delete" "D")
+        (maf-history-visit-calc "calc" "v")
         (quit-window "quit" "q")))
 
-(defun maf-timeline--control-keys (command preferred)
+(defun maf-history--control-keys (command preferred)
   "Return the key strings naming COMMAND on the legend line.
 COMMAND is one command or a list of them. Each PREFERRED key is kept
 only while it still runs one of COMMAND in this buffer, so a binding
@@ -279,11 +279,11 @@ left the live keymap decides."
         (list (key-description key)))
       (list "M-x")))
 
-(defun maf-timeline--legend ()
+(defun maf-history--legend ()
   "Return the key legend line shown at the top of the buffer.
 The shape of the *maf-options* controls line: each control's keys in
 the binding face, its verb after, the whole line on the
-`maf-timeline-legend' band. Keys are looked up in the buffer's live
+`maf-history-legend' band. Keys are looked up in the buffer's live
 keymaps, so the legend follows a rebinding. Ends in its own newline,
 which carries the band face so its `:extend' reaches the window edge."
   (let ((line (concat
@@ -293,43 +293,43 @@ which carries the band face so its `:extend' reaches the window edge."
                   (pcase-let ((`(,command ,verb . ,preferred) cell))
                     (concat (mapconcat (lambda (key)
                                          (propertize key 'face 'help-key-binding))
-                                       (maf-timeline--control-keys command preferred)
+                                       (maf-history--control-keys command preferred)
                                        "/")
                             " " verb)))
-                maf-timeline--controls
+                maf-history--controls
                 "   ")
                "\n")))
-    (add-face-text-property 0 (length line) 'maf-timeline-legend t line)
+    (add-face-text-property 0 (length line) 'maf-history-legend t line)
     line))
 
-(defun maf-timeline--render ()
-  "Render the state at `maf-timeline--index' into the current buffer.
-A key legend (see `maf-timeline--legend') sits at the top, then a
-one-line operation strip (see `maf-timeline--strip'), then the stack
+(defun maf-history--render ()
+  "Render the state at `maf-history--index' into the current buffer.
+A key legend (see `maf-history--legend') sits at the top, then a
+one-line operation strip (see `maf-history--strip'), then the stack
 state. Point keeps its line and column when the buffer had content; a
 fresh buffer gets point on the top-of-stack entry, the likeliest RET
 target."
-  (let* ((total (length maf-timeline--states))
-         (index (max 0 (min maf-timeline--index (max 0 (1- total)))))
-         (state (nth index maf-timeline--states))
+  (let* ((total (length maf-history--states))
+         (index (max 0 (min maf-history--index (max 0 (1- total)))))
+         (state (nth index maf-history--states))
          (values (nth 0 state))
          ;; Entries absent from the previous (older) state are what
          ;; this step produced; they get the changed face. The oldest
          ;; state has no reference to diff against.
          (prev-values (and (< (1+ index) total)
-                           (nth 0 (nth (1+ index) maf-timeline--states))))
+                           (nth 0 (nth (1+ index) maf-history--states))))
          (fresh (zerop (buffer-size)))
          (line (line-number-at-pos))
          (col (current-column))
          (inhibit-read-only t))
-    (setq maf-timeline--index index)
+    (setq maf-history--index index)
     (erase-buffer)
     ;; The legend, then the operation strip: a row of nearby operations
     ;; beneath the header, above the stack state. Neither carries the
-    ;; `maf-timeline-value' property, so RET ignores them.
-    (insert (maf-timeline--legend) "\n")
+    ;; `maf-history-value' property, so RET ignores them.
+    (insert (maf-history--legend) "\n")
     (when (> total 0)
-      (insert (maf-timeline--strip total index) "\n\n"))
+      (insert (maf-history--strip total index) "\n\n"))
     (cond
      ((null state)
       (insert (propertize "(no states yet)" 'face 'shadow) "\n"))
@@ -340,91 +340,91 @@ target."
         ;; Deepest first, like the stack: level 1 renders at the bottom.
         (dolist (val (reverse values))
           (let ((start (point)))
-            (insert (maf-timeline--format-entry val level) "\n")
-            (put-text-property start (point) 'maf-timeline-value val)
+            (insert (maf-history--format-entry val level) "\n")
+            (put-text-property start (point) 'maf-history-value val)
             (when (and prev-values (not (member val prev-values)))
-              (put-text-property start (point) 'face 'maf-timeline-changed)))
+              (put-text-property start (point) 'face 'maf-history-changed)))
           (setq level (1- level))))))
     ;; The current op is highlighted in the strip, so the header keeps
     ;; only the position counter.
     (setq header-line-format
-          (maf-timeline--header total index nil))
+          (maf-history--header total index nil))
     (if fresh
         (progn (goto-char (point-max)) (forward-line -1))
       (goto-char (point-min))
       (forward-line (1- line))
       (move-to-column col))))
 
-(defun maf-timeline--refresh (&optional new)
-  "Re-render the *maf-timeline* buffer, if it exists.
+(defun maf-history--refresh (&optional new)
+  "Re-render the *maf-history* buffer, if it exists.
 With NEW non-nil a state was just recorded: a view on the newest state
 follows to the new one; a view on an older state stays on that state,
 its index shifted under it."
-  (when-let ((buf (get-buffer "*maf-timeline*")))
+  (when-let ((buf (get-buffer "*maf-history*")))
     (with-current-buffer buf
-      (when (and new (> maf-timeline--index 0))
-        (setq maf-timeline--index (1+ maf-timeline--index)))
-      (maf-timeline--render))))
+      (when (and new (> maf-history--index 0))
+        (setq maf-history--index (1+ maf-history--index)))
+      (maf-history--render))))
 
 ;;; The buffer
 
-(defvar maf-timeline-mode-map (make-sparse-keymap)
-  "Keymap for `maf-timeline-mode'.")
+(defvar maf-history-mode-map (make-sparse-keymap)
+  "Keymap for `maf-history-mode'.")
 
 ;; Bindings live outside the defvar so reloading the file applies edits
 ;; to the existing map.
-(define-key maf-timeline-mode-map (kbd "u") #'maf-timeline-previous)
-(define-key maf-timeline-mode-map (kbd "i") #'maf-timeline-next)
+(define-key maf-history-mode-map (kbd "u") #'maf-history-previous)
+(define-key maf-history-mode-map (kbd "i") #'maf-history-next)
 ;; h/l step older/newer too, matching the strip's left-older orientation.
-(define-key maf-timeline-mode-map (kbd "h") #'maf-timeline-previous)
-(define-key maf-timeline-mode-map (kbd "l") #'maf-timeline-next)
-(define-key maf-timeline-mode-map (kbd "M-p") #'maf-timeline-previous)
-(define-key maf-timeline-mode-map (kbd "M-n") #'maf-timeline-next)
-(define-key maf-timeline-mode-map (kbd "<") #'maf-timeline-oldest)
-(define-key maf-timeline-mode-map (kbd ">") #'maf-timeline-newest)
+(define-key maf-history-mode-map (kbd "h") #'maf-history-previous)
+(define-key maf-history-mode-map (kbd "l") #'maf-history-next)
+(define-key maf-history-mode-map (kbd "M-p") #'maf-history-previous)
+(define-key maf-history-mode-map (kbd "M-n") #'maf-history-next)
+(define-key maf-history-mode-map (kbd "<") #'maf-history-oldest)
+(define-key maf-history-mode-map (kbd ">") #'maf-history-newest)
 ;; Line motion between entries, for picking a RET target.
-(define-key maf-timeline-mode-map (kbd "n") #'next-line)
-(define-key maf-timeline-mode-map (kbd "p") #'previous-line)
-(define-key maf-timeline-mode-map (kbd "j") #'next-line)
-(define-key maf-timeline-mode-map (kbd "k") #'previous-line)
-(define-key maf-timeline-mode-map (kbd "v") #'maf-timeline-visit-calc)
-(define-key maf-timeline-mode-map (kbd "RET") #'maf-timeline-insert)
-(define-key maf-timeline-mode-map (kbd "C-<return>") #'maf-timeline-insert-stay)
-(define-key maf-timeline-mode-map (kbd "r") #'maf-timeline-restore)
+(define-key maf-history-mode-map (kbd "n") #'next-line)
+(define-key maf-history-mode-map (kbd "p") #'previous-line)
+(define-key maf-history-mode-map (kbd "j") #'next-line)
+(define-key maf-history-mode-map (kbd "k") #'previous-line)
+(define-key maf-history-mode-map (kbd "v") #'maf-history-visit-calc)
+(define-key maf-history-mode-map (kbd "RET") #'maf-history-insert)
+(define-key maf-history-mode-map (kbd "C-<return>") #'maf-history-insert-stay)
+(define-key maf-history-mode-map (kbd "r") #'maf-history-restore)
 ;; Capital, so a fingerslip on the motion keys cannot reach a delete.
-(define-key maf-timeline-mode-map (kbd "D") #'maf-timeline-delete)
+(define-key maf-history-mode-map (kbd "D") #'maf-history-delete)
 
-(define-derived-mode maf-timeline-mode special-mode "maf-timeline"
-  "Major mode for browsing calc stack timeline.
+(define-derived-mode maf-history-mode special-mode "maf-history"
+  "Major mode for browsing calc stack history.
 Each view is one whole stack state, rendered as calc renders the
-stack, with the entries that step produced highlighted. \\<maf-timeline-mode-map>
-\\[maf-timeline-previous] steps to older states and \\[maf-timeline-next]
-to newer ones; \\[maf-timeline-oldest] and \\[maf-timeline-newest] jump
-to the ends. \\[maf-timeline-insert] pushes the entry at point onto
-the live stack and quits; \\[maf-timeline-insert-stay] pushes and
-stays, ready to insert more. \\[maf-timeline-restore] replaces the
-whole stack with the state shown and quits. \\[maf-timeline-delete]
+stack, with the entries that step produced highlighted. \\<maf-history-mode-map>
+\\[maf-history-previous] steps to older states and \\[maf-history-next]
+to newer ones; \\[maf-history-oldest] and \\[maf-history-newest] jump
+to the ends. \\[maf-history-insert] pushes the entry at point onto
+the live stack and quits; \\[maf-history-insert-stay] pushes and
+stays, ready to insert more. \\[maf-history-restore] replaces the
+whole stack with the state shown and quits. \\[maf-history-delete]
 deletes the state shown from the log. \\[quit-window] buries the
 buffer."
   (setq truncate-lines t)
   (setq-local revert-buffer-function
-              (lambda (&rest _) (maf-timeline--render))))
+              (lambda (&rest _) (maf-history--render))))
 
-(defun maf-timeline--buffer ()
-  "Return the timeline buffer, creating and rendering it if needed."
-  (or (get-buffer "*maf-timeline*")
-      (with-current-buffer (get-buffer-create "*maf-timeline*")
-        (maf-timeline-mode)
-        (maf-timeline--render)
+(defun maf-history--buffer ()
+  "Return the history buffer, creating and rendering it if needed."
+  (or (get-buffer "*maf-history*")
+      (with-current-buffer (get-buffer-create "*maf-history*")
+        (maf-history-mode)
+        (maf-history--render)
         (current-buffer))))
 
 ;;;###autoload
-(defun maf-timeline ()
-  "Show the stack timeline buffer in a window below calc, and select it.
+(defun maf-history ()
+  "Show the stack history buffer in a window below calc, and select it.
 Already visible, the window is selected as it stands. Without a calc
 window the buffer opens below the selected window."
   (interactive)
-  (let ((buf (maf-timeline--buffer)))
+  (let ((buf (maf-history--buffer)))
     (select-window
      (or (get-buffer-window buf)
          (let* ((calc-buf (maf--find-calc-buffer))
@@ -432,8 +432,8 @@ window the buffer opens below the selected window."
            (with-selected-window (or calc-win (selected-window))
              (display-buffer buf '(display-buffer-below-selected))))))))
 
-(defun maf-timeline-visit-calc ()
-  "Select the calc window, leaving the timeline window open.
+(defun maf-history-visit-calc ()
+  "Select the calc window, leaving the history window open.
 Without a window showing calc, one is found for it."
   (interactive)
   (let ((buf (or (maf--find-calc-buffer)
@@ -443,55 +443,55 @@ Without a window showing calc, one is found for it."
 
 ;;; Browsing commands
 
-(defun maf-timeline--move (n)
+(defun maf-history--move (n)
   "Show the state N steps older (newer when N is negative)."
-  (unless maf-timeline--states (user-error "No states recorded yet"))
-  (let* ((max (1- (length maf-timeline--states)))
-         (target (max 0 (min (+ maf-timeline--index n) max))))
-    (when (= target maf-timeline--index)
+  (unless maf-history--states (user-error "No states recorded yet"))
+  (let* ((max (1- (length maf-history--states)))
+         (target (max 0 (min (+ maf-history--index n) max))))
+    (when (= target maf-history--index)
       (user-error (if (> n 0) "Already at the oldest state"
                     "Already at the newest state")))
-    (setq maf-timeline--index target)
-    (maf-timeline--render)))
+    (setq maf-history--index target)
+    (maf-history--render)))
 
-(defun maf-timeline-previous (n)
+(defun maf-history-previous (n)
   "Show the Nth previous (older) stack state."
   (interactive "p")
-  (maf-timeline--move n))
+  (maf-history--move n))
 
-(defun maf-timeline-next (n)
+(defun maf-history-next (n)
   "Show the Nth next (newer) stack state."
   (interactive "p")
-  (maf-timeline--move (- n)))
+  (maf-history--move (- n)))
 
-(defun maf-timeline-oldest ()
+(defun maf-history-oldest ()
   "Show the oldest recorded stack state."
   (interactive)
-  (maf-timeline--move (length maf-timeline--states)))
+  (maf-history--move (length maf-history--states)))
 
-(defun maf-timeline-newest ()
+(defun maf-history-newest ()
   "Show the newest recorded stack state."
   (interactive)
-  (maf-timeline--move (- (length maf-timeline--states))))
+  (maf-history--move (- (length maf-history--states))))
 
 ;;; Acting on the live stack
 
-(defun maf-timeline-insert ()
-  "Push the timeline entry at point onto the live calc stack, and quit.
+(defun maf-history-insert ()
+  "Push the history entry at point onto the live calc stack, and quit.
 The value is pushed on top as a new entry — a copy, so later edits to
-the live entry never reach back into the timeline — and recorded in
-the timeline as its own step. The timeline window quits, as after
-choosing from a list; `maf-timeline-insert-stay' keeps it open."
+the live entry never reach back into the history — and recorded in
+the history as its own step. The history window quits, as after
+choosing from a list; `maf-history-insert-stay' keeps it open."
   (interactive)
-  (maf-timeline-insert-stay)
+  (maf-history-insert-stay)
   (quit-window))
 
-(defun maf-timeline-insert-stay ()
-  "Push the timeline entry at point onto the live calc stack.
-As `maf-timeline-insert', but the timeline window stays open with point
+(defun maf-history-insert-stay ()
+  "Push the history entry at point onto the live calc stack.
+As `maf-history-insert', but the history window stays open with point
 in place, ready to insert more."
   (interactive)
-  (let ((val (get-text-property (point) 'maf-timeline-value)))
+  (let ((val (get-text-property (point) 'maf-history-value)))
     (unless val (user-error "No stack entry at point"))
     (setq val (copy-tree val))
     (maf--with-calc-buffer
@@ -499,15 +499,15 @@ in place, ready to insert more."
        (calc-pop-push-record-list 0 "hist" (list val) 1 (list nil))))
     (message "Pushed: %s" (math-format-value val))))
 
-(defun maf-timeline-restore ()
+(defun maf-history-restore ()
   "Replace the live calc stack with the state being viewed, and quit.
 The whole stack becomes this snapshot — copies, as in
-`maf-timeline-insert' — and the view jumps back to the newest state,
+`maf-history-insert' — and the view jumps back to the newest state,
 which now shows the restored stack. A single undo reverts the
-restore. The timeline window quits, as after `maf-timeline-insert':
+restore. The history window quits, as after `maf-history-insert':
 a restore is the end of a browse."
   (interactive)
-  (let ((state (nth maf-timeline--index maf-timeline--states)))
+  (let ((state (nth maf-history--index maf-history--states)))
     (unless state (user-error "No states recorded yet"))
     (let ((values (mapcar #'copy-tree (nth 0 state))))
       (maf--with-calc-buffer
@@ -519,106 +519,106 @@ a restore is the end of a browse."
                                            (reverse values)))
                ((> (calc-stack-size) 0)
                 (calc-pop-stack (calc-stack-size))))))
-      (setq maf-timeline--index 0)
-      (maf-timeline--render)
+      (setq maf-history--index 0)
+      (maf-history--render)
       (message "Stack restored (%d %s)" (length values)
                (if (= (length values) 1) "entry" "entries"))
       (quit-window))))
 
-(defun maf-timeline-delete ()
-  "Delete the state being viewed from the timeline log.
-The live stack is untouched — the timeline is a log of what happened,
-and this drops one record from it, so like `maf-timeline-clear' it is
+(defun maf-history-delete ()
+  "Delete the state being viewed from the history log.
+The live stack is untouched — the history is a log of what happened,
+and this drops one record from it, so like `maf-history-clear' it is
 not undoable. The view lands on the next older state, or on the
 newest remaining when the oldest was the one deleted."
   (interactive)
-  (let ((state (nth maf-timeline--index maf-timeline--states)))
+  (let ((state (nth maf-history--index maf-history--states)))
     (unless state (user-error "No states recorded yet"))
-    (let ((total (length maf-timeline--states))
-          (index maf-timeline--index))
+    (let ((total (length maf-history--states))
+          (index maf-history--index))
       (if (zerop index)
-          (setq maf-timeline--states (cdr maf-timeline--states))
-        (let ((cell (nthcdr (1- index) maf-timeline--states)))
+          (setq maf-history--states (cdr maf-history--states))
+        (let ((cell (nthcdr (1- index) maf-history--states)))
           (setcdr cell (cddr cell))))
-      (maf-timeline--render)
+      (maf-history--render)
       (message "Deleted state %d/%d (%s)" (- total index) total
-               (maf-timeline--strip-label state)))))
+               (maf-history--strip-label state)))))
 
-(defun maf-timeline-clear ()
+(defun maf-history-clear ()
   "Discard every recorded stack state, keeping the live stack.
-The timeline is a log of what happened rather than part of the calc
+The history is a log of what happened rather than part of the calc
 state, so nothing here is undoable and the stack is untouched — the
 next change starts a fresh log, baselined against the stack as it
 stands. Recording carries on if it was on; this only empties what was
 recorded. Nothing else empties the log — `maf-reset' wipes the session
-but deliberately leaves the timeline standing — so this is the one way
+but deliberately leaves the history standing — so this is the one way
 to discard it.
 
 Deliberately unbound in the browser: wiping the whole log a fingerslip
 away from \\`r' would be far worse than \\`D''s one state at a time.
-Reach it as \\[maf-timeline-clear]."
+Reach it as \\[maf-history-clear]."
   (interactive)
-  (let ((n (length maf-timeline--states)))
-    (setq maf-timeline--states nil
-          maf-timeline--record-prefix nil)
+  (let ((n (length maf-history--states)))
+    (setq maf-history--states nil
+          maf-history--record-prefix nil)
     ;; Rebaseline on the live stack rather than on nil: with the stack
     ;; left standing, a nil baseline would make the next capture record
     ;; the whole stack as if it had just been built.
-    (setq maf-timeline--last-raw
+    (setq maf-history--last-raw
           (let ((buf (maf--find-calc-buffer)))
             (and buf (with-current-buffer buf
                        (mapcar #'car (nthcdr calc-stack-top calc-stack))))))
-    (when-let ((buf (get-buffer "*maf-timeline*")))
+    (when-let ((buf (get-buffer "*maf-history*")))
       (with-current-buffer buf
-        (setq maf-timeline--index 0)
-        (maf-timeline--render)))
+        (setq maf-history--index 0)
+        (maf-history--render)))
     (when (called-interactively-p 'interactive)
-      (message "Timeline cleared (%d %s)" n (if (= n 1) "state" "states")))
+      (message "History cleared (%d %s)" n (if (= n 1) "state" "states")))
     n))
 
 ;;; The module
 
 ;;;###autoload
-(define-minor-mode maf-use-timeline-mode
-  "Global minor mode recording a browsable timeline of calc stack states.
+(define-minor-mode maf-use-history-mode
+  "Global minor mode recording a browsable history of calc stack states.
 Enabled, every stack change is snapshotted (see this file's commentary)
-and `\\[maf-timeline]' — bound to \\`t d' in `maf-mode' buffers — opens
-the *maf-timeline* browser. Disabled, recording stops and the \\`t d'
+and `\\[maf-history]' — bound to \\`t d' in `maf-mode' buffers — opens
+the *maf-history* browser. Disabled, recording stops and the \\`t d'
 key falls back to calc's own `calc-trail-display'; states already
 recorded stay browsable. Managed through the module system; see
 `maf-modules'."
   :global t
   :group 'maf
-  (if maf-use-timeline-mode
+  (if maf-use-history-mode
       (progn
-        (advice-add 'calc-record :after #'maf-timeline--stash-prefix)
-        (add-hook 'post-command-hook #'maf-timeline--capture)
+        (advice-add 'calc-record :after #'maf-history--stash-prefix)
+        (add-hook 'post-command-hook #'maf-history--capture)
         (maf-bindings--refresh)
         ;; Baseline the current stack so the first change diffs against it.
-        (maf-timeline--capture))
-    (remove-hook 'post-command-hook #'maf-timeline--capture)
-    (advice-remove 'calc-record #'maf-timeline--stash-prefix)
+        (maf-history--capture))
+    (remove-hook 'post-command-hook #'maf-history--capture)
+    (advice-remove 'calc-record #'maf-history--stash-prefix)
     ;; The recompile cedes the key back to calc's trail display.
     (maf-bindings--refresh)))
 
 ;; M-h beside t d: h for history, a single chord for the browse the
-;; timeline is for. It shadows only the global `mark-paragraph', which
+;; history is for. It shadows only the global `mark-paragraph', which
 ;; has no meaning in the stack buffer.
-(maf-bindings-module-keys 'maf-timeline 'maf-use-timeline-mode
-  '(((calc native vim) "t d" maf-timeline)
-    ((calc native vim) "M-h" maf-timeline)))
+(maf-bindings-module-keys 'maf-history 'maf-use-history-mode
+  '(((calc native vim) "t d" maf-history)
+    ((calc native vim) "M-h" maf-history)))
 
 ;; Register with the module system when it is present; the mode above
 ;; works on its own without it.
 (when (require 'maf-module nil t)
-  (maf-register-module 'maf-timeline #'maf-use-timeline-mode
+  (maf-register-module 'maf-history #'maf-use-history-mode
                        "Browse past stack states and bring any of them back.
 
 Every command that changes the stack records a snapshot. The
-*maf-timeline* buffer shows one state at a time with the entries that
+*maf-history* buffer shows one state at a time with the entries that
 changed highlighted: u and i step through them, RET pushes the entry
 at point onto the live stack, r restores the whole state, D deletes
 a state from the log."
                        "t d, M-h"))
 
-(provide 'maf-timeline)
+(provide 'maf-history)

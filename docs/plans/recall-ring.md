@@ -3,7 +3,7 @@
 Replaces the TODO in [maf.org](../maf.org) ("quick recall command, bind to
 M-[n/p]"). Written up rather than left in conversation because the design turns
 on one distinction that is easy to lose: **this ring holds what you *typed*; the
-timeline holds what the stack *held*.**
+history holds what the stack *held*.**
 
 **Status: landed** as `modules/maf-recall.el`, with the step tests below. Where
 the code and this document disagreed, the document is fixed in place rather than
@@ -28,10 +28,10 @@ Two different losses hide inside "in case you screw up a calculation":
    *your source text*, in the unsimplified form you wrote it.
 2. A *computed* result got consumed. It was never typed.
 
-This feature is case 1 only. Case 2 belongs to `maf-timeline`, which already
+This feature is case 1 only. Case 2 belongs to `maf-history`, which already
 records every stack state and pushes any past entry back
-(`maf-timeline-insert`). A recall ring that tried to cover case 2 would be a
-worse timeline: it would fill with every intermediate result, and values
+(`maf-history-insert`). A recall ring that tried to cover case 2 would be a
+worse history: it would fill with every intermediate result, and values
 re-rendered to text are lossy — the reason `maf-edit-commit` never reparses
 untouched entries.
 
@@ -174,7 +174,7 @@ two advices, two keymap entries, one toggle.
 
 ```
 maf-recall--ring          list of (TEXT . VALUE), newest first
-maf-recall-size           defcustom, 100 (matches maf-timeline-size)
+maf-recall-size           defcustom, 100 (matches maf-history-size)
 maf-recall--record        dedupe by TEXT, push front, truncate
 ```
 
@@ -207,13 +207,13 @@ maf-edit-mode-map   M-p  maf-recall-previous     M-n  maf-recall-next
 ```
 
 Both keys are free in both maps today (`M-p`/`M-n` are bound only in the
-timeline and formulas buffers' own major-mode maps).
+history and formulas buffers' own major-mode maps).
 
 **Pushing.** `calc-pop-push-record-list` with a `"rcl"` trail prefix — 0 popped
 to start a cycle, 1 popped to replace during one, following the idiom in
-`modules/maf-formulas.el:306`. The prefix also gives `maf-timeline` a sensible
+`modules/maf-formulas.el:306`. The prefix also gives `maf-history` a sensible
 label for the operation, since it takes the trail prefix when there is one
-(`modules/maf-timeline.el:162`).
+(`modules/maf-history.el:162`).
 
 **Persistence.** `(with-eval-after-load 'savehist (add-to-list
 'savehist-additional-variables 'maf-recall--ring))`. One global ring, not
@@ -279,4 +279,4 @@ user did something else".
 - Module description string for the modules manager, in the register call.
 - Header commentary in `maf-recall.el` carrying the "what you typed vs what the
   stack held" split, which is the thing a reader needs to not blur this back
-  into the timeline.
+  into the history.

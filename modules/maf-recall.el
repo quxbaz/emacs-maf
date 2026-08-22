@@ -9,9 +9,9 @@
 ;; the calculation mangles it.
 ;;
 ;; What the ring holds is the whole design: *what you typed*, never
-;; what the stack held. maf-timeline already records stack states and
+;; what the stack held. maf-history already records stack states and
 ;; pushes any past entry back; a ring that also carried computed
-;; results would be a worse timeline — filled with every intermediate
+;; results would be a worse history — filled with every intermediate
 ;; value, and re-rendering a value to text is lossy, which is why
 ;; `maf-edit-commit' never reparses an untouched entry. So only
 ;; brand-new entries feed the ring:
@@ -426,7 +426,7 @@ leaves one entry behind and a single undo removes it.
 
 The ring holds entries you typed from nothing, on both the maf-edit
 and digit-entry paths — never a result a command computed, which is
-`maf-timeline's business."
+`maf-history's business."
   (interactive)
   (maf-recall--move 1))
 

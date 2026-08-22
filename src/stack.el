@@ -1552,9 +1552,9 @@ Clears the stack, calc's undo and redo lists, and the trail, restores
 the mode settings saved in `calc-settings-file', then re-reads the
 rest of that file (see `maf--reset-load-settings'). What survives is
 what lives outside the calc buffer: stored variables, the formula
-library, the kill ring — and the maf stack timeline, which is a log
+library, the kill ring — and the maf stack history, which is a log
 of what happened rather than part of the session, and stays browsable
-across the reset. `maf-timeline-clear' empties it separately.
+across the reset. `maf-history-clear' empties it separately.
 
 With a prefix argument DEFAULTS, restore calc's factory default modes
 instead of the saved ones — and then leave the settings file alone,
@@ -1575,7 +1575,7 @@ Nothing here is undoable: the undo list is one of the things cleared."
 
 The other half of `maf-reset': restores the mode settings saved in
 `calc-settings-file' and re-reads the rest of that file, but leaves
-the stack, its selections, and the timeline exactly as they are. The
+the stack, its selections, and the history exactly as they are. The
 command for when a mode got toggled by accident and the session is
 worth keeping.
 

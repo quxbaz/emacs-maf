@@ -3,7 +3,7 @@
 ;; maf-module.el
 ;;
 ;; The module system. Major maf features that stand apart from the
-;; contextual-command core — the stack timeline, sub-formula
+;; contextual-command core — the stack history, sub-formula
 ;; highlighting, stack persistence, in-place editing — live as
 ;; optional modules under modules/, each toggled independently without
 ;; disturbing the core.
