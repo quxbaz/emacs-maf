@@ -290,7 +290,11 @@ poshandler measures against."
 START is where WIN begins its display; see `maf-preview--overlay-show'."
   (if (maf-preview--posframe-p)
       (progn (maf-preview--overlay-hide)
-             (maf-preview--posframe-show str))
+             ;; posframe measures its parent window from the selected
+             ;; one, and WIN is not necessarily selected — the mode can
+             ;; be switched on from another window (the module menu).
+             (with-selected-window win
+               (maf-preview--posframe-show str)))
     (maf-preview--posframe-hide)
     (maf-preview--overlay-show str win start)))
 
@@ -420,7 +424,13 @@ otherwise it is drawn inside the Calc window."
         ;; globally, see `maf-preview--on-window-change'.)
         (add-hook 'window-scroll-functions #'maf-preview--on-scroll nil t)
         (add-hook 'after-change-functions #'maf-preview--on-change nil t)
-        (maf-preview--update))
+        ;; Against the buffer's window, not the selected one: the mode
+        ;; can be switched on from another window — the module menu —
+        ;; and the panel should appear there and then, not on the next
+        ;; command in the calc window. (`get-buffer-window' prefers the
+        ;; selected window, so turning the mode on from the calc buffer
+        ;; itself draws where it always did.)
+        (maf-preview--update (get-buffer-window)))
     (remove-hook 'post-command-hook #'maf-preview--update t)
     (remove-hook 'window-scroll-functions #'maf-preview--on-scroll t)
     (remove-hook 'after-change-functions #'maf-preview--on-change t)
