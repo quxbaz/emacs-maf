@@ -23,6 +23,7 @@
     - the right column showing the corresponding stack
   - [ ] new command: jump to next operand
     - bind to `S-SPC`
+    - only bind in stack mode. do not bind in edit/editplus.
   - [ ] swap `C-RET` and `M-RET`
   - [ ] new `C-RET` should retain point, otherwise there's no difference against
     `RET`
