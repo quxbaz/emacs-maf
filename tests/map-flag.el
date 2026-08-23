@@ -143,21 +143,16 @@
                       "[x + a = 2, x - b = 3]"))
   (calc-pop (calc-stack-size))
 
-  ;; A subject with no elements refuses; the flag is still consumed and
-  ;; the stack stands.
-  (maf-push "x + 1")
+  ;; A subject with no elements is the degenerate map: the command
+  ;; runs once on the whole entry, flag consumed — M Q on a scalar is
+  ;; plain Q.
+  (maf-push "x")
   (goto-char (point-max))
-  (cl-assert (string-match-p
-              "Nothing to map over"
-              (condition-case err
-                  (progn (setq maf-map-flag t)
-                         (call-interactively 'mafcmd-expand)
-                         "")
-                (user-error (error-message-string err)))))
-  (cl-assert (null maf-map-flag))
-  (cl-assert (string= (math-format-value
-                       (maf--strip-encasing (calc-top 1 'full)))
-                      "x + 1"))
+  (progn (execute-kbd-macro (kbd "M Q"))
+         (cl-assert (null maf-map-flag))
+         (cl-assert (string= (math-format-value
+                              (maf--strip-encasing (calc-top 1 'full)))
+                             "sqrt(x)")))
   (cl-assert (= (calc-stack-size) 1))
   (calc-pop (calc-stack-size))
 

@@ -115,19 +115,22 @@ element runs the body once, ARG shared across the runs, and what the
 body commits becomes the element's replacement. A body that commits
 nothing leaves its element unchanged. Nested vectors recurse, so a
 matrix maps over its individual elements — the same reading
-`mafcmd-map' gives one. A non-vector refuses: the map flag promised a
-mapping, and a subject with no elements has nowhere to map (a relation
-never reaches here — it resolves to the equation target first)."
-  (unless (eq (car-safe expr) 'vec)
-    (user-error "Nothing to map over: the subject is not a vector or relation"))
-  (cons 'vec
-        (mapcar (lambda (el)
-                  (if (eq (car-safe el) 'vec)
-                      (maf--defcmd-map-vec runner el arg)
-                    (let (out)
-                      (funcall runner el arg (lambda (val) (setq out val)))
-                      (or out el))))
-                (cdr expr))))
+`mafcmd-map' gives one. A non-vector subject is the degenerate map:
+the body runs once on the whole expression, so M Q on a scalar is
+plain Q (a relation never reaches here — it resolves to the equation
+target first)."
+  (if (eq (car-safe expr) 'vec)
+      (cons 'vec
+            (mapcar (lambda (el)
+                      (if (eq (car-safe el) 'vec)
+                          (maf--defcmd-map-vec runner el arg)
+                        (let (out)
+                          (funcall runner el arg (lambda (val) (setq out val)))
+                          (or out el))))
+                    (cdr expr)))
+    (let (out)
+      (funcall runner expr arg (lambda (val) (setq out val)))
+      (or out expr))))
 
 (defvar maf--dispatch-narrowing nil
   "Narrowing policy riding a flag dispatch to a variant command.

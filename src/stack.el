@@ -5639,7 +5639,8 @@ solve) split it, since the flag is an explicit request to map — though
 those forced commands split only an =. An ordered relation or a !=
 refuses there: whether the direction survives depends on which way the
 command bends, which a command, unlike $'s formula, has no way to
-state. Any other subject refuses too: there is nothing to map over.
+state. Any other subject is the degenerate map — the command runs
+once on the whole entry, so M Q on a scalar is plain Q.
 
 The flag lasts for exactly one command, like calc's K or I: it chains
 with those prefixes (M I | runs |'s inverse variant, vconcatrev, once
