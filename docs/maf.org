@@ -6,7 +6,8 @@
   [[https://www.gnu.org/software/emacs/manual/html_mono/calc.html#Symbolic-Lisp-Functions][symbolic lisp functions]]
 
 * Todo
-  - [ ] preview as latex
+  - [-] preview as latex
+  - add basic/fundamental identities (addition, multiplication, etc)
 
 * review
 
