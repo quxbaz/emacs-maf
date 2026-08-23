@@ -35,8 +35,6 @@
     2: [1, 3, 9]
     1:  [1, 2, 3, 6]
     and produce all unique
-  - [ ] add redundant binding `J` to same command as `*`
-    - first, what is existing `J`?
 
 * major features [8/9]
   - [X] bindings module
