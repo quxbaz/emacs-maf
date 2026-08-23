@@ -51,6 +51,7 @@
   - [ ] g i (my/calc-graph-quick-with-range) interval form a:b should work with spaces 'a b'
 
 * later
+** thin web client w/ mathjax rendering
 ** rework preview
    it feels awkward in actual usage
 ** modules suboptions
