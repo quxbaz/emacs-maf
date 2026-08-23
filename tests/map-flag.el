@@ -1,6 +1,6 @@
 ;; mafcmd-map-flag (M): a fancy prefix like calc's K or I — the next
 ;; contextual command, unary or binary, maps over its subject: one run
-;; per vector element or equation side. Where M M maps a formula you
+;; per vector element or equation side. Where M : maps a formula you
 ;; type and M $ maps one from the stack, M maps a command. The prefix is
 ;; driven with real keys where the flow through calc's fancy-prefix
 ;; machinery is itself the thing under test.
@@ -166,11 +166,11 @@
          (cl-assert (null maf-map-flag))
          (cl-assert (null (memq #'maf--map-flag-expire post-command-hook))))
 
-  ;; A second M is the formula prompt, not a cancel: M M runs
-  ;; `mafcmd-map', the flag spent on entry.
+  ;; The colon is the formula prompt: M : runs `mafcmd-map', the
+  ;; flag spent on entry.
   (maf-push "[1, 2, 3]")
   (goto-char (point-max))
-  (progn (execute-kbd-macro (kbd "M M x ^ 2 RET"))
+  (progn (execute-kbd-macro (kbd "M : x ^ 2 RET"))
          (cl-assert (null maf-map-flag))
          (cl-assert (string= (math-format-value
                               (maf--strip-encasing (calc-top 1 'full)))

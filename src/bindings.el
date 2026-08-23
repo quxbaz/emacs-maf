@@ -139,7 +139,7 @@
 ;; target, one run per vector element or equation side. A fancy prefix
 ;; like calc's K/I/H, so it chains with them; M shadows
 ;; calc-more-recursion-depth. The formula-mapping commands live one
-;; keypress behind it (`maf--map-flag-keys'): M M prompts for the
+;; keypress behind it (`maf--map-flag-keys'): M : prompts for the
 ;; formula (mafcmd-map), M $ takes it from the top of the stack
 ;; (mafcmd-map-stack) — $ alone keeps calc's own command, and
 ;; # its digit-starter role. Calc's a M keeps the operator prompt
