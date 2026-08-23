@@ -829,6 +829,27 @@ product it reads as, not a call to 2."
   (let ((c (char-after pos)))
     (and c (string-match-p "[[:alpha:]_]" (char-to-string c)))))
 
+(defun maf-editplus--operand-start-p (pos bound)
+  "Non-nil when the token beginning at POS reads as an operand.
+The tokenizer's classification (`maf-editplus--tokens'), asked of one
+position, and told by exclusion as the tokenizer tells it: a closer,
+a comma, an operator spelling, and the atom the tokenizer files as
+calc's word operator — the run mod under calc's own syntax — begin
+no operand. Every other token does, the lone character the tokenizer
+keeps as an atom of its own included, so the two never drift apart.
+modulus is still the name it looks like, the atom run having taken
+the whole of it; BOUND stops the runs at the end of the entry."
+  (let ((c (char-after pos)))
+    (and c
+         (not (memq c maf-editplus--closers))
+         (not (memq c '(?, ?\;)))
+         (if (maf-editplus--atom-start-p pos)
+             (not (and (maf-editplus--calc-syntax-p)
+                       (string= (buffer-substring-no-properties
+                                 pos (maf-editplus--atom-run pos bound))
+                                "mod")))
+           (not (maf-editplus--operator-run pos bound))))))
+
 (defun maf-editplus--string-run (pos bound)
   "End of the string literal opening at POS, no further than BOUND.
 A string's contents are not syntax, so the whole literal is one atom.
@@ -1208,7 +1229,17 @@ scan takes over, as at the end of the entry. A call's own closer
 names nothing even with no unit behind it (an empty call is the
 command's own answer); a bare pair's or a vector's closer with
 nothing complete behind point — an operator, the opener — still
-names the enclosure, there being no smaller expression to mean."
+names the enclosure, there being no smaller expression to mean.
+
+Nil likewise on padding whitespace with a complete unit ending at
+point: the space beside a spelled operator, or a wrapped line's
+break, is furniture, and a press there means the term just typed —
+2 x| + 1 names the x — with the same term-behind scan taking over.
+The one space that is not padding is a juxtaposed product's own
+operator glyph, told apart by what follows it: 2 |x runs on into an
+operand and names the product, the way any operator names its node
+\(`maf-editplus--operand-start-p' — which knows calc's word operator,
+so x |mod y is the mod's padding and names the x)."
   (let ((entry (maf-editplus--entry-at-point)))
     (when entry
       (let* ((limit (+ (overlay-start entry)
@@ -1226,12 +1257,29 @@ names the enclosure, there being no smaller expression to mean."
                              (setq at (maf-editplus--skip-fill-forward
                                        pos bound))
                              (maf-editplus--node-at tree at)))))
-            (unless (and node
-                         (= at (1- (maf-editplus--node-end node)))
-                         (memq (char-after at) maf-editplus--closers)
-                         (or (eq (maf-editplus--node-kind node) 'call)
-                             (maf-editplus--unit-before at limit)))
-              node)))))))
+            (cond
+             ((and node
+                   (= at (1- (maf-editplus--node-end node)))
+                   (memq (char-after at) maf-editplus--closers)
+                   (or (eq (maf-editplus--node-kind node) 'call)
+                       (maf-editplus--unit-before at limit)))
+              nil)
+             ;; Padding whitespace with a complete unit ending at
+             ;; point reads as the end of the entry does: the press
+             ;; means the term just typed — 2 x| + 1 names the x, not
+             ;; the sum whose padding point stands on. The one space
+             ;; that is not padding is a juxtaposed product's own
+             ;; operator glyph, told apart by what follows: 2 |x runs
+             ;; on into an operand, an operator's padding into the
+             ;; operator itself.
+             ((and node
+                   (memq (char-after at) '(?\s ?\t ?\n))
+                   (not (maf-editplus--operand-start-p
+                         (maf-editplus--skip-fill-forward at bound)
+                         bound))
+                   (maf-editplus--unit-before at limit))
+              nil)
+             (t node))))))))
 
 (defun maf-editplus--wrap-node (node name &optional tail)
   "Write a call to NAME around NODE; return where the call begins.
@@ -1263,6 +1311,39 @@ restructure text the writer is in the middle of."
 
 ;;; The common target
 
+(defun maf-editplus--number-end (pos bound)
+  "Position just past the number beginning at POS, no further than BOUND.
+POS must start a number: a digit, or the point of one written without
+its leading zero. Covers what calc's number syntax reaches past a
+bare digit run, as `maf-editvars--number-end' does over strings: the
+inner punctuation with a digit after it (2.5, calc's fraction 3:4), a
+radix form, whose digits run past nine (16#ff), and a float's
+exponent with its sign (1e5, 1.5e-3). A letter past all of that is
+where the number ends and a name begins — 24x ends at the x."
+  (let ((p pos))
+    (while (and (< p bound)
+                (or (maf-editplus--digit-p (char-after p))
+                    (and (memq (char-after p) maf-editplus--atom-inner)
+                         (maf-editplus--digit-p (char-after (1+ p))))))
+      (setq p (1+ p)))
+    (if (and (< p bound) (eq (char-after p) ?#))
+        (progn
+          (setq p (1+ p))
+          (while (and (< p bound)
+                      (or (maf-editplus--name-char-p (char-after p))
+                          (eq (char-after p) ?.)))
+            (setq p (1+ p))))
+      (when (and (< p bound) (memq (char-after p) '(?e ?E)))
+        (let ((q (1+ p)))
+          (when (and (< q bound) (memq (char-after q) '(?+ ?-)))
+            (setq q (1+ q)))
+          (when (and (< q bound) (maf-editplus--digit-p (char-after q)))
+            (setq p (1+ q))
+            (while (and (< p bound)
+                        (maf-editplus--digit-p (char-after p)))
+              (setq p (1+ p)))))))
+    p))
+
 (defun maf-editplus--unit-before (pos limit)
   "Bounds of the smallest complete unit ending exactly at POS, or nil.
 An atom with its own punctuation — a name, a number, a string literal
@@ -1270,7 +1351,13 @@ An atom with its own punctuation — a name, a number, a string literal
 quoted name, {cm}, is such a group. Nil when the character behind POS
 completes nothing: whitespace, an operator, the head of the entry. No
 whitespace is crossed on the way in: this is the unit a power typed
-at POS would bind to, and a power does not reach back across a space."
+at POS would bind to, and a power does not reach back across a space.
+
+A run that begins with a number and runs on into letters is that
+number times a name — calc reads 24x as 24 x — so the unit ending at
+POS is the name alone, exactly what the power typed there would bind
+to. The number's own letters stay its own: 24e3x is 24e3 times x
+\(`maf-editplus--number-end')."
   (when (> pos limit)
     (let ((c (char-before pos)))
       (cond
@@ -1305,6 +1392,14 @@ at POS would bind to, and a power does not reach back across a space."
           (while (and (> beg limit)
                       (maf-editplus--atom-char-p (1- beg)))
             (setq beg (1- beg)))
+          ;; A run led by a number is the number times the name after
+          ;; it, and the name is the smaller unit ending at POS.
+          (when (or (maf-editplus--digit-p (char-after beg))
+                    (and (eq (char-after beg) ?.)
+                         (maf-editplus--digit-p (char-after (1+ beg)))))
+            (let ((split (maf-editplus--number-end beg pos)))
+              (when (< split pos)
+                (setq beg split))))
           (cons beg pos)))))))
 
 (defun maf-editplus--resolve-target ()
@@ -1413,6 +1508,8 @@ it:
   a+b|*c       =>  a+ln(b*c)      (point on an operator: its node)
   a|+b*c       =>  ln(a+b*c)      (the sum the + heads)
   |(a+b)*c     =>  ln(a+b)*c      (a bare pair is punctuation)
+  2 x| + 1     =>  2 ln(x) + 1    (padding space: the unit behind it)
+  2 |x + 1     =>  ln(2 x) + 1    (the space that is the product)
 
 At the end of the entry there is no character under point, and the
 smallest complete unit ending at point is the argument instead — the
@@ -1421,6 +1518,7 @@ typing carries on:
 
   x+2|         =>  x+ln(2)
   a+b*c|       =>  a+b*ln(c)
+  24x|         =>  24ln(x)        (24x is 24 times x: the x alone)
   27/sqrt(3)|  =>  27/ln(sqrt(3))
   ln(x)|       =>  ln(ln(x))
   x = |        =>  x = ln(|)
