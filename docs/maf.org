@@ -27,6 +27,7 @@
     - the right column showing the corresponding stack
   - [ ] new command: jump to next operand
     - bind to `S-SPC`
+    - do not bind in edit/editplus, leave unbound
     - delete previous command bound to `S-SPC` (jump to next spc char)
   - [ ] rebind `,` to simplify (currently `k k`)
     - [ ] rebind former `,` (push variable) to `:`
