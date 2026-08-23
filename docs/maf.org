@@ -17,7 +17,7 @@
       - `D` to delete entry
       - preview each entry in a split window when point hovers over
       - standard npjk navigation for prev/next entry
-  - [ ] add redundant binding `l t` for apart (split fraction) command (`a a`)
+  - [-] add redundant binding `l t` for apart (split fraction) command (`a a`)
     this acts as an analog to `l c` (collect)
   - [ ] change *maf-history* rendering
     - it should render as two columns
