@@ -73,7 +73,7 @@
 ** modules suboptions
 
 * when done
-  - [ ] revise and update all anki cards
+  - [ ] revise and update all anki cards in `calc-mode` deck
     - base on `native` profile
     - update outdated bindings
     - add cards for missing bindings
