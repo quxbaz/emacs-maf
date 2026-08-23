@@ -23,8 +23,6 @@
     - the right column showing the corresponding stack
   - [ ] new command: jump to next operand
     - bind to `S-SPC`
-    - do not bind in edit/editplus, leave unbound
-    - delete previous command bound to `S-SPC` (jump to next spc char)
   - [ ] swap `C-RET` and `M-RET`
   - [ ] new `C-RET` should retain point, otherwise there's no difference against
     `RET`
