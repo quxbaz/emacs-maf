@@ -185,7 +185,7 @@
   - the escape map beneath base: `m c` maf-list-modules — in every
     profile and with the module off, not a native addition
   - module keys: `SPC` \` `C-o` `(` (edit), `?` (options), `t d` `M-h`
-    (history), `t l` `t u` (persist), `M-p` `M-n` (recall), `s o`
+    (history), `l R` `l S` (persist), `M-p` `M-n` (recall), `s o`
     (formulas)
 ** contextual siblings on their own calc key (outside the table)
    - `A` mafcmd-abs ← calc-abs, `f h` mafcmd-hypot ← calc-hypot,
@@ -343,7 +343,7 @@
      RET's maf-dup-or-clear-selections
    - maf-edit-add-entry-below — deliberately unbound; C-o one entry
      down covers the gesture (see src/bindings.el)
-   - maf-restore-stack — t l runs the choose-a-session variant
+   - maf-restore-stack — l R runs the choose-a-session variant
      (maf-restore-stack-from)
    - maf-history-clear
 

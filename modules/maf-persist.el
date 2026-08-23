@@ -249,7 +249,7 @@ The stack is saved when Emacs exits and after it has been idle for
 buffer opens. For example, if you leave 12 and x+1 on the stack, they
 return the next time you start the same session.
 
-Press t u to save immediately. Press t l to load a stack saved by a
+Press l S to save immediately. Press l R to load a stack saved by a
 different session. Each session has its own file, so two running Emacs
 sessions do not overwrite each other.
 
@@ -263,18 +263,15 @@ but does not delete existing save files."
       (progn
         (add-hook 'kill-emacs-hook #'maf--stack-shutdown)
         (add-hook 'calc-mode-hook #'maf-restore-stack)
-        ;; "Load a saved stack", beside the stack history on t d: both
-        ;; keys bring back an earlier stack, the history's from this
-        ;; session and this one's from any session. t l is unbound in
-        ;; calc itself — its t prefix is the trail (t b d f h i k m n o
-        ;; p r s y) and the date/time commands on the capitals — so
-        ;; nothing is shadowed and there is nothing to cede back.
+        ;; The pair rides maf's custom-letter family on capitals:
+        ;; l S saves this session's file now — a checkpoint the idle
+        ;; timer has not reached yet — and l R loads a stack saved by
+        ;; any session, beside the stack history on t d (both bring
+        ;; back an earlier stack). The lowercase keys belong to
+        ;; complete-square (l s) and to-radians (l r); the capitals
+        ;; are free in every profile. In vim, where l is a motion,
+        ;; the pair rides the family's o home as o S and o R.
         (maf-bindings--refresh)
-        ;; The load key's companion: update this session's save file now,
-        ;; for a checkpoint the idle timer has not reached yet. t u is
-        ;; free in calc too, and the right hand takes it without leaving
-        ;; the prefix's own hand — t s, the mnemonic key, is calc's
-        ;; trail isearch, whose t r twin would be left behind.
         (when maf--stack-save-timer (cancel-timer maf--stack-save-timer))
         (setq maf--stack-save-timer
               (run-with-idle-timer maf-stack-save-interval t #'maf-save-stack))
@@ -293,16 +290,18 @@ but does not delete existing save files."
 ;; Register with the module system when it is present; the mode above
 ;; works on its own without it.
 (maf-bindings-module-keys 'maf-persist 'maf-persist-mode
-  '(((calc native vim) "t l" maf-restore-stack-from)
-    ((calc native vim) "t u" maf-save-stack)))
+  '(((calc native) "l R" maf-restore-stack-from)
+    ((calc native) "l S" maf-save-stack)
+    ((vim) "o R" maf-restore-stack-from)
+    ((vim) "o S" maf-save-stack)))
 
 (when (require 'maf-module nil t)
   (maf-register-module 'maf-persist #'maf-persist-mode
                        "Save and restore the stack across Emacs sessions.
 
 For example, values left on the stack return the next time you start
-the same session. Press t u to save now or t l to load another
+the same session. Press l S to save now or l R to load another
 session's stack. Only values are saved, not selections or undo history."
-                       "t l, t u" "Prefs"))
+                       "l R, l S" "Prefs"))
 
 (provide 'maf-persist)
