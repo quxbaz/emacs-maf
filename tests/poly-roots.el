@@ -180,7 +180,7 @@
     (cl-assert win)
     (with-selected-window win
       (with-current-buffer buf
-        (execute-kbd-macro (kbd "l t")))))
+        (execute-kbd-macro (kbd "l a")))))
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "[-5, 5]"))
   (calc-pop (calc-stack-size))
 
@@ -196,7 +196,7 @@
     (cl-assert win)
     (with-selected-window win
       (with-current-buffer buf
-        (execute-kbd-macro (kbd "l t")))))
+        (execute-kbd-macro (kbd "l a")))))
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "[-2, 2]"))
   (cl-assert (null (nth 2 (calc-top 1 'entry))))
   (cl-assert (null calc-any-selections))

@@ -399,11 +399,11 @@
 ;; `maf-digit-commit-here' (src/minibuffer.el).
 (maf-bindings-define '(native) "C-<return>" #'mafcmd-let)
 ;; Polynomial roots by factoring, with multiplicity. On the l prefix
-;; with the other maf-only algebra keys; l t is unbound in calc
-;; itself, free since collect-fractions moved to its own letter on
-;; l c. It sat on M-r until 2026-08-20; that key falls through to
-;; whatever the global map holds.
-(maf-bindings-define '(native) "l t" #'mafcmd-poly-roots)
+;; with the other maf-only algebra keys; l a is unbound in calc
+;; itself, and mirrors a l, the prompting form of the same answer.
+;; It sat on l t until 2026-08-23, and on M-r before 2026-08-20 —
+;; that key falls through to whatever the global map holds.
+(maf-bindings-define '(native) "l a" #'mafcmd-poly-roots)
 ;; The prompting form of the roots vector beside its stock a P (the
 ;; roots row in maf-cmds.el): the variable is read from the minibuffer
 ;; as i reads it, the subject's priority variable as the default. a l
