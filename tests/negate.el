@@ -186,17 +186,18 @@
 
   ;; --- point must name a target, as it must everywhere else in maf ---
 
-  ;; A point inside the entry that resolves to nothing signals, rather
-  ;; than falling through to the whole entry. The path walk reports the
-  ;; whole formula and an unfindable node the same way — as nil — so
-  ;; without the resolver's verdict this negated the entry instead.
+  ;; This f once resolved to nothing, and this case asserted the
+  ;; signal: upstream dropped the DIV flag from selection compositions,
+  ;; leaving a bracketed denominator two parens short of the display, so
+  ;; the entry's last columns were unreachable. With the composition
+  ;; fixed (`maf--comp-compose-keep-div', core/maf-comp.el) the f names
+  ;; itself, and the negate compensates inside the product as anywhere
+  ;; else. The signal on a target the resolver cannot name still stands,
+  ;; covered by the region case below.
   (maf-push "2 / (e f)")
   (progn (goto-char (point-min)) (search-forward "f") (backward-char 1))
-  (cl-assert (eq :signaled
-                 (condition-case nil
-                     (progn (call-interactively 'mafcmd-negate) :committed)
-                   (error :signaled))))
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "2 / (e f)"))
+  (call-interactively 'mafcmd-negate)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "2 / (-e*-f)"))
   (cl-assert (= (calc-stack-size) 1))
   (calc-pop (calc-stack-size))
 
