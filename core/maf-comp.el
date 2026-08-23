@@ -24,6 +24,10 @@
 ;; let-bindings and reads of them are dynamic too.
 (defvar math-comp-pos)
 (defvar math-comp-sel-tag)
+(defvar math-comp-selected)
+(defvar math-comp-tagged)
+(defvar math-compose-level)
+(defvar calc-selection-cache-entry)
 (defvar calc-selection-cache-num)
 (defvar calc-selection-cache-comp)
 (defvar calc-selection-cache-offset)
@@ -34,6 +38,48 @@
 ;; let-binds them around the walk.
 (defvar maf--comp-flat-start)
 (defvar maf--comp-flat-end)
+
+;; Upstream calc loses parens in every composition it builds for the
+;; selection machinery: the tag/selection branch — the first cond arm of
+;; `math-compose-expr' — recurses as (math-compose-expr a prec), dropping
+;; the DIV argument. DIV is what brackets a product standing as a
+;; denominator (implicit multiplication outranks `/', so precedence never
+;; does it), and it is the only paren source the branch loses — PREC rides
+;; through. So the tagged composition renders `8 / (3 x^3)' as
+;; `8 / 3 x^3', two characters short of the displayed entry, and every
+;; consumer of that composition drifts together: cursor→sub-formula
+;; resolution (`calc-find-selected-part', hence maf's whole resolve layer)
+;; goes off by the missing parens and finds nothing at all in the entry's
+;; last columns, and a re-render from the cached composition
+;; (`calc-change-current-selection', after any selection rewrite) writes
+;; the paren-less text into the buffer until the next refresh.
+;;
+;; The advice re-runs exactly the dropped-DIV case with DIV passed
+;; through, replicating the branch's own bookkeeping: the level increment
+;; the bypassed outer call would have made, selection cleared inside the
+;; tag, and — when tagging is on — `math-comp-tagged' pointed at A so the
+;; inner call falls past the branch into the operator logic, where DIV
+;; brackets the product inside the tag. Every other call passes through
+;; untouched, so only tagged/selected compositions of denominator
+;; products change.
+(defun maf--comp-compose-keep-div (orig a prec &optional div)
+  "Run `math-compose-expr' ORIG with DIV surviving its tag branch.
+A and PREC pass through unchanged; see the comment above."
+  (if (and div (eq (car-safe a) '*)
+           (or (and (eq a math-comp-selected) a)
+               (and math-comp-tagged (not (eq math-comp-tagged a)))))
+      (let ((math-compose-level (1+ math-compose-level))
+            (math-comp-selected nil)
+            (math-comp-tagged (and math-comp-tagged a)))
+        (list 'tag a (funcall orig a prec div)))
+    (funcall orig a prec div)))
+
+(advice-add 'math-compose-expr :around #'maf--comp-compose-keep-div)
+
+;; A composition cached before the advice landed was built without it;
+;; empty the cache (`calc-prepare-selection' compares against this) so
+;; the next selection recomposes.
+(setq calc-selection-cache-entry nil)
 
 (defun maf--comp-flat-term (c)
   "Walk composition C, resolving the tag at `math-comp-sel-cpos'.
