@@ -9,9 +9,6 @@
   - [ ] preview as latex
 
 * review
-  - [-] *maf-formulas*
-    - `q` should quit in searched results view
-    - `c` should clear
 
 * major features [8/9]
   - [X] bindings module
