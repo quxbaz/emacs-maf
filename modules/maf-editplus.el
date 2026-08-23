@@ -52,15 +52,15 @@
 ;; heads — and these write ln, sqrt, abs, sin, cos, tan or log around
 ;; that. At the end of the entry there is no character under point,
 ;; and the smallest complete unit ending at point is the argument
-;; instead — the same unit ' raises there — so a term just typed
+;; instead — the same unit `:' raises there — so a term just typed
 ;; becomes the log, the root, the modulus or a trig function of itself
 ;; without going back to find where it starts.
 ;;
-;; M-2..M-9 and ' raise to a power. An exponent is two characters that
+;; M-2..M-9 and : raise to a power. An exponent is two characters that
 ;; interrupt a formula being typed, and the digit is nearly always
-;; small: the meta-digits write ^2 through ^9 outright, and ' squares
+;; small: the meta-digits write ^2 through ^9 outright, and : squares
 ;; and then counts up, one press per power, for the times the exponent
-;; is easier to reach for than to name. ' names what it raises the
+;; is easier to reach for than to name. `:' names what it raises the
 ;; way L and Q name what they wrap — the sub-expression under point,
 ;; parenthesized where the text needs it — while the meta-digits write
 ;; their two characters at point and look at nothing.
@@ -2104,7 +2104,7 @@ These keys work only while a maf-edit session is active:
   S/C/T         Wrap the target in sin, cos, or tan.
   B             Wrap the target in log with an explicit base.
   M-2..M-9      Type ^2 through ^9.
-  ' or W        Square the target; repeat to raise the power.
+  : or W        Square the target; repeat to raise the power.
   P             Type pi.
   DEL/C-d       Delete a whole power when deleting next to ^.
 
@@ -2132,7 +2132,7 @@ Turning this mode off restores the ordinary editing keys."
                  ("C"   . maf-editplus-wrap-cos)
                  ("T"   . maf-editplus-wrap-tan)
                  ("B"   . maf-editplus-wrap-log)
-                 ("'"   . maf-editplus-raise-power)
+                 (":"   . maf-editplus-raise-power)
                  ("W"   . maf-editplus-raise-power)
                  ("P"   . maf-editplus-insert-pi)
                  ("DEL" . maf-editplus-delete-backward)
