@@ -13,9 +13,8 @@
 ;; What is here now are the four delimiter gestures, TAB, M-o, C-RET
 ;; and the shifted arrows, the function keys L, Q, |, S, C, T and B,
 ;; the exponent keys M-2 through M-9 and :, P for the constant pi,
-;; DEL and C-d, which delete a power whole from either side of its
-;; operator, and S-SPC, which keeps the stack's space motion
-;; (`maf-forward-space') alive over the editable text.
+;; and DEL and C-d, which delete a power whole from either side of
+;; its operator.
 ;;
 ;; TAB escapes. Typing a formula runs forward past closing delimiters
 ;; constantly — sqrt(x^2+1), f(g(x)) — and reaching the far side of one
@@ -2139,7 +2138,6 @@ what goes in."
 These keys work only while a maf-edit session is active:
 
   TAB           Move past the closing parenthesis or bracket.
-  S-SPC         Move to the next space.
   M-o           Put parentheses around the term before point.
   C-RET         Duplicate the group at point.
   S-up/S-down   Change parentheses to brackets, or back.
@@ -2162,7 +2160,6 @@ Turning this mode off restores the ordinary editing keys."
   :group 'maf
   (let ((on maf-use-editplus-mode))
     (dolist (b '(("TAB" . maf-editplus-escape-group)
-                 ("S-SPC" . maf-forward-space)
                  ("M-o" . maf-editplus-wrap-parens)
                  ("C-<return>" . maf-editplus-duplicate-group)
                  ("S-<up>"   . maf-editplus-toggle-brackets)

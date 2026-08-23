@@ -329,7 +329,9 @@
    - [X] `M-m` maf-beginning-of-entry
    - [X] `M-f` maf-forward-noun
    - [X] `M-b` maf-backward-noun
-   - [X] `S-SPC` maf-forward-space
+   - [X] `S-SPC` maf-forward-space (deleted 2026-08-23: command,
+     binding, editplus key, and tty decode entries all removed —
+     the key is freed)
    - [X] `C-M-u` maf-up-expression
    - [X] `C-M-k` maf-reset
    - [X] `C-M-l` maf-reset-settings
