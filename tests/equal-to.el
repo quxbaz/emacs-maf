@@ -50,38 +50,35 @@
   (calc-pop (calc-stack-size))
 
   ;; An unsimplified subject survives intact — nothing re-normalizes it.
-  ;; (The bare variable argument leads, per the orientation rule below;
-  ;; the subject's structure is carried across untouched.)
   (let ((calc-simplify-mode 'none))
     (calc-push '(+ (+ (var x var-x) 1) 1)))
   (calc-push '(var y var-y))
   (goto-char (point-max))
   (call-interactively 'mafcmd-equal-to)
   (cl-assert (equal (calc-top 1 'full)
-                    '(calcFunc-eq (var y var-y) (+ (+ (var x var-x) 1) 1))))
+                    '(calcFunc-eq (+ (+ (var x var-x) 1) 1) (var y var-y))))
   (calc-pop (calc-stack-size))
 
-  ;; --- Orientation: a lone bare variable is written on the left ---
+  ;; --- No reordering: the sides stand as the stack had them ---
 
-  ;; Subject is an object, argument a bare variable: the variable leads,
-  ;; overriding the subject-left rule.
+  ;; Subject is an object, argument a bare variable: the pair stands as
+  ;; it sat — nothing turns the variable to the left.
   (maf-push "5")
   (maf-push "x")
+  (goto-char (point-max))
+  (call-interactively 'mafcmd-equal-to)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "5 = x"))
+  (calc-pop (calc-stack-size))
+
+  ;; The variable as subject keeps the left, like any subject.
+  (maf-push "x")
+  (maf-push "5")
   (goto-char (point-max))
   (call-interactively 'mafcmd-equal-to)
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "x = 5"))
   (calc-pop (calc-stack-size))
 
-  ;; The variable already on the left stays there — the subject-left rule
-  ;; and the orientation rule agree, so nothing turns.
-  (maf-push "x")
-  (maf-push "5")
-  (goto-char (point-max))
-  (call-interactively 'mafcmd-equal-to)
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "x = 5"))
-  (calc-pop (calc-stack-size))
-
-  ;; Two bare variables say nothing about which leads: subject stays left.
+  ;; Two bare variables: subject stays left.
   (maf-push "y")
   (maf-push "x")
   (goto-char (point-max))
@@ -89,7 +86,7 @@
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "y = x"))
   (calc-pop (calc-stack-size))
 
-  ;; Two objects have no subject to prefer: subject stays left.
+  ;; Two objects: subject stays left.
   (maf-push "2 a")
   (maf-push "b + 1")
   (goto-char (point-max))
@@ -97,8 +94,7 @@
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "2 a = b + 1"))
   (calc-pop (calc-stack-size))
 
-  ;; A compound in the variable is an object, not a bare variable, so the
-  ;; subject keeps the left.
+  ;; A compound in the variable too: subject keeps the left.
   (maf-push "5")
   (maf-push "2 x")
   (goto-char (point-max))
@@ -106,12 +102,12 @@
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "5 = 2 x"))
   (calc-pop (calc-stack-size))
 
-  ;; != orients the same way.
+  ;; != keeps the pair as it sat, the same way.
   (maf-push "5")
   (maf-push "x")
   (goto-char (point-max))
   (call-interactively 'mafcmd-not-equal-to)
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "x != 5"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "5 != x"))
   (calc-pop (calc-stack-size))
 
   ;; --- Inverse flag builds != via mafcmd-not-equal-to ---
@@ -146,8 +142,7 @@
   ;; --- Whole-entry scope: point inside a formula still equates the
   ;; whole entry, not the sub-formula under point ---
 
-  ;; Neither side is a bare variable, so orientation does not enter into
-  ;; it: had the subject narrowed to the v under point, this would read
+  ;; Had the subject narrowed to the v under point, this would read
   ;; v = w + 1.
   (maf-push "u + v")
   (maf-push "w + 1")

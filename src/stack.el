@@ -2564,17 +2564,12 @@ entry at point equates with the top regardless of the entries between.
   2:  b     =>   1:  b
   1:  c
 
-One case overrides the subject-left rule: when exactly one side is a
-bare variable, that side is written on the left, so an equation about x
-reads x = ... however the pair happened to sit on the stack. Only that
-clear case turns — two variables say nothing about which leads, and two
-objects have no subject to prefer.
+The sides stand as the stack had them — a bare variable on the right
+stays on the right, like the operands of any other binary command;
+nothing reorders the pair.
 
-  2:  5          1:  x = 5|     (the variable leads)
+  2:  5          1:  5 = x|
   1:  x|
-
-  2:  x          1:  x = y|     (both variables: as they stand)
-  1:  y|
 
 With the Inverse flag, `mafcmd-not-equal-to' builds != instead. With
 keep-args the operands stay and the equation is pushed on top. Both
@@ -2586,19 +2581,19 @@ with fewer than two entries."
   :scope entry
   :map -1
   :inverse mafcmd-not-equal-to
-  (commit (maf--relation-var-left (list 'calcFunc-eq expr arg))))
+  (commit (list 'calcFunc-eq expr arg)))
 
 (maf-defcmd mafcmd-not-equal-to (expr arg commit)
   "Build != between the entry at point and the top-of-stack argument.
 
 The Inverse route of `mafcmd-equal-to' — identical in every way but the
 relation it forms: subject != argument, structural, no simplification,
-and a lone bare variable written on the left."
+the sides standing as the stack had them."
   :arity binary
   :prefix "neq"
   :scope entry
   :map -1
-  (commit (maf--relation-var-left (list 'calcFunc-neq expr arg))))
+  (commit (list 'calcFunc-neq expr arg)))
 
 (maf-defcmd mafcmd-remove-equal (expr _arg commit)
   "Drop the relation from the entry at point, keeping the side that matters.
