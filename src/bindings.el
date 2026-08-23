@@ -66,6 +66,10 @@
 ;; c for collect. The key returns to service after the float/frac
 ;; toggle freed it: frac kept its name and flags, and t said nothing.
 (maf-bindings-define '(native) "l c" #'mafcmd-collect-fractions)
+;; Collect's inverse beside it: a redundant second key for apart (the
+;; table's a a), splitting a fraction into partial fractions the way
+;; l c gathers them. t freed when poly-roots moved to l a.
+(maf-bindings-define '(native) "l t" #'mafcmd-apart)
 ;; The float/frac toggle: any float in the target converts toward
 ;; exact, otherwise fractions float — see `mafcmd-float-frac'. The
 ;; fixed directions stay reachable through it: I forces the float, H
