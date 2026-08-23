@@ -163,6 +163,18 @@
                     "ln(2 x)+1"))
   (call-interactively 'maf-edit-discard)
 
+  ;; A character the scan has no reading for is an atom of its own
+  ;; (`maf-editplus--op-strings'), so the space in front of it is a
+  ;; juxtaposed product's space too — the tokenizer's classification
+  ;; tells operand from operator, not a list of operand spellings.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (insert "x @y") nil)
+  (progn (maf-edit-move-beginning-of-line 1) (forward-char 1) nil)
+  (call-interactively 'maf-editplus-wrap-ln)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "ln(x @y)"))
+  (call-interactively 'maf-edit-discard)
+
   ;; An operator's padding space is no operator of its own: a complete
   ;; unit ending at point is the argument there, exactly as at the end
   ;; of the entry. The sum stays reachable from the `+' itself.
@@ -354,6 +366,20 @@
          nil)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
                     "ln(modulus)+1"))
+  (call-interactively 'maf-edit-discard)
+
+  ;; And the word's padding is padding like any operator's, not the
+  ;; start of an operand: the unit ending at point is the argument,
+  ;; and the mod node keeps its ground from its own letters.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (insert "2 x mod y")
+         (maf-edit-move-beginning-of-line 1)
+         (forward-char 3)
+         (let ((maf-edit-parse-text-function #'identity))
+           (call-interactively 'maf-editplus-wrap-ln))
+         nil)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "2 ln(x) mod y"))
   (call-interactively 'maf-edit-discard)
 
   ;; And under the editvars dialect it is no operator at all: there a

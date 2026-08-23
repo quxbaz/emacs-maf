@@ -829,6 +829,27 @@ product it reads as, not a call to 2."
   (let ((c (char-after pos)))
     (and c (string-match-p "[[:alpha:]_]" (char-to-string c)))))
 
+(defun maf-editplus--operand-start-p (pos bound)
+  "Non-nil when the token beginning at POS reads as an operand.
+The tokenizer's classification (`maf-editplus--tokens'), asked of one
+position, and told by exclusion as the tokenizer tells it: a closer,
+a comma, an operator spelling, and the atom the tokenizer files as
+calc's word operator — the run mod under calc's own syntax — begin
+no operand. Every other token does, the lone character the tokenizer
+keeps as an atom of its own included, so the two never drift apart.
+modulus is still the name it looks like, the atom run having taken
+the whole of it; BOUND stops the runs at the end of the entry."
+  (let ((c (char-after pos)))
+    (and c
+         (not (memq c maf-editplus--closers))
+         (not (memq c '(?, ?\;)))
+         (if (maf-editplus--atom-start-p pos)
+             (not (and (maf-editplus--calc-syntax-p)
+                       (string= (buffer-substring-no-properties
+                                 pos (maf-editplus--atom-run pos bound))
+                                "mod")))
+           (not (maf-editplus--operator-run pos bound))))))
+
 (defun maf-editplus--string-run (pos bound)
   "End of the string literal opening at POS, no further than BOUND.
 A string's contents are not syntax, so the whole literal is one atom.
@@ -1216,7 +1237,9 @@ break, is furniture, and a press there means the term just typed —
 2 x| + 1 names the x — with the same term-behind scan taking over.
 The one space that is not padding is a juxtaposed product's own
 operator glyph, told apart by what follows it: 2 |x runs on into an
-operand and names the product, the way any operator names its node."
+operand and names the product, the way any operator names its node
+\(`maf-editplus--operand-start-p' — which knows calc's word operator,
+so x |mod y is the mod's padding and names the x)."
   (let ((entry (maf-editplus--entry-at-point)))
     (when entry
       (let* ((limit (+ (overlay-start entry)
@@ -1251,11 +1274,9 @@ operand and names the product, the way any operator names its node."
              ;; operator itself.
              ((and node
                    (memq (char-after at) '(?\s ?\t ?\n))
-                   (let ((next (maf-editplus--skip-fill-forward at bound)))
-                     (not (or (maf-editplus--atom-start-p next)
-                              (memq (char-after next)
-                                    maf-editplus--openers)
-                              (eq (char-after next) ?\"))))
+                   (not (maf-editplus--operand-start-p
+                         (maf-editplus--skip-fill-forward at bound)
+                         bound))
                    (maf-editplus--unit-before at limit))
               nil)
              (t node))))))))
