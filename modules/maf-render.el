@@ -38,7 +38,7 @@ with its `--stdout' option."
   :type 'file
   :group 'maf)
 
-(defcustom maf-render-font-size 40
+(defcustom maf-render-font-size 28
   "Base font size passed to RaTeX by `maf-render'."
   :type 'number
   :group 'maf)
