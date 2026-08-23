@@ -7,7 +7,8 @@
 
 * Todo
   - [-] preview as latex
-  - add basic/fundamental identities (addition, multiplication, etc)
+  - [ ] *maf-formulas*: add basic/fundamental identities (addition,
+    multiplication, etc)
 
 * review
 
