@@ -6,7 +6,7 @@
   [[https://www.gnu.org/software/emacs/manual/html_mono/calc.html#Symbolic-Lisp-Functions][symbolic lisp functions]]
 
 * Todo
-  - [-] preview as latex
+  - [X] preview as latex (on demand via RaTeX)
   - [ ] *maf-formulas*: add basic/fundamental identities (addition,
     multiplication, etc)
 
@@ -47,7 +47,7 @@
 ** modules suboptions
 
 * maybe
-** TODO preview entry as latex
+** DONE preview entry as latex
 
 * cleanup
   - [ ] delete my/calc

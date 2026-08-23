@@ -186,7 +186,7 @@
     profile and with the module off, not a native addition
   - module keys: `SPC` \` `C-o` `(` (edit), `?` (options), `t d` `M-h`
     (history), `t l` `t u` (persist), `M-p` `M-n` (recall), `s o`
-    (formulas)
+    (formulas), `l t` (render)
 ** contextual siblings on their own calc key (outside the table)
    - `A` mafcmd-abs ← calc-abs, `f h` mafcmd-hypot ← calc-hypot,
      `a b` mafcmd-substitute ← calc-substitute,
@@ -283,9 +283,11 @@
      for the difference of squares, beside its k d; the vim mirror
      carries it as `o D`, the command's home there since vim's k is
      a motion)
-   - [X] `l t` mafcmd-poly-roots (2026-08-20: moved off `M-r` onto the
-     key collect-fractions vacated; M-r falls through to the global
-     map)
+   - [X] `l a` mafcmd-poly-roots (2026-08-23: moved off `l t` so the
+     on-demand typesetter can own its mnemonic; mirrors roots-for on
+     `a l`, and `M-r` remains free)
+   - [X] `l t` maf-render (2026-08-23: typeset the current entry once
+     through RaTeX; the vim profile declares its mirror on `o t`)
    - [X] `a l` mafcmd-roots-for (2026-08-22: the prompting form — the
      variable read as `i` reads it, the subject's priority variable
      as the default; the stock stack-argument roots stays on `a P`.
@@ -407,10 +409,12 @@
      still dies with the motion, native the escape hatch
    - [X] `l` — resolved 2026-08-21: the family rides `o` (right-hand
      home row, the most l-like key under the fingers), second letters
-     intact — o c collect-fractions, o t poly-roots (minus l l: the
+     intact — o c collect-fractions, o a poly-roots (minus l l: the
      toggle rides M-o there) —
      mirrored in src/bindings.el from native's own l declarations, so
-     a key added to the family lands in both profiles. The commands
+     a default key added to the family lands in both profiles. Module
+     claims are not derived; render explicitly declares o t beside l t.
+     The commands
      displaced from o's case pair trade places one step over: the
      commute takes the family's free doubled slot o o (native binds
      no l o), the reciprocal the capital O the commute vacates. The
@@ -484,7 +488,8 @@
        mafcmd-collect-fractions (l c), mafcmd-float-frac (l l, the
        float/frac toggle; float and frac stay commands),
        mafcmd-to-degrees (l d), mafcmd-to-radians (l r),
-       mafcmd-poly-roots (l t), mafcmd-inverse-function (l v),
+       mafcmd-poly-roots (l a), maf-render (l t; module),
+       mafcmd-inverse-function (l v),
        mafcmd-swap-vars (l x), mafcmd-unique-groups (l g)
      - calc's log-units family: calc-lu-plus/minus/times/divide/quant,
        calc-db, calc-np, calc-freq, calc-midi, calc-spn
@@ -530,8 +535,8 @@
      — the [ ] lesson)
 ** modified keys
    - free meta: `M-a` `M-d` `M-e` `M-g` `M-j` `M-q` `M-t` `M-z`,
-     and `M-r` since poly-roots moved to l t (2026-08-20; `M-h` went
-     to the history the same day)
+     and `M-r` (poly-roots left it for l a on 2026-08-23; `M-h` went
+     to the history on 2026-08-20)
    - cautious meta: `M-v` (scrolling's other half), `M-y` (yank-pop
      pairs with maf-yank's C-y); never `M-x`
    - free-ish control: `C-z` (suspend, commonly rebound anyway); `C-t`
