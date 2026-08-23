@@ -148,19 +148,19 @@
   (call-interactively 'maf-edit-discard)
 
   ;; Under the input dialect a bare run of letters is a run of
-  ;; factors, so raising it whole needs the parens — a bare ^2 would
-  ;; take only the last factor. Wanting just the y squared is what
-  ;; spacing the run apart is for.
+  ;; factors, and the caret binds to the last of them — x times y
+  ;; squared, the same smallest expression the wrap keys take there.
+  ;; Raising the run whole is what marking it is for.
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "ln(xy)") nil)
   (progn (backward-char 1) nil)
   (progn (execute-kbd-macro ":") nil)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
-                    "ln((xy)^2)"))
-  ;; Point on the caret, so the next press counts the power up.
+                    "ln(xy^2)"))
+  ;; The next press counts that power up.
   (progn (execute-kbd-macro ":") nil)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
-                    "ln((xy)^3)"))
+                    "ln(xy^3)"))
   (call-interactively 'maf-edit-discard)
 
   ;; On the run itself the node is that same run, and the parens go
