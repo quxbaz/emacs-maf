@@ -376,30 +376,50 @@ costs nothing — the update at the end of the command draws it afresh."
     (maf-preview--overlay-hide)
     (setq maf-preview--state nil)))
 
+(defun maf-preview--target-window ()
+  "Return the window the panel belongs over, or nil if there is none.
+The first window on the frame showing a buffer with `maf-preview-mode'
+on — and `window-list' starts from the selected window, so with the
+stack in two windows the panel goes over the one the user is working
+in. Unlike `maf-preview--window' this does not need the user to be in
+the stack at all: the mode toggled from the module menu, or an echo
+area growing or shrinking under the menu, still finds the calc window
+on display beside it."
+  (seq-find (lambda (win)
+              (buffer-local-value 'maf-preview-mode (window-buffer win)))
+            (window-list)))
+
 (defun maf-preview--on-window-change (&rest _)
-  "Refresh the preview, or hide it, when the window the user is in changes.
+  "Refresh the preview, or hide it, when the window layout changes.
 On `window-selection-change-functions' and
 `window-configuration-change-hook' while the module is on: the panel
-floats over one window, so it has to go when that window is no longer
-showing the stack, and to be redrawn when the window is resized, split,
-or replaced — none of which is a command in the calc buffer.
+floats over one window, so it has to go when no window shows the stack
+any more, and to be redrawn when that window is resized, split, or
+replaced — none of which is a command in the calc buffer.
 
 Both hooks are taken globally rather than buffer-locally on purpose: the
 buffer-local form of the configuration hook runs once per window showing
 the buffer, each time with that window selected, which would leave the
 single panel over whichever window happened to come last.
 
+The window to draw over is searched for (see
+`maf-preview--target-window') rather than read off the current buffer's
+`maf-preview-mode': these hooks run with whatever buffer redisplay has
+current — the module menu's, say, when toggling a module resizes the
+echo area under it — and the mode is nil in any buffer but the stack's,
+which had the panel hide itself the moment something else was current.
+
 The panel's own arrival is itself a window change, and these hooks then
-run with the child frame's buffer current, where the buffer-local
-`maf-preview-mode' is nil — so reading the mode from whatever buffer
-happens to be current had the panel hide itself the moment it was drawn.
-The frame's buffer is passed over for that reason. Only redisplay runs
-these hooks, so a keyboard macro never saw it and a real keypress
-always did."
+run with the child frame's buffer current; that event is passed over
+rather than answered with a redraw of the panel it is about. Only
+redisplay runs these hooks, so a keyboard macro never saw it and a real
+keypress always did."
   (unless (eq (current-buffer) (get-buffer maf-preview--buffer))
-    (if (bound-and-true-p maf-preview-mode)
-        (maf-preview--update)
-      (maf-preview--hide))))
+    (let ((win (maf-preview--target-window)))
+      (if win
+          (with-current-buffer (window-buffer win)
+            (maf-preview--update win))
+        (maf-preview--hide)))))
 
 ;;;###autoload
 (define-minor-mode maf-preview-mode
