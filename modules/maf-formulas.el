@@ -611,6 +611,13 @@ is untouched, still listed under its own category."
   "Menu buffer being narrowed while the minibuffer reads a filter.
 Bound for the dynamic extent of `maf-formulas-filter' only.")
 
+(defvar maf-formulas--filter-touched nil
+  "Non-nil once anything has been typed into the filter minibuffer.
+The prompt opens empty, but the narrowing in effect holds until the
+user actually types: an untouched empty minibuffer means \"nothing
+said yet\", not \"show everything\". Bound alongside
+`maf-formulas--filter-buffer'.")
+
 (defun maf-formulas--set-query (buf query)
   "Narrow menu buffer BUF to QUERY, re-rendering when it changed.
 Rendering happens with BUF's window selected so point and the window's
@@ -626,9 +633,13 @@ view move together, as they would if the user had navigated there."
 
 (defun maf-formulas--filter-update ()
   "Narrow the menu to what is typed so far.
-Runs on the minibuffer's own `post-command-hook'."
-  (maf-formulas--set-query maf-formulas--filter-buffer
-                           (minibuffer-contents-no-properties)))
+Runs on the minibuffer's own `post-command-hook'. Until the first
+edit, the empty prompt leaves the current narrowing alone; deleting
+back to empty after typing does widen to the full list."
+  (let ((s (minibuffer-contents-no-properties)))
+    (unless (and (string-empty-p s) (not maf-formulas--filter-touched))
+      (setq maf-formulas--filter-touched t)
+      (maf-formulas--set-query maf-formulas--filter-buffer s))))
 
 (defun maf-formulas-filter (&optional query)
   "Narrow the formula menu to QUERY (title, category, or variable).
@@ -640,15 +651,19 @@ narrowing and \\[keyboard-quit] restores the one in effect before."
       (maf-formulas--set-query (current-buffer) query)
     (let* ((buf (current-buffer))
            (prev maf-formulas--query)
-           (maf-formulas--filter-buffer buf))
+           (maf-formulas--filter-buffer buf)
+           (maf-formulas--filter-touched nil))
       (condition-case nil
           ;; The live narrowing has already applied what was typed; the
           ;; returned string settles anything a final command changed.
-          (maf-formulas--set-query
-           buf (minibuffer-with-setup-hook
-                   (lambda ()
-                     (add-hook 'post-command-hook #'maf-formulas--filter-update nil t))
-                 (read-string "Filter formulas: " prev)))
+          ;; RET on an untouched prompt keeps the narrowing in effect —
+          ;; the list never previewed anything else.
+          (let ((s (minibuffer-with-setup-hook
+                       (lambda ()
+                         (add-hook 'post-command-hook #'maf-formulas--filter-update nil t))
+                     (read-string "Filter formulas: "))))
+            (maf-formulas--set-query
+             buf (if maf-formulas--filter-touched s prev)))
         (quit (maf-formulas--set-query buf prev)
               (signal 'quit nil))))))
 
