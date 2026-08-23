@@ -11,6 +11,39 @@
     multiplication, etc)
 
 * review
+  - [ ] `e` command should not re-arrange variable to be on left side.
+    1: 5
+    2: x
+    `e` => x = 5
+
+    instead, let it resolve as it would naturally and consistent with normal
+    stack behavior,
+    => 5 = x
+  - [ ] rebind persist commands (removing existing bindings) to,
+    `l S` save
+    `l R` restore
+    - `l R` should bring up a buffer (using dial pkg) instead of a menu
+      - the buffer should have all the entries
+      - `D` to delete entry
+      - preview each entry in a split window when point hovers over
+      - standard npjk navigation for prev/next entry
+  - [ ] add redundant binding `l t` for apart command (`a a`)
+    this acts as an analog to `l c` (collect)
+  - [ ] change *maf-history* rendering
+    - it should render as two columns
+    - the left column showing the actions
+    - the right column showing the corresponding stack
+  - [ ] new command: jump to next operand
+    bind to `S-SPC`
+    delete previous command bound to `S-SPC` (jump to next spc char)
+  - [ ] rebind `,` to simplify (currently `k k`)
+    - [ ] rebind former `,` (push variable) to `:`
+    - `k k` should be free now. can we do anything with this?
+  - [ ] swap `C-RET` and `M-RET`
+  - [ ] new `C-RET` should retain point, otherwise there's no difference against
+    `RET`
+  - [ ] (a + b) (2 c - d) latex is wrong (remove the \times)
+  - [ ] how to sort vector? did this used to be `v o`?
 
 * major features [8/9]
   - [X] bindings module
