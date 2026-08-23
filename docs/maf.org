@@ -26,8 +26,8 @@
     - the left column showing the actions
     - the right column showing the corresponding stack
   - [ ] new command: jump to next operand
-    bind to `S-SPC`
-    delete previous command bound to `S-SPC` (jump to next spc char)
+    - bind to `S-SPC`
+    - delete previous command bound to `S-SPC` (jump to next spc char)
   - [ ] rebind `,` to simplify (currently `k k`)
     - [ ] rebind former `,` (push variable) to `:`
     - `k k` should be free now. can we do anything with this?
