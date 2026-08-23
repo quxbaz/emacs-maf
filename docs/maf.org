@@ -37,6 +37,8 @@
   - [ ] `a f` is busted. doesn't work at all on:
     12 y^2 - 19 y + 4
   - [ ] add redundant binding `k f` bound to same command as `a f` (factor)
+  - [ ] add binding for permutations (binary command). there should be a builtin
+    for this. did we used to have this on `k t`?
 
 * major features [8/9]
   - [X] bindings module
