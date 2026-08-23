@@ -286,7 +286,10 @@
    - [X] `l t` mafcmd-poly-roots (2026-08-20: moved off `M-r` onto the
      key collect-fractions vacated; M-r falls through to the global
      map)
-   - [X] `a l` mafcmd-roots (alias of its stock `a P`; my/calc's key)
+   - [X] `a l` mafcmd-roots-for (2026-08-22: the prompting form — the
+     variable read as `i` reads it, the subject's priority variable
+     as the default; the stock stack-argument roots stays on `a P`.
+     Earlier the key was a plain alias of `a P`, my/calc's key)
    - [X] `j i` mafcmd-isolate
    - [X] `a k` mafcmd-abs-ineq
    - [X] `M-.` mafcmd-remove-equal

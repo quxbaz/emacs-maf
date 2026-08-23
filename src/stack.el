@@ -4647,17 +4647,19 @@ has no default and the command's own error, if any, reports the miss."
            (vars (maf--solve-sorted-vars (alist-get :expr context))))
       (and vars (symbol-name (nth 1 (car vars)))))))
 
-(defun maf--solve-for-read-vars (default)
+(defun maf--solve-for-read-vars (default &optional prompt)
   "Read the variable(s) to solve for; return them as a calc expression.
 DEFAULT is the variable name empty input stands for, or nil to require
-input. Several names, separated by commas or spaces, come back as a
-vector, so a system of equations can be solved for all its unknowns at
-once. Anything calc cannot parse is a `user-error'."
-  (let ((input (string-trim
-                (read-string (if default
-                                 (format "Solve for (default %s): " default)
-                               "Solve for: ")
-                             nil nil default))))
+input. PROMPT heads the prompt string, \"Solve for\" when nil. Several
+names, separated by commas or spaces, come back as a vector, so a
+system of equations can be solved for all its unknowns at once.
+Anything calc cannot parse is a `user-error'."
+  (let* ((prompt (or prompt "Solve for"))
+         (input (string-trim
+                 (read-string (if default
+                                  (format "%s (default %s): " prompt default)
+                                (concat prompt ": "))
+                              nil nil default))))
     (when (string-empty-p input)
       (user-error "No variable to solve for"))
     ;; Two or more names denote a vector; bracket them so calc reads one,
@@ -4761,6 +4763,69 @@ variable that was solved for.
     (let ((maf--solve-for-vars vars)
           (maf--solve-for-func func))
       (call-interactively #'maf--solve-for-run))))
+
+(defun mafcmd-roots-for ()
+  "Find all roots of the entry at point, for a variable from the minibuffer.
+
+  x^2 - 4  =>  [2, -2]
+
+The variable is read as `mafcmd-solve-for' (i) reads it: the prompt
+offers the subject\='s priority variable as its default — x, y, z, t
+first, then alphabetical — so RET takes the variable the entry
+suggests. The roots come back as a vector, complete with multiplicity,
+exact whatever the mode, a family\='s leftover freedom named by a dummy
+variable (n1 over the integer multiples of a periodic root). A bare
+expression is treated as = 0, and an input calc cannot take roots of
+for the named variable commits unchanged.
+
+It acts on the whole entry — wherever point sits on its line, or the
+top entry at home; root-finding has no sub-formula meaning, so point
+within the formula is not used to narrow it. The stock form stays on
+a P (`mafcmd-roots\='), its variable taken from the stack, and
+`mafcmd-poly-roots\=' (l t) picks the variable itself.
+
+  x^2 = 4            =>  [2, -2]
+  (x - 1)^2 (x + 2)  =>  [-2, 1, 1]   (multiplicity kept)
+  2 x = 1            =>  [1:2]        (exact, not 0.5)
+  x^2 + y^2 = 4      =>  [sqrt(-x^2 + 4), -sqrt(-x^2 + 4)]  (typed: y)
+  y + 3              =>  y + 3        (typed: x — no x in it: unchanged)"
+  (interactive)
+  (when (or calc-inverse-flag calc-hyperbolic-flag)
+    ;; calc\='s a P has no flag variants — roots already finds them all —
+    ;; so refuse rather than drop the flag silently, consuming it as
+    ;; the defcmd dispatcher would.
+    (let ((flag (if calc-inverse-flag "inverse" "hyperbolic")))
+      (setq calc-inverse-flag nil
+            calc-hyperbolic-flag nil)
+      (calc-set-mode-line)
+      (user-error "No %s variant for this command" flag)))
+  ;; Read the prompt before any calc state is touched, so C-g aborts
+  ;; with nothing done.
+  (let ((maf--solve-for-vars
+         (maf--solve-for-read-vars (maf--solve-for-default-var) "Roots for")))
+    (call-interactively #'maf--roots-for-run)))
+(put 'mafcmd-roots-for 'maf-command t)
+
+(maf-defcmd maf--roots-for-run (expr _arg commit)
+  "Take `calcFunc-roots' of the whole entry for `maf--solve-for-vars'.
+The worker behind `mafcmd-roots-for' — see there. Takes the whole
+entry (`:scope entry'), so point within the formula never narrows the
+subject. Symbolic and prefer-frac, so a non-integer root stays exact.
+Calc leaves input it cannot take roots of as an unevaluated call;
+that, and a calc signal raised along the way, both commit the entry
+unchanged."
+  :arity unary
+  :prefix "prts"
+  :map -1
+  :scope entry
+  (let ((result (let ((calc-symbolic-mode t) (calc-prefer-frac t))
+                  (condition-case nil
+                      (calcFunc-roots expr maf--solve-for-vars)
+                    (error nil)))))
+    (commit (if (or (null result)
+                    (eq (car-safe result) 'calcFunc-roots))
+                expr
+              result))))
 
 (maf-defcmd mafcmd-inverse-function (expr _arg commit)
   "Invert the function at point: y = f(x) becomes y = f-inverse(x).

@@ -404,11 +404,12 @@
 ;; l c. It sat on M-r until 2026-08-20; that key falls through to
 ;; whatever the global map holds.
 (maf-bindings-define '(native) "l t" #'mafcmd-poly-roots)
-;; A comfortable alias for the roots vector beside its stock a P (the
-;; roots row in maf-cmds.el). a l is unbound in calc itself; the same
-;; key held calc-poly-roots in the my/calc config this layout grew
-;; from.
-(maf-bindings-define '(native) "a l" #'mafcmd-roots)
+;; The prompting form of the roots vector beside its stock a P (the
+;; roots row in maf-cmds.el): the variable is read from the minibuffer
+;; as i reads it, the subject's priority variable as the default. a l
+;; is unbound in calc itself; the same key held calc-poly-roots in the
+;; my/calc config this layout grew from.
+(maf-bindings-define '(native) "a l" #'mafcmd-roots-for)
 ;; Polynomial LCM, beside calc's own polynomial GCD on a g
 ;; (mafcmd-pgcd, from the table in maf-cmds.el). a L is unbound in
 ;; calc itself.
