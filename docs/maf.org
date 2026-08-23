@@ -6,9 +6,6 @@
   [[https://www.gnu.org/software/emacs/manual/html_mono/calc.html#Symbolic-Lisp-Functions][symbolic lisp functions]]
 
 * NOW
-  - *maf-modules*
-    - [X] rewrite detailed help text in simpler terms and use simple clarifying
-      examples when possible or useful
   - [ ] when maf-preview is toggled, it should show the preview for the current
     entry immediately
   - [-] `a l` should take a variable similar to `i` command
