@@ -6,8 +6,6 @@
   [[https://www.gnu.org/software/emacs/manual/html_mono/calc.html#Symbolic-Lisp-Functions][symbolic lisp functions]]
 
 * Todo
-  - [ ] when maf-preview is toggled, it should show the preview for the current
-    entry immediately
   - [ ] preview as latex
 
 * review
