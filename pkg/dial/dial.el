@@ -1059,8 +1059,11 @@ its own :default or :reset — see `dial--control-available-p'.
              before the first render, for consumer buffer-locals the
              other functions read.
 
-Reopening an existing BUFFER rebuilds it from scratch."
-  (let ((buf (get-buffer-create buffer)))
+Reopening an existing BUFFER rebuilds it from scratch, except that
+point stays on the row it was last on — leaving the buffer and coming
+back finds the same setting under point."
+  (let* ((reopened (and (get-buffer buffer) t))
+         (buf (get-buffer-create buffer)))
     (with-current-buffer buf
       (dial-mode)
       (when name (setq mode-name name))
@@ -1075,8 +1078,13 @@ Reopening an existing BUFFER rebuilds it from scratch."
       (when init (funcall init))
       (dial--apply-format)
       (dial--refresh)
-      (dial--print))
-    (pop-to-buffer buf)
+      (dial--print reopened))
+    ;; Captured before pop-to-buffer: selecting a window that once
+    ;; showed this buffer can resurrect the window's remembered
+    ;; position over the point the print just set.
+    (let ((pos (with-current-buffer buf (point))))
+      (pop-to-buffer buf)
+      (goto-char pos))
     buf))
 
 (provide 'dial)
