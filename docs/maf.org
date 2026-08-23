@@ -9,11 +9,6 @@
   - [ ] preview as latex
 
 * review
-  - [-] editplus
-    24x|
-    wrapping commands (sin, cos, tan, squaring, sqrt, etc) here actually should target just the `x`
-    we reverted this at some point, but i was wrong
-    `x` is the smallest expression preceeding point, so it's consistent with what we actually want and expect
   - [-] *maf-formulas*
     - `q` should quit in searched results view
     - `c` should clear
