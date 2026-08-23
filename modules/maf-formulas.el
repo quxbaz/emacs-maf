@@ -273,7 +273,7 @@ doubles as the toggle's indicator."
                          (funcall entry "D" "deletes recent")
                          (funcall entry "q" "quits"))
                    "   "))
-    (format "maf-formulas — filter: %s  (q clears)" maf-formulas--query)))
+    (format "maf-formulas — filter: %s  (c clears)" maf-formulas--query)))
 
 (defun maf-formulas--refresh-header ()
   "Recompute the header line, for a state change without a re-render."
@@ -611,6 +611,13 @@ is untouched, still listed under its own category."
   "Menu buffer being narrowed while the minibuffer reads a filter.
 Bound for the dynamic extent of `maf-formulas-filter' only.")
 
+(defvar maf-formulas--filter-touched nil
+  "Non-nil once anything has been typed into the filter minibuffer.
+The prompt opens empty, but the narrowing in effect holds until the
+user actually types: an untouched empty minibuffer means \"nothing
+said yet\", not \"show everything\". Bound alongside
+`maf-formulas--filter-buffer'.")
+
 (defun maf-formulas--set-query (buf query)
   "Narrow menu buffer BUF to QUERY, re-rendering when it changed.
 Rendering happens with BUF's window selected so point and the window's
@@ -626,9 +633,13 @@ view move together, as they would if the user had navigated there."
 
 (defun maf-formulas--filter-update ()
   "Narrow the menu to what is typed so far.
-Runs on the minibuffer's own `post-command-hook'."
-  (maf-formulas--set-query maf-formulas--filter-buffer
-                           (minibuffer-contents-no-properties)))
+Runs on the minibuffer's own `post-command-hook'. Until the first
+edit, the empty prompt leaves the current narrowing alone; deleting
+back to empty after typing does widen to the full list."
+  (let ((s (minibuffer-contents-no-properties)))
+    (unless (and (string-empty-p s) (not maf-formulas--filter-touched))
+      (setq maf-formulas--filter-touched t)
+      (maf-formulas--set-query maf-formulas--filter-buffer s))))
 
 (defun maf-formulas-filter (&optional query)
   "Narrow the formula menu to QUERY (title, category, or variable).
@@ -640,15 +651,19 @@ narrowing and \\[keyboard-quit] restores the one in effect before."
       (maf-formulas--set-query (current-buffer) query)
     (let* ((buf (current-buffer))
            (prev maf-formulas--query)
-           (maf-formulas--filter-buffer buf))
+           (maf-formulas--filter-buffer buf)
+           (maf-formulas--filter-touched nil))
       (condition-case nil
           ;; The live narrowing has already applied what was typed; the
           ;; returned string settles anything a final command changed.
-          (maf-formulas--set-query
-           buf (minibuffer-with-setup-hook
-                   (lambda ()
-                     (add-hook 'post-command-hook #'maf-formulas--filter-update nil t))
-                 (read-string "Filter formulas: " prev)))
+          ;; RET on an untouched prompt keeps the narrowing in effect —
+          ;; the list never previewed anything else.
+          (let ((s (minibuffer-with-setup-hook
+                       (lambda ()
+                         (add-hook 'post-command-hook #'maf-formulas--filter-update nil t))
+                     (read-string "Filter formulas: "))))
+            (maf-formulas--set-query
+             buf (if maf-formulas--filter-touched s prev)))
         (quit (maf-formulas--set-query buf prev)
               (signal 'quit nil))))))
 
@@ -729,16 +744,6 @@ untouched either way."
   ;; when it borrowed one. Either way the frame returns as it was.
   (quit-window))
 
-(defun maf-formulas-quit-or-clear-filter ()
-  "Clear the filter while the menu is narrowed, else quit the menu.
-`q' out of a filtered view backs out of the filter first, so the key
-that leaves never discards a narrowing you meant to keep looking at; a
-second `q' then leaves. `maf-formulas-quit' always quits outright."
-  (interactive)
-  (if (string-empty-p maf-formulas--query)
-      (maf-formulas-quit)
-    (maf-formulas-clear-filter)))
-
 (defvar maf-formulas-mode-map (make-sparse-keymap)
   "Keymap for `maf-formulas-mode'.")
 
@@ -746,7 +751,8 @@ second `q' then leaves. `maf-formulas-quit' always quits outright."
 (define-key maf-formulas-mode-map (kbd "RET") #'maf-formulas-insert)
 (define-key maf-formulas-mode-map (kbd "/")   #'maf-formulas-filter)
 (define-key maf-formulas-mode-map (kbd "g")   #'maf-formulas-clear-filter)
-(define-key maf-formulas-mode-map (kbd "q")   #'maf-formulas-quit-or-clear-filter)
+(define-key maf-formulas-mode-map (kbd "c")   #'maf-formulas-clear-filter)
+(define-key maf-formulas-mode-map (kbd "q")   #'maf-formulas-quit)
 (define-key maf-formulas-mode-map (kbd "o")   #'maf-formulas-show-detail)
 (define-key maf-formulas-mode-map (kbd "?")   #'maf-formulas-show-detail)
 ;; `d' — once an alias for `o' — is deliberately unbound; the explicit
@@ -776,8 +782,7 @@ pushes the formula at point onto the stack, \\[maf-formulas-next-item] and \\[ma
 between formulas, \\[maf-formulas-next-group] between groups, \\[maf-formulas-show-detail] shows the formula at
 point in the detail pane (again to close it), \\[maf-formulas-toggle-detail] toggles the pane following point (on by
 default, remembered for the session), \\[maf-formulas-delete-recent] drops the recent entry at
-point, \\[maf-formulas-filter] filters as you type, \\[maf-formulas-clear-filter] clears the filter, \\[maf-formulas-quit-or-clear-filter] clears the
-filter when narrowed and quits otherwise."
+point, \\[maf-formulas-filter] filters as you type, \\[maf-formulas-clear-filter] clears the filter, \\[maf-formulas-quit] quits."
   (setq truncate-lines t)
   ;; The legend's band is the options buffer's: `header-line's own look
   ;; is replaced outright, not layered under, so the two read as one
