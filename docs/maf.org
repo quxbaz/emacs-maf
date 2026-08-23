@@ -11,9 +11,7 @@
     multiplication, etc)
 
 * review
-  - [ ] rebind persist commands (removing existing bindings) to,
-    - [ ] `l S` save
-    - [ ] `l R` restore
+  - [ ] *maf-persist*
     - [ ] `l R` should bring up a buffer (using dial pkg) instead of a menu
       - the buffer should have all the entries
       - `D` to delete entry
