@@ -12,7 +12,7 @@
   - [ ] find better binding for simplify (`a s`)
   - [ ] when maf-preview is toggled, it should show the preview for the current
     entry immediately
-  - [ ] `a l` should take a variable similar to `i` command
+  - [-] `a l` should take a variable similar to `i` command
 
 * review
   - [-] editplus
