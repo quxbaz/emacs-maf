@@ -16,8 +16,7 @@
   - [ ] `M-r` to get all roots
 
 * review
-  - [ ] `M <command>` doesn't process digit input correctly
-  - [ ] editplus
+  - [-] editplus
     24x|
     wrapping commands (sin, cos, tan, squaring, sqrt, etc) here actually should target just the `x`
     we reverted this at some point, but i was wrong
