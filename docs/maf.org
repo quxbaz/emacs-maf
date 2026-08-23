@@ -34,6 +34,9 @@
     2: [1, 3, 9]
     1:  [1, 2, 3, 6]
     and produce all unique
+  - [ ] `a f` is busted. doesn't work at all on:
+    12 y^2 - 19 y + 4
+  - [ ] add redundant binding `k f` bound to same command as `a f` (factor)
 
 * major features [8/9]
   - [X] bindings module
