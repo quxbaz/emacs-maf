@@ -72,6 +72,12 @@
    it feels awkward in actual usage
 ** modules suboptions
 
+* when done
+  - [ ] revise and update all anki cards
+    - base on `native` profile
+    - update outdated bindings
+    - add cards for missing bindings
+
 * maybe
 ** TODO preview entry as latex
 
