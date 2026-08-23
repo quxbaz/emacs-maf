@@ -1,56 +1,68 @@
 # Calc selection quirks (upstream)
 
-Known drift in calc's own sub-formula resolution that maf deliberately
-mirrors. Discovered 2026-07-11 by sweeping `maf-hl-mode` against calc's
-selection renderer (`debug/maf-hl-sweep.el`); affects stock calc too (try
-`j s` at the positions below).
+Drift in calc's own sub-formula resolution, discovered 2026-07-11 by
+sweeping `maf-hl-mode` against calc's selection renderer
+(`debug/maf-hl-sweep.el`); it affects stock calc too (try `j s` at the
+positions below). The largest item — dropped denominator parens — is
+diagnosed and **fixed in maf** as of 2026-08-23; the remaining ones are
+still mirrored.
 
-## Synthesized parens are invisible to the selection walker
+## Selection compositions dropped denominator parens (fixed)
 
-Calc renders some parentheses without putting them in the composition: the
-flat renderer emits `(`/`)` from `(set LEVEL ...)`/`(break LEVEL)` markers
-(see `math-comp-to-string-flat-term` in `calccomp.el`). The selection
-walker `math-comp-sel-flat-term` — and maf's clone `maf-hl--flat-term` in
-`modules/maf-hl.el` — treats `set`/`break` as **zero-width**, so from the first
-synthesized paren onward, cursor columns map to shifted formula positions.
+Originally misdiagnosed here as "synthesized parens invisible to the
+selection walker" — parens emitted by the renderer that the walker
+counted as zero-width. The real cause is upstream dropping an argument:
+the tag/selection branch (the first `cond` arm) of `math-compose-expr`
+in `calccomp.el` recurses as `(math-compose-expr a prec)`, losing the
+third argument DIV. DIV is what brackets a product standing as a
+denominator — implicit multiplication outranks `/`, so precedence alone
+never adds those parens — and it is the only paren source the branch
+loses; PREC rides through. So every composition built for the selection
+machinery (`calc-prepare-selection` with `math-comp-tagged`, and
+selected-entry re-renders) was genuinely two characters short per
+bracketed denominator. The walkers were never wrong; they walked a
+wrong composition.
 
-Example: `(a + b)^(c - d) / (e f)`. The numerator's parens are literal
-strings in the composition; the denominator's are synthesized. Result:
+One cause, several faces, all confirmed on `y = 8 / (3 x^3) - 5:3`:
 
-| cursor on | calc resolves |
-|-----------|---------------|
-| `(` of `(e f)` | `e` |
-| `e`            | `e f` (the product) |
-| space          | `f` |
-| `f`            | nothing |
+- Cursor→sub-formula resolution shifted by 2 past the `(`: the `(`
+  resolved the inner `3`, the `-` resolved the trailing frac.
+- The entry's last two columns (`:` and final `3` of `5:3`) resolved to
+  nothing at all — RET signaled "Could not resolve target at point",
+  `j e` silently did nothing.
+- The whole-formula selection extent came out 2 columns short (the
+  doc's old `(e f)` table was this same shift).
+- A re-render from the cached composition (`calc-change-current-selection`,
+  which runs after any selection rewrite, `j e` included) wrote the
+  paren-less text — `8 / 3 x^3` — into the buffer until the next
+  refresh.
 
-The whole-formula selection also comes out 2 columns short (the overlay
-ends at `(e ` instead of `f)`).
+The fix is `maf--comp-compose-keep-div` in `core/maf-comp.el`: `:around`
+advice on `math-compose-expr` that re-runs exactly the dropped-DIV case
+with DIV passed through, replicating the branch's own bookkeeping. All
+consumers read the one cached composition, so resolution
+(`calc-find-selected-part` and maf's resolve layer), highlight extents
+(`maf--comp-flat-term`), anchors, and selection-time re-renders
+corrected together — the old fear that highlighter and resolve path had
+to be fixed in tandem dissolved, since they share the data structure
+that was wrong. Loading maf also un-quirks stock calc's `j s` in that
+session. Regression test: `tests/sel-comp-parens.el`. The bug is worth
+reporting upstream to Emacs.
 
-A related off-by-one: at the trailing space where a wrapped entry breaks to
-the next line, calc resolves the term *before* the break, so the highlight
-does not cover point there.
+## Remaining quirks (still mirrored)
 
-## Why maf mirrors it instead of fixing it
+maf targets what `calc-prepare-selection` / `calc-find-selected-part`
+answer, so these stand until fixed at the source like the above.
 
-The highlight's contract is "show what a contextual command will operate
-on", and maf's resolve layer targets whatever `calc-prepare-selection` /
-`calc-find-selected-part` resolve. Fixing the walk only in `maf-hl` would
-make the highlight disagree with the commands. A real fix must correct the
-coordinate accounting (advance positions for renderer-emitted parens, i.e.
-replicate the `math-comp-level` bookkeeping) in **both** the highlighter's
-walker and the selection/resolve path together.
+### Line-break gap
 
-## How it's tested
+At the trailing space where a wrapped entry breaks to the next line,
+resolution answers the enclosing sum spanning the break (a real node,
+verified 2026-08-23), but highlight geometry at the gap stays
+approximate — the sweep classifies divergence at line-break gaps as
+`:quirks`, not failures.
 
-`debug/maf-hl-sweep.el` sweeps every cursor position of many expression
-types and compares `maf-hl` against calc's resolver (presence) and calc's
-selection renderer (extent). Entries whose rendered length differs from the
-walker's length contain synthesized parens; divergence there (and at
-line-break gaps) is classified as `:quirks`, not failures. A clean run
-returns `:problem-exprs nil` with a handful of `:calc-quirks`.
-
-## A matrix's rows cannot be picked by point
+### A matrix's rows cannot be picked by point
 
 In the multi-line matrix rendering, calc maps every structural
 character — the rows' brackets and commas included — to the whole
@@ -60,5 +72,26 @@ names an inner row, and any point-targeted command (the `j l` / `j r`
 element shifts, for one) can act on a row's elements or on the whole
 matrix, but never on a row as a unit. A *non*-matrix nested vector
 renders flat, and there an inner vector's own comma resolves to it —
-`[[1, 2], [3, 4, 9], [5]]` moves whole sub-vectors fine. Mirrored for
-the usual reason: maf targets what calc's selection resolver answers.
+`[[1, 2], [3, 4, 9], [5]]` moves whole sub-vectors fine.
+
+## How it's tested
+
+`debug/maf-hl-sweep.el` sweeps every cursor position of many expression
+types and compares `maf-hl` against calc's resolver (presence) and
+calc's selection renderer (extent). Its `:synth-parens` classifier
+(rendered length vs walker length) should find nothing now that the
+composition carries its parens; with the fix in place the old extent
+quirks on `(a + b)^(c - d) / (e f)` are gone from the report.
+
+Note (2026-08-23): the sweep is not currently clean on `main` even
+aside from all this — every expression reports a uniform set of
+mismatches at the line-prefix columns and EOL, where `maf-hl` now
+highlights the whole entry (the margin → entry target) while the
+sweep's oracle answers nil. That maf-hl behavior postdates the sweep;
+the oracle needs updating before `:problem-exprs nil` means clean
+again. Predates the parens fix (verified by an advice-removed baseline
+run; the two reports' mismatch sets are identical).
+
+The walker maf uses for highlight/anchor coordinates is
+`maf--comp-flat-term` in `core/maf-comp.el` (this doc used to name it
+`maf-hl--flat-term` in `modules/maf-hl.el`; it moved).
