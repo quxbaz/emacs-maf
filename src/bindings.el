@@ -55,6 +55,12 @@
 ;; inverse flag, and W is free in both maps. The next key over from
 ;; Q, and the shape of the two square-root keys' inverse.
 (maf-bindings-define '(native) "W" #'mafcmd-sqr)
+;; A second key for multiplication, beside the table's *: the
+;; most-struck binary operator gains a home-row shift where * is a
+;; reach to shift-8. Displaces conj's table key J in native — conj
+;; rides its family key l j (below) — while the calc profile keeps
+;; J = conj, calc's own layout.
+(maf-bindings-define '(native) "J" #'mafcmd-mul)
 ;; Shadows calc-stirling's key; the contextual stirling pair
 ;; (mafcmd-stir1/stir2) cedes it — see the table in maf-cmds.el.
 (maf-bindings-define '(native) "k s" #'mafcmd-complete-square)
@@ -100,7 +106,9 @@
 ;; The conjugate on its initial, l j — which the vim mirror carries
 ;; as o j, the command's home there since vim's J is the relocated
 ;; selection/structure family. l j is unbound in calc's log-units
-;; prefix; conj keeps its table key J in native.
+;; prefix. Conj's table key J is ceded to the second multiply key
+;; (above), making this conj's native home; the calc profile keeps
+;; J = conj.
 (maf-bindings-define '(native) "l j" #'mafcmd-conj)
 ;; Complete the square on its letter — which the vim mirror carries
 ;; as o s, the command's home there since vim's k is a motion; k s

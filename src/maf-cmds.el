@@ -154,6 +154,9 @@ variant's own variable governs only its direct invocation."
   ;; their function under `calc-normalize', which normalizes the
   ;; arguments first, and that floats an exact sqrt(3) entry before the
   ;; command can see it was exact.
+  ;; conj's J is shadowed in native by a second multiply key
+  ;; (bindings.el); the calc profile keeps it, and native's conj
+  ;; home is l j.
   (conj unary calcFunc-conj "J")
   ;; arg cedes calc's G to maf-go-home (bindings.el).
   (arg unary calcFunc-arg)

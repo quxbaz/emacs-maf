@@ -78,9 +78,10 @@
   (cl-assert (null (key-binding (kbd "o l"))))
 
   ;; The selection/structure family rides its capital in vim, second
-  ;; letters intact, mirrored from native's j declarations. The
-  ;; conjugate it displaces from J rides the custom-letter family on
-  ;; its initial: o j. The u prefix is untouched.
+  ;; letters intact, mirrored from native's j declarations. It
+  ;; displaces native's J whole (the second multiply key — mul keeps
+  ;; *); the conjugate rides the custom-letter family on its
+  ;; initial: o j. The u prefix is untouched.
   (cl-assert (eq (key-binding (kbd "J i")) 'mafcmd-isolate))
   (cl-assert (null (key-binding (kbd "J x"))))
   (cl-assert (null (key-binding (kbd "J f"))))
@@ -119,7 +120,7 @@
   (cl-assert (eq (key-binding (kbd "l l")) 'mafcmd-float-frac))
   (cl-assert (null (key-binding (kbd "j x"))))
   (cl-assert (eq (key-binding (kbd "j D")) 'maf-distribute))
-  (cl-assert (eq (key-binding (kbd "J")) 'mafcmd-conj))
+  (cl-assert (eq (key-binding (kbd "J")) 'mafcmd-mul))
   (cl-assert (eq (key-binding (kbd "l j")) 'mafcmd-conj))
   (cl-assert (eq (key-binding (kbd "y")) 'calc-copy-to-buffer))
   (cl-assert (keymapp (key-binding (kbd "j")))))

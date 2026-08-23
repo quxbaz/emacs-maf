@@ -250,6 +250,12 @@
    - [X] `j e` maf-jump-equals ← calc-enable-selections
    - [X] `@` maf-toggle-simplify ← calcDigit-start
    - [X] `&` maf-toggle-big-language ← calc-inv
+   - [X] `J` mafcmd-mul ← mafcmd-conj (2026-08-23: a second key for
+     multiplication beside its table key `*` — the most-struck binary
+     operator on a home-row shift where * is a reach to shift-8.
+     Displaces conj's table key in native; conj's home is its family
+     key `l j`, and the calc profile keeps J = conj. Vim's relocated
+     selection family already owns J, so there mul keeps only *)
 ** additions (keys calc leaves unbound)
    - [X] `W` mafcmd-sqr
    - [X] `k k` mafcmd-esimplify (2026-08-22: the extended simplify's
@@ -276,9 +282,10 @@
      `o w`, the command's home there since vim's M-o is the
      float/frac toggle)
    - [X] `l j` mafcmd-conj (2026-08-21: a family key on its initial,
-     beside its table key J; the vim mirror carries it as `o j`, the
-     command's home there since vim's J is the relocated
-     selection/structure family)
+     then beside its table key J — since 2026-08-23 J is a second
+     multiply key and this is conj's native home; the vim mirror
+     carries it as `o j`, the command's home there since vim's J is
+     the relocated selection/structure family)
    - [X] `l D` mafcmd-factor-powers (2026-08-21: a family key on D,
      for the difference of squares, beside its k d; the vim mirror
      carries it as `o D`, the command's home there since vim's k is
