@@ -524,8 +524,8 @@
      trade already made when < > took calc's horizontal pair
    - `~` — calc-num-prefix: near-free, but a stretch to reach —
      fine for something occasional, wrong for a repeat-heavy command
-   - `:` — calc-fdiv: moderate — fraction division is real but the
-     fraction is also typed in digit entry (1 : 3). Cautious
+   - `:` — calc-fdiv: spent on maf-quick-variable (2026-08-23) —
+     fraction division is still typed in digit entry (1 : 3)
    - not weak, despite looks: `;` (calc-semi, matrix entry punctuation
      — the [ ] lesson)
 ** modified keys
