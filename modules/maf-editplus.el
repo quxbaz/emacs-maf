@@ -1420,12 +1420,11 @@ run with a digit in it (x3) is one identifier the dialect spells as
 calc does, an exempt run (pi) is one name under either reading, and
 under calc's own syntax the whole run is the one variable it names.
 
-The complement of the power key's whole-run reading
-\(`maf-editplus--split-run-p' in `maf-editplus-raise-power'): a bare
-^2 after the run would take only its last factor, so the parens the
-power key brings are that key's whole point — but a wrap takes the
-smallest expression ending at point, as it does behind a number's
-coefficient, and the whole run stays reachable by marking it."
+This is the reading the whole subexpression family shares: a typed
+^2 after the run binds to its last factor, the power key writes
+exactly that, and the wrap keys take the same smallest expression —
+as each does behind a number's coefficient. The run whole stays
+reachable by marking it."
   (if (and (> (- end beg) 1)
            (not (maf-editplus--calc-syntax-p))
            (let ((run (buffer-substring-no-properties beg end)))
@@ -1827,9 +1826,9 @@ it does anything else."
 
 (defun maf-editplus--raise-span (beg end)
   "Square BEG..END as one parenthesized unit; point lands on the caret.
-The parens are not optional: the span is a region or a run that only
-the marks or the dialect say to treat whole, and a bare caret would
-take just its tail. As in `maf-editplus--raise-node', the opener goes
+The parens are not optional: the span is a region that only the marks
+say to treat whole, and a bare caret would take just its tail. As in
+`maf-editplus--raise-node', the opener goes
 in first, so the closer's position is the span's end shifted by the
 one character — and with point on the caret, the next press finds a
 power to count up."
@@ -1899,11 +1898,14 @@ press counts the power up.
 At the end of the entry there is no character under point, and what
 counts as the exponent is a run of digits immediately behind point
 with the caret in front of it — anything else and a fresh ^2 goes in.
-So x^2 y counts as no exponent at all, and x^2* neither.
+So x^2 y counts as no exponent at all, and x^2* neither. Under the
+input dialect a bare run of letters is a run of factors, and the
+caret binds to the last of them, the same smallest expression the
+wrap keys take there:
 
-Bound to `:' in `maf-edit-mode-map'. The character itself is not lost:
-`;' types it \(`maf-edit-insert-colon'), fractions being the reason it
-has a key with no modifier at all."
+  ab|        =>  ab^2           (dialect: a times b squared)
+
+Bound to \\=' and `W' in `maf-edit-mode-map'."
   (interactive "p")
   (dotimes (_ n)
     (pcase (maf-editplus--resolve-target)
@@ -1920,10 +1922,11 @@ has a key with no modifier at all."
            (delete-region beg end)
            (goto-char beg)
            (insert (number-to-string (1+ (string-to-number text)))))
-          ;; A run the dialect splits is raised whole — a bare ^2
-          ;; would take only its last factor.
-          ((maf-editplus--split-run-p beg end)
-           (maf-editplus--raise-span beg end))
+          ;; A run the dialect splits needs nothing extra: the caret
+          ;; binds to its last factor, the same smallest expression
+          ;; the wrap keys take there (`maf-editplus--unit-last-factor'),
+          ;; so ab| becomes ab^2 — a times b squared. The run whole
+          ;; stays reachable by marking it.
           (t
            (goto-char end)
            (insert "^2")))))

@@ -5,8 +5,8 @@
 ;; editvars dialect a bare run of letters is a product too — ab is
 ;; a times b — and the wrap keys take its last factor the same way,
 ;; spaced off the run so the call name does not fuse into it; the
-;; power key alone takes the run whole, in the parens that a typed ^2
-;; could not bring. A step passes when it raises no error.
+;; power key writes the caret that binds to that same last factor.
+;; A step passes when it raises no error.
 
 (maf-step
   ;; The headline case: the x comes away, the 24 stays a factor.
@@ -133,12 +133,33 @@
                     "ln(x3)"))
   (call-interactively 'maf-edit-discard)
 
-  ;; The power key alone still takes the run whole — the parens are
-  ;; that key's point, a typed ^2 taking only the last factor — and
-  ;; the parens wrap keeps the product one term, as it keeps b*c.
+  ;; The power key reads the position the same way as the wraps: the
+  ;; caret binds to the last factor, so ab^2 is a times b squared —
+  ;; and the next press counts that power up. What commits agrees.
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "ab") nil)
   (call-interactively 'maf-editplus-raise-power)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "ab^2"))
+  (call-interactively 'maf-editplus-raise-power)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "ab^3"))
+  (call-interactively 'maf-edit-commit)
+  (cl-assert (equal (calc-top 1)
+                    '(* (var a var-a) (^ (var b var-b) 3))))
+  (calc-pop 1)
+
+  ;; The whole run stays reachable by marking it. Marked and pressed
+  ;; in the one step: the stepper deactivates the mark around every
+  ;; form it runs.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (execute-kbd-macro "ab") nil)
+  (progn (maf-edit-move-beginning-of-line 1)
+         (set-mark (point))
+         (forward-char 2)
+         (activate-mark)
+         (execute-kbd-macro "'")
+         nil)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
                     "(ab)^2"))
   (call-interactively 'maf-edit-discard)
