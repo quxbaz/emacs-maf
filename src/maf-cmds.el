@@ -330,6 +330,8 @@ variant's own variable governs only its direct invocation."
   (ltpc binary calcFunc-ltpc)
   (ltpp binary calcFunc-ltpp)
   (ltpt binary calcFunc-ltpt)
+  ;; perm takes calc's k p from calc-prime-test (bindings.el); calc
+  ;; leaves it on choose's hyperbolic flag alone.
   (perm binary calcFunc-perm)
   (stir2 binary calcFunc-stir2)
   ;; store (calc-s-oper-keys)

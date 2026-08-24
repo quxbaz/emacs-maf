@@ -67,6 +67,11 @@
 ;; Shadows calc-double-factorial's key; mafcmd-dfact cedes it — see
 ;; the table in maf-cmds.el.
 (maf-bindings-define '(native) "k d" #'mafcmd-factor-powers)
+;; Permutations on p, beside its sibling choose (k c, the table): calc
+;; leaves perm on the hyperbolic flag alone (H k c), and nPr is struck
+;; often enough beside nCr to want a key of its own. A custom-prefix
+;; claim under the k/l policy: calc-prime-test cedes the key.
+(maf-bindings-define '(native) "k p" #'mafcmd-perm)
 ;; A second key for the factor, beside its table key a f: the whole
 ;; factoring family already gathers under k and l (k d, l f, l F, l D),
 ;; and f is factor's letter. mafcmd-prfac cedes it — see the table in
