@@ -200,6 +200,26 @@
      `RET` maf-dup-or-clear-selections ← calc-enter,
      `TAB` / `C-t` maf-swap-up ← calc-roll-down,
      `M-RET` mafcmd-let ← calc-last-args
+   - the combinators, on calc's own keys (2026-08-24): `v R`
+     mafcmd-reduce ← calc-reduce, `v U` mafcmd-accum ←
+     calc-accumulate, `v A` mafcmd-apply ← calc-apply, `v O`
+     mafcmd-outer ← calc-outer-product, `v I` mafcmd-inner ←
+     calc-inner-product. They were mafcmd table rows and could not
+     be: the leading argument of calcFunc-reduce and its kin is an
+     operation, not an operand, so the row built a call one argument
+     short and `calc-normalize` handed it back inert (`v O` on two
+     vectors gave outer([1, 3, 9], [1, 2, 3, 6])). Now they read the
+     operation from the next key, the gesture calc's own V R and V O
+     already use — what widens is only the space the key is looked
+     up in: calc finds it in `calc-oper-keys`, a fixed table of
+     blessed operations, and maf finds it in its own map, so any
+     command stamped `maf-operation` answers (every table row is,
+     and a hand-written command joins by stamping it). `:` types a
+     formula instead, as it does after the map flag. The I variants
+     ride the combinator, not the operation: `I v R` folds from the
+     right. calc's nest/fixp (H V R, I H V R) are not carried over —
+     they iterate a count rather than fold, and were only reachable
+     through the broken flag routes
    - `r 0`..`r 9` maf-recall-quick ← calc-recall-quick
    - the digit starters `_` `0`..`9` `.` `#` maf-digit-start ←
      calcDigit-start

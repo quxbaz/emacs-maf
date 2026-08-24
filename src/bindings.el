@@ -55,6 +55,18 @@
 ;; inverse flag, and W is free in both maps. The next key over from
 ;; Q, and the shape of the two square-root keys' inverse.
 (maf-bindings-define '(native) "W" #'mafcmd-sqr)
+
+;; The combinators, on calc's own keys for them: each reads its
+;; operation from the next key press, as calc's V R and V O do, but
+;; looks it up among maf's commands instead of calc's fixed operator
+;; table (see `maf--read-operation'). They left the mafcmd table
+;; because a row cannot express an argument that is an operation —
+;; see the note in maf-cmds.el.
+(maf-bindings-define '(calc native) "v R" #'mafcmd-reduce)
+(maf-bindings-define '(calc native) "v U" #'mafcmd-accum)
+(maf-bindings-define '(calc native) "v A" #'mafcmd-apply)
+(maf-bindings-define '(calc native) "v O" #'mafcmd-outer)
+(maf-bindings-define '(calc native) "v I" #'mafcmd-inner)
 ;; A second key for multiplication, beside the table's *: the
 ;; most-struck binary operator gains a home-row shift where * is a
 ;; reach to shift-8. Displaces conj's table key J in native — conj

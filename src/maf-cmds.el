@@ -116,6 +116,15 @@ variant's own variable governs only its direct invocation."
                  (commit (calc-normalize
                           (list ',func expr
                                 ,@(when (eq arity 'binary) '(arg)))))))
+             ;; The row's function and how many operands it takes,
+             ;; recorded on the command so the combinators can use it
+             ;; as an operation: v R + folds by `calcFunc-add' because
+             ;; the + key runs a command stamped with it. This is what
+             ;; widens the operation space past calc's fixed table —
+             ;; every row qualifies, and a hand-written command joins
+             ;; by stamping the property itself.
+             (list `(put ',name 'maf-operation
+                         '(,func . ,(if (eq arity 'binary) 2 1))))
              (when key
                (list `(maf-cmds--table-key ,key #',name))))))
         specs)))
@@ -384,7 +393,6 @@ variant's own variable governs only its direct invocation."
   ;; stack, not a single applied call.
   (rev unary calcFunc-rev "v v")
   (index unary calcFunc-index "v x")
-  (apply unary calcFunc-apply "v A")
   ;; The cross product takes both vectors as operands.
   (cross binary calcFunc-cross "v C")
   (det unary calcFunc-det "v D")
@@ -392,15 +400,18 @@ variant's own variable governs only its direct invocation."
   (vfloor unary calcFunc-vfloor "v F")
   (grade unary calcFunc-grade "v G" :inv rgrade)
   (histogram binary calcFunc-histogram "v H")
-  (inner binary calcFunc-inner "v I")
   ;; lud cedes calc's v L to mafcmd-flatten (bindings.el).
   (lud unary calcFunc-lud)
   (cnorm unary calcFunc-cnorm "v N")
-  (outer binary calcFunc-outer "v O")
-  (reduce unary calcFunc-reduce "v R" :inv rreduce :hyp nest :invhyp fixp)
+  ;; The combinators — apply, reduce, accum, outer, inner and the
+  ;; nest/fixp variants — are not rows: their leading argument is an
+  ;; operation, not an operand, so applying the calcFunc to the
+  ;; resolved expression builds a call of the wrong arity that
+  ;; `calc-normalize' can only hand back inert. They read the
+  ;; operation from the next key instead (`mafcmd-reduce' and
+  ;; friends, src/stack.el).
   (sort unary calcFunc-sort "v S" :inv rsort)
   (tr unary calcFunc-tr "v T")
-  (accum unary calcFunc-accum "v U" :inv raccum :hyp anest :invhyp afixp)
   (vunion binary calcFunc-vunion "v V")
   (vxor binary calcFunc-vxor "v X")
   (vdiff binary calcFunc-vdiff "v -")
@@ -411,15 +422,9 @@ variant's own variable governs only its direct invocation."
   (rdup unary calcFunc-rdup "v +")
   (tail unary calcFunc-tail)
   (rgrade unary calcFunc-rgrade)
-  (rreduce unary calcFunc-rreduce)
   (rsort unary calcFunc-rsort)
-  (raccum unary calcFunc-raccum)
   (rhead unary calcFunc-rhead)
   (rcons binary calcFunc-rcons)
-  (nest binary calcFunc-nest)
-  (anest binary calcFunc-anest)
-  (rtail unary calcFunc-rtail)
-  (fixp unary calcFunc-fixp)
-  (afixp unary calcFunc-afixp))
+  (rtail unary calcFunc-rtail))
 
 (provide 'maf-cmds)

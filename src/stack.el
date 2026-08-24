@@ -12,6 +12,16 @@
 ;; These live in lazily-loaded calc modules; calc-ext's autoload registry
 ;; resolves them at runtime, but the byte compiler needs declarations.
 (declare-function calcFunc-mul "calc-arith")
+(declare-function calcFunc-reduce "calc-map")
+(declare-function calcFunc-rreduce "calc-map")
+(declare-function calcFunc-accum "calc-map")
+(declare-function calcFunc-raccum "calc-map")
+(declare-function calcFunc-apply "calc-map")
+(declare-function calcFunc-outer "calc-map")
+(declare-function calcFunc-inner "calc-map")
+(declare-function math-calcFunc-to-var "calc-ext")
+(declare-function calc-default-formula-arglist "calc-prog")
+(defvar math-arglist)   ; calc-prog's, filled by the arglist walker
 (declare-function calcFunc-div "calc-arith")
 (declare-function calcFunc-nrat "calc-poly")
 (declare-function calcFunc-expand "calc-poly")
@@ -5643,6 +5653,264 @@ M i on a vector of relations solves each one for the variable typed."
       (setq overriding-terminal-local-map maf--map-flag-keys))
     (add-hook 'post-command-hook #'maf--map-flag-expire)))
 (put 'mafcmd-map-flag 'maf-command t)
+
+;;; Combinators
+
+;; apply, reduce, accumulate and the outer product take an operation
+;; where the other vector commands take an operand, so none of them can
+;; be a table row: a row applies its function to the resolved
+;; expression, which for these builds a call one argument short that
+;; `calc-normalize' can only hand back inert. They read the operation
+;; from the keyboard instead, as calc's own V R and V O do — the
+;; gesture is calc's, unchanged, and what widens is only the space the
+;; key is looked up in. Calc reads a character and finds it in
+;; `calc-oper-keys', a fixed table of blessed operations; these read a
+;; whole key sequence and find it in maf's own map, so any command
+;; carrying a `maf-operation' stamp qualifies (every mafcmd table row
+;; does, and a hand-written command joins by stamping the property).
+;; The formula routes come along with it: : types one, as it does
+;; after the map flag.
+
+(defun maf--operation-lambda (input nargs)
+  "Build a Calc lambda of NARGS arguments from INPUT, a typed formula.
+The formula names its arguments with its own free variables, taken in
+alphabetical order: a - b subtracts right from left, b - a the other
+way. Input already written as a lambda is taken as it stands."
+  (let ((expr (math-read-expr input)))
+    (when (eq (car-safe expr) 'error)
+      (user-error "Bad format in formula: %s" (nth 2 expr)))
+    (if (eq (car-safe expr) 'calcFunc-lambda)
+        expr
+      (let ((math-arglist nil))
+        (calc-default-formula-arglist expr)
+        (let ((args (sort math-arglist #'string-lessp)))
+          (unless (= (length args) nargs)
+            (user-error "Formula needs %d variable%s, not %d"
+                        nargs (if (= nargs 1) "" "s") (length args)))
+          (append '(calcFunc-lambda)
+                  (mapcar (lambda (v)
+                            (list 'var v (intern (concat "var-" (symbol-name v)))))
+                          args)
+                  (list expr)))))))
+
+(defun maf--operation-of (command nargs)
+  "Return COMMAND's operation as a Calc function of NARGS arguments.
+Nil when COMMAND carries no `maf-operation' stamp, and the symbol
+`arity' when it carries one of the wrong size — the two refusals the
+reader reports differently."
+  (let ((op (get command 'maf-operation)))
+    (cond ((null op) nil)
+          ((/= (cdr op) nargs) 'arity)
+          ;; Calc wants the operation as a variable, not as the
+          ;; calcFunc symbol the stamp records: `calcFunc-reduce' and
+          ;; its kin convert back themselves and reject the symbol.
+          (t (math-calcFunc-to-var (car op))))))
+
+(defun maf--read-operation (msg nargs)
+  "Read an operation of NARGS arguments from the keyboard and return it.
+MSG names the combinator asking. Any command stamped with a
+`maf-operation' of the right size answers, pressed on its own key —
+so + is addition and a s the extended simplify — and : reads a typed
+formula instead. C-g aborts. Rejections re-prompt rather than
+signalling, so a mistyped key costs one keystroke."
+  (let ((result nil))
+    (while (not result)
+      (let* ((seq (read-key-sequence
+                   (format "%s (operation key, or : for a formula):" msg)))
+             (cmd (key-binding seq t)))
+        (cond
+         ((equal seq (kbd "C-g")) (keyboard-quit))
+         ((equal seq ":")
+          (setq result (maf--operation-lambda
+                        (string-trim (read-string (format "%s by formula: " msg)))
+                        nargs)))
+         (t
+          (let ((op (and cmd (symbolp cmd) (maf--operation-of cmd nargs))))
+            (cond
+             ((eq op 'arity)
+              (message "%s takes %d argument%s, not %d"
+                       cmd (cdr (get cmd 'maf-operation))
+                       (if (= (cdr (get cmd 'maf-operation)) 1) "" "s") nargs)
+              (sit-for 1))
+             ((null op)
+              (message "%s is not an operation" (key-description seq))
+              (sit-for 1))
+             (t (setq result op))))))))
+    result))
+
+(defvar maf--combinator-op nil
+  "The operation the combinator workers apply, bound per call.
+Read from the keyboard by `maf--read-operation' before any calc state
+is touched, so C-g aborts with nothing done.")
+
+(defvar maf--combinator-op2 nil
+  "The second operation `maf--inner-run' applies — the sum's.
+See `maf--combinator-op'.")
+
+(defvar maf--combinator-func nil
+  "The Calc function a combinator worker calls, bound per call.
+`calcFunc-reduce' or `calcFunc-rreduce' for the reduce pair, and the
+matching split for accumulate: the Inverse flag picks the direction
+before the worker runs.")
+
+(maf-defcmd maf--reduce-run (expr _arg commit)
+  "Reduce the resolved vector by `maf--combinator-op'.
+The worker behind `mafcmd-reduce' — see there."
+  :arity unary
+  :prefix "redc"
+  (commit (funcall maf--combinator-func maf--combinator-op expr)))
+
+(maf-defcmd maf--accum-run (expr _arg commit)
+  "Accumulate over the resolved vector by `maf--combinator-op'.
+The worker behind `mafcmd-accum' — see there."
+  :arity unary
+  :prefix "accm"
+  (commit (funcall maf--combinator-func maf--combinator-op expr)))
+
+(maf-defcmd maf--apply-run (expr _arg commit)
+  "Apply `maf--combinator-op' to the resolved vector's elements as arguments.
+The worker behind `mafcmd-apply' — see there."
+  :arity unary
+  :prefix "appl"
+  (commit (calcFunc-apply maf--combinator-op expr)))
+
+(maf-defcmd maf--outer-run (expr arg commit)
+  "Build the outer product of the resolved vector and the stack's.
+The worker behind `mafcmd-outer' — see there."
+  :arity binary
+  :prefix "outr"
+  :map -1
+  (commit (calcFunc-outer maf--combinator-op expr arg)))
+
+(maf-defcmd maf--inner-run (expr arg commit)
+  "Build the inner product of the resolved vector and the stack's.
+The worker behind `mafcmd-inner' — see there."
+  :arity binary
+  :prefix "innr"
+  :map -1
+  (commit (calcFunc-inner maf--combinator-op maf--combinator-op2 expr arg)))
+
+(defun mafcmd-reduce ()
+  "Reduce the vector at point by an operation you press.
+
+  [1, 2, 3, 4]  =>  10        (pressing +)
+
+The operation is the next key: any contextual command of two arguments
+answers on its own key, so + sums, * multiplies and f x takes the
+maximum, and : types a formula instead. The operation folds along the
+vector from the left, each result becoming the next call's first
+argument.
+
+Inverse: fold from the right instead.
+
+  [1, 2, 3, 4]  =>  -2        (pressing I then -, as 1 - (2 - (3 - 4)))
+
+Point picks the target as usual: a sub-formula at point, each side of
+an equation, the top entry at home.
+
+  [[1, 2], [3, 4]]  =>  10          (pressing +: a matrix reduces whole)
+  [a, b, c]         =>  a + b + c   (pressing +: symbolic, unevaluated)"
+  (interactive)
+  (let ((op (maf--read-operation "Reduce" 2))
+        (func (if calc-inverse-flag 'calcFunc-rreduce 'calcFunc-reduce)))
+    (setq calc-inverse-flag nil
+          calc-hyperbolic-flag nil)
+    (let ((maf--combinator-op op)
+          (maf--combinator-func func))
+      (call-interactively #'maf--reduce-run))))
+(put 'mafcmd-reduce 'maf-command t)
+
+(defun mafcmd-accum ()
+  "Accumulate over the vector at point by an operation you press.
+
+  [1, 2, 3, 4]  =>  [1, 3, 6, 10]        (pressing +)
+
+The running results of the fold `mafcmd-reduce' performs, kept as a
+vector rather than reduced to the last one. The operation is read the
+same way: the next key, or : for a typed formula.
+
+Inverse: accumulate from the right.
+
+  [1, 2, 3, 4]  =>  [-2, 3, -1, 4]       (pressing I then -)
+
+Point picks the target as usual: a sub-formula at point, each side of
+an equation, the top entry at home."
+  (interactive)
+  (let ((op (maf--read-operation "Accumulate" 2))
+        (func (if calc-inverse-flag 'calcFunc-raccum 'calcFunc-accum)))
+    (setq calc-inverse-flag nil
+          calc-hyperbolic-flag nil)
+    (let ((maf--combinator-op op)
+          (maf--combinator-func func))
+      (call-interactively #'maf--accum-run))))
+(put 'mafcmd-accum 'maf-command t)
+
+(defun mafcmd-apply ()
+  "Apply an operation you press to the vector at point, element by element.
+
+  [3, 5]  =>  8        (pressing +)
+
+The vector's elements become the operation's arguments, so a
+two-argument operation wants a vector of two. The operation is the next
+key, or : for a typed formula.
+
+Point picks the target as usual: a sub-formula at point, each side of
+an equation, the top entry at home."
+  (interactive)
+  (let ((op (maf--read-operation "Apply" 2)))
+    (setq calc-inverse-flag nil
+          calc-hyperbolic-flag nil)
+    (let ((maf--combinator-op op))
+      (call-interactively #'maf--apply-run))))
+(put 'mafcmd-apply 'maf-command t)
+
+(defun mafcmd-outer ()
+  "Build the outer product of two vectors under an operation you press.
+
+  2:  [1, 2]     =>  1:  [[3, 4], [6, 8]]      (pressing *)
+  1:  [3, 4]
+
+Every element of the lower vector meets every element of the upper one,
+giving a matrix with the lower vector's elements down the rows. The
+operation is the next key: any contextual command of two arguments, or
+: for a typed formula.
+
+Point picks the target as usual, the stack's top entry supplying the
+second vector.
+
+  2:  [1, 3, 9]     =>  1:  [[1, 1:2, 1:3, 1:6], [3, 3:2, 1, 1:2],
+  1:  [1, 2, 3, 6]                    [9, 9:2, 3, 3:2]]
+
+                       (pressing /: every quotient of the two)"
+  (interactive)
+  (let ((op (maf--read-operation "Outer" 2)))
+    (setq calc-inverse-flag nil
+          calc-hyperbolic-flag nil)
+    (let ((maf--combinator-op op))
+      (call-interactively #'maf--outer-run))))
+(put 'mafcmd-outer 'maf-command t)
+
+(defun mafcmd-inner ()
+  "Build the inner product of two vectors under two operations you press.
+
+  2:  [1, 2, 3]     =>  1:  32        (pressing * then +)
+  1:  [4, 5, 6]
+
+The first operation combines the pairs, the second reduces them — * and
++ give the ordinary dot product. Each is read the same way: the next
+key, or : for a typed formula.
+
+Point picks the target as usual, the stack's top entry supplying the
+second vector."
+  (interactive)
+  (let* ((mul (maf--read-operation "Inner (multiply)" 2))
+         (add (maf--read-operation "Inner (add)" 2)))
+    (setq calc-inverse-flag nil
+          calc-hyperbolic-flag nil)
+    (let ((maf--combinator-op mul)
+          (maf--combinator-op2 add))
+      (call-interactively #'maf--inner-run))))
+(put 'mafcmd-inner 'maf-command t)
 
 ;;; Roots
 
