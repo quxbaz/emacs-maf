@@ -16,30 +16,10 @@
     - [X] recents should not appear in filtered results
 
 * review
-  - [X] *maf-persist*
-    - [X] `l R` should bring up a buffer (using dial pkg) instead of a menu
-      - the buffer should have all the entries
-      - `D` to delete entry
-      - preview each entry in a split window when point hovers over
-      - standard npjk navigation for prev/next entry
   - [ ] change *maf-history* rendering
     - it should render as two columns
     - the left column showing the actions
     - the right column showing the corresponding stack
-  - [ ] new command: jump to next operand
-    - bind to `S-SPC`
-    - only bind in stack mode. do not bind in edit/editplus.
-  - [X] new `C-RET` should retain point, otherwise there's no difference between
-    it and `RET`
-    (2026-08-24: C-RET now runs `prefix RET` — the keep-point half of
-    RET's dispatcher, maf-dup-here-or-clear-selections. maf-dup-go, the
-    traveling duplicate that held the key, is reachable by name and on
-    the calc profile's M-RET.)
-  - [-] add redundant binding `k f` bound to same command as `a f` (factor)
-  - [-] add binding for permutations (binary command). there should be a builtin
-    for this. did we used to have this on `k t`?
-  - [-] if *maf-formulas* is already open, then just visit it instead of trying
-    to open new buffer
 
 * major features [8/9]
   - [X] bindings module
