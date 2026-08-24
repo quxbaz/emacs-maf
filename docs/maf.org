@@ -20,7 +20,7 @@
       - [ ] curreently on "add" items, the added item is not highlighted in
         yellow in the corresponding stack
   - *maf-persist*
-    - [ ] bind command to name session `R`
+    - [-] bind new command to name session `R`
   - *maf-formulas*
     - [ ] in details view, the variables in the "big" formula (referenced below)
       should match the color of the referenced value (looks like teal currently)
