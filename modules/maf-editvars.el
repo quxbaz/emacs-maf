@@ -18,7 +18,7 @@
 ;;   2{cm}            2*cm
 ;;   {foo}+x          foo+x
 ;;   2pi              2*pi           pi is exempt and stays whole
-;;   x/inf            x/inf          so are inf and nan, calc's own
+;;   x/inf            x/inf          so are calc's inf, uinf and nan
 ;;   xy(5)            the function xy, called on 5
 ;;   {xy}(5)          xy*5           the variable xy, times 5
 ;;   map({sin},[1,2]) sin passed by name, not called
@@ -33,17 +33,17 @@
 ;; quietly change what 5xy meant. Quoting is explicit, visible in the
 ;; text, and stable.
 ;;
-;; The one exception is `maf-editvars-exempt-names' — pi, inf and nan
-;; by default. 2pi means twice the circle constant everywhere algebra
-;; is written by hand, and inf and nan are the only ways calc writes
-;; infinity and not-a-number; nobody types any of the three meaning
-;; p times i, i times n times f, or n times a times n, so the bare
-;; runs stay one name and need no braces.
-;; Unlike the rejected table this is not "what calc knows": it is a
-;; short, fixed, user-visible list, and an exempt run is coloured in
-;; the buffer just as a quoted one is, so what holds together is still
-;; visible in the text. Only a whole run is exempt — xpi is still
-;; x*p*i, and uinf is still u*i*n*f.
+;; The one exception is `maf-editvars-exempt-names' — pi, and calc's
+;; three non-finite values inf, uinf and nan, by default. 2pi means
+;; twice the circle constant everywhere algebra is written by hand,
+;; and the other three are the only spellings calc has for infinity,
+;; undirected infinity and not-a-number; nobody types any of them
+;; meaning a product of their letters, so the bare runs stay one name
+;; and need no braces. Unlike the rejected table this is not "what
+;; calc knows": it is a short, fixed, user-visible list, and an exempt
+;; run is coloured in the buffer just as a quoted one is, so what
+;; holds together is still visible in the text. Only a whole run is
+;; exempt — xpi is still x*p*i, and nano is still n*a*n*o.
 ;;
 ;; A run is a *letter* run: a name with a digit in it is one identifier
 ;; already and needs no quoting, so x1 and xy1 pass through untouched.
@@ -123,26 +123,28 @@
 
 ;;; The exempt names
 
-(defcustom maf-editvars-exempt-names '("pi" "inf" "nan")
+(defcustom maf-editvars-exempt-names '("pi" "inf" "uinf" "nan")
   "Letter runs that stay one identifier without quotes.
 A run in this list never splits and is never quoted: bare pi commits
 as the constant rather than as the product p i, keys that type it
 type it bare, and text loaded from the stack shows it without braces.
 
-The default holds pi, inf and nan — each a name calc spells as a run
-of letters and nothing else. 2pi is how twice the circle constant is
-written by hand; inf is how calc writes infinity, the thing a limit
-goes to and a divergent integral returns; nan is what it hands back
-where there is no answer, from inf - inf or 0 * inf. Split, they
-would come back as p times i, i times n times f, or n times a times
-n — products of variables nobody meant. Every addition widens the
-same trap the dialect exists to close — a run whose meaning depends
-on a list rather than on the text — so this wants to stay short, and
-each entry should be a name whose product reading no one would ever
-intend.
+The default holds pi and calc's three non-finite values — each a name
+calc spells as a run of letters and nothing else. 2pi is how twice
+the circle constant is written by hand; inf is how calc writes
+infinity, the thing a limit goes to and a divergent integral returns;
+uinf is infinity with no direction, what 1/0 gives in Infinite mode
+since neither sign of the approach is right; nan is what calc hands
+back where there is no answer at all, from inf - inf or 0 * inf.
+Split, these come back as products of their letters — p times i,
+n times a times n — which is never what was typed. Every addition
+widens the same trap the dialect exists to close — a run whose
+meaning depends on a list rather than on the text — so this wants to
+stay short, and each entry should be a name whose product reading no
+one would ever intend.
 
 Whole runs only, compared case-sensitively: xpi still splits into
-three factors, uinf is not inf, and Pi is not pi. A name in front of
+three factors, nano is not nan, and Pi is not pi. A name in front of
 `(' is still a call — pi(5) calls calc's pi function — since calls
 are calc's own syntax in either dialect."
   :type '(repeat string)
@@ -582,8 +584,8 @@ they contain more than a name, so {1, 2} remains a vector.
 
 This syntax applies only inside maf-edit and only in Normal language.
 Turning the mode off restores Calc's usual input rules. The names in
-`maf-editvars-exempt-names', pi, inf and nan by default, stay whole
-without braces."
+`maf-editvars-exempt-names' — pi, inf, uinf and nan by default — stay
+whole without braces."
   :global t
   :group 'maf
   (if maf-use-editvars-mode
