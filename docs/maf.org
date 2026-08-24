@@ -39,7 +39,7 @@
   - [ ] find command that solves with +/i in answer, but uses a different
     representation (port it)
   - [ ] ` command should edit stack entry at m=1
-  - [ ] bug: `v o` sort command is completely broken given this entry,
+  - [ ] bug: `v o` sort command is completely broken given an entry like this,
     [sqrt(10), -sqrt(10)]
   - [ ] bug: given,
     (x - 2|)^2 = -12 y
