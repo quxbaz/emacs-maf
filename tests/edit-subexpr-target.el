@@ -100,6 +100,70 @@
                     "27/sqrt(ln(3))"))
   (call-interactively 'maf-edit-discard)
 
+  ;; A separator is punctuation the same way that closer is: the
+  ;; argument list it divides is not an expression to act on, so the
+  ;; press means the argument just typed. Without this, standing in
+  ;; the gap after an argument would wrap the whole call from inside
+  ;; its own parentheses.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (execute-kbd-macro "log(x,5)") nil)
+  (progn (maf-edit-move-beginning-of-line 1) (forward-char 5) nil)
+  (call-interactively 'maf-editplus-wrap-ln)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "log(ln(x),5)"))
+  (call-interactively 'maf-edit-discard)
+
+  ;; Every argument reads alike: the last one already did, through the
+  ;; closer, and a middle one now does through the comma after it.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (execute-kbd-macro "f(a,b,c)") nil)
+  (progn (maf-edit-move-beginning-of-line 1) (forward-char 4) nil)
+  (call-interactively 'maf-editplus-wrap-ln)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "f(a,ln(b),c)"))
+  (call-interactively 'maf-edit-discard)
+
+  ;; A vector's commas separate the same way a call's do.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (execute-kbd-macro "[a,b]") nil)
+  (progn (maf-edit-move-beginning-of-line 1) (forward-char 2) nil)
+  (call-interactively 'maf-editplus-wrap-ln)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "[ln(a),b]"))
+  (call-interactively 'maf-edit-discard)
+
+  ;; So does a matrix's row separator, calc's other separator glyph.
+  ;; M-; is the literal semicolon here — the ; key types the fraction
+  ;; colon (`maf-edit-insert-semicolon').
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (execute-kbd-macro (kbd "[ p , q M-; r , s ]")) nil)
+  (progn (maf-edit-move-beginning-of-line 1) (forward-char 4) nil)
+  (call-interactively 'maf-editplus-wrap-ln)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "[p,ln(q);r,s]"))
+  (call-interactively 'maf-edit-discard)
+
+  ;; A separator with nothing complete behind it has no argument to
+  ;; mean, so the enclosure stands as the node — the same fallback the
+  ;; closer branch makes for an empty call.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (insert "f(,b)") nil)
+  (progn (maf-edit-move-beginning-of-line 1) (forward-char 2) nil)
+  (call-interactively 'maf-editplus-wrap-ln)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "ln(f(,b))"))
+  (call-interactively 'maf-edit-discard)
+
+  ;; The whole call is still reachable, from its name or its opener —
+  ;; the separator change only affects the gaps between arguments.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (execute-kbd-macro "log(x,5)") nil)
+  (progn (maf-edit-move-beginning-of-line 1) nil)
+  (call-interactively 'maf-editplus-wrap-ln)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "ln(log(x,5))"))
+  (call-interactively 'maf-edit-discard)
+
   ;; A vector is structure: its bracket names the whole thing, an
   ;; element names itself, and neither press disturbs the other.
   (call-interactively 'maf-edit-add-entry-below)

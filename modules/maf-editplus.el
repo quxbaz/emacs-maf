@@ -1272,6 +1272,18 @@ so x |mod y is the mod's padding and names the x)."
                    (or (eq (maf-editplus--node-kind node) 'call)
                        (maf-editplus--unit-before at limit)))
               nil)
+             ;; A separator is punctuation the same way a closer is:
+             ;; the argument list it divides is not a sub-expression a
+             ;; command could act on, so a press on one means the
+             ;; argument just typed — log(x|, 5) naming the x, exactly
+             ;; as the closer after the last argument does. Without
+             ;; this the innermost node covering the comma is the call
+             ;; itself, and the key would wrap the whole call from
+             ;; inside its own argument list.
+             ((and node
+                   (memq (char-after at) '(?, ?\;))
+                   (maf-editplus--unit-before at limit))
+              nil)
              ;; Padding whitespace with a complete unit ending at
              ;; point reads as the end of the entry does: the press
              ;; means the term just typed — 2 x| + 1 names the x, not
