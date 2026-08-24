@@ -445,8 +445,9 @@
 ;; whose control-character leaf calc's fancy prefix would rather not
 ;; carry (K C-c C-c is what `maf--fancy-prefix-keep's provisional path
 ;; was written for; see src/stack.el) — then C-RET, which the edit
-;; module's quick-add had given up for it (`, C-o and "(" remain, and
-;; ` opens the same bottom entry, as a trip home). Bind the GUI event
+;; module's quick-add had given up for it (`, C-o and "(" remain,
+;; though ` now opens the bottom entry for editing rather than adding
+;; one below it, still as a trip home). Bind the GUI event
 ;; and the terminal form both.
 (maf-bindings-define '(native) "M-<return>" #'mafcmd-let)
 (maf-bindings-define '(native) "M-RET" #'mafcmd-let)

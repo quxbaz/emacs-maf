@@ -81,13 +81,13 @@
 Set by `maf-edit--enter-for-add' (the quick-add gestures) before
 entering; commit and discard both consult it, returning point to where
 it was before the edit began instead of keeping its in-edit position.
-`maf-edit-add-entry-at-home' stores a home snapshot here instead,
+`maf-edit-entry-at-home' stores a home snapshot here instead,
 whose restore is a no-op: that gesture's landing is
 `maf-edit--home-return's, not this one's.")
 
 (defvar-local maf-edit--return-home nil
   "Non-nil when this edit session ends with point parked home.
-Set by `maf-edit-add-entry-at-home', whose gesture is a trip home: the
+Set by `maf-edit-entry-at-home', whose gesture is a trip home: the
 session ends on the dot, commit and discard alike, rather than on the
 entry that was typed or back where point started. A point snapshot
 here rather than t names the place the gesture left, which is marked
@@ -1242,19 +1242,21 @@ it still owns before the blank line becomes an entry of its own."
       (maf-edit--repair)
       (goto-char (+ bol (maf-edit--leading-prefix-run bol))))))
 
-(defun maf-edit-add-entry-at-home ()
-  "Enter maf-edit with a fresh entry at the bottom, landing point home.
+(defun maf-edit-entry-at-home ()
+  "Enter maf-edit on the entry at stack level 1, landing point home.
 
-  2:  a + b|        3:  a + b
-  1:  c        =>   2:  c
-                    1:  z
+  2:  a|+ b         2:  a + b
+  1:  12       =>   1:  123
                         .|
 
-The new entry opens as a blank numbered line just above the dot, point
-on its content column ready to type — from anywhere, including an
-empty stack. The session is a trip home: when it ends point stays
-there, below the committed entry, and the place it left is marked. A
-single
+The bottom entry — level 1, the one nearest home — opens for editing
+with point at the end of its text, ready to extend or correct it, from
+wherever point stood. On an empty stack there is nothing to edit, so a
+blank entry opens at the bottom instead and the gesture is the quick
+add it used to be throughout.
+
+The session is a trip home: when it ends point lands on the dot, below
+the committed entry, and the place it left is marked. A single
 \\[pop-to-mark-command] returns to it, as does \\[maf-go-home], which
 bounces back to the mark when pressed at home. Pressed at home there
 is nothing to mark and nothing to return from.
@@ -1264,16 +1266,27 @@ mark is still the way back."
   (interactive)
   (when maf-edit-mode
     (user-error "maf-edit is already active"))
-  ;; t rather than nil at home: the session still lands on the dot,
-  ;; there is just no journey to mark.
-  (let ((origin (if (maf--at-home-p) t (maf--point-snapshot))))
+  ;; Read the stack before entering: inside a session the buffer is
+  ;; plain text, and the empty case is the one that has no entry to
+  ;; open on.
+  (let ((emptyp (zerop (calc-stack-size)))
+        ;; t rather than nil at home: the session still lands on the
+        ;; dot, there is just no journey to mark.
+        (origin (if (maf--at-home-p) t (maf--point-snapshot))))
     (maf-edit-mode 1)
     ;; A home snapshot makes the exit's point restore a no-op, leaving
     ;; the landing to `maf-edit--home-return' rather than to the
     ;; position point held inside the edited text.
     (setq maf-edit--return (list (cons :affinity 'home))
-          maf-edit--return-home origin))
-  (maf-edit--open-at-dot))
+          maf-edit--return-home origin)
+    (if emptyp
+        (maf-edit--open-at-dot)
+      ;; Entry overlays come back in buffer order and level 1 renders
+      ;; last, just above the dot, so the final one is the entry this
+      ;; gesture opens on. Its end is where the text stops, the
+      ;; newline excluded — the same column a freshly opened blank
+      ;; entry leaves point on.
+      (goto-char (overlay-end (car (last (maf-edit--overlays))))))))
 
 (defun maf-edit-add-entry-below ()
   "Enter maf-edit with a fresh entry opened below the entry at point.
@@ -1611,7 +1624,7 @@ does not change the stack."
 
 (maf-bindings-module-keys 'maf-edit 'maf-use-edit-mode
   '(((calc native vim) "SPC" maf-edit)
-    ((calc native vim) "`" maf-edit-add-entry-at-home)
+    ((calc native vim) "`" maf-edit-entry-at-home)
     ((calc native vim) "C-o" maf-edit-add-entry-above)
     ((calc native vim) "(" maf-edit-add-vector)))
 
