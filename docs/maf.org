@@ -33,7 +33,8 @@
   - *maf-formulas*
     - [ ] retain the legend even in filtered results view
     - [ ] npjk should move to first character of entry, instead of first column
-    - [ ] in filtered results, RET on group name should expand/show entire group
+    - [ ] RET on group name should filter for that group (should work in filtered and non-filtered views)
+    - [ ] npjk should also land on group names
   - [ ] given something like: [h = 0, p =| -4, k = 0]
     on `j l` or `j r`, point should stay next to the `=`
   - *maf-editplus*
