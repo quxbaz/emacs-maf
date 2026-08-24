@@ -33,8 +33,10 @@
         (push (car row) bad)))
     (cl-assert (null bad)))
 
+  ;; The native layout now takes Calc's evaluation key for equating too.
+  (cl-assert (eq (key-binding "=") 'mafcmd-equal-to))
+
   ;; Deliberate fall-throughs to calc stay calc's.
-  (cl-assert (eq (key-binding "=") 'calc-evaluate))
   (cl-assert (eq (key-binding "'") 'calc-algebraic-entry))
   (cl-assert (eq (key-binding "$") 'calc-auto-algebraic-entry))
   (cl-assert (eq (key-binding ":") 'calc-fdiv))

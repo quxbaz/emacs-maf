@@ -373,12 +373,14 @@
 ;; is where add-entry-below opened, so the gesture survives one line
 ;; down — with ` still opening at the bottom.
 
-;; Equate lives on e (shadowing the e-notation digit start); = stays
-;; unbound here, falling through to calc's own calc-evaluate. Inside
-;; digit entry e reaches the same command: `maf-digit-equal-to'
-;; (src/minibuffer.el) ends the entry on it and the number becomes the
-;; argument.
+;; Equate lives on e (shadowing the e-notation digit start) and its
+;; typographic twin =. The calc profile leaves = to calc-evaluate.
+;; Inside digit entry e reaches the same command through
+;; `maf-digit-equal-to' (src/minibuffer.el), which ends the entry on it
+;; and makes the number the argument; = takes calc's ordinary
+;; command-key handoff to the stack binding.
 (maf-bindings-define '(native) "e" #'mafcmd-equal-to)
+(maf-bindings-define '(native) "=" #'mafcmd-equal-to)
 ;; The other direction: drop the relation, keep a side. M-. is unbound
 ;; in calc itself; a . is calc's own key for the operation, which the
 ;; table in maf-cmds.el no longer claims.
