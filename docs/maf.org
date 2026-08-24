@@ -39,6 +39,8 @@
   - [ ] add redundant binding `k f` bound to same command as `a f` (factor)
   - [ ] add binding for permutations (binary command). there should be a builtin
     for this. did we used to have this on `k t`?
+  - [ ] if *maf-formulas* is already open, then just visit it instead of trying
+    to open new buffer
 
 * major features [8/9]
   - [X] bindings module
