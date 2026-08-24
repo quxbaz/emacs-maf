@@ -311,7 +311,9 @@ variant's own variable governs only its direct invocation."
   ;; dfact cedes calc's k d to mafcmd-factor-powers (bindings.el).
   (dfact unary calcFunc-dfact)
   (euler unary calcFunc-euler "k e")
-  (prfac unary calcFunc-prfac "k f")
+  ;; prfac cedes calc's k f to a second key for mafcmd-factor
+  ;; (bindings.el), beside its table key a f.
+  (prfac unary calcFunc-prfac)
   (gcd binary calcFunc-gcd "k g")
   (shuffle binary calcFunc-shuffle "k h")
   (lcm binary calcFunc-lcm "k l")

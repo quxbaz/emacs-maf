@@ -218,6 +218,11 @@
      prefix claim — see the k/l policy above)
    - [X] `k d` mafcmd-factor-powers ← calc-double-factorial (a custom
      prefix claim; my/calc's key for the command too)
+   - [X] `k f` mafcmd-factor ← calc-prime-factors (2026-08-24: a second
+     key for the factor beside its table key `a f`, on factor's letter
+     and beside the rest of the factoring family under k and l.
+     Displaces prfac's table key in native; prfac keeps no key, and the
+     calc profile keeps k f = prime factors)
    - [X] `l f` mafcmd-factor-by ← calc-freq
    - [X] `l s` mafcmd-complete-square ← calc-spn (2026-08-21: a
      family key on the square's letter, beside its k s; the vim
@@ -489,11 +494,12 @@
        calc-enter/edit/copy/del-selection,
        calc-enable/show/clear/break-selections, calc-unselect, calc-conj
    - `k` — the combinatorics prefix:
-     - mafcmd siblings shadowing calc: choose, gcd, lcm, prfac,
+     - mafcmd siblings shadowing calc: choose, gcd, lcm,
        nextprime, totient, moebius, euler, bern, random, shuffle,
        utpt/utpp/utpc
      - maf-only: mafcmd-esimplify (k k), mafcmd-evaluate (k v),
-       mafcmd-complete-square (k s), mafcmd-factor-powers (k d)
+       mafcmd-complete-square (k s), mafcmd-factor-powers (k d),
+       mafcmd-factor (k f, a second key beside `a f`)
      - calc-only leftovers: calc-keep-args (k K), calc-prime-test,
        calc-random-again, calc-extended-gcd, calc-utpn/utpf/utpb
    - `l` — maf's own invented prefix, layered over calc's log-units

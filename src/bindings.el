@@ -67,6 +67,11 @@
 ;; Shadows calc-double-factorial's key; mafcmd-dfact cedes it — see
 ;; the table in maf-cmds.el.
 (maf-bindings-define '(native) "k d" #'mafcmd-factor-powers)
+;; A second key for the factor, beside its table key a f: the whole
+;; factoring family already gathers under k and l (k d, l f, l F, l D),
+;; and f is factor's letter. mafcmd-prfac cedes it — see the table in
+;; maf-cmds.el.
+(maf-bindings-define '(native) "k f" #'mafcmd-factor)
 (maf-bindings-define '(native) "l f" #'mafcmd-factor-by)
 (maf-bindings-define '(native) "l F" #'mafcmd-factor-gcd)
 ;; c for collect. The key returns to service after the float/frac
