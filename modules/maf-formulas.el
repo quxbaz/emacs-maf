@@ -270,6 +270,7 @@ doubles as the toggle's indicator."
                          (if (eq maf-formulas--pane-state 'follow)
                              (propertize "O follows" 'face 'warning)
                            (funcall entry "O" "follows"))
+                         (funcall entry "a/i" "adds recent")
                          (funcall entry "D" "deletes recent")
                          (funcall entry "q" "quits"))
                    "   "))
@@ -573,6 +574,53 @@ decides."
                   (buffer-substring-no-properties header (line-end-position)))
                 maf-formulas--recent-category))))
 
+(defun maf-formulas--goto-formula (f recent)
+  "Put point on the row for formula F, RECENT choosing which copy.
+A formula in the \"Recent\" group is listed twice — there and under
+its own category — so a re-render leaves two rows to land on. With
+RECENT non-nil the group's copy is taken, otherwise the category's.
+When the wanted copy is not on screen the other serves, and when
+neither is, point stays where the render left it."
+  (let (wanted other)
+    (save-excursion
+      (goto-char (point-min))
+      (while (not (eobp))
+        (when (eq (get-text-property (line-beginning-position) 'maf-formula) f)
+          (if (eq (and (maf-formulas--recent-line-p) t) (and recent t))
+              (unless wanted (setq wanted (line-beginning-position)))
+            (unless other (setq other (line-beginning-position)))))
+        (forward-line 1)))
+    (when-let ((pos (or wanted other)))
+      (goto-char pos))))
+
+(defun maf-formulas-add-recent ()
+  "Add the formula at point to the \"Recent\" group, without inserting it.
+The group is otherwise written only by inserting a formula, which
+leaves the menu; this marks one as reached-for and stays put, so a
+handful can be gathered in one visit and found at the top of the list
+next time. A formula already in the group moves back to its head.
+
+The narrowing is no obstacle: the row under point is what counts, so
+a filtered list marks the same way an unfiltered one does — though a
+formula the current query hides is not shown in the group until the
+filter widens to it again.
+
+Point keeps its place rather than following the render to the top,
+and its copy with it: marking from the group's own line stays there."
+  (interactive)
+  (let ((f (get-text-property (line-beginning-position) 'maf-formula)))
+    (unless f (user-error "No formula on this line"))
+    (when (<= maf-formulas-recent-max 0)
+      (user-error "The Recent group is turned off (maf-formulas-recent-max)"))
+    (let ((recent (maf-formulas--recent-line-p)))
+      (maf-formulas--record-recent f)
+      (maf-formulas--render)
+      (maf-formulas--goto-formula f recent))
+    (when (eq maf-formulas--pane-state 'follow)
+      (setq maf-formulas--detail-line (line-beginning-position))
+      (maf-formulas--update-detail))
+    (message "Added to Recent: %s" (maf-formulas--title f))))
+
 (defun maf-formulas-delete-recent ()
   "Drop the entry at point from the \"Recent\" group.
 Only a line in that group qualifies: the group is the session's memory
@@ -746,6 +794,8 @@ untouched either way."
 ;; nil clears it from a live map on reload.
 (define-key maf-formulas-mode-map (kbd "d")   nil)
 (define-key maf-formulas-mode-map (kbd "O")   #'maf-formulas-toggle-detail)
+(define-key maf-formulas-mode-map (kbd "a")   #'maf-formulas-add-recent)
+(define-key maf-formulas-mode-map (kbd "i")   #'maf-formulas-add-recent)
 (define-key maf-formulas-mode-map (kbd "D")   #'maf-formulas-delete-recent)
 (define-key maf-formulas-mode-map (kbd "C-g") #'maf-formulas-keyboard-quit)
 ;; Two levels of motion: n/p/j/k and TAB/S-TAB step formula to formula
@@ -768,7 +818,8 @@ form. \\<maf-formulas-mode-map>\\[maf-formulas-insert]
 pushes the formula at point onto the stack, \\[maf-formulas-next-item] and \\[maf-formulas-prev-item] step
 between formulas, \\[maf-formulas-next-group] between groups, \\[maf-formulas-show-detail] shows the formula at
 point in the detail pane (again to close it), \\[maf-formulas-toggle-detail] toggles the pane following point (on by
-default, remembered for the session), \\[maf-formulas-delete-recent] drops the recent entry at
+default, remembered for the session), \\[maf-formulas-add-recent] adds the formula at point to
+the Recent group without inserting it, \\[maf-formulas-delete-recent] drops the recent entry at
 point, \\[maf-formulas-filter] filters as you type, \\[maf-formulas-clear-filter] clears the filter, \\[maf-formulas-quit] quits."
   (setq truncate-lines t)
   ;; The legend's band is the options buffer's: `header-line's own look
