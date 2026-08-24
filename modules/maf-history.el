@@ -7,7 +7,7 @@
 ;; snapshot — whatever produced the change: maf commands, plain calc
 ;; commands, digit entry, undo. Browsing is two side-by-side windows:
 ;; *maf-history* on the left is the action log, one line per recorded
-;; state, oldest at the top, the current one marked; *maf-history-stack*
+;; state, newest at the top, the current one marked; *maf-history-stack*
 ;; on the right shows that state's whole stack, rendered like the stack
 ;; itself with the entries that step produced highlighted. Moving in
 ;; the log re-renders the stack beside it: n/p/j/k step through the
@@ -43,6 +43,25 @@
 (defface maf-history-current
   '((t :inherit warning :weight bold))
   "Face for the current state's action in the history log."
+  :group 'maf)
+
+;; The log's change markers, coloured the way a git UI colours a diff
+;; stat. The core semantic faces rather than the `diff-*' ones: every
+;; theme styles these three, while `diff-changed' is commonly left
+;; unspecified.
+(defface maf-history-added
+  '((t :inherit success))
+  "Face for the marker on a state that added a stack entry."
+  :group 'maf)
+
+(defface maf-history-removed
+  '((t :inherit error))
+  "Face for the marker on a state that removed stack entries."
+  :group 'maf)
+
+(defface maf-history-modified
+  '((t :inherit warning))
+  "Face for the marker on a state that changed the stack in place."
   :group 'maf)
 
 (defcustom maf-history-log-width 0.25
@@ -222,6 +241,22 @@ multi-value push) — so unnamed steps stay legible and 1:1 with `u'/`i'."
           ((symbolp label) (symbol-name label))
           (t "entry"))))
 
+(defun maf-history--marker (values older has-older)
+  "Return (CHAR . FACE) marking how VALUES changed the stack from OLDER.
+The kinds a git UI shows: `+' for a state that added an entry, `-' for
+one that removed entries, `~' for one that changed the stack in place
+— an entry edited, or several changes at once. HAS-OLDER says whether
+OLDER is a state at all rather than merely an empty one; the oldest
+recorded state has nothing to diff against and takes a neutral `·'.
+The classification is `maf-history--classify's, so the marker and a
+structural label agree by construction."
+  (if (not has-older)
+      (cons ?· 'shadow)
+    (pcase (maf-history--classify older values)
+      ("new" (cons ?+ 'maf-history-added))
+      ("del" (cons ?- 'maf-history-removed))
+      (_     (cons ?~ 'maf-history-modified)))))
+
 (defvar maf-history--controls nil
   "Commands summarized on the legend line, in order.
 Each entry is (COMMAND VERB . PREFERRED-KEYS), the shape dial's
@@ -231,12 +266,12 @@ for it, kept only while each still runs it.")
 
 ;; Set outside the defvar so a reload applies edits to the list.
 ;; n/p/j/k all step, in both windows, so the legend reads the same from
-;; either one.
+;; either one; it names n/p and leaves j/k as unadvertised aliases
+;; rather than spend the width on both pairs.
 (setq maf-history--controls
-      '(((maf-history-previous maf-history-next) "step" "n" "p" "j" "k")
+      '(((maf-history-previous maf-history-next) "step" "n" "p")
         ((maf-history-oldest maf-history-newest) "ends" "<" ">")
-        ((maf-history-switch maf-history-focus-log maf-history-focus-stack)
-         "switch" "o" "h" "l")
+        (maf-history-switch "switch" "t")
         (maf-history-insert "insert" "RET")
         (maf-history-restore "restore" "r")
         (maf-history-delete "delete" "D")
@@ -278,8 +313,10 @@ the wide one; the pair is one UI, and the keys drive both."
 
 (defun maf-history--render-log ()
   "Render the action log into the current buffer, the browser's left window.
-One line per recorded state, oldest at the top: the action that
-produced it, the current one marked and on `maf-history-current'. Each
+One line per recorded state, newest at the top and oldest at the
+bottom, so the latest work is where the eye starts. Each line is a
+change marker (see `maf-history--marker') and the action that produced
+the state, the current one marked and on `maf-history-current'. Each
 line carries its state's index, so point lands on a state rather than
 merely near one, and point is left on the current line — in the log
 the selection is where point is. The header line carries the position
@@ -291,18 +328,26 @@ counter."
     (erase-buffer)
     (if (null maf-history--states)
         (insert (propertize "(no states yet)" 'face 'shadow) "\n")
-      (let ((i (1- total)))
-        (while (>= i 0)
-          (let ((current (= i index))
-                (start (point)))
-            (insert (if current "▸ " "  ")
-                    (maf-history--label (nth i maf-history--states))
-                    "\n")
-            (put-text-property start (point) 'maf-history-index i)
-            (when current
-              (add-face-text-property start (point) 'maf-history-current t)
-              (setq target start)))
-          (setq i (1- i)))))
+      (dotimes (i total)
+        (let* ((state (nth i maf-history--states))
+               (has-older (< (1+ i) total))
+               (marker (maf-history--marker
+                        (nth 0 state)
+                        (and has-older (nth 0 (nth (1+ i) maf-history--states)))
+                        has-older))
+               (current (= i index))
+               (start (point)))
+          (insert (if current "▸ " "  "))
+          (let ((mstart (point)))
+            (insert (car marker) " ")
+            (put-text-property mstart (1+ mstart) 'face (cdr marker)))
+          (insert (maf-history--label state) "\n")
+          (put-text-property start (point) 'maf-history-index i)
+          (when current
+            ;; Appended, so the marker keeps its own colour and only
+            ;; picks up the current state's weight.
+            (add-face-text-property start (point) 'maf-history-current t)
+            (setq target start)))))
     (setq header-line-format
           (if (zerop total) "maf-history"
             (format "maf-history  %d/%d" (- total index) total)))
@@ -383,8 +428,9 @@ The index is clamped here, so both views render the same selection."
   "Re-render the browser, if it is open.
 With NEW non-nil a state was just recorded: a view on the newest state
 follows to the new one; a view on an older state stays on that state,
-its index shifted under it — the new line appends at the bottom of the
-log, so nothing shifts under point."
+its index shifted under it. The new line lands at the top of the log
+and the rest move down a row, but the log puts point back on the
+selected state either way."
   (when (get-buffer maf-history--log-buffer)
     (let ((follow (and new (zerop maf-history--index))))
       (when (and new (> maf-history--index 0))
@@ -406,24 +452,22 @@ mean something else beside a stack — line motion and RET.")
 ;; to the existing maps.
 
 ;; The log: every line is a state, so plain motion and stepping are the
-;; same thing. With the log running oldest-at-top, older is up (k/p)
-;; and newer is down (j/n).
-(define-key maf-history-mode-map (kbd "k") #'maf-history-previous)
-(define-key maf-history-mode-map (kbd "j") #'maf-history-next)
-(define-key maf-history-mode-map (kbd "p") #'maf-history-previous)
-(define-key maf-history-mode-map (kbd "n") #'maf-history-next)
-(define-key maf-history-mode-map (kbd "M-p") #'maf-history-previous)
-(define-key maf-history-mode-map (kbd "M-n") #'maf-history-next)
-(define-key maf-history-mode-map (kbd "<") #'maf-history-oldest)
-(define-key maf-history-mode-map (kbd ">") #'maf-history-newest)
-;; G reaches the newest state too, the vim end-of-buffer key.
-(define-key maf-history-mode-map (kbd "G") #'maf-history-newest)
-;; h/l cross between the two windows, the way they read on the layout:
-;; the log is on the left, the stack on the right. o crosses either
-;; way, for when the hand does not want to name a direction.
-(define-key maf-history-mode-map (kbd "h") #'maf-history-focus-log)
-(define-key maf-history-mode-map (kbd "l") #'maf-history-focus-stack)
-(define-key maf-history-mode-map (kbd "o") #'maf-history-switch)
+;; same thing, and the keys follow the display rather than the clock.
+;; The log runs newest-at-top, so down (j/n) walks back in time and up
+;; (k/p) walks forward — the way n/p move through the items of any
+;; Emacs list buffer, whatever order the list is in.
+(define-key maf-history-mode-map (kbd "j") #'maf-history-previous)
+(define-key maf-history-mode-map (kbd "n") #'maf-history-previous)
+(define-key maf-history-mode-map (kbd "k") #'maf-history-next)
+(define-key maf-history-mode-map (kbd "p") #'maf-history-next)
+(define-key maf-history-mode-map (kbd "M-n") #'maf-history-previous)
+(define-key maf-history-mode-map (kbd "M-p") #'maf-history-next)
+;; The ends follow the display too, as the step keys do: the log runs
+;; newest-first, so < reaches the top of it and > the bottom.
+(define-key maf-history-mode-map (kbd "<") #'maf-history-newest)
+(define-key maf-history-mode-map (kbd ">") #'maf-history-oldest)
+;; One key crosses between the two windows, either way.
+(define-key maf-history-mode-map (kbd "t") #'maf-history-switch)
 (define-key maf-history-mode-map (kbd "TAB") #'maf-history-focus-stack)
 ;; RET in the log drills into the stack beside it — there is no entry
 ;; here to push, and picking one is what comes next.
@@ -448,8 +492,9 @@ mean something else beside a stack — line motion and RET.")
 
 (define-derived-mode maf-history-mode special-mode "maf-history"
   "Major mode for the calc stack history\='s action log.
-The left window of the browser: one line per recorded state, oldest at
-the top, naming the action that produced it, the current one marked.
+The left window of the browser: one line per recorded state, newest at
+the top, each a change marker (+ added, - removed, ~ changed in place)
+and the action that produced it, the current one marked.
 The stack that action left shows in `maf-history-stack-mode' beside
 it, following point as it moves. \<maf-history-mode-map>
 \[maf-history-previous] steps to older states and \[maf-history-next]
@@ -555,8 +600,9 @@ without a calc window the pair opens below the selected window."
 (defun maf-history-switch ()
   "Switch between the action log and the stack beside it.
 Selects whichever of the browser's two windows is not the current
-one, so one key crosses either way; `maf-history-focus-log' and
-`maf-history-focus-stack' name a side instead."
+one, so one key crosses either way. `maf-history-focus-log' and
+`maf-history-focus-stack' name a side instead; TAB runs whichever of
+them leads out of the window it is pressed in."
   (interactive)
   (if (derived-mode-p 'maf-history-stack-mode)
       (maf-history-focus-log)

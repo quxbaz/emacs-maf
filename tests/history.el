@@ -1,12 +1,15 @@
 (maf-step
-  ;; The history log is global session state: stash it and run against
-  ;; a clean one; the last form puts everything back.
+  ;; The history log is global session state, the selection into it
+  ;; included: stash both and run against a clean one; the last form
+  ;; puts everything back.
   (setq maf--history-stash (list maf-history--states
                                  maf-history--last-raw
-                                 maf-history-size)
+                                 maf-history-size
+                                 maf-history--index)
         maf-history--states nil
         maf-history--last-raw nil
-        maf-history-size 100)
+        maf-history-size 100
+        maf-history--index 0)
 
   ;; Each stack change records a whole-stack state, values top first.
   (calc-wrapper (maf-push "6 x + 12"))
@@ -40,18 +43,18 @@
   ;; added an entry).
   (with-current-buffer (maf-history--buffer)
     (cl-assert (equal (buffer-substring-no-properties (point-min) (point-max))
-                      "  new\n▸ new\n"))
+                      "▸ + new\n  · new\n"))
     (cl-assert (equal header-line-format "maf-history  2/2"))
     ;; Point rests on the current state's line, and every line names
     ;; its state.
-    (cl-assert (= (line-number-at-pos) 2))
+    (cl-assert (= (line-number-at-pos) 1))
     (cl-assert (= (get-text-property (point) 'maf-history-index) 0))
-    (progn (goto-char (point-min))
+    (progn (forward-line 1)
            (cl-assert (= (get-text-property (point) 'maf-history-index) 1))))
   (with-current-buffer (maf-history--stack-buffer)
     (cl-assert (equal (buffer-substring-no-properties (point-min) (point-max))
                       "2:  6 x + 12\n1:  a + b\n"))
-    (cl-assert (string-match-p " n/p/j/k step .* r restore .* D delete "
+    (cl-assert (string-match-p " n/p step .* t switch .* r restore .* D delete "
                                (format-mode-line header-line-format)))
     ;; The entry this step produced is highlighted; the one carried
     ;; over from the state before is not.
@@ -69,8 +72,8 @@
     (call-interactively 'maf-history-previous)
     (cl-assert (equal header-line-format "maf-history  1/2"))
     (cl-assert (equal (buffer-substring-no-properties (point-min) (point-max))
-                      "▸ new\n  new\n"))
-    (cl-assert (= (line-number-at-pos) 1)))
+                      "  + new\n▸ · new\n"))
+    (cl-assert (= (line-number-at-pos) 2)))
   (with-current-buffer (maf-history--stack-buffer)
     (cl-assert (equal (buffer-substring-no-properties (point-min) (point-max))
                       "1:  6 x + 12\n"))
@@ -82,42 +85,52 @@
     (cl-assert (equal header-line-format "maf-history  2/2"))
     (cl-assert (not (ignore-errors (call-interactively 'maf-history-next) t))))
 
-  ;; In the log every line is a state, so all of n/p/j/k step: k/p
-  ;; older (up), j/n newer (down). Driving them through the keymap
-  ;; steps and back.
+  ;; In the log every line is a state, so all of n/p/j/k step, and
+  ;; they follow the display rather than the clock: with the log
+  ;; newest-first, j/n walk down into older states and k/p walk back
+  ;; up. Driving them through the keymap steps and back.
   (with-current-buffer (maf-history--buffer)
-    (cl-assert (eq (lookup-key maf-history-mode-map (kbd "k")) 'maf-history-previous))
-    (cl-assert (eq (lookup-key maf-history-mode-map (kbd "p")) 'maf-history-previous))
-    (cl-assert (eq (lookup-key maf-history-mode-map (kbd "j")) 'maf-history-next))
-    (cl-assert (eq (lookup-key maf-history-mode-map (kbd "n")) 'maf-history-next))
-    (call-interactively (lookup-key maf-history-mode-map (kbd "k")))
-    (cl-assert (equal header-line-format "maf-history  1/2"))
+    (cl-assert (eq (lookup-key maf-history-mode-map (kbd "j")) 'maf-history-previous))
+    (cl-assert (eq (lookup-key maf-history-mode-map (kbd "n")) 'maf-history-previous))
+    (cl-assert (eq (lookup-key maf-history-mode-map (kbd "k")) 'maf-history-next))
+    (cl-assert (eq (lookup-key maf-history-mode-map (kbd "p")) 'maf-history-next))
     (call-interactively (lookup-key maf-history-mode-map (kbd "j")))
+    (cl-assert (equal header-line-format "maf-history  1/2"))
+    (call-interactively (lookup-key maf-history-mode-map (kbd "k")))
     (cl-assert (equal header-line-format "maf-history  2/2")))
 
   ;; The stack map inherits the log's, so the step keys mean the same
   ;; in both windows; what it overrides is RET, which must pick an
   ;; entry here. Moving between the entries of one stack is left to
   ;; special-mode's own C-n/C-p.
-  (cl-assert (eq (lookup-key maf-history-stack-mode-map (kbd "k")) 'maf-history-previous))
-  (cl-assert (eq (lookup-key maf-history-stack-mode-map (kbd "n")) 'maf-history-next))
+  (cl-assert (eq (lookup-key maf-history-stack-mode-map (kbd "j")) 'maf-history-previous))
+  (cl-assert (eq (lookup-key maf-history-stack-mode-map (kbd "k")) 'maf-history-next))
   (cl-assert (eq (lookup-key maf-history-stack-mode-map (kbd "RET")) 'maf-history-insert))
   (cl-assert (eq (lookup-key maf-history-mode-map (kbd "RET")) 'maf-history-focus-stack))
-  ;; o crosses either way; h/l name a side. u/i and v are gone.
-  (cl-assert (eq (lookup-key maf-history-mode-map (kbd "o")) 'maf-history-switch))
-  (cl-assert (eq (lookup-key maf-history-stack-mode-map (kbd "o")) 'maf-history-switch))
-  (cl-assert (eq (lookup-key maf-history-mode-map (kbd "h")) 'maf-history-focus-log))
-  (cl-assert (eq (lookup-key maf-history-mode-map (kbd "l")) 'maf-history-focus-stack))
-  (cl-assert (null (lookup-key maf-history-mode-map (kbd "u"))))
-  (cl-assert (null (lookup-key maf-history-mode-map (kbd "i"))))
-  (cl-assert (null (lookup-key maf-history-mode-map (kbd "v"))))
+  ;; t is the one key that crosses between the windows, either way.
+  (cl-assert (eq (lookup-key maf-history-mode-map (kbd "t")) 'maf-history-switch))
+  (cl-assert (eq (lookup-key maf-history-stack-mode-map (kbd "t")) 'maf-history-switch))
+  ;; The ends follow the display, as the step keys do: < reaches the
+  ;; top of a newest-first log, > the bottom.
+  (cl-assert (eq (lookup-key maf-history-mode-map (kbd "<")) 'maf-history-newest))
+  (cl-assert (eq (lookup-key maf-history-mode-map (kbd ">")) 'maf-history-oldest))
+  ;; Retired keys stay retired: none of them still runs a browsing
+  ;; command. They are not asserted unbound — special-mode keeps its
+  ;; own claim on some (h is `describe-mode'), which is what should
+  ;; show through once ours is gone.
+  (dolist (key '("u" "i" "o" "h" "l" "v" "G"))
+    (cl-assert (not (memq (lookup-key maf-history-mode-map (kbd key))
+                          '(maf-history-previous maf-history-next
+                            maf-history-oldest maf-history-newest
+                            maf-history-switch maf-history-focus-log
+                            maf-history-focus-stack maf-history-visit-calc)))
+               nil "key %s should no longer run a browsing command" key))
 
-  ;; G reaches the newest state alongside >, and C-M-k clears the log.
+  ;; < reaches the newest state, and C-M-k clears the log.
   (with-current-buffer (maf-history--buffer)
-    (cl-assert (eq (lookup-key maf-history-mode-map (kbd "G")) 'maf-history-newest))
     (cl-assert (eq (lookup-key maf-history-mode-map (kbd "C-M-k")) 'maf-history-clear))
     (call-interactively 'maf-history-previous)
-    (call-interactively (lookup-key maf-history-mode-map (kbd "G")))
+    (call-interactively (lookup-key maf-history-mode-map (kbd "<")))
     (cl-assert (zerop maf-history--index)))
 
   ;; Invoking maf-history always lands on the newest state, wherever a
@@ -148,7 +161,7 @@
     ;; (hist) as the newest, bottom line; the marker stays on the
     ;; oldest state, the log growing under it.
     (cl-assert (equal (buffer-substring-no-properties (point-min) (point-max))
-                      "▸ new\n  new\n  hist\n"))
+                      "  + hist\n  + new\n▸ · new\n"))
     (cl-assert (equal header-line-format "maf-history  1/3")))
   (with-current-buffer (maf-history--stack-buffer)
     ;; The stack still shows the selected (oldest) state, not the live one.
@@ -202,6 +215,6 @@
   (progn
     (setq maf-history--states (nth 0 maf--history-stash)
           maf-history--last-raw (nth 1 maf--history-stash)
-          maf-history-size (nth 2 maf--history-stash))
-    (setq maf-history--index 0)
+          maf-history-size (nth 2 maf--history-stash)
+          maf-history--index (nth 3 maf--history-stash))
     (maf-history--render t)))

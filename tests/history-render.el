@@ -13,21 +13,30 @@
                                   (list (list 5) nil))
         maf-history--index 0)
 
-  ;; The log: one line per state, oldest at the top, the current one
-  ;; marked and wearing the current face. Each line carries its state's
-  ;; index, and point rests on the current line. The header line counts
-  ;; the position, oldest to newest, matching the layout.
+  ;; The log: one line per state, newest at the top, each prefixed by a
+  ;; change marker — `+' added, `-' removed, `~' changed in place, `·'
+  ;; for the oldest, which has nothing to diff against. The current
+  ;; state is marked and wears the current face. Each line carries its
+  ;; state's index, and point rests on the current line.
   (with-current-buffer (maf-history--buffer)
     (maf-history--render t)
     (cl-assert (equal (buffer-substring-no-properties (point-min) (point-max))
-                      "  entry\n▸ mult\n"))
+                      "▸ + mult\n  · entry\n"))
     (cl-assert (equal header-line-format "maf-history  2/2"))
-    (cl-assert (= (line-number-at-pos) 2))
+    (cl-assert (= (line-number-at-pos) 1))
     (cl-assert (= (get-text-property (point) 'maf-history-index) 0))
     (cl-assert (eq (get-text-property (point) 'face) 'maf-history-current))
-    (progn (goto-char (point-min)))
+    ;; The marker keeps its own colour under the current state's face,
+    ;; which is appended rather than layered over it.
+    (progn (search-forward "+") (backward-char 1))
+    (cl-assert (equal (get-text-property (point) 'face)
+                      '(maf-history-added maf-history-current)))
+    (progn (goto-char (point-min)) (forward-line 1))
     (cl-assert (= (get-text-property (point) 'maf-history-index) 1))
-    (cl-assert (null (get-text-property (point) 'face))))
+    (cl-assert (null (get-text-property (point) 'face)))
+    ;; The oldest state has no reference, so it takes the neutral marker.
+    (progn (search-forward "·") (backward-char 1))
+    (cl-assert (eq (get-text-property (point) 'face) 'shadow)))
 
   ;; The stack beside it: the selected state's whole stack, deepest
   ;; first, the entry this step produced highlighted and the one
@@ -48,9 +57,12 @@
     ;; the step keys mean the same in both windows, and RET inserts
     ;; here (in the log it crosses over instead).
     (let ((legend (substring-no-properties (format-mode-line header-line-format))))
-      (cl-assert (string-match-p "n/p/j/k step" legend))
+      ;; n/p name the step control; j/k step too but stay off the
+      ;; legend rather than spend the width on a second pair.
+      (cl-assert (string-match-p "n/p step" legend))
+      (cl-assert (not (string-match-p "j/k" legend)))
       (cl-assert (string-match-p "RET insert" legend))
-      (cl-assert (string-match-p "o/h/l switch" legend))
+      (cl-assert (string-match-p "t switch" legend))
       (cl-assert (not (string-match-p "calc" legend)))))
 
   ;; Selecting the older state re-renders both: the marker moves, and
@@ -59,8 +71,8 @@
   (progn (setq maf-history--index 1) (maf-history--render t))
   (with-current-buffer (maf-history--buffer)
     (cl-assert (equal (buffer-substring-no-properties (point-min) (point-max))
-                      "▸ entry\n  mult\n"))
-    (cl-assert (= (line-number-at-pos) 1))
+                      "  + mult\n▸ · entry\n"))
+    (cl-assert (= (line-number-at-pos) 2))
     (cl-assert (equal header-line-format "maf-history  1/2")))
   (with-current-buffer (maf-history--stack-buffer)
     (cl-assert (equal (buffer-substring-no-properties (point-min) (point-max))
@@ -73,6 +85,13 @@
   (progn (setq maf-history--states (list (list nil "del") (list (list 5) nil))
                maf-history--index 0)
          (maf-history--render t))
+  (with-current-buffer (maf-history--buffer)
+    ;; Emptying the stack is a removal, and takes the `-' marker.
+    (cl-assert (equal (buffer-substring-no-properties (point-min) (point-max))
+                      "▸ - del\n  · entry\n"))
+    (progn (goto-char (point-min)) (search-forward "-") (backward-char 1))
+    (cl-assert (equal (get-text-property (point) 'face)
+                      '(maf-history-removed maf-history-current))))
   (with-current-buffer (maf-history--stack-buffer)
     (cl-assert (string-match-p "(empty stack)"
                                (buffer-substring-no-properties (point-min) (point-max)))))
