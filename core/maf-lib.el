@@ -342,4 +342,25 @@ as-is. Signals an error if the string does not parse."
         (error "maf-push: cannot parse %S: %s" expr (nth 2 val)))
       (calc-push val))))
 
+(defun maf--display-borrowing-window (buf alist)
+  "Show BUF in another window on this frame, calc's for choice.
+A `display-buffer' action function: the pane borrows a window the way
+a help buffer does rather than carving the frame smaller, so a list
+and its detail sit side by side at the frame's own split instead of
+squeezing a third window in. Calc's window is picked over the
+least-recently-used one because these panes are opened from calc — the
+stack is what the user is least likely to be reading while looking
+something up. Returns nil when there is nothing to borrow, so
+`display-buffer' falls through to splitting.
+
+Shared by the detail panes that follow point: the formulas menu's and
+the saved-stacks preview."
+  (let* ((cbuf (maf--find-calc-buffer))
+         (win (or (and cbuf (get-buffer-window cbuf))
+                  (get-lru-window nil nil t))))
+    (when (and win
+               (not (eq win (selected-window)))
+               (not (window-dedicated-p win)))
+      (window--display-buffer buf win 'reuse alist))))
+
 (provide 'maf-lib)

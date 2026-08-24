@@ -388,22 +388,9 @@ away than the frame size suggests."
       'right
     'below))
 
-(defun maf-formulas--display-detail-elsewhere (buf alist)
-  "Show BUF in another window on this frame, calc's for choice.
-A `display-buffer' action function, and the pane's first preference:
-the detail borrows a window the way a help buffer does rather than
-carving the frame smaller. Calc's window is picked over the
-least-recently-used one because the menu was called from calc — the
-stack is what the user is least likely to be reading while looking a
-formula up. Returns nil when there is nothing to borrow, so
-`display-buffer' falls through to splitting."
-  (let* ((cbuf (maf--find-calc-buffer))
-         (win (or (and cbuf (get-buffer-window cbuf))
-                  (get-lru-window nil nil t))))
-    (when (and win
-               (not (eq win (selected-window)))
-               (not (window-dedicated-p win)))
-      (window--display-buffer buf win 'reuse alist))))
+;; The detail pane's window-borrowing action now lives in core
+;; (`maf--display-borrowing-window'): the saved-stacks preview wants
+;; the same behavior, so the two share one implementation.
 
 (defun maf-formulas--split-p (win)
   "Non-nil when WIN was made for the detail pane rather than borrowed.
@@ -514,7 +501,7 @@ way it was opened, so it takes neither a matching key nor leaving the menu."
     ;; width.
     (setq maf-formulas--detail-dir (maf-formulas--detail-direction))
     (display-buffer dbuf `((display-buffer-reuse-window
-                            maf-formulas--display-detail-elsewhere
+                            maf--display-borrowing-window
                             display-buffer-in-direction)
                            (direction . ,maf-formulas--detail-dir)
                            (inhibit-same-window . t)))
