@@ -120,6 +120,83 @@
   (cl-assert (= (calc-stack-size) 1))
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "y^2"))
 
+  ;; R names the session on the row: its save file moves under the new
+  ;; name and the row moves with it, the preview following as it does
+  ;; on any other row.
+  (save-window-excursion
+    (maf-saved-stacks)
+    (goto-char (point-min))
+    (search-forward "test-buf-b")
+    (maf-stacks-name "test-buf-z")
+    (cl-assert (file-exists-p (maf--stack-file "test-buf-z")))
+    (cl-assert (not (file-exists-p (maf--stack-file "test-buf-b"))))
+    (cl-assert (eq (tabulated-list-get-id) (intern "test-buf-z"))
+               t "point left the renamed row: %S" (tabulated-list-get-id))
+    (maf--stacks-preview)
+    (with-current-buffer "*maf-stacks preview*"
+      (cl-assert (equal (buffer-substring-no-properties (point-min) (point-max))
+                        "1: y^2")))
+    ;; A name another save already holds, a name no file could carry,
+    ;; and no name at all: each refused, the save left where it is.
+    (cl-assert (equal (condition-case err (maf-stacks-name "test-buf-c")
+                        (user-error (cadr err)))
+                      "Session test-buf-c already taken"))
+    (cl-assert (equal (condition-case err (maf-stacks-name "  ")
+                        (user-error (cadr err)))
+                      "Session name cannot be empty"))
+    (cl-assert (equal (condition-case err (maf-stacks-name "a/b")
+                        (user-error (cadr err)))
+                      "Session name cannot contain a slash"))
+    (cl-assert (file-exists-p (maf--stack-file "test-buf-z")))
+    ;; A session live in another Emacs keeps saving under its own
+    ;; name, so renaming its row would only bring the old one back:
+    ;; refused. PID 1 stands in for that other Emacs — a process
+    ;; certainly alive, and certainly not this one.
+    (write-region "1" nil (maf--stack-file "test-buf-z" ".lock") nil 'silent)
+    (cl-assert (equal (condition-case err (maf-stacks-name "test-buf-live")
+                        (user-error (cadr err)))
+                      "Session test-buf-z is live in another Emacs"))
+    (delete-file (maf--stack-file "test-buf-z" ".lock"))
+    ;; Back to b, so the rows below read as they did.
+    (maf-stacks-name "test-buf-b")
+    (cl-assert (file-exists-p (maf--stack-file "test-buf-b"))))
+
+  ;; Naming the session's own row names the running session: the name
+  ;; lock moves with the file, the row goes on saying it is the
+  ;; current one, and the next save lands under the new name.
+  (save-window-excursion
+    (maf-saved-stacks)
+    (goto-char (point-min))
+    (search-forward "test-buf-a")
+    (maf-stacks-name "test-named")
+    (cl-assert (equal maf--stack-session "test-named"))
+    (cl-assert (equal maf-stack-session-name "test-named"))
+    (cl-assert (file-exists-p (maf--stack-file "test-named" ".lock")))
+    (cl-assert (not (file-exists-p (maf--stack-file "test-buf-a" ".lock"))))
+    (cl-assert (string-match-p "test-named.*(current)"
+                               (buffer-substring-no-properties (point-min)
+                                                               (point-max))))
+    (calc-wrapper (maf-push "42"))
+    (cl-assert (maf-save-stack))
+    (let ((values (maf--stack-read (maf--stack-file "test-named"))))
+      (cl-assert (= (length values) 2))
+      (cl-assert (string= (math-format-value (car values)) "42")))
+    (calc-pop 1)
+    ;; Back to a, this session with it.
+    (maf-stacks-name "test-buf-a")
+    (cl-assert (equal maf--stack-session "test-buf-a"))
+    (cl-assert (file-exists-p (maf--stack-file "test-buf-a" ".lock"))))
+
+  ;; The save above touched a's file; spread the times again so the
+  ;; rows below run newest first as they did to begin with.
+  (progn
+    (set-file-times (maf--stack-file "test-buf-a") (time-subtract nil 300))
+    (set-file-times (maf--stack-file "test-buf-b") (time-subtract nil 200))
+    (set-file-times (maf--stack-file "test-buf-c") (time-subtract nil 100))
+    (cl-assert (equal (mapcar #'car (maf--stack-saved-sessions))
+                      '("test-buf-c" "test-buf-b" "test-buf-a")))
+    :respread)
+
   ;; Deleting removes the file and the row, asking nothing; the buffer
   ;; stays while rows remain. `y-or-n-p' is stubbed to signal rather
   ;; than to answer: a prompt reintroduced here has to fail the test,

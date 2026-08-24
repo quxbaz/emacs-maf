@@ -6,8 +6,8 @@
 ;; under its own name and restores it in the next session, so juggling
 ;; several sessions never loses a stack — sessions write only their own
 ;; file, and the saved files are browsed in `maf-saved-stacks', a dial
-;; buffer (pkg/dial) that previews, restores or deletes any session's
-;; stack. The whole feature hangs off one switch,
+;; buffer (pkg/dial) that previews, restores, names or deletes any
+;; session's stack. The whole feature hangs off one switch,
 ;; `maf-persist-mode' (a global minor mode); loading this
 ;; file changes nothing. Save files hold plain formula values: no
 ;; selections, trail, or undo history.
@@ -402,6 +402,47 @@ this session's own name."
   (maf-restore-stack-from (maf--stacks-at-point) keep)
   (maf-stacks-quit))
 
+(defun maf-stacks-name (name)
+  "Give the session on the current line the name NAME.
+Its save file moves to the new name, and the row with it. Prompts
+with the name the row carries now.
+
+Naming this very session — the row marked current — names the running
+session: the name lock moves with the file, and every later save lands
+under NAME. The name holds for as long as this Emacs runs; to keep it
+across restarts, set `maf-stack-session-name'.
+
+A name some other saved stack already holds is refused. So is the row
+of a session live in another Emacs: that session goes on saving under
+its own name, which would bring the old row straight back. A dead
+session's leftover lock is dropped along the way — it named nothing."
+  (interactive
+   (let ((old (maf--stacks-at-point)))
+     (list (read-string (format "Name session %s: " old) old))))
+  (let ((old (maf--stacks-at-point))
+        (name (string-trim name)))
+    (when (string-empty-p name)
+      (user-error "Session name cannot be empty"))
+    (when (string-match-p "[/\\]" name)
+      (user-error "Session name cannot contain a slash"))
+    (unless (equal name old)
+      (when (and (not (equal old maf--stack-session))
+                 (maf--stack-lock-owner old))
+        (user-error "Session %s is live in another Emacs" old))
+      (when (or (file-exists-p (maf--stack-file name))
+                (maf--stack-lock-owner name))
+        (user-error "Session %s already taken" name))
+      (rename-file (maf--stack-file old) (maf--stack-file name))
+      (ignore-errors (delete-file (maf--stack-file old ".lock")))
+      (when (equal old maf--stack-session)
+        (write-region (number-to-string (emacs-pid)) nil
+                      (maf--stack-file name ".lock") nil 'silent)
+        (setq maf--stack-session name
+              maf-stack-session-name name))
+      (maf-stacks-refresh)
+      (maf--stacks-goto (intern name))
+      (message "Session %s is now %s" old name))))
+
 (defun maf-stacks-delete ()
   "Delete the saved stack on the current line, without asking.
 Removes the session's save file — and its lock, when no live session
@@ -464,6 +505,7 @@ k — stays underneath while the row acts are these.")
 ;; Bindings live outside the defvar so reloading the file applies
 ;; edits to the existing map, as dial's own do.
 (define-key maf-stacks-map (kbd "RET") #'maf-stacks-restore)
+(define-key maf-stacks-map (kbd "R")   #'maf-stacks-name)
 (define-key maf-stacks-map (kbd "D")   #'maf-stacks-delete)
 (define-key maf-stacks-map (kbd "g")   #'maf-stacks-refresh)
 (define-key maf-stacks-map (kbd "q")   #'maf-stacks-quit)
@@ -479,11 +521,12 @@ k — stays underneath while the row acts are these.")
 (defvar maf--stacks-controls nil
   "The saved-stacks buffer's controls line.
 Dial's default speaks of setting values; these rows are sessions, and
-the acts are restore and delete.")
+the acts are restore, name and delete.")
 
 ;; Set outside the defvar so a reload applies edits to the list.
 (setq maf--stacks-controls
       '((maf-stacks-restore "restore" "RET")
+        (maf-stacks-name "name" "R")
         (maf-stacks-delete "delete" "D")
         (maf-stacks-refresh "refresh" "g")
         (maf-stacks-quit "quit" "q")))
@@ -496,7 +539,8 @@ the right, laid out as calc would show it; the buffer is dial's (see
 `dial-mode'), so n, p, j and k move between rows.
 
 \\<maf-stacks-map>\\[maf-stacks-restore] restores the row's stack in
-place of the current one — on top of it, with a prefix argument — and
+place of the current one — on top of it, with a prefix argument —
+\\[maf-stacks-name] gives the row's session another name, and
 \\[maf-stacks-delete] deletes its save file. `maf-restore-stack-from'
 is the plain-minibuffer way to the same restore."
   (interactive)
