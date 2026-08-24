@@ -992,11 +992,15 @@ Two module shapes have appeared, matching the feature's state:
   left, newer right, current highlighted), for context while stepping.
   Persistence
   (=maf-persist-mode=) is the same shape: enabling installs the save
-  timer and the restore hook and binds =t l= to
-  =maf-restore-stack-from= (a key calc leaves free, beside the
-  history's =t d= — both bring back an earlier stack, the history's
-  from this session and =t l='s from any session) and =t u= to
-  =maf-save-stack=, its on-demand companion; disabling removes them.
+  timer and the restore hook and binds =l R= to =maf-saved-stacks=
+  (both it and the history's =t d= bring back an earlier stack, the
+  history's from this session and =l R='s from any session) and =l S=
+  to =maf-save-stack=, its on-demand companion; disabling removes
+  them. The saved-stacks buffer is dial's, like the options menu — a
+  row per save file, previewing its stack in a window beside the list
+  as point moves (side by side, so a stack of any depth is read
+  without scrolling), restoring one with RET and deleting one
+  outright with =D=.
   The edit module too
   (=modules/maf-edit.el=): =maf-use-edit-mode= installs SPC / ` / C-o /
   =(= in =maf-mode-map= when enabled and cedes them

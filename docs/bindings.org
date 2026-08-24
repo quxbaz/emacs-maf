@@ -352,8 +352,8 @@
      RET's maf-dup-or-clear-selections
    - maf-edit-add-entry-below — deliberately unbound; C-o one entry
      down covers the gesture (see src/bindings.el)
-   - maf-restore-stack — l R runs the choose-a-session variant
-     (maf-restore-stack-from)
+   - maf-restore-stack, maf-restore-stack-from — l R runs the
+     saved-stacks buffer (maf-saved-stacks), which restores from a row
    - maf-history-clear
 
 * profile:vim

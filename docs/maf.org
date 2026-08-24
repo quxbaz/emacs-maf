@@ -11,8 +11,8 @@
     multiplication, etc)
 
 * review
-  - [ ] *maf-persist*
-    - [ ] `l R` should bring up a buffer (using dial pkg) instead of a menu
+  - [X] *maf-persist*
+    - [X] `l R` should bring up a buffer (using dial pkg) instead of a menu
       - the buffer should have all the entries
       - `D` to delete entry
       - preview each entry in a split window when point hovers over
