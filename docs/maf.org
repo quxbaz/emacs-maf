@@ -23,7 +23,7 @@
     - same conditions. only work in stack mode.
   - [ ] find command that solves with +/i in answer, but uses a different
     representation (port it)
-  - [ ] bug: given,
+  - [X] bug: given,
     (x - 2|)^2 = -12 y
     `G`, `k k`, `G`
     point returns the the former line, but not to the same column (it lands in

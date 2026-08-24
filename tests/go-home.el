@@ -170,6 +170,42 @@
          (deactivate-mark)
          nil)
 
+  ;; --- A rewrite in between ---
+
+  ;; The round trip survives the entry being re-rendered while point is
+  ;; away. A marker rides a push and a renumber, but a rewrite deletes
+  ;; the text it sits in and collapses it to the line's start, so the
+  ;; return leg would land in the prefix without the column recorded
+  ;; beside the mark.
+  (progn (calc-pop (calc-stack-size)) nil)
+  (calc-wrapper (maf-push "(x - 2)^2 = -12 y"))
+  (progn (goto-char (point-min)) (search-forward "- 2")
+         (setq maf-test--origin (point))
+         nil)
+  (call-interactively 'maf-go-home)
+  (cl-assert (maf--at-home-p))
+  ;; k k -- the simplify rewrites the entry in place.
+  (call-interactively 'mafcmd-esimplify)
+  (call-interactively 'maf-go-home)
+  (cl-assert (not (maf--at-home-p)))
+  (cl-assert (not (maf--at-line-prefix-p)))
+  ;; Same line, same column: point is back on the glyph it left.
+  (cl-assert (string= (buffer-substring-no-properties
+                       (line-beginning-position) (point))
+                      "1:  (x - 2"))
+  (progn (calc-pop (calc-stack-size)) nil)
+
+  ;; A trip that left from the prefix has no column in the text to
+  ;; restore, and the return leg leaves the marker's answer alone.
+  (calc-wrapper (maf-push "6 x + 12"))
+  (progn (goto-char (point-min)) (forward-char 1)
+         (cl-assert (maf--at-line-prefix-p))
+         nil)
+  (call-interactively 'maf-go-home)
+  (call-interactively 'maf-go-home)
+  (cl-assert (not (maf--at-home-p)))
+  (progn (calc-pop (calc-stack-size)) nil)
+
   ;; --- The empty stack ---
 
   ;; All home, and the marks left in it point at nothing else: the press

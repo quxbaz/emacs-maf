@@ -269,6 +269,15 @@ restores it after (`maf--point-restore')."
        (prog1 (progn ,@forms)
          (maf--point-restore ,snapshot)))))
 
+(defvar-local maf--home-mark-column nil
+  "Column of the place the last homing trip marked, or nil.
+A marker rides a push and a renumber, but not a rewrite of the entry it
+sits in: re-rendering deletes the text around it and collapses it to
+the start of the line, so the mark keeps the entry and loses the
+column. Recorded here beside the mark for `maf-go-home's return trip
+to put back. Nil when the trip left from the line-number prefix, there
+being no column in the text to restore.")
+
 (defun maf--mark-before-home (&optional pos)
   "Leave a silent mark at POS (or point) in the calc buffer.
 Commands that push a new entry park point on the home line, losing the
@@ -276,8 +285,16 @@ spot the user was on. A mark left there — the marker rides the push and
 renumber, so it keeps tracking the entry — lets a single
 `pop-to-mark-command' return to it. Call this while point (or POS) is
 still at the origin, before the push homes it. No-op at POS nil with
-point already gone is the caller's concern."
-  (maf--with-calc-buffer (push-mark pos t)))
+point already gone is the caller's concern.
+
+The column goes into `maf--home-mark-column' alongside, for the
+rewrite the marker cannot ride."
+  (maf--with-calc-buffer
+    (push-mark pos t)
+    (setq maf--home-mark-column
+          (save-excursion
+            (when pos (goto-char pos))
+            (and (not (maf--at-line-prefix-p)) (current-column))))))
 
 (defvar maf-undo--cmd-point nil
   "Pre-command point snapshot for the head `calc-undo-list' group.

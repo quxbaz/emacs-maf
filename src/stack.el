@@ -1857,6 +1857,7 @@ displaced is restored from the ring (`push-mark' put it there), leaving
 the ring as deep as it was before the round trip — unlike `pop-mark',
 which rotates the spent mark to the ring's tail instead. A no-op when
 the mark has moved on since, POS then being none of its business."
+  (setq maf--home-mark-column nil)
   (when (and (mark t) (= (mark t) pos))
     (if mark-ring
         (let ((prev (car mark-ring)))
@@ -1864,6 +1865,20 @@ the mark has moved on since, POS then being none of its business."
           (move-marker prev nil)
           (setq mark-ring (cdr mark-ring)))
       (set-marker (mark-marker) nil))))
+
+(defun maf--home-restore-mark-column ()
+  "Put point at the column the homing trip left, when the mark lost it.
+A mark is a marker, and a marker rides a push and a renumber but not a
+rewrite of the entry it sits in: re-rendering deletes the text around
+it and collapses it to the line's start, landing the return trip in
+the line-number prefix instead of on the glyph it left. That is the
+one case corrected here, from `maf--home-mark-column' — a mark still
+holding a column of its own is left alone, so a rendering that shifted
+sideways keeps the marker's answer rather than a stale recorded one.
+The column is clamped by `move-to-column' when the rewrite left the
+line shorter than it was."
+  (when (and maf--home-mark-column (maf--at-line-prefix-p))
+    (move-to-column maf--home-mark-column)))
 
 (defun maf--home-dot-position ()
   "Return the buffer position of the home line's dot.
@@ -1968,6 +1983,7 @@ with none it just undoes horizontal scrolling."
     (cond
      (back
       (goto-char back)
+      (maf--home-restore-mark-column)
       (maf--home-drop-mark back))
      (t
       (goto-char dot)
