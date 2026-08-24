@@ -1775,6 +1775,67 @@ two motions retrace each other."
   (interactive "p")
   (maf--noun-move (- (or n 1))))
 
+(defun maf--operand-positions (m)
+  "Sorted buffer positions of the operand stops in the entry at level M.
+nil when the entry's rendering is not flat — Big language, a tall
+matrix — which offers the motion no stops."
+  (calc-prepare-selection m)
+  (maf--comp-landing-positions))
+
+(defun maf--operand-position (dir)
+  "Return the position of the nearest operand stop in direction DIR, or nil.
+DIR is 1 forward, -1 back. Strictly past point, so the stop point
+already sits on is never its own answer. The scan crosses entries,
+over the whole stack: forward runs on into the entry below, backward
+into the one above."
+  (let ((from (point))
+        (size (calc-stack-size)))
+    (catch 'found
+      (let ((m (calc-locate-cursor-element from)))
+        (if (> dir 0)
+            (cl-loop for lvl from (min m size) downto 1
+                     for hit = (seq-find (lambda (p) (> p from))
+                                         (maf--operand-positions lvl))
+                     when hit do (throw 'found hit))
+          (cl-loop for lvl from (max m 1) to size
+                   for hit = (seq-find (lambda (p) (< p from))
+                                       (nreverse (maf--operand-positions lvl)))
+                   when hit do (throw 'found hit))))
+      nil)))
+
+(defun maf-forward-operand (&optional n)
+  "Move point to the next operand: the next sub-formula, where resolve names it.
+
+  2:  |6 x + 12  =>  2:  6| x + 12   (the product 6 x)
+  2:  6| x + 12  =>  2:  6 |x + 12
+  2:  6 |x + 12  =>  2:  6 x |+ 12   (the whole sum)
+  2:  6 x |+ 12  =>  2:  6 x + |12
+
+Every sub-formula of the entry is one stop, the whole entry among
+them — each an operand the next command could act on — at the first
+glyph it renders itself: a number or variable at its start, an
+operation at its operator, a call at its function name, a vector at
+its bracket. That glyph is where resolve names the sub-formula, the
+landing `maf-up-expression' picks, so a few presses cross the entry
+target by target, offering every target once. A juxtaposed product
+renders its multiplication as nothing but a space, so its stop is
+that space, as in the first step above.
+
+The walk crosses entries — from the last operand of one to the first
+of the next, the line-number margin never a stop — and signals at the
+end of the stack. An entry drawn over several lines (Big language, a
+tall matrix) offers no stops and is crossed whole; `maf-forward-noun'
+still walks its terms. A numeric prefix N moves over that many
+operands, backward when negative."
+  (interactive "p")
+  (let* ((count (or n 1))
+         (dir (if (< count 0) -1 1)))
+    (dotimes (_ (abs count))
+      (let ((pos (maf--operand-position dir)))
+        (unless pos
+          (user-error "No operand %s point" (if (> dir 0) "after" "before")))
+        (goto-char pos)))))
+
 (defun maf--home-drop-mark (pos)
   "Drop the mark at POS that `maf-go-home' just returned to.
 The mark the trip out pushed is spent once point is back on it, so it

@@ -524,6 +524,18 @@
 (maf-bindings-define '(native) "M-f" #'maf-forward-noun)
 (maf-bindings-define '(native) "M-b" #'maf-backward-noun)
 
+;; Motion by operand — the next place point names a sub-formula, so
+;; repeated presses offer every target of the entry in turn. Shift on
+;; the space that opens an edit session: calc binds nothing on S-SPC,
+;; and without the binding the shifted press would fall back to that
+;; plain SPC. Stack mode only, deliberately: an edit session swaps the
+;; local map and turns maf-mode off, and no editplus key carries this
+;; motion into the editable text — the stack's targets are what it
+;; walks. A prefix argument counts operands, backward when negative; a
+;; terminal needs the decode entries at the end of this file to say
+;; the key at all.
+(maf-bindings-define '(native) "S-SPC" #'maf-forward-operand)
+
 ;; Step out to the enclosing sub-formula, taking the key the global map
 ;; gives `backward-up-list' — the same gesture, over the formula rather
 ;; than over the printed parens. Calc leaves C-M-u unbound, so nothing
@@ -571,6 +583,12 @@
 ;; C-! through C-?, and | is 124). Which modifier the terminal reports
 ;; depends on whether it counts the shift that produced the | — take
 ;; both 6 (ctrl+shift) and 5 (ctrl alone).
+;;
+;; The operand motion's S-SPC has the same gap a third way: a terminal
+;; without modifyOtherKeys sends Shift+Space as the plain space it
+;; shifts, and one with it spells the key out — but xterm.el's table
+;; carries shift alone (modifier 2) for tab and return only, so the
+;; keycode-32 form falls through undecoded like the others.
 (defun maf--tty-setup-keys ()
   "Decode terminal sequences for keys maf binds and `term/xterm.el' omits."
   (define-key input-decode-map "\e[27;7;127~" [C-M-backspace])
@@ -578,7 +596,9 @@
   (define-key input-decode-map "\e[27;6;124~" [?\C-\|])
   (define-key input-decode-map "\e[124;6u" [?\C-\|])
   (define-key input-decode-map "\e[27;5;124~" [?\C-\|])
-  (define-key input-decode-map "\e[124;5u" [?\C-\|]))
+  (define-key input-decode-map "\e[124;5u" [?\C-\|])
+  (define-key input-decode-map "\e[27;2;32~" [?\S-\s])
+  (define-key input-decode-map "\e[32;2u" [?\S-\s]))
 
 ;; `input-decode-map' is terminal-local, so this runs once per tty
 ;; rather than once at load.
