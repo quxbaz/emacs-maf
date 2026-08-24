@@ -22,7 +22,7 @@
   - *maf-persist*
     - [-] bind new command to name session `R`
   - *maf-formulas*
-    - [ ] in details view, the variables in the "big" formula (referenced below)
+    - [-] in details view, the variables in the "big" formula (referenced below)
       should match the color of the referenced value (looks like teal currently)
   - [ ] S-SPC doesn't work propery. it should only land on operands, but it
     lands on terms also.
