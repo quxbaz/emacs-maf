@@ -338,29 +338,31 @@
 ;;
 ;; C-u RET is the keep-point variant (`maf-dup-here'): same push, point
 ;; stays on the target instead of homing, so the next command still
-;; resolves there. It rides RET's prefix argument rather than a key of
-;; its own — the RET family is full (C-RET below, M-RET on
-;; `mafcmd-let', S-RET on the restack) and W is the only unbound
-;; single key left in the buffer, too scarce to spend on where point
-;; lands. Contextual dup has no
-;; numeric reading to conflict with; cf. `maf-swap-up', whose prefix
-;; likewise switches mode rather than counting. The prefix reaches the
-;; duplicate only: with a selection active the key clears, which has
-;; nothing for a prefix to vary.
+;; resolves there. C-RET below is that same variant on a key, so the
+;; prefix is the spelling for a terminal that cannot deliver the GUI
+;; event. Contextual dup has no numeric reading to conflict with; cf.
+;; `maf-swap-up', whose prefix likewise switches mode rather than
+;; counting. The prefix reaches the duplicate only: with a selection
+;; active the key clears, which has nothing for a prefix to vary.
 (maf-bindings-define '(calc native) "RET" #'maf-dup-or-clear-selections)
-;; C-RET is the traveling duplicate: the same copy onto the top of the
-;; stack as RET's, with point going along to the copy instead of
-;; parking on the home line (`maf-dup-go'). `mafcmd-let' held this key
-;; until the two swapped; it rides M-RET below. During digit entry
-;; C-<return> stays calc's digit map's `maf-digit-commit-here'
-;; (src/minibuffer.el).
+;; C-RET is the keep-point duplicate: RET's own push, with point staying
+;; on what it copied instead of parking home, so the next command still
+;; resolves there (`maf-dup-here-or-clear-selections' — the dispatcher
+;; with its keep-point argument set, which is what C-u RET runs). Where
+;; point lands is the whole of the difference: a C-RET that homed too
+;; would be RET with a modifier held down. A selection still clears, as
+;; it does on RET; the hold has nothing to vary there.
 ;;
-;; `maf-dup-here' — the keep-point variant of RET's duplicate — held
-;; M-RET until the entry-duplicate took it; it now rides RET's prefix
-;; argument (C-u RET), and stays reachable by name.
-(maf-bindings-define '(native) "C-<return>" #'maf-dup-go)
-;; The swap is a native-layout opinion: the calc profile keeps the
-;; duplicate on M-RET, its pre-swap home. The GUI event and the
+;; It matches the key's promise in the digit-entry minibuffer, where
+;; C-<return> is `maf-digit-commit-here' (src/minibuffer.el): push the
+;; number, keep point. `maf-dup-go', the traveling duplicate whose point
+;; rides to the copy on top, held this key from the swap with
+;; `mafcmd-let' until 2026-08-24; it stays reachable by name, and on
+;; M-RET in the calc profile below.
+(maf-bindings-define '(native) "C-<return>" #'maf-dup-here-or-clear-selections)
+;; The swap was a native-layout opinion, and so is the keep-point key
+;; that replaced it: the calc profile keeps the traveling duplicate on
+;; M-RET, its pre-swap home. The GUI event and the
 ;; terminal form both, as calc itself binds only the terminal form
 ;; (calc-last-args).
 (maf-bindings-define '(calc) "M-<return>" #'maf-dup-go)

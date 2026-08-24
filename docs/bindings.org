@@ -297,10 +297,17 @@
      `k v`)
    - [X] `k v` mafcmd-evaluate (2026-08-22: moved off `k k`, ceded to
      esimplify; `I k v` still reaches mafcmd-identify)
-   - [X] `C-<return>` maf-dup-go (2026-08-23: swapped keys with
-     mafcmd-let, which rides M-RET now; the traveling duplicate had
-     been on M-RET since 2026-08-20, mafcmd-let on C-RET since it
-     left C-c C-c)
+   - [X] `C-<return>` maf-dup-here-or-clear-selections (2026-08-24:
+     the keep-point duplicate — RET's dispatcher with its keep-point
+     argument set, so C-RET is C-u RET on a key: same push, point
+     stays on what it copied instead of homing, and a selection still
+     clears. Where point lands is the only difference from RET, which
+     is the point of the key. maf-dup-go, the traveling duplicate, held
+     it from 2026-08-23 — swapped there with mafcmd-let, which rides
+     M-RET now; the traveling duplicate had been on M-RET since
+     2026-08-20, mafcmd-let on C-RET since it left C-c C-c — and is
+     unbound in native now, reachable by name and on the calc profile's
+     M-RET)
    - [X] `l l` mafcmd-float-frac (2026-08-20: the float/frac toggle —
      floats toward fractions first, fractions to floats otherwise,
      direction echoed; I forces float, H float-all, frac's tolerance
@@ -362,9 +369,10 @@
    - [X] `M-<up>` maf-carry-up
    - [X] `M-<down>` maf-carry-down
    - [X] `M-<return>` mafcmd-let (2026-08-23: swapped keys with the
-     traveling duplicate, which rides C-RET now — a native-layout
-     opinion; the calc profile keeps the duplicate on M-RET, its
-     pre-swap home. Dup-go's own note,
+     traveling duplicate, which rode C-RET until the keep-point
+     duplicate took that key on 2026-08-24 — a native-layout
+     opinion; the calc profile keeps the traveling duplicate on M-RET,
+     its pre-swap home. Dup-go's own note,
      2026-08-20: the copy lands on top of the stack, calc's
      convention, rather than below the source; point travels with it,
      a mark holding the origin. Renamed from maf-dup-below to say so)
@@ -391,7 +399,10 @@
    - mafcmd-map, mafcmd-map-stack — explicit mapping commands; the M
      flag is the bound workflow
    - maf-dup, maf-dup-here, maf-clear-selections — split-out halves of
-     RET's maf-dup-or-clear-selections
+     RET's maf-dup-or-clear-selections (C-RET runs the keep-point
+     dispatcher, maf-dup-here-or-clear-selections)
+   - maf-dup-go — the traveling duplicate; native's C-RET went to the
+     keep-point dup 2026-08-24, and the calc profile's M-RET keeps it
    - maf-edit-add-entry-below — deliberately unbound; C-o one entry
      down covers the gesture (see src/bindings.el)
    - maf-restore-stack — l R runs the choose-a-session variant

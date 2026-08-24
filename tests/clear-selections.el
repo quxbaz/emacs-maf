@@ -2,7 +2,9 @@
 ;; `maf-dup-or-clear-selections' are real commands (src/stack.el), so
 ;; these steps drive them directly. The contract: clearing takes every
 ;; selection, leaves the stack alone, and keeps point where it was; RET
-;; clears when any selection is active and duplicates otherwise.
+;; clears when any selection is active and duplicates otherwise, and
+;; C-RET (`maf-dup-here-or-clear-selections') does the same holding
+;; point.
 
 (maf-step
   ;; A selection under point is cleared, point staying on the line and
@@ -96,5 +98,33 @@
   (cl-assert (not (maf--sel-any-p)))
   (calc-pop (calc-stack-size))
 
-  ;; The key itself: RET runs the dispatcher in the calc buffer.
-  (cl-assert (eq (key-binding (kbd "RET")) 'maf-dup-or-clear-selections)))
+  ;; --- C-RET: the same dispatcher, holding point ---
+
+  ;; With none active it duplicates as RET does, but point stays on what
+  ;; it copied rather than parking home — the whole of the difference
+  ;; between the two keys.
+  (maf-push "(a + b) c")
+  (progn (goto-char (point-min)) (search-forward "+") (backward-char 1))
+  (call-interactively 'maf-dup-here-or-clear-selections)
+  (cl-assert (= (calc-stack-size) 2))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "a + b"))
+  (cl-assert (eq (char-after) ?+))
+  (cl-assert (not (maf--at-home-p)))
+  (calc-pop (calc-stack-size))
+
+  ;; With a selection active it clears, exactly as RET does: the hold has
+  ;; no point-motion to vary, and the stack does not grow.
+  (maf-push "a + b c")
+  (progn (goto-char (point-min)) (search-forward "c") (backward-char 1))
+  (call-interactively 'calc-select-here)
+  (call-interactively 'maf-dup-here-or-clear-selections)
+  (cl-assert (not (maf--sel-any-p)))
+  (cl-assert (= (calc-stack-size) 1))
+  (cl-assert (eq (char-after) ?c))
+  (calc-pop (calc-stack-size))
+
+  ;; The keys themselves: RET runs the dispatcher in the calc buffer,
+  ;; C-<return> its keep-point half.
+  (cl-assert (eq (key-binding (kbd "RET")) 'maf-dup-or-clear-selections))
+  (cl-assert (eq (key-binding (kbd "C-<return>"))
+                 'maf-dup-here-or-clear-selections)))

@@ -24,8 +24,12 @@
   - [-] new command: jump to next operand
     - bind to `S-SPC`
     - only bind in stack mode. do not bind in edit/editplus.
-  - [-] new `C-RET` should retain point, otherwise there's no difference between
+  - [X] new `C-RET` should retain point, otherwise there's no difference between
     it and `RET`
+    (2026-08-24: C-RET now runs `prefix RET` — the keep-point half of
+    RET's dispatcher, maf-dup-here-or-clear-selections. maf-dup-go, the
+    traveling duplicate that held the key, is reachable by name and on
+    the calc profile's M-RET.)
   - [-] add redundant binding `k f` bound to same command as `a f` (factor)
   - [-] add binding for permutations (binary command). there should be a builtin
     for this. did we used to have this on `k t`?
