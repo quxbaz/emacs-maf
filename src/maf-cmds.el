@@ -296,7 +296,9 @@ variant's own variable governs only its direct invocation."
   (lnp1 unary calcFunc-lnp1 :inv expm1)
   (mant unary calcFunc-mant "f M")
   (isqrt unary calcFunc-isqrt "f Q")
-  (scf unary calcFunc-scf "f S")
+  ;; scf scales by a power of ten: scf(x, n) takes the exponent as a
+  ;; second operand, so the row is binary.
+  (scf binary calcFunc-scf "f S")
   (arctan2 binary calcFunc-arctan2 "f T")
   (xpon unary calcFunc-xpon "f X")
   (decr binary calcFunc-decr "f [")
@@ -353,7 +355,7 @@ variant's own variable governs only its direct invocation."
   (vmeane unary calcFunc-vmeane)
   (vpsdev unary calcFunc-vpsdev)
   (vcorr binary calcFunc-vcorr)
-  (agmean unary calcFunc-agmean)
+  (agmean binary calcFunc-agmean)
   (vmedian unary calcFunc-vmedian)
   (vvar unary calcFunc-vvar)
   (vhmean unary calcFunc-vhmean)
@@ -383,7 +385,8 @@ variant's own variable governs only its direct invocation."
   (rev unary calcFunc-rev "v v")
   (index unary calcFunc-index "v x")
   (apply unary calcFunc-apply "v A")
-  (cross unary calcFunc-cross "v C")
+  ;; The cross product takes both vectors as operands.
+  (cross binary calcFunc-cross "v C")
   (det unary calcFunc-det "v D")
   (venum unary calcFunc-venum "v E")
   (vfloor unary calcFunc-vfloor "v F")
