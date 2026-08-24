@@ -203,7 +203,10 @@ variant's own variable governs only its direct invocation."
   ;; each side is already as simple as it gets alone, so the command
   ;; would do nothing at all on an equation.
   (esimplify unary calcFunc-esimplify "a s" :map -1)
-  (factor binary calcFunc-factor "a f" :hyp factors)
+  ;; The seed table lists factor/factors with two arguments, but the
+  ;; second is calcFunc-factor's optional variable, not an operand:
+  ;; calc's own a f factors the one expression.
+  (factor unary calcFunc-factor "a f" :hyp factors)
   (pgcd binary calcFunc-pgcd "a g")
   (integ binary calcFunc-integ "a i")
   (match binary calcFunc-match "a m" :inv matchnot :map -1)
@@ -235,7 +238,7 @@ variant's own variable governs only its direct invocation."
   (mapeqr binary calcFunc-mapeqr :map -1)
   (finv binary calcFunc-finv :map -1)
   (tderiv binary calcFunc-tderiv)
-  (factors binary calcFunc-factors)
+  (factors unary calcFunc-factors)   ; see factor above
   (mapeqp binary calcFunc-mapeqp :map -1)
   (fsolve binary calcFunc-fsolve :map -1)
   (pdivide binary calcFunc-pdivide)
