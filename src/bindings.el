@@ -55,6 +55,13 @@
 ;; inverse flag, and W is free in both maps. The next key over from
 ;; Q, and the shape of the two square-root keys' inverse.
 (maf-bindings-define '(native) "W" #'mafcmd-sqr)
+;; And a second key for it beside W, on the shifted twin of the digit
+;; key that types a fraction. The square is reached for far more often
+;; than fraction division, whose key this was: calc's : is shadowed
+;; here, and the fraction is still typed where it is written, inside a
+;; number — digit entry keeps calc's own colon handling, reached on ;
+;; there (`maf-digit-colon'), so nothing about entering 3:4 changes.
+(maf-bindings-define '(native) ":" #'mafcmd-sqr)
 
 ;; The combinators, on calc's own keys for them: each reads its
 ;; operation from the next key press, as calc's V R and V O do, but

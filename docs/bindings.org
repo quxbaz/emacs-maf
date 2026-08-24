@@ -227,6 +227,10 @@
    - [X] `N` mafcmd-negate ← calc-eval-num
    - [X] `o` mafcmd-inv ← calc-realign
    - [X] `\` mafcmd-sqrt ← calc-idiv
+   - [X] `:` mafcmd-sqr ← calc-fdiv (2026-08-24: a second key for the
+     square beside `W`, on the shifted twin of the digit key that
+     types a fraction; the fraction itself is still entered inside a
+     number, where digit entry keeps calc's own colon)
    - [X] `<` mafcmd-decrement ← calc-scroll-left
    - [X] `>` mafcmd-increment ← calc-scroll-right
    - [X] `x` mafcmd-expand ← calc-execute-extended-command
@@ -290,7 +294,8 @@
      key `l j`, and the calc profile keeps J = conj. Vim's relocated
      selection family already owns J, so there mul keeps only *)
 ** additions (keys calc leaves unbound)
-   - [X] `W` mafcmd-sqr
+   - [X] `W` mafcmd-sqr (a second key, `:`, shadows calc-fdiv — see
+     the shadowing list above)
    - [X] `k k` mafcmd-esimplify (2026-08-22: the extended simplify's
      doubled-k chord beside its table key `a s` — the most-reached-for
      command on the cheapest key; evaluate, which held it, moved to
@@ -597,8 +602,9 @@
      trade already made when < > took calc's horizontal pair
    - `~` — calc-num-prefix: near-free, but a stretch to reach —
      fine for something occasional, wrong for a repeat-heavy command
-   - `:` — calc-fdiv: moderate — fraction division is real but the
-     fraction is also typed in digit entry (1 : 3). Cautious
+   - `:` — spent 2026-08-24 on mafcmd-sqr, the square's second key.
+     Judged moderate: fraction division is real, but the fraction is
+     also typed in digit entry (1 : 3), which is untouched
    - not weak, despite looks: `;` (calc-semi, matrix entry punctuation
      — the [ ] lesson)
 ** modified keys
