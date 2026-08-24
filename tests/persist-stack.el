@@ -97,7 +97,7 @@
          (cl-assert (with-current-buffer (messages-buffer)
                       (save-excursion
                         (goto-char (point-max))
-                        (search-backward "maf-restore-stack-from"
+                        (search-backward "maf-saved-stacks"
                                          (max (point-min) (- (point-max) 500))
                                          t)))))
   (cl-assert (= (calc-stack-size) 0))
@@ -110,9 +110,9 @@
   (cl-assert (memq 'maf-restore-stack calc-mode-hook))
   (cl-assert (= 1 (seq-count (lambda (tm) (eq (timer--function tm) 'maf-save-stack))
                              timer-idle-list)))
-  ;; ...and the two keys: load a session's stack, save this one's.
+  ;; ...and the two keys: browse the saved stacks, save this one's.
   (cl-assert (eq (lookup-key maf-mode-map (kbd "l R"))
-                 'maf-restore-stack-from))
+                 'maf-saved-stacks))
   (cl-assert (eq (lookup-key maf-mode-map (kbd "l S")) 'maf-save-stack))
   (maf-persist-mode -1)
   (cl-assert (not (memq 'maf--stack-shutdown kill-emacs-hook)))
