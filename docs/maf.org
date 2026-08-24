@@ -19,13 +19,6 @@
         should be "dupe"
       - [ ] curreently on "add" items, the added item is not highlighted in
         yellow in the corresponding stack
-  - *maf-persist*
-    - [X] bind command to name session `R`
-  - *maf-formulas*
-    - [-] in details view, the variables in the "big" formula (referenced below)
-      should match the color of the referenced value (looks like teal currently)
-  - [X] S-SPC doesn't work propery. it should only land on operands, but it
-    lands on terms also.
   - [ ] bug:
     given,
     1: log(x|, 5)
@@ -33,25 +26,11 @@
     => log(x, 5)^2
     instead of,
     => log(x^2, 5)
-  - [X] bind `j U` to the contextual version of `M-u`
   - [ ] bind `C-M-SPC` to the reverse of `S-SPC`. move to the PREV operand
     - same conditions. only work in stack mode.
   - [ ] find command that solves with +/i in answer, but uses a different
     representation (port it)
-  - [ ] ` command should edit stack entry at m=1
-  - [X] bug: `v o` sort command is completely broken given an entry like this,
-    [sqrt(10), -sqrt(10)]
-    - upstream: calc's `calcFunc-sort` orders by `math-beforep`, a canonical
-      ordering of expression *shape*, not of magnitude. Two non-real operands
-      end up compared by head symbol with `string-lessp`, and negation wraps
-      its operand in a `neg` node — so -sqrt(10) sorts under the letter n and
-      trails sqrt(10) whatever its sign. `[x, -x]` is the same bug; it only
-      looked intermittent because same-head elements recurse into their
-      arguments (`[sqrt(2), sqrt(10), sqrt(5)]` was always right).
-    - fixed by `maf-sort`/`maf-rsort` (src/math.el): order by numeric value
-      when every element has one, keeping each element's exact form, and fall
-      back to calc's ordering when any element has no place on the number
-      line. Test: tests/sort.el
+  - [-] ` command should edit stack entry at m=1
   - [ ] bug: given,
     (x - 2|)^2 = -12 y
     `G`, `k k`, `G`
