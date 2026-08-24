@@ -27,7 +27,7 @@
   - [-] swap `C-RET` and `M-RET`
   - [ ] new `C-RET` should retain point, otherwise there's no difference between
     it and `RET`
-  - [-] (a + b) (2 c - d) latex is wrong (remove the \times)
+  - [X] (a + b) (2 c - d) latex is wrong (remove the \times)
   - [X] how to sort vector? did this used to be `v o`?
     (2026-08-24: `v S` is the table key; `v o` was the legacy binding,
     now restored as a second key. `I` gives the descending sort.)
