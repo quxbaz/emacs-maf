@@ -199,7 +199,7 @@
      `C-y` maf-yank ← calc-yank,
      `RET` maf-dup-or-clear-selections ← calc-enter,
      `TAB` / `C-t` maf-swap-up ← calc-roll-down,
-     `M-RET` maf-dup-go ← calc-last-args
+     `M-RET` mafcmd-let ← calc-last-args
    - `r 0`..`r 9` maf-recall-quick ← calc-recall-quick
    - the digit starters `_` `0`..`9` `.` `#` maf-digit-start ←
      calcDigit-start
@@ -264,7 +264,10 @@
      `k v`)
    - [X] `k v` mafcmd-evaluate (2026-08-22: moved off `k k`, ceded to
      esimplify; `I k v` still reaches mafcmd-identify)
-   - [X] `C-<return>` mafcmd-let
+   - [X] `C-<return>` maf-dup-go (2026-08-23: swapped keys with
+     mafcmd-let, which rides M-RET now; the traveling duplicate had
+     been on M-RET since 2026-08-20, mafcmd-let on C-RET since it
+     left C-c C-c)
    - [X] `l l` mafcmd-float-frac (2026-08-20: the float/frac toggle —
      floats toward fractions first, fractions to floats otherwise,
      direction echoed; I forces float, H float-all, frac's tolerance
@@ -322,10 +325,13 @@
    - [X] `C-M-<backspace>` (and aliases) maf-roll-to-bottom
    - [X] `M-<up>` maf-carry-up
    - [X] `M-<down>` maf-carry-down
-   - [X] `M-<return>` maf-dup-go (2026-08-20: the copy now lands on
-     top of the stack, calc's convention, rather than below the
-     source; point travels with it, a mark holding the origin.
-     Renamed from maf-dup-below to say so)
+   - [X] `M-<return>` mafcmd-let (2026-08-23: swapped keys with the
+     traveling duplicate, which rides C-RET now — a native-layout
+     opinion; the calc profile keeps the duplicate on M-RET, its
+     pre-swap home. Dup-go's own note,
+     2026-08-20: the copy lands on top of the stack, calc's
+     convention, rather than below the source; point travels with it,
+     a mark holding the origin. Renamed from maf-dup-below to say so)
    - [X] `M-m` maf-beginning-of-entry
    - [X] `M-f` maf-forward-noun
    - [X] `M-b` maf-backward-noun

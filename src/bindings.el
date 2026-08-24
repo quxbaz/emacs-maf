@@ -313,7 +313,7 @@
 ;; C-u RET is the keep-point variant (`maf-dup-here'): same push, point
 ;; stays on the target instead of homing, so the next command still
 ;; resolves there. It rides RET's prefix argument rather than a key of
-;; its own — the RET family is full (M-RET below, C-RET on
+;; its own — the RET family is full (C-RET below, M-RET on
 ;; `mafcmd-let', S-RET on the restack) and W is the only unbound
 ;; single key left in the buffer, too scarce to spend on where point
 ;; lands. Contextual dup has no
@@ -322,15 +322,23 @@
 ;; duplicate only: with a selection active the key clears, which has
 ;; nothing for a prefix to vary.
 (maf-bindings-define '(calc native) "RET" #'maf-dup-or-clear-selections)
-;; M-RET duplicates the whole entry into the slot just below it, the
-;; in-place counterpart of RET's copy onto the top. Bind the GUI event
-;; and the terminal form both, as calc has no M-RET.
+;; C-RET is the traveling duplicate: the same copy onto the top of the
+;; stack as RET's, with point going along to the copy instead of
+;; parking on the home line (`maf-dup-go'). `mafcmd-let' held this key
+;; until the two swapped; it rides M-RET below. During digit entry
+;; C-<return> stays calc's digit map's `maf-digit-commit-here'
+;; (src/minibuffer.el).
 ;;
 ;; `maf-dup-here' — the keep-point variant of RET's duplicate — held
-;; this key until the entry-duplicate took it; it now rides RET's prefix
+;; M-RET until the entry-duplicate took it; it now rides RET's prefix
 ;; argument (C-u RET), and stays reachable by name.
-(maf-bindings-define '(calc native) "M-<return>" #'maf-dup-go)
-(maf-bindings-define '(calc native) "M-RET" #'maf-dup-go)
+(maf-bindings-define '(native) "C-<return>" #'maf-dup-go)
+;; The swap is a native-layout opinion: the calc profile keeps the
+;; duplicate on M-RET, its pre-swap home. The GUI event and the
+;; terminal form both, as calc itself binds only the terminal form
+;; (calc-last-args).
+(maf-bindings-define '(calc) "M-<return>" #'maf-dup-go)
+(maf-bindings-define '(calc) "M-RET" #'maf-dup-go)
 ;; S-<return> is the restack (bound above, beside the bury). It was the
 ;; edit module's add-entry-below, which is unbound now and reachable by
 ;; name: C-o opens an entry above point, and above the entry below point
@@ -397,19 +405,19 @@
 ;; the first, a contextual subject, and $ for the stack.
 (maf-bindings-define '(calc native) "a b" #'mafcmd-substitute)
 ;; Quick substitution: apply an assignment from the stack to the
-;; contextual subject. C-<return> is the one-hand chord a substitution
-;; is worth, and the edit module's quick-add gave the key up for it
-;; (`, C-o and "(" remain, and ` opens the same bottom entry C-RET
-;; used to, as a trip home). It replaces C-c C-c, the conventional
-;; mode-specific
-;; "apply this" gesture, which had been the command's only key and is
-;; unbound again — two hands and four keys for something reached this
-;; often, where the leaf is a control character calc's fancy prefix
-;; would rather not carry (K C-c C-c is what `maf--fancy-prefix-keep's
-;; provisional path was written for; see src/stack.el). During digit
-;; entry C-<return> is calc's own map, where it stays
-;; `maf-digit-commit-here' (src/minibuffer.el).
-(maf-bindings-define '(native) "C-<return>" #'mafcmd-let)
+;; contextual subject. On the RET family's meta member since the swap
+;; with the traveling duplicate (above); shadows calc-last-args, as
+;; the duplicate did before it. The command's earlier keys:
+;; C-c C-c first — the conventional mode-specific "apply this"
+;; gesture, two hands and four keys for something reached this often,
+;; whose control-character leaf calc's fancy prefix would rather not
+;; carry (K C-c C-c is what `maf--fancy-prefix-keep's provisional path
+;; was written for; see src/stack.el) — then C-RET, which the edit
+;; module's quick-add had given up for it (`, C-o and "(" remain, and
+;; ` opens the same bottom entry, as a trip home). Bind the GUI event
+;; and the terminal form both.
+(maf-bindings-define '(native) "M-<return>" #'mafcmd-let)
+(maf-bindings-define '(native) "M-RET" #'mafcmd-let)
 ;; Polynomial roots by factoring, with multiplicity. On the l prefix
 ;; with the other maf-only algebra keys; l a is unbound in calc
 ;; itself, and mirrors a l, the prompting form of the same answer.

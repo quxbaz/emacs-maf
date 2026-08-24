@@ -6,7 +6,7 @@
 ;; does not count as a calc command -- every control character below SPC, and
 ;; every event that is not an integer at all, which is every function key. So
 ;; K reached maf commands bound to plain characters (K *) and nothing else:
-;; mafcmd-let on C-<return> and mafcmd-toggle-op on S-<up> both ran with the
+;; mafcmd-let on M-<return> and mafcmd-toggle-op on S-<up> both ran with the
 ;; flag already cleared.
 ;;
 ;; `maf--fancy-prefix-keep' spares the keys that open a command marked
@@ -22,22 +22,22 @@
 ;; any of this. tests/dup.el covers the K RET case from the same angle.
 
 (maf-step
-  ;; C-<return> without K: ordinary binary command, both operands consumed.
+  ;; M-<return> without K: ordinary binary command, both operands consumed.
   (calc-pop (calc-stack-size))
   (calc-push (math-read-expr "2 x"))
   (calc-push (math-read-expr "x = 3"))
-  (progn (goto-char (point-max)) (execute-kbd-macro (kbd "C-<return>")) nil)
+  (progn (goto-char (point-max)) (execute-kbd-macro (kbd "M-<return>")) nil)
   (cl-assert (= (calc-stack-size) 1))
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "6"))
 
-  ;; K C-<return>: the operands stay and the result is pushed on top, which is
+  ;; K M-<return>: the operands stay and the result is pushed on top, which is
   ;; what the command's docstring promises for keep-args. The event is the
-  ;; symbol `C-return', which calc's test rejects as firmly as a control
+  ;; symbol `M-return', which calc's test rejects as firmly as a control
   ;; character, so the flag only survives because the advice keeps it.
   (calc-pop (calc-stack-size))
   (calc-push (math-read-expr "2 x"))
   (calc-push (math-read-expr "x = 3"))
-  (progn (goto-char (point-max)) (execute-kbd-macro (kbd "K C-<return>")) nil)
+  (progn (goto-char (point-max)) (execute-kbd-macro (kbd "K M-<return>")) nil)
   (cl-assert (= (calc-stack-size) 3))
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "6"))
   (cl-assert (string= (math-format-value (calc-top 2 'full)) "x = 3"))
