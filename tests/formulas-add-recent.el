@@ -96,6 +96,7 @@
 
   ;; The narrowed list marks the same way: the row under point is what
   ;; counts, so a filter is no obstacle, and it survives the re-render.
+  ;; Recents remain out of filtered results until the filter is cleared.
   (progn (setq maf-formulas--recent nil) nil)
   (save-window-excursion
     (delete-other-windows)
@@ -109,16 +110,17 @@
       (execute-kbd-macro (kbd "a"))
       (cl-assert (equal (mapcar #'maf-formulas--title maf-formulas--recent)
                         '("Area of triangle")))
-      ;; The narrowing is still in force, the group is up inside it,
-      ;; and point is still on the row it was marked from.
+      ;; The narrowing is still in force, no Recent group is mixed into
+      ;; its results, and point is still on the row it was marked from.
       (cl-assert (equal maf-formulas--query "triangle"))
-      (cl-assert (string-match-p "^Recent$"
-                                 (buffer-substring-no-properties
-                                  (point-min) (line-end-position 1))))
+      (cl-assert (not (string-match-p "^Recent$" (buffer-string))))
       (cl-assert (string-match-p
                   "Area of triangle"
                   (buffer-substring-no-properties (line-beginning-position)
                                                   (line-end-position))))
+      ;; Clearing the filter reveals the recorded formula in Recent.
+      (maf-formulas-clear-filter)
+      (cl-assert (string-match-p "^Recent$" (buffer-string)))
       (maf-formulas-quit)))
 
   ;; With the group turned off there is nowhere to add, and the command

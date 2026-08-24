@@ -12,8 +12,8 @@
 
 * now
   - *maf-formulas
-    - [ ] change number of recents limit from 5 -> 10
-    - [ ] recents should not appear in filtered results
+    - [X] change number of recents limit from 5 -> 10
+    - [X] recents should not appear in filtered results
 
 * review
   - [X] *maf-persist*

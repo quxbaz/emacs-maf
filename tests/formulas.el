@@ -29,6 +29,20 @@
   (maf-use-formulas-mode 1)
   (get-buffer-create maf-formulas--detail-buffer)
 
+  ;; Ten formulas are kept by default. Recording an eleventh drops the
+  ;; oldest, leaving the ten most recently reached-for formulas.
+  (cl-assert (= (eval (car (get 'maf-formulas-recent-max 'standard-value)) t)
+                10))
+  (let ((maf-formulas-recent-max 10)
+        (maf-formulas--recent nil))
+    (dotimes (n 11)
+      (maf-formulas--record-recent (list :name (format "recent-%d" n))))
+    (cl-assert (= (length maf-formulas--recent) 10))
+    (cl-assert (equal (mapcar (lambda (f) (plist-get f :name))
+                              maf-formulas--recent)
+                      '("recent-10" "recent-9" "recent-8" "recent-7" "recent-6"
+                        "recent-5" "recent-4" "recent-3" "recent-2" "recent-1"))))
+
   (with-current-buffer (get-buffer-create "*maf-formulas*")
     (maf-formulas-mode)
     (maf-formulas--render)

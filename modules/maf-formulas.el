@@ -109,7 +109,7 @@ in your init to add formulas without a file. Only :expr is required."
   :type '(repeat plist)
   :group 'maf)
 
-(defcustom maf-formulas-recent-max 5
+(defcustom maf-formulas-recent-max 10
   "How many recently-inserted formulas the \"Recent\" group holds.
 Zero drops the group entirely. The list is per-session; nothing is
 written to disk."
@@ -130,7 +130,7 @@ so the side split is only taken when both halves clear this width."
   "Name of the buffer showing detail for the formula at point.")
 
 (defconst maf-formulas--recent-category "Recent"
-  "Category header for the recently-inserted group, shown first.")
+  "Category header for the recently-inserted group, shown first when unfiltered.")
 
 (defvar maf-formulas--loaded nil
   "Non-nil once `maf-formulas-file' has been consulted this session.")
@@ -198,16 +198,17 @@ convenience for the sitting, not something to carry between them.")
 (defun maf-formulas--groups ()
   "The menu's groups, an alist of (CATEGORY . FORMULAS).
 Categories come alphabetically, each holding the formulas matching the
-current query; the recently-inserted group leads when it has any, so
-what you reached for last is where the cursor already is. A recent
-formula also stays listed under its own category — the group is a
-shortcut, not a move."
+current query. With no query, the recently-inserted group leads when it
+has any, so what you reached for last is where the cursor already is.
+Filtering omits that shortcut group; matching recent formulas remain
+listed under their own categories."
   (let* ((all (maf-formulas--all))
          (match (lambda (f) (maf-formulas--matches-p f maf-formulas--query)))
          ;; Recents are held by identity, so formulas dropped from
          ;; `maf-formulas-user' since (a reloaded file, say) fall out.
-         (recent (seq-filter (lambda (f) (and (memq f all) (funcall match f)))
-                             maf-formulas--recent))
+         (recent (and (string-empty-p maf-formulas--query)
+                      (seq-filter (lambda (f) (memq f all))
+                                  maf-formulas--recent)))
          (groups nil))
     (dolist (f (seq-filter match all))
       (let* ((cat (maf-formulas--category f))
@@ -601,9 +602,8 @@ handful can be gathered in one visit and found at the top of the list
 next time. A formula already in the group moves back to its head.
 
 The narrowing is no obstacle: the row under point is what counts, so
-a filtered list marks the same way an unfiltered one does — though a
-formula the current query hides is not shown in the group until the
-filter widens to it again.
+a filtered list marks the same way an unfiltered one does. The Recent
+group stays hidden until the filter is cleared.
 
 Point keeps its place rather than following the render to the top,
 and its copy with it: marking from the group's own line stays there."
