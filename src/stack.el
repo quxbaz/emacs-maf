@@ -6269,6 +6269,12 @@ instead, so callers can leave such an expression alone rather than
 abort. `calc-unpack-with-type' is bound off so the parts come back on
 their own, as `calcFunc-unpack' returns them, without the trailing
 dimension entries `calc-unpack' adds for its own stack listing."
+  ;; calc-ext's autoload registry covers most of calc-vec but not this
+  ;; function, so the module has to be pulled in by hand — and outside
+  ;; the condition-case, which would otherwise swallow the void-function
+  ;; error and report "nothing to unpack" for every expression until
+  ;; something else in the session happened to load calc-vec.
+  (require 'calc-vec)
   (let ((calc-unpack-with-type nil))
     (condition-case nil
         (calc-unpack-item mode expr)
