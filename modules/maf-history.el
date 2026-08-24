@@ -265,15 +265,20 @@ or a list that reads as one control, and the keys the ones to show
 for it, kept only while each still runs it.")
 
 ;; Set outside the defvar so a reload applies edits to the list.
-;; n/p/j/k all step, in both windows, so the legend reads the same from
-;; either one; it names n/p and leaves j/k as unadvertised aliases
-;; rather than spend the width on both pairs.
+;; n/p/j/k and </> move within whichever window they are pressed in —
+;; between states in the log, between lines in the stack — so each
+;; control names both meanings and the legend stays true wherever it
+;; is rendered. It names n/p and < >, leaving j/k as unadvertised
+;; aliases rather than spending the width on both pairs.
 (setq maf-history--controls
-      '(((maf-history-previous maf-history-next) "step" "n" "p")
-        ((maf-history-oldest maf-history-newest) "ends" "<" ">")
-        (maf-history-switch "switch" "t")
+      '(((maf-history-previous maf-history-next next-line previous-line)
+         "move" "n" "p")
+        ((maf-history-oldest maf-history-newest
+          maf-history-stack-first maf-history-stack-last)
+         "ends" "<" ">")
+        (maf-history-switch "switch" "o" "t")
         (maf-history-insert "insert" "RET")
-        (maf-history-restore "restore" "r")
+        (maf-history-restore "restore" "r" "RET")
         (maf-history-delete "delete" "D")
         (maf-history-quit "quit" "q")))
 
@@ -466,12 +471,14 @@ mean something else beside a stack — line motion and RET.")
 ;; newest-first, so < reaches the top of it and > the bottom.
 (define-key maf-history-mode-map (kbd "<") #'maf-history-newest)
 (define-key maf-history-mode-map (kbd ">") #'maf-history-oldest)
-;; One key crosses between the two windows, either way.
+;; Either of these crosses between the two windows, either way.
+(define-key maf-history-mode-map (kbd "o") #'maf-history-switch)
 (define-key maf-history-mode-map (kbd "t") #'maf-history-switch)
 (define-key maf-history-mode-map (kbd "TAB") #'maf-history-focus-stack)
-;; RET in the log drills into the stack beside it — there is no entry
-;; here to push, and picking one is what comes next.
-(define-key maf-history-mode-map (kbd "RET") #'maf-history-focus-stack)
+;; RET on a log row takes that state: choosing an item from the log is
+;; choosing the stack it names, as RET on a completion candidate takes
+;; it. Picking one entry out of a state instead is RET in the stack.
+(define-key maf-history-mode-map (kbd "RET") #'maf-history-restore)
 (define-key maf-history-mode-map (kbd "r") #'maf-history-restore)
 ;; Capital, so a fingerslip on the motion keys cannot reach a delete.
 (define-key maf-history-mode-map (kbd "D") #'maf-history-delete)
@@ -480,11 +487,18 @@ mean something else beside a stack — line motion and RET.")
 (define-key maf-history-mode-map (kbd "C-M-k") #'maf-history-clear)
 (define-key maf-history-mode-map (kbd "q") #'maf-history-quit)
 
-;; The stack: n/p/j/k step states here too, inherited from the log, so
-;; the keys mean one thing across both windows. Moving between the
-;; entries of one stack — to pick a RET target — is what special-mode
-;; already gives: C-n/C-p and the arrow keys.
+;; The stack: the same keys navigate this buffer instead of the log —
+;; n/j down a line, p/k up, </> to the ends — so they always move
+;; within the window the hand is in. Stepping states is the log's job;
+;; t crosses back to it. Everything not overridden here (t, r, D, q,
+;; C-M-k) is inherited and works from either window.
 (set-keymap-parent maf-history-stack-mode-map maf-history-mode-map)
+(define-key maf-history-stack-mode-map (kbd "n") #'next-line)
+(define-key maf-history-stack-mode-map (kbd "j") #'next-line)
+(define-key maf-history-stack-mode-map (kbd "p") #'previous-line)
+(define-key maf-history-stack-mode-map (kbd "k") #'previous-line)
+(define-key maf-history-stack-mode-map (kbd "<") #'maf-history-stack-first)
+(define-key maf-history-stack-mode-map (kbd ">") #'maf-history-stack-last)
 (define-key maf-history-stack-mode-map (kbd "RET") #'maf-history-insert)
 (define-key maf-history-stack-mode-map (kbd "C-<return>")
             #'maf-history-insert-stay)
@@ -499,10 +513,10 @@ The stack that action left shows in `maf-history-stack-mode' beside
 it, following point as it moves. \<maf-history-mode-map>
 \[maf-history-previous] steps to older states and \[maf-history-next]
 to newer ones; \[maf-history-oldest] and \[maf-history-newest] jump
-to the ends. \[maf-history-switch] crosses into the stack, where RET
-pushes the entry at point onto the live stack.
-\[maf-history-restore] replaces the whole stack with the state shown
-and quits. \[maf-history-delete] deletes the state shown from the
+to the ends. \[maf-history-restore] takes the state at point, making
+it the live stack again, and quits. \[maf-history-switch] crosses into
+the stack instead, to take one entry out of a state rather than the
+whole of it. \[maf-history-delete] deletes the state shown from the
 log; \[maf-history-clear] clears the whole log. \[maf-history-quit]
 buries the browser."
   (setq truncate-lines t)
@@ -516,9 +530,9 @@ with the entries the selected step produced highlighted.
 \<maf-history-stack-mode-map>
 \[maf-history-insert] pushes the entry at point onto the live stack
 and quits; \[maf-history-insert-stay] pushes and stays, ready to
-insert more. \[maf-history-previous] and \[maf-history-next] step
-the selection without leaving this window, and \[maf-history-switch]
-crosses back to the log."
+insert more. The motion keys move between the entries of this stack
+rather than between states — stepping states is the log's job, and
+\[maf-history-switch] crosses back to it."
   (setq truncate-lines t)
   (setq-local revert-buffer-function
               (lambda (&rest _) (maf-history--render))))
@@ -596,6 +610,21 @@ without a calc window the pair opens below the selected window."
   (let ((win (get-buffer-window (maf-history--stack-buffer))))
     (unless win (maf-history) (setq win (get-buffer-window maf-history--stack-buffer)))
     (when win (select-window win))))
+
+(defun maf-history-stack-first ()
+  "Move to the deepest entry of the stack shown."
+  (interactive)
+  (goto-char (point-min)))
+
+(defun maf-history-stack-last ()
+  "Move to the top-of-stack entry of the stack shown.
+Not `end-of-buffer': every entry line ends in a newline, so that lands
+on the empty line past the last one, where there is no entry for RET
+to push."
+  (interactive)
+  (goto-char (point-max))
+  (forward-line (if (bolp) -1 0))
+  (beginning-of-line))
 
 (defun maf-history-switch ()
   "Switch between the action log and the stack beside it.

@@ -54,7 +54,7 @@
   (with-current-buffer (maf-history--stack-buffer)
     (cl-assert (equal (buffer-substring-no-properties (point-min) (point-max))
                       "2:  6 x + 12\n1:  a + b\n"))
-    (cl-assert (string-match-p " n/p step .* t switch .* r restore .* D delete "
+    (cl-assert (string-match-p " n/p move .* o/t switch .* r restore .* D delete "
                                (format-mode-line header-line-format)))
     ;; The entry this step produced is highlighted; the one carried
     ;; over from the state before is not.
@@ -99,26 +99,37 @@
     (call-interactively (lookup-key maf-history-mode-map (kbd "k")))
     (cl-assert (equal header-line-format "maf-history  2/2")))
 
-  ;; The stack map inherits the log's, so the step keys mean the same
-  ;; in both windows; what it overrides is RET, which must pick an
-  ;; entry here. Moving between the entries of one stack is left to
-  ;; special-mode's own C-n/C-p.
-  (cl-assert (eq (lookup-key maf-history-stack-mode-map (kbd "j")) 'maf-history-previous))
-  (cl-assert (eq (lookup-key maf-history-stack-mode-map (kbd "k")) 'maf-history-next))
-  (cl-assert (eq (lookup-key maf-history-stack-mode-map (kbd "RET")) 'maf-history-insert))
-  (cl-assert (eq (lookup-key maf-history-mode-map (kbd "RET")) 'maf-history-focus-stack))
-  ;; t is the one key that crosses between the windows, either way.
-  (cl-assert (eq (lookup-key maf-history-mode-map (kbd "t")) 'maf-history-switch))
-  (cl-assert (eq (lookup-key maf-history-stack-mode-map (kbd "t")) 'maf-history-switch))
-  ;; The ends follow the display, as the step keys do: < reaches the
-  ;; top of a newest-first log, > the bottom.
+  ;; The stack map inherits the log's, but overrides every motion key:
+  ;; in the stack they move between the entries shown rather than
+  ;; between states, so the keys always act on the window the hand is
+  ;; in.
+  (dolist (cell '(("n" . next-line) ("j" . next-line)
+                  ("p" . previous-line) ("k" . previous-line)
+                  ("<" . maf-history-stack-first)
+                  (">" . maf-history-stack-last)
+                  ("RET" . maf-history-insert)))
+    (cl-assert (eq (lookup-key maf-history-stack-mode-map (kbd (car cell)))
+                   (cdr cell))
+               nil "stack key %s should run %s" (car cell) (cdr cell)))
+  ;; RET takes what the row names: the whole state in the log, one
+  ;; entry of it in the stack.
+  (cl-assert (eq (lookup-key maf-history-mode-map (kbd "RET")) 'maf-history-restore))
+  ;; What the stack does not override is inherited and works from
+  ;; either window.
+  (dolist (cell '(("t" . maf-history-switch) ("r" . maf-history-restore)
+                  ("D" . maf-history-delete) ("q" . maf-history-quit)))
+    (cl-assert (eq (lookup-key maf-history-stack-mode-map (kbd (car cell)))
+                   (cdr cell))
+               nil "stack key %s should inherit %s" (car cell) (cdr cell)))
+  ;; In the log the ends follow the display, as the motion keys do:
+  ;; < reaches the top of a newest-first log, > the bottom.
   (cl-assert (eq (lookup-key maf-history-mode-map (kbd "<")) 'maf-history-newest))
   (cl-assert (eq (lookup-key maf-history-mode-map (kbd ">")) 'maf-history-oldest))
   ;; Retired keys stay retired: none of them still runs a browsing
   ;; command. They are not asserted unbound — special-mode keeps its
   ;; own claim on some (h is `describe-mode'), which is what should
   ;; show through once ours is gone.
-  (dolist (key '("u" "i" "o" "h" "l" "v" "G"))
+  (dolist (key '("u" "i" "h" "l" "v" "G"))
     (cl-assert (not (memq (lookup-key maf-history-mode-map (kbd key))
                           '(maf-history-previous maf-history-next
                             maf-history-oldest maf-history-newest

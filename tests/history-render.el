@@ -57,12 +57,14 @@
     ;; the step keys mean the same in both windows, and RET inserts
     ;; here (in the log it crosses over instead).
     (let ((legend (substring-no-properties (format-mode-line header-line-format))))
-      ;; n/p name the step control; j/k step too but stay off the
-      ;; legend rather than spend the width on a second pair.
-      (cl-assert (string-match-p "n/p step" legend))
+      ;; n/p name the motion control; j/k do the same but stay off the
+      ;; legend rather than spend the width on a second pair. In this
+      ;; window they move between entries, in the log between states —
+      ;; the control names both, so the legend is true either way.
+      (cl-assert (string-match-p "n/p move" legend))
       (cl-assert (not (string-match-p "j/k" legend)))
       (cl-assert (string-match-p "RET insert" legend))
-      (cl-assert (string-match-p "t switch" legend))
+      (cl-assert (string-match-p "o/t switch" legend))
       (cl-assert (not (string-match-p "calc" legend)))))
 
   ;; Selecting the older state re-renders both: the marker moves, and
