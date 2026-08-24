@@ -1,6 +1,6 @@
 ;;; The saved-stacks buffer (modules/maf-persist.el): every save file
 ;; listed as a dial row with size, age and liveness, hovering a row
-;; previews its stack in a window below, RET restores it, D deletes
+;; previews its stack in a window beside it, RET restores it, D deletes
 ;; the file. Driven against a scratch directory the way
 ;; persist-stack.el drives the save/restore core, with the session's
 ;; own persistence state stashed and put back at the end.
@@ -79,6 +79,34 @@
     (with-current-buffer "*maf-stacks preview*"
       (cl-assert (equal (buffer-substring-no-properties (point-min) (point-max))
                         "1: y^2"))))
+
+  ;; The list and its preview share the frame evenly, in two windows.
+  ;; The preview borrows a window rather than carving the frame
+  ;; smaller (`maf--display-borrowing-window'), which is what the
+  ;; formulas menu's detail pane and every help buffer do. Asking
+  ;; `display-buffer' for a (window-width . 0.5) instead measured the
+  ;; fraction against the whole frame, so the preview claimed the
+  ;; list's own half and left it in the two columns a window cannot go
+  ;; below, with calc still holding the other half — three windows,
+  ;; none of them the intended size.
+  (save-window-excursion
+    (delete-other-windows)
+    (maf-saved-stacks)
+    (goto-char (point-min))
+    (search-forward "test-buf-a")
+    (maf--stacks-preview)
+    (let* ((windows (window-list))
+           (list-win (get-buffer-window "*maf-stacks*"))
+           (preview-win (get-buffer-window "*maf-stacks preview*")))
+      (cl-assert (= (length windows) 2))
+      (cl-assert (and list-win preview-win))
+      ;; Even to within the column an odd frame width cannot split.
+      (cl-assert (<= (abs (- (window-total-width list-win)
+                             (window-total-width preview-win)))
+                     1))
+      ;; And each really is about half the frame, not a sliver.
+      (cl-assert (> (window-total-width list-win)
+                    (/ (frame-width) 3)))))
 
   ;; Restoring replaces the current stack with the row's and closes
   ;; the buffer, preview and all.

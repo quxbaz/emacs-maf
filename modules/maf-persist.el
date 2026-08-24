@@ -375,15 +375,21 @@ leaves the last preview standing."
         ;; preview it never drew, and nothing short of another row
         ;; would try again.
         (setq maf--stacks-previewed id)
+        ;; Borrow a window if the frame has one to lend — calc's,
+        ;; usually — the way the formulas menu's detail pane and every
+        ;; help buffer do, rather than carving the frame smaller. The
+        ;; list already sits at the frame's own split, so borrowing
+        ;; leaves the two panes side by side at half the width each;
+        ;; asking for a width instead measured the fraction against
+        ;; the whole frame, which claimed the list's own half and left
+        ;; it in the two columns a window cannot go below. Failing a
+        ;; window to borrow, split to the right.
         (display-buffer buffer
                         '((display-buffer-reuse-window
+                           maf--display-borrowing-window
                            display-buffer-in-direction)
                           (direction . right)
-                          ;; Half the frame each: the list's rows and
-                          ;; the stack's entries are both read across,
-                          ;; and neither column has a claim on the
-                          ;; width the other would lose.
-                          (window-width . 0.5)))))))
+                          (inhibit-same-window . t)))))))
 
 (defun maf-stacks-restore (&optional keep)
   "Restore the saved stack on the current line, replacing calc's stack.
