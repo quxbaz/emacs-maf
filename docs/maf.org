@@ -27,7 +27,7 @@
   - [ ] swap `C-RET` and `M-RET`
   - [ ] new `C-RET` should retain point, otherwise there's no difference against
     `RET`
-  - [ ] (a + b) (2 c - d) latex is wrong (remove the \times)
+  - [X] (a + b) (2 c - d) latex is wrong (remove the \times)
   - [ ] how to sort vector? did this used to be `v o`?
   - [ ] rational roots theorem
     what command used to take something like:

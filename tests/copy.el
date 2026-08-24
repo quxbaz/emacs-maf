@@ -134,6 +134,16 @@
   (cl-assert (string= (current-kill 0) "\\frac{1}{2}"))
   (calc-pop (calc-stack-size))
 
+  ;; A product whose right factor is a \left( group: calc would write
+  ;; \times there, but juxtaposition is unambiguous and reads better,
+  ;; so the LaTeX copy drops it.
+  (maf-push "(a+b) (c/d+e)")
+  (progn (goto-char (point-max)) (call-interactively 'maf-copy))
+  (let ((last-command 'maf-copy)) (call-interactively 'maf-copy))
+  (cl-assert (string= (current-kill 0)
+                      "(a + b) \\left( \\frac{c}{d} + e \\right)"))
+  (calc-pop (calc-stack-size))
+
   ;; Logarithms: calc renders log(x, b) unTeXed and log10 without its
   ;; base; maf's compose forms give both a subscripted \log.
   (maf-push "log(x, 3) + log10(y)")

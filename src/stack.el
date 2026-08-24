@@ -2682,13 +2682,21 @@ stale entry is never picked up by a later copy.")
 Calc's latex language does the formatting, but only for the call: the
 language variables it sets are restored afterwards, so the stack
 display never changes language. `math-format-value' inhibits line
-breaking, so the result is one line however wide."
+breaking, so the result is one line however wide.
+
+Calc writes a product as juxtaposition except when the right factor
+is a \\left( group, where it falls back to \\times — its flatness
+test is structural, so even a factor that renders flat can trip it.
+Juxtaposition is unambiguous there too, so the \\times goes; it stays
+in the remaining cases (a negated right factor), where dropping it
+would turn the product into a difference."
   (maf--with-calc-buffer
     (let ((lang calc-language)
           (opt calc-language-option))
       (unwind-protect
           (progn (calc-set-language 'latex nil t)
-                 (math-format-value expr))
+                 (replace-regexp-in-string "\\\\times \\(\\\\left(\\)" "\\1"
+                                           (math-format-value expr)))
         (calc-set-language lang opt t)))))
 
 (defun maf--copy-squeeze (text)
