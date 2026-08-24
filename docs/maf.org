@@ -19,7 +19,7 @@
         should be "dupe"
       - [ ] curreently on "add" items, the added item is not highlighted in
         yellow in the corresponding stack
-  - [ ] bug:
+  - [-] bug:
     given,
     1: log(x|, 5)
     any wrapping function (eg, pow/sqrt/sin/etc) results in:
@@ -30,7 +30,6 @@
     - same conditions. only work in stack mode.
   - [ ] find command that solves with +/i in answer, but uses a different
     representation (port it)
-  - [X] ` command should edit stack entry at m=1
   - [ ] bug: given,
     (x - 2|)^2 = -12 y
     `G`, `k k`, `G`
