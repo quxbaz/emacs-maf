@@ -33,7 +33,7 @@
     => log(x, 5)^2
     instead of,
     => log(x^2, 5)
-  - [-] bind `j U` to the contextual version of `M-u`
+  - [X] bind `j U` to the contextual version of `M-u`
   - [ ] bind `C-M-SPC` to the reverse of `S-SPC`. move to the PREV operand
     - same conditions. only work in stack mode.
   - [ ] find command that solves with +/i in answer, but uses a different

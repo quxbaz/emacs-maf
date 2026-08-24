@@ -89,7 +89,7 @@
   (cl-assert (eq (key-binding (kbd "J M")) 'maf-merge))
   (cl-assert (eq (key-binding (kbd "J e")) 'maf-jump-equals))
   (cl-assert (eq (key-binding (kbd "J j")) 'mafcmd-isolate))
-  (cl-assert (eq (key-binding (kbd "J U")) 'mafcmd-unpack))
+  (cl-assert (eq (key-binding (kbd "J U")) 'mafcmd-unwrap))
   (cl-assert (eq (key-binding (kbd "o j")) 'mafcmd-conj))
   (cl-assert (eq (key-binding (kbd "u M")) 'mafcmd-vmean))
   (cl-assert (eq (key-binding (kbd "u c")) 'calc-convert-units))

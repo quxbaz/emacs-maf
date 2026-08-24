@@ -473,20 +473,20 @@
 
 ;; Unwrap the entry at point into its parts. M-u is unbound in calc
 ;; itself (it shadows the global upcase-dwim, which has no place in the
-;; stack buffer). The other two are calc's own unpack keys: v u is
-;; calc-unpack, whose whole-entry behavior mafcmd-unpack matches, and
-;; j U (with its j M-U alias) is calc-sel-unpack, which replaces a
-;; selected one-argument call with its argument — unpacking spreads
-;; parts over the stack, and a formula slot has no room for that, so
-;; the contextual command takes the selection's entry whole instead.
-;; Shadowing both keeps one unpack behavior in the buffer.
+;; stack buffer); v u is calc-unpack, whose whole-entry behavior
+;; mafcmd-unpack matches. Both keys keep the entry-scoped command.
 (maf-bindings-define '(native) "M-u" #'mafcmd-unpack)
 (maf-bindings-define '(calc native) "v u" #'mafcmd-unpack)
+;; j U (with its j M-U alias) is calc-sel-unpack, which replaces a
+;; selected one-argument call with its argument. That is the narrowing
+;; reading of unwrapping, so the key takes mafcmd-unwrap: inside a
+;; formula it peels the wrapper around point in place, and on a whole
+;; entry it spreads the parts as M-u does.
 ;; In vim these arrive by derivation and the j motion prunes them —
 ;; the unpack keeps M-u and v u there until the relocation table
 ;; rehomes the j family (profile:vim in docs/bindings.org).
-(maf-bindings-define '(calc native) "j U" #'mafcmd-unpack)
-(maf-bindings-define '(calc native) "j M-U" #'mafcmd-unpack)
+(maf-bindings-define '(calc native) "j U" #'mafcmd-unwrap)
+(maf-bindings-define '(calc native) "j M-U" #'mafcmd-unwrap)
 
 ;; Push an index vector [1..n], the size prompted for — the legacy
 ;; config's v RET. The contextual mafcmd-index keeps v x; this is the

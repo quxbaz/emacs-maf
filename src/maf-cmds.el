@@ -391,11 +391,12 @@ variant's own variable governs only its direct invocation."
   (mrow binary calcFunc-mrow "v r")
   (trn unary calcFunc-trn "v t")
   ;; Unpacking lives in stack.el: mafcmd-unpack (M-u, and calc's own
-  ;; v u / j U) unwraps the entry at point into its parts. It is
-  ;; not a row here because calcFunc-unpack is binary — it takes a mode
-  ;; ahead of the thing — and the contextual command takes that mode
-  ;; from a prefix argument rather than the stack. A row would also be
-  ;; the wrong shape: the result is a list of values spread over the
+  ;; v u) unwraps the entry at point into its parts, and mafcmd-unwrap
+  ;; (j U) is its narrowing sibling, peeling the wrapper around point.
+  ;; Neither is a row here because calcFunc-unpack is binary — it takes
+  ;; a mode ahead of the thing — and the contextual commands take that
+  ;; mode from a prefix argument rather than the stack. A row would also
+  ;; be the wrong shape: the result is a list of values spread over the
   ;; stack, not a single applied call.
   (rev unary calcFunc-rev "v v")
   (index unary calcFunc-index "v x")

@@ -191,8 +191,8 @@
    - `A` mafcmd-abs ← calc-abs, `f h` mafcmd-hypot ← calc-hypot,
      `a b` mafcmd-substitute ← calc-substitute,
      `a .` mafcmd-remove-equal ← calc-remove-equal,
-     `v u` mafcmd-unpack ← calc-unpack (also `j U`, `j M-U` ←
-     calc-sel-unpack), `P` maf-pi ← calc-pi
+     `v u` mafcmd-unpack ← calc-unpack, `j U` / `j M-U`
+     mafcmd-unwrap ← calc-sel-unpack, `P` maf-pi ← calc-pi
    - `U` maf-undo ← calc-undo, `D` maf-redo ← calc-redo,
      `C-d` / `DEL` maf-del ← calc-pop, `C-k` maf-kill ← calc-kill,
      `M-w` maf-copy ← calc-copy-region-as-kill,
@@ -530,7 +530,7 @@
    - `h` — calc-help-prefix (the whole h help family)
    - `j` — the selection prefix, close to maf's core:
      - maf's own: mafcmd-raise (j i), mafcmd-isolate (j j),
-       mafcmd-unpack (j U), maf-merge (j M), maf-distribute (j D),
+       mafcmd-unwrap (j U), maf-merge (j M), maf-distribute (j D),
        maf-jump-equals (j e), maf-commute-left/right (j l / j r)
      - calc's selection machinery: calc-select-here/once/more/less/
        next/previous/part, calc-sel-add/sub/mult/div-both-sides,
