@@ -6,8 +6,8 @@
 ;; and point to positions in a rendered stack entry. Calc renders each
 ;; entry from a composition tree whose `tag' nodes reference the actual
 ;; formula conses; walking it connects the formula structure to buffer
-;; text. Consumers: sub-formula highlighting (maf-hl) and anchor-based
-;; point restoration (maf-lib).
+;; text. Consumers: sub-formula highlighting (maf-hl), anchor-based
+;; point restoration (maf-lib), and the operand motion (src/stack.el).
 ;;
 ;; All entry points assume `calc-prepare-selection' has run for the
 ;; entry in question, and handle only flat (single-height) renderings —
@@ -288,5 +288,69 @@ composition (identity lost, or a non-flat rendering)."
                     (calc-cursor-stack-index calc-selection-cache-num)
                     (point))))
        (maf--comp-flat-to-pos start toppt)))))
+
+(defun maf--comp-landing-positions ()
+  "Buffer positions naming each sub-formula of the prepared entry, sorted.
+One position per tagged sub-formula, the whole entry included: the
+first of the glyphs the node renders itself — its operator, function
+name, opening delimiter — preferring non-blank over the padding
+around an operator, so each is a place `calc-find-selected-part'
+answers with that node, the same landing `maf--up-node-position'
+picks. A juxtaposed product draws its multiplication as nothing but a
+space, so its position is blank; an atom, all of whose glyphs are its
+own, is named at its start. nil when the composition is not flat."
+  (when (math-comp-is-flat calc-selection-cache-comp)
+    (let ((math-comp-pos 0)
+          (pieces nil)
+          (frames nil)     ; open tags, innermost first: (START . CHILD-SPANS)
+          (records nil))   ; closed tags: (START END CHILD-SPANS)
+      (cl-labels
+          ((walk (c)
+             (cond
+              ((not (consp c))
+               (push c pieces)
+               (setq math-comp-pos (+ math-comp-pos (length c))))
+              ((memq (car c) '(set break)))
+              ((eq (car c) 'horiz)
+               (dolist (sub (cdr c)) (walk sub)))
+              ((eq (car c) 'tag)
+               (push (cons math-comp-pos nil) frames)
+               (walk (nth 2 c))
+               (let ((frame (pop frames)))
+                 (when frames
+                   ;; A direct child of the enclosing tag: its span is
+                   ;; what the parent's own-glyph scan below excludes.
+                   (push (cons (car frame) math-comp-pos)
+                         (cdr (car frames))))
+                 (push (list (car frame) math-comp-pos
+                             (nreverse (cdr frame)))
+                       records)))
+              (t (walk (nth 2 c))))))
+        (walk calc-selection-cache-comp))
+      (let ((text (apply #'concat (nreverse pieces)))
+            (toppt (save-excursion
+                     (calc-cursor-stack-index calc-selection-cache-num)
+                     (point))))
+        (delete-dups
+         (sort (delq nil
+                     (mapcar
+                      (lambda (r)
+                        (pcase-let ((`(,start ,end ,children) r))
+                          (let* ((own (cl-loop
+                                       for p from start below end
+                                       unless (cl-some
+                                               (lambda (c)
+                                                 (and (<= (car c) p)
+                                                      (< p (cdr c))))
+                                               children)
+                                       collect p))
+                                 (fpos (or (cl-find-if
+                                            (lambda (p)
+                                              (not (eq (aref text p) ?\s)))
+                                            own)
+                                           (car own) start)))
+                            (maf--comp-flat-to-pos fpos toppt))))
+                      records))
+               #'<))))))
 
 (provide 'maf-comp)

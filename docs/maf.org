@@ -21,7 +21,7 @@
     - it should render as two columns
     - the left column showing the actions
     - the right column showing the corresponding stack
-  - [-] new command: jump to next operand
+  - [X] new command: jump to next operand
     - bind to `S-SPC`
     - only bind in stack mode. do not bind in edit/editplus.
   - [X] new `C-RET` should retain point, otherwise there's no difference between
