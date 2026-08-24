@@ -71,7 +71,19 @@
     (cl-assert (eq (key-binding (kbd "D")) #'maf-formulas-delete-recent))
     (maf-formulas--update-detail)
     (with-current-buffer maf-formulas--detail-buffer
-      (cl-assert (> (buffer-size) 0)))
+      (cl-assert (> (buffer-size) 0))
+      ;; A variable in the Big rendering wears the same face as its
+      ;; meaning in the list below, so the eye can carry a symbol in the
+      ;; formula down to what it stands for; the rest of the rendering
+      ;; keeps the formula's own face. Point is on "Area of triangle",
+      ;; whose Big middle line reads "A = - b h".
+      (goto-char (point-min))
+      (cl-assert (re-search-forward "^  \\(A\\)\\( = \\)- \\(b\\) \\(h\\)$" nil t))
+      (dolist (g '(1 3 4))
+        (cl-assert (eq (get-text-property (match-beginning g) 'face)
+                       'maf-formulas-var)))
+      (cl-assert (eq (get-text-property (match-beginning 2) 'face)
+                     'maf-formulas-form)))
 
     ;; The pane borrows a window before it takes one: shown from a menu
     ;; that has calc beside it, it lands in calc's window and closing

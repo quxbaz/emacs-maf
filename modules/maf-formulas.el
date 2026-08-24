@@ -348,6 +348,28 @@ keep their exact layout, but prose should bend to the pane."
     (mapconcat (lambda (l) (concat "  " l))
                (split-string (buffer-string) "\n") "\n")))
 
+(defun maf-formulas--color-vars (big vars)
+  "BIG, the Big rendering, with VARS' names in `maf-formulas-var'.
+The same face the variable wears in the list of meanings below, so
+the eye can carry a symbol in the formula down to what it stands for.
+Big display hands back a laid-out string rather than a tree, so the
+names are found by matching text: a name counts only where it is not
+part of a longer word, leaving the `r' in `sqrt' the formula's own
+color."
+  (let ((s (copy-sequence big)))
+    (dolist (v vars s)
+      (let ((re (concat "\\(?:^\\|[^[:alnum:]_]\\)\\("
+                        (regexp-quote (format "%s" (car v)))
+                        "\\)\\(?:$\\|[^[:alnum:]_]\\)"))
+            (from 0))
+        ;; Resume from the end of the name, not of the whole match: the
+        ;; character after it may be the one that bounds the next
+        ;; occurrence, as the `+' does between the two `a's in "a+a".
+        (while (string-match re s from)
+          (put-text-property (match-beginning 1) (match-end 1)
+                             'face 'maf-formulas-var s)
+          (setq from (match-end 1)))))))
+
 (defun maf-formulas--detail-string (f width)
   "Detail text for F: title, Big rendering, description, variable meanings.
 WIDTH is the pane's width in columns; the description fills to it."
@@ -358,9 +380,11 @@ WIDTH is the pane's width in columns; the description fills to it."
          (big (ignore-errors (let ((calc-language 'big)) (math-format-value expr)))))
     (concat
      "\n  " (propertize (maf-formulas--title f) 'face 'maf-formulas-category) "\n\n"
-     (propertize
-      (mapconcat (lambda (l) (concat "  " l)) (split-string (or big "") "\n") "\n")
-      'face 'maf-formulas-form)
+     (maf-formulas--color-vars
+      (propertize
+       (mapconcat (lambda (l) (concat "  " l)) (split-string (or big "") "\n") "\n")
+       'face 'maf-formulas-form)
+      vars)
      "\n"
      (when doc
        (concat "\n"
