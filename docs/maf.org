@@ -17,7 +17,7 @@
       - `D` to delete entry
       - preview each entry in a split window when point hovers over
       - standard npjk navigation for prev/next entry
-  - [ ] change *maf-history* rendering
+  - [X] change *maf-history* rendering
     - it should render as two columns
     - the left column showing the actions
     - the right column showing the corresponding stack
