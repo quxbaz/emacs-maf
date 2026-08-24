@@ -793,20 +793,31 @@ point, \\[maf-formulas-filter] filters as you type, \\[maf-formulas-clear-filter
 ;;;###autoload
 (defun maf-formulas ()
   "Open the saved-formula menu, its detail pane following point.
+If the menu is already on screen, go to its window instead, leaving the
+filter and the pane as they stand.
 \\<maf-formulas-mode-map>\\[maf-formulas-toggle-detail] toggles the pane, \\[maf-formulas-show-detail] freezes it on the formula at point."
   (interactive)
-  (let ((buf (get-buffer-create "*maf-formulas*")))
-    (with-current-buffer buf
-      (maf-formulas-mode)
-      (maf-formulas--render))
-    ;; Ordinary `pop-to-buffer' display: Emacs picks the window by the
-    ;; usual rules, so `display-buffer-alist' can route the menu, and
-    ;; `maf-formulas-quit' undoes exactly what was done.
-    (pop-to-buffer buf)
-    ;; The pane's state survives the menu being quit (following by
-    ;; default), so opening brings it back rather than starting closed.
-    (when maf-formulas--pane-state
-      (maf-formulas--open-detail))))
+  (if-let ((win (get-buffer-window "*maf-formulas*" 0)))
+      ;; Already on screen somewhere: visit it where it stands. Opening
+      ;; it again would re-run `maf-formulas-mode', and the mode call
+      ;; kills the buffer-local state the menu is carrying — the filter
+      ;; and the detail line — so the visible menu would reset under
+      ;; the user for a command that only meant "go there".
+      (progn
+        (select-frame-set-input-focus (window-frame win))
+        (select-window win))
+    (let ((buf (get-buffer-create "*maf-formulas*")))
+      (with-current-buffer buf
+        (maf-formulas-mode)
+        (maf-formulas--render))
+      ;; Ordinary `pop-to-buffer' display: Emacs picks the window by the
+      ;; usual rules, so `display-buffer-alist' can route the menu, and
+      ;; `maf-formulas-quit' undoes exactly what was done.
+      (pop-to-buffer buf)
+      ;; The pane's state survives the menu being quit (following by
+      ;; default), so opening brings it back rather than starting closed.
+      (when maf-formulas--pane-state
+        (maf-formulas--open-detail)))))
 
 ;;; The module
 
