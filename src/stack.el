@@ -2866,8 +2866,10 @@ within it.
 Point moves home to the copy, leaving a mark where it was so a single
 `pop-to-mark-command' returns there. With a prefix argument (KEEP-POINT
 non-nil) point stays put instead and no mark is left, so the next
-command still targets what point was on — C-u RET, with `maf-dup-here'
-as the named entry point.
+command still targets what point was on — C-u RET, or C-RET, which is
+that same prefix on a key of its own
+(`maf-dup-here-or-clear-selections'); `maf-dup-here' is the named entry
+point.
 
   1:  (a +| b) c   C-u RET  =>   2:  (a +| b) c
                                  1:  b            (point stays on b)
@@ -2913,7 +2915,8 @@ nothing on the stack to begin with, so what it spares here is point."
   "Duplicate the item at point like `maf-dup', but keep point in place.
 The copy is still pushed on top; point stays where it was instead of
 moving home to the copy. The named entry point for RET's prefix
-argument, C-u RET."
+argument, C-u RET; the key C-RET goes through RET's dispatcher instead
+(`maf-dup-here-or-clear-selections'), so a selection still clears there."
   (interactive)
   (maf-dup t))
 
@@ -3048,6 +3051,22 @@ it, and `maf--fancy-prefix-keep' is what lets it survive the key."
 ;; deliberately (see the docstring above), which is exactly what the mark
 ;; means, so set it here.
 (put 'maf-dup-or-clear-selections 'maf-command t)
+
+(defun maf-dup-here-or-clear-selections ()
+  "Clear active selections, or duplicate the item at point, keeping point.
+`maf-dup-or-clear-selections' with its keep-point argument set — the
+same thing C-u RET runs, on a key of its own: C-RET. With no selection
+active the copy is pushed onto the top of the stack and point stays on
+what it named instead of homing, so the next command still targets it.
+With a selection active this clears like plain RET: the clear moves
+point nowhere to begin with, so there is nothing for the hold to vary."
+  (interactive)
+  (maf-dup-or-clear-selections t))
+
+;; Hand-written like the dispatcher it wraps, and bound to a key calc's
+;; fancy prefix would otherwise strip the flags off (K C-RET), so it
+;; carries the same mark.
+(put 'maf-dup-here-or-clear-selections 'maf-command t)
 
 (defun maf--fancy-prefix-binding (event)
   "The command or keymap EVENT would run, ignoring calc's fancy prefix.

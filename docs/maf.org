@@ -25,8 +25,12 @@
     - bind to `S-SPC`
     - only bind in stack mode. do not bind in edit/editplus.
   - [-] swap `C-RET` and `M-RET`
-  - [ ] new `C-RET` should retain point, otherwise there's no difference between
+  - [X] new `C-RET` should retain point, otherwise there's no difference between
     it and `RET`
+    (2026-08-24: C-RET now runs `prefix RET` — the keep-point half of
+    RET's dispatcher, maf-dup-here-or-clear-selections. maf-dup-go, the
+    traveling duplicate that held the key, is reachable by name and on
+    the calc profile's M-RET.)
   - [X] (a + b) (2 c - d) latex is wrong (remove the \times)
   - [X] how to sort vector? did this used to be `v o`?
     (2026-08-24: `v S` is the table key; `v o` was the legacy binding,
