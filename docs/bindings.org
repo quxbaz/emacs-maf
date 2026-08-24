@@ -340,11 +340,17 @@
      variable read as `i` reads it, the subject's priority variable
      as the default; the stock stack-argument roots stays on `a P`.
      Earlier the key was a plain alias of `a P`, my/calc's key)
-   - [X] `j i` mafcmd-isolate
+   - [X] `j j` mafcmd-isolate (2026-08-24: swapped keys with the
+     raise, taking the doubled prefix key as `k k` does for the
+     extended simplify — the family's most-reached-for member on its
+     cheapest chord)
    - [X] `a k` mafcmd-abs-ineq
    - [X] `M-.` mafcmd-remove-equal
    - [X] `l x` swap-vars
-   - [X] `j j` mafcmd-raise
+   - [X] `j i` mafcmd-raise (2026-08-24: swapped keys with the
+     isolate, onto i for the plainest reading of the word — this is
+     the one that lifts a sub-formula out of what surrounded it,
+     where mafcmd-isolate isolates a variable by solving for it)
    - [X] `C-c C-c` mafcmd-esimplify (2026-08-20: second key beside its
      table key `a s`, earned by frequency — since 2026-08-22 also on
      `k k`; the mode's slice of the C-c convention, with its
@@ -523,7 +529,7 @@
    these families by derivation.
    - `h` — calc-help-prefix (the whole h help family)
    - `j` — the selection prefix, close to maf's core:
-     - maf's own: mafcmd-raise (j j), mafcmd-isolate (j i),
+     - maf's own: mafcmd-raise (j i), mafcmd-isolate (j j),
        mafcmd-unpack (j U), maf-merge (j M), maf-distribute (j D),
        maf-jump-equals (j e), maf-commute-left/right (j l / j r)
      - calc's selection machinery: calc-select-here/once/more/less/

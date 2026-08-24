@@ -155,7 +155,7 @@
     (cl-assert win)
     (with-selected-window win
       (with-current-buffer buf
-        (execute-kbd-macro (kbd "j i")))))
+        (execute-kbd-macro (kbd "j j")))))
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "b = a / c"))
   (cl-assert (null (nth 2 (calc-top 1 'entry))))
   (cl-assert (null calc-any-selections))
@@ -210,7 +210,7 @@
 
   ;; --- The binding ---
 
-  ;; j i isolates the sub-expression under point, on a key calc leaves
+  ;; j j isolates the sub-expression under point, on a key calc leaves
   ;; unbound; calc's own j I (calc-sel-isolate) stays reachable.
   (maf-push "y = 30 x + 12")
   (let* ((buf (get-buffer "*Calculator*"))
@@ -220,7 +220,7 @@
       (with-current-buffer buf
         (calc-cursor-stack-index 1) (beginning-of-line)
         (search-forward ":  ") (search-forward "12") (backward-char 2)
-        (execute-kbd-macro (kbd "j i")))))
+        (execute-kbd-macro (kbd "j j")))))
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "12 = y - 30 x"))
   (calc-clear-selections) (calc-pop (calc-stack-size))
   (cl-assert (eq (lookup-key calc-mode-map (kbd "j I")) 'calc-sel-isolate)))

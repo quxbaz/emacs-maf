@@ -401,16 +401,18 @@
 
 ;; Auto-solve: solve the entry for a variable, cycling through them on
 ;; repeat. The entry is the subject wherever point sits within it — the
-;; sub-formula targeting lives on j i below, so this key means the same
+;; sub-formula targeting lives on j j below, so this key means the same
 ;; thing from anywhere on the line. M-i is unbound in calc itself.
 (maf-bindings-define '(native) "M-i" #'mafcmd-auto-solve)
 ;; The same solve, targeting the sub-expression under point: isolate it,
 ;; falling back to the variable solve when there is nothing to isolate.
-;; Lowercase j i, where calc keeps the operation on the capital j I
-;; (calc-sel-isolate) — the same trade maf makes for the commute shifts
-;; (j l / j r) and the equals jump (j e), leaving calc's own command
-;; unshadowed and its key reachable.
-(maf-bindings-define '(native) "j i" #'mafcmd-isolate)
+;; The doubled prefix key, as k k is for the extended simplify: the
+;; family's most-reached-for member takes its cheapest chord. Calc
+;; leaves j j unbound — its j prefix is the selection commands, which
+;; have no j of their own — and keeps the operation on the capital
+;; j I (calc-sel-isolate), unshadowed and reachable either way. The
+;; literal sense of the word is next door on j i (mafcmd-raise).
+(maf-bindings-define '(native) "j j" #'mafcmd-isolate)
 ;; The same solve again, with the variable named rather than picked.
 ;; It held i before, yielded the key to the reciprocal, and takes it
 ;; back now that the reciprocal sits on o — the naming solve is the
@@ -490,14 +492,16 @@
 (maf-bindings-define '(native) "v RET" #'maf-index)
 
 ;; Keep only the part point names: it becomes the whole entry, the
-;; formula around it discarded. j j is unbound in calc itself — its j
-;; prefix is the selection commands, which have no j of their own — and
-;; the command belongs with them, working as it does on the part point
-;; picks out. "Raise" is `raise-sexp's operation, the form at point
-;; replacing the form around it; the word "isolate" is spoken for here
-;; by `mafcmd-auto-solve', which isolates a sub-expression by solving
-;; the relation for it.
-(maf-bindings-define '(native) "j j" #'mafcmd-raise)
+;; formula around it discarded. On i for the plainest reading of
+;; "isolate" — this is the one that isolates a sub-formula literally,
+;; lifting it out of what surrounded it, where `mafcmd-isolate' next
+;; door on j j isolates a variable by solving for it. "Raise" is the
+;; name because it is `raise-sexp's operation, the form at point
+;; replacing the form around it. j i is unbound in calc itself — its
+;; j prefix is the selection commands, which have no i of their own,
+;; keeping isolation on the capital j I — and the command belongs with
+;; them, working as it does on the part point picks out.
+(maf-bindings-define '(native) "j i" #'mafcmd-raise)
 
 ;; Group a vector's elements N at a time, N from the stack. l g is
 ;; unbound in calc itself — its l prefix is the logarithmic units,
