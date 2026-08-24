@@ -13,7 +13,6 @@
 * now
 
 * review
-  - [X] bind `:` to square in stack mode (same as `W`)
   - *maf-history* rendering
     - refine history log
       - [ ] if action is duplication (eg, RET on an entire entry), then action
