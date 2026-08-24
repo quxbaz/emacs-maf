@@ -5,8 +5,9 @@
 ;; Stack persistence module: each Emacs session saves its calc stack
 ;; under its own name and restores it in the next session, so juggling
 ;; several sessions never loses a stack — sessions write only their own
-;; file, and `maf-restore-stack-from' loads any other session's stack on
-;; request. The whole feature hangs off one switch,
+;; file, and the saved files are browsed in `maf-saved-stacks', a dial
+;; buffer (pkg/dial) that previews, restores or deletes any session's
+;; stack. The whole feature hangs off one switch,
 ;; `maf-persist-mode' (a global minor mode); loading this
 ;; file changes nothing. Save files hold plain formula values: no
 ;; selections, trail, or undo history.
@@ -25,6 +26,7 @@
 ;; `maf-stack-session-name' to name a session explicitly.
 
 (require 'calc)
+(require 'dial)
 (require 'maf-lib)
 (require 'maf-conf "conf")  ; the `maf' customize group
 
@@ -159,7 +161,7 @@ inspection — calc starts empty rather than failing to start."
         (if (not (file-exists-p file))
             (when-let ((others (maf--stack-saved-sessions)))
               (message (concat "maf: no saved stack for session %s; "
-                               "M-x maf-restore-stack-from loads another "
+                               "M-x maf-saved-stacks browses the others "
                                "(%d saved)")
                        maf--stack-session (length others)))
           (condition-case err
@@ -233,6 +235,277 @@ records it under this session's own name."
       (message "maf: restored %d entries from session %s"
                (length values) session))))
 
+;;; The saved-stacks buffer
+
+;; The browsing UI over the save files, in a dial buffer (pkg/dial):
+;; dial provides the shell — the tabulated list, its motion and
+;; controls line — and this section supplies the rows and the acts
+;; they support. Each row is one saved session; moving onto a row
+;; previews its stack in a window beside it, and `maf-stacks-map' lays
+;; restore, delete, refresh and quit over dial's keys. The rows have
+;; no values to step or defaults to reset, so those dial commands
+;; either refuse for themselves or, where their refusal would talk
+;; about values, sit under a shadow.
+
+(defun maf--stacks-items ()
+  "Compile the saved sessions into dial items, newest save first.
+The item ID is the session name interned — dial's rows carry symbols —
+and the name itself comes back with `symbol-name'.
+
+No :group: every row is a saved session, so there is one group and
+nothing for a heading to distinguish. Dial prints no Group column for
+a table like that (see `dial--grouped-p'), and the names start at the
+left margin."
+  (mapcar (lambda (session)
+            (list (intern (car session)) :label (car session)))
+          (maf--stack-saved-sessions)))
+
+(defun maf--stacks-annotation (name)
+  "Return the Value column text for session NAME: size, age, liveness.
+The chooser annotation, plus which sessions are alive right now — this
+one by its claimed name, any other by its lock."
+  (concat (string-trim-left (maf--stack-session-annotation
+                             (maf--stack-file name)))
+          ;; Parenthesized, where size and age are comma-separated:
+          ;; those two measure the save, this says something about the
+          ;; session behind it, and the bracket keeps the two kinds of
+          ;; fact from reading as one list.
+          (cond ((equal name maf--stack-session) " (current session)")
+                ((maf--stack-lock-owner name) " (live)")
+                (t ""))))
+
+(defun maf--stacks-at-point ()
+  "Return the session name on the current line, or signal.
+The controls line and the gaps between groups name no session."
+  (let ((id (tabulated-list-get-id)))
+    (unless (and id (symbolp id))
+      (user-error "No session on this line"))
+    (symbol-name id)))
+
+(defun maf--stacks-format (value)
+  "Format VALUE as calc would display it.
+In the calc buffer when one exists, where the display modes live as
+buffer-locals; without one the global defaults do."
+  (let ((buf (maf--find-calc-buffer)))
+    (if buf
+        (with-current-buffer buf (math-format-value value))
+      (math-format-value value))))
+
+(defun maf--stacks-render (name)
+  "Return session NAME's saved stack, laid out as calc lays out a stack.
+Deepest entry first, the top of the stack on the last line, levels
+numbered the way the stack buffer numbers them. A file that cannot be
+read renders as its error, the file itself left in place — the same
+policy `maf-restore-stack' follows."
+  (condition-case err
+      (let* ((values (maf--stack-read (maf--stack-file name)))
+             (level (length values)))
+        (if (null values)
+            "(empty stack)"
+          (mapconcat (lambda (value)
+                       (prog1 (format "%d: %s" level
+                                      (maf--stacks-format value))
+                         (setq level (1- level))))
+                     (reverse values) "\n")))
+    (error (format "unreadable (%s)" (error-message-string err)))))
+
+(defun maf--stacks-neighbor ()
+  "Return the row that would take the current row's place if it went.
+The row below, or the one above when there is none below. Nil on the
+only row left. Read before a deletion, restored after it — see
+`maf--stacks-goto'."
+  (save-excursion
+    (let ((here (tabulated-list-get-id)))
+      (dial--move-line 1)
+      (if (not (eq (tabulated-list-get-id) here))
+          (tabulated-list-get-id)
+        ;; The last row: nothing below to move up, so point holds the
+        ;; row above instead.
+        (dial--move-line -1)
+        (let ((above (tabulated-list-get-id)))
+          (unless (eq above here) above))))))
+
+(defun maf--stacks-goto (id)
+  "Put point on the row for session ID, if the list still shows one.
+Off any row — a deleted ID, or nil — point is left where the redraw
+put it rather than moved somewhere arbitrary."
+  (when id
+    (let ((found (save-excursion
+                   (goto-char (point-min))
+                   (catch 'found
+                     (while (not (eobp))
+                       (when (eq (tabulated-list-get-id) id)
+                         (throw 'found (point)))
+                       (forward-line 1))
+                     nil))))
+      (when found
+        (goto-char found)
+        (dial--goto-option)))))
+
+(defvar-local maf--stacks-previewed nil
+  "The row last previewed, so resting on it redraws nothing.
+Cleared wherever a file may have changed under the same row — see
+`maf-stacks-refresh' — since only a change of row redraws otherwise.")
+
+(defun maf--stacks-preview ()
+  "Preview the hovered session's stack in a window beside the list.
+Side by side rather than one above the other: a stack is a column of
+entries and the list is a column of rows, so splitting them across
+gives each its full height — a stack of any depth is read without
+scrolling, which stacked windows would cost.
+
+On `post-command-hook', the way dial's own doc echo follows point: any
+motion that lands on another row redraws the preview to that row's
+saved stack, dial's j and k no more than C-n or a click. Only a change
+of row redraws, and landing off every row — the controls line, a gap —
+leaves the last preview standing."
+  (let* ((id (tabulated-list-get-id))
+         (id (and (symbolp id) id)))
+    (when (and id (not (eq id maf--stacks-previewed)))
+      (let ((buffer (get-buffer-create "*maf-stacks preview*"))
+            (text (maf--stacks-render (symbol-name id))))
+        (with-current-buffer buffer
+          (let ((inhibit-read-only t))
+            (erase-buffer)
+            (insert text)
+            (goto-char (point-min)))
+          (special-mode))
+        ;; Marked as previewed only once the text is in: a render that
+        ;; threw partway would otherwise leave the row claiming a
+        ;; preview it never drew, and nothing short of another row
+        ;; would try again.
+        (setq maf--stacks-previewed id)
+        (display-buffer buffer
+                        '((display-buffer-reuse-window
+                           display-buffer-in-direction)
+                          (direction . right)
+                          ;; Half the frame each: the list's rows and
+                          ;; the stack's entries are both read across,
+                          ;; and neither column has a claim on the
+                          ;; width the other would lose.
+                          (window-width . 0.5)))))))
+
+(defun maf-stacks-restore (&optional keep)
+  "Restore the saved stack on the current line, replacing calc's stack.
+With a prefix argument (KEEP non-nil) the entries push on top of the
+current stack instead. Either way the buffer closes — the stack asked
+for is on the stack now — and `maf-restore-stack-from''s rule holds:
+the loaded stack is this session's, and the next save records it under
+this session's own name."
+  (interactive "P")
+  (maf-restore-stack-from (maf--stacks-at-point) keep)
+  (maf-stacks-quit))
+
+(defun maf-stacks-delete ()
+  "Delete the saved stack on the current line, without asking.
+Removes the session's save file — and its lock, when no live session
+holds it — then drops the row. Deleting the last row closes the
+buffer. A live session's row can be deleted too: only the file goes,
+and that session writes a fresh one the next time its stack changes.
+
+No confirmation: the row about to go is the one previewed beside the
+list, so what is being deleted has just been read rather than named
+from memory. Nothing undoes it — the file is gone, and only the
+session that wrote it can write it again.
+
+Point stays where it is, on the row that moves up into the deleted
+one's place — the last row's neighbour is the one above it. So a run
+of deletions is a run of D presses, rather than each one throwing
+point back to the top of the list to be walked down again."
+  (interactive)
+  (let* ((name (maf--stacks-at-point))
+         (file (maf--stack-file name))
+         (neighbor (maf--stacks-neighbor)))
+    (delete-file file)
+    (unless (or (equal name maf--stack-session)
+                (maf--stack-lock-owner name))
+      (ignore-errors (delete-file (maf--stack-file name ".lock"))))
+    (setq dial-items (assq-delete-all (intern name) dial-items)
+          maf--stacks-previewed nil)
+    (if dial-items
+        (progn (dial-refresh)
+               (maf--stacks-goto neighbor)
+               (message "Deleted saved stack of session %s" name))
+      (maf-stacks-quit)
+      (message "Deleted saved stack of session %s — none left" name))))
+
+(defun maf-stacks-refresh ()
+  "Re-read the saved sessions from disk and redraw the list.
+Dial's own refresh redraws the rows it has; this one also picks up
+sessions saved or deleted since the buffer opened, and redraws the
+preview, whose file may have changed under it. An emptied directory
+closes the buffer."
+  (interactive)
+  (setq dial-items (maf--stacks-items)
+        maf--stacks-previewed nil)
+  (if dial-items
+      (dial-refresh)
+    (maf-stacks-quit)
+    (message "No saved stacks in %s" maf-stack-directory)))
+
+(defun maf-stacks-quit ()
+  "Close the saved-stacks buffer and its preview window."
+  (interactive)
+  (when-let ((window (get-buffer-window "*maf-stacks preview*")))
+    (quit-window nil window))
+  (quit-window))
+
+(defvar maf-stacks-map (make-sparse-keymap)
+  "Keys the saved-stacks buffer lays over `dial-mode-map'.
+Composed in front of dial's map at open, so dial's motion — n, p, j,
+k — stays underneath while the row acts are these.")
+
+;; Bindings live outside the defvar so reloading the file applies
+;; edits to the existing map, as dial's own do.
+(define-key maf-stacks-map (kbd "RET") #'maf-stacks-restore)
+(define-key maf-stacks-map (kbd "D")   #'maf-stacks-delete)
+(define-key maf-stacks-map (kbd "g")   #'maf-stacks-refresh)
+(define-key maf-stacks-map (kbd "q")   #'maf-stacks-quit)
+;; A session is not a setting: there are no values to step along the
+;; row, and dial's stepping keys would refuse in terms of values and
+;; of RET setting one — wrong twice over here, so they go dark.
+(define-key maf-stacks-map (kbd "TAB")       #'undefined)
+(define-key maf-stacks-map (kbd "<backtab>") #'undefined)
+(define-key maf-stacks-map (kbd "SPC")       #'undefined)
+(define-key maf-stacks-map (kbd "h")         #'undefined)
+(define-key maf-stacks-map (kbd "l")         #'undefined)
+
+(defvar maf--stacks-controls nil
+  "The saved-stacks buffer's controls line.
+Dial's default speaks of setting values; these rows are sessions, and
+the acts are restore and delete.")
+
+;; Set outside the defvar so a reload applies edits to the list.
+(setq maf--stacks-controls
+      '((maf-stacks-restore "restore" "RET")
+        (maf-stacks-delete "delete" "D")
+        (maf-stacks-refresh "refresh" "g")
+        (maf-stacks-quit "quit" "q")))
+
+(defun maf-saved-stacks ()
+  "Browse every session's saved stack in one buffer.
+Each row is one session's save file with its size, age and liveness
+beside the name. Moving onto a row previews that stack in a window to
+the right, laid out as calc would show it; the buffer is dial's (see
+`dial-mode'), so n, p, j and k move between rows.
+
+\\<maf-stacks-map>\\[maf-stacks-restore] restores the row's stack in
+place of the current one — on top of it, with a prefix argument — and
+\\[maf-stacks-delete] deletes its save file. `maf-restore-stack-from'
+is the plain-minibuffer way to the same restore."
+  (interactive)
+  (unless (maf--stack-saved-sessions)
+    (user-error "No saved stacks in %s" maf-stack-directory))
+  (dial-open "*maf-stacks*" (maf--stacks-items)
+             :name "maf-stacks"
+             :controls maf--stacks-controls
+             :raw (lambda (id) (maf--stacks-annotation (symbol-name id)))
+             :init (lambda ()
+                     (use-local-map (make-composed-keymap maf-stacks-map
+                                                          dial-mode-map))
+                     (add-hook 'post-command-hook
+                               #'maf--stacks-preview nil t))))
+
 ;;; The switch
 
 (defun maf--stack-shutdown ()
@@ -249,9 +522,9 @@ The stack is saved when Emacs exits and after it has been idle for
 buffer opens. For example, if you leave 12 and x+1 on the stack, they
 return the next time you start the same session.
 
-Press l S to save immediately. Press l R to load a stack saved by a
-different session. Each session has its own file, so two running Emacs
-sessions do not overwrite each other.
+Press l S to save immediately. Press l R to browse every session's
+saved stack — preview, restore or delete one. Each session has its own
+file, so two running Emacs sessions do not overwrite each other.
 
 Only stack values are saved. Selections, undo history, and Calc's trail
 are not. Files are stored in `maf-stack-directory' under the name from
@@ -265,9 +538,9 @@ but does not delete existing save files."
         (add-hook 'calc-mode-hook #'maf-restore-stack)
         ;; The pair rides maf's custom-letter family on capitals:
         ;; l S saves this session's file now — a checkpoint the idle
-        ;; timer has not reached yet — and l R loads a stack saved by
-        ;; any session, beside the stack history on t d (both bring
-        ;; back an earlier stack). The lowercase keys belong to
+        ;; timer has not reached yet — and l R browses the stacks
+        ;; saved by every session, beside the stack history on t d
+        ;; (both bring back an earlier stack). The lowercase keys belong to
         ;; complete-square (l s) and to-radians (l r); the capitals
         ;; are free in every profile. In vim, where l is a motion,
         ;; the pair rides the family's o home as o S and o R.
@@ -290,9 +563,9 @@ but does not delete existing save files."
 ;; Register with the module system when it is present; the mode above
 ;; works on its own without it.
 (maf-bindings-module-keys 'maf-persist 'maf-persist-mode
-  '(((calc native) "l R" maf-restore-stack-from)
+  '(((calc native) "l R" maf-saved-stacks)
     ((calc native) "l S" maf-save-stack)
-    ((vim) "o R" maf-restore-stack-from)
+    ((vim) "o R" maf-saved-stacks)
     ((vim) "o S" maf-save-stack)))
 
 (when (require 'maf-module nil t)
@@ -300,8 +573,9 @@ but does not delete existing save files."
                        "Save and restore the stack across Emacs sessions.
 
 For example, values left on the stack return the next time you start
-the same session. Press l S to save now or l R to load another
-session's stack. Only values are saved, not selections or undo history."
+the same session. Press l S to save now or l R to browse, preview,
+restore or delete the saved stacks. Only values are saved, not
+selections or undo history."
                        "l R, l S" "Prefs"))
 
 (provide 'maf-persist)
