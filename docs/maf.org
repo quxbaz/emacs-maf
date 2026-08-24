@@ -11,7 +11,7 @@
     multiplication, etc)
 
 * review
-  - [ ] *maf-persist*
+  - [-] *maf-persist*
     - [ ] `l R` should bring up a buffer (using dial pkg) instead of a menu
       - the buffer should have all the entries
       - `D` to delete entry
@@ -21,20 +21,20 @@
     - it should render as two columns
     - the left column showing the actions
     - the right column showing the corresponding stack
-  - [ ] new command: jump to next operand
+  - [-] new command: jump to next operand
     - bind to `S-SPC`
     - only bind in stack mode. do not bind in edit/editplus.
   - [ ] swap `C-RET` and `M-RET`
   - [ ] new `C-RET` should retain point, otherwise there's no difference against
     `RET`
-  - [ ] (a + b) (2 c - d) latex is wrong (remove the \times)
-  - [ ] how to sort vector? did this used to be `v o`?
+  - [-] (a + b) (2 c - d) latex is wrong (remove the \times)
+  - [-] how to sort vector? did this used to be `v o`?
   - [ ] rational roots theorem
     what command used to take something like:
     2: [1, 3, 9]
     1:  [1, 2, 3, 6]
     and produce all unique
-  - [ ] `a f` is busted. doesn't work at all on:
+  - [-] `a f` is busted. doesn't work at all on:
     12 y^2 - 19 y + 4
   - [ ] add redundant binding `k f` bound to same command as `a f` (factor)
   - [ ] add binding for permutations (binary command). there should be a builtin
