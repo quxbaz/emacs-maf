@@ -11,7 +11,7 @@
     multiplication, etc)
 
 * review
-  - [-] *maf-persist*
+  - [ ] *maf-persist*
     - [ ] `l R` should bring up a buffer (using dial pkg) instead of a menu
       - the buffer should have all the entries
       - `D` to delete entry
@@ -24,9 +24,9 @@
   - [-] new command: jump to next operand
     - bind to `S-SPC`
     - only bind in stack mode. do not bind in edit/editplus.
-  - [ ] swap `C-RET` and `M-RET`
-  - [ ] new `C-RET` should retain point, otherwise there's no difference against
-    `RET`
+  - [-] swap `C-RET` and `M-RET`
+  - [ ] new `C-RET` should retain point, otherwise there's no difference between
+    it and `RET`
   - [-] (a + b) (2 c - d) latex is wrong (remove the \times)
   - [-] how to sort vector? did this used to be `v o`?
   - [ ] rational roots theorem
