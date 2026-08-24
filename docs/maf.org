@@ -19,7 +19,7 @@
         should be "dupe"
       - [ ] curreently on "add" items, the added item is not highlighted in
         yellow in the corresponding stack
-  - [-] bug:
+  - [-] bug in maf-editplus:
     given,
     1: log(x|, 5)
     any wrapping function (eg, pow/sqrt/sin/etc) results in:
