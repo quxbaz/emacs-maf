@@ -26,6 +26,13 @@
       should match the color of the referenced value (looks like teal currently)
   - [ ] S-SPC doesn't work propery. it should only land on operands, but it
     lands on terms also.
+  - [ ] bug:
+    given,
+    1: log(x|, 5)
+    any wrapping function (eg, pow/sqrt/sin/etc) results in:
+    => log(x, 5)^2
+    instead of,
+    => log(x^2, 5)
 
 * major features [8/9]
   - [X] bindings module
