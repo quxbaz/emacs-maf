@@ -33,7 +33,6 @@
     => log(x, 5)^2
     instead of,
     => log(x^2, 5)
-  - [ ] bind `=` to same command as `e`
   - [ ] bind `j U` to the contextual version of `M-u`
   - [ ] bind `C-M-SPC` to the reverse of `S-SPC`. move to the PREV operand
     - same conditions. only work in stack mode.
@@ -42,6 +41,11 @@
   - [ ] ` command should edit stack entry at m=1
   - [ ] bug: `v o` sort command is completely broken given this entry,
     [sqrt(10), -sqrt(10)]
+  - [ ] bug: given,
+    (x - 2)^2 = -12 y
+    `G`, `k k`, `G`
+    point returns the the former line, but not to the same column (it lands in
+    prefix area instead)
 
 * major features [8/9]
   - [X] bindings module
