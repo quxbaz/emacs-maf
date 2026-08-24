@@ -10,6 +10,11 @@
   - [ ] *maf-formulas*: add basic/fundamental identities (addition,
     multiplication, etc)
 
+* now
+  - *maf-formulas
+    - [ ] change number of recents limit from 5 -> 10
+    - [ ] recents should not appear in filtered results
+
 * review
   - [X] *maf-persist*
     - [X] `l R` should bring up a buffer (using dial pkg) instead of a menu
