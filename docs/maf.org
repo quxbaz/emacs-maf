@@ -24,8 +24,7 @@
   - [-] new command: jump to next operand
     - bind to `S-SPC`
     - only bind in stack mode. do not bind in edit/editplus.
-  - [-] swap `C-RET` and `M-RET`
-  - [ ] new `C-RET` should retain point, otherwise there's no difference between
+  - [-] new `C-RET` should retain point, otherwise there's no difference between
     it and `RET`
   - [X] (a + b) (2 c - d) latex is wrong (remove the \times)
   - [X] how to sort vector? did this used to be `v o`?
@@ -34,8 +33,8 @@
   - [ ] rational roots theorem
     what command used to take something like:
     2: [1, 3, 9]
-    1:  [1, 2, 3, 6]
-    and produce all unique
+    1: [1, 2, 3, 6]
+    and produce all unique pairs?
   - [-] `a f` is busted. doesn't work at all on:
     12 y^2 - 19 y + 4
   - [ ] add redundant binding `k f` bound to same command as `a f` (factor)
