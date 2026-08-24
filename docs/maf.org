@@ -20,8 +20,11 @@
     - it should render as two columns
     - the left column showing the actions
     - the right column showing the corresponding stack
-  - [ ] *maf-persist*
-    - bind command to name session `R`
+  - *maf-persist*
+    - [ ] bind command to name session `R`
+  - *maf-formulas*
+    - [ ] in details view, the variables in the "big" formula (referenced below)
+      should also be in the same color as the referenced value
 
 * major features [8/9]
   - [X] bindings module
