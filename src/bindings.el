@@ -488,6 +488,11 @@
 ;; rows where a plain list was wanted, and it sits a keystroke from
 ;; mafcmd-arrange (v a), the N-column form it degenerates from.
 (maf-bindings-define '(native) "v L" #'mafcmd-flatten)
+;; A second key for the sort, beside the table's v S: the key the
+;; legacy config bound, kept for the muscle memory and the spared
+;; shift. v o is unbound in calc itself, and the flag prefixes route
+;; through it as through v S — I v o is the descending sort.
+(maf-bindings-define '(native) "v o" #'mafcmd-sort)
 
 ;; The right triangle, all three keys together. f h keeps calc's own
 ;; hypotenuse key, for a command that answers where calc's gives up (see

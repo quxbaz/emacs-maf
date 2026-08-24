@@ -312,6 +312,9 @@
    - [X] `S-<up>` / `S-<down>` mafcmd-toggle-op
    - [X] `C-|` mafcmd-bracket
    - [X] `v RET` maf-index
+   - [X] `v o` mafcmd-sort (2026-08-24: a second key beside its table
+     key `v S` — the legacy config's key, unshifted; the flag prefixes
+     route through it too, so I v o is the descending sort)
    - [X] `l g` unique-groups
    - [X] `r r` maf-recall-variable
    - [X] `M-o` mafcmd-mod-360
