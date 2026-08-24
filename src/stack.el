@@ -1787,8 +1787,9 @@ two motions retrace each other."
 
 (defun maf--operand-positions (m)
   "Sorted buffer positions of the operand stops in the entry at level M.
-nil when the entry's rendering is not flat — Big language, a tall
-matrix — which offers the motion no stops."
+nil when the entry offers the motion no stops: a bare atom, all of it
+one noun, or a rendering that is not flat — Big language, a tall
+matrix."
   (calc-prepare-selection m)
   (maf--comp-landing-positions))
 
@@ -1814,29 +1815,31 @@ into the one above."
       nil)))
 
 (defun maf-forward-operand (&optional n)
-  "Move point to the next operand: the next sub-formula, where resolve names it.
+  "Move point to the next operand: the next operation, where resolve names it.
 
   2:  |6 x + 12  =>  2:  6| x + 12   (the product 6 x)
-  2:  6| x + 12  =>  2:  6 |x + 12
-  2:  6 |x + 12  =>  2:  6 x |+ 12   (the whole sum)
-  2:  6 x |+ 12  =>  2:  6 x + |12
+  2:  6| x + 12  =>  2:  6 x |+ 12   (the whole sum)
 
-Every sub-formula of the entry is one stop, the whole entry among
-them — each an operand the next command could act on — at the first
-glyph it renders itself: a number or variable at its start, an
-operation at its operator, a call at its function name, a vector at
-its bracket. That glyph is where resolve names the sub-formula, the
-landing `maf-up-expression' picks, so a few presses cross the entry
-target by target, offering every target once. A juxtaposed product
-renders its multiplication as nothing but a space, so its stop is
-that space, as in the first step above.
+Every operation of the entry is one stop, the whole entry among them —
+each an operand the next command could act on — at the first glyph it
+renders itself: an operation at its operator, a call at its function
+name, a vector at its bracket. That glyph is where resolve names the
+sub-formula, the landing `maf-up-expression' picks, so a few presses
+cross the entry target by target, offering every compound target once.
+A juxtaposed product renders its multiplication as nothing but a
+space, so its stop is that space, as in the first step above.
+
+The nouns are not stops: a number or a variable is one term, and
+walking those is `maf-forward-noun''s (M-f) job, so the two motions
+divide the entry between them rather than covering the same columns.
+An entry that is a bare atom offers no stop of its own and is crossed
+whole, as is one drawn over several lines (Big language, a tall
+matrix).
 
 The walk crosses entries — from the last operand of one to the first
 of the next, the line-number margin never a stop — and signals at the
-end of the stack. An entry drawn over several lines (Big language, a
-tall matrix) offers no stops and is crossed whole; `maf-forward-noun'
-still walks its terms. A numeric prefix N moves over that many
-operands, backward when negative."
+end of the stack. A numeric prefix N moves over that many operands,
+backward when negative."
   (interactive "p")
   (let* ((count (or n 1))
          (dir (if (< count 0) -1 1)))
