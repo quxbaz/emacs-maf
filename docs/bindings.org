@@ -222,6 +222,10 @@
      on p, beside its sibling choose on `k c` — calc leaves perm on the
      hyperbolic flag alone, `H k c`, which still reaches it. A custom
      prefix claim under the k/l policy)
+   - [X] `k t` mafcmd-perm ← calc-totient (2026-08-24: a second key for
+     the permutation beside its `k p`. Displaces totient's table key in
+     native; totient keeps no key, and the calc profile keeps
+     k t = totient)
    - [X] `k f` mafcmd-factor ← calc-prime-factors (2026-08-24: a second
      key for the factor beside its table key `a f`, on factor's letter
      and beside the rest of the factoring family under k and l.
@@ -499,12 +503,12 @@
        calc-enable/show/clear/break-selections, calc-unselect, calc-conj
    - `k` — the combinatorics prefix:
      - mafcmd siblings shadowing calc: choose, gcd, lcm,
-       nextprime, totient, moebius, euler, bern, random, shuffle,
+       nextprime, moebius, euler, bern, random, shuffle,
        utpt/utpp/utpc
      - maf-only: mafcmd-esimplify (k k), mafcmd-evaluate (k v),
        mafcmd-complete-square (k s), mafcmd-factor-powers (k d),
        mafcmd-factor (k f, a second key beside `a f`),
-       mafcmd-perm (k p, which calc leaves on `H k c`)
+       mafcmd-perm (k p and k t, which calc leaves on `H k c`)
      - calc-only leftovers: calc-keep-args (k K),
        calc-random-again, calc-extended-gcd, calc-utpn/utpf/utpb
    - `l` — maf's own invented prefix, layered over calc's log-units

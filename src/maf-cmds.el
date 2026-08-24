@@ -322,7 +322,9 @@ variant's own variable governs only its direct invocation."
   (random unary calcFunc-random "k r")
   ;; stir1 cedes calc's k s to mafcmd-complete-square (bindings.el).
   (stir1 binary calcFunc-stir1 :hyp stir2)
-  (totient unary calcFunc-totient "k t")
+  ;; totient cedes calc's k t to a second key for mafcmd-perm
+  ;; (bindings.el), beside its k p.
+  (totient unary calcFunc-totient)
   (utpc binary calcFunc-utpc "k C" :inv ltpc)
   (utpp binary calcFunc-utpp "k P" :inv ltpp)
   (utpt binary calcFunc-utpt "k T" :inv ltpt)
