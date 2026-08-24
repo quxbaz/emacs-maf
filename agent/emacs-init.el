@@ -20,23 +20,36 @@
 ;;     nohup emacs -title maf-refactor -l agent/emacs-init.el >/dev/null 2>&1 &
 
 (setq server-name (or (getenv "MAF_SERVER_NAME") "#emacs"))
-(server-start)
+(unless (server-running-p server-name)
+  (server-start))
 
 ;; The agent launches this instance from its own shell, whose
-;; SSH_AUTH_SOCK is a snapshot from wherever that session began — often
-;; a dead socket by launch time. Git under magit then finds no agent
-;; and falls back to prompting for the key's passphrase, which the
-;; user's normally-started Emacs (inheriting the live session socket)
-;; never does. Repoint at a live agent socket whenever the inherited
-;; one is unset or stale, probing the standard per-user locations:
-;; gpg-agent's ssh interface, gnome-keyring, the systemd ssh-agent.
-(let ((sock (getenv "SSH_AUTH_SOCK")))
-  (unless (and sock (file-exists-p sock))
-    (let* ((runtime (or (getenv "XDG_RUNTIME_DIR")
-                        (format "/run/user/%d" (user-uid))))
-           (live (seq-find #'file-exists-p
-                           (list (expand-file-name "gnupg/S.gpg-agent.ssh" runtime)
-                                 (expand-file-name "keyring/ssh" runtime)
-                                 (expand-file-name "ssh-agent.socket" runtime)))))
-      (when live
-        (setenv "SSH_AUTH_SOCK" live)))))
+;; SSH_AUTH_SOCK may be stale or point at a different, empty agent. Git
+;; under magit then falls back to prompting for the key's passphrase,
+;; which the user's normally-started Emacs (inheriting the login
+;; session's populated agent) never does. Probe the inherited socket,
+;; standard per-user sockets, and sockets made by a conventional
+;; ssh-agent, preferring the first one that actually has identities.
+(let* ((inherited (getenv "SSH_AUTH_SOCK"))
+       (runtime (or (getenv "XDG_RUNTIME_DIR")
+                    (format "/run/user/%d" (user-uid))))
+       (candidates
+        (delete-dups
+         (delq nil
+               (append
+                (list inherited
+                      (expand-file-name "gnupg/S.gpg-agent.ssh" runtime)
+                      (expand-file-name "keyring/ssh" runtime)
+                      (expand-file-name "ssh-agent.socket" runtime))
+                (file-expand-wildcards "/tmp/ssh-*/agent.*" t)))))
+       (populated
+        (seq-find
+         (lambda (socket)
+           (and (file-exists-p socket)
+                (let ((process-environment
+                       (copy-sequence process-environment)))
+                  (setenv "SSH_AUTH_SOCK" socket)
+                  (eq 0 (call-process "ssh-add" nil nil nil "-l")))))
+         candidates)))
+  (when populated
+    (setenv "SSH_AUTH_SOCK" populated)))
