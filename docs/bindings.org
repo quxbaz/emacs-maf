@@ -387,7 +387,10 @@
    - [X] `M-b` maf-backward-noun
    - [X] `S-SPC` maf-forward-operand (2026-08-24: the freed key's new
      tenant, after maf-forward-space was deleted 2026-08-23. Stack
-     mode only — no editplus key carries it into an edit session)
+     mode only — no editplus key carries it into an edit session.
+     Later the same day the stops lost the nouns: only an operation is
+     a landing, numbers and variables being M-f's, so the two motions
+     divide the entry rather than covering the same columns)
    - [X] `C-M-u` maf-up-expression
    - [X] `C-M-k` maf-reset
    - [X] `C-M-l` maf-reset-settings

@@ -609,15 +609,18 @@ selection along with it, that being what a command would resolve to
 instead of point.
 
 =maf-forward-operand= (S-SPC) walks the same landings sideways rather
-than upward: every sub-formula of the entry is one stop, the whole
+than upward: every /operation/ of the entry is one stop, the whole
 entry among them, each at the first glyph it renders itself, so a few
-presses offer every target of the entry in turn. Where the climb asks
-resolve one ancestor at a time, the motion reads the stops off the
-prepared composition in one pass (=maf--comp-landing-positions=),
-which is defined for flat renderings only: an entry drawn over several
-lines — Big language, a tall matrix — offers no stops and is crossed
-whole. =maf-forward-noun= (M-f) still walks the terms of such an
-entry, reading the rendering as text.
+presses offer every compound target of the entry in turn. The nouns
+are left out — a number or a variable is =maf-forward-noun='s (M-f) to
+walk — so the two motions divide the entry between them rather than
+covering the same columns, and an entry that is a bare atom offers no
+stop of its own. Where the climb asks resolve one ancestor at a time,
+the motion reads the stops off the prepared composition in one pass
+(=maf--comp-landing-positions=), which is defined for flat renderings
+only: an entry drawn over several lines — Big language, a tall
+matrix — offers no stops and is crossed whole, its terms still the
+noun motion's to walk, read off the rendering as text.
 
 ** Widening a rewrite marker
 
