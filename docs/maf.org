@@ -14,9 +14,10 @@
   - *maf-formulas
     - [X] change number of recents limit from 5 -> 10
     - [X] recents should not appear in filtered results
+  - find command that solves w/ +/i in answer
 
 * review
-  - [ ] change *maf-history* rendering
+  - [X] change *maf-history* rendering
     - it should render as two columns
     - the left column showing the actions
     - the right column showing the corresponding stack
