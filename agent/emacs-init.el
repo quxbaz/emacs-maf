@@ -19,6 +19,10 @@
 ;;     MAF_SERVER_NAME=maf-refactor \
 ;;     nohup emacs -title maf-refactor -l agent/emacs-init.el >/dev/null 2>&1 &
 
+;; `server-running-p' lives in server.el and is not autoloaded, so the
+;; require has to come first: without it the launch dies here with a
+;; void-function before the socket is ever made.
+(require 'server)
 (setq server-name (or (getenv "MAF_SERVER_NAME") "#emacs"))
 (unless (server-running-p server-name)
   (server-start))
