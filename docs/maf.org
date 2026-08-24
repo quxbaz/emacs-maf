@@ -20,6 +20,8 @@
     - it should render as two columns
     - the left column showing the actions
     - the right column showing the corresponding stack
+  - [ ] *maf-persist*
+    - bind command to name session
 
 * major features [8/9]
   - [X] bindings module
