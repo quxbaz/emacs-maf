@@ -1016,8 +1016,9 @@ Two module shapes have appeared, matching the feature's state:
   them. The saved-stacks buffer is dial's, like the options menu — a
   row per save file, previewing its stack in a window beside the list
   as point moves (side by side, so a stack of any depth is read
-  without scrolling), restoring one with RET and deleting one
-  outright with =D=.
+  without scrolling), restoring one with RET, naming one with =R= —
+  which on the session's own row names the running session, its lock
+  moving with the file — and deleting one outright with =D=.
   The edit module too
   (=modules/maf-edit.el=): =maf-use-edit-mode= installs SPC / ` / C-o /
   =(= in =maf-mode-map= when enabled and cedes them
