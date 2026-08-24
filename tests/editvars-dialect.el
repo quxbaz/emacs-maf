@@ -1,9 +1,9 @@
 ;; The maf-editvars input dialect: inside a maf-edit session a run of
 ;; letters is a product of one-letter factors (2xy is 2*x*y) and a
 ;; multi-letter identifier is written in braces ({cm}) — save the
-;; exempt names, pi alone by default, which stay whole bare. A name in
-;; front of `(' is still a call, so xy(5) calls xy while {xy}(5)
-;; multiplies. A step passes when it raises no error.
+;; exempt names, pi and calc's inf, uinf and nan, which stay whole bare.
+;; A name in front of `(' is still a call, so xy(5) calls xy while
+;; {xy}(5) multiplies. A step passes when it raises no error.
 ;;
 ;; The contract has two halves that must agree. Typed text is
 ;; translated at commit; text loaded from the stack is translated the
@@ -47,8 +47,9 @@
 
   ;; The rule takes no account of what calc knows — cm splits and is
   ;; quoted like anything else — with one deliberate exception: the
-  ;; short exempt list, pi alone by default, stays whole bare.
-  (cl-assert (equal maf-editvars-exempt-names '("pi")))
+  ;; short exempt list, pi and calc's three non-finite values by
+  ;; default, stays whole bare.
+  (cl-assert (equal maf-editvars-exempt-names '("pi" "inf" "uinf" "nan")))
   (cl-assert (equal (math-read-expr (maf-editvars--split "pi"))
                     (math-read-expr "pi")))
   (cl-assert (equal (math-read-expr (maf-editvars--split "2pi"))
@@ -62,6 +63,33 @@
   (cl-assert (equal (math-read-expr (maf-editvars--split "{pi}"))
                     (math-read-expr "pi")))
   (cl-assert (string= (maf-editvars--quote "2 pi + foo") "2 pi + {foo}"))
+
+  ;; Calc's non-finite values are exempt on the same terms: each is a
+  ;; run of letters and nothing else, so splitting would give i n f,
+  ;; u i n f, n a n — products of variables in place of the value.
+  (cl-assert (equal (math-read-expr (maf-editvars--split "inf"))
+                    (math-read-expr "inf")))
+  (cl-assert (equal (math-read-expr (maf-editvars--split "x/inf"))
+                    (math-read-expr "x/inf")))
+  (cl-assert (equal (math-read-expr (maf-editvars--split "-inf"))
+                    (math-read-expr "-inf")))
+  (cl-assert (equal (math-read-expr (maf-editvars--split "uinf"))
+                    (math-read-expr "uinf")))
+  (cl-assert (equal (math-read-expr (maf-editvars--split "nan"))
+                    (math-read-expr "nan")))
+  (cl-assert (equal (math-read-expr (maf-editvars--split "x+nan"))
+                    (math-read-expr "x+nan")))
+  ;; Whole runs only here too: nano is a longer run and takes the
+  ;; braces like any other name, exempt nan inside it or not.
+  (cl-assert (equal (math-read-expr (maf-editvars--split "nano"))
+                    (math-read-expr "n*a*n*o")))
+  (cl-assert (equal (math-read-expr (maf-editvars--split "{nano}"))
+                    (math-read-expr "nano")))
+  ;; Loaded from the stack they come back bare, where a name off the
+  ;; list beside them still takes the braces.
+  (cl-assert (string= (maf-editvars--quote "x / inf + uinf")
+                      "x / inf + uinf"))
+  (cl-assert (string= (maf-editvars--quote "nan + foo") "nan + {foo}"))
   ;; Withdrawn from the list, pi splits and quotes like anything else.
   (cl-assert (let ((maf-editvars-exempt-names nil))
                (and (equal (math-read-expr (maf-editvars--split "pi"))
@@ -87,7 +115,8 @@
   (progn
     (dolist (s '("foo+1" "cm*x" "2*pi*r" "xy" "sin(x)" "map(sin,[1,2])"
                  "x1+xy1" "1.5e3*cm" "sqrt(2)+alpha" "[cm,foo]" "a<b"
-                 "x_1+foo" "cm*(x+1)" "foo(bar)"))
+                 "x_1+foo" "cm*(x+1)" "foo(bar)" "x/inf" "inf-uinf"
+                 "nan+x"))
       (let ((v (math-read-expr s)))
         (cl-assert (equal v (math-read-expr
                              (maf-editvars--split
@@ -138,6 +167,26 @@
   (cl-assert (maf-editvars--unit-p "cm"))
   (cl-assert (maf-editvars--unit-p "km"))     ; prefixes count
   (cl-assert (not (maf-editvars--unit-p "foo")))
+  (calc-pop (calc-stack-size))
+
+  ;; An exempt run typed bare survives the same trip: inf commits as
+  ;; calc's infinity, where splitting the letters would give i n f.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (execute-kbd-macro "x/inf") nil)
+  (call-interactively 'maf-edit-commit)
+  (cl-assert (string= (math-format-value (calc-top 1 'full) 1000) "x / inf"))
+  (calc-pop (calc-stack-size))
+
+  ;; And the load direction beside it: the exempt runs open bare where
+  ;; a name off the list opens in braces, and all of it commits back
+  ;; unchanged.
+  (maf-push "x/inf + uinf + nan + foo")
+  (call-interactively 'maf-edit)
+  (cl-assert (string-match-p "x / inf \\+ uinf \\+ nan \\+ {foo}"
+                             (buffer-substring-no-properties (point-min) (point-max))))
+  (call-interactively 'maf-edit-commit)
+  (cl-assert (string= (math-format-value (calc-top 1 'full) 1000)
+                      "x / inf + uinf + nan + foo"))
   (calc-pop (calc-stack-size))
 
   ;; A session paints the quoted spans, and takes the overlays back out
