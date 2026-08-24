@@ -38,7 +38,7 @@
 ;; entry.
 
 (require 'maf-defcmd)
-(require 'maf-math "math")   ; maf-vconcat, applied by the vconcat rows below
+(require 'maf-math "math")   ; maf-vconcat and maf-sort, applied by the rows below
 
 ;; Also defvar'd in maf.el next to the minor mode; whichever file loads first
 ;; creates the map and the other defvar is a no-op. Declared here too so this
@@ -417,7 +417,12 @@ variant's own variable governs only its direct invocation."
   ;; `calc-normalize' can only hand back inert. They read the
   ;; operation from the next key instead (`mafcmd-reduce' and
   ;; friends, src/stack.el).
-  (sort unary calcFunc-sort "v S" :inv rsort)
+  ;; sort/rsort use maf's own ordering rather than calcFunc-sort:
+  ;; calc sorts by expression shape, which strands every negated
+  ;; symbolic term after its positive twin ([sqrt(10), -sqrt(10)] comes
+  ;; back untouched). maf orders by numeric value when every element
+  ;; has one, and defers to calc otherwise (see `maf--sort-vector').
+  (sort unary maf-sort "v S" :inv rsort)
   (tr unary calcFunc-tr "v T")
   (vunion binary calcFunc-vunion "v V")
   (vxor binary calcFunc-vxor "v X")
@@ -429,7 +434,7 @@ variant's own variable governs only its direct invocation."
   (rdup unary calcFunc-rdup "v +")
   (tail unary calcFunc-tail)
   (rgrade unary calcFunc-rgrade)
-  (rsort unary calcFunc-rsort)
+  (rsort unary maf-rsort)   ; see sort above
   (rhead unary calcFunc-rhead)
   (rcons binary calcFunc-rcons)
   (rtail unary calcFunc-rtail))

@@ -39,6 +39,9 @@
 (declare-function math-lessp "calc-ext")
 (declare-function math-equal "calc-ext")
 (declare-function math-evaluate-expr "calc-ext")
+(declare-function math-compare "calc-ext")
+(declare-function math-reject-arg "calc-ext")
+(declare-function math-beforep "calc-alg")
 (declare-function calcFunc-rmeq "calc-prog")
 (declare-function calcFunc-finv "calcalg2")
 (declare-function math-solve-eqn "calcalg2")
@@ -1156,6 +1159,86 @@ reproduced here without its scalar test."
 (defun maf-vconcatrev (a b)
   "Concatenate B and A into a vector, the reverse of `maf-vconcat'."
   (maf-vconcat b a))
+
+(defun maf--sort-value (expr)
+  "Return EXPR's value as a real number, or nil when it has none.
+The evaluation runs with `calc-symbolic-mode' off, so a root that has no
+exact form still answers: sqrt(10) gives 3.16227766017 where symbolic
+mode would hand back sqrt(10) unchanged. Nil comes back for anything
+that does not reduce to a real — a free variable, a complex number, an
+interval, a nested vector — since such an element has no place on the
+number line.
+
+Exact operands stay exact: an integer or a fraction evaluates to itself
+rather than to a float, so only irrationals are ever approximated. A
+variable that has a stored value evaluates through it, as calc's own
+`=' does, so a stored x participates by its value.
+
+This is the ordering key behind `maf-sort'."
+  (condition-case nil
+      (let* ((calc-symbolic-mode nil)
+             (v (math-evaluate-expr expr)))
+        (and (Math-realp v) v))
+    (error nil)))
+
+(defun maf--sort-vector (vec reverse)
+  "Return calc vector VEC sorted, descending when REVERSE is non-nil.
+
+Elements are ordered by numeric value when every one of them has a
+value (`maf--sort-value'), and by calc's own `math-beforep' when any
+does not. Only the order changes: elements keep the exact form they
+came in with, so [sqrt(10), -sqrt(10)] sorts to [-sqrt(10), sqrt(10)]
+rather than to a pair of decimals.
+
+The numeric pass is what calc's `calcFunc-sort' does not do.
+`math-beforep' is a canonical ordering of expressions, not of
+magnitudes: reaching two non-real operands it compares their head
+symbols with `string-lessp', and negation wraps its operand in a `neg'
+node, so -sqrt(10) sorts under the letter n and lands after sqrt(10)
+whatever its sign. The same is true of [x, -x]. It only looks
+intermittent because elements sharing a head recurse into their
+arguments, which is why [sqrt(2), sqrt(10), sqrt(5)] already came out
+right.
+
+Ties fall back to `math-beforep', so elements that weigh the same still
+land in a canonical order rather than depending on where they started.
+Two irrationals agreeing to `calc-internal-prec' digits count as a tie
+and are ordered that way, which is as far as a finite precision can
+decide them. Exact operands are compared exactly — integers and
+fractions never detour through a float — so only irrationals are
+approximated at all.
+
+Vectors no numeric pass can order — a matrix, a vector holding a free
+variable or a complex number — keep calc's behavior exactly. The pass
+is all-or-nothing rather than per-element: one unorderable element
+gives the whole vector back to `math-beforep', so a vector never comes
+back half sorted by value and half by shape."
+  (if (not (math-vectorp vec))
+      (math-reject-arg vec 'vectorp)
+    (let* ((elts (cdr vec))
+           (keyed (mapcar (lambda (e) (cons (maf--sort-value e) e)) elts))
+           (numeric (and elts (not (memq nil (mapcar #'car keyed)))))
+           (sorted
+            (if numeric
+                (mapcar #'cdr
+                        (sort keyed
+                              (lambda (a b)
+                                (let ((c (math-compare (car a) (car b))))
+                                  (cond ((eq c -1) t)
+                                        ((eq c 1) nil)
+                                        (t (math-beforep (cdr a) (cdr b))))))))
+              (sort (copy-sequence elts) #'math-beforep))))
+      (cons 'vec (if reverse (nreverse sorted) sorted)))))
+
+(defun maf-sort (vec)
+  "Return calc vector VEC in increasing order.
+Sorts by numeric value where calc's `calcFunc-sort' sorts by expression
+shape; see `maf--sort-vector'."
+  (maf--sort-vector vec nil))
+
+(defun maf-rsort (vec)
+  "Return calc vector VEC in decreasing order, the reverse of `maf-sort'."
+  (maf--sort-vector vec t))
 
 (defun maf--combinations (items k)
   "Return every K-element combination of list ITEMS, as a list of lists.
