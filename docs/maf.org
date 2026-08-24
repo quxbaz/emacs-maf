@@ -11,21 +11,19 @@
     multiplication, etc)
 
 * now
-  - *maf-formulas
-    - [X] change number of recents limit from 5 -> 10
-    - [X] recents should not appear in filtered results
-  - find command that solves w/ +/i in answer
 
 * review
-  - [X] change *maf-history* rendering
-    - it should render as two columns
-    - the left column showing the actions
-    - the right column showing the corresponding stack
+  - *maf-history* rendering
+    - refine history log
+      - [ ] if action is duplication (eg, RET on an entire entry), then action
+        should be "dupe"
+      - [ ] curreently on "add" items, the added item is not highlighted in
+        yellow in the corresponding stack
   - *maf-persist*
     - [ ] bind command to name session `R`
   - *maf-formulas*
     - [ ] in details view, the variables in the "big" formula (referenced below)
-      should also be in the same color as the referenced value
+      should match the color of the referenced value (looks like teal currently)
 
 * major features [8/9]
   - [X] bindings module
