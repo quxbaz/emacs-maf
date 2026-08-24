@@ -15,7 +15,7 @@
   ;; The dialect is on by default and pi is exempt within it; that
   ;; pair is what the first half of this file exercises.
   (cl-assert maf-use-editvars-mode)
-  (cl-assert (equal maf-editvars-exempt-names '("pi")))
+  (cl-assert (maf-editvars-exempt-p "pi"))
   (cl-assert (null calc-language))
 
   ;; Exempt, the name goes in bare, directly after a number, and reads
