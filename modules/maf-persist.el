@@ -270,7 +270,7 @@ one by its claimed name, any other by its lock."
           ;; those two measure the save, this says something about the
           ;; session behind it, and the bracket keeps the two kinds of
           ;; fact from reading as one list.
-          (cond ((equal name maf--stack-session) " (current session)")
+          (cond ((equal name maf--stack-session) " (current)")
                 ((maf--stack-lock-owner name) " (live)")
                 (t ""))))
 

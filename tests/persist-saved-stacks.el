@@ -47,7 +47,7 @@
   (save-window-excursion
     (maf-saved-stacks)
     (let ((text (buffer-substring-no-properties (point-min) (point-max))))
-      (cl-assert (string-match-p "test-buf-a.*2 entries.*(current session)" text))
+      (cl-assert (string-match-p "test-buf-a.*2 entries.*(current)" text))
       (cl-assert (string-match-p "test-buf-b.*1 entries" text))
       (cl-assert (not (string-match-p "test-buf-b.*live" text)))
       ;; Every row is a saved session, so the table names no group:
