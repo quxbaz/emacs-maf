@@ -55,6 +55,12 @@
 ;; and restore it around `calc-reset'.
 (defvar maf-mode)
 (declare-function maf-mode "maf")
+;; The edit module's, for the paren keys' home fallback
+;; (`maf--goto-side'): with the module on they open a blank vector
+;; entry at home, as its own binding on "(" did before the motions
+;; took the keys.
+(defvar maf-use-edit-mode)
+(declare-function maf-edit-add-vector "maf-edit")
 (declare-function calc-normal-language "calc-lang")
 (declare-function calc-big-language "calc-lang")
 (declare-function math-solve-eqn "calcalg2")
@@ -715,17 +721,41 @@ entry at home.
                     (nthcdr 3 expr)))
            (t expr))))
 
-(defun maf--anchor-on-node (m node)
+(defun maf--anchor-offset-on-node (m node)
+  "Point's character offset into NODE's rendering, or nil.
+NODE is a sub-formula of the entry at stack level M, read before a
+rewrite so the offset can be replayed against the moved node
+afterwards (see `maf--anchor-on-node'). nil when point is outside
+NODE's rendering, or the entry does not render flat.
+
+`calc-prepare-selection' sets `calc-keep-selection', which the commands
+that call this bind around their own rewrite; the binding here keeps
+the probe from leaking that flag past them."
+  (ignore-errors
+    (let ((calc-keep-selection calc-keep-selection))
+      (calc-prepare-selection m)
+      (maf--comp-node-point-offset node))))
+
+(defun maf--anchor-on-node (m node &optional offset)
   "Put point on NODE within the entry at stack level M; nil if not found.
 For the commands that hand a rewrite to calc and then want point to
 follow the term it moved. NODE is matched by identity in the freshly
 rewritten entry, so it lands only where the rewrite reused the same
 cons — true of an associative shift within a + or * chain, false once
 a - or / crossing wraps the term in a fresh neg/reciprocal. Callers
-fall back to a positional restore on nil."
+fall back to a positional restore on nil.
+
+OFFSET, from `maf--anchor-offset-on-node' before the rewrite, keeps the
+character of NODE point was on rather than pulling it back to NODE's
+first character. The term travels whole, so every grip on it survives
+the trip: from the = of an element of [h = 0, p = -4, k = 0] point is
+on that = wherever the element lands, and from the 2 of [a, b, c12] on
+that 2 — not on the p or the c. Without one, the start of NODE's
+rendering is the only placement it names."
   (ignore-errors
     (calc-prepare-selection m)
-    (when-let ((pos (maf--comp-node-start-pos node)))
+    (when-let ((pos (or (and offset (maf--comp-node-offset-pos node offset))
+                        (maf--comp-node-start-pos node))))
       (goto-char pos))))
 
 (defun maf--commute (dir arg)
@@ -756,6 +786,10 @@ does nothing rather than signaling calc's \"No term is selected\"."
         (let* ((entry  (calc-top m 'entry))
                (expr   (car entry))
                (sel    (ignore-errors (calc-auto-selection entry)))
+               ;; Read before the rewrite: where in the term point was,
+               ;; so it can ride along on that character rather than
+               ;; being pulled to the term's first one.
+               (anchor (and (consp sel) (maf--anchor-offset-on-node m sel)))
                (direct (and (consp sel)
                             (calc-find-parent-formula expr sel)))
                (parent (and (consp sel)
@@ -787,7 +821,7 @@ does nothing rather than signaling calc's \"No term is selected\"."
                   (calc-wrapper
                    (calc-pop-push-record-list 1 "cmut" (list new)
                                               m (list nil)))
-                  (or (maf--anchor-on-node m sel)
+                  (or (maf--anchor-on-node m sel anchor)
                       (maf--point-restore snapshot))
                   (maf--undo-record-cmd-point snapshot)))))
            ;; An arithmetic chain, where calc's shift is
@@ -806,7 +840,7 @@ does nothing rather than signaling calc's \"No term is selected\"."
                     (calc-commute-right arg))
                 ;; "Term is already leftmost/rightmost" — nothing to do.
                 (error nil))
-              (or (maf--anchor-on-node m sel)
+              (or (maf--anchor-on-node m sel anchor)
                   (maf--point-restore snapshot))
               ;; A single undo reverts point along with the stack.
               (maf--undo-record-cmd-point snapshot)))))))))
@@ -817,9 +851,12 @@ does nothing rather than signaling calc's \"No term is selected\"."
   a + b + c|  =>  a + c| + b   (point on c)
 
 Point selects the term as usual — the sub-formula under the cursor — and
-follows it as it moves.  The shift respects the operators it crosses: a
-term moved left past a minus becomes an addition of its negation, past a
-division a multiplication by its reciprocal, so the value is preserved.
+follows it as it moves, keeping the character of it that it had: from
+the = of an element of [h = 0, p =| -4, k = 0] point is on that = once
+the element has moved, not back on its p.  The shift respects the
+operators it crosses: a term moved left past a minus becomes an addition
+of its negation, past a division a multiplication by its reciprocal, so
+the value is preserved.
 Repeat to walk the term further left; with the entry below the top, the
 lower entry is acted on in place.
 
@@ -1796,23 +1833,28 @@ matrix."
 (defun maf--operand-position (dir)
   "Return the position of the nearest operand stop in direction DIR, or nil.
 DIR is 1 forward, -1 back. Strictly past point, so the stop point
-already sits on is never its own answer. The scan crosses entries,
-over the whole stack: forward runs on into the entry below, backward
-into the one above."
-  (let ((from (point))
-        (size (calc-stack-size)))
-    (catch 'found
-      (let ((m (calc-locate-cursor-element from)))
+already sits on is never its own answer. The scan is confined to the
+entry point sits in: it never runs on into the entry below or above,
+so each entry's first and last stops are where the walk stops asking.
+nil at home as well, there being no entry there to walk."
+  (let* ((from (point))
+         (m (calc-locate-cursor-element from)))
+    (when (and (>= m 1) (<= m (calc-stack-size)))
+      (let ((stops (maf--operand-positions m)))
         (if (> dir 0)
-            (cl-loop for lvl from (min m size) downto 1
-                     for hit = (seq-find (lambda (p) (> p from))
-                                         (maf--operand-positions lvl))
-                     when hit do (throw 'found hit))
-          (cl-loop for lvl from (max m 1) to size
-                   for hit = (seq-find (lambda (p) (< p from))
-                                       (nreverse (maf--operand-positions lvl)))
-                   when hit do (throw 'found hit))))
-      nil)))
+            (seq-find (lambda (p) (> p from)) stops)
+          (seq-find (lambda (p) (< p from)) (reverse stops)))))))
+
+(defun maf--operand-move (n)
+  "Move point over N operand stops, backward when N is negative.
+Signals at the entry's edge, having taken the steps it could."
+  (let ((dir (if (< n 0) -1 1)))
+    (dotimes (_ (abs n))
+      (let ((pos (maf--operand-position dir)))
+        (unless pos
+          (user-error "No operand %s point in this entry"
+                      (if (> dir 0) "after" "before")))
+        (goto-char pos)))))
 
 (defun maf-forward-operand (&optional n)
   "Move point to the next operand: the next operation, where resolve names it.
@@ -1836,18 +1878,27 @@ An entry that is a bare atom offers no stop of its own and is crossed
 whole, as is one drawn over several lines (Big language, a tall
 matrix).
 
-The walk crosses entries — from the last operand of one to the first
-of the next, the line-number margin never a stop — and signals at the
-end of the stack. A numeric prefix N moves over that many operands,
-backward when negative."
+The walk stays inside the entry it starts in: the last operand is
+where it stops asking, and it signals there rather than crossing the
+line-number margin into the entry below. A numeric prefix N moves over
+that many operands, backward when negative."
   (interactive "p")
-  (let* ((count (or n 1))
-         (dir (if (< count 0) -1 1)))
-    (dotimes (_ (abs count))
-      (let ((pos (maf--operand-position dir)))
-        (unless pos
-          (user-error "No operand %s point" (if (> dir 0) "after" "before")))
-        (goto-char pos)))))
+  (maf--operand-move (or n 1)))
+
+(defun maf-backward-operand (&optional n)
+  "Move point to the previous operand: the operation before point.
+
+  1:  1 + sqrt(x| y)  =>  1:  1 + |sqrt(x y)   (the sqrt call)
+  1:  1 + |sqrt(x y)  =>  1:  1 |+ sqrt(x y)   (the whole sum)
+
+The mirror of `maf-forward-operand', over the same stops — every
+operation of the entry at the first glyph it renders itself, the nouns
+left to `maf-backward-noun' — so the two motions retrace each other.
+It stays inside its entry the same way, signalling at the first
+operand rather than climbing to the entry above. A numeric prefix N
+moves over that many operands, forward when negative."
+  (interactive "p")
+  (maf--operand-move (- (or n 1))))
 
 (defun maf--home-drop-mark (pos)
   "Drop the mark at POS that `maf-go-home' just returned to.
@@ -2108,6 +2159,155 @@ command acts on.
         (setq pos (or (maf--up-node-position node (maf--up-entry-region m))
                       pos)))
       (goto-char pos))))
+
+;;; Equation sides
+
+(defun maf--side-relation (expr node)
+  "Return the innermost relation of EXPR at or above NODE, or nil.
+NODE itself counts: point on a relation's own operator names that
+relation, and its two sides are what there is to move to. Failing
+that the walk climbs, so a term inside one element of [a = 1, b = 2]
+finds the equation it sits in rather than the vector around it, and
+the outermost relation answers only when nothing nearer is one. A nil
+NODE — point on the entry's margin, where it names the whole entry —
+starts the walk at EXPR itself."
+  (let ((n (or node expr)))
+    ;; `calc-find-parent-formula' answers t at the root and nil for a
+    ;; node EXPR does not contain; either way the loop ends on a
+    ;; non-cons, which is the no-relation answer.
+    (while (and (consp n) (not (maf--relation-p n)))
+      (setq n (calc-find-parent-formula expr n)))
+    (and (consp n) n)))
+
+(defun maf--goto-side (side)
+  "Move point to the whole SIDE of the relation it sits in.
+SIDE is `left' or `right'. The shared body of `maf-goto-left-side' and
+`maf-goto-right-side'; those docstrings describe what the motion
+promises.
+
+Point already standing where SIDE would land crosses to the other side
+instead, so either key walks the relation on repeat.
+
+At home the paren keys keep the meaning the edit module gives them
+there — a blank vector entry opened at the bottom of the stack — since
+there is no entry at point for the motion to work within. With that
+module off there is nothing to fall back to and the motion signals."
+  (let ((m (calc-locate-cursor-element (point))))
+    (if (<= m 0)
+        (if (bound-and-true-p maf-use-edit-mode)
+            (maf-edit-add-vector)
+          (user-error "No expression at point"))
+      (calc-prepare-selection m)
+      (let* ((expr (calc-top m 'full))
+             (rel (maf--side-relation expr (calc-find-selected-part))))
+        (unless rel
+          (user-error "No relation at point"))
+        (let* ((region (maf--up-entry-region m))
+               (node (nth (if (eq side 'left) 1 2) rel))
+               (pos (maf--up-node-position node region)))
+          ;; Cycle rather than stand still. Point already on the side
+          ;; the key names has arrived: there is nowhere further out on
+          ;; that end of the relation, so the press crosses to the
+          ;; other side instead and one key walks the whole relation.
+          ;; The test is the landing itself — point sitting where this
+          ;; motion would put it — so it holds however point got there,
+          ;; the mirror key included.
+          (when (and pos (= pos (point)))
+            (let* ((other (if (eq side 'left) 'right 'left))
+                   (other-node (nth (if (eq other 'left) 1 2) rel))
+                   (other-pos (maf--up-node-position other-node region)))
+              ;; A side with nothing to name it by is no destination:
+              ;; the press stays put rather than signalling, since the
+              ;; side it was asked for is where point already is.
+              (when other-pos
+                (setq side other node other-node pos other-pos))))
+          (unless pos
+            (user-error "Nothing to name the %s side by"
+                        (if (eq side 'left) "left" "right")))
+          ;; A selection outranks point when a command resolves its
+          ;; subject (see `maf--resolve-context'), so a motion that left
+          ;; one behind would move the cursor and change nothing.
+          ;; Carrying it to the side keeps the promise the motion makes,
+          ;; as `maf-up-expression' does for the climb; the re-render it
+          ;; costs rewrites the entry's lines, so point is placed after.
+          (when (calc-top m 'sel)
+            (calc-wrapper
+             (calc-prepare-selection m)
+             (calc-change-current-selection node))
+            (calc-prepare-selection m)
+            (setq pos (or (maf--up-node-position
+                           node (maf--up-entry-region m))
+                          pos)))
+          (goto-char pos))))))
+
+(defun maf-goto-left-side ()
+  "Move point to the whole left side of the relation it sits in.
+
+  6 x + 12 = 18 y| + 6  =>  6 x |+ 12 = 18 y + 6
+
+Point lands on that side's own first glyph — its operator, the parens
+calc printed around it, its function name — which is where resolve
+names it, so the next command acts on the side entire rather than on
+the term point was in. The side is the largest formula there is on the
+left: `maf-up-expression' climbs to it a level at a time, and this is
+the one key that arrives.
+
+The relation is the innermost one point sits in, so a term inside one
+element of a vector of equations finds its own equation rather than the
+vector around it. All six relations count, not just =.
+
+  2 x - 3| < 7  =>  2 x |- 3 < 7
+
+From the entry's margin — the line-number prefix, the end of the line —
+where point names the whole entry, the entry's own relation is the one
+used.
+
+  |1:  y = (x + 3)^2  =>  1:  |y = (x + 3)^2
+
+Pressed from the side it already names, the key crosses to the other
+one rather than standing still: the side is as far out as that end of
+the relation goes, so the press that would repeat it is a crossing
+instead.
+
+  6 x |+ 12 = 18 y + 6  =>  6 x + 12 = 18 y |+ 6
+
+One key therefore walks the whole relation, and the pair are two ways
+into the same walk — `(' starting it leftward, `)' rightward. The test
+is the landing, not the key that made it, so a `)' arrival cycles under
+`(' just the same.
+
+With a selection up on the entry it travels to the side along with
+point, since a selection is what the next command would resolve — the
+crossing carries it too.
+
+At home, where there is no entry at point, the key keeps the meaning
+the edit module gives it there: a blank vector entry opened at the
+bottom of the stack (`maf-edit-add-vector'). With that module off it
+signals instead, as it does on an entry that holds no relation."
+  (interactive)
+  (maf--goto-side 'left))
+
+(defun maf-goto-right-side ()
+  "Move point to the whole right side of the relation it sits in.
+
+  6 x| + 12 = 18 y + 6  =>  6 x + 12 = 18 y |+ 6
+
+The mirror of `maf-goto-left-side', over the same relation — the
+innermost one point sits in — and landing the same way: on the glyph
+that names the whole side, so the next command acts on it entire.
+
+  2 x - 3| < 7  =>  2 x - 3 < |7
+
+Pressed from the side it already names, it crosses back the same way
+`maf-goto-left-side' does:
+
+  6 x + 12 = 18 y |+ 6  =>  6 x |+ 12 = 18 y + 6
+
+So either key alone is the whole crossing — one press to the far side,
+one back, whatever term point started on — and the two differ only in
+which side they set out for."
+  (interactive)
+  (maf--goto-side 'right))
 
 (defun maf--swap-target-with-top ()
   "Swap the resolved sub-formula at point with the level-1 entry.

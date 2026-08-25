@@ -359,6 +359,48 @@ superseded by the 8# prefix."
 
 (maf-bindings-digit-define "o" #'maf-digit-mod-360 #'calcDigit-key)
 
+(defun maf-digit-sqr ()
+  "End the digit entry on `:' and square the number entered.
+`:' is `mafcmd-sqr' out in the stack (see src/bindings.el); this gives
+the entry minibuffer the same key, so a square goes in as it is typed:
+
+  1:  |        5 :  =>  1:  25
+
+It is calc's own command-key termination and nothing more — the entry
+ends and the `:' re-dispatches, exactly as the `+' of 1 + does: the
+number becomes the command's argument, point stays on the entry the
+command resolves, and the push folds into the square's undo group.
+
+The cost is the fraction colon this key was, which `;' carries instead
+— the unshifted twin, and where fractions have been typed since (see
+`maf-digit-colon'). The two keys trade places rather than one going
+missing: wherever `;' is calc's own, `:' is maf's, and wherever `:' is
+calc's own, `;' is maf's.
+
+So the fraction is still on `:' in the two places `;' cannot be. While
+an incomplete object is being entered `;' is the row separator of
+matrix entry, and 1:2 goes in on the colon as it always did; in a
+radix-prefixed entry only calc knows how to read the colon that
+follows a digit of that base. With `maf-mode' off in the calc buffer
+the key is calc's throughout, as every shortcut here is."
+  (interactive)
+  (if (or (not (maf--digit-shortcuts-live-p))
+          (maf--digit-radix-entry-p)
+          (maf--incomplete-entry-p))
+      ;; Calc's own key — the fraction colon. Named as `this-command'
+      ;; to keep the run of digit keys unbroken for the next key's
+      ;; `last-command' test.
+      (progn (setq this-command 'calcDigit-key)
+             (calcDigit-key))
+    ;; Named as calc's own terminator for the same undo-amalgamation
+    ;; reason as `maf-digit-equal-to'. The event is not exchanged: `:'
+    ;; is already the square out in the stack, so what
+    ;; `calcDigit-nondigit' unreads dispatches to `mafcmd-sqr' itself.
+    (setq this-command 'calcDigit-nondigit)
+    (calcDigit-nondigit)))
+
+(maf-bindings-digit-define ":" #'maf-digit-sqr #'calcDigit-key)
+
 (defvar maf--digit-jump-level nil
   "Stack level a finished digit entry should send point to, or nil.
 Set by `maf-digit-jump' (`j') to the level the entry named; read by

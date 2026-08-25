@@ -16,9 +16,10 @@
   (calc-pop (calc-stack-size))
 
   ;; Any number the entry can read is a multiple: a typed fraction gives
-  ;; the fraction of pi.
+  ;; the fraction of pi. Typed on `;', the colon's key since `:' became
+  ;; the square (maf-digit-sqr).
   (goto-char (point-max))
-  (execute-kbd-macro (kbd "1 : 3 n"))
+  (execute-kbd-macro (kbd "1 ; 3 n"))
   (cl-assert (equal (calc-top 1 'full) '(/ (var pi var-pi) 3)))
   (calc-pop (calc-stack-size))
 

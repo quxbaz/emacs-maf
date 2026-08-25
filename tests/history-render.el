@@ -64,7 +64,13 @@
       (cl-assert (string-match-p "n/p move" legend))
       (cl-assert (not (string-match-p "j/k" legend)))
       (cl-assert (string-match-p "RET insert" legend))
-      (cl-assert (string-match-p "o/t switch" legend))
+      ;; TAB crosses between the windows too, by naming the side it
+      ;; leads to rather than toggling, so it joins o/t on the control.
+      (cl-assert (string-match-p "TAB/o/t switch" legend))
+      ;; Clearing the whole log is on the legend beside the D that
+      ;; deletes one state, chord and all: the key is what keeps a wipe
+      ;; out of fingerslip range, so it is the part worth showing.
+      (cl-assert (string-match-p "C-M-k clear" legend))
       (cl-assert (not (string-match-p "calc" legend)))))
 
   ;; Selecting the older state re-renders both: the marker moves, and
@@ -81,6 +87,98 @@
                       "1:  5\n"))
     (progn (goto-char (point-min)))
     (cl-assert (null (get-text-property (point) 'face))))
+
+  ;; Duplicating an entry reads as `dupe' and still marks as an addition.
+  ;; The copy it added is highlighted even though the state before it
+  ;; held that same value — which entry the step produced is a matter of
+  ;; position, not of membership — and the copy nearest the top is the
+  ;; one taken, the end calc pushes to.
+  (progn (setq maf-history--states (list (list (list 5 5 3) "dupe")
+                                         (list (list 5 3) "mult")
+                                         (list (list 3) nil))
+               maf-history--index 0)
+         (maf-history--render t))
+  (with-current-buffer (maf-history--buffer)
+    (cl-assert (equal (buffer-substring-no-properties (point-min) (point-max))
+                      "▸ + dupe\n  + mult\n  · entry\n")))
+  (with-current-buffer (maf-history--stack-buffer)
+    (cl-assert (equal (buffer-substring-no-properties (point-min) (point-max))
+                      "3:  3\n2:  5\n1:  5\n"))
+    ;; Top of stack: the copy, highlighted.
+    (cl-assert (looking-at-p "1:  5"))
+    (cl-assert (eq (get-text-property (point) 'face) 'maf-history-changed))
+    ;; The 5 below it is the original, carried over.
+    (progn (goto-char (point-min)) (forward-line 1))
+    (cl-assert (looking-at-p "2:  5"))
+    (cl-assert (null (get-text-property (point) 'face))))
+
+  ;; A state's third slot is the command the change landed under, and
+  ;; the log echoes it after the label, parenthesised. The label leads —
+  ;; it names the operation — and the command names the code that ran,
+  ;; which a trail prefix like "mul" does not say.
+  (progn (setq maf-history--states
+               (list (list (list 12) "mul" 'mafcmd-mul)
+                     (list (list 4 3) "entry" 'calcDigit-nondigit)
+                     (list (list 3) "undo" 'undo)
+                     (list (list 9) "solo"))
+               maf-history--index 0)
+         (maf-history--render t))
+  (with-current-buffer (maf-history--buffer)
+    ;; A label that is already the command's name says it once; a state
+    ;; with no command recorded has no echo to give.
+    (cl-assert (equal (buffer-substring-no-properties (point-min) (point-max))
+                      (concat "▸ - mul (mafcmd-mul)\n"
+                              "  + entry (calcDigit-nondigit)\n"
+                              "  ~ undo\n"
+                              "  · solo\n")))
+    ;; The echo is shadowed, so the label still carries the line.
+    (progn (goto-char (point-min)) (search-forward "(mafcmd-mul") (backward-char 1))
+    (cl-assert (equal (get-text-property (point) 'face)
+                      '(shadow maf-history-current)))
+    ;; It is part of the row, so point anywhere along it still names the
+    ;; state -- the whole line carries the index.
+    (cl-assert (= (get-text-property (point) 'maf-history-index) 0)))
+
+  ;; ? opens the help of the command a row names, so a name read off the
+  ;; log leads to what it does. Point picks the row, which is why the
+  ;; row and not the selection is what it reads.
+  (cl-assert (eq (lookup-key maf-history-mode-map (kbd "?"))
+                 'maf-history-describe-command))
+  ;; w is the same reading without a shifted key, and the stack window
+  ;; inherits both.
+  (cl-assert (eq (lookup-key maf-history-mode-map (kbd "w"))
+                 'maf-history-describe-command))
+  (cl-assert (eq (lookup-key maf-history-stack-mode-map (kbd "w"))
+                 'maf-history-describe-command))
+  ;; The mode's own help keeps the h that `special-mode' also puts it on.
+  (cl-assert (eq (lookup-key maf-history-mode-map (kbd "h")) 'describe-mode))
+  (with-current-buffer (maf-history--buffer)
+    (progn (goto-char (point-min)) (forward-line 1))
+    (cl-assert (eq (nth 2 (maf-history--state-at-point)) 'calcDigit-nondigit))
+    (save-window-excursion (call-interactively 'maf-history-describe-command))
+    (cl-assert (string-match-p "calcDigit-nondigit"
+                               (with-current-buffer "*Help*" (buffer-string))))
+    ;; The oldest row here recorded no command, so there is nothing to
+    ;; describe and it says so rather than describing the wrong thing.
+    (progn (goto-char (point-min)) (forward-line 3))
+    (cl-assert (null (nth 2 (maf-history--state-at-point))))
+    (cl-assert (not (ignore-errors
+                      (call-interactively 'maf-history-describe-command) t))))
+  ;; Off a log row -- the stack window has none -- it falls back to the
+  ;; state the browser has selected, which is the one that window shows.
+  (with-current-buffer (maf-history--stack-buffer)
+    (cl-assert (eq (nth 2 (maf-history--state-at-point)) 'mafcmd-mul)))
+
+  ;; A state before an emptied stack is still a state to diff against, so
+  ;; the first entry after one is highlighted rather than left plain.
+  (progn (setq maf-history--states (list (list (list 7) "new")
+                                         (list nil "del"))
+               maf-history--index 0)
+         (maf-history--render t))
+  (with-current-buffer (maf-history--stack-buffer)
+    (cl-assert (equal (buffer-substring-no-properties (point-min) (point-max))
+                      "1:  7\n"))
+    (cl-assert (eq (get-text-property (point) 'face) 'maf-history-changed)))
 
   ;; An empty stack renders as its placeholder, and an empty log leaves
   ;; the counter off the header and says so in both windows.

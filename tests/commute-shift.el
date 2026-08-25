@@ -2,6 +2,35 @@
 ;; under point through its associative chain, with point following the
 ;; moved term.  Run in a live Emacs (see tests/README.md).
 (maf-step
+  ;; --- Keys ---
+
+  ;; Both spellings reach the same pair: the j prefix, and the shifted
+  ;; arrows that say the direction the term travels.
+  (cl-assert (eq (key-binding (kbd "j l")) 'maf-commute-left))
+  (cl-assert (eq (key-binding (kbd "j r")) 'maf-commute-right))
+  (cl-assert (eq (key-binding (kbd "S-<left>")) 'maf-commute-left))
+  (cl-assert (eq (key-binding (kbd "S-<right>")) 'maf-commute-right))
+  ;; The plain arrows stay the buffer's own motion keys.
+  (cl-assert (eq (key-binding (kbd "<left>")) 'left-char))
+  (cl-assert (eq (key-binding (kbd "<right>")) 'right-char))
+
+  ;; Driven as real keys, the arrows shift the term and carry point --
+  ;; unlike the j prefix, which execute-kbd-macro cannot deliver
+  ;; (calc's fancy prefixes), so the rest of this file calls the
+  ;; commands directly.
+  (maf-push "[h = 0, p = -4, k = 0]")
+  (progn (calc-cursor-stack-index 1) (beginning-of-line)
+         (search-forward "p ="))
+  (execute-kbd-macro (kbd "S-<left>"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full))
+                      "[p = -4, h = 0, k = 0]"))
+  (cl-assert (string= (buffer-substring (- (point) 3) (point)) "p ="))
+  (execute-kbd-macro (kbd "S-<right>"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full))
+                      "[h = 0, p = -4, k = 0]"))
+  (cl-assert (string= (buffer-substring (- (point) 3) (point)) "p ="))
+  (calc-pop 1)
+
   ;; --- Basic shift, point follows the moved term ---
 
   ;; Left: the term under point moves one place left; point stays on it.
@@ -176,6 +205,63 @@
   (call-interactively 'maf-commute-left)
   (cl-assert (string= (math-format-value (calc-top 1 'full))
                       "[[3, 4, 9], [1, 2], [5]]"))
+  (calc-pop 1)
+
+  ;; --- Point keeps its place in the term, not the term's first character ---
+
+  ;; On the = of an element, point is on that = again once the element
+  ;; has moved -- not pulled back to the element's leading p.
+  (maf-push "[h = 0, p = -4, k = 0]")
+  (progn (goto-char (point-min)) (search-forward "p ="))
+  (call-interactively 'maf-commute-left)
+  (cl-assert (string= (math-format-value (calc-top 1 'full))
+                      "[p = -4, h = 0, k = 0]"))
+  (cl-assert (string= (buffer-substring (- (point) 3) (point)) "p ="))
+  ;; And back the other way, from the same grip.
+  (call-interactively 'maf-commute-right)
+  (cl-assert (string= (math-format-value (calc-top 1 'full))
+                      "[h = 0, p = -4, k = 0]"))
+  (cl-assert (string= (buffer-substring (- (point) 3) (point)) "p ="))
+  (calc-pop 1)
+
+  ;; The same for a composite element gripped by its comma: point is on
+  ;; the moved element's own comma, not on its opening bracket.
+  (maf-push "[[1, 2], [3, 4, 9], [5]]")
+  (progn (goto-char (point-min)) (search-forward "3,") (backward-char 1))
+  (call-interactively 'maf-commute-left)
+  (cl-assert (string= (math-format-value (calc-top 1 'full))
+                      "[[3, 4, 9], [1, 2], [5]]"))
+  (cl-assert (eq (char-after) ?,))
+  (cl-assert (eq (char-before) ?3))
+  (calc-pop 1)
+
+  ;; The term travels whole, so a grip inside one of its own operands
+  ;; is kept too: from the last digit of a multi-character name, point
+  ;; is on that digit again, not on the name's first letter.
+  (maf-push "[a, b, c12]")
+  (progn (goto-char (point-min)) (search-forward "c12") (backward-char 1))
+  (call-interactively 'maf-commute-left)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "[a, c12, b]"))
+  (cl-assert (eq (char-after) ?2))
+  (cl-assert (string= (buffer-substring (- (point) 2) (1+ (point))) "c12"))
+  (calc-pop 1)
+
+  ;; The same inside a composite element, where the inner term is what
+  ;; commutes: point holds its digit through the shift.
+  (maf-push "[a, b + c12, d]")
+  (progn (goto-char (point-min)) (search-forward "c12") (backward-char 1))
+  (call-interactively 'maf-commute-left)
+  (cl-assert (string= (math-format-value (calc-top 1 'full))
+                      "[a, c12 + b, d]"))
+  (cl-assert (eq (char-after) ?2))
+  (calc-pop 1)
+
+  ;; A single-character term has one place to be, and keeps it.
+  (maf-push "[a, b, c]")
+  (progn (goto-char (point-min)) (search-forward "b") (backward-char 1))
+  (call-interactively 'maf-commute-left)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "[b, a, c]"))
+  (cl-assert (eq (char-after) ?b))
   (calc-pop 1)
 
   ;; A vector nested in a larger expression shifts in place.

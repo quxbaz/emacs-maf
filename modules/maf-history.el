@@ -64,11 +64,14 @@
   "Face for the marker on a state that changed the stack in place."
   :group 'maf)
 
-(defcustom maf-history-log-width 0.25
+(defcustom maf-history-log-width (/ 1.0 3)
   "Share of the width given to the action log in the history browser.
 `maf-history' shows the log on the left and the state's stack on the
 right; this fraction of the space the pair is opened in goes to the
-log, the rest to the stack. Either window can still be resized by
+log, the rest to the stack. A third of it by default, so the two run
+1:2 — enough for a log line to carry its label and the command name
+after it (see `maf-history--command-name') without the formulas beside
+it losing the room to render. Either window can still be resized by
 hand afterwards."
   :type 'float
   :group 'maf)
@@ -83,11 +86,14 @@ history stays cheap."
 
 (defvar maf-history--states nil
   "Recorded stack states, newest first, at most `maf-history-size'.
-Each state is a list (VALUES LABEL): VALUES the stack's formula values
-top first, with `calc-encase-atoms' wrappers stripped, and LABEL what
-produced the state — the change's trail prefix (a string, \"fctr\"),
-else \"undo\"/\"redo\", else a structural classification of the change
-against the previous stack (see `maf-history--classify').")
+Each state is a list (VALUES LABEL COMMAND): VALUES the stack's formula
+values top first, with `calc-encase-atoms' wrappers stripped; LABEL
+what produced the state — the change's trail prefix (a string,
+\"fctr\"), else \"undo\"/\"redo\", else a structural classification of
+the change against the previous stack (see `maf-history--classify');
+and COMMAND the `this-command' the change landed under, the precise
+name behind a label that names an operation rather than a command.
+COMMAND is nil for a state recorded outside any command.")
 
 (defvar maf-history--last-raw nil
   "Raw stack values at the last capture, for cheap change detection.")
@@ -123,37 +129,40 @@ views on one selection, so both read the same index.")
 
 ;;; Recording
 
-(defun maf-history--one-inserted-p (short long)
-  "Non-nil if LONG is SHORT with exactly one element inserted anywhere.
-Both are top-first value lists; comparison is by `equal'."
-  (and (= (length long) (1+ (length short)))
-       (let ((s short) (l long) (skipped nil) (ok t))
-         (while (and l ok)
-           (cond
-            ((and s (equal (car s) (car l))) (setq s (cdr s) l (cdr l)))
-            ((not skipped) (setq skipped t l (cdr l)))  ; the inserted one
-            (t (setq ok nil))))
-         (and ok (null s)))))
+(defun maf-history--diff (old new)
+  "Return (INDEX OLD-COUNT NEW-COUNT), where NEW differs from OLD.
+Both are top-first stack value lists, compared by `equal'. The entries
+the two stacks share at the bottom are matched off first and the ones
+they share at the top after, leaving one contiguous region: the
+OLD-COUNT entries at INDEX in OLD are the NEW-COUNT entries at INDEX in
+NEW. Matching the bottom first settles the ambiguous case — after
+duplicating an entry either copy could be called the new one — on the
+copy nearest the top, the end calc pushes to."
+  (let ((no (length old)) (nn (length new))
+        (tail 0) (head 0))
+    (let ((o (reverse old)) (n (reverse new)))
+      (while (and o n (equal (car o) (car n)))
+        (setq tail (1+ tail) o (cdr o) n (cdr n))))
+    (let ((o old) (n new) (limit (- (min no nn) tail)))
+      (while (and (< head limit) (equal (car o) (car n)))
+        (setq head (1+ head) o (cdr o) n (cdr n))))
+    (list head (- no tail head) (- nn tail head))))
 
 (defun maf-history--classify (old new)
   "Label the change from OLD to NEW stack values, both top-first lists.
-For a change with no trail prefix, name it structurally: `new' when one
-entry was added (the rest unchanged, wherever it landed), `edit' when
-exactly one value changed in place, `del' when entries were removed,
-else `change' (several changes at once, a reorder). Distinguishes
-adding an entry from editing one — the common single-entry cases
-exactly, the rest best-effort."
-  (let ((no (length old)) (nn (length new)))
+For a change with no trail prefix, name it structurally, off the region
+`maf-history--diff' finds: `new' when one entry was added (the rest
+unchanged, wherever it landed), `dupe' when that added entry is a copy
+of one the stack already held, `edit' when exactly one value changed in
+place, `del' when entries were removed, else `change' (several changes
+at once, a reorder). Distinguishes adding an entry from editing one —
+the common single-entry cases exactly, the rest best-effort."
+  (pcase-let ((`(,index ,old-count ,new-count) (maf-history--diff old new)))
     (cond
-     ((and (= nn (1+ no)) (maf-history--one-inserted-p old new)) "new")
-     ((and (= nn no)
-           (= 1 (let ((d 0) (o old) (n new))
-                  (while o
-                    (unless (equal (car o) (car n)) (setq d (1+ d)))
-                    (setq o (cdr o) n (cdr n)))
-                  d)))
-      "edit")
-     ((< nn no) "del")
+     ((and (= old-count 0) (= new-count 1))
+      (if (member (nth index new) old) "dupe" "new"))
+     ((and (= old-count 1) (= new-count 1)) "edit")
+     ((< (length new) (length old)) "del")
      (t "change"))))
 
 (defun maf-history--capture ()
@@ -191,13 +200,26 @@ swallowed so a bad calc state can never get the hook disabled."
                        ((memq this-command '(maf-undo calc-undo)) "undo")
                        ((memq this-command '(maf-redo calc-redo)) "redo")
                        ((and (stringp trail) (> (length trail) 0)) trail)
-                       (t (maf-history--classify old raw)))))
+                       (t (maf-history--typed old raw prefix)))))
                 (setq maf-history--last-raw raw)
                 (maf-history--record (mapcar #'maf--strip-encasing raw)
-                                      label)))))))))
+                                      label this-command)))))))))
 
-(defun maf-history--record (values label)
-  "Record VALUES as the newest state, produced by the command LABEL.
+(defun maf-history--typed (old new prefix)
+  "Classify OLD to NEW, reading a typed value as new input, not a copy.
+`maf-history--classify' calls an added entry the stack already held a
+duplication, which is what it looks like from the stack alone. Typing a
+value that happens to be on the stack already is not one, though: the
+user entered it rather than copying it, and the log's business is the
+action. Calc tells the two apart without a roster of commands to keep —
+an entry goes through `calc-record' and lands a trail line, so PREFIX
+is a stashed (PREFIX) even when the prefix itself is nil, while the dup
+commands push with `calc-push' and record nothing, leaving PREFIX nil."
+  (let ((kind (maf-history--classify old new)))
+    (if (and (equal kind "dupe") prefix) "new" kind)))
+
+(defun maf-history--record (values label &optional command)
+  "Record VALUES as the newest state, named LABEL and made by COMMAND.
 Skipped when VALUES matches the newest state — a selection was made or
 cleared, changing the entry conses but not the formulas — and when
 VALUES is an empty stack with no history yet, so the log never starts
@@ -205,7 +227,7 @@ with an empty baseline."
   (unless (or (and maf-history--states
                    (equal values (nth 0 (car maf-history--states))))
               (and (null values) (null maf-history--states)))
-    (push (list values label) maf-history--states)
+    (push (list values label command) maf-history--states)
     (when-let ((cell (nthcdr (1- maf-history-size) maf-history--states)))
       (setcdr cell nil))
     (maf-history--refresh t)))
@@ -241,6 +263,19 @@ multi-value push) — so unnamed steps stay legible and 1:1 with `u'/`i'."
           ((symbolp label) (symbol-name label))
           (t "entry"))))
 
+(defun maf-history--command-name (state)
+  "Return the name of the command that made STATE, or nil to show none.
+The label names the operation and is what the log leads with — a trail
+prefix like \"fctr\", or a structural reading like \"dupe\" — while the
+command is the code that ran, which no prefix says. A label that is
+already the command's name says it once and takes no echo; a state
+recorded outside any command has no name to give."
+  (let ((command (nth 2 state)))
+    (and command
+         (symbolp command)
+         (let ((name (symbol-name command)))
+           (and (not (equal name (maf-history--label state))) name)))))
+
 (defun maf-history--marker (values older has-older)
   "Return (CHAR . FACE) marking how VALUES changed the stack from OLDER.
 The kinds a git UI shows: `+' for a state that added an entry, `-' for
@@ -253,9 +288,9 @@ structural label agree by construction."
   (if (not has-older)
       (cons ?· 'shadow)
     (pcase (maf-history--classify older values)
-      ("new" (cons ?+ 'maf-history-added))
-      ("del" (cons ?- 'maf-history-removed))
-      (_     (cons ?~ 'maf-history-modified)))))
+      ((or "new" "dupe") (cons ?+ 'maf-history-added))
+      ("del"             (cons ?- 'maf-history-removed))
+      (_                 (cons ?~ 'maf-history-modified)))))
 
 (defvar maf-history--controls nil
   "Commands summarized on the legend line, in order.
@@ -268,18 +303,29 @@ for it, kept only while each still runs it.")
 ;; n/p/j/k and </> move within whichever window they are pressed in —
 ;; between states in the log, between lines in the stack — so each
 ;; control names both meanings and the legend stays true wherever it
-;; is rendered. It names n/p and < >, leaving j/k as unadvertised
-;; aliases rather than spending the width on both pairs.
+;; is rendered. It names n/p and < >, leaving j/k and M-< / M-> as
+;; unadvertised aliases rather than spending the width on every pair.
 (setq maf-history--controls
       '(((maf-history-previous maf-history-next next-line previous-line)
          "move" "n" "p")
         ((maf-history-oldest maf-history-newest
           maf-history-stack-first maf-history-stack-last)
          "ends" "<" ">")
-        (maf-history-switch "switch" "o" "t")
+        ;; TAB crosses too, by naming the side it leads to rather than
+        ;; toggling, so it belongs to this control even though it runs a
+        ;; different command in each window — which is also why the
+        ;; commands are listed: a preferred key is kept only while it
+        ;; still runs one of them.
+        ((maf-history-switch maf-history-focus-log maf-history-focus-stack)
+         "switch" "TAB" "o" "t")
         (maf-history-insert "insert" "RET")
         (maf-history-restore "restore" "r" "RET")
         (maf-history-delete "delete" "D")
+        ;; Beside D, the one state at a time it is the whole-log
+        ;; counterpart of; the chord is what keeps the two apart on the
+        ;; keyboard, so the legend showing it is what says the wipe is
+        ;; deliberately out of fingerslip range.
+        (maf-history-clear "clear" "C-M-k")
         (maf-history-quit "quit" "q")))
 
 (defun maf-history--control-keys (command preferred)
@@ -302,7 +348,13 @@ the binding face, its verb after. Keys are looked up in the current
 buffer's live keymaps, so the legend follows a rebinding — and shows
 the keys that window actually uses, the two browsing maps differing on
 a few. It heads the stack window rather than the log because that is
-the wide one; the pair is one UI, and the keys drive both."
+the wide one; the pair is one UI, and the keys drive both.
+
+Controls are set two spaces apart rather than three: the line has
+grown past what three would fit, and the keys carry `help-key-binding'
+while the verbs are plain, so the two already read apart without the
+extra column. A header line truncates rather than wraps, so the width
+it costs comes off the end of the line."
   (concat
    " "
    (mapconcat
@@ -314,18 +366,19 @@ the wide one; the pair is one UI, and the keys drive both."
                            "/")
                 " " verb)))
     maf-history--controls
-    "   ")))
+    "  ")))
 
 (defun maf-history--render-log ()
   "Render the action log into the current buffer, the browser's left window.
 One line per recorded state, newest at the top and oldest at the
 bottom, so the latest work is where the eye starts. Each line is a
 change marker (see `maf-history--marker') and the action that produced
-the state, the current one marked and on `maf-history-current'. Each
-line carries its state's index, so point lands on a state rather than
-merely near one, and point is left on the current line — in the log
-the selection is where point is. The header line carries the position
-counter."
+the state — its label, and after it the command that ran (see
+`maf-history--command-name') — the current one marked and on
+`maf-history-current'. Each line carries its state's index, so point
+lands on a state rather than merely near one, and point is left on the
+current line — in the log the selection is where point is. The header
+line carries the position counter."
   (let ((total (length maf-history--states))
         (index maf-history--index)
         (target nil)
@@ -346,7 +399,15 @@ counter."
           (let ((mstart (point)))
             (insert (car marker) " ")
             (put-text-property mstart (1+ mstart) 'face (cdr marker)))
-          (insert (maf-history--label state) "\n")
+          (insert (maf-history--label state))
+          ;; The command that ran, after the operation it goes by, in
+          ;; the parentheses an elisp name is read in. On `shadow', so
+          ;; the label still carries the line and the name reads as the
+          ;; footnote it is; the log truncates rather than wraps, so a
+          ;; narrow window drops the echo and keeps the label.
+          (when-let ((name (maf-history--command-name state)))
+            (insert " " (propertize (format "(%s)" name) 'face 'shadow)))
+          (insert "\n")
           (put-text-property start (point) 'maf-history-index i)
           (when current
             ;; Appended, so the marker keeps its own colour and only
@@ -363,11 +424,13 @@ counter."
 (defun maf-history--render-stack (&optional follow)
   "Render the selected state\='s stack into the current buffer, the right window.
 Rendered as calc renders the stack, deepest entry first, with the
-entries this step produced highlighted — those absent from the state
-before it; the oldest state has no reference to diff against. Every
-line carries its entry\='s value, so RET works anywhere on the row,
-continuation lines of a multi-line entry included. The header line
-carries the key legend (see `maf-history--legend').
+entries this step produced highlighted — the region `maf-history--diff'
+finds against the state before it, so a duplicate highlights the copy
+it added rather than nothing at all; the oldest state has no reference
+to diff against and highlights nothing. Every line carries its entry\='s
+value, so RET works anywhere on the row, continuation lines of a
+multi-line entry included. The header line carries the key legend (see
+`maf-history--legend').
 
 Point keeps its line and column, so a re-render under an unchanged
 selection leaves it be; with FOLLOW non-nil — the selection moved, or
@@ -377,8 +440,11 @@ RET target."
          (index maf-history--index)
          (state (nth index maf-history--states))
          (values (nth 0 state))
-         (prev-values (and (< (1+ index) total)
-                           (nth 0 (nth (1+ index) maf-history--states))))
+         ;; The older state itself, not its values: a state whose stack
+         ;; was empty is still something to diff against, and everything
+         ;; here is then new.
+         (prev (and (< (1+ index) total)
+                    (nth (1+ index) maf-history--states)))
          (fresh (zerop (buffer-size)))
          (line (line-number-at-pos))
          (col (current-column))
@@ -391,9 +457,16 @@ RET target."
      ((null values)
       (insert (propertize "(empty stack)" 'face 'shadow) "\n"))
      (t
-      (let ((level (length values)))
+      ;; Which entries this step produced is a matter of position, not of
+      ;; membership: duplicating an entry leaves a copy that the state
+      ;; before it also held, and that copy is exactly what to highlight.
+      (pcase-let* ((`(,from ,_ ,count) (if prev
+                                           (maf-history--diff (nth 0 prev) values)
+                                         (list 0 0 0)))
+                   (level (length values)))
         (dolist (val (reverse values))
-          (let ((changed (and prev-values (not (member val prev-values)))))
+          (let* ((entry (1- level))
+                 (changed (and (>= entry from) (< entry (+ from count)))))
             (setq target (point))
             (let ((start (point)))
               (insert (maf-history--format-entry val level) "\n")
@@ -468,9 +541,14 @@ mean something else beside a stack — line motion and RET.")
 (define-key maf-history-mode-map (kbd "M-n") #'maf-history-previous)
 (define-key maf-history-mode-map (kbd "M-p") #'maf-history-next)
 ;; The ends follow the display too, as the step keys do: the log runs
-;; newest-first, so < reaches the top of it and > the bottom.
+;; newest-first, so < reaches the top of it and > the bottom. M-< and
+;; M-> are the same two under a modifier, and the same two Emacs puts
+;; the ends of a buffer on — which for a log rendered newest-first is
+;; the reading they already have here.
 (define-key maf-history-mode-map (kbd "<") #'maf-history-newest)
 (define-key maf-history-mode-map (kbd ">") #'maf-history-oldest)
+(define-key maf-history-mode-map (kbd "M-<") #'maf-history-newest)
+(define-key maf-history-mode-map (kbd "M->") #'maf-history-oldest)
 ;; Either of these crosses between the two windows, either way.
 (define-key maf-history-mode-map (kbd "o") #'maf-history-switch)
 (define-key maf-history-mode-map (kbd "t") #'maf-history-switch)
@@ -485,6 +563,13 @@ mean something else beside a stack — line motion and RET.")
 ;; A deliberate chord for wiping the whole log, well out of fingerslip
 ;; range of the single-key commands.
 (define-key maf-history-mode-map (kbd "C-M-k") #'maf-history-clear)
+;; ? describes the command a row names, the reading that makes the
+;; echoed command name useful rather than only informative. It shadows
+;; the `describe-mode' special-mode puts here, which stays on h. w is
+;; the same command on a home-row key, for reading down the log without
+;; reaching for a shifted one.
+(define-key maf-history-mode-map (kbd "?") #'maf-history-describe-command)
+(define-key maf-history-mode-map (kbd "w") #'maf-history-describe-command)
 (define-key maf-history-mode-map (kbd "q") #'maf-history-quit)
 
 ;; The stack: the same keys navigate this buffer instead of the log —
@@ -499,6 +584,8 @@ mean something else beside a stack — line motion and RET.")
 (define-key maf-history-stack-mode-map (kbd "k") #'previous-line)
 (define-key maf-history-stack-mode-map (kbd "<") #'maf-history-stack-first)
 (define-key maf-history-stack-mode-map (kbd ">") #'maf-history-stack-last)
+(define-key maf-history-stack-mode-map (kbd "M-<") #'maf-history-stack-first)
+(define-key maf-history-stack-mode-map (kbd "M->") #'maf-history-stack-last)
 (define-key maf-history-stack-mode-map (kbd "RET") #'maf-history-insert)
 (define-key maf-history-stack-mode-map (kbd "C-<return>")
             #'maf-history-insert-stay)
@@ -508,7 +595,8 @@ mean something else beside a stack — line motion and RET.")
   "Major mode for the calc stack history\='s action log.
 The left window of the browser: one line per recorded state, newest at
 the top, each a change marker (+ added, - removed, ~ changed in place)
-and the action that produced it, the current one marked.
+and the action that produced it — the operation it goes by, and after
+it the command that ran — the current one marked.
 The stack that action left shows in `maf-history-stack-mode' beside
 it, following point as it moves. \<maf-history-mode-map>
 \[maf-history-previous] steps to older states and \[maf-history-next]
@@ -517,8 +605,10 @@ to the ends. \[maf-history-restore] takes the state at point, making
 it the live stack again, and quits. \[maf-history-switch] crosses into
 the stack instead, to take one entry out of a state rather than the
 whole of it. \[maf-history-delete] deletes the state shown from the
-log; \[maf-history-clear] clears the whole log. \[maf-history-quit]
-buries the browser."
+log; \[maf-history-clear] clears the whole log.
+\[maf-history-describe-command] describes the command the row at point
+names, and \[describe-mode] this help. \[maf-history-quit] buries the
+browser."
   (setq truncate-lines t)
   (setq-local revert-buffer-function
               (lambda (&rest _) (maf-history--render))))
@@ -625,6 +715,36 @@ to push."
   (goto-char (point-max))
   (forward-line (if (bolp) -1 0))
   (beginning-of-line))
+
+(defun maf-history--state-at-point ()
+  "Return the state point names, else the one the browser has selected.
+Every log row carries its state's index, so in the log this is the row
+under point even where point has drifted off the selection. The stack
+window has no rows of states to read, and there falls back to the
+selected state, which is the one it is showing."
+  (let ((index (or (get-text-property (point) 'maf-history-index)
+                   maf-history--index)))
+    (nth index maf-history--states)))
+
+(defun maf-history-describe-command ()
+  "Describe the command that produced the state at point.
+The log names the operation and echoes the command that ran beside it
+\(see `maf-history--command-name'); this opens that command's own help,
+so a name read off the log leads to what it does without leaving the
+browser to look it up. Point picks the state in the log; the stack
+window describes the state it is showing.
+
+On \\`?', where `special-mode' puts `describe-mode' — the mode's own
+help stays on \\`h', which runs it too — and on \\`w', the same reading
+without a shifted key."
+  (interactive)
+  (let* ((state (or (maf-history--state-at-point)
+                    (user-error "No states recorded yet")))
+         (command (nth 2 state)))
+    (unless (and command (symbolp command) (fboundp command))
+      (user-error "No command recorded for this state (%s)"
+                  (maf-history--label state)))
+    (describe-function command)))
 
 (defun maf-history-switch ()
   "Switch between the action log and the stack beside it.

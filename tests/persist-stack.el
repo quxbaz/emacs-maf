@@ -12,6 +12,12 @@
         maf--stack-session nil
         maf--stack-restored t
         maf--stack-last-saved 'maf--persist-unset)
+  (defun maf--persist-said (text)
+    "Return non-nil when TEXT is in the last of *Messages*."
+    (with-current-buffer (messages-buffer)
+      (save-excursion
+        (goto-char (point-max))
+        (search-backward text (max (point-min) (- (point-max) 500)) t))))
 
   ;; Save writes this session's file: values top first, name claimed
   ;; and locked.
@@ -25,6 +31,18 @@
 
   ;; Unchanged stack: the save is skipped.
   (cl-assert (not (maf-save-stack)))
+
+  ;; Interactively — l S — the outcome reaches the echo area, whether
+  ;; the save was skipped or written. Assert on *Messages*, not
+  ;; (current-message): stepping via keyboard macro suppresses the
+  ;; echo area.
+  (progn (maf-save-stack t)
+         (cl-assert (maf--persist-said "stack unchanged, session test-a")))
+  (progn (calc-wrapper (maf-push "7"))
+         (cl-assert (maf-save-stack t))
+         (cl-assert (maf--persist-said "saved 3 entries to session test-a")))
+  ;; ...and back to the two-entry save the checks below expect.
+  (progn (calc-pop 1) (cl-assert (maf-save-stack)))
 
   ;; Restore brings this session's entries back in order.
   (calc-pop (calc-stack-size))

@@ -6,57 +6,41 @@
   [[https://www.gnu.org/software/emacs/manual/html_mono/calc.html#Symbolic-Lisp-Functions][symbolic lisp functions]]
 
 * Todo
-  - [-] preview as latex
-  - [ ] *maf-formulas*: add basic/fundamental identities (addition,
+  - [-] *maf-formulas*: add basic/fundamental identities (addition,
     multiplication, etc)
+    - [X] properties of real numbers (commutative, associative,
+      distributive, identities, inverses, sign rules) — shipped in
+      =maf-formulas-builtin=
+    - [ ] logarithm laws (product, quotient, power; b^log_b x = x)
+    - [ ] quadratic formula, discriminant, Vieta's root relations
+    - [ ] radicals and the x^0 / x^1 / x^(m/n) exponent cases
+    - [ ] fraction arithmetic, absolute value
+    - [ ] trig identity table (reciprocal, quotient, the other two
+      Pythagoreans, angle sum/difference, double and half angle)
 
-* now
-
-* review
-  - *maf-history* rendering
-    - refine history log
-      - [ ] if action is duplication (eg, RET on an entire entry), then action
-        should be "dupe"
-      - [ ] currently on "add" items, the added item is not highlighted in
-        yellow in the corresponding stack
-  - [ ] bind `C-M-SPC` to the reverse of `S-SPC`. move to the PREV operand
-    - same conditions. only work in stack mode.
-  - [ ] find command that solves with +/i in answer, but uses a different
-    representation (port it)
-  - *maf-history*
-    - [ ] update format: next to history item (eg, `maf-del`), show the command
-      name (eg, `(maf-del)`)
-    - [ ] show `C-M-k` binding in legend
-  - [ ] overload `(` and `)` to move point to largest expression on left/right side of
-    equation/relation. only in stack mode (not edit mode).
-  - *maf-formulas*
-    - [ ] retain the legend even in filtered results view
-    - [ ] npjk should move to first character of entry, instead of first column
-    - [ ] RET on group name should filter for that group (should work in filtered and non-filtered views)
-    - [ ] npjk should also land on group names
-  - [ ] given something like: [h = 0, p =| -4, k = 0]
-    on `j l` or `j r`, point should stay next to the `=`
-  - *maf-editplus*
-    - [ ] rewrite `U` as union `||`
-      similar to other conversions on confirmation (`RET`)
-    - [ ] bind `J` to insert `*` (same as entering `*` key)
-  - [ ] port binding `F` to vector fold (reduce)
-  - [ ] `l S` (maf-save-stack) should print a confirmation message in minibuffer.
-
-* maf-latex
+* NEXT maf-latex
+  - [ ] refine stand-alone feature
   - [ ] support in maf-preview
   - [ ] support in maf-formulas
 
-* major features [8/9]
+* review
+  - [ ] fix bug:
+    y^2 = 3 |(x - 5)
+    M-e won't go beyond here
+
+* major features [8/12]
   - [X] bindings module
-  - [X] Persistent sub-formula highlighting
-  - [X] History module (né timeline)
-  - [X] Omni-options menu buffer
-  - [X] Formulas module
-  - [X] Modules manager
-  - [X] Use module architecture (maf-history, maf-edit)
-  - [X] Recall ring for typed entries (maf-recall)
-  - [ ] Discovery document for useful features, behaviors, modules, etc
+  - [X] persistent sub-formula highlighting
+  - [X] history module (né timeline)
+  - [X] omni-options menu buffer
+  - [X] formulas module
+  - [X] modules manager
+  - [X] use module architecture (maf-history, maf-edit)
+  - [X] recall ring for typed entries (maf-recall)
+  - [ ] discovery document for useful features, behaviors, modules, etc
+  - [ ] readme (overview)
+  - [ ] main docs for users (new features, changes)
+  - [ ] technical docs for devs
 
 * feedback
   - [ ] single-key (no modifiers) to force next cmd to target line
