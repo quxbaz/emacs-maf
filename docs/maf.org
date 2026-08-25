@@ -26,20 +26,8 @@
   - [ ] support in maf-formulas
 
 * maf-preview
-  - [X] change options: off, always on, show on command only
-    - the module row stays a plain [on off] — the panel follows point,
-      or it does not
-    - "show on command only" is the row off plus =G=
-      (=maf-preview-show=), which peeks at the entry at point until
-      the next command and is bound either way (src/bindings.el)
-    - =G= came from =maf-go-home=, and =maf-toggle-big-language= gave
-      up =&= to the reciprocal — both commands are still defined, just
-      unbound
 
 * review
-  - [-] fix bug:
-    y^2 = 3 |(x - 5)
-    `M-e` won't go beyond here
 
 * major features [8/12]
   - [X] bindings module
