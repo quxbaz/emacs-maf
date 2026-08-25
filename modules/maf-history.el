@@ -64,11 +64,14 @@
   "Face for the marker on a state that changed the stack in place."
   :group 'maf)
 
-(defcustom maf-history-log-width 0.25
+(defcustom maf-history-log-width (/ 1.0 3)
   "Share of the width given to the action log in the history browser.
 `maf-history' shows the log on the left and the state's stack on the
 right; this fraction of the space the pair is opened in goes to the
-log, the rest to the stack. Either window can still be resized by
+log, the rest to the stack. A third of it by default, so the two run
+1:2 — enough for a log line to carry its label and the command name
+after it (see `maf-history--command-name') without the formulas beside
+it losing the room to render. Either window can still be resized by
 hand afterwards."
   :type 'float
   :group 'maf)
