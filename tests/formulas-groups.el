@@ -149,20 +149,93 @@
       (cl-assert (string-match-p "Area of triangle" (buffer-string)))
       (cl-assert (not (string-match-p "Volume of sphere" (buffer-string))))
 
-      ;; A filter typed while the group is up narrows within it, and
-      ;; being the newer word on what to show it stands after widening
-      ;; rather than the one that was set aside.
+      ;; Filtering is the other way out of a group: a filter searches
+      ;; the whole list, so the group is lifted rather than searched
+      ;; inside — and the filter it had set aside goes with it, there
+      ;; being nothing left to come back to. "area" reaches the
+      ;; triangle, in a group the narrowing had put out of sight.
       (goto-char (point-min))
       (search-forward "Geometry — 3D: Sphere")
       (beginning-of-line)
       (execute-kbd-macro (kbd "RET"))
-      (maf-formulas-filter "volume")
-      (cl-assert (string-match-p "Volume of sphere" (buffer-string)))
-      (cl-assert (not (string-match-p "Surface area of sphere" (buffer-string))))
-      (goto-char (point-min))
-      (execute-kbd-macro (kbd "RET"))
+      (cl-assert (equal maf-formulas--group "Geometry — 3D: Sphere"))
+      (maf-formulas-filter "area")
       (cl-assert (null maf-formulas--group))
-      (cl-assert (equal maf-formulas--query "volume"))
+      (cl-assert (null maf-formulas--group-query))
+      (cl-assert (equal maf-formulas--query "area"))
+      (cl-assert (string-match-p "Area of triangle" (buffer-string)))
+      (cl-assert (string-match-p "Surface area of sphere" (buffer-string)))
+      (cl-assert (not (string-match-p "Volume of sphere" (buffer-string))))
+
+      ;; Even a filter that asks for what is already in force lifts the
+      ;; group: inside one the filter string is empty, and filtering
+      ;; for nothing is still a search over everything.
+      (goto-char (point-min))
+      (search-forward "Geometry — 3D: Sphere")
+      (beginning-of-line)
+      (execute-kbd-macro (kbd "RET"))
+      (cl-assert (equal maf-formulas--query ""))
+      (maf-formulas-filter "")
+      (cl-assert (null maf-formulas--group))
+      (cl-assert (string-match-p "Area of triangle" (buffer-string)))
+      (cl-assert (string-match-p "Volume of sphere" (buffer-string)))
+
+      ;; `/' on its own widens nothing: the prompt opens on the group,
+      ;; and it is the first character typed — the search actually
+      ;; beginning — that lifts it.
+      (maf-formulas-filter "area")
+      (goto-char (point-min))
+      (search-forward "Geometry — 3D: Sphere")
+      (beginning-of-line)
+      (execute-kbd-macro (kbd "RET"))
+      (let (seen)
+        (cl-letf (((symbol-function 'read-string)
+                   (lambda (&rest _)
+                     (setq seen (list maf-formulas--group (buffer-string)))
+                     ;; A character typed: the hook the reader installs
+                     ;; pushes what stands so far, and the group goes.
+                     (cl-letf (((symbol-function 'minibuffer-contents-no-properties)
+                                (lambda () "triangle")))
+                       (maf-formulas--filter-update))
+                     "triangle")))
+          (maf-formulas-filter))
+        ;; The list the prompt opened on was still the group's.
+        (cl-assert (equal (car seen) "Geometry — 3D: Sphere"))
+        (cl-assert (not (string-match-p "Area of triangle" (cadr seen)))))
+      (cl-assert (null maf-formulas--group))
+      (cl-assert (null maf-formulas--group-query))
+      (cl-assert (equal maf-formulas--query "triangle"))
+      (cl-assert (string-match-p "Area of triangle" (buffer-string)))
+
+      ;; RET on an untouched prompt leaves the group standing: a search
+      ;; never made takes nothing away.
+      (maf-formulas-filter "area")
+      (goto-char (point-min))
+      (search-forward "Geometry — 3D: Sphere")
+      (beginning-of-line)
+      (execute-kbd-macro (kbd "RET"))
+      (cl-letf (((symbol-function 'read-string) (lambda (&rest _) "")))
+        (maf-formulas-filter))
+      (cl-assert (equal maf-formulas--group "Geometry — 3D: Sphere"))
+      (cl-assert (equal maf-formulas--group-query "area"))
+      (cl-assert (equal maf-formulas--query ""))
+      (cl-assert (not (string-match-p "Area of triangle" (buffer-string))))
+
+      ;; And quitting after typing puts the group back, the filter it
+      ;; had set aside with it: nothing was asked for after all.
+      (cl-letf (((symbol-function 'read-string)
+                 (lambda (&rest _)
+                   (cl-letf (((symbol-function 'minibuffer-contents-no-properties)
+                              (lambda () "triangle")))
+                     (maf-formulas--filter-update))
+                   (cl-assert (null maf-formulas--group)) ; widened as it was typed
+                   (signal 'quit nil))))
+        (cl-assert (condition-case nil (progn (maf-formulas-filter) nil)
+                     (quit t))))
+      (cl-assert (equal maf-formulas--group "Geometry — 3D: Sphere"))
+      (cl-assert (equal maf-formulas--group-query "area"))
+      (cl-assert (equal maf-formulas--query ""))
+      (cl-assert (not (string-match-p "Area of triangle" (buffer-string))))
 
       ;; And `c' drops the lot, rather than leaving the other narrowing
       ;; to be found and undone.

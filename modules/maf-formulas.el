@@ -181,7 +181,8 @@ variable is the single source, so runtime additions to it persist."
 (defvar-local maf-formulas--group nil
   "Category the menu is narrowed to, or nil for every group.
 Set by RET on a group header (`maf-formulas-filter-group'), and cleared
-by RET on that header again or by `maf-formulas-clear-filter'. It sits
+by RET on that header again, by `maf-formulas-clear-filter', or by a
+filter — which searches the whole list, so it lifts this. It sits
 beside `maf-formulas--query' rather than folding into it: the query is
 words matched across titles, categories and variables, where this
 picks one group out by name — including \"Recent\", which no query can
@@ -193,8 +194,8 @@ Narrowing to a group shows the group whole, so the filter that was in
 force is lifted rather than compounded — asking for a group is asking
 for the group, not for the part of it that survived what was typed.
 It is kept here so RET on the header again puts back the filtered list
-it was pressed from, unless something was typed inside the group in
-the meantime, which is then the filter that stands.")
+it was pressed from. The two narrowings are never in force together:
+filtering from inside a group leaves the group, taking this with it.")
 
 (defvar maf-formulas--recent nil
   "Formulas inserted this session, most recent first.
@@ -235,9 +236,9 @@ listed under their own categories.
 
 `maf-formulas--group' narrows to the one group it names — \"Recent\"
 included, which a query cannot reach on its own. The two narrowings
-compose, a query still deciding which of that group's formulas are
-listed; but `maf-formulas-filter-group' lifts the filter as it
-narrows, so a group reached from a filtered list comes up whole."
+are never in force at once: narrowing to a group sets the query aside
+so the group comes up whole, and filtering lifts the group so the
+search runs over every formula."
   (let* ((all (maf-formulas--all))
          (match (lambda (f) (maf-formulas--matches-p f maf-formulas--query)))
          (group maf-formulas--group)
@@ -757,24 +758,60 @@ user actually types: an untouched empty minibuffer means \"nothing
 said yet\", not \"show everything\". Bound alongside
 `maf-formulas--filter-buffer'.")
 
+(defun maf-formulas--render-visible ()
+  "Re-render the current menu buffer with its window selected.
+Point and the window's view then move together, as they would had the
+user navigated there."
+  (let ((win (get-buffer-window (current-buffer))))
+    (if win
+        (with-selected-window win (maf-formulas--render))
+      (maf-formulas--render))))
+
+(defun maf-formulas--lift-group (buf)
+  "Widen menu buffer BUF out of any group narrowing, re-rendering if it had one.
+What a filter searches is the whole list, so the group a filter meets
+is lifted rather than searched inside — and the filter it had set
+aside goes with it, there being nothing left to come back to."
+  (when (buffer-live-p buf)
+    (with-current-buffer buf
+      (when maf-formulas--group
+        (setq maf-formulas--group nil
+              maf-formulas--group-query nil)
+        (maf-formulas--render-visible)))))
+
 (defun maf-formulas--set-query (buf query)
   "Narrow menu buffer BUF to QUERY, re-rendering when it changed.
+Any group narrowing is lifted with it: a filter is a search over every
+formula, not over the corner of the list last stepped into.
 Rendering happens with BUF's window selected so point and the window's
 view move together, as they would if the user had navigated there."
   (when (buffer-live-p buf)
     (with-current-buffer buf
-      (unless (equal query maf-formulas--query)
-        (setq maf-formulas--query query)
-        (let ((win (get-buffer-window buf)))
-          (if win
-              (with-selected-window win (maf-formulas--render))
-            (maf-formulas--render)))))))
+      (if (equal query maf-formulas--query)
+          (maf-formulas--lift-group buf)
+        (setq maf-formulas--query query
+              maf-formulas--group nil
+              maf-formulas--group-query nil)
+        (maf-formulas--render-visible)))))
+
+(defun maf-formulas--restore-narrowing (buf query group group-query)
+  "Put menu buffer BUF's narrowing back to QUERY, GROUP and GROUP-QUERY.
+The way back from a filter that was abandoned: setting a query only
+ever widens out of a group, where \\[keyboard-quit] has one to put back."
+  (when (buffer-live-p buf)
+    (with-current-buffer buf
+      (setq maf-formulas--query query
+            maf-formulas--group group
+            maf-formulas--group-query group-query)
+      (maf-formulas--render-visible))))
 
 (defun maf-formulas--filter-update ()
   "Narrow the menu to what is typed so far.
 Runs on the minibuffer's own `post-command-hook'. Until the first
-edit, the empty prompt leaves the current narrowing alone; deleting
-back to empty after typing does widen to the full list."
+edit, the empty prompt leaves the current narrowing alone — a group
+included, which the first character typed then lifts, the search being
+over the whole list; deleting back to empty after typing does widen to
+the full list."
   (let ((s (minibuffer-contents-no-properties)))
     (unless (and (string-empty-p s) (not maf-formulas--filter-touched))
       (setq maf-formulas--filter-touched t)
@@ -786,6 +823,12 @@ QUERY is matched a word at a time — \"power rule\" finds the formulas
 named by both words, in either order and in any of the fields a filter
 looks at (see `maf-formulas--matches-p').
 
+A filter searches the whole list, so a group narrowing in force is
+lifted rather than searched inside — but not before there is a search:
+the prompt opens on the group, and the first character typed widens to
+every formula. An abandoned \\`/' leaves the list exactly as it was,
+and \\[keyboard-quit] after typing puts the group back with the rest.
+
 Called interactively, the list narrows as each character is typed, so
 the match is visible before the filter is committed; RET keeps the
 narrowing and \\[keyboard-quit] restores the one in effect before."
@@ -794,20 +837,24 @@ narrowing and \\[keyboard-quit] restores the one in effect before."
       (maf-formulas--set-query (current-buffer) query)
     (let* ((buf (current-buffer))
            (prev maf-formulas--query)
+           (prev-group maf-formulas--group)
+           (prev-group-query maf-formulas--group-query)
            (maf-formulas--filter-buffer buf)
            (maf-formulas--filter-touched nil))
       (condition-case nil
           ;; The live narrowing has already applied what was typed; the
           ;; returned string settles anything a final command changed.
-          ;; RET on an untouched prompt keeps the narrowing in effect —
-          ;; the list never previewed anything else.
+          ;; RET on an untouched prompt is left alone entirely — the
+          ;; list never previewed anything else, and a group it is
+          ;; still narrowed to is not something a search never made
+          ;; took away.
           (let ((s (minibuffer-with-setup-hook
                        (lambda ()
                          (add-hook 'post-command-hook #'maf-formulas--filter-update nil t))
                      (read-string "Filter formulas: "))))
-            (maf-formulas--set-query
-             buf (if maf-formulas--filter-touched s prev)))
-        (quit (maf-formulas--set-query buf prev)
+            (when maf-formulas--filter-touched
+              (maf-formulas--set-query buf s)))
+        (quit (maf-formulas--restore-narrowing buf prev prev-group prev-group-query)
               (signal 'quit nil))))))
 
 (defun maf-formulas-clear-filter ()
@@ -834,9 +881,9 @@ compounded with it: the header names a group of formulas, and reaching
 for it from a filtered list asks for that group, not for the part of
 it the filter had left standing. The filter is not lost — widening
 again puts it back, and the list returns to the one the header was
-pressed from. A filter typed with \\<maf-formulas-mode-map>\\[maf-formulas-filter] while the group is up does
-narrow within it, and being the newer word it stands after widening
-too. \\[maf-formulas-clear-filter] drops the lot, whichever way the list was narrowed.
+pressed from. Filtering with \\<maf-formulas-mode-map>\\[maf-formulas-filter] is the other way out: a filter
+searches the whole list, so it leaves the group rather than narrowing
+inside it. \\[maf-formulas-clear-filter] drops the lot, whichever way the list was narrowed.
 
 The \"Recent\" group narrows like any other, and is the one group a
 filter string cannot reach — it is a shortcut rather than a category,
@@ -846,13 +893,11 @@ so no title or variable of its formulas names it."
     (unless group (user-error "Not on a group header"))
     (if (equal group maf-formulas--group)
         ;; Widening: the filter the narrowing lifted comes back with the
-        ;; other groups, so the round trip lands where it started. A
-        ;; filter typed inside the group is the newer word on what to
-        ;; show, and stands in place of it.
+        ;; other groups, so the round trip lands where it started.
+        ;; Nothing was typed in the meantime — a filter would have left
+        ;; the group rather than narrowed inside it.
         (setq maf-formulas--group nil
-              maf-formulas--query (if (string-empty-p maf-formulas--query)
-                                      (or maf-formulas--group-query "")
-                                    maf-formulas--query)
+              maf-formulas--query (or maf-formulas--group-query "")
               maf-formulas--group-query nil)
       (setq maf-formulas--group group
             maf-formulas--group-query maf-formulas--query
