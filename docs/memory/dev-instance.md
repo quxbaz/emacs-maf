@@ -62,6 +62,17 @@ Properties, all deliberate:
 4. For highlight work, `debug/maf-hl-verify.el` and `debug/maf-hl-sweep.el`
    run inside this instance.
 
+`load-file` does not restyle a `defface` the instance already has:
+`custom-declare-face` keeps the existing face and only refreshes it for
+a face it has never seen. After editing a face spec, force it:
+
+```sh
+emacsclient -s '#emacs' --eval '(progn (put (quote maf-history-separator) (quote face-defface-spec) nil)
+  (load-file "modules/maf-history.el")
+  (face-spec-set (quote maf-history-separator)
+                 (get (quote maf-history-separator) (quote face-defface-spec))))'
+```
+
 Reset calc state between tests with `calc-pop` — note the stack survives
 `kill-buffer` of `*Calculator*` (calc keeps it in global state), so
 popping is the reliable reset.

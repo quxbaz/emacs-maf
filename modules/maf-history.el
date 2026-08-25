@@ -64,16 +64,18 @@
   "Face for the marker on a state that changed the stack in place."
   :group 'maf)
 
-;; The separator a state can carry (`maf-history-separate'), drawn as
-;; the row's own underline rather than as a row of its own: `:extend'
-;; carries the underline past the end of the text to the window edge,
-;; so the rule runs the log's full width without a character of it
-;; being in the buffer. Underline rather than overline — which would
-;; put the rule above the row instead — because a terminal draws the
-;; one and not the other.
+;; The separator a state can carry (`maf-history-separate'), drawn as a
+;; blank row of its own under the state's row: a band of background
+;; colour, `:extend' carrying it past the end of the (empty) line to
+;; the window edge, so the rule runs the log's full width. A row rather
+;; than the row's own underline, which leaves the mark no vertical
+;; margin — glued under the text above it and against the text below.
+;; Low contrast against the default background: the band divides the
+;; log without competing with anything written in it.
 (defface maf-history-separator
-  '((t :underline t :extend t))
-  "Face drawing the separator rule under a state's row in the history log."
+  '((((background dark)) :background "#303030" :extend t)
+    (t :background "#dcdcdc" :extend t))
+  "Face drawing the separator band under a state's row in the history log."
   :group 'maf)
 
 (defcustom maf-history-log-width (/ 1.0 3)
@@ -408,12 +410,13 @@ bottom, so the latest work is where the eye starts. Each line is a
 change marker (see `maf-history--marker') and the action that produced
 the state — its label, and after it the command that ran (see
 `maf-history--command-name') — the current one marked and on
-`maf-history-current'. A state marked with `maf-history-separate' has
-its row underlined to the window edge, the separator drawn without a
-line of the log going to it. Each line carries its state's index, so
-point lands on a state rather than merely near one, and point is left
-on the current line — in the log the selection is where point is. The
-header line carries the position counter."
+`maf-history-current'. A state marked with `maf-history-separate' is
+followed by a blank row banded to the window edge, the separator that
+divides the log into stretches of work. Every line carries a state's
+index, the band under a state the index of that state, so point lands
+on a state rather than merely near one, and point is left on the
+current line — in the log the selection is where point is. The header
+line carries the position counter."
   (let ((total (length maf-history--states))
         (index maf-history--index)
         (target nil)
@@ -449,14 +452,16 @@ header line carries the position counter."
             ;; picks up the current state's weight.
             (add-face-text-property start (point) 'maf-history-current t)
             (setq target start))
-          ;; The rule the state carries, drawn as the underline of the
-          ;; row itself — the region covers the terminating newline,
-          ;; which is what the face extends from to the window edge.
-          ;; Prepended rather than appended, so the underline is the
-          ;; attribute that lands whatever else the row wears; it sets
-          ;; no colour, so the marker and the current state keep theirs.
+          ;; The rule the state carries, drawn as a blank row under it:
+          ;; the newline is all there is to the line, and `:extend' is
+          ;; what carries the band from there to the window edge. The
+          ;; row still names the state it divides off, so point drifting
+          ;; onto the band reads as the state above it rather than as
+          ;; nothing.
           (when (maf-history--separator state)
-            (add-face-text-property start (point) 'maf-history-separator)))))
+            (let ((sep (point)))
+              (insert (propertize "\n" 'face 'maf-history-separator))
+              (put-text-property sep (point) 'maf-history-index i))))))
     (setq header-line-format
           (if (zerop total) "maf-history"
             (format "maf-history  %d/%d" (- total index) total)))
@@ -653,9 +658,8 @@ it the live stack again, and quits. \[maf-history-switch] crosses into
 the stack instead, to take one entry out of a state rather than the
 whole of it. \[maf-history-delete] deletes the state shown from the
 log; \[maf-history-clear] clears the whole log.
-\[maf-history-separate] draws a separator rule under the state at
-point, dividing the log into stretches of work without spending a
-line of it.
+\[maf-history-separate] draws a separator band under the state at
+point, dividing the log into stretches of work.
 \[maf-history-describe-command] describes the command the row at point
 names, and \[describe-mode] this help. \[maf-history-quit] buries the
 browser."
@@ -945,18 +949,19 @@ newest remaining when the oldest was the one deleted."
                (maf-history--label state)))))
 
 (defun maf-history-separate ()
-  "Toggle a separator rule under the state at point.
+  "Toggle a separator band under the state at point.
 The log is one running record, but work comes in sittings: this draws
 a line under a state, so what sits above it reads as its own stretch
 of work. Pressing it again on the same state takes the line off.
 Point picks the state in the log; the stack window marks the state it
 is showing.
 
-The rule is drawn as the row's own underline, run out to the window
-edge (see `maf-history-separator'), rather than as a line of the log:
-a line here is a state — something to step onto, to count, and to land
-point on — and a separator is none of those. So it takes no line, and
-nothing about browsing changes for it.
+The rule is a blank row under the state, banded to the window edge
+(see `maf-history-separator'): a row of its own, so the division has
+the vertical margin an underline on the state's own row cannot give
+it. Browsing is unchanged — stepping and the ends move by state, not
+by line, and the band names the state it sits under, so point drifting
+onto it still reads as that state.
 
 The mark belongs to the state it is under and goes where that state
 goes: it shifts down as new states land on top, and a deleted state
