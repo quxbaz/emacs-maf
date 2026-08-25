@@ -1070,37 +1070,23 @@ Held by category name, the same string `maf-formulas--groups' keys a
 group by, so a fold survives the re-renders a filter and a group
 narrowing cause. A name no longer in the list simply never matches.")
 
-(defvar-local maf-formulas--collapsed-saved nil
-  "Folds set aside while a filter is in force, put back when it lifts.
-See `maf-formulas--sync-collapse'.")
-
-(defvar-local maf-formulas--collapse-suspended nil
-  "Non-nil while a filter has the folds set aside.
-Distinguishes \"nothing was folded\" from \"the folds are in
-`maf-formulas--collapsed-saved'\", which an empty list cannot.")
-
 (defun maf-formulas--sync-collapse ()
-  "Reconcile the folds with the filter, before a render reads them.
+  "Unfold every group while a filter is in force, before a render reads the folds.
 A search that left its groups folded would hide the very rows it
-found, so a filter in force unfolds everything — the toggle really is
-flipped to shown, not merely overridden for the render. The folds are
-set aside rather than dropped, and come back when the filter lifts:
-the same bargain `maf-formulas--group-query' strikes for the query a
-group narrowing displaces, so a search costs a look at the list, not
-the shape it was being read in.
+found — there would be no way to see the results — so filtering flips
+the toggle to shown.
 
-Called from `maf-formulas--render', so every path that changes the
-query — filtering, clearing, abandoning a filter, stepping into a
-group — is covered by the one rule, none of them having to know it."
-  (if (string-empty-p maf-formulas--query)
-      (when maf-formulas--collapse-suspended
-        (setq maf-formulas--collapsed maf-formulas--collapsed-saved
-              maf-formulas--collapsed-saved nil
-              maf-formulas--collapse-suspended nil))
-    (unless maf-formulas--collapse-suspended
-      (setq maf-formulas--collapsed-saved maf-formulas--collapsed
-            maf-formulas--collapsed nil
-            maf-formulas--collapse-suspended t))))
+It flips it for good, not for the duration. The folds are dropped
+rather than set aside: what a search leaves behind is the list it
+found, open and readable, and a list that re-folded itself the moment
+the filter lifted would take the results away again from a user still
+reading them. Folding is one key away when it is wanted.
+
+Called from `maf-formulas--render', so every path that sets a query —
+filtering, clearing, abandoning a filter, stepping into a group — is
+covered by the one rule, none of them having to know it."
+  (unless (string-empty-p maf-formulas--query)
+    (setq maf-formulas--collapsed nil)))
 
 (defun maf-formulas--collapsed-p (group)
   "Non-nil when GROUP is folded away to its header."
@@ -1968,9 +1954,10 @@ by; this one picks a single group out of it.
 
 Folds are not a narrowing: the folded formulas are still in the list,
 still counted, and \\[maf-formulas-clear-filter] leaves them folded —
-a fold is undone where it was made. Filtering does unfold everything,
-so that what a search turns up can be seen; the folds come back when
-the filter lifts \\(`maf-formulas--sync-collapse')."
+a fold is undone where it was made. Filtering is the exception, and
+unfolds everything so that what a search turns up can be seen; it
+stays unfolded once the filter lifts
+\\(`maf-formulas--sync-collapse')."
   (interactive)
   (let ((group (maf-formulas--group-of-point)))
     (unless group (user-error "No group here"))

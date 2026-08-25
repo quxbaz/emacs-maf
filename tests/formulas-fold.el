@@ -10,9 +10,10 @@
 ;;
 ;; The fold is not a narrowing. The folded formulas are still in the
 ;; list and still counted; `c' does not lift a fold. What does lift one
-;; is a search, which unfolds everything so its results can be seen and
-;; puts the folds back when it lifts — the bargain
-;; `maf-formulas--group-query' already strikes for a displaced query.
+;; is a search: every group unfolds, because a folded search is a
+;; search whose results cannot be seen. It stays unfolded afterwards —
+;; a list that re-folded itself as the filter lifted would take the
+;; results back from a user still reading them.
 ;;
 ;; Self-contained the way formulas-groups.el is: its own fixture in
 ;; `maf-formulas-user' with `maf-formulas-builtin' set aside, the file
@@ -193,27 +194,28 @@
 
   ;; A search unfolds everything, so that what it turns up can be seen:
   ;; results hidden behind a fold made earlier would be a search that
-  ;; answered nothing. The folds are set aside, not dropped.
+  ;; answered nothing. Driven through `/' and real keystrokes, the way
+  ;; it is met — the live narrowing runs off the minibuffer's own hook,
+  ;; which a programmatic call would step around.
   (save-window-excursion
-    (delete-other-windows)
     (maf-formulas)
     (with-selected-window (get-buffer-window "*maf-formulas*")
       (goto-char (point-min))
       (execute-kbd-macro (kbd "TAB"))
+      (cl-assert (= (length maf-formulas--collapsed) 2))
       (cl-assert (null (fold--rows)))
-      (maf-formulas-filter "sphere")
+      ;; RET rides in the same macro: the filter's read blocks until it.
+      (execute-kbd-macro (kbd "/ s p h e r e RET"))
+      (cl-assert (equal maf-formulas--query "sphere"))
       (cl-assert (null maf-formulas--collapsed))
-      (cl-assert maf-formulas--collapse-suspended)
-      (cl-assert (= (length maf-formulas--collapsed-saved) 2))
-      ;; The matches are on screen, folded group or not.
+      ;; The matches are on screen, folded a moment ago or not.
       (cl-assert (equal (fold--rows)
                         '("Volume of sphere" "Surface area of sphere")))
-      ;; Lifting the filter puts the folds back, the list returning to
-      ;; the shape it was being read in.
+      ;; And they stay on screen: lifting the filter leaves the list
+      ;; unfolded rather than folding the results away again.
       (maf-formulas-clear-filter)
-      (cl-assert (= (length maf-formulas--collapsed) 2))
-      (cl-assert (null maf-formulas--collapse-suspended))
-      (cl-assert (null (fold--rows)))
+      (cl-assert (null maf-formulas--collapsed))
+      (cl-assert (= (length (fold--rows)) 3))
       (maf-formulas-quit)))
 
   ;; RET on a folded header unfolds it on the way in: asking for a
@@ -252,9 +254,7 @@
     (fmakunbound 'fold--headers)
     (when-let ((buf (get-buffer "*maf-formulas*")))
       (with-current-buffer buf
-        (setq maf-formulas--collapsed nil
-              maf-formulas--collapsed-saved nil
-              maf-formulas--collapse-suspended nil)))
+        (setq maf-formulas--collapsed nil)))
     (setq maf-formulas-user (nth 0 fold--stash)
           maf-formulas--loaded (nth 1 fold--stash)
           maf-formulas--recent (nth 2 fold--stash)
