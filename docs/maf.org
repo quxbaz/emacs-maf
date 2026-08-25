@@ -26,7 +26,7 @@
     - [ ] update format: next to history item (eg, `maf-del`), show the command
       name (eg, `(maf-del)`)
     - [ ] show `C-M-k` binding in legend
-  - [ ] overload `(` and `)` to move point to largest expression on left/right side of
+  - [X] overload `(` and `)` to move point to largest expression on left/right side of
     equation/relation. only in stack mode (not edit mode).
   - *maf-formulas*
     - [ ] retain the legend even in filtered results view
