@@ -10,8 +10,10 @@
 ;; the entry it starts in, signalling at either edge rather than
 ;; crossing the margin, a numeric prefix counts stops (the other way
 ;; when negative), and an entry offering no stop of its own — a bare
-;; atom, a Big-language fraction with no flat rendering — signals
-;; wherever point sits in it. A step passes when it raises no error.
+;; atom, all of it one noun — signals wherever point sits in it. A
+;; rendering drawn over several lines is walked like any other, the
+;; stops running down it as they run across it. A step passes when it
+;; raises no error.
 
 (defun maf-test--flat (expr)
   "EXPR in flat notation, with the selection machinery's encasing gone."
@@ -153,8 +155,9 @@
 
   ;; An entry with no operation of its own has nowhere to step, and
   ;; says so where point stands rather than handing the walk to a
-  ;; neighbour: a bare number is all noun, and a Big-language fraction
-  ;; has no flat rendering to read stops off.
+  ;; neighbour: a bare number is all noun. The rest of this block runs
+  ;; in Big language, where an entry is drawn as a picture over several
+  ;; lines rather than a row of glyphs.
   (calc-wrapper (maf-push "6 x + 12") (maf-push "42")
                 (maf-push "1 / (x^2 - 1)") (maf-push "2 z"))
   (call-interactively 'maf-toggle-big-language)
@@ -170,14 +173,43 @@
                    (user-error 'signalled))))
   (cl-assert (= (calc-locate-cursor-element (point)) 3))
 
-  ;; The fraction is drawn over several lines, so it offers no stops
-  ;; either — and the entries around it are none of its business.
+  ;; The fraction is drawn over three lines, and the walk crosses all
+  ;; of them: the stops are read back through resolve rather than
+  ;; counted off a row of glyphs, so there is nothing for a rendering
+  ;; to be too tall for.
+  ;;
+  ;;       1
+  ;;   2:  ------      the quotient at its bar, then the stops of the
+  ;;        2          denominator, in the order the rendering draws
+  ;;       x  - 1      them
+  ;;
+  ;; The power is named by a blank, as a juxtaposed product is: the x
+  ;; and the raised 2 are each their own atom, so what is left to name
+  ;; x^2 by is the space beside them.
   (progn (calc-cursor-stack-index 2) (call-interactively 'maf-beginning-of-entry))
+  (cl-assert (looking-at "1$"))
   (cl-assert (= (calc-locate-cursor-element (point)) 2))
+  (progn (execute-kbd-macro (kbd "M-e")) nil)
+  (cl-assert (eq (char-after) ?-))
+  (cl-assert (string= (maf-test--part-at-point) "1 / (x^2 - 1)"))
+  (progn (execute-kbd-macro (kbd "M-e")) nil)
+  (cl-assert (eq (char-after) ?\s))
+  (cl-assert (string= (maf-test--part-at-point) "x^2"))
+  (progn (execute-kbd-macro (kbd "M-e")) nil)
+  (cl-assert (eq (char-after) ?-))
+  (cl-assert (string= (maf-test--part-at-point) "x^2 - 1"))
+
+  ;; The last stop is the last one here too: the entries around it are
+  ;; none of the walk's business, however many lines it just crossed.
   (cl-assert (eq 'signalled
                  (condition-case nil
                      (progn (call-interactively 'maf-forward-operand) 'moved)
                    (user-error 'signalled))))
+  (cl-assert (= (calc-locate-cursor-element (point)) 2))
+  (progn (execute-kbd-macro (kbd "M-a")) nil)
+  (cl-assert (string= (maf-test--part-at-point) "x^2"))
+  (progn (execute-kbd-macro (kbd "M-a")) nil)
+  (cl-assert (string= (maf-test--part-at-point) "1 / (x^2 - 1)"))
   (cl-assert (= (calc-locate-cursor-element (point)) 2))
 
   ;; An entry that is flat in Big language walks its own stops there
