@@ -9,6 +9,13 @@
   ;; The first entry on an empty stack.
   (cl-assert (equal (maf-history--classify '() '(a)) "new"))
 
+  ;; An added entry the stack already held is a duplication, not a fresh
+  ;; entry — RET on a whole entry, wherever the copy lands.
+  (cl-assert (equal (maf-history--classify '(b a) '(b b a)) "dupe"))
+  (cl-assert (equal (maf-history--classify '(b a) '(a b a)) "dupe"))
+  (cl-assert (equal (maf-history--classify '(b a) '(b a a)) "dupe"))
+  (cl-assert (equal (maf-history--classify '(a) '(a a)) "dupe"))
+
   ;; Exactly one value changed in place — an edit.
   (cl-assert (equal (maf-history--classify '(b a) '(x a)) "edit"))
   (cl-assert (equal (maf-history--classify '(a) '(z)) "edit"))

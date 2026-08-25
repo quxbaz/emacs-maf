@@ -123,37 +123,40 @@ views on one selection, so both read the same index.")
 
 ;;; Recording
 
-(defun maf-history--one-inserted-p (short long)
-  "Non-nil if LONG is SHORT with exactly one element inserted anywhere.
-Both are top-first value lists; comparison is by `equal'."
-  (and (= (length long) (1+ (length short)))
-       (let ((s short) (l long) (skipped nil) (ok t))
-         (while (and l ok)
-           (cond
-            ((and s (equal (car s) (car l))) (setq s (cdr s) l (cdr l)))
-            ((not skipped) (setq skipped t l (cdr l)))  ; the inserted one
-            (t (setq ok nil))))
-         (and ok (null s)))))
+(defun maf-history--diff (old new)
+  "Return (INDEX OLD-COUNT NEW-COUNT), where NEW differs from OLD.
+Both are top-first stack value lists, compared by `equal'. The entries
+the two stacks share at the bottom are matched off first and the ones
+they share at the top after, leaving one contiguous region: the
+OLD-COUNT entries at INDEX in OLD are the NEW-COUNT entries at INDEX in
+NEW. Matching the bottom first settles the ambiguous case — after
+duplicating an entry either copy could be called the new one — on the
+copy nearest the top, the end calc pushes to."
+  (let ((no (length old)) (nn (length new))
+        (tail 0) (head 0))
+    (let ((o (reverse old)) (n (reverse new)))
+      (while (and o n (equal (car o) (car n)))
+        (setq tail (1+ tail) o (cdr o) n (cdr n))))
+    (let ((o old) (n new) (limit (- (min no nn) tail)))
+      (while (and (< head limit) (equal (car o) (car n)))
+        (setq head (1+ head) o (cdr o) n (cdr n))))
+    (list head (- no tail head) (- nn tail head))))
 
 (defun maf-history--classify (old new)
   "Label the change from OLD to NEW stack values, both top-first lists.
-For a change with no trail prefix, name it structurally: `new' when one
-entry was added (the rest unchanged, wherever it landed), `edit' when
-exactly one value changed in place, `del' when entries were removed,
-else `change' (several changes at once, a reorder). Distinguishes
-adding an entry from editing one — the common single-entry cases
-exactly, the rest best-effort."
-  (let ((no (length old)) (nn (length new)))
+For a change with no trail prefix, name it structurally, off the region
+`maf-history--diff' finds: `new' when one entry was added (the rest
+unchanged, wherever it landed), `dupe' when that added entry is a copy
+of one the stack already held, `edit' when exactly one value changed in
+place, `del' when entries were removed, else `change' (several changes
+at once, a reorder). Distinguishes adding an entry from editing one —
+the common single-entry cases exactly, the rest best-effort."
+  (pcase-let ((`(,index ,old-count ,new-count) (maf-history--diff old new)))
     (cond
-     ((and (= nn (1+ no)) (maf-history--one-inserted-p old new)) "new")
-     ((and (= nn no)
-           (= 1 (let ((d 0) (o old) (n new))
-                  (while o
-                    (unless (equal (car o) (car n)) (setq d (1+ d)))
-                    (setq o (cdr o) n (cdr n)))
-                  d)))
-      "edit")
-     ((< nn no) "del")
+     ((and (= old-count 0) (= new-count 1))
+      (if (member (nth index new) old) "dupe" "new"))
+     ((and (= old-count 1) (= new-count 1)) "edit")
+     ((< (length new) (length old)) "del")
      (t "change"))))
 
 (defun maf-history--capture ()
@@ -253,9 +256,9 @@ structural label agree by construction."
   (if (not has-older)
       (cons ?· 'shadow)
     (pcase (maf-history--classify older values)
-      ("new" (cons ?+ 'maf-history-added))
-      ("del" (cons ?- 'maf-history-removed))
-      (_     (cons ?~ 'maf-history-modified)))))
+      ((or "new" "dupe") (cons ?+ 'maf-history-added))
+      ("del"             (cons ?- 'maf-history-removed))
+      (_                 (cons ?~ 'maf-history-modified)))))
 
 (defvar maf-history--controls nil
   "Commands summarized on the legend line, in order.
@@ -363,11 +366,13 @@ counter."
 (defun maf-history--render-stack (&optional follow)
   "Render the selected state\='s stack into the current buffer, the right window.
 Rendered as calc renders the stack, deepest entry first, with the
-entries this step produced highlighted — those absent from the state
-before it; the oldest state has no reference to diff against. Every
-line carries its entry\='s value, so RET works anywhere on the row,
-continuation lines of a multi-line entry included. The header line
-carries the key legend (see `maf-history--legend').
+entries this step produced highlighted — the region `maf-history--diff'
+finds against the state before it, so a duplicate highlights the copy
+it added rather than nothing at all; the oldest state has no reference
+to diff against and highlights nothing. Every line carries its entry\='s
+value, so RET works anywhere on the row, continuation lines of a
+multi-line entry included. The header line carries the key legend (see
+`maf-history--legend').
 
 Point keeps its line and column, so a re-render under an unchanged
 selection leaves it be; with FOLLOW non-nil — the selection moved, or
@@ -377,8 +382,11 @@ RET target."
          (index maf-history--index)
          (state (nth index maf-history--states))
          (values (nth 0 state))
-         (prev-values (and (< (1+ index) total)
-                           (nth 0 (nth (1+ index) maf-history--states))))
+         ;; The older state itself, not its values: a state whose stack
+         ;; was empty is still something to diff against, and everything
+         ;; here is then new.
+         (prev (and (< (1+ index) total)
+                    (nth (1+ index) maf-history--states)))
          (fresh (zerop (buffer-size)))
          (line (line-number-at-pos))
          (col (current-column))
@@ -391,9 +399,16 @@ RET target."
      ((null values)
       (insert (propertize "(empty stack)" 'face 'shadow) "\n"))
      (t
-      (let ((level (length values)))
+      ;; Which entries this step produced is a matter of position, not of
+      ;; membership: duplicating an entry leaves a copy that the state
+      ;; before it also held, and that copy is exactly what to highlight.
+      (pcase-let* ((`(,from ,_ ,count) (if prev
+                                           (maf-history--diff (nth 0 prev) values)
+                                         (list 0 0 0)))
+                   (level (length values)))
         (dolist (val (reverse values))
-          (let ((changed (and prev-values (not (member val prev-values)))))
+          (let* ((entry (1- level))
+                 (changed (and (>= entry from) (< entry (+ from count)))))
             (setq target (point))
             (let ((start (point)))
               (insert (maf-history--format-entry val level) "\n")

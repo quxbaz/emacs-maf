@@ -82,6 +82,41 @@
     (progn (goto-char (point-min)))
     (cl-assert (null (get-text-property (point) 'face))))
 
+  ;; Duplicating an entry reads as `dupe' and still marks as an addition.
+  ;; The copy it added is highlighted even though the state before it
+  ;; held that same value — which entry the step produced is a matter of
+  ;; position, not of membership — and the copy nearest the top is the
+  ;; one taken, the end calc pushes to.
+  (progn (setq maf-history--states (list (list (list 5 5 3) "dupe")
+                                         (list (list 5 3) "mult")
+                                         (list (list 3) nil))
+               maf-history--index 0)
+         (maf-history--render t))
+  (with-current-buffer (maf-history--buffer)
+    (cl-assert (equal (buffer-substring-no-properties (point-min) (point-max))
+                      "▸ + dupe\n  + mult\n  · entry\n")))
+  (with-current-buffer (maf-history--stack-buffer)
+    (cl-assert (equal (buffer-substring-no-properties (point-min) (point-max))
+                      "3:  3\n2:  5\n1:  5\n"))
+    ;; Top of stack: the copy, highlighted.
+    (cl-assert (looking-at-p "1:  5"))
+    (cl-assert (eq (get-text-property (point) 'face) 'maf-history-changed))
+    ;; The 5 below it is the original, carried over.
+    (progn (goto-char (point-min)) (forward-line 1))
+    (cl-assert (looking-at-p "2:  5"))
+    (cl-assert (null (get-text-property (point) 'face))))
+
+  ;; A state before an emptied stack is still a state to diff against, so
+  ;; the first entry after one is highlighted rather than left plain.
+  (progn (setq maf-history--states (list (list (list 7) "new")
+                                         (list nil "del"))
+               maf-history--index 0)
+         (maf-history--render t))
+  (with-current-buffer (maf-history--stack-buffer)
+    (cl-assert (equal (buffer-substring-no-properties (point-min) (point-max))
+                      "1:  7\n"))
+    (cl-assert (eq (get-text-property (point) 'face) 'maf-history-changed)))
+
   ;; An empty stack renders as its placeholder, and an empty log leaves
   ;; the counter off the header and says so in both windows.
   (progn (setq maf-history--states (list (list nil "del") (list (list 5) nil))
