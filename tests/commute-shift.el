@@ -2,6 +2,35 @@
 ;; under point through its associative chain, with point following the
 ;; moved term.  Run in a live Emacs (see tests/README.md).
 (maf-step
+  ;; --- Keys ---
+
+  ;; Both spellings reach the same pair: the j prefix, and the shifted
+  ;; arrows that say the direction the term travels.
+  (cl-assert (eq (key-binding (kbd "j l")) 'maf-commute-left))
+  (cl-assert (eq (key-binding (kbd "j r")) 'maf-commute-right))
+  (cl-assert (eq (key-binding (kbd "S-<left>")) 'maf-commute-left))
+  (cl-assert (eq (key-binding (kbd "S-<right>")) 'maf-commute-right))
+  ;; The plain arrows stay the buffer's own motion keys.
+  (cl-assert (eq (key-binding (kbd "<left>")) 'left-char))
+  (cl-assert (eq (key-binding (kbd "<right>")) 'right-char))
+
+  ;; Driven as real keys, the arrows shift the term and carry point --
+  ;; unlike the j prefix, which execute-kbd-macro cannot deliver
+  ;; (calc's fancy prefixes), so the rest of this file calls the
+  ;; commands directly.
+  (maf-push "[h = 0, p = -4, k = 0]")
+  (progn (calc-cursor-stack-index 1) (beginning-of-line)
+         (search-forward "p ="))
+  (execute-kbd-macro (kbd "S-<left>"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full))
+                      "[p = -4, h = 0, k = 0]"))
+  (cl-assert (string= (buffer-substring (- (point) 3) (point)) "p ="))
+  (execute-kbd-macro (kbd "S-<right>"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full))
+                      "[h = 0, p = -4, k = 0]"))
+  (cl-assert (string= (buffer-substring (- (point) 3) (point)) "p ="))
+  (calc-pop 1)
+
   ;; --- Basic shift, point follows the moved term ---
 
   ;; Left: the term under point moves one place left; point stays on it.

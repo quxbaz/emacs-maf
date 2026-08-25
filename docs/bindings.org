@@ -259,8 +259,9 @@
    - [X] `i` mafcmd-solve-for ← calc-info
    - [X] `e` mafcmd-equal-to ← calcDigit-start
    - [X] `O` mafcmd-commute ← calc-option
-   - [X] `j l` maf-commute-left ← calc-select-less
-   - [X] `j r` maf-commute-right ← calc-rewrite-selection
+   - [X] `j l` maf-commute-left ← calc-select-less (also on `S-<left>`)
+   - [X] `j r` maf-commute-right ← calc-rewrite-selection (also on
+     `S-<right>`)
    - [X] `j D` maf-distribute ← calc-sel-distribute (prompt-free version
      of the same operation)
      - resolved (2026-08-19): not folded into `x` — expand-all and
@@ -356,6 +357,11 @@
      `k k`; the mode's slice of the C-c convention, with its
      do-the-obvious-thing reflex)
    - [X] `S-<up>` / `S-<down>` mafcmd-toggle-op
+   - [X] `S-<left>` / `S-<right>` maf-commute-left / -right (2026-08-25:
+     second keys beside their `j l` / `j r`, the arrow saying the
+     direction the term travels and repeating without leaving the key;
+     joins the S-arrow family above, the plain arrows staying the
+     buffer's motion keys)
    - [X] `C-|` mafcmd-bracket
    - [X] `v RET` maf-index
    - [X] `v o` mafcmd-sort (2026-08-24: a second key beside its table
