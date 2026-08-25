@@ -1057,6 +1057,55 @@ It is kept here so RET on the header again puts back the filtered list
 it was pressed from. The two narrowings are never in force together:
 filtering from inside a group leaves the group, taking this with it.")
 
+(defvar-local maf-formulas--collapsed nil
+  "Categories folded away to their headers, or nil for none.
+A third narrowing, and the only one that is not a narrowing of what
+the list holds: the folded groups are still in it, still counted in
+their headers, and a fold is undone where it was made rather than
+from a key that clears the lot. What it buys is the whole list read
+as its group names, which is how a list this long is navigated —
+glance down the headers, unfold the one wanted.
+
+Held by category name, the same string `maf-formulas--groups' keys a
+group by, so a fold survives the re-renders a filter and a group
+narrowing cause. A name no longer in the list simply never matches.")
+
+(defvar-local maf-formulas--collapsed-saved nil
+  "Folds set aside while a filter is in force, put back when it lifts.
+See `maf-formulas--sync-collapse'.")
+
+(defvar-local maf-formulas--collapse-suspended nil
+  "Non-nil while a filter has the folds set aside.
+Distinguishes \"nothing was folded\" from \"the folds are in
+`maf-formulas--collapsed-saved'\", which an empty list cannot.")
+
+(defun maf-formulas--sync-collapse ()
+  "Reconcile the folds with the filter, before a render reads them.
+A search that left its groups folded would hide the very rows it
+found, so a filter in force unfolds everything — the toggle really is
+flipped to shown, not merely overridden for the render. The folds are
+set aside rather than dropped, and come back when the filter lifts:
+the same bargain `maf-formulas--group-query' strikes for the query a
+group narrowing displaces, so a search costs a look at the list, not
+the shape it was being read in.
+
+Called from `maf-formulas--render', so every path that changes the
+query — filtering, clearing, abandoning a filter, stepping into a
+group — is covered by the one rule, none of them having to know it."
+  (if (string-empty-p maf-formulas--query)
+      (when maf-formulas--collapse-suspended
+        (setq maf-formulas--collapsed maf-formulas--collapsed-saved
+              maf-formulas--collapsed-saved nil
+              maf-formulas--collapse-suspended nil))
+    (unless maf-formulas--collapse-suspended
+      (setq maf-formulas--collapsed-saved maf-formulas--collapsed
+            maf-formulas--collapsed nil
+            maf-formulas--collapse-suspended t))))
+
+(defun maf-formulas--collapsed-p (group)
+  "Non-nil when GROUP is folded away to its header."
+  (and (member group maf-formulas--collapsed) t))
+
 (defvar maf-formulas--recent nil
   "Formulas inserted this session, most recent first.
 A plain variable, so the list dies with the session — recency is a
@@ -1183,6 +1232,7 @@ named the filter took the legend away exactly when it was in use."
                      (list (if state (mapconcat #'identity state "  ") "maf-formulas")
                            (funcall entry "RET" "inserts")
                            (funcall entry "/" "filters")
+                           (funcall entry "TAB" "folds")
                            ;; Only while something is narrowed: the key is
                            ;; noise until there is something for it to clear.
                            (when state (funcall entry "c" "clears"))
@@ -1202,22 +1252,42 @@ named the filter took the legend away exactly when it was in use."
 
 (defun maf-formulas--render ()
   "Render the categorized list: each formula beside its one-line form.
-Groups are separated by a blank line."
-  (let* ((inhibit-read-only t) (first t)
+Groups are separated by a blank line. A folded group renders as its
+header alone, wearing the count of what it holds so the list still
+says how much is down there; consecutive folded groups drop the blank
+between them, the fold view being worth reading in one glance.
+
+The header carries its category in a `maf-formula-group' text
+property rather than being read back off the line, the count having
+made the line and the name two different strings."
+  (maf-formulas--sync-collapse)
+  (let* ((inhibit-read-only t) (first t) (prev-folded nil)
          (groups (maf-formulas--groups))
-         (fs (apply #'append (mapcar #'cdr groups))))
+         ;; Folded rows are not drawn, so they are no reason to widen
+         ;; the column the drawn ones align on.
+         (fs (apply #'append (mapcar (lambda (g)
+                                       (unless (maf-formulas--collapsed-p (car g))
+                                         (cdr g)))
+                                     groups))))
     (erase-buffer)
     (setq header-line-format (maf-formulas--header-line))
     (let ((w (apply #'max 0 (mapcar (lambda (f) (length (maf-formulas--title f))) fs))))
       (dolist (g groups)
-        (unless first (insert "\n"))    ; blank line above each group
-        (setq first nil)
-        (insert (propertize (car g) 'face
-                            (if (equal (car g) maf-formulas--recent-category)
-                                'maf-formulas-recent
-                              'maf-formulas-category))
-                "\n")
-        (dolist (f (cdr g))
+        (let ((folded (maf-formulas--collapsed-p (car g)))
+              hstart)
+          (unless (or first (and folded prev-folded))
+            (insert "\n"))             ; blank line above each group
+          (setq first nil prev-folded folded hstart (point))
+          (insert (propertize (car g) 'face
+                              (if (equal (car g) maf-formulas--recent-category)
+                                  'maf-formulas-recent
+                                'maf-formulas-category)))
+          (when folded
+            (insert " " (propertize (format "(%d)" (length (cdr g)))
+                                    'face 'maf-formulas-leader)))
+          (insert "\n")
+          (put-text-property hstart (point) 'maf-formula-group (car g)))
+        (dolist (f (unless (maf-formulas--collapsed-p (car g)) (cdr g)))
           (let* ((start (point))
                  (title (maf-formulas--title f))
                  ;; A dotted leader bridges the gap to the aligned formula
@@ -1527,7 +1597,7 @@ decides."
     (and header
          (equal (save-excursion
                   (goto-char header)
-                  (buffer-substring-no-properties header (line-end-position)))
+                  (maf-formulas--group-at-point))
                 maf-formulas--recent-category))))
 
 (defun maf-formulas--goto-formula (f recent)
@@ -1759,7 +1829,11 @@ so no title or variable of its formulas names it."
         (setq maf-formulas--group nil
               maf-formulas--query (or maf-formulas--group-query "")
               maf-formulas--group-query nil)
-      (setq maf-formulas--group group
+      ;; Asking for a group is asking to see it, so a fold on the way
+      ;; in is lifted rather than left to hide what was just reached
+      ;; for — the same courtesy a filter gets in `maf-formulas--sync-collapse'.
+      (setq maf-formulas--collapsed (remove group maf-formulas--collapsed)
+            maf-formulas--group group
             maf-formulas--group-query maf-formulas--query
             maf-formulas--query ""))
     (maf-formulas--render)
@@ -1768,13 +1842,18 @@ so no title or variable of its formulas names it."
 
 (defun maf-formulas--group-at-point ()
   "The category name when point is on a group header, else nil.
-A header is a non-blank line carrying no formula, and its whole text
-is the category — the same string `maf-formulas--groups' keyed the
-group by, so it can be handed straight back as a narrowing."
+A header is a non-blank line carrying no formula, and the renderer
+puts the category in its `maf-formula-group' property — the same
+string `maf-formulas--groups' keyed the group by, so it can be handed
+straight back as a narrowing. The line's own text no longer serves
+for that: a folded header wears its count as well as its name. The
+text is still read when the property is missing, for a buffer
+rendered before the property existed."
   (let ((bol (line-beginning-position)))
     (and (> (line-end-position) bol)
          (not (get-text-property bol 'maf-formula))
-         (buffer-substring-no-properties bol (line-end-position)))))
+         (or (get-text-property bol 'maf-formula-group)
+             (buffer-substring-no-properties bol (line-end-position))))))
 
 (defun maf-formulas--group-starts ()
   "Buffer positions of each category header line."
@@ -1864,6 +1943,64 @@ header, a second to the header before it."
           (before (goto-char before))
           (t (user-error "No previous group")))))
 
+(defun maf-formulas--group-of-point ()
+  "The category the line at point belongs to.
+Its own name on a header, and the nearest header above on a formula
+row — so a key meaning \"this group\" can be pressed anywhere in it."
+  (or (maf-formulas--group-at-point)
+      (let* ((p (line-beginning-position))
+             (header (car (last (seq-filter (lambda (s) (<= s p))
+                                            (maf-formulas--group-starts))))))
+        (and header (save-excursion (goto-char header)
+                                    (maf-formulas--group-at-point))))))
+
+(defun maf-formulas-toggle-group ()
+  "Fold the group at point away to its header, or unfold it again.
+A folded group keeps its header and wears the count of what it holds,
+so a list too long to read is read as its group names instead — fold
+what is not wanted, glance down the headers, unfold the one that is.
+Pressed on a formula row it folds the group that row is in, point
+coming to rest on the header; pressed on that header it unfolds.
+
+\\<maf-formulas-mode-map>\\[maf-formulas-toggle-all-groups] folds or
+unfolds every group at once, and is the key the fold view is reached
+by; this one picks a single group out of it.
+
+Folds are not a narrowing: the folded formulas are still in the list,
+still counted, and \\[maf-formulas-clear-filter] leaves them folded —
+a fold is undone where it was made. Filtering does unfold everything,
+so that what a search turns up can be seen; the folds come back when
+the filter lifts \\(`maf-formulas--sync-collapse')."
+  (interactive)
+  (let ((group (maf-formulas--group-of-point)))
+    (unless group (user-error "No group here"))
+    (setq maf-formulas--collapsed
+          (if (maf-formulas--collapsed-p group)
+              (remove group maf-formulas--collapsed)
+            (cons group maf-formulas--collapsed)))
+    (maf-formulas--render)
+    (maf-formulas--goto-group group)
+    (maf-formulas--item-start)))
+
+(defun maf-formulas-toggle-all-groups ()
+  "Fold every group away to its headers, or unfold them all.
+The fold view for the whole list in one key: with anything folded this
+unfolds the lot, otherwise it folds the lot. Point keeps its group,
+landing on that header when the rows it was among have gone.
+
+What it folds does not depend on where it is pressed — the key is for
+a view of the whole list, and means the same thing from any line in
+it. Folding one group at a time is
+\\<maf-formulas-mode-map>\\[maf-formulas-toggle-group]."
+  (interactive)
+  (let ((group (maf-formulas--group-of-point)))
+    (setq maf-formulas--collapsed
+          (unless maf-formulas--collapsed
+            (mapcar #'car (maf-formulas--groups))))
+    (maf-formulas--render)
+    (when group (maf-formulas--goto-group group))
+    (maf-formulas--item-start)))
+
 (defun maf-formulas-quit ()
   "Quit the formula menu, closing the detail pane too.
 The menu's window is deleted if `maf-formulas' made one, or goes back to
@@ -1895,17 +2032,26 @@ untouched either way."
 (define-key maf-formulas-mode-map (kbd "i")   #'maf-formulas-add-recent)
 (define-key maf-formulas-mode-map (kbd "D")   #'maf-formulas-delete-recent)
 (define-key maf-formulas-mode-map (kbd "C-g") #'maf-formulas-keyboard-quit)
-;; Two levels of motion: n/p/j/k and TAB/S-TAB step formula to formula
-;; (headers and the blank lines between groups are skipped), M-n/M-p
-;; step group to group.
+;; Two levels of motion: n/p/j/k step formula to formula (headers and
+;; the blank lines between groups are skipped), M-n/M-p step group to
+;; group.
 (define-key maf-formulas-mode-map (kbd "n")   #'maf-formulas-next-item)
 (define-key maf-formulas-mode-map (kbd "p")   #'maf-formulas-prev-item)
 (define-key maf-formulas-mode-map (kbd "j")   #'maf-formulas-next-item)
 (define-key maf-formulas-mode-map (kbd "k")   #'maf-formulas-prev-item)
-(define-key maf-formulas-mode-map (kbd "TAB")       #'maf-formulas-next-item)
-(define-key maf-formulas-mode-map (kbd "<backtab>") #'maf-formulas-prev-item)
 (define-key maf-formulas-mode-map (kbd "M-n") #'maf-formulas-next-group)
 (define-key maf-formulas-mode-map (kbd "M-p") #'maf-formulas-prev-group)
+;; TAB folds, the outline reflex — and the list is long enough now to
+;; be read as its headers. It had been a third key for the item
+;; motion, which n/p/j/k already cover twice over; the fold has no
+;; other key it would be looked for on.
+;;
+;; The whole list, not the group under point: TAB means the same thing
+;; wherever it is pressed, which is what makes it the key for a view
+;; of the list rather than an edit to one corner of it. S-TAB is the
+;; one group, for picking the wanted one out of a folded list.
+(define-key maf-formulas-mode-map (kbd "TAB")       #'maf-formulas-toggle-all-groups)
+(define-key maf-formulas-mode-map (kbd "<backtab>") #'maf-formulas-toggle-group)
 
 (define-derived-mode maf-formulas-mode special-mode "maf-formulas"
   "Major mode for the saved-formula list.
@@ -1916,7 +2062,11 @@ pushes the formula at point onto the stack — or, on a group header,
 narrows the list to that group, whole, and widens again when pressed
 there a second time. \\[maf-formulas-next-item] and \\[maf-formulas-prev-item] step between the rows and the headers
 alike, landing on the entry itself rather than the column before it;
-\\[maf-formulas-next-group] and \\[maf-formulas-prev-group] step group to group. \\[maf-formulas-show-detail] shows the formula at
+\\[maf-formulas-next-group] and \\[maf-formulas-prev-group] step group to group.
+\\[maf-formulas-toggle-all-groups] folds every group away to its header
+and unfolds them all again, so a long list can be read as its group
+names; \\[maf-formulas-toggle-group] folds or unfolds the one group at
+point. \\[maf-formulas-show-detail] shows the formula at
 point in the detail pane (again to close it), \\[maf-formulas-toggle-detail] toggles the pane following point (on by
 default, remembered for the session), \\[maf-formulas-add-recent] adds the formula at point to
 the Recent group without inserting it, \\[maf-formulas-delete-recent] drops the recent entry at
