@@ -227,6 +227,11 @@
    - [X] `N` mafcmd-negate ← calc-eval-num
    - [X] `o` mafcmd-inv ← calc-realign
    - [X] `\` mafcmd-sqrt ← calc-idiv
+   - [X] `:` mafcmd-sqr ← calc-fdiv (2026-08-24: an unshifted key
+     beside `W`, the pairing an edit session already makes — `:` and
+     `W` both raise to a power there, so the stack answers the same
+     way. Calc's fraction divide keeps the key in the calc profile,
+     and the mafcmd table has no fdiv row to strand)
    - [X] `<` mafcmd-decrement ← calc-scroll-left
    - [X] `>` mafcmd-increment ← calc-scroll-right
    - [X] `x` mafcmd-expand ← calc-execute-extended-command

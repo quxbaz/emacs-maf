@@ -55,6 +55,11 @@
 ;; inverse flag, and W is free in both maps. The next key over from
 ;; Q, and the shape of the two square-root keys' inverse.
 (maf-bindings-define '(native) "W" #'mafcmd-sqr)
+;; And an unshifted key beside it, the pairing an edit session already
+;; makes: : and W both raise to a power there, so the stack answers
+;; the same way. Displaces calc's fraction divide, which the mafcmd
+;; table keeps no key for.
+(maf-bindings-define '(native) ":" #'mafcmd-sqr)
 
 ;; The combinators, on calc's own keys for them: each reads its
 ;; operation from the next key press, as calc's V R and V O do, but
