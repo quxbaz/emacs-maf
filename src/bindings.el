@@ -582,7 +582,15 @@
 ;; walks. A prefix argument counts operands, backward when negative; a
 ;; terminal needs the decode entries at the end of this file to say
 ;; the key at all.
+;;
+;; The reverse walk takes C-M-SPC: space again, so the pair reads as one
+;; gesture under two modifiers, and calc binds nothing there either —
+;; all the binding shadows is the global map's `mark-sexp', which has
+;; no sexp to mark in a stack buffer. A terminal says this key without
+;; help: xterm.el's table carries keycode 32 under ctrl+alt, the entry
+;; it lacks for shift alone.
 (maf-bindings-define '(native) "S-SPC" #'maf-forward-operand)
+(maf-bindings-define '(native) "C-M-SPC" #'maf-backward-operand)
 
 ;; Step out to the enclosing sub-formula, taking the key the global map
 ;; gives `backward-up-list' — the same gesture, over the formula rather
