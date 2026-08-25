@@ -19,9 +19,12 @@
     - [-] on new `L` command, insert a horizontal line separator in history
       entries at point
     - is it possible to make it unselectable (not actually occupy a line, just display it)?
-  - [ ] stuff like this should be included in basic simplification (`k k`)
+  - [X] stuff like this should be included in basic simplification (`k k`)
     2^log(x, 2) => x
     e^ln(x) => x (i think this works already, so we just need to generalize it to any base)
+    - done by the =maf-log-power= module (on by default); =k k= also
+      collapses the scaled form =2^(2 log(x, 2))= => =x^2=, log10
+      spelling included
   - [-] x|
     command: `, y`
     expect: x y
