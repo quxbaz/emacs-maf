@@ -12,9 +12,10 @@
 ;;
 ;; What is here now are the four delimiter gestures, TAB, M-o, C-RET
 ;; and the shifted arrows, the function keys L, Q, |, S, C, T and B,
-;; the exponent keys M-2 through M-9 and :, P for the constant pi,
-;; the union U that commit trades for calc's ||, and DEL and C-d,
-;; which delete a power whole from either side of its operator.
+;; the exponent keys M-2 through M-9 and :, P for the constant pi and
+;; J for the multiplication sign, the union U that commit trades for
+;; calc's ||, and DEL and C-d, which delete a power whole from either
+;; side of its operator.
 ;;
 ;; TAB escapes. Typing a formula runs forward past closing delimiters
 ;; constantly — sqrt(x^2+1), f(g(x)) — and reaching the far side of one
@@ -2236,6 +2237,19 @@ what goes in."
         (insert " "))
       (insert name))))
 
+(defun maf-editplus-insert-times (n)
+  "Insert the multiplication sign, N times, on the unmodified `J' key.
+J is what maf gives multiplication on the stack (`mafcmd-mul'), and
+this carries the letter into the session: it types `*', by the same
+self-insertion the `*' key itself runs, so the operator keeps one key
+on both sides of a maf-edit session and reaching across for shift-8
+mid-formula is optional rather than required.
+
+A capital J is no longer self-inserting during a session — see
+`maf-use-editplus-mode' on what that costs."
+  (interactive "p")
+  (self-insert-command n ?*))
+
 ;;; The module
 
 (define-minor-mode maf-use-editplus-mode
@@ -2253,6 +2267,7 @@ These keys work only while a maf-edit session is active:
   M-2..M-9      Type ^2 through ^9.
   : or W        Square the target; repeat to raise the power.
   P             Type pi.
+  J             Type *, as the `*' key does.
   DEL/C-d       Delete a whole power when deleting next to ^.
 
 For example, press Q on x in x+1 to get sqrt(x)+1. Press W on x to
@@ -2284,6 +2299,7 @@ Turning this mode off restores the ordinary editing keys."
                  (":"   . maf-editplus-raise-power)
                  ("W"   . maf-editplus-raise-power)
                  ("P"   . maf-editplus-insert-pi)
+                 ("J"   . maf-editplus-insert-times)
                  ("DEL" . maf-editplus-delete-backward)
                  ("C-d" . maf-editplus-delete-forward)))
       (define-key maf-edit-mode-map (kbd (car b)) (and on (cdr b))))
@@ -2315,8 +2331,9 @@ Turning this mode off restores the ordinary editing keys."
 
 For example, Q wraps x as sqrt(x), W changes x to x^2, and M-3 types
 ^3. TAB moves out of parentheses, M-o adds them, and DEL or C-d
-removes a whole power cleanly. A spaced-out U commits as the union
-||. These keys work only while editing."
+removes a whole power cleanly. J types the multiplication sign, and a
+spaced-out U commits as the union ||. These keys work only while
+editing."
                        nil "Editing"))
 
 (provide 'maf-editplus)
