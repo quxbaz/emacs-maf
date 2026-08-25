@@ -9,8 +9,14 @@
 ;; buffer (pkg/dial) that previews, restores, names or deletes any
 ;; session's stack. The whole feature hangs off one switch,
 ;; `maf-persist-mode' (a global minor mode); loading this
-;; file changes nothing. Save files hold plain formula values: no
-;; selections, trail, or undo history.
+;; file changes nothing.
+;;
+;; A session writes two files. Its stack holds plain formula values —
+;; no selections, trail, or calc undo history — and beside it, under
+;; the same session name, the history module's log: the states it
+;; recorded and the separators dividing them into sittings. The two
+;; are written separately, so a log too big or too broken to read
+;; costs nothing but the log.
 ;;
 ;; The mode is registered with the module system as `persist' (see
 ;; `maf-modules'). Unlike the highlight and history modules it is not
@@ -26,11 +32,19 @@
 ;; `maf-stack-session-name' to name a session explicitly.
 
 (require 'calc)
+(require 'seq)
 (require 'dial)
 (require 'maf-lib)
 (require 'maf-conf "conf")  ; the `maf' customize group
 
 (defvar maf-mode-map)
+
+;; The history module is a soft dependency: persisting its log must not
+;; drag it in, and this file loads without it.
+(defvar maf-history--states)
+(defvar maf-history--index)
+(defvar maf-history-size)
+(declare-function maf-history--refresh "maf-history")
 
 (defcustom maf-stack-directory (locate-user-emacs-file "maf-stacks/")
   "Directory holding the per-session calc stack save files."
@@ -124,10 +138,16 @@ The file holds the stack's formula values, top first, with
 save — and a session with no calc buffer at all — write nothing.
 Returns non-nil when a write happened.
 
+The history log is saved alongside, silently and whatever the stack
+did: a sitting can be marked off with a separator without a formula
+moving, and that is a change worth keeping too.
+
 INTERACTIVE non-nil, as when l S runs this, reports what happened in
-the echo area: the idle-timer and kill-emacs saves stay silent."
+the echo area: the idle-timer and kill-emacs saves stay silent, and
+the message speaks for the stack, the log riding along unmentioned."
   (interactive (list t))
-  (let ((buf (get-buffer "*Calculator*")))
+  (prog1
+      (let ((buf (get-buffer "*Calculator*")))
     (cond
      ((not buf)
       (when interactive (message "maf: no calc stack to save"))
@@ -160,7 +180,8 @@ the echo area: the idle-timer and kill-emacs saves stay silent."
             (message "maf: saved %d entr%s to session %s"
                      (length values) (if (= 1 (length values)) "y" "ies")
                      maf--stack-session))
-          t)))))))
+          t))))))
+    (maf-save-history)))
 
 (defun maf--stack-read (file)
   "Read and return the stack values saved in FILE."
@@ -170,12 +191,17 @@ the echo area: the idle-timer and kill-emacs saves stay silent."
 
 (defun maf-restore-stack ()
   "Restore this session's saved calc stack, once per session.
+The history log is restored first, so the stack landing on top of it
+reads against the log's newest state rather than against nothing, and
+the state that restore would otherwise record is recognised as the one
+already at the top of the log and skipped.
 Runs in the calc buffer, and only onto an empty stack. Without a save
 file for this session the stack starts empty, mentioning
 `maf-restore-stack-from' when other sessions' stacks exist. A file
 that cannot be read is skipped with a message and left in place for
 inspection — calc starts empty rather than failing to start."
   (interactive)
+  (maf-restore-history)
   (unless maf--stack-restored
     (setq maf--stack-restored t)
     (when (zerop (calc-stack-size))
@@ -196,6 +222,100 @@ inspection — calc starts empty rather than failing to start."
                   (setq maf--stack-last-saved values)))
             (error (message "maf: calc stack not restored, %s unreadable (%s)"
                             file (error-message-string err)))))))))
+
+;;; The history log
+
+;; The other record a session builds up (see `maf-history--states'),
+;; and the one with handmade parts in it: the separators dividing the
+;; log into sittings, and the names written into them, are typed
+;; rather than derived, so they are worth more than a session.
+;;
+;; It rides this module's session name and lock, in a file of its own
+;; beside the stack's — one write never rewrites the other, and the
+;; extension is deliberately not `.eld': `maf--stack-saved-sessions'
+;; globs that, and a log file wearing it would show up in the browser
+;; as a session of its own.
+;;
+;; A soft dependency. The history module need not be loaded at all,
+;; and with its mode off nothing is recorded, so there is no log to
+;; write — a saved one is then left as it stands rather than being
+;; overwritten with the empty log of a session that never kept one.
+
+(defvar maf--history-last-saved nil
+  "Printed history states at the last save, for skipping no-change writes.
+The printed form rather than the states: a state is modified in place
+when a separator is set on it (see `maf-history--set-separator'), so a
+copy of the list would be changed under this by the very edit it is
+meant to notice.")
+
+(defvar maf--history-restored nil
+  "Non-nil once `maf-restore-history' has run in this session.")
+
+(defun maf--history-file (&optional name)
+  "Return the path of session NAME's history file, this session's by default."
+  (maf--stack-file (or name (maf--stack-session)) ".history"))
+
+(defun maf--history-live-p ()
+  "Non-nil when this session keeps a history log to persist."
+  (and (featurep 'maf-history)
+       (bound-and-true-p maf-use-history-mode)))
+
+(defun maf-save-history ()
+  "Save this session's history log beside its saved stack.
+The file holds `maf-history--states' whole: each recorded state's
+values, the label and command that made it, and the separator it
+carries. Unchanged states since the last save write nothing, and a
+session keeping no log leaves the file alone rather than emptying it.
+Returns non-nil when a write happened."
+  (when (maf--history-live-p)
+    (let* ((print-length nil)
+           (print-level nil)
+           (printed (prin1-to-string maf-history--states)))
+      (unless (equal printed maf--history-last-saved)
+        (setq maf--history-last-saved printed)
+        (make-directory maf-stack-directory t)
+        (with-temp-file (maf--history-file) (insert printed))
+        t))))
+
+(defun maf--history-read (file)
+  "Read and return the history states saved in FILE.
+Signals when the file does not hold a log: a list of states, each a
+list itself. Read before anything is set from it, so a file that is
+not one leaves the running log alone."
+  (let ((states (with-temp-buffer
+                  (insert-file-contents file)
+                  (read (current-buffer)))))
+    (unless (and (listp states) (seq-every-p #'consp states))
+      (error "Not a history log"))
+    states))
+
+(defun maf-restore-history ()
+  "Restore this session's saved history log, once per session.
+Only onto an empty log: a session that has already recorded something
+keeps what it recorded rather than having an older log land under it.
+The restored states are trimmed to `maf-history-size', which may have
+been lowered since the save. A file that cannot be read is skipped
+with a message and left in place for inspection, as the stack's is —
+a broken log is not worth failing a calc session over."
+  (interactive)
+  (unless maf--history-restored
+    (setq maf--history-restored t)
+    (when (and (maf--history-live-p) (null maf-history--states))
+      (let ((file (maf--history-file)))
+        (when (file-exists-p file)
+          (condition-case err
+              (let ((states (seq-take (maf--history-read file)
+                                      maf-history-size)))
+                (setq maf-history--states states
+                      maf-history--index 0)
+                ;; What was just read is what is saved, so the next
+                ;; save has nothing to do until something changes.
+                (let ((print-length nil) (print-level nil))
+                  (setq maf--history-last-saved (prin1-to-string states)))
+                (maf-history--refresh))
+            (error (message "maf: history not restored, %s unreadable (%s)"
+                            file (error-message-string err)))))))))
+
 
 ;;; Choosing another session's stack
 
@@ -455,6 +575,11 @@ session's leftover lock is dropped along the way — it named nothing."
                 (maf--stack-lock-owner name))
         (user-error "Session %s already taken" name))
       (rename-file (maf--stack-file old) (maf--stack-file name))
+      ;; The log belongs to the stack it was recorded against, so it
+      ;; moves with it: left behind, it would be orphaned under a name
+      ;; nothing saves to any more.
+      (when (file-exists-p (maf--history-file old))
+        (rename-file (maf--history-file old) (maf--history-file name)))
       (ignore-errors (delete-file (maf--stack-file old ".lock")))
       (when (equal old maf--stack-session)
         (write-region (number-to-string (emacs-pid)) nil
@@ -486,6 +611,9 @@ point back to the top of the list to be walked down again."
          (file (maf--stack-file name))
          (neighbor (maf--stacks-neighbor)))
     (delete-file file)
+    ;; The log goes with the stack, for the same reason it is renamed
+    ;; with it: nothing else would ever read it again.
+    (ignore-errors (delete-file (maf--history-file name)))
     (unless (or (equal name maf--stack-session)
                 (maf--stack-lock-owner name))
       (ignore-errors (delete-file (maf--stack-file name ".lock"))))
@@ -598,10 +726,11 @@ Press l S to save immediately. Press l R to browse every session's
 saved stack — preview, restore or delete one. Each session has its own
 file, so two running Emacs sessions do not overwrite each other.
 
-Only stack values are saved. Selections, undo history, and Calc's trail
-are not. Files are stored in `maf-stack-directory' under the name from
-`maf-stack-session-name'. Turning the mode off stops automatic saving
-but does not delete existing save files."
+The history log is saved and restored with the stack, separators and
+all, when the history module is on. Selections, Calc's undo history
+and its trail are not saved. Files are stored in `maf-stack-directory'
+under the name from `maf-stack-session-name'. Turning the mode off
+stops automatic saving but does not delete existing save files."
   :global t
   :group 'maf
   (if maf-persist-mode
@@ -646,8 +775,8 @@ but does not delete existing save files."
 
 For example, values left on the stack return the next time you start
 the same session. Press l S to save now or l R to browse, preview,
-restore or delete the saved stacks. Only values are saved, not
-selections or undo history."
+restore or delete the saved stacks. Values and the history log are
+saved, not selections or Calc's undo history."
                        "l R, l S" "Prefs"))
 
 (provide 'maf-persist)

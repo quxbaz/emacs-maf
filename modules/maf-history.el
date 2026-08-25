@@ -1021,8 +1021,9 @@ onto it still reads as that state.
 
 The mark belongs to the state it is under and goes where that state
 goes: it shifts down as new states land on top, and a deleted state
-takes its rule with it. Like the log itself, nothing persists it —
-the divisions are the session's, as the record is."
+takes its rule with it. Like the log itself it is kept across Emacs
+sessions when the persist module is on (see `maf-persist-mode'), and
+is the session's alone when it is not."
   (interactive
    ;; Only the press that sets a rule has text to ask for, and only
    ;; when there is a state to set it on: with an empty log the body
