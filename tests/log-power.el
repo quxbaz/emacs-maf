@@ -1,10 +1,10 @@
 ;; maf-log-power module: general-base log identities under
 ;; simplification. Calc only collapses b^log(a,b) for base 10 and e;
-;; the module adds the rule for any base, plus the guarded reverse
-;; log(b^y, b) -> y. Exercised through the real commands: a s is
-;; mafcmd-esimplify (extended simplification) and a e mafcmd-simplify
-;; (basic), which is what makes the reverse rule's realp guard
-;; observable.
+;; the module adds the rule for any base, plus the scaled
+;; b^(n log(a,b)) -> a^n and the guarded reverse log(b^y, b) -> y.
+;; Exercised through the real commands: a s is mafcmd-esimplify
+;; (extended simplification) and a e mafcmd-simplify (basic), which is
+;; what makes the guards observable.
 
 (maf-step
   (cl-assert maf-use-log-power-mode)
@@ -28,6 +28,55 @@
   (goto-char (point-max))
   (call-interactively 'mafcmd-esimplify)
   (cl-assert (equal (calc-top 1 'full) '(var x var-x)))
+  (calc-pop (calc-stack-size))
+
+  ;; A scaled exponent collapses too, mirroring upstream's e^(2 ln(x)).
+  (maf-push "3^(2 log(x, 3))")
+  (goto-char (point-max))
+  (call-interactively 'mafcmd-esimplify)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "x^2"))
+  (calc-pop (calc-stack-size))
+
+  ;; It carries upstream's guards on that rule, though: basic
+  ;; simplification, without `math-living-dangerously', leaves it...
+  (maf-push "3^(2 log(x, 3))")
+  (goto-char (point-max))
+  (call-interactively 'mafcmd-simplify)
+  (cl-assert (string= (math-format-value (calc-top 1 'full))
+                      "3^(2 log(x, 3))"))
+  (calc-pop (calc-stack-size))
+
+  ;; ...and a multiplier that is neither an integer above one nor one
+  ;; half stays put under a s as well, exactly as e^(-ln(x)) does.
+  (maf-push "3^(-log(x, 3))")
+  (goto-char (point-max))
+  (call-interactively 'mafcmd-esimplify)
+  (cl-assert (string= (math-format-value (calc-top 1 'full))
+                      "3^(-log(x, 3))"))
+  (calc-pop (calc-stack-size))
+
+  ;; log10 counts as the base-10 log: the scaled collapse reaches
+  ;; calc's own spelling, which upstream only handles for e...
+  (maf-push "10^(2 log10(x))")
+  (goto-char (point-max))
+  (call-interactively 'mafcmd-esimplify)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "x^2"))
+  (calc-pop (calc-stack-size))
+
+  ;; ...which matters because normalization rewrites log(x, 10) into
+  ;; log10(x) before any handler sees it.
+  (maf-push "10^(2 log(x, 10))")
+  (goto-char (point-max))
+  (call-interactively 'mafcmd-esimplify)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "x^2"))
+  (calc-pop (calc-stack-size))
+
+  ;; The base still has to match that spelling.
+  (maf-push "2^(2 log10(x))")
+  (goto-char (point-max))
+  (call-interactively 'mafcmd-esimplify)
+  (cl-assert (string= (math-format-value (calc-top 1 'full))
+                      "2^(2 log10(x))"))
   (calc-pop (calc-stack-size))
 
   ;; A mismatched base stays put.
