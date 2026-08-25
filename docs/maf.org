@@ -15,8 +15,8 @@
 * review
   - *maf-history* rendering
     - refine history log
-      - [-] if action is duplication (eg, RET on an entire entry), then action should be "dupe"
-      - [-] currently on "add" items, the added item is not highlighted in
+      - [X] if action is duplication (eg, RET on an entire entry), then action should be "dupe"
+      - [X] currently on "add" items, the added item is not highlighted in
         yellow in the corresponding stack
       - [-] update format: next to history item (eg, `maf-del`), show the command
         name (eg, `(maf-del)`)
