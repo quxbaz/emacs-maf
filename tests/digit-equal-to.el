@@ -10,6 +10,15 @@
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "x = 5"))
   (calc-pop (calc-stack-size))
 
+  ;; = is the same command from a digit entry. Calc's normal
+  ;; command-key handoff ends the number and dispatches the stack alias.
+  (maf-push "x")
+  (progn (goto-char (point-min)) (end-of-line))
+  (execute-kbd-macro (kbd "5 ="))
+  (cl-assert (= (calc-stack-size) 1))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "x = 5"))
+  (calc-pop (calc-stack-size))
+
   ;; It is a command-key termination like the + of 1 +, so the arg push
   ;; folds into the command's undo group: one undo reverts both.
   (maf-push "x")

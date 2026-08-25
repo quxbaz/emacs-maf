@@ -363,14 +363,26 @@ that the values put to better use.")
   "Non-nil when the reference-key column is present."
   (and dial--show-keys dial--keys-name))
 
+(defun dial--grouped-p ()
+  "Non-nil when any item names a :group.
+A table whose rows are all of one kind has no headings to print, and
+its Group column would be nine columns of nothing — so the column, the
+blank rows that separate groups, and the group motion all hang off
+this. Not a mode the consumer declares: a table either sorts its rows
+into groups or it does not, and the items say which."
+  (and (seq-some (lambda (entry) (plist-get (cdr entry) :group)) dial-items)
+       t))
+
 (defun dial--apply-format ()
   "Set `tabulated-list-format' for the columns currently shown.
 Value goes last because it holds every value the setting can take — no
 fixed width would hold that, and nothing may sit to the right of it.
-The reference-key column comes and goes with `dial--show-keys', so the
-format is built rather than written out."
+The reference-key column comes and goes with `dial--show-keys', and the
+Group column with whether any row is in a group, so the format is built
+rather than written out."
   (setq tabulated-list-format
-        (vconcat [("Group" 9 nil) ("Option" 18 nil)]
+        (vconcat (when (dial--grouped-p) [("Group" 9 nil)])
+                 [("Option" 18 nil)]
                  (when (dial--keys-shown-p) `[(,dial--keys-name 20 nil)])
                  [("Value" 0 nil)]))
   (tabulated-list-init-header))
@@ -523,6 +535,7 @@ works only with one."
     ('dial-toggle-keys (and dial--keys-name t))
     ('dial-toggle-changed-only (and dial--default-fn t))
     ('dial-reset (dial--any-reset-p))
+    ((or 'dial-next-group 'dial-previous-group) (dial--grouped-p))
     ((or 'dial-describe 'dial-describe-visit)
      (and (seq-some (lambda (entry)
                       (or (plist-get (cdr entry) :details)
@@ -712,24 +725,29 @@ themselves come from."
 A blank row separates each :group from the next. Its id is a cons
 rather than an item ID, which is what `dial--item' reads as \"no
 setting on this line\" — and being distinct per group, it also leaves
-`tabulated-list-print' able to put point back where it was."
-  (let (entries last-group)
+`tabulated-list-print' able to put point back where it was.
+
+An ungrouped table — see `dial--grouped-p' — prints neither the
+headings nor the blank rows, and its rows start at the Option column."
+  (let ((grouped (dial--grouped-p))
+        entries last-group)
     (dolist (entry dial-items)
       (let* ((id (car entry))
              (spec (cdr entry))
              (group (plist-get spec :group))
              (changed (dial--changed-p id spec)))
         (unless (and dial--changed-only (not changed))
-          (unless (or (null last-group) (equal group last-group))
+          (when (and grouped last-group (not (equal group last-group)))
             (push (list (cons 'gap group)
                         (make-vector (length tabulated-list-format) ""))
                   entries))
           (push (list id
                       (vconcat
-                       (vector (if (equal group last-group)
-                                   ""
-                                 (propertize group 'face 'dial-group))
-                               (plist-get spec :label))
+                       (when grouped
+                         (vector (if (equal group last-group)
+                                     ""
+                                   (propertize (or group "") 'face 'dial-group))))
+                       (vector (plist-get spec :label))
                        (when (dial--keys-shown-p)
                          (vector (or (plist-get spec :keys) "")))
                        (vector (dial--value-column id spec))))

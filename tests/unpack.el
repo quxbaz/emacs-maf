@@ -1,14 +1,15 @@
 (maf-step
-  ;; Every key reaches the contextual command: M-u, plus the two calc
-  ;; unpack keys it subsumes -- v u (calc-unpack) and j U with its
-  ;; j M-U alias (calc-sel-unpack). Assert on resolution rather than
-  ;; driving the keys: calc's fancy prefixes do not survive
+  ;; The entry-scoped command holds M-u and v u (calc-unpack, whose
+  ;; whole-entry behavior it matches). j U and j M-U -- calc's own
+  ;; calc-sel-unpack keys -- take the narrowing sibling instead; that
+  ;; command has its own file, unwrap.el. Assert on resolution rather
+  ;; than driving the keys: calc's fancy prefixes do not survive
   ;; execute-kbd-macro, which is why the j-prefix commands are called
   ;; directly throughout these tests.
   (cl-assert (eq (key-binding (kbd "M-u")) 'mafcmd-unpack))
   (cl-assert (eq (key-binding (kbd "v u")) 'mafcmd-unpack))
-  (cl-assert (eq (key-binding (kbd "j U")) 'mafcmd-unpack))
-  (cl-assert (eq (key-binding (kbd "j M-U")) 'mafcmd-unpack))
+  (cl-assert (eq (key-binding (kbd "j U")) 'mafcmd-unwrap))
+  (cl-assert (eq (key-binding (kbd "j M-U")) 'mafcmd-unwrap))
   ;; The j prefix still falls through to calc's own selection commands.
   (cl-assert (eq (key-binding (kbd "j s")) 'calc-select-here))
 

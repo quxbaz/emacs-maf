@@ -260,6 +260,46 @@ From `point-min', not from point, which the open leaves on a row."
     (cl-assert (eq dialtest--value 'b))
     (cl-assert (equal dial--pending '(dialtest-item . 2))))
 
+  ;; --- A table with no groups drops the column that names them ---
+
+  ;; Grouping is read off the items, not declared: a table where no row
+  ;; states a :group has no headings to print, so the Group column, the
+  ;; blank rows between groups, and the group motion all go with it.
+  (dialtest--open
+   `((dialtest-one :label "One" :doc "The first setting."
+                   :values ((a "on" (setq dialtest--value 'a))))
+     (dialtest-two :label "Two" :doc "The second setting."
+                   :values ((a "on" (setq dialtest--value 'a))))))
+  (with-current-buffer "*dial-test*"
+    (cl-assert (not (dial--grouped-p)))
+    (cl-assert (equal (mapcar #'car (append tabulated-list-format nil))
+                      '("Option" "Value"))
+               t "columns: %S" tabulated-list-format)
+    ;; Both rows print, with nothing between them and the label first.
+    (cl-assert (= 2 (length tabulated-list-entries)))
+    (goto-char (point-min))
+    (dial--move-line 1)
+    (cl-assert (eq (tabulated-list-get-id) 'dialtest-one))
+    (dial--move-line 1)
+    (cl-assert (eq (tabulated-list-get-id) 'dialtest-two)))
+  ;; The group control is not advertised, and the command refuses.
+  (cl-assert (not (string-match-p "group" (dialtest--controls))))
+  (cl-assert (equal (dialtest--refused 'dial-next-group) "No next group"))
+
+  ;; A table that does group still prints the column and separates.
+  (dialtest--open
+   `((dialtest-one :group "G" :label "One" :doc "The first setting."
+                   :values ((a "on" (setq dialtest--value 'a))))
+     (dialtest-two :group "H" :label "Two" :doc "The second setting."
+                   :values ((a "on" (setq dialtest--value 'a))))))
+  (with-current-buffer "*dial-test*"
+    (cl-assert (dial--grouped-p))
+    (cl-assert (equal (mapcar #'car (append tabulated-list-format nil))
+                      '("Group" "Option" "Value")))
+    ;; Two settings plus the blank row parting the groups.
+    (cl-assert (= 3 (length tabulated-list-entries))))
+  (cl-assert (string-match-p "group" (dialtest--controls)))
+
   ;; --- The controls line follows the live keymaps ---
 
   ;; Refresh moved from g to x in a buffer-local copy of the map: the

@@ -38,7 +38,7 @@
 ;; entry.
 
 (require 'maf-defcmd)
-(require 'maf-math "math")   ; maf-vconcat, applied by the vconcat rows below
+(require 'maf-math "math")   ; maf-vconcat and maf-sort, applied by the rows below
 
 ;; Also defvar'd in maf.el next to the minor mode; whichever file loads first
 ;; creates the map and the other defvar is a no-op. Declared here too so this
@@ -116,6 +116,15 @@ variant's own variable governs only its direct invocation."
                  (commit (calc-normalize
                           (list ',func expr
                                 ,@(when (eq arity 'binary) '(arg)))))))
+             ;; The row's function and how many operands it takes,
+             ;; recorded on the command so the combinators can use it
+             ;; as an operation: v R + folds by `calcFunc-add' because
+             ;; the + key runs a command stamped with it. This is what
+             ;; widens the operation space past calc's fixed table —
+             ;; every row qualifies, and a hand-written command joins
+             ;; by stamping the property itself.
+             (list `(put ',name 'maf-operation
+                         '(,func . ,(if (eq arity 'binary) 2 1))))
              (when key
                (list `(maf-cmds--table-key ,key #',name))))))
         specs)))
@@ -154,12 +163,17 @@ variant's own variable governs only its direct invocation."
   ;; their function under `calc-normalize', which normalizes the
   ;; arguments first, and that floats an exact sqrt(3) entry before the
   ;; command can see it was exact.
+  ;; conj's J is shadowed in native by a second multiply key
+  ;; (bindings.el); the calc profile keeps it, and native's conj
+  ;; home is l j.
   (conj unary calcFunc-conj "J")
   ;; arg cedes calc's G to maf-go-home (bindings.el).
   (arg unary calcFunc-arg)
   (sqrt unary calcFunc-sqrt "Q" :inv sqr)
   (min binary calcFunc-min "f n")
   (max binary calcFunc-max "f x")
+  ;; floor cedes F in native to a second key for mafcmd-reduce
+  ;; (bindings.el); the calc profile keeps F = floor.
   (floor unary calcFunc-floor "F" :inv ceil :hyp ffloor :invhyp fceil)
   (round unary calcFunc-round "R" :inv trunc :hyp fround :invhyp ftrunc)
   (sin unary calcFunc-sin "S" :inv arcsin :hyp sinh :invhyp arcsinh)
@@ -200,7 +214,10 @@ variant's own variable governs only its direct invocation."
   ;; each side is already as simple as it gets alone, so the command
   ;; would do nothing at all on an equation.
   (esimplify unary calcFunc-esimplify "a s" :map -1)
-  (factor binary calcFunc-factor "a f" :hyp factors)
+  ;; The seed table lists factor/factors with two arguments, but the
+  ;; second is calcFunc-factor's optional variable, not an operand:
+  ;; calc's own a f factors the one expression.
+  (factor unary calcFunc-factor "a f" :hyp factors)
   (pgcd binary calcFunc-pgcd "a g")
   (integ binary calcFunc-integ "a i")
   (match binary calcFunc-match "a m" :inv matchnot :map -1)
@@ -232,7 +249,7 @@ variant's own variable governs only its direct invocation."
   (mapeqr binary calcFunc-mapeqr :map -1)
   (finv binary calcFunc-finv :map -1)
   (tderiv binary calcFunc-tderiv)
-  (factors binary calcFunc-factors)
+  (factors unary calcFunc-factors)   ; see factor above
   (mapeqp binary calcFunc-mapeqp :map -1)
   (fsolve binary calcFunc-fsolve :map -1)
   (pdivide binary calcFunc-pdivide)
@@ -290,7 +307,9 @@ variant's own variable governs only its direct invocation."
   (lnp1 unary calcFunc-lnp1 :inv expm1)
   (mant unary calcFunc-mant "f M")
   (isqrt unary calcFunc-isqrt "f Q")
-  (scf unary calcFunc-scf "f S")
+  ;; scf scales by a power of ten: scf(x, n) takes the exponent as a
+  ;; second operand, so the row is binary.
+  (scf binary calcFunc-scf "f S")
   (arctan2 binary calcFunc-arctan2 "f T")
   (xpon unary calcFunc-xpon "f X")
   (decr binary calcFunc-decr "f [")
@@ -305,7 +324,9 @@ variant's own variable governs only its direct invocation."
   ;; dfact cedes calc's k d to mafcmd-factor-powers (bindings.el).
   (dfact unary calcFunc-dfact)
   (euler unary calcFunc-euler "k e")
-  (prfac unary calcFunc-prfac "k f")
+  ;; prfac cedes calc's k f to a second key for mafcmd-factor
+  ;; (bindings.el), beside its table key a f.
+  (prfac unary calcFunc-prfac)
   (gcd binary calcFunc-gcd "k g")
   (shuffle binary calcFunc-shuffle "k h")
   (lcm binary calcFunc-lcm "k l")
@@ -314,7 +335,9 @@ variant's own variable governs only its direct invocation."
   (random unary calcFunc-random "k r")
   ;; stir1 cedes calc's k s to mafcmd-complete-square (bindings.el).
   (stir1 binary calcFunc-stir1 :hyp stir2)
-  (totient unary calcFunc-totient "k t")
+  ;; totient cedes calc's k t to a second key for mafcmd-perm
+  ;; (bindings.el), beside its k p.
+  (totient unary calcFunc-totient)
   (utpc binary calcFunc-utpc "k C" :inv ltpc)
   (utpp binary calcFunc-utpp "k P" :inv ltpp)
   (utpt binary calcFunc-utpt "k T" :inv ltpt)
@@ -322,6 +345,8 @@ variant's own variable governs only its direct invocation."
   (ltpc binary calcFunc-ltpc)
   (ltpp binary calcFunc-ltpp)
   (ltpt binary calcFunc-ltpt)
+  ;; perm takes calc's k p from calc-prime-test (bindings.el); calc
+  ;; leaves it on choose's hyperbolic flag alone.
   (perm binary calcFunc-perm)
   (stir2 binary calcFunc-stir2)
   ;; store (calc-s-oper-keys)
@@ -347,7 +372,7 @@ variant's own variable governs only its direct invocation."
   (vmeane unary calcFunc-vmeane)
   (vpsdev unary calcFunc-vpsdev)
   (vcorr binary calcFunc-vcorr)
-  (agmean unary calcFunc-agmean)
+  (agmean binary calcFunc-agmean)
   (vmedian unary calcFunc-vmedian)
   (vvar unary calcFunc-vvar)
   (vhmean unary calcFunc-vhmean)
@@ -368,30 +393,39 @@ variant's own variable governs only its direct invocation."
   (mrow binary calcFunc-mrow "v r")
   (trn unary calcFunc-trn "v t")
   ;; Unpacking lives in stack.el: mafcmd-unpack (M-u, and calc's own
-  ;; v u / j U) unwraps the entry at point into its parts. It is
-  ;; not a row here because calcFunc-unpack is binary — it takes a mode
-  ;; ahead of the thing — and the contextual command takes that mode
-  ;; from a prefix argument rather than the stack. A row would also be
-  ;; the wrong shape: the result is a list of values spread over the
+  ;; v u) unwraps the entry at point into its parts, and mafcmd-unwrap
+  ;; (j U) is its narrowing sibling, peeling the wrapper around point.
+  ;; Neither is a row here because calcFunc-unpack is binary — it takes
+  ;; a mode ahead of the thing — and the contextual commands take that
+  ;; mode from a prefix argument rather than the stack. A row would also
+  ;; be the wrong shape: the result is a list of values spread over the
   ;; stack, not a single applied call.
   (rev unary calcFunc-rev "v v")
   (index unary calcFunc-index "v x")
-  (apply unary calcFunc-apply "v A")
-  (cross unary calcFunc-cross "v C")
+  ;; The cross product takes both vectors as operands.
+  (cross binary calcFunc-cross "v C")
   (det unary calcFunc-det "v D")
   (venum unary calcFunc-venum "v E")
   (vfloor unary calcFunc-vfloor "v F")
   (grade unary calcFunc-grade "v G" :inv rgrade)
   (histogram binary calcFunc-histogram "v H")
-  (inner binary calcFunc-inner "v I")
   ;; lud cedes calc's v L to mafcmd-flatten (bindings.el).
   (lud unary calcFunc-lud)
   (cnorm unary calcFunc-cnorm "v N")
-  (outer binary calcFunc-outer "v O")
-  (reduce unary calcFunc-reduce "v R" :inv rreduce :hyp nest :invhyp fixp)
-  (sort unary calcFunc-sort "v S" :inv rsort)
+  ;; The combinators — apply, reduce, accum, outer, inner and the
+  ;; nest/fixp variants — are not rows: their leading argument is an
+  ;; operation, not an operand, so applying the calcFunc to the
+  ;; resolved expression builds a call of the wrong arity that
+  ;; `calc-normalize' can only hand back inert. They read the
+  ;; operation from the next key instead (`mafcmd-reduce' and
+  ;; friends, src/stack.el).
+  ;; sort/rsort use maf's own ordering rather than calcFunc-sort:
+  ;; calc sorts by expression shape, which strands every negated
+  ;; symbolic term after its positive twin ([sqrt(10), -sqrt(10)] comes
+  ;; back untouched). maf orders by numeric value when every element
+  ;; has one, and defers to calc otherwise (see `maf--sort-vector').
+  (sort unary maf-sort "v S" :inv rsort)
   (tr unary calcFunc-tr "v T")
-  (accum unary calcFunc-accum "v U" :inv raccum :hyp anest :invhyp afixp)
   (vunion binary calcFunc-vunion "v V")
   (vxor binary calcFunc-vxor "v X")
   (vdiff binary calcFunc-vdiff "v -")
@@ -402,15 +436,9 @@ variant's own variable governs only its direct invocation."
   (rdup unary calcFunc-rdup "v +")
   (tail unary calcFunc-tail)
   (rgrade unary calcFunc-rgrade)
-  (rreduce unary calcFunc-rreduce)
-  (rsort unary calcFunc-rsort)
-  (raccum unary calcFunc-raccum)
+  (rsort unary maf-rsort)   ; see sort above
   (rhead unary calcFunc-rhead)
   (rcons binary calcFunc-rcons)
-  (nest binary calcFunc-nest)
-  (anest binary calcFunc-anest)
-  (rtail unary calcFunc-rtail)
-  (fixp unary calcFunc-fixp)
-  (afixp unary calcFunc-afixp))
+  (rtail unary calcFunc-rtail))
 
 (provide 'maf-cmds)

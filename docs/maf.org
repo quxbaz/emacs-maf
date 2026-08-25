@@ -7,21 +7,38 @@
 
 * Todo
   - [X] preview as latex (on demand via RaTeX)
-  - [ ] *maf-formulas*: add basic/fundamental identities (addition,
+  - [-] *maf-formulas*: add basic/fundamental identities (addition,
     multiplication, etc)
+    - [X] properties of real numbers (commutative, associative,
+      distributive, identities, inverses, sign rules) — shipped in
+      =maf-formulas-builtin=
+    - [ ] logarithm laws (product, quotient, power; b^log_b x = x)
+    - [ ] quadratic formula, discriminant, Vieta's root relations
+    - [ ] radicals and the x^0 / x^1 / x^(m/n) exponent cases
+    - [ ] fraction arithmetic, absolute value
+    - [ ] trig identity table (reciprocal, quotient, the other two
+      Pythagoreans, angle sum/difference, double and half angle)
+
+* NEXT maf-latex
+  - [ ] refine stand-alone feature
+  - [ ] support in maf-preview
+  - [ ] support in maf-formulas
 
 * review
 
-* major features [8/9]
+* major features [8/12]
   - [X] bindings module
-  - [X] Persistent sub-formula highlighting
-  - [X] History module (né timeline)
-  - [X] Omni-options menu buffer
-  - [X] Formulas module
-  - [X] Modules manager
-  - [X] Use module architecture (maf-history, maf-edit)
-  - [X] Recall ring for typed entries (maf-recall)
-  - [ ] Discovery document for useful features, behaviors, modules, etc
+  - [X] persistent sub-formula highlighting
+  - [X] history module (né timeline)
+  - [X] omni-options menu buffer
+  - [X] formulas module
+  - [X] modules manager
+  - [X] use module architecture (maf-history, maf-edit)
+  - [X] recall ring for typed entries (maf-recall)
+  - [ ] discovery document for useful features, behaviors, modules, etc
+  - [ ] readme (overview)
+  - [ ] main docs for users (new features, changes)
+  - [ ] technical docs for devs
 
 * feedback
   - [ ] single-key (no modifiers) to force next cmd to target line
@@ -45,6 +62,12 @@
 ** rework preview
    it feels awkward in actual usage
 ** modules suboptions
+
+* when done
+  - [ ] revise and update all anki cards in `calc-mode` deck
+    - base on `native` profile
+    - update outdated bindings
+    - add cards for missing bindings
 
 * maybe
 ** DONE preview entry as latex

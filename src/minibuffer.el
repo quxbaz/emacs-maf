@@ -525,8 +525,9 @@ sibling of it to do.
 
 `calcDigit-nondigit' is calc's own terminator; binding `last-command-event'
 to RET around it takes its RET path — commit, no command re-dispatch (so
-this never triggers `mafcmd-let', C-<return>'s stack-mode
-binding) — while `no-align' is what carries point through the push. The
+this never triggers `maf-dup-here-or-clear-selections', C-<return>'s
+stack-mode binding) — while `no-align' is what carries point through
+the push. The
 flag is set both here and, via `maf--digit-keep-point', inside the
 wrapper `maf-digit-start' pushes from: on calc's own read this code
 runs within the `calc-do' whose flags the push consults, but maf's own

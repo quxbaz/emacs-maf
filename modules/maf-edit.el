@@ -81,13 +81,13 @@
 Set by `maf-edit--enter-for-add' (the quick-add gestures) before
 entering; commit and discard both consult it, returning point to where
 it was before the edit began instead of keeping its in-edit position.
-`maf-edit-add-entry-at-home' stores a home snapshot here instead,
+`maf-edit-entry-at-home' stores a home snapshot here instead,
 whose restore is a no-op: that gesture's landing is
 `maf-edit--home-return's, not this one's.")
 
 (defvar-local maf-edit--return-home nil
   "Non-nil when this edit session ends with point parked home.
-Set by `maf-edit-add-entry-at-home', whose gesture is a trip home: the
+Set by `maf-edit-entry-at-home', whose gesture is a trip home: the
 session ends on the dot, commit and discard alike, rather than on the
 entry that was typed or back where point started. A point snapshot
 here rather than t names the place the gesture left, which is marked
@@ -139,6 +139,22 @@ returns is re-rendered, and an edit session started on it hands the
 rendering back to this hook — or an entry could change under a commit
 that never touched it.")
 
+(defvar maf-edit-transform-text-functions nil
+  "Functions rewriting a changed entry's text before it is parsed.
+Called in order, each on the previous one's result, on the text of
+every entry whose text has changed — and on nothing else: an
+untouched entry keeps its value object and is never reparsed. nil,
+the default, hands the buffer text straight on. Each runs before
+`maf-edit-parse-text-function', so a dialect sees text already in the
+notation calc reads.
+
+The text-side counterpart of `maf-edit-transform-value-functions',
+and the extension point for a spelling calc has no reading for at
+all: a value transform can only rewrite something that parsed, so a
+module whose notation is not calc\='s — U for the union calc writes ||
+\(see maf-editplus) — has to reach the text. Confined to commit, so
+what the session shows is what was typed.")
+
 (defvar maf-edit-mode-map
   (let ((map (make-sparse-keymap)))
     ;; RET confirms; the newline gesture (split/continue) moves to
@@ -150,10 +166,10 @@ that never touched it.")
     ;; RET. It is also the newline key everywhere else in Emacs.
     (define-key map (kbd "C-j") #'maf-edit-newline)
     (define-key map (kbd "C-c C-k") #'maf-edit-discard)
-    ;; The entry at point copies into the slot below it. The same key
-    ;; out in the stack (`maf-dup-go') duplicates too, though its
-    ;; copy lands on top as calc convention has it. The GUI event and
-    ;; the terminal form both, as there is no calc M-RET to shadow.
+    ;; The entry at point copies into the slot below it. The stack's
+    ;; traveling duplicate (`maf-dup-go', reachable by name out there)
+    ;; copies too, though its copy lands on top as calc convention has it. The GUI
+    ;; event and the terminal form both.
     (define-key map (kbd "M-<return>") #'maf-edit-dup-entry)
     (define-key map (kbd "M-RET") #'maf-edit-dup-entry)
     ;; Line-start motion treats the machine-owned prefix/pad as column
@@ -442,6 +458,20 @@ and x=1,y=2 the vector of both equations."
   (if (maf-edit--top-level-comma-p text)
       (concat "[" text "]")
     text))
+
+(defun maf-edit--parse-text (text)
+  "TEXT as `math-read-expr' should see it.
+The whole input side of a commit in one place, in the order the
+layers stand: `maf-edit-transform-text-functions' first, so a module
+may rewrite a notation calc has no reading for; then the dialect\='s
+own `maf-edit-parse-text-function'; then the brackets a top-level
+comma earns (`maf-edit--implicit-vector'). Nothing here changes the
+buffer — the session keeps showing what was typed."
+  (maf-edit--implicit-vector
+   (funcall maf-edit-parse-text-function
+            (seq-reduce (lambda (s f) (funcall f s))
+                        maf-edit-transform-text-functions
+                        text))))
 
 ;;; Colon quotients
 
@@ -1242,19 +1272,21 @@ it still owns before the blank line becomes an entry of its own."
       (maf-edit--repair)
       (goto-char (+ bol (maf-edit--leading-prefix-run bol))))))
 
-(defun maf-edit-add-entry-at-home ()
-  "Enter maf-edit with a fresh entry at the bottom, landing point home.
+(defun maf-edit-entry-at-home ()
+  "Enter maf-edit on the entry at stack level 1, landing point home.
 
-  2:  a + b|        3:  a + b
-  1:  c        =>   2:  c
-                    1:  z
+  2:  a|+ b         2:  a + b
+  1:  12       =>   1:  123
                         .|
 
-The new entry opens as a blank numbered line just above the dot, point
-on its content column ready to type — from anywhere, including an
-empty stack. The session is a trip home: when it ends point stays
-there, below the committed entry, and the place it left is marked. A
-single
+The bottom entry — level 1, the one nearest home — opens for editing
+with point at the end of its text, ready to extend or correct it, from
+wherever point stood. On an empty stack there is nothing to edit, so a
+blank entry opens at the bottom instead and the gesture is the quick
+add it used to be throughout.
+
+The session is a trip home: when it ends point lands on the dot, below
+the committed entry, and the place it left is marked. A single
 \\[pop-to-mark-command] returns to it, as does \\[maf-go-home], which
 bounces back to the mark when pressed at home. Pressed at home there
 is nothing to mark and nothing to return from.
@@ -1264,16 +1296,27 @@ mark is still the way back."
   (interactive)
   (when maf-edit-mode
     (user-error "maf-edit is already active"))
-  ;; t rather than nil at home: the session still lands on the dot,
-  ;; there is just no journey to mark.
-  (let ((origin (if (maf--at-home-p) t (maf--point-snapshot))))
+  ;; Read the stack before entering: inside a session the buffer is
+  ;; plain text, and the empty case is the one that has no entry to
+  ;; open on.
+  (let ((emptyp (zerop (calc-stack-size)))
+        ;; t rather than nil at home: the session still lands on the
+        ;; dot, there is just no journey to mark.
+        (origin (if (maf--at-home-p) t (maf--point-snapshot))))
     (maf-edit-mode 1)
     ;; A home snapshot makes the exit's point restore a no-op, leaving
     ;; the landing to `maf-edit--home-return' rather than to the
     ;; position point held inside the edited text.
     (setq maf-edit--return (list (cons :affinity 'home))
-          maf-edit--return-home origin))
-  (maf-edit--open-at-dot))
+          maf-edit--return-home origin)
+    (if emptyp
+        (maf-edit--open-at-dot)
+      ;; Entry overlays come back in buffer order and level 1 renders
+      ;; last, just above the dot, so the final one is the entry this
+      ;; gesture opens on. Its end is where the text stops, the
+      ;; newline excluded — the same column a freshly opened blank
+      ;; entry leaves point on.
+      (goto-char (overlay-end (car (last (maf-edit--overlays))))))))
 
 (defun maf-edit-add-entry-below ()
   "Enter maf-edit with a fresh entry opened below the entry at point.
@@ -1351,7 +1394,12 @@ opens the session.
 
 Committed untouched it pushes the empty vector []; \\<maf-edit-mode-map>\\[maf-edit-discard] backs out
 instead. Unlike `maf-edit-add-entry-below', point returns to where it
-was before the command when the session ends."
+was before the command when the session ends.
+
+In the native layout the key reaches this command from home alone —
+`maf-goto-left-side' owns it on an entry, where the vector would have
+nothing to do with what point is on — and in the calc layout from
+anywhere."
   (interactive)
   (maf-edit--enter-for-add)
   (maf-edit--open-at-dot)
@@ -1389,8 +1437,8 @@ numeric prefix argument makes N copies.
                         1:  [ [ 1, 2 ]
                               [ 3, 4 ] ]
 
-The in-session sibling of `maf-dup-go', the same key out in the
-stack — though there the copy lands on top, as calc convention has it,
+The in-session sibling of `maf-dup-go' out in the stack —
+though there the copy lands on top, as calc convention has it,
 while a session's natural slot is right below the source. Both work on
 the entry, never on the screen line: a
 line-based duplicate would cut a matrix across its rows, and would
@@ -1455,10 +1503,11 @@ have to read every copy back from whatever the display shows."
 Entries whose text is untouched keep their value objects and
 selections; changed or new text is parsed in the current input modes
 and committed exactly as written, never simplified — 1 + 2 + x stays
-1 + 2 + x. The one exception is deliberate:
-`maf-edit-transform-value-functions' maps each reparsed value, so a
-module can commit a spelling calc prefers over the one the session
-wanted visible.
+1 + 2 + x. The exceptions are deliberate and both belong to modules:
+`maf-edit-transform-text-functions' rewrites the text before it is
+parsed, and `maf-edit-transform-value-functions' maps each reparsed
+value, so a module can commit a spelling calc prefers over the one
+the session wanted visible (`maf-edit--parse-text').
 
 An entry emptied to blank commits as deleted, and so does one left
 holding nothing but empty parentheses: () wraps nothing and resolves
@@ -1501,9 +1550,7 @@ session `maf-edit' opened there."
           (push (overlay-get o 'maf-edit-val) vals)
           (push (overlay-get o 'maf-edit-sel) sels))
          (t
-          (let ((v (math-read-expr
-                    (maf-edit--implicit-vector
-                     (funcall maf-edit-parse-text-function text)))))
+          (let ((v (math-read-expr (maf-edit--parse-text text))))
             ;; A colon calc refused gets a second reading as a quotient
             ;; (`maf-edit--colon-quotient') — only ever for text already
             ;; refused whole, so nothing that parses is reread. A retry
@@ -1512,9 +1559,7 @@ session `maf-edit' opened there."
             (when (eq (car-safe v) 'error)
               (let ((again (maf-edit--colon-quotient text)))
                 (when again
-                  (let ((v2 (math-read-expr
-                             (maf-edit--implicit-vector
-                              (funcall maf-edit-parse-text-function again)))))
+                  (let ((v2 (math-read-expr (maf-edit--parse-text again))))
                     (unless (eq (car-safe v2) 'error)
                       (setq v v2))))))
             (if (eq (car-safe v) 'error)
@@ -1592,7 +1637,9 @@ With this mode on:
   SPC  Edit the entry at point.
   `    Go to the bottom of the stack and add an entry there.
   C-o  Add an entry above the one at point.
-  (    Add an empty vector at the bottom of the stack.
+  (    Add an empty vector at the bottom of the stack. Pressed at home
+       in the native layout, where the parens are otherwise the
+       relation motions; anywhere on the stack in the calc layout.
 
 While editing, change formulas directly in the Calc buffer. For
 example, change x+1 to x+2 without deleting and re-entering the stack
@@ -1609,11 +1656,18 @@ does not change the stack."
   ;; or out (see core/maf-bindings.el).
   (maf-bindings--refresh))
 
+;; The vector-add's "(" is a calc-profile key alone: in native (and in
+;; vim, by derivation) the parens are the relation motions
+;; `maf-goto-left-side' and `maf-goto-right-side' (src/bindings.el),
+;; which hand the key back to this command at home — the one place
+;; there is no entry to move within. Declaring it here for those
+;; profiles too would be a second owner on the key, which the compiler
+;; refuses outright rather than resolving by precedence.
 (maf-bindings-module-keys 'maf-edit 'maf-use-edit-mode
   '(((calc native vim) "SPC" maf-edit)
-    ((calc native vim) "`" maf-edit-add-entry-at-home)
+    ((calc native vim) "`" maf-edit-entry-at-home)
     ((calc native vim) "C-o" maf-edit-add-entry-above)
-    ((calc native vim) "(" maf-edit-add-vector)))
+    ((calc) "(" maf-edit-add-vector)))
 
 ;; Register with the module system when it is present; the mode above
 ;; works on its own without it.
@@ -1624,6 +1678,6 @@ does not change the stack."
 Press SPC to edit the entry at point, then RET to save it. For
 example, change x+1 to x+2 directly on the stack. S-RET splits an
 entry; deleting the newline between two entries joins them."
-                       "SPC, `, C-o, \"(\"" "Editing"))
+                       "SPC, `, C-o, \"(\" (at home)" "Editing"))
 
 (provide 'maf-edit)

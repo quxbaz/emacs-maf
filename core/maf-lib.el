@@ -269,6 +269,15 @@ restores it after (`maf--point-restore')."
        (prog1 (progn ,@forms)
          (maf--point-restore ,snapshot)))))
 
+(defvar-local maf--home-mark-column nil
+  "Column of the place the last homing trip marked, or nil.
+A marker rides a push and a renumber, but not a rewrite of the entry it
+sits in: re-rendering deletes the text around it and collapses it to
+the start of the line, so the mark keeps the entry and loses the
+column. Recorded here beside the mark for `maf-go-home's return trip
+to put back. Nil when the trip left from the line-number prefix, there
+being no column in the text to restore.")
+
 (defun maf--mark-before-home (&optional pos)
   "Leave a silent mark at POS (or point) in the calc buffer.
 Commands that push a new entry park point on the home line, losing the
@@ -276,8 +285,16 @@ spot the user was on. A mark left there — the marker rides the push and
 renumber, so it keeps tracking the entry — lets a single
 `pop-to-mark-command' return to it. Call this while point (or POS) is
 still at the origin, before the push homes it. No-op at POS nil with
-point already gone is the caller's concern."
-  (maf--with-calc-buffer (push-mark pos t)))
+point already gone is the caller's concern.
+
+The column goes into `maf--home-mark-column' alongside, for the
+rewrite the marker cannot ride."
+  (maf--with-calc-buffer
+    (push-mark pos t)
+    (setq maf--home-mark-column
+          (save-excursion
+            (when pos (goto-char pos))
+            (and (not (maf--at-line-prefix-p)) (current-column))))))
 
 (defvar maf-undo--cmd-point nil
   "Pre-command point snapshot for the head `calc-undo-list' group.
@@ -341,5 +358,26 @@ as-is. Signals an error if the string does not parse."
       (when (and (consp val) (eq (car val) 'error))
         (error "maf-push: cannot parse %S: %s" expr (nth 2 val)))
       (calc-push val))))
+
+(defun maf--display-borrowing-window (buf alist)
+  "Show BUF in another window on this frame, calc's for choice.
+A `display-buffer' action function: the pane borrows a window the way
+a help buffer does rather than carving the frame smaller, so a list
+and its detail sit side by side at the frame's own split instead of
+squeezing a third window in. Calc's window is picked over the
+least-recently-used one because these panes are opened from calc — the
+stack is what the user is least likely to be reading while looking
+something up. Returns nil when there is nothing to borrow, so
+`display-buffer' falls through to splitting.
+
+Shared by the detail panes that follow point: the formulas menu's and
+the saved-stacks preview."
+  (let* ((cbuf (maf--find-calc-buffer))
+         (win (or (and cbuf (get-buffer-window cbuf))
+                  (get-lru-window nil nil t))))
+    (when (and win
+               (not (eq win (selected-window)))
+               (not (window-dedicated-p win)))
+      (window--display-buffer buf win 'reuse alist))))
 
 (provide 'maf-lib)

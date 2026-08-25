@@ -12,6 +12,12 @@
         maf--stack-session nil
         maf--stack-restored t
         maf--stack-last-saved 'maf--persist-unset)
+  (defun maf--persist-said (text)
+    "Return non-nil when TEXT is in the last of *Messages*."
+    (with-current-buffer (messages-buffer)
+      (save-excursion
+        (goto-char (point-max))
+        (search-backward text (max (point-min) (- (point-max) 500)) t))))
 
   ;; Save writes this session's file: values top first, name claimed
   ;; and locked.
@@ -25,6 +31,18 @@
 
   ;; Unchanged stack: the save is skipped.
   (cl-assert (not (maf-save-stack)))
+
+  ;; Interactively — l S — the outcome reaches the echo area, whether
+  ;; the save was skipped or written. Assert on *Messages*, not
+  ;; (current-message): stepping via keyboard macro suppresses the
+  ;; echo area.
+  (progn (maf-save-stack t)
+         (cl-assert (maf--persist-said "stack unchanged, session test-a")))
+  (progn (calc-wrapper (maf-push "7"))
+         (cl-assert (maf-save-stack t))
+         (cl-assert (maf--persist-said "saved 3 entries to session test-a")))
+  ;; ...and back to the two-entry save the checks below expect.
+  (progn (calc-pop 1) (cl-assert (maf-save-stack)))
 
   ;; Restore brings this session's entries back in order.
   (calc-pop (calc-stack-size))
@@ -97,7 +115,7 @@
          (cl-assert (with-current-buffer (messages-buffer)
                       (save-excursion
                         (goto-char (point-max))
-                        (search-backward "maf-restore-stack-from"
+                        (search-backward "maf-saved-stacks"
                                          (max (point-min) (- (point-max) 500))
                                          t)))))
   (cl-assert (= (calc-stack-size) 0))
@@ -110,16 +128,16 @@
   (cl-assert (memq 'maf-restore-stack calc-mode-hook))
   (cl-assert (= 1 (seq-count (lambda (tm) (eq (timer--function tm) 'maf-save-stack))
                              timer-idle-list)))
-  ;; ...and the two keys: load a session's stack, save this one's.
-  (cl-assert (eq (lookup-key maf-mode-map (kbd "t l"))
-                 'maf-restore-stack-from))
-  (cl-assert (eq (lookup-key maf-mode-map (kbd "t u")) 'maf-save-stack))
+  ;; ...and the two keys: browse the saved stacks, save this one's.
+  (cl-assert (eq (lookup-key maf-mode-map (kbd "l R"))
+                 'maf-saved-stacks))
+  (cl-assert (eq (lookup-key maf-mode-map (kbd "l S")) 'maf-save-stack))
   (maf-persist-mode -1)
   (cl-assert (not (memq 'maf--stack-shutdown kill-emacs-hook)))
   (cl-assert (not (memq 'maf-restore-stack calc-mode-hook)))
   ;; Off, both keys are maf's no more; calc's t prefix has nothing there.
-  (cl-assert (null (lookup-key maf-mode-map (kbd "t l"))))
-  (cl-assert (null (lookup-key maf-mode-map (kbd "t u"))))
+  (cl-assert (null (lookup-key maf-mode-map (kbd "l R"))))
+  (cl-assert (null (lookup-key maf-mode-map (kbd "l S"))))
   (cl-assert (not (seq-some (lambda (tm) (eq (timer--function tm) 'maf-save-stack))
                             timer-idle-list)))
   (cl-assert (not (file-exists-p (maf--stack-file "test-e" ".lock"))))

@@ -1,15 +1,18 @@
 ;; Self-contained: the real formulas now live in `maf-formulas-file'
 ;; (the user's Emacs config), so this test supplies its own fixture in
-;; `maf-formulas-user' and marks the file already-consulted so nothing
-;; on disk is read. The last form restores the session state.
+;; `maf-formulas-user', sets `maf-formulas-builtin' aside, and marks
+;; the file already-consulted so nothing on disk is read. The last
+;; form restores the session state.
 
 (maf-step
   (setq maf--formulas-stash (list maf-formulas-user maf-formulas--loaded
                                   maf-formulas--recent maf-use-formulas-mode
-                                  maf-formulas--pane-state)
+                                  maf-formulas--pane-state
+                                  maf-formulas-builtin)
         maf-formulas--loaded t          ; skip loading maf-formulas-file
         maf-formulas--recent nil        ; a clean session's recents
         maf-formulas--pane-state 'follow  ; a fresh session's default
+        maf-formulas-builtin nil        ; the fixture stands alone
         maf-formulas-user
         '((:name "volume-of-sphere" :title "Volume of sphere"
            :category "Geometry — 3D: Sphere"
@@ -28,6 +31,20 @@
 
   (maf-use-formulas-mode 1)
   (get-buffer-create maf-formulas--detail-buffer)
+
+  ;; Ten formulas are kept by default. Recording an eleventh drops the
+  ;; oldest, leaving the ten most recently reached-for formulas.
+  (cl-assert (= (eval (car (get 'maf-formulas-recent-max 'standard-value)) t)
+                10))
+  (let ((maf-formulas-recent-max 10)
+        (maf-formulas--recent nil))
+    (dotimes (n 11)
+      (maf-formulas--record-recent (list :name (format "recent-%d" n))))
+    (cl-assert (= (length maf-formulas--recent) 10))
+    (cl-assert (equal (mapcar (lambda (f) (plist-get f :name))
+                              maf-formulas--recent)
+                      '("recent-10" "recent-9" "recent-8" "recent-7" "recent-6"
+                        "recent-5" "recent-4" "recent-3" "recent-2" "recent-1"))))
 
   (with-current-buffer (get-buffer-create "*maf-formulas*")
     (maf-formulas-mode)
@@ -57,7 +74,19 @@
     (cl-assert (eq (key-binding (kbd "D")) #'maf-formulas-delete-recent))
     (maf-formulas--update-detail)
     (with-current-buffer maf-formulas--detail-buffer
-      (cl-assert (> (buffer-size) 0)))
+      (cl-assert (> (buffer-size) 0))
+      ;; A variable in the Big rendering wears the same face as its
+      ;; meaning in the list below, so the eye can carry a symbol in the
+      ;; formula down to what it stands for; the rest of the rendering
+      ;; keeps the formula's own face. Point is on "Area of triangle",
+      ;; whose Big middle line reads "A = - b h".
+      (goto-char (point-min))
+      (cl-assert (re-search-forward "^  \\(A\\)\\( = \\)- \\(b\\) \\(h\\)$" nil t))
+      (dolist (g '(1 3 4))
+        (cl-assert (eq (get-text-property (match-beginning g) 'face)
+                       'maf-formulas-var)))
+      (cl-assert (eq (get-text-property (match-beginning 2) 'face)
+                     'maf-formulas-form)))
 
     ;; The pane borrows a window before it takes one: shown from a menu
     ;; that has calc beside it, it lands in calc's window and closing
@@ -183,6 +212,24 @@
     ;; The filter narrows the list.
     (cl-assert (string-match-p "Volume of sphere" (buffer-string)))
     (cl-assert (not (string-match-p "triangle" (buffer-string))))
+
+    ;; Several words are several searches, not one string: each word
+    ;; has to turn up somewhere in the formula, in any order — the
+    ;; literal "sphere volume" is nowhere in the list at all.
+    (setq maf-formulas--query "sphere volume")
+    (maf-formulas--render)
+    (cl-assert (string-match-p "Volume of sphere" (buffer-string)))
+    (cl-assert (not (string-match-p "cylinder" (buffer-string))))
+    ;; And the words may land in different fields: "volume" is a title
+    ;; word, "height" a variable only the cylinder carries among the
+    ;; two the first word leaves.
+    (setq maf-formulas--query "volume height")
+    (maf-formulas--render)
+    (cl-assert (string-match-p "Volume of cylinder" (buffer-string)))
+    (cl-assert (not (string-match-p "Volume of sphere" (buffer-string))))
+    ;; Whitespace is what separates words, never something to match.
+    (cl-assert (maf-formulas--matches-p (car maf-formulas-user)
+                                        "  sphere   volume "))
     (setq maf-formulas--query "")
     (maf-formulas--render)
 
@@ -311,6 +358,7 @@
     (setq maf-formulas-user (nth 0 maf--formulas-stash)
           maf-formulas--loaded (nth 1 maf--formulas-stash)
           maf-formulas--recent (nth 2 maf--formulas-stash)
-          maf-formulas--pane-state (nth 4 maf--formulas-stash))
+          maf-formulas--pane-state (nth 4 maf--formulas-stash)
+          maf-formulas-builtin (nth 5 maf--formulas-stash))
     (when (nth 3 maf--formulas-stash)
       (maf-use-formulas-mode 1))))

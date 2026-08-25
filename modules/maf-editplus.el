@@ -12,10 +12,10 @@
 ;;
 ;; What is here now are the four delimiter gestures, TAB, M-o, C-RET
 ;; and the shifted arrows, the function keys L, Q, |, S, C, T and B,
-;; the exponent keys M-2 through M-9 and :, P for the constant pi,
-;; DEL and C-d, which delete a power whole from either side of its
-;; operator, and S-SPC, which keeps the stack's space motion
-;; (`maf-forward-space') alive over the editable text.
+;; the exponent keys M-2 through M-9 and :, P for the constant pi and
+;; J for the multiplication sign, the union U that commit trades for
+;; calc's ||, and DEL and C-d, which delete a power whole from either
+;; side of its operator.
 ;;
 ;; TAB escapes. Typing a formula runs forward past closing delimiters
 ;; constantly — sqrt(x^2+1), f(g(x)) — and reaching the far side of one
@@ -1273,6 +1273,18 @@ so x |mod y is the mod's padding and names the x)."
                    (or (eq (maf-editplus--node-kind node) 'call)
                        (maf-editplus--unit-before at limit)))
               nil)
+             ;; A separator is punctuation the same way a closer is:
+             ;; the argument list it divides is not a sub-expression a
+             ;; command could act on, so a press on one means the
+             ;; argument just typed — log(x|, 5) naming the x, exactly
+             ;; as the closer after the last argument does. Without
+             ;; this the innermost node covering the comma is the call
+             ;; itself, and the key would wrap the whole call from
+             ;; inside its own argument list.
+             ((and node
+                   (memq (char-after at) '(?, ?\;))
+                   (maf-editplus--unit-before at limit))
+              nil)
              ;; Padding whitespace with a complete unit ending at
              ;; point reads as the end of the entry does: the press
              ;; means the term just typed — 2 x| + 1 names the x, not
@@ -1605,7 +1617,9 @@ nothing behind point:
 
 Bound to `|' in `maf-edit-mode-map', which costs the character its own
 key for the length of a session — calc reads it as vector
-concatenation, and one wanted literally has to be yanked in."
+concatenation, and one wanted literally has to be yanked in. The
+union `||' is the exception, and it is spelled U instead
+\(`maf-editplus--commit-union')."
   (interactive)
   (maf-editplus--apply-function "abs"))
 
@@ -1785,6 +1799,98 @@ through untouched, as does everything else in EXPR."
          (eql (nth 2 expr) 10))
     (list 'calcFunc-log10 (maf-editplus--commit-log10 (nth 1 expr))))
    (t (cons (car expr) (mapcar #'maf-editplus--commit-log10 (cdr expr))))))
+
+;;; The union
+
+;; A solution set is written with a union — x < -1 || x > 1, the shape
+;; `a k' and `a S' hand back — and the vertical bar is not a character
+;; an edit session can type: `|' is the modulus key here, and pressing
+;; it twice only wraps twice. So the union is spelled U, the letter
+;; drawn like the sign, and commit trades it for calc's own || .
+;;
+;; The trade is the log key's, one layer further down. log(x, 10)
+;; parses as itself and wants only renaming, so it rides
+;; `maf-edit-transform-value-functions'; a U does not parse as an
+;; operator at all — calc reads a lone U as a variable, and
+;; x<-1 U x>1 as nothing — so this one rewrites the text before the
+;; parser sees it, on `maf-edit-transform-text-functions'.
+;;
+;; Which U: one standing between two operands with whitespace on both
+;; sides — [1,2] U [3], x < -1 U x > 1. A U inside a name is part of
+;; the name; a U written tight against a neighbour is a factor; and a
+;; U with an operator rather than an operand beside it is the variable
+;; it looks like, so E = U + K commits as written. What the rule does
+;; cost is a spaced-out U used as a factor — a U b — a product nobody
+;; writes that way while * has a key of its own.
+
+(defconst maf-editplus--union-space '(?\s ?\t ?\n)
+  "Whitespace separating the union U from its operands.")
+
+(defconst maf-editplus--union-enders '(?\) ?\] ?\} ?\")
+  "Non-name characters that can end the operand before a union U.")
+
+(defconst maf-editplus--union-starters '(?\( ?\[ ?\{ ?\" ?- ?+)
+  "Non-name characters that can start the operand after a union U.")
+
+(defun maf-editplus--union-at-p (text i)
+  "Non-nil when the U at index I of TEXT stands as the union operator.
+Whitespace on both sides, an operand ending somewhere before it and
+another starting somewhere after — a name character or one of
+`maf-editplus--union-enders' and `maf-editplus--union-starters'. Nil
+for a U at either end of TEXT, one touching a neighbour, and one
+whose neighbour is an operator: those are names and factors, and the
+text means them as it spells them."
+  (let ((n (length text)))
+    (and (> i 0)
+         (< (1+ i) n)
+         (memq (aref text (1- i)) maf-editplus--union-space)
+         (memq (aref text (1+ i)) maf-editplus--union-space)
+         (let ((j (1- i))
+               (k (1+ i)))
+           (while (and (>= j 0)
+                       (memq (aref text j) maf-editplus--union-space))
+             (setq j (1- j)))
+           (while (and (< k n)
+                       (memq (aref text k) maf-editplus--union-space))
+             (setq k (1+ k)))
+           (and (>= j 0)
+                (< k n)
+                (let ((before (aref text j))
+                      (after (aref text k)))
+                  (and (or (maf-editplus--name-char-p before)
+                           (memq before maf-editplus--union-enders))
+                       (or (maf-editplus--name-char-p after)
+                           (memq after maf-editplus--union-starters)))))))))
+
+(defun maf-editplus--commit-union (text)
+  "TEXT with each union U rewritten as the || calc reads.
+On `maf-edit-transform-text-functions' while the module is on, so a
+union can be typed at all: the vertical bar has no key in an edit
+session, `|' being the modulus (`maf-editplus-wrap-abs'), and U is
+the letter drawn like the sign.
+
+Only a U standing between two operands, whitespace on both sides
+\(`maf-editplus--union-at-p'), and only outside a string literal —
+where a U is text like any other character. Everything else in TEXT
+passes through untouched."
+  (let ((strings (maf-edit--string-regions text))
+        (parts nil)
+        (last 0)
+        (i 0)
+        (n (length text)))
+    (while (< i n)
+      (when (and (eq (aref text i) ?U)
+                 (not (seq-find (lambda (r) (and (>= i (car r)) (< i (cdr r))))
+                                strings))
+                 (maf-editplus--union-at-p text i))
+        (push (substring text last i) parts)
+        (push "||" parts)
+        (setq last (1+ i)))
+      (setq i (1+ i)))
+    (if (null parts)
+        text
+      (push (substring text last) parts)
+      (apply #'concat (nreverse parts)))))
 
 ;;; Raising to a power
 
@@ -2131,6 +2237,19 @@ what goes in."
         (insert " "))
       (insert name))))
 
+(defun maf-editplus-insert-times (n)
+  "Insert the multiplication sign, N times, on the unmodified `J' key.
+J is what maf gives multiplication on the stack (`mafcmd-mul'), and
+this carries the letter into the session: it types `*', by the same
+self-insertion the `*' key itself runs, so the operator keeps one key
+on both sides of a maf-edit session and reaching across for shift-8
+mid-formula is optional rather than required.
+
+A capital J is no longer self-inserting during a session — see
+`maf-use-editplus-mode' on what that costs."
+  (interactive "p")
+  (self-insert-command n ?*))
+
 ;;; The module
 
 (define-minor-mode maf-use-editplus-mode
@@ -2139,7 +2258,6 @@ what goes in."
 These keys work only while a maf-edit session is active:
 
   TAB           Move past the closing parenthesis or bracket.
-  S-SPC         Move to the next space.
   M-o           Put parentheses around the term before point.
   C-RET         Duplicate the group at point.
   S-up/S-down   Change parentheses to brackets, or back.
@@ -2149,11 +2267,15 @@ These keys work only while a maf-edit session is active:
   M-2..M-9      Type ^2 through ^9.
   : or W        Square the target; repeat to raise the power.
   P             Type pi.
+  J             Type *, as the `*' key does.
   DEL/C-d       Delete a whole power when deleting next to ^.
 
 For example, press Q on x in x+1 to get sqrt(x)+1. Press W on x to
 get x^2, then press it again to get x^3. B uses base 10 unless an
 earlier nearby log supplies another base or you give a numeric prefix.
+
+A U with a space on either side is the union: type x < -1 U x > 1 and
+it commits as x < -1 || x > 1, the bar having no key of its own here.
 
 The single-character shortcuts replace normal insertion of those
 characters during the edit session. Yank a literal character if needed.
@@ -2162,7 +2284,6 @@ Turning this mode off restores the ordinary editing keys."
   :group 'maf
   (let ((on maf-use-editplus-mode))
     (dolist (b '(("TAB" . maf-editplus-escape-group)
-                 ("S-SPC" . maf-forward-space)
                  ("M-o" . maf-editplus-wrap-parens)
                  ("C-<return>" . maf-editplus-duplicate-group)
                  ("S-<up>"   . maf-editplus-toggle-brackets)
@@ -2178,6 +2299,7 @@ Turning this mode off restores the ordinary editing keys."
                  (":"   . maf-editplus-raise-power)
                  ("W"   . maf-editplus-raise-power)
                  ("P"   . maf-editplus-insert-pi)
+                 ("J"   . maf-editplus-insert-times)
                  ("DEL" . maf-editplus-delete-backward)
                  ("C-d" . maf-editplus-delete-forward)))
       (define-key maf-edit-mode-map (kbd (car b)) (and on (cdr b))))
@@ -2188,11 +2310,18 @@ Turning this mode off restores the ordinary editing keys."
                   (and on #'maf-editplus-insert-power)))
     ;; The commit-time half of B: the base-10 default trades its
     ;; visible spelling for calc's log10 as the entry leaves the text.
+    ;; The union U is the same trade one layer down — it never parsed,
+    ;; so it is traded in the text rather than in the value.
     (if on
-        (add-hook 'maf-edit-transform-value-functions
-                  #'maf-editplus--commit-log10)
+        (progn
+          (add-hook 'maf-edit-transform-value-functions
+                    #'maf-editplus--commit-log10)
+          (add-hook 'maf-edit-transform-text-functions
+                    #'maf-editplus--commit-union))
       (remove-hook 'maf-edit-transform-value-functions
-                   #'maf-editplus--commit-log10))))
+                   #'maf-editplus--commit-log10)
+      (remove-hook 'maf-edit-transform-text-functions
+                   #'maf-editplus--commit-union))))
 
 ;; Register with the module system when it is present; the mode above
 ;; works on its own without it.
@@ -2202,7 +2331,9 @@ Turning this mode off restores the ordinary editing keys."
 
 For example, Q wraps x as sqrt(x), W changes x to x^2, and M-3 types
 ^3. TAB moves out of parentheses, M-o adds them, and DEL or C-d
-removes a whole power cleanly. These keys work only while editing."
+removes a whole power cleanly. J types the multiplication sign, and a
+spaced-out U commits as the union ||. These keys work only while
+editing."
                        nil "Editing"))
 
 (provide 'maf-editplus)

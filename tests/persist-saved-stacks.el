@@ -1,0 +1,250 @@
+;;; The saved-stacks buffer (modules/maf-persist.el): every save file
+;; listed as a dial row with size, age and liveness, hovering a row
+;; previews its stack in a window beside it, RET restores it, D deletes
+;; the file. Driven against a scratch directory the way
+;; persist-stack.el drives the save/restore core, with the session's
+;; own persistence state stashed and put back at the end.
+
+(require 'maf-persist)
+
+(maf-step
+  (setq pstacks--stash (list maf-stack-directory
+                             maf-stack-session-name
+                             maf--stack-session
+                             maf--stack-restored
+                             maf--stack-last-saved)
+        maf-stack-directory (make-temp-file "maf-stacks-test" t)
+        maf-stack-session-name "test-buf-a"
+        maf--stack-session nil
+        maf--stack-restored t
+        maf--stack-last-saved 'pstacks--unset)
+
+  ;; Three saved sessions: this one's, saved for real, and two written
+  ;; by hand — no lock on either, so neither reads as live.
+  (calc-wrapper (maf-push "6 x + 12") (maf-push "a + b"))
+  (cl-assert (maf-save-stack))
+  (let ((print-length nil) (print-level nil))
+    (with-temp-file (maf--stack-file "test-buf-b")
+      (prin1 (list (math-read-expr "y^2")) (current-buffer)))
+    (with-temp-file (maf--stack-file "test-buf-c")
+      (prin1 (list (math-read-expr "n!")) (current-buffer))))
+
+  ;; Save times set apart by hand: three files written in one step
+  ;; land on the same second, and rows sorted newest first would then
+  ;; fall back on whatever order the directory listed them in. Spread
+  ;; them and the list is c, b, a — which is what the ages shown, and
+  ;; every row-order assertion below, actually rest on.
+  (progn
+    (set-file-times (maf--stack-file "test-buf-a") (time-subtract nil 300))
+    (set-file-times (maf--stack-file "test-buf-b") (time-subtract nil 200))
+    (set-file-times (maf--stack-file "test-buf-c") (time-subtract nil 100))
+    (cl-assert (equal (mapcar #'car (maf--stack-saved-sessions))
+                      '("test-buf-c" "test-buf-b" "test-buf-a")))
+    :ordered)
+
+  ;; The buffer lists every saved session, sized and aged, the
+  ;; session's own row saying whose it is.
+  (save-window-excursion
+    (maf-saved-stacks)
+    (let ((text (buffer-substring-no-properties (point-min) (point-max))))
+      (cl-assert (string-match-p "test-buf-a.*2 entries.*(current)" text))
+      (cl-assert (string-match-p "test-buf-b.*1 entries" text))
+      (cl-assert (not (string-match-p "test-buf-b.*live" text)))
+      ;; Every row is a saved session, so the table names no group:
+      ;; no Group column in the format, and the name at the margin.
+      (cl-assert (not (dial--grouped-p)))
+      (cl-assert (not (seq-find (lambda (col) (equal (car col) "Group"))
+                                tabulated-list-format))
+                 t "group column shown: %S" tabulated-list-format)
+      (cl-assert (string-match-p "^ +test-buf-a" text))))
+
+  ;; Hovering a row previews its saved stack, laid out as calc lays
+  ;; out a stack: top of the stack on the last line, at level 1.
+  (save-window-excursion
+    (maf-saved-stacks)
+    (goto-char (point-min))
+    (search-forward "test-buf-a")
+    (maf--stacks-preview)
+    (cl-assert (eq maf--stacks-previewed (intern "test-buf-a")))
+    (cl-assert (get-buffer-window "*maf-stacks preview*"))
+    (with-current-buffer "*maf-stacks preview*"
+      (let ((text (buffer-substring-no-properties (point-min) (point-max))))
+        (cl-assert (equal text "2: 6 x + 12\n1: a + b"))))
+    ;; Resting on the row redraws nothing; another row redraws to it.
+    ;; The rows run newest save first, so b is the one above a.
+    (maf--stacks-preview)
+    (goto-char (point-min))
+    (search-forward "test-buf-b")
+    (maf--stacks-preview)
+    (with-current-buffer "*maf-stacks preview*"
+      (cl-assert (equal (buffer-substring-no-properties (point-min) (point-max))
+                        "1: y^2"))))
+
+  ;; The list and its preview share the frame evenly, in two windows.
+  ;; The preview borrows a window rather than carving the frame
+  ;; smaller (`maf--display-borrowing-window'), which is what the
+  ;; formulas menu's detail pane and every help buffer do. Asking
+  ;; `display-buffer' for a (window-width . 0.5) instead measured the
+  ;; fraction against the whole frame, so the preview claimed the
+  ;; list's own half and left it in the two columns a window cannot go
+  ;; below, with calc still holding the other half — three windows,
+  ;; none of them the intended size.
+  (save-window-excursion
+    (delete-other-windows)
+    (maf-saved-stacks)
+    (goto-char (point-min))
+    (search-forward "test-buf-a")
+    (maf--stacks-preview)
+    (let* ((windows (window-list))
+           (list-win (get-buffer-window "*maf-stacks*"))
+           (preview-win (get-buffer-window "*maf-stacks preview*")))
+      (cl-assert (= (length windows) 2))
+      (cl-assert (and list-win preview-win))
+      ;; Even to within the column an odd frame width cannot split.
+      (cl-assert (<= (abs (- (window-total-width list-win)
+                             (window-total-width preview-win)))
+                     1))
+      ;; And each really is about half the frame, not a sliver.
+      (cl-assert (> (window-total-width list-win)
+                    (/ (frame-width) 3)))))
+
+  ;; Restoring replaces the current stack with the row's and closes
+  ;; the buffer, preview and all.
+  (save-window-excursion
+    (maf-saved-stacks)
+    (goto-char (point-min))
+    (search-forward "test-buf-b")
+    (maf-stacks-restore)
+    (cl-assert (not (get-buffer-window "*maf-stacks*")))
+    (cl-assert (not (get-buffer-window "*maf-stacks preview*"))))
+  (cl-assert (= (calc-stack-size) 1))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "y^2"))
+
+  ;; R names the session on the row: its save file moves under the new
+  ;; name and the row moves with it, the preview following as it does
+  ;; on any other row.
+  (save-window-excursion
+    (maf-saved-stacks)
+    (goto-char (point-min))
+    (search-forward "test-buf-b")
+    (maf-stacks-name "test-buf-z")
+    (cl-assert (file-exists-p (maf--stack-file "test-buf-z")))
+    (cl-assert (not (file-exists-p (maf--stack-file "test-buf-b"))))
+    (cl-assert (eq (tabulated-list-get-id) (intern "test-buf-z"))
+               t "point left the renamed row: %S" (tabulated-list-get-id))
+    (maf--stacks-preview)
+    (with-current-buffer "*maf-stacks preview*"
+      (cl-assert (equal (buffer-substring-no-properties (point-min) (point-max))
+                        "1: y^2")))
+    ;; A name another save already holds, a name no file could carry,
+    ;; and no name at all: each refused, the save left where it is.
+    (cl-assert (equal (condition-case err (maf-stacks-name "test-buf-c")
+                        (user-error (cadr err)))
+                      "Session test-buf-c already taken"))
+    (cl-assert (equal (condition-case err (maf-stacks-name "  ")
+                        (user-error (cadr err)))
+                      "Session name cannot be empty"))
+    (cl-assert (equal (condition-case err (maf-stacks-name "a/b")
+                        (user-error (cadr err)))
+                      "Session name cannot contain a slash"))
+    (cl-assert (file-exists-p (maf--stack-file "test-buf-z")))
+    ;; A session live in another Emacs keeps saving under its own
+    ;; name, so renaming its row would only bring the old one back:
+    ;; refused. PID 1 stands in for that other Emacs — a process
+    ;; certainly alive, and certainly not this one.
+    (write-region "1" nil (maf--stack-file "test-buf-z" ".lock") nil 'silent)
+    (cl-assert (equal (condition-case err (maf-stacks-name "test-buf-live")
+                        (user-error (cadr err)))
+                      "Session test-buf-z is live in another Emacs"))
+    (delete-file (maf--stack-file "test-buf-z" ".lock"))
+    ;; Back to b, so the rows below read as they did.
+    (maf-stacks-name "test-buf-b")
+    (cl-assert (file-exists-p (maf--stack-file "test-buf-b"))))
+
+  ;; Naming the session's own row names the running session: the name
+  ;; lock moves with the file, the row goes on saying it is the
+  ;; current one, and the next save lands under the new name.
+  (save-window-excursion
+    (maf-saved-stacks)
+    (goto-char (point-min))
+    (search-forward "test-buf-a")
+    (maf-stacks-name "test-named")
+    (cl-assert (equal maf--stack-session "test-named"))
+    (cl-assert (equal maf-stack-session-name "test-named"))
+    (cl-assert (file-exists-p (maf--stack-file "test-named" ".lock")))
+    (cl-assert (not (file-exists-p (maf--stack-file "test-buf-a" ".lock"))))
+    (cl-assert (string-match-p "test-named.*(current)"
+                               (buffer-substring-no-properties (point-min)
+                                                               (point-max))))
+    (calc-wrapper (maf-push "42"))
+    (cl-assert (maf-save-stack))
+    (let ((values (maf--stack-read (maf--stack-file "test-named"))))
+      (cl-assert (= (length values) 2))
+      (cl-assert (string= (math-format-value (car values)) "42")))
+    (calc-pop 1)
+    ;; Back to a, this session with it.
+    (maf-stacks-name "test-buf-a")
+    (cl-assert (equal maf--stack-session "test-buf-a"))
+    (cl-assert (file-exists-p (maf--stack-file "test-buf-a" ".lock"))))
+
+  ;; The save above touched a's file; spread the times again so the
+  ;; rows below run newest first as they did to begin with.
+  (progn
+    (set-file-times (maf--stack-file "test-buf-a") (time-subtract nil 300))
+    (set-file-times (maf--stack-file "test-buf-b") (time-subtract nil 200))
+    (set-file-times (maf--stack-file "test-buf-c") (time-subtract nil 100))
+    (cl-assert (equal (mapcar #'car (maf--stack-saved-sessions))
+                      '("test-buf-c" "test-buf-b" "test-buf-a")))
+    :respread)
+
+  ;; Deleting removes the file and the row, asking nothing; the buffer
+  ;; stays while rows remain. `y-or-n-p' is stubbed to signal rather
+  ;; than to answer: a prompt reintroduced here has to fail the test,
+  ;; not sail through on the stub's yes.
+  (save-window-excursion
+    (maf-saved-stacks)
+    (goto-char (point-min))
+    (search-forward "test-buf-b")
+    (cl-letf (((symbol-function 'y-or-n-p)
+               (lambda (_) (error "delete asked for confirmation"))))
+      (maf-stacks-delete))
+    (cl-assert (not (file-exists-p (maf--stack-file "test-buf-b"))))
+    (cl-assert (null (assq (intern "test-buf-b") dial-items)))
+    (cl-assert (get-buffer-window "*maf-stacks*"))
+    ;; Point stayed on the line, which now holds the row that moved up
+    ;; into the deleted one's place: b sat between c and a, so a.
+    (cl-assert (eq (tabulated-list-get-id) (intern "test-buf-a"))
+               t "point left the deleted row's place: %S"
+               (tabulated-list-get-id))
+    ;; The bottom row has nothing below to move up, so point takes the
+    ;; row above instead. This is also the session's own row: only the
+    ;; file goes, the live name lock stays.
+    (maf-stacks-delete)
+    (cl-assert (not (file-exists-p (maf--stack-file "test-buf-a"))))
+    (cl-assert (file-exists-p (maf--stack-file "test-buf-a" ".lock")))
+    (cl-assert (eq (tabulated-list-get-id) (intern "test-buf-c"))
+               t "point left the last row's neighbour: %S"
+               (tabulated-list-get-id))
+    ;; Deleting the only row left closes the buffer.
+    (maf-stacks-delete)
+    (cl-assert (not (file-exists-p (maf--stack-file "test-buf-c"))))
+    (cl-assert (not (get-buffer-window "*maf-stacks*"))))
+
+  ;; An emptied directory refuses to open at all.
+  (cl-assert (equal (condition-case err
+                        (save-window-excursion (maf-saved-stacks))
+                      (user-error (cadr err)))
+                    (format "No saved stacks in %s" maf-stack-directory)))
+
+  ;; Put the session's own persistence state back.
+  (progn (calc-pop (calc-stack-size))
+         (when (get-buffer "*maf-stacks*") (kill-buffer "*maf-stacks*"))
+         (when (get-buffer "*maf-stacks preview*")
+           (kill-buffer "*maf-stacks preview*"))
+         (delete-directory maf-stack-directory t)
+         (setq maf-stack-directory (nth 0 pstacks--stash)
+               maf-stack-session-name (nth 1 pstacks--stash)
+               maf--stack-session (nth 2 pstacks--stash)
+               maf--stack-restored (nth 3 pstacks--stash)
+               maf--stack-last-saved (nth 4 pstacks--stash))
+         :cleaned))

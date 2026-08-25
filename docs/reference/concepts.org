@@ -608,6 +608,40 @@ row, is walked past rather than landed on — and it carries an active
 selection along with it, that being what a command would resolve to
 instead of point.
 
+=maf-forward-operand= (S-SPC) walks the same landings sideways rather
+than upward: every /operation/ of the entry is one stop, the whole
+entry among them, each at the first glyph it renders itself, so a few
+presses offer every compound target of the entry in turn. The nouns
+are left out — a number or a variable is =maf-forward-noun='s (M-f) to
+walk — so the two motions divide the entry between them rather than
+covering the same columns, and an entry that is a bare atom offers no
+stop of its own. Where the climb asks resolve one ancestor at a time,
+the motion reads the stops off the prepared composition in one pass
+(=maf--comp-landing-positions=), which is defined for flat renderings
+only: an entry drawn over several lines — Big language, a tall
+matrix — offers no stops at all, its terms still the noun motion's to
+walk, read off the rendering as text. Either way the walk is confined
+to the entry point sits in: the first and last stops are where it
+stops asking, and it signals at the margin rather than carrying point
+into a neighbouring entry, which is a line of its own to move to.
+=maf-backward-operand= (M-S-SPC) is the same walk the other way, over
+the same stops, so the two retrace each other.
+
+=maf-goto-left-side= (=(=) and =maf-goto-right-side= (=)=) arrive at
+one particular landing in one press: the whole of a relation's left or
+right side, the largest formula there is on it, where the climb would
+reach it a level at a time. The relation is the innermost one point
+sits in, so a term inside one element of =[h = 0, p = -4, k = 0]=
+crosses within its own equation rather than finding the vector around
+it, and the entry's margins — the line-number prefix, the end of the
+line — cross the entry's own relation. Like the climb it asks the
+rendering where the side is nameable rather than computing a column
+(=maf--up-node-position=), so it works in Big language too, and it
+carries an active selection along for the same reason. Home is the one
+place the keys mean something else: there is no entry at point to move
+within, and they keep the blank-vector gesture the edit module gives
+them (=maf-edit-add-vector=).
+
 ** Widening a rewrite marker
 
 =maf-distribute= (j D) and =maf-merge= (j M) widen along the same
@@ -919,7 +953,7 @@ multiples of pi.
 | [[file:../../modules/maf-edit.el][modules/maf-edit.el]]      | Edit module: =maf-use-edit-mode= binds SPC/`/C-o/"(" to =maf-edit= in-place stack editing (=maf-edit-mode= session) |
 | [[file:../../modules/maf-preview.el][modules/maf-preview.el]]   | Preview module: =maf-use-preview-mode= shows the entry at point in Big display in a floating panel (posframe child frame, else in-window) |
 | [[file:../../modules/maf-render.el][modules/maf-render.el]]    | Render module: =maf-render= sends the entry at point through Calc LaTeX and RaTeX, then displays the SVG on demand |
-| [[file:../../modules/maf-formulas.el][modules/maf-formulas.el]]  | Formulas module: =maf-formulas= menu of saved formulas by category (detail + RET-insert); data in maf-formulas-data.el |
+| [[file:../../modules/maf-formulas.el][modules/maf-formulas.el]]  | Formulas module: =maf-formulas= menu of saved formulas by category (detail + RET-insert); data in =maf-formulas-builtin= (shipped) plus =maf-formulas-file= (the user's) |
 | [[file:../../debug/maf-step.el][debug/maf-step.el]]       | Step-through harness (cockpit) that drives the tests        |
 | [[file:../../debug/maf-hl-verify.el][debug/maf-hl-verify.el]]  | Programmatic highlight verification (overlay state + render) |
 | [[file:../../debug/maf-hl-sweep.el][debug/maf-hl-sweep.el]]   | Highlight sweep across many expression shapes               |
@@ -987,17 +1021,28 @@ Two module shapes have appeared, matching the feature's state:
   =maf-use-history-mode= global minor mode: enabling installs the recording
   hook and the =calc-record= advice and binds =t d= to =maf-history= in
   =maf-mode-map=; disabling removes them and cedes =t d= back to calc's
-  =calc-trail-display=. The browsing buffer runs in its own
-  =maf-history-mode= major mode; beneath the header it shows a
-  horizontal strip of the operations around the current one (older
-  left, newer right, current highlighted), for context while stepping.
+  =calc-trail-display=. Browsing is two side-by-side
+  windows below calc: =*maf-history*= (=maf-history-mode=) on the left
+  is the action log, one line per state, newest at the top, each
+  prefixed by a git-style change marker (=+= added, =-= removed, =~=
+  changed in place, =·= for the oldest state, which has nothing to
+  diff against), the current one marked;
+  =*maf-history-stack*= (=maf-history-stack-mode=,
+  whose map inherits the log's) on the right shows that state's whole
+  stack. Moving in the log re-renders the stack beside it, so the
+  session's course reads at a glance while stepping.
   Persistence
   (=maf-persist-mode=) is the same shape: enabling installs the save
-  timer and the restore hook and binds =t l= to
-  =maf-restore-stack-from= (a key calc leaves free, beside the
-  history's =t d= — both bring back an earlier stack, the history's
-  from this session and =t l='s from any session) and =t u= to
-  =maf-save-stack=, its on-demand companion; disabling removes them.
+  timer and the restore hook and binds =l R= to =maf-saved-stacks=
+  (both it and the history's =t d= bring back an earlier stack, the
+  history's from this session and =l R='s from any session) and =l S=
+  to =maf-save-stack=, its on-demand companion; disabling removes
+  them. The saved-stacks buffer is dial's, like the options menu — a
+  row per save file, previewing its stack in a window beside the list
+  as point moves (side by side, so a stack of any depth is read
+  without scrolling), restoring one with RET, naming one with =R= —
+  which on the session's own row names the running session, its lock
+  moving with the file — and deleting one outright with =D=.
   The edit module too
   (=modules/maf-edit.el=): =maf-use-edit-mode= installs SPC / ` / C-o /
   =(= in =maf-mode-map= when enabled and cedes them

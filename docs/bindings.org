@@ -185,21 +185,41 @@
   - the escape map beneath base: `m c` maf-list-modules — in every
     profile and with the module off, not a native addition
   - module keys: `SPC` \` `C-o` `(` (edit), `?` (options), `t d` `M-h`
-    (history), `t l` `t u` (persist), `M-p` `M-n` (recall), `s o`
+    (history), `l R` `l S` (persist), `M-p` `M-n` (recall), `s o`
     (formulas), `l t` (render)
 ** contextual siblings on their own calc key (outside the table)
    - `A` mafcmd-abs ← calc-abs, `f h` mafcmd-hypot ← calc-hypot,
      `a b` mafcmd-substitute ← calc-substitute,
      `a .` mafcmd-remove-equal ← calc-remove-equal,
-     `v u` mafcmd-unpack ← calc-unpack (also `j U`, `j M-U` ←
-     calc-sel-unpack), `P` maf-pi ← calc-pi
+     `v u` mafcmd-unpack ← calc-unpack, `j U` / `j M-U`
+     mafcmd-unwrap ← calc-sel-unpack, `P` maf-pi ← calc-pi
    - `U` maf-undo ← calc-undo, `D` maf-redo ← calc-redo,
      `C-d` / `DEL` maf-del ← calc-pop, `C-k` maf-kill ← calc-kill,
      `M-w` maf-copy ← calc-copy-region-as-kill,
      `C-y` maf-yank ← calc-yank,
      `RET` maf-dup-or-clear-selections ← calc-enter,
      `TAB` / `C-t` maf-swap-up ← calc-roll-down,
-     `M-RET` maf-dup-go ← calc-last-args
+     `M-RET` mafcmd-let ← calc-last-args
+   - the combinators, on calc's own keys (2026-08-24): `v R`
+     mafcmd-reduce ← calc-reduce, `v U` mafcmd-accum ←
+     calc-accumulate, `v A` mafcmd-apply ← calc-apply, `v O`
+     mafcmd-outer ← calc-outer-product, `v I` mafcmd-inner ←
+     calc-inner-product. They were mafcmd table rows and could not
+     be: the leading argument of calcFunc-reduce and its kin is an
+     operation, not an operand, so the row built a call one argument
+     short and `calc-normalize` handed it back inert (`v O` on two
+     vectors gave outer([1, 3, 9], [1, 2, 3, 6])). Now they read the
+     operation from the next key, the gesture calc's own V R and V O
+     already use — what widens is only the space the key is looked
+     up in: calc finds it in `calc-oper-keys`, a fixed table of
+     blessed operations, and maf finds it in its own map, so any
+     command stamped `maf-operation` answers (every table row is,
+     and a hand-written command joins by stamping it). `:` types a
+     formula instead, as it does after the map flag. The I variants
+     ride the combinator, not the operation: `I v R` folds from the
+     right. calc's nest/fixp (H V R, I H V R) are not carried over —
+     they iterate a count rather than fold, and were only reachable
+     through the broken flag routes
    - `r 0`..`r 9` maf-recall-quick ← calc-recall-quick
    - the digit starters `_` `0`..`9` `.` `#` maf-digit-start ←
      calcDigit-start
@@ -218,6 +238,24 @@
      prefix claim — see the k/l policy above)
    - [X] `k d` mafcmd-factor-powers ← calc-double-factorial (a custom
      prefix claim; my/calc's key for the command too)
+   - [X] `k p` mafcmd-perm ← calc-prime-test (2026-08-24: permutations
+     on p, beside its sibling choose on `k c` — calc leaves perm on the
+     hyperbolic flag alone, `H k c`, which still reaches it. A custom
+     prefix claim under the k/l policy)
+   - [X] `k t` mafcmd-perm ← calc-totient (2026-08-24: a second key for
+     the permutation beside its `k p`. Displaces totient's table key in
+     native; totient keeps no key, and the calc profile keeps
+     k t = totient)
+   - [X] `k f` mafcmd-factor ← calc-prime-factors (2026-08-24: a second
+     key for the factor beside its table key `a f`, on factor's letter
+     and beside the rest of the factoring family under k and l.
+     Displaces prfac's table key in native; prfac keeps no key, and the
+     calc profile keeps k f = prime factors)
+   - [X] `F` mafcmd-reduce ← calc-floor (2026-08-24: a second key for
+     the fold beside its `v R` — the combinator reached for most, and
+     one that spends a key on the operation it reads, so the prefix is
+     the one worth dropping. Displaces floor's table key in native;
+     floor keeps no key, and the calc profile keeps F = floor)
    - [X] `l f` mafcmd-factor-by ← calc-freq
    - [X] `l s` mafcmd-complete-square ← calc-spn (2026-08-21: a
      family key on the square's letter, beside its k s; the vim
@@ -226,8 +264,9 @@
    - [X] `i` mafcmd-solve-for ← calc-info
    - [X] `e` mafcmd-equal-to ← calcDigit-start
    - [X] `O` mafcmd-commute ← calc-option
-   - [X] `j l` maf-commute-left ← calc-select-less
-   - [X] `j r` maf-commute-right ← calc-rewrite-selection
+   - [X] `j l` maf-commute-left ← calc-select-less (also on `S-<left>`)
+   - [X] `j r` maf-commute-right ← calc-rewrite-selection (also on
+     `S-<right>`)
    - [X] `j D` maf-distribute ← calc-sel-distribute (prompt-free version
      of the same operation)
      - resolved (2026-08-19): not folded into `x` — expand-all and
@@ -250,6 +289,21 @@
    - [X] `j e` maf-jump-equals ← calc-enable-selections
    - [X] `@` maf-toggle-simplify ← calcDigit-start
    - [X] `&` maf-toggle-big-language ← calc-inv
+   - [X] `J` mafcmd-mul ← mafcmd-conj (2026-08-23: a second key for
+     multiplication beside its table key `*` — the most-struck binary
+     operator on a home-row shift where * is a reach to shift-8.
+     Displaces conj's table key in native; conj's home is its family
+     key `l j`, and the calc profile keeps J = conj. Vim's relocated
+     selection family already owns J, so there mul keeps only *)
+   - [X] `(` maf-goto-left-side ← calc-begin-complex
+   - [X] `)` maf-goto-right-side ← calc-end-complex (2026-08-25: the
+     parens cross a relation — one key to the whole left side, one to
+     the whole right, the largest formula on each. Calc's own use for
+     them is the complex-number delimiters, which maf's algebraic
+     entry supplies instead. `(` also displaces the edit module's
+     blank-vector key: that gesture keeps the key at home, where there
+     is no entry to move within, and keeps it outright in the calc
+     profile)
 ** additions (keys calc leaves unbound)
    - [X] `W` mafcmd-sqr
    - [X] `k k` mafcmd-esimplify (2026-08-22: the extended simplify's
@@ -258,7 +312,17 @@
      `k v`)
    - [X] `k v` mafcmd-evaluate (2026-08-22: moved off `k k`, ceded to
      esimplify; `I k v` still reaches mafcmd-identify)
-   - [X] `C-<return>` mafcmd-let
+   - [X] `C-<return>` maf-dup-here-or-clear-selections (2026-08-24:
+     the keep-point duplicate — RET's dispatcher with its keep-point
+     argument set, so C-RET is C-u RET on a key: same push, point
+     stays on what it copied instead of homing, and a selection still
+     clears. Where point lands is the only difference from RET, which
+     is the point of the key. maf-dup-go, the traveling duplicate, held
+     it from 2026-08-23 — swapped there with mafcmd-let, which rides
+     M-RET now; the traveling duplicate had been on M-RET since
+     2026-08-20, mafcmd-let on C-RET since it left C-c C-c — and is
+     unbound in native now, reachable by name and on the calc profile's
+     M-RET)
    - [X] `l l` mafcmd-float-frac (2026-08-20: the float/frac toggle —
      floats toward fractions first, fractions to floats otherwise,
      direction echoed; I forces float, H float-all, frac's tolerance
@@ -276,9 +340,10 @@
      `o w`, the command's home there since vim's M-o is the
      float/frac toggle)
    - [X] `l j` mafcmd-conj (2026-08-21: a family key on its initial,
-     beside its table key J; the vim mirror carries it as `o j`, the
-     command's home there since vim's J is the relocated
-     selection/structure family)
+     then beside its table key J — since 2026-08-23 J is a second
+     multiply key and this is conj's native home; the vim mirror
+     carries it as `o j`, the command's home there since vim's J is
+     the relocated selection/structure family)
    - [X] `l D` mafcmd-factor-powers (2026-08-21: a family key on D,
      for the difference of squares, beside its k d; the vim mirror
      carries it as `o D`, the command's home there since vim's k is
@@ -292,18 +357,32 @@
      variable read as `i` reads it, the subject's priority variable
      as the default; the stock stack-argument roots stays on `a P`.
      Earlier the key was a plain alias of `a P`, my/calc's key)
-   - [X] `j i` mafcmd-isolate
+   - [X] `j j` mafcmd-isolate (2026-08-24: swapped keys with the
+     raise, taking the doubled prefix key as `k k` does for the
+     extended simplify — the family's most-reached-for member on its
+     cheapest chord)
    - [X] `a k` mafcmd-abs-ineq
    - [X] `M-.` mafcmd-remove-equal
    - [X] `l x` swap-vars
-   - [X] `j j` mafcmd-raise
+   - [X] `j i` mafcmd-raise (2026-08-24: swapped keys with the
+     isolate, onto i for the plainest reading of the word — this is
+     the one that lifts a sub-formula out of what surrounded it,
+     where mafcmd-isolate isolates a variable by solving for it)
    - [X] `C-c C-c` mafcmd-esimplify (2026-08-20: second key beside its
      table key `a s`, earned by frequency — since 2026-08-22 also on
      `k k`; the mode's slice of the C-c convention, with its
      do-the-obvious-thing reflex)
    - [X] `S-<up>` / `S-<down>` mafcmd-toggle-op
+   - [X] `S-<left>` / `S-<right>` maf-commute-left / -right (2026-08-25:
+     second keys beside their `j l` / `j r`, the arrow saying the
+     direction the term travels and repeating without leaving the key;
+     joins the S-arrow family above, the plain arrows staying the
+     buffer's motion keys)
    - [X] `C-|` mafcmd-bracket
    - [X] `v RET` maf-index
+   - [X] `v o` mafcmd-sort (2026-08-24: a second key beside its table
+     key `v S` — the legacy config's key, unshifted; the flag prefixes
+     route through it too, so I v o is the descending sort)
    - [X] `l g` unique-groups
    - [X] `r r` maf-recall-variable
    - [X] `M-o` mafcmd-mod-360
@@ -317,14 +396,33 @@
    - [X] `C-M-<backspace>` (and aliases) maf-roll-to-bottom
    - [X] `M-<up>` maf-carry-up
    - [X] `M-<down>` maf-carry-down
-   - [X] `M-<return>` maf-dup-go (2026-08-20: the copy now lands on
-     top of the stack, calc's convention, rather than below the
-     source; point travels with it, a mark holding the origin.
-     Renamed from maf-dup-below to say so)
+   - [X] `M-<return>` mafcmd-let (2026-08-23: swapped keys with the
+     traveling duplicate, which rode C-RET until the keep-point
+     duplicate took that key on 2026-08-24 — a native-layout
+     opinion; the calc profile keeps the traveling duplicate on M-RET,
+     its pre-swap home. Dup-go's own note,
+     2026-08-20: the copy lands on top of the stack, calc's
+     convention, rather than below the source; point travels with it,
+     a mark holding the origin. Renamed from maf-dup-below to say so)
    - [X] `M-m` maf-beginning-of-entry
    - [X] `M-f` maf-forward-noun
    - [X] `M-b` maf-backward-noun
-   - [X] `S-SPC` maf-forward-space
+   - [X] `S-SPC` maf-forward-operand (2026-08-24: the freed key's new
+     tenant, after maf-forward-space was deleted 2026-08-23. Stack
+     mode only — no editplus key carries it into an edit session.
+     Later the same day the stops lost the nouns: only an operation is
+     a landing, numbers and variables being M-f's, so the two motions
+     divide the entry rather than covering the same columns. 2026-08-25:
+     confined to one entry as well — the walk signals at the entry's
+     first and last stop instead of crossing the margin into its
+     neighbour, both motions together)
+   - [X] `M-S-SPC` maf-backward-operand (2026-08-25: S-SPC's reverse
+     over the same stops — the forward key with meta added, calc and
+     the global map both unbound there, stack mode only like the
+     forward walk. Wanted a decode entry of its own: xterm.el carries
+     keycode 32 under alt and ctrl+alt, never under a shift, so
+     alt+shift falls through as the plain shift does. It held C-M-SPC
+     for a few hours the same day, the key the request meant to name)
    - [X] `C-M-u` maf-up-expression
    - [X] `C-M-k` maf-reset
    - [X] `C-M-l` maf-reset-settings
@@ -342,11 +440,14 @@
    - mafcmd-map, mafcmd-map-stack — explicit mapping commands; the M
      flag is the bound workflow
    - maf-dup, maf-dup-here, maf-clear-selections — split-out halves of
-     RET's maf-dup-or-clear-selections
+     RET's maf-dup-or-clear-selections (C-RET runs the keep-point
+     dispatcher, maf-dup-here-or-clear-selections)
+   - maf-dup-go — the traveling duplicate; native's C-RET went to the
+     keep-point dup 2026-08-24, and the calc profile's M-RET keeps it
    - maf-edit-add-entry-below — deliberately unbound; C-o one entry
      down covers the gesture (see src/bindings.el)
-   - maf-restore-stack — t l runs the choose-a-session variant
-     (maf-restore-stack-from)
+   - maf-restore-stack, maf-restore-stack-from — l R runs the
+     saved-stacks buffer (maf-saved-stacks), which restores from a row
    - maf-history-clear
 
 * profile:vim
@@ -465,8 +566,8 @@
    these families by derivation.
    - `h` — calc-help-prefix (the whole h help family)
    - `j` — the selection prefix, close to maf's core:
-     - maf's own: mafcmd-raise (j j), mafcmd-isolate (j i),
-       mafcmd-unpack (j U), maf-merge (j M), maf-distribute (j D),
+     - maf's own: mafcmd-raise (j i), mafcmd-isolate (j j),
+       mafcmd-unwrap (j U), maf-merge (j M), maf-distribute (j D),
        maf-jump-equals (j e), maf-commute-left/right (j l / j r)
      - calc's selection machinery: calc-select-here/once/more/less/
        next/previous/part, calc-sel-add/sub/mult/div-both-sides,
@@ -475,12 +576,14 @@
        calc-enter/edit/copy/del-selection,
        calc-enable/show/clear/break-selections, calc-unselect, calc-conj
    - `k` — the combinatorics prefix:
-     - mafcmd siblings shadowing calc: choose, gcd, lcm, prfac,
-       nextprime, totient, moebius, euler, bern, random, shuffle,
+     - mafcmd siblings shadowing calc: choose, gcd, lcm,
+       nextprime, moebius, euler, bern, random, shuffle,
        utpt/utpp/utpc
      - maf-only: mafcmd-esimplify (k k), mafcmd-evaluate (k v),
-       mafcmd-complete-square (k s), mafcmd-factor-powers (k d)
-     - calc-only leftovers: calc-keep-args (k K), calc-prime-test,
+       mafcmd-complete-square (k s), mafcmd-factor-powers (k d),
+       mafcmd-factor (k f, a second key beside `a f`),
+       mafcmd-perm (k p and k t, which calc leaves on `H k c`)
+     - calc-only leftovers: calc-keep-args (k K),
        calc-random-again, calc-extended-gcd, calc-utpn/utpf/utpb
    - `l` — maf's own invented prefix, layered over calc's log-units
      prefix:

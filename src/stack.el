@@ -12,6 +12,16 @@
 ;; These live in lazily-loaded calc modules; calc-ext's autoload registry
 ;; resolves them at runtime, but the byte compiler needs declarations.
 (declare-function calcFunc-mul "calc-arith")
+(declare-function calcFunc-reduce "calc-map")
+(declare-function calcFunc-rreduce "calc-map")
+(declare-function calcFunc-accum "calc-map")
+(declare-function calcFunc-raccum "calc-map")
+(declare-function calcFunc-apply "calc-map")
+(declare-function calcFunc-outer "calc-map")
+(declare-function calcFunc-inner "calc-map")
+(declare-function math-calcFunc-to-var "calc-ext")
+(declare-function calc-default-formula-arglist "calc-prog")
+(defvar math-arglist)   ; calc-prog's, filled by the arglist walker
 (declare-function calcFunc-div "calc-arith")
 (declare-function calcFunc-nrat "calc-poly")
 (declare-function calcFunc-expand "calc-poly")
@@ -45,6 +55,12 @@
 ;; and restore it around `calc-reset'.
 (defvar maf-mode)
 (declare-function maf-mode "maf")
+;; The edit module's, for the paren keys' home fallback
+;; (`maf--goto-side'): with the module on they open a blank vector
+;; entry at home, as its own binding on "(" did before the motions
+;; took the keys.
+(defvar maf-use-edit-mode)
+(declare-function maf-edit-add-vector "maf-edit")
 (declare-function calc-normal-language "calc-lang")
 (declare-function calc-big-language "calc-lang")
 (declare-function math-solve-eqn "calcalg2")
@@ -705,17 +721,41 @@ entry at home.
                     (nthcdr 3 expr)))
            (t expr))))
 
-(defun maf--anchor-on-node (m node)
+(defun maf--anchor-offset-on-node (m node)
+  "Point's character offset into NODE's rendering, or nil.
+NODE is a sub-formula of the entry at stack level M, read before a
+rewrite so the offset can be replayed against the moved node
+afterwards (see `maf--anchor-on-node'). nil when point is outside
+NODE's rendering, or the entry does not render flat.
+
+`calc-prepare-selection' sets `calc-keep-selection', which the commands
+that call this bind around their own rewrite; the binding here keeps
+the probe from leaking that flag past them."
+  (ignore-errors
+    (let ((calc-keep-selection calc-keep-selection))
+      (calc-prepare-selection m)
+      (maf--comp-node-point-offset node))))
+
+(defun maf--anchor-on-node (m node &optional offset)
   "Put point on NODE within the entry at stack level M; nil if not found.
 For the commands that hand a rewrite to calc and then want point to
 follow the term it moved. NODE is matched by identity in the freshly
 rewritten entry, so it lands only where the rewrite reused the same
 cons — true of an associative shift within a + or * chain, false once
 a - or / crossing wraps the term in a fresh neg/reciprocal. Callers
-fall back to a positional restore on nil."
+fall back to a positional restore on nil.
+
+OFFSET, from `maf--anchor-offset-on-node' before the rewrite, keeps the
+character of NODE point was on rather than pulling it back to NODE's
+first character. The term travels whole, so every grip on it survives
+the trip: from the = of an element of [h = 0, p = -4, k = 0] point is
+on that = wherever the element lands, and from the 2 of [a, b, c12] on
+that 2 — not on the p or the c. Without one, the start of NODE's
+rendering is the only placement it names."
   (ignore-errors
     (calc-prepare-selection m)
-    (when-let ((pos (maf--comp-node-start-pos node)))
+    (when-let ((pos (or (and offset (maf--comp-node-offset-pos node offset))
+                        (maf--comp-node-start-pos node))))
       (goto-char pos))))
 
 (defun maf--commute (dir arg)
@@ -746,6 +786,10 @@ does nothing rather than signaling calc's \"No term is selected\"."
         (let* ((entry  (calc-top m 'entry))
                (expr   (car entry))
                (sel    (ignore-errors (calc-auto-selection entry)))
+               ;; Read before the rewrite: where in the term point was,
+               ;; so it can ride along on that character rather than
+               ;; being pulled to the term's first one.
+               (anchor (and (consp sel) (maf--anchor-offset-on-node m sel)))
                (direct (and (consp sel)
                             (calc-find-parent-formula expr sel)))
                (parent (and (consp sel)
@@ -777,7 +821,7 @@ does nothing rather than signaling calc's \"No term is selected\"."
                   (calc-wrapper
                    (calc-pop-push-record-list 1 "cmut" (list new)
                                               m (list nil)))
-                  (or (maf--anchor-on-node m sel)
+                  (or (maf--anchor-on-node m sel anchor)
                       (maf--point-restore snapshot))
                   (maf--undo-record-cmd-point snapshot)))))
            ;; An arithmetic chain, where calc's shift is
@@ -796,7 +840,7 @@ does nothing rather than signaling calc's \"No term is selected\"."
                     (calc-commute-right arg))
                 ;; "Term is already leftmost/rightmost" — nothing to do.
                 (error nil))
-              (or (maf--anchor-on-node m sel)
+              (or (maf--anchor-on-node m sel anchor)
                   (maf--point-restore snapshot))
               ;; A single undo reverts point along with the stack.
               (maf--undo-record-cmd-point snapshot)))))))))
@@ -807,9 +851,12 @@ does nothing rather than signaling calc's \"No term is selected\"."
   a + b + c|  =>  a + c| + b   (point on c)
 
 Point selects the term as usual — the sub-formula under the cursor — and
-follows it as it moves.  The shift respects the operators it crosses: a
-term moved left past a minus becomes an addition of its negation, past a
-division a multiplication by its reciprocal, so the value is preserved.
+follows it as it moves, keeping the character of it that it had: from
+the = of an element of [h = 0, p =| -4, k = 0] point is on that = once
+the element has moved, not back on its p.  The shift respects the
+operators it crosses: a term moved left past a minus becomes an addition
+of its negation, past a division a multiplication by its reciprocal, so
+the value is preserved.
 Repeat to walk the term further left; with the entry below the top, the
 lower entry is acted on in place.
 
@@ -1775,91 +1822,83 @@ two motions retrace each other."
   (interactive "p")
   (maf--noun-move (- (or n 1))))
 
-(defun maf--space-furniture-p (pos)
-  "Non-nil when the space at POS is furniture rather than formula text.
-Three kinds of it: any machine-owned character of a maf-edit session
-\(the `maf-edit-prefix' text property; reading it needs nothing from
-the module, a rendered stack line simply never carries it), the
-line-number prefix's padding — the margin of \"2:  6 x\" — and a
-line's leading indentation, nothing but spaces and machine-owned text
-back to its start: the home line's own margin, and the layout the Big
-language draws a multi-line entry with."
-  (or (get-text-property pos 'maf-edit-prefix)
-      (save-excursion
-        (goto-char pos)
-        (beginning-of-line)
-        (and (looking-at " *[0-9]+: +")
-             (< pos (match-end 0))))
-      (save-excursion
-        (goto-char pos)
-        (catch 'text
-          (while (> (point) (line-beginning-position))
-            (backward-char)
-            (unless (or (eq (char-after) ?\s)
-                        (get-text-property (point) 'maf-edit-prefix))
-              (throw 'text nil)))
-          t))))
+(defun maf--operand-positions (m)
+  "Sorted buffer positions of the operand stops in the entry at level M.
+nil when the entry offers the motion no stops: a bare atom, all of it
+one noun, or a rendering that is not flat — Big language, a tall
+matrix."
+  (calc-prepare-selection m)
+  (maf--comp-landing-positions))
 
-(defun maf--space-stop-p (pos)
-  "Non-nil when the space motion may stop at POS.
-A stop is the first space of a run of them: the space at POS must be
-formula text (`maf--space-furniture-p'), with no such space just before
-it — a run is one gap in the formula, however wide the rendering draws
-it, so it is one stop."
-  (and (eq (char-after pos) ?\s)
-       (not (maf--space-furniture-p pos))
-       (not (and (> pos (point-min))
-                 (eq (char-after (1- pos)) ?\s)
-                 (not (maf--space-furniture-p (1- pos)))))))
-
-(defun maf--space-position (dir)
-  "Position of the nearest space stop in direction DIR, or nil.
+(defun maf--operand-position (dir)
+  "Return the position of the nearest operand stop in direction DIR, or nil.
 DIR is 1 forward, -1 back. Strictly past point, so the stop point
-already sits on is never its own answer; from inside a run of spaces,
-the step back lands on the run's first, as `backward-word' lands on a
-word's start. The scan keeps to point's own line: the walk is along
-one line of formula text, and the line below is its own walk, not
-this one's next stop."
-  (save-excursion
-    (let ((from (point))
-          (bound (if (> dir 0) (line-end-position) (line-beginning-position)))
-          (hit nil))
-      (while (and (not hit)
-                  (if (> dir 0)
-                      (search-forward " " bound t)
-                    (search-backward " " bound t)))
-        (let ((pos (match-beginning 0)))
-          (when (and (if (> dir 0) (> pos from) (< pos from))
-                     (maf--space-stop-p pos))
-            (setq hit pos))))
-      hit)))
+already sits on is never its own answer. The scan is confined to the
+entry point sits in: it never runs on into the entry below or above,
+so each entry's first and last stops are where the walk stops asking.
+nil at home as well, there being no entry there to walk."
+  (let* ((from (point))
+         (m (calc-locate-cursor-element from)))
+    (when (and (>= m 1) (<= m (calc-stack-size)))
+      (let ((stops (maf--operand-positions m)))
+        (if (> dir 0)
+            (seq-find (lambda (p) (> p from)) stops)
+          (seq-find (lambda (p) (< p from)) (reverse stops)))))))
 
-(defun maf-forward-space (&optional n)
-  "Move point onto the next space between the parts of a formula.
-
-  2:  |6 x + 12  =>  2:  6| x + 12  =>  2:  6 x| + 12
-
-Each press hops one gap along, so the formula is crossed in a few
-keystrokes rather than a column at a time — the complement of
-`maf-forward-noun', which walks the terms the gaps lie between. Point
-lands on the space itself.
-
-A run of spaces is one gap and one stop, however wide the rendering
-draws it, and the furniture around the formulas is no stop at all: the
-line-number margin of the stack display, and the machine-owned prefix
-of a maf-edit session, are stepped over. The walk keeps to point's own
-line — past its last gap the motion signals rather than crossing into
-the entry below, and each line of a multi-line rendering is its own
-walk — and works the same over the editable text of an edit session.
-A numeric prefix N moves over that many gaps, backward when negative."
-  (interactive "p")
-  (let* ((count (or n 1))
-         (dir (if (< count 0) -1 1)))
-    (dotimes (_ (abs count))
-      (let ((pos (maf--space-position dir)))
+(defun maf--operand-move (n)
+  "Move point over N operand stops, backward when N is negative.
+Signals at the entry's edge, having taken the steps it could."
+  (let ((dir (if (< n 0) -1 1)))
+    (dotimes (_ (abs n))
+      (let ((pos (maf--operand-position dir)))
         (unless pos
-          (user-error "No space %s point" (if (> dir 0) "after" "before")))
+          (user-error "No operand %s point in this entry"
+                      (if (> dir 0) "after" "before")))
         (goto-char pos)))))
+
+(defun maf-forward-operand (&optional n)
+  "Move point to the next operand: the next operation, where resolve names it.
+
+  2:  |6 x + 12  =>  2:  6| x + 12   (the product 6 x)
+  2:  6| x + 12  =>  2:  6 x |+ 12   (the whole sum)
+
+Every operation of the entry is one stop, the whole entry among them —
+each an operand the next command could act on — at the first glyph it
+renders itself: an operation at its operator, a call at its function
+name, a vector at its bracket. That glyph is where resolve names the
+sub-formula, the landing `maf-up-expression' picks, so a few presses
+cross the entry target by target, offering every compound target once.
+A juxtaposed product renders its multiplication as nothing but a
+space, so its stop is that space, as in the first step above.
+
+The nouns are not stops: a number or a variable is one term, and
+walking those is `maf-forward-noun''s (M-f) job, so the two motions
+divide the entry between them rather than covering the same columns.
+An entry that is a bare atom offers no stop of its own and is crossed
+whole, as is one drawn over several lines (Big language, a tall
+matrix).
+
+The walk stays inside the entry it starts in: the last operand is
+where it stops asking, and it signals there rather than crossing the
+line-number margin into the entry below. A numeric prefix N moves over
+that many operands, backward when negative."
+  (interactive "p")
+  (maf--operand-move (or n 1)))
+
+(defun maf-backward-operand (&optional n)
+  "Move point to the previous operand: the operation before point.
+
+  1:  1 + sqrt(x| y)  =>  1:  1 + |sqrt(x y)   (the sqrt call)
+  1:  1 + |sqrt(x y)  =>  1:  1 |+ sqrt(x y)   (the whole sum)
+
+The mirror of `maf-forward-operand', over the same stops — every
+operation of the entry at the first glyph it renders itself, the nouns
+left to `maf-backward-noun' — so the two motions retrace each other.
+It stays inside its entry the same way, signalling at the first
+operand rather than climbing to the entry above. A numeric prefix N
+moves over that many operands, forward when negative."
+  (interactive "p")
+  (maf--operand-move (- (or n 1))))
 
 (defun maf--home-drop-mark (pos)
   "Drop the mark at POS that `maf-go-home' just returned to.
@@ -1869,6 +1908,7 @@ displaced is restored from the ring (`push-mark' put it there), leaving
 the ring as deep as it was before the round trip — unlike `pop-mark',
 which rotates the spent mark to the ring's tail instead. A no-op when
 the mark has moved on since, POS then being none of its business."
+  (setq maf--home-mark-column nil)
   (when (and (mark t) (= (mark t) pos))
     (if mark-ring
         (let ((prev (car mark-ring)))
@@ -1876,6 +1916,20 @@ the mark has moved on since, POS then being none of its business."
           (move-marker prev nil)
           (setq mark-ring (cdr mark-ring)))
       (set-marker (mark-marker) nil))))
+
+(defun maf--home-restore-mark-column ()
+  "Put point at the column the homing trip left, when the mark lost it.
+A mark is a marker, and a marker rides a push and a renumber but not a
+rewrite of the entry it sits in: re-rendering deletes the text around
+it and collapses it to the line's start, landing the return trip in
+the line-number prefix instead of on the glyph it left. That is the
+one case corrected here, from `maf--home-mark-column' — a mark still
+holding a column of its own is left alone, so a rendering that shifted
+sideways keeps the marker's answer rather than a stale recorded one.
+The column is clamped by `move-to-column' when the rewrite left the
+line shorter than it was."
+  (when (and maf--home-mark-column (maf--at-line-prefix-p))
+    (move-to-column maf--home-mark-column)))
 
 (defun maf--home-dot-position ()
   "Return the buffer position of the home line's dot.
@@ -1980,6 +2034,7 @@ with none it just undoes horizontal scrolling."
     (cond
      (back
       (goto-char back)
+      (maf--home-restore-mark-column)
       (maf--home-drop-mark back))
      (t
       (goto-char dot)
@@ -2104,6 +2159,116 @@ command acts on.
         (setq pos (or (maf--up-node-position node (maf--up-entry-region m))
                       pos)))
       (goto-char pos))))
+
+;;; Equation sides
+
+(defun maf--side-relation (expr node)
+  "Return the innermost relation of EXPR at or above NODE, or nil.
+NODE itself counts: point on a relation's own operator names that
+relation, and its two sides are what there is to move to. Failing
+that the walk climbs, so a term inside one element of [a = 1, b = 2]
+finds the equation it sits in rather than the vector around it, and
+the outermost relation answers only when nothing nearer is one. A nil
+NODE — point on the entry's margin, where it names the whole entry —
+starts the walk at EXPR itself."
+  (let ((n (or node expr)))
+    ;; `calc-find-parent-formula' answers t at the root and nil for a
+    ;; node EXPR does not contain; either way the loop ends on a
+    ;; non-cons, which is the no-relation answer.
+    (while (and (consp n) (not (maf--relation-p n)))
+      (setq n (calc-find-parent-formula expr n)))
+    (and (consp n) n)))
+
+(defun maf--goto-side (side)
+  "Move point to the whole SIDE of the relation it sits in.
+SIDE is `left' or `right'. The shared body of `maf-goto-left-side' and
+`maf-goto-right-side'; those docstrings describe what the motion
+promises.
+
+At home the paren keys keep the meaning the edit module gives them
+there — a blank vector entry opened at the bottom of the stack — since
+there is no entry at point for the motion to work within. With that
+module off there is nothing to fall back to and the motion signals."
+  (let ((m (calc-locate-cursor-element (point))))
+    (if (<= m 0)
+        (if (bound-and-true-p maf-use-edit-mode)
+            (maf-edit-add-vector)
+          (user-error "No expression at point"))
+      (calc-prepare-selection m)
+      (let* ((expr (calc-top m 'full))
+             (rel (maf--side-relation expr (calc-find-selected-part))))
+        (unless rel
+          (user-error "No relation at point"))
+        (let* ((node (nth (if (eq side 'left) 1 2) rel))
+               (pos (maf--up-node-position node (maf--up-entry-region m))))
+          (unless pos
+            (user-error "Nothing to name the %s side by"
+                        (if (eq side 'left) "left" "right")))
+          ;; A selection outranks point when a command resolves its
+          ;; subject (see `maf--resolve-context'), so a motion that left
+          ;; one behind would move the cursor and change nothing.
+          ;; Carrying it to the side keeps the promise the motion makes,
+          ;; as `maf-up-expression' does for the climb; the re-render it
+          ;; costs rewrites the entry's lines, so point is placed after.
+          (when (calc-top m 'sel)
+            (calc-wrapper
+             (calc-prepare-selection m)
+             (calc-change-current-selection node))
+            (calc-prepare-selection m)
+            (setq pos (or (maf--up-node-position
+                           node (maf--up-entry-region m))
+                          pos)))
+          (goto-char pos))))))
+
+(defun maf-goto-left-side ()
+  "Move point to the whole left side of the relation it sits in.
+
+  6 x + 12 = 18 y| + 6  =>  6 x |+ 12 = 18 y + 6
+
+Point lands on that side's own first glyph — its operator, the parens
+calc printed around it, its function name — which is where resolve
+names it, so the next command acts on the side entire rather than on
+the term point was in. The side is the largest formula there is on the
+left: `maf-up-expression' climbs to it a level at a time, and this is
+the one key that arrives.
+
+The relation is the innermost one point sits in, so a term inside one
+element of a vector of equations finds its own equation rather than the
+vector around it. All six relations count, not just =.
+
+  2 x - 3| < 7  =>  2 x |- 3 < 7
+
+From the entry's margin — the line-number prefix, the end of the line —
+where point names the whole entry, the entry's own relation is the one
+used.
+
+  |1:  y = (x + 3)^2  =>  1:  |y = (x + 3)^2
+
+With a selection up on the entry it travels to the side along with
+point, since a selection is what the next command would resolve.
+
+At home, where there is no entry at point, the key keeps the meaning
+the edit module gives it there: a blank vector entry opened at the
+bottom of the stack (`maf-edit-add-vector'). With that module off it
+signals instead, as it does on an entry that holds no relation."
+  (interactive)
+  (maf--goto-side 'left))
+
+(defun maf-goto-right-side ()
+  "Move point to the whole right side of the relation it sits in.
+
+  6 x| + 12 = 18 y + 6  =>  6 x + 12 = 18 y |+ 6
+
+The mirror of `maf-goto-left-side', over the same relation — the
+innermost one point sits in — and landing the same way: on the glyph
+that names the whole side, so the next command acts on it entire.
+
+  2 x - 3| < 7  =>  2 x - 3 < |7
+
+The two keys together are the whole crossing: one press to the far
+side, one back, whatever term point started on."
+  (interactive)
+  (maf--goto-side 'right))
 
 (defun maf--swap-target-with-top ()
   "Swap the resolved sub-formula at point with the level-1 entry.
@@ -2564,17 +2729,12 @@ entry at point equates with the top regardless of the entries between.
   2:  b     =>   1:  b
   1:  c
 
-One case overrides the subject-left rule: when exactly one side is a
-bare variable, that side is written on the left, so an equation about x
-reads x = ... however the pair happened to sit on the stack. Only that
-clear case turns — two variables say nothing about which leads, and two
-objects have no subject to prefer.
+The sides stand as the stack had them — a bare variable on the right
+stays on the right, like the operands of any other binary command;
+nothing reorders the pair.
 
-  2:  5          1:  x = 5|     (the variable leads)
+  2:  5          1:  5 = x|
   1:  x|
-
-  2:  x          1:  x = y|     (both variables: as they stand)
-  1:  y|
 
 With the Inverse flag, `mafcmd-not-equal-to' builds != instead. With
 keep-args the operands stay and the equation is pushed on top. Both
@@ -2586,19 +2746,19 @@ with fewer than two entries."
   :scope entry
   :map -1
   :inverse mafcmd-not-equal-to
-  (commit (maf--relation-var-left (list 'calcFunc-eq expr arg))))
+  (commit (list 'calcFunc-eq expr arg)))
 
 (maf-defcmd mafcmd-not-equal-to (expr arg commit)
   "Build != between the entry at point and the top-of-stack argument.
 
 The Inverse route of `mafcmd-equal-to' — identical in every way but the
 relation it forms: subject != argument, structural, no simplification,
-and a lone bare variable written on the left."
+the sides standing as the stack had them."
   :arity binary
   :prefix "neq"
   :scope entry
   :map -1
-  (commit (maf--relation-var-left (list 'calcFunc-neq expr arg))))
+  (commit (list 'calcFunc-neq expr arg)))
 
 (maf-defcmd mafcmd-remove-equal (expr _arg commit)
   "Drop the relation from the entry at point, keeping the side that matters.
@@ -2773,13 +2933,21 @@ stale entry is never picked up by a later copy.")
 Calc's latex language does the formatting, but only for the call: the
 language variables it sets are restored afterwards, so the stack
 display never changes language. `math-format-value' inhibits line
-breaking, so the result is one line however wide."
+breaking, so the result is one line however wide.
+
+Calc writes a product as juxtaposition except when the right factor
+is a \\left( group, where it falls back to \\times — its flatness
+test is structural, so even a factor that renders flat can trip it.
+Juxtaposition is unambiguous there too, so the \\times goes; it stays
+in the remaining cases (a negated right factor), where dropping it
+would turn the product into a difference."
   (maf--with-calc-buffer
     (let ((lang calc-language)
           (opt calc-language-option))
       (unwind-protect
           (progn (calc-set-language 'latex nil t)
-                 (math-format-value expr))
+                 (replace-regexp-in-string "\\\\times \\(\\\\left(\\)" "\\1"
+                                           (math-format-value expr)))
         (calc-set-language lang opt t)))))
 
 (defun maf--copy-squeeze (text)
@@ -2949,8 +3117,10 @@ within it.
 Point moves home to the copy, leaving a mark where it was so a single
 `pop-to-mark-command' returns there. With a prefix argument (KEEP-POINT
 non-nil) point stays put instead and no mark is left, so the next
-command still targets what point was on — C-u RET, with `maf-dup-here'
-as the named entry point.
+command still targets what point was on — C-u RET, or C-RET, which is
+that same prefix on a key of its own
+(`maf-dup-here-or-clear-selections'); `maf-dup-here' is the named entry
+point.
 
   1:  (a +| b) c   C-u RET  =>   2:  (a +| b) c
                                  1:  b            (point stays on b)
@@ -2996,7 +3166,8 @@ nothing on the stack to begin with, so what it spares here is point."
   "Duplicate the item at point like `maf-dup', but keep point in place.
 The copy is still pushed on top; point stays where it was instead of
 moving home to the copy. The named entry point for RET's prefix
-argument, C-u RET."
+argument, C-u RET; the key C-RET goes through RET's dispatcher instead
+(`maf-dup-here-or-clear-selections'), so a selection still clears there."
   (interactive)
   (maf-dup t))
 
@@ -3131,6 +3302,22 @@ it, and `maf--fancy-prefix-keep' is what lets it survive the key."
 ;; deliberately (see the docstring above), which is exactly what the mark
 ;; means, so set it here.
 (put 'maf-dup-or-clear-selections 'maf-command t)
+
+(defun maf-dup-here-or-clear-selections ()
+  "Clear active selections, or duplicate the item at point, keeping point.
+`maf-dup-or-clear-selections' with its keep-point argument set — the
+same thing C-u RET runs, on a key of its own: C-RET. With no selection
+active the copy is pushed onto the top of the stack and point stays on
+what it named instead of homing, so the next command still targets it.
+With a selection active this clears like plain RET: the clear moves
+point nowhere to begin with, so there is nothing for the hold to vary."
+  (interactive)
+  (maf-dup-or-clear-selections t))
+
+;; Hand-written like the dispatcher it wraps, and bound to a key calc's
+;; fancy prefix would otherwise strip the flags off (K C-RET), so it
+;; carries the same mark.
+(put 'maf-dup-here-or-clear-selections 'maf-command t)
 
 (defun maf--fancy-prefix-binding (event)
   "The command or keymap EVENT would run, ignoring calc's fancy prefix.
@@ -5587,9 +5774,9 @@ matrix, which is not implemented yet."
   x^2                                     (the formula, on top)
   [1, 2, 3]  =>  [1, 4, 9]
 
-The same command as `mafcmd-map' (M M) with the formula taken from the
+The same command as `mafcmd-map' (M :) with the formula taken from the
 stack instead of a prompt — the shortcut for a formula already built
-there, and the same thing a lone $ at M M's prompt does. As for any
+there, and the same thing a lone $ at M :'s prompt does. As for any
 binary command, the formula is the entry above the subject (the top
 entry at home) and is consumed on commit, so the subject must lie below
 the top.
@@ -5617,7 +5804,7 @@ the other fancy prefixes chain (M I N maps the inverse), and the
 argument readers carry a prefix argument to the command they precede.")
 
 (defun maf--map-flag-entry ()
-  "Run `mafcmd-map' as \\`M M', spending the pending map flag.
+  "Run `mafcmd-map' as \\`M :', spending the pending map flag.
 The flag and the prefix keymap are cleared first: the flag asks the
 next command to map, and this command is its own mapping — left set it
 would ask `mafcmd-map' to map the mapper."
@@ -5637,7 +5824,7 @@ See `maf--map-flag-entry'."
 (defvar maf--map-flag-keys
   (let ((map (make-sparse-keymap)))
     (define-key map "$" #'maf--map-flag-stack)
-    (define-key map "M" #'maf--map-flag-entry)
+    (define-key map ":" #'maf--map-flag-entry)
     ;; The parent gathers digits as a prefix argument, but maf's
     ;; digits start a numeric entry: give them the fall-through every
     ;; other key gets, so M 1 + types the 1 and adds it plainly (the
@@ -5649,7 +5836,7 @@ See `maf--map-flag-entry'."
     map)
   "Keymap live for the keypress after \\`M', over calc's fancy-prefix map.
 Its parent is `calc-fancy-prefix-map', attached in `mafcmd-map-flag'
-once calc-ext has defined it, so its changes are few: $ and M run the
+once calc-ext has defined it, so its changes are few: $ and : run the
 formula-mapping commands, a digit starts a numeric entry as it does
 outside the flag (C-u still reads a prefix argument), and any other
 key falls to `calc-fancy-prefix-other-key', which re-dispatches it
@@ -5688,7 +5875,7 @@ prompt's own keystrokes must not spend it."
 
   [x, y]  M N   =>  [-x, -y]      (negate, mapped over the elements)
 
-Where `mafcmd-map' (M M) maps a formula you type and `mafcmd-map-stack'
+Where `mafcmd-map' (M :) maps a formula you type and `mafcmd-map-stack'
 (M $) maps one from the stack, M maps a command — any `maf-defcmd'
 command, unary or binary, with no keymap of blessed operations behind
 it (calc's V M reads its operator from a fixed table; a flag needs no
@@ -5726,6 +5913,264 @@ M i on a vector of relations solves each one for the variable typed."
       (setq overriding-terminal-local-map maf--map-flag-keys))
     (add-hook 'post-command-hook #'maf--map-flag-expire)))
 (put 'mafcmd-map-flag 'maf-command t)
+
+;;; Combinators
+
+;; apply, reduce, accumulate and the outer product take an operation
+;; where the other vector commands take an operand, so none of them can
+;; be a table row: a row applies its function to the resolved
+;; expression, which for these builds a call one argument short that
+;; `calc-normalize' can only hand back inert. They read the operation
+;; from the keyboard instead, as calc's own V R and V O do — the
+;; gesture is calc's, unchanged, and what widens is only the space the
+;; key is looked up in. Calc reads a character and finds it in
+;; `calc-oper-keys', a fixed table of blessed operations; these read a
+;; whole key sequence and find it in maf's own map, so any command
+;; carrying a `maf-operation' stamp qualifies (every mafcmd table row
+;; does, and a hand-written command joins by stamping the property).
+;; The formula routes come along with it: : types one, as it does
+;; after the map flag.
+
+(defun maf--operation-lambda (input nargs)
+  "Build a Calc lambda of NARGS arguments from INPUT, a typed formula.
+The formula names its arguments with its own free variables, taken in
+alphabetical order: a - b subtracts right from left, b - a the other
+way. Input already written as a lambda is taken as it stands."
+  (let ((expr (math-read-expr input)))
+    (when (eq (car-safe expr) 'error)
+      (user-error "Bad format in formula: %s" (nth 2 expr)))
+    (if (eq (car-safe expr) 'calcFunc-lambda)
+        expr
+      (let ((math-arglist nil))
+        (calc-default-formula-arglist expr)
+        (let ((args (sort math-arglist #'string-lessp)))
+          (unless (= (length args) nargs)
+            (user-error "Formula needs %d variable%s, not %d"
+                        nargs (if (= nargs 1) "" "s") (length args)))
+          (append '(calcFunc-lambda)
+                  (mapcar (lambda (v)
+                            (list 'var v (intern (concat "var-" (symbol-name v)))))
+                          args)
+                  (list expr)))))))
+
+(defun maf--operation-of (command nargs)
+  "Return COMMAND's operation as a Calc function of NARGS arguments.
+Nil when COMMAND carries no `maf-operation' stamp, and the symbol
+`arity' when it carries one of the wrong size — the two refusals the
+reader reports differently."
+  (let ((op (get command 'maf-operation)))
+    (cond ((null op) nil)
+          ((/= (cdr op) nargs) 'arity)
+          ;; Calc wants the operation as a variable, not as the
+          ;; calcFunc symbol the stamp records: `calcFunc-reduce' and
+          ;; its kin convert back themselves and reject the symbol.
+          (t (math-calcFunc-to-var (car op))))))
+
+(defun maf--read-operation (msg nargs)
+  "Read an operation of NARGS arguments from the keyboard and return it.
+MSG names the combinator asking. Any command stamped with a
+`maf-operation' of the right size answers, pressed on its own key —
+so + is addition and a s the extended simplify — and : reads a typed
+formula instead. C-g aborts. Rejections re-prompt rather than
+signalling, so a mistyped key costs one keystroke."
+  (let ((result nil))
+    (while (not result)
+      (let* ((seq (read-key-sequence
+                   (format "%s (operation key, or : for a formula):" msg)))
+             (cmd (key-binding seq t)))
+        (cond
+         ((equal seq (kbd "C-g")) (keyboard-quit))
+         ((equal seq ":")
+          (setq result (maf--operation-lambda
+                        (string-trim (read-string (format "%s by formula: " msg)))
+                        nargs)))
+         (t
+          (let ((op (and cmd (symbolp cmd) (maf--operation-of cmd nargs))))
+            (cond
+             ((eq op 'arity)
+              (message "%s takes %d argument%s, not %d"
+                       cmd (cdr (get cmd 'maf-operation))
+                       (if (= (cdr (get cmd 'maf-operation)) 1) "" "s") nargs)
+              (sit-for 1))
+             ((null op)
+              (message "%s is not an operation" (key-description seq))
+              (sit-for 1))
+             (t (setq result op))))))))
+    result))
+
+(defvar maf--combinator-op nil
+  "The operation the combinator workers apply, bound per call.
+Read from the keyboard by `maf--read-operation' before any calc state
+is touched, so C-g aborts with nothing done.")
+
+(defvar maf--combinator-op2 nil
+  "The second operation `maf--inner-run' applies — the sum's.
+See `maf--combinator-op'.")
+
+(defvar maf--combinator-func nil
+  "The Calc function a combinator worker calls, bound per call.
+`calcFunc-reduce' or `calcFunc-rreduce' for the reduce pair, and the
+matching split for accumulate: the Inverse flag picks the direction
+before the worker runs.")
+
+(maf-defcmd maf--reduce-run (expr _arg commit)
+  "Reduce the resolved vector by `maf--combinator-op'.
+The worker behind `mafcmd-reduce' — see there."
+  :arity unary
+  :prefix "redc"
+  (commit (funcall maf--combinator-func maf--combinator-op expr)))
+
+(maf-defcmd maf--accum-run (expr _arg commit)
+  "Accumulate over the resolved vector by `maf--combinator-op'.
+The worker behind `mafcmd-accum' — see there."
+  :arity unary
+  :prefix "accm"
+  (commit (funcall maf--combinator-func maf--combinator-op expr)))
+
+(maf-defcmd maf--apply-run (expr _arg commit)
+  "Apply `maf--combinator-op' to the resolved vector's elements as arguments.
+The worker behind `mafcmd-apply' — see there."
+  :arity unary
+  :prefix "appl"
+  (commit (calcFunc-apply maf--combinator-op expr)))
+
+(maf-defcmd maf--outer-run (expr arg commit)
+  "Build the outer product of the resolved vector and the stack's.
+The worker behind `mafcmd-outer' — see there."
+  :arity binary
+  :prefix "outr"
+  :map -1
+  (commit (calcFunc-outer maf--combinator-op expr arg)))
+
+(maf-defcmd maf--inner-run (expr arg commit)
+  "Build the inner product of the resolved vector and the stack's.
+The worker behind `mafcmd-inner' — see there."
+  :arity binary
+  :prefix "innr"
+  :map -1
+  (commit (calcFunc-inner maf--combinator-op maf--combinator-op2 expr arg)))
+
+(defun mafcmd-reduce ()
+  "Reduce the vector at point by an operation you press.
+
+  [1, 2, 3, 4]  =>  10        (pressing +)
+
+The operation is the next key: any contextual command of two arguments
+answers on its own key, so + sums, * multiplies and f x takes the
+maximum, and : types a formula instead. The operation folds along the
+vector from the left, each result becoming the next call's first
+argument.
+
+Inverse: fold from the right instead.
+
+  [1, 2, 3, 4]  =>  -2        (pressing I then -, as 1 - (2 - (3 - 4)))
+
+Point picks the target as usual: a sub-formula at point, each side of
+an equation, the top entry at home.
+
+  [[1, 2], [3, 4]]  =>  10          (pressing +: a matrix reduces whole)
+  [a, b, c]         =>  a + b + c   (pressing +: symbolic, unevaluated)"
+  (interactive)
+  (let ((op (maf--read-operation "Reduce" 2))
+        (func (if calc-inverse-flag 'calcFunc-rreduce 'calcFunc-reduce)))
+    (setq calc-inverse-flag nil
+          calc-hyperbolic-flag nil)
+    (let ((maf--combinator-op op)
+          (maf--combinator-func func))
+      (call-interactively #'maf--reduce-run))))
+(put 'mafcmd-reduce 'maf-command t)
+
+(defun mafcmd-accum ()
+  "Accumulate over the vector at point by an operation you press.
+
+  [1, 2, 3, 4]  =>  [1, 3, 6, 10]        (pressing +)
+
+The running results of the fold `mafcmd-reduce' performs, kept as a
+vector rather than reduced to the last one. The operation is read the
+same way: the next key, or : for a typed formula.
+
+Inverse: accumulate from the right.
+
+  [1, 2, 3, 4]  =>  [-2, 3, -1, 4]       (pressing I then -)
+
+Point picks the target as usual: a sub-formula at point, each side of
+an equation, the top entry at home."
+  (interactive)
+  (let ((op (maf--read-operation "Accumulate" 2))
+        (func (if calc-inverse-flag 'calcFunc-raccum 'calcFunc-accum)))
+    (setq calc-inverse-flag nil
+          calc-hyperbolic-flag nil)
+    (let ((maf--combinator-op op)
+          (maf--combinator-func func))
+      (call-interactively #'maf--accum-run))))
+(put 'mafcmd-accum 'maf-command t)
+
+(defun mafcmd-apply ()
+  "Apply an operation you press to the vector at point, element by element.
+
+  [3, 5]  =>  8        (pressing +)
+
+The vector's elements become the operation's arguments, so a
+two-argument operation wants a vector of two. The operation is the next
+key, or : for a typed formula.
+
+Point picks the target as usual: a sub-formula at point, each side of
+an equation, the top entry at home."
+  (interactive)
+  (let ((op (maf--read-operation "Apply" 2)))
+    (setq calc-inverse-flag nil
+          calc-hyperbolic-flag nil)
+    (let ((maf--combinator-op op))
+      (call-interactively #'maf--apply-run))))
+(put 'mafcmd-apply 'maf-command t)
+
+(defun mafcmd-outer ()
+  "Build the outer product of two vectors under an operation you press.
+
+  2:  [1, 2]     =>  1:  [[3, 4], [6, 8]]      (pressing *)
+  1:  [3, 4]
+
+Every element of the lower vector meets every element of the upper one,
+giving a matrix with the lower vector's elements down the rows. The
+operation is the next key: any contextual command of two arguments, or
+: for a typed formula.
+
+Point picks the target as usual, the stack's top entry supplying the
+second vector.
+
+  2:  [1, 3, 9]     =>  1:  [[1, 1:2, 1:3, 1:6], [3, 3:2, 1, 1:2],
+  1:  [1, 2, 3, 6]                    [9, 9:2, 3, 3:2]]
+
+                       (pressing /: every quotient of the two)"
+  (interactive)
+  (let ((op (maf--read-operation "Outer" 2)))
+    (setq calc-inverse-flag nil
+          calc-hyperbolic-flag nil)
+    (let ((maf--combinator-op op))
+      (call-interactively #'maf--outer-run))))
+(put 'mafcmd-outer 'maf-command t)
+
+(defun mafcmd-inner ()
+  "Build the inner product of two vectors under two operations you press.
+
+  2:  [1, 2, 3]     =>  1:  32        (pressing * then +)
+  1:  [4, 5, 6]
+
+The first operation combines the pairs, the second reduces them — * and
++ give the ordinary dot product. Each is read the same way: the next
+key, or : for a typed formula.
+
+Point picks the target as usual, the stack's top entry supplying the
+second vector."
+  (interactive)
+  (let* ((mul (maf--read-operation "Inner (multiply)" 2))
+         (add (maf--read-operation "Inner (add)" 2)))
+    (setq calc-inverse-flag nil
+          calc-hyperbolic-flag nil)
+    (let ((maf--combinator-op mul)
+          (maf--combinator-op2 add))
+      (call-interactively #'maf--inner-run))))
+(put 'mafcmd-inner 'maf-command t)
 
 ;;; Roots
 
@@ -6004,6 +6449,12 @@ instead, so callers can leave such an expression alone rather than
 abort. `calc-unpack-with-type' is bound off so the parts come back on
 their own, as `calcFunc-unpack' returns them, without the trailing
 dimension entries `calc-unpack' adds for its own stack listing."
+  ;; calc-ext's autoload registry covers most of calc-vec but not this
+  ;; function, so the module has to be pulled in by hand — and outside
+  ;; the condition-case, which would otherwise swallow the void-function
+  ;; error and report "nothing to unpack" for every expression until
+  ;; something else in the session happened to load calc-vec.
+  (require 'calc-vec)
   (let ((calc-unpack-with-type nil))
     (condition-case nil
         (calc-unpack-item mode expr)
@@ -6064,6 +6515,72 @@ signaling.
       ;; The whole entry takes the parts as a value list, which commit
       ;; spreads over one entry each.
       (t parts)))))
+
+;;; Unwrapping
+
+(defun maf--unpack-peelable-p (expr)
+  "Non-nil when EXPR unwraps to exactly one part.
+The `:widen' predicate for `mafcmd-unwrap': a node that gives exactly
+one part is one a sub-formula slot can hold, so it is the node to peel.
+Reads the mode through `maf--unpack-mode', the same way the body does —
+resolve and body must agree on what counts, or resolve would widen to a
+node the body then declines to unwrap."
+  (let ((parts (maf--unpack-parts expr (maf--unpack-mode))))
+    (and parts (null (cdr parts)))))
+
+(maf-defcmd mafcmd-unwrap (expr _arg commit)
+  "Unwrap the resolved expression, taking off the wrapper around point.
+
+  sin(2| x)  =>  2 x
+
+Inside a formula there is room for only one expression, so point peels
+the innermost wrapper around it that gives exactly one part — the node
+under point when that fits, otherwise the nearest enclosing one. So
+anywhere within sin(2 x) the command means the same thing: take off
+the sin, leaving what it held in its place.
+
+Where the target is a whole entry the parts have room to spread, and
+the command reads as `mafcmd-unpack' does: one level comes apart at a
+time — a composite object into its components, a function call into
+its arguments, an operator into its operands — one stack entry per
+part.
+
+A numeric prefix argument gives calc's unpacking mode: a positive N
+unwraps N levels deep, a negative N splits a vector by component type.
+An expression with nothing to give — a plain number, a bare variable,
+or one the requested mode does not fit — commits unchanged rather than
+signaling, as does a sub-formula with no peelable wrapper around it.
+An explicit calc selection is taken as it stands and never widened.
+
+  sin|(2 x)              =>  2 x
+  2 x - 3 < sin(|7)      =>  2 x - 3 < 7
+  y + sin(a| + b)        =>  y + (a + b)       (peels the sin)
+  (a| + b) (2 c - d)     =>  unchanged         (no wrapper to peel)
+  [x, y]                 =>  2:  x / 1:  y     (a whole entry spreads)
+  x                      =>  x                 (nothing to give)"
+  :arity unary
+  :prefix "unwr"
+  ;; A relation is a function call like any other: unwrapping consumes
+  ;; it into its two sides, as calc-unpack does, rather than mapping
+  ;; over them and putting the relation back together.
+  :map -1
+  ;; In a formula slot only a one-part node fits, so resolve hands the
+  ;; body the innermost such node around point instead of whatever
+  ;; point happens to name. Without this, pressing the key on an
+  ;; operand or on a multi-part operator would silently do nothing.
+  :widen maf--unpack-peelable-p
+  (let ((parts (maf--unpack-parts expr (maf--unpack-mode))))
+    (commit
+     (cond
+      ;; Nothing to give: leave the target exactly as it stands.
+      ((null parts) expr)
+      ;; A whole stack entry takes the parts as a value list, which
+      ;; commit spreads over one entry each.
+      ((memq maf-target '(home entry)) parts)
+      ;; A sub-formula slot holds a single expression: unwrap when the
+      ;; parts amount to one, otherwise there is no room for them.
+      ((null (cdr parts)) (car parts))
+      (t expr)))))
 
 ;;; Raising
 

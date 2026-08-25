@@ -55,17 +55,59 @@
 ;; inverse flag, and W is free in both maps. The next key over from
 ;; Q, and the shape of the two square-root keys' inverse.
 (maf-bindings-define '(native) "W" #'mafcmd-sqr)
+
+;; The combinators, on calc's own keys for them: each reads its
+;; operation from the next key press, as calc's V R and V O do, but
+;; looks it up among maf's commands instead of calc's fixed operator
+;; table (see `maf--read-operation'). They left the mafcmd table
+;; because a row cannot express an argument that is an operation —
+;; see the note in maf-cmds.el.
+(maf-bindings-define '(calc native) "v R" #'mafcmd-reduce)
+(maf-bindings-define '(calc native) "v U" #'mafcmd-accum)
+(maf-bindings-define '(calc native) "v A" #'mafcmd-apply)
+(maf-bindings-define '(calc native) "v O" #'mafcmd-outer)
+(maf-bindings-define '(calc native) "v I" #'mafcmd-inner)
+;; A second key for the reduce, beside its v R: the fold is the
+;; combinator reached for most, and it already spends a key on the
+;; operation it reads, so the prefix is the one worth dropping.
+;; Displaces floor's table key in native — floor keeps no key — while
+;; the calc profile keeps F = floor, calc's own layout.
+(maf-bindings-define '(native) "F" #'mafcmd-reduce)
+;; A second key for multiplication, beside the table's *: the
+;; most-struck binary operator gains a home-row shift where * is a
+;; reach to shift-8. Displaces conj's table key J in native — conj
+;; rides its family key l j (below) — while the calc profile keeps
+;; J = conj, calc's own layout.
+(maf-bindings-define '(native) "J" #'mafcmd-mul)
 ;; Shadows calc-stirling's key; the contextual stirling pair
 ;; (mafcmd-stir1/stir2) cedes it — see the table in maf-cmds.el.
 (maf-bindings-define '(native) "k s" #'mafcmd-complete-square)
 ;; Shadows calc-double-factorial's key; mafcmd-dfact cedes it — see
 ;; the table in maf-cmds.el.
 (maf-bindings-define '(native) "k d" #'mafcmd-factor-powers)
+;; Permutations on p, beside its sibling choose (k c, the table): calc
+;; leaves perm on the hyperbolic flag alone (H k c), and nPr is struck
+;; often enough beside nCr to want a key of its own. A custom-prefix
+;; claim under the k/l policy: calc-prime-test cedes the key.
+(maf-bindings-define '(native) "k p" #'mafcmd-perm)
+;; And a second key for it on t, for the count of arrangements the
+;; permutation is: p and t both fall under the same hand as k c.
+;; mafcmd-totient cedes it — see the table in maf-cmds.el.
+(maf-bindings-define '(native) "k t" #'mafcmd-perm)
+;; A second key for the factor, beside its table key a f: the whole
+;; factoring family already gathers under k and l (k d, l f, l F, l D),
+;; and f is factor's letter. mafcmd-prfac cedes it — see the table in
+;; maf-cmds.el.
+(maf-bindings-define '(native) "k f" #'mafcmd-factor)
 (maf-bindings-define '(native) "l f" #'mafcmd-factor-by)
 (maf-bindings-define '(native) "l F" #'mafcmd-factor-gcd)
 ;; c for collect. The key returns to service after the float/frac
 ;; toggle freed it: frac kept its name and flags, and t said nothing.
 (maf-bindings-define '(native) "l c" #'mafcmd-collect-fractions)
+;; Collect's inverse beside it: a redundant second key for apart (the
+;; table's a a), splitting a fraction into partial fractions the way
+;; l c gathers them. t freed when poly-roots moved to l a.
+(maf-bindings-define '(native) "l t" #'mafcmd-apart)
 ;; The float/frac toggle: any float in the target converts toward
 ;; exact, otherwise fractions float — see `mafcmd-float-frac'. The
 ;; fixed directions stay reachable through it: I forces the float, H
@@ -96,7 +138,9 @@
 ;; The conjugate on its initial, l j — which the vim mirror carries
 ;; as o j, the command's home there since vim's J is the relocated
 ;; selection/structure family. l j is unbound in calc's log-units
-;; prefix; conj keeps its table key J in native.
+;; prefix. Conj's table key J is ceded to the second multiply key
+;; (above), making this conj's native home; the calc profile keeps
+;; J = conj.
 (maf-bindings-define '(native) "l j" #'mafcmd-conj)
 ;; Complete the square on its letter — which the vim mirror carries
 ;; as o s, the command's home there since vim's k is a motion; k s
@@ -126,6 +170,14 @@
 ;; the ulp-stepping originals, and [ ] stay calc's vector delimiters.
 (maf-bindings-define '(native) "<" #'mafcmd-decrement)
 (maf-bindings-define '(native) ">" #'mafcmd-increment)
+;; The same step under a modifier, for the run of them a nudge invites:
+;; the hand holds meta and taps rather than releasing between steps. A
+;; terminal delivers these, unlike C-< / C->, so they work on a tty as
+;; the unmodified pair does. They shadow the global `beginning-of-buffer'
+;; / `end-of-buffer', whose trip to the ends of the stack buffer G
+;; (`maf-go-home') already makes in the terms the stack is read in.
+(maf-bindings-define '(native) "M-<" #'mafcmd-decrement)
+(maf-bindings-define '(native) "M->" #'mafcmd-increment)
 ;; Balanced negation, beside calc's own n (mafcmd-neg in the table,
 ;; which flips the sign and lets the value change with it). Shadows
 ;; calc-eval-num; N is also one of the two V M operator codes that are
@@ -135,7 +187,7 @@
 ;; target, one run per vector element or equation side. A fancy prefix
 ;; like calc's K/I/H, so it chains with them; M shadows
 ;; calc-more-recursion-depth. The formula-mapping commands live one
-;; keypress behind it (`maf--map-flag-keys'): M M prompts for the
+;; keypress behind it (`maf--map-flag-keys'): M : prompts for the
 ;; formula (mafcmd-map), M $ takes it from the top of the stack
 ;; (mafcmd-map-stack) — $ alone keeps calc's own command, and
 ;; # its digit-starter role. Calc's a M keeps the operator prompt
@@ -145,6 +197,16 @@
 ;; j l / j r (calc binds the shifts to capital j L / j R, left reachable).
 (maf-bindings-define '(native) "j l" #'maf-commute-left)
 (maf-bindings-define '(native) "j r" #'maf-commute-right)
+;; The same two on the shifted arrows, which say the direction the term
+;; travels and repeat without leaving the key. They join the S-arrow
+;; family the stack already reads as "act on what is under point":
+;; S-<up>/S-<down> toggle its operator (below), and the plain arrows
+;; stay the buffer's motion keys, so shift is the modifier that moves
+;; the formula rather than the cursor. Calc binds neither key; outside
+;; calc S-<left> is a global transpose, which this shadows only in the
+;; calc buffer.
+(maf-bindings-define '(native) "S-<left>" #'maf-commute-left)
+(maf-bindings-define '(native) "S-<right>" #'maf-commute-right)
 ;; Move the term under point across the = (or !=) it sits in. Lowercase
 ;; j e, beside the shifts above, for the same reason: calc keeps the
 ;; jump on the capital j E, which stays reachable and unshadowed for
@@ -217,10 +279,12 @@
 (dotimes (i 10)
   (maf-bindings-define '(calc native) (format "r %d" i)
                        #'maf-recall-quick))
-;; The in-place editing entry keys (SPC / ` / C-o / "(") are
-;; installed by the edit module when it is enabled (see
-;; modules/edit.el), not here. ` shadows calc-edit, the command the
-;; whole module replaces.
+;; The in-place editing entry keys (SPC / ` / C-o) are installed by the
+;; edit module when it is enabled (see modules/edit.el), not here. `
+;; shadows calc-edit, the command the whole module replaces. The
+;; module's fourth key, "(" for a blank vector, is native's relation
+;; motion below and reaches the module through it; the module still
+;; declares its own plain "(" for the calc profile.
 (maf-bindings-define '(calc native) "U" #'maf-undo)
 (maf-bindings-define '(calc native) "D" #'maf-redo)
 ;; Catch every key that dispatches to undo/redo, so point handling
@@ -300,37 +364,49 @@
 ;;
 ;; C-u RET is the keep-point variant (`maf-dup-here'): same push, point
 ;; stays on the target instead of homing, so the next command still
-;; resolves there. It rides RET's prefix argument rather than a key of
-;; its own — the RET family is full (M-RET below, C-RET on
-;; `mafcmd-let', S-RET on the restack) and W is the only unbound
-;; single key left in the buffer, too scarce to spend on where point
-;; lands. Contextual dup has no
-;; numeric reading to conflict with; cf. `maf-swap-up', whose prefix
-;; likewise switches mode rather than counting. The prefix reaches the
-;; duplicate only: with a selection active the key clears, which has
-;; nothing for a prefix to vary.
+;; resolves there. C-RET below is that same variant on a key, so the
+;; prefix is the spelling for a terminal that cannot deliver the GUI
+;; event. Contextual dup has no numeric reading to conflict with; cf.
+;; `maf-swap-up', whose prefix likewise switches mode rather than
+;; counting. The prefix reaches the duplicate only: with a selection
+;; active the key clears, which has nothing for a prefix to vary.
 (maf-bindings-define '(calc native) "RET" #'maf-dup-or-clear-selections)
-;; M-RET duplicates the whole entry into the slot just below it, the
-;; in-place counterpart of RET's copy onto the top. Bind the GUI event
-;; and the terminal form both, as calc has no M-RET.
+;; C-RET is the keep-point duplicate: RET's own push, with point staying
+;; on what it copied instead of parking home, so the next command still
+;; resolves there (`maf-dup-here-or-clear-selections' — the dispatcher
+;; with its keep-point argument set, which is what C-u RET runs). Where
+;; point lands is the whole of the difference: a C-RET that homed too
+;; would be RET with a modifier held down. A selection still clears, as
+;; it does on RET; the hold has nothing to vary there.
 ;;
-;; `maf-dup-here' — the keep-point variant of RET's duplicate — held
-;; this key until the entry-duplicate took it; it now rides RET's prefix
-;; argument (C-u RET), and stays reachable by name.
-(maf-bindings-define '(calc native) "M-<return>" #'maf-dup-go)
-(maf-bindings-define '(calc native) "M-RET" #'maf-dup-go)
+;; It matches the key's promise in the digit-entry minibuffer, where
+;; C-<return> is `maf-digit-commit-here' (src/minibuffer.el): push the
+;; number, keep point. `maf-dup-go', the traveling duplicate whose point
+;; rides to the copy on top, held this key from the swap with
+;; `mafcmd-let' until 2026-08-24; it stays reachable by name, and on
+;; M-RET in the calc profile below.
+(maf-bindings-define '(native) "C-<return>" #'maf-dup-here-or-clear-selections)
+;; The swap was a native-layout opinion, and so is the keep-point key
+;; that replaced it: the calc profile keeps the traveling duplicate on
+;; M-RET, its pre-swap home. The GUI event and the
+;; terminal form both, as calc itself binds only the terminal form
+;; (calc-last-args).
+(maf-bindings-define '(calc) "M-<return>" #'maf-dup-go)
+(maf-bindings-define '(calc) "M-RET" #'maf-dup-go)
 ;; S-<return> is the restack (bound above, beside the bury). It was the
 ;; edit module's add-entry-below, which is unbound now and reachable by
 ;; name: C-o opens an entry above point, and above the entry below point
 ;; is where add-entry-below opened, so the gesture survives one line
 ;; down — with ` still opening at the bottom.
 
-;; Equate lives on e (shadowing the e-notation digit start); = stays
-;; unbound here, falling through to calc's own calc-evaluate. Inside
-;; digit entry e reaches the same command: `maf-digit-equal-to'
-;; (src/minibuffer.el) ends the entry on it and the number becomes the
-;; argument.
+;; Equate lives on e (shadowing the e-notation digit start) and its
+;; typographic twin =. The calc profile leaves = to calc-evaluate.
+;; Inside digit entry e reaches the same command through
+;; `maf-digit-equal-to' (src/minibuffer.el), which ends the entry on it
+;; and makes the number the argument; = takes calc's ordinary
+;; command-key handoff to the stack binding.
 (maf-bindings-define '(native) "e" #'mafcmd-equal-to)
+(maf-bindings-define '(native) "=" #'mafcmd-equal-to)
 ;; The other direction: drop the relation, keep a side. M-. is unbound
 ;; in calc itself; a . is calc's own key for the operation, which the
 ;; table in maf-cmds.el no longer claims.
@@ -353,16 +429,18 @@
 
 ;; Auto-solve: solve the entry for a variable, cycling through them on
 ;; repeat. The entry is the subject wherever point sits within it — the
-;; sub-formula targeting lives on j i below, so this key means the same
+;; sub-formula targeting lives on j j below, so this key means the same
 ;; thing from anywhere on the line. M-i is unbound in calc itself.
 (maf-bindings-define '(native) "M-i" #'mafcmd-auto-solve)
 ;; The same solve, targeting the sub-expression under point: isolate it,
 ;; falling back to the variable solve when there is nothing to isolate.
-;; Lowercase j i, where calc keeps the operation on the capital j I
-;; (calc-sel-isolate) — the same trade maf makes for the commute shifts
-;; (j l / j r) and the equals jump (j e), leaving calc's own command
-;; unshadowed and its key reachable.
-(maf-bindings-define '(native) "j i" #'mafcmd-isolate)
+;; The doubled prefix key, as k k is for the extended simplify: the
+;; family's most-reached-for member takes its cheapest chord. Calc
+;; leaves j j unbound — its j prefix is the selection commands, which
+;; have no j of their own — and keeps the operation on the capital
+;; j I (calc-sel-isolate), unshadowed and reachable either way. The
+;; literal sense of the word is next door on j i (mafcmd-raise).
+(maf-bindings-define '(native) "j j" #'mafcmd-isolate)
 ;; The same solve again, with the variable named rather than picked.
 ;; It held i before, yielded the key to the reciprocal, and takes it
 ;; back now that the reciprocal sits on o — the naming solve is the
@@ -385,19 +463,20 @@
 ;; the first, a contextual subject, and $ for the stack.
 (maf-bindings-define '(calc native) "a b" #'mafcmd-substitute)
 ;; Quick substitution: apply an assignment from the stack to the
-;; contextual subject. C-<return> is the one-hand chord a substitution
-;; is worth, and the edit module's quick-add gave the key up for it
-;; (`, C-o and "(" remain, and ` opens the same bottom entry C-RET
-;; used to, as a trip home). It replaces C-c C-c, the conventional
-;; mode-specific
-;; "apply this" gesture, which had been the command's only key and is
-;; unbound again — two hands and four keys for something reached this
-;; often, where the leaf is a control character calc's fancy prefix
-;; would rather not carry (K C-c C-c is what `maf--fancy-prefix-keep's
-;; provisional path was written for; see src/stack.el). During digit
-;; entry C-<return> is calc's own map, where it stays
-;; `maf-digit-commit-here' (src/minibuffer.el).
-(maf-bindings-define '(native) "C-<return>" #'mafcmd-let)
+;; contextual subject. On the RET family's meta member since the swap
+;; with the traveling duplicate (above); shadows calc-last-args, as
+;; the duplicate did before it. The command's earlier keys:
+;; C-c C-c first — the conventional mode-specific "apply this"
+;; gesture, two hands and four keys for something reached this often,
+;; whose control-character leaf calc's fancy prefix would rather not
+;; carry (K C-c C-c is what `maf--fancy-prefix-keep's provisional path
+;; was written for; see src/stack.el) — then C-RET, which the edit
+;; module's quick-add had given up for it (`, C-o and "(" remain,
+;; though ` now opens the bottom entry for editing rather than adding
+;; one below it, still as a trip home). Bind the GUI event
+;; and the terminal form both.
+(maf-bindings-define '(native) "M-<return>" #'mafcmd-let)
+(maf-bindings-define '(native) "M-RET" #'mafcmd-let)
 ;; Polynomial roots by factoring, with multiplicity. On the l prefix
 ;; with the other maf-only algebra keys; l a is unbound in calc
 ;; itself, and mirrors a l, the prompting form of the same answer.
@@ -421,20 +500,20 @@
 
 ;; Unwrap the entry at point into its parts. M-u is unbound in calc
 ;; itself (it shadows the global upcase-dwim, which has no place in the
-;; stack buffer). The other two are calc's own unpack keys: v u is
-;; calc-unpack, whose whole-entry behavior mafcmd-unpack matches, and
-;; j U (with its j M-U alias) is calc-sel-unpack, which replaces a
-;; selected one-argument call with its argument — unpacking spreads
-;; parts over the stack, and a formula slot has no room for that, so
-;; the contextual command takes the selection's entry whole instead.
-;; Shadowing both keeps one unpack behavior in the buffer.
+;; stack buffer); v u is calc-unpack, whose whole-entry behavior
+;; mafcmd-unpack matches. Both keys keep the entry-scoped command.
 (maf-bindings-define '(native) "M-u" #'mafcmd-unpack)
 (maf-bindings-define '(calc native) "v u" #'mafcmd-unpack)
+;; j U (with its j M-U alias) is calc-sel-unpack, which replaces a
+;; selected one-argument call with its argument. That is the narrowing
+;; reading of unwrapping, so the key takes mafcmd-unwrap: inside a
+;; formula it peels the wrapper around point in place, and on a whole
+;; entry it spreads the parts as M-u does.
 ;; In vim these arrive by derivation and the j motion prunes them —
 ;; the unpack keeps M-u and v u there until the relocation table
 ;; rehomes the j family (profile:vim in docs/bindings.org).
-(maf-bindings-define '(calc native) "j U" #'mafcmd-unpack)
-(maf-bindings-define '(calc native) "j M-U" #'mafcmd-unpack)
+(maf-bindings-define '(calc native) "j U" #'mafcmd-unwrap)
+(maf-bindings-define '(calc native) "j M-U" #'mafcmd-unwrap)
 
 ;; Push an index vector [1..n], the size prompted for — the legacy
 ;; config's v RET. The contextual mafcmd-index keeps v x; this is the
@@ -442,14 +521,16 @@
 (maf-bindings-define '(native) "v RET" #'maf-index)
 
 ;; Keep only the part point names: it becomes the whole entry, the
-;; formula around it discarded. j j is unbound in calc itself — its j
-;; prefix is the selection commands, which have no j of their own — and
-;; the command belongs with them, working as it does on the part point
-;; picks out. "Raise" is `raise-sexp's operation, the form at point
-;; replacing the form around it; the word "isolate" is spoken for here
-;; by `mafcmd-auto-solve', which isolates a sub-expression by solving
-;; the relation for it.
-(maf-bindings-define '(native) "j j" #'mafcmd-raise)
+;; formula around it discarded. On i for the plainest reading of
+;; "isolate" — this is the one that isolates a sub-formula literally,
+;; lifting it out of what surrounded it, where `mafcmd-isolate' next
+;; door on j j isolates a variable by solving for it. "Raise" is the
+;; name because it is `raise-sexp's operation, the form at point
+;; replacing the form around it. j i is unbound in calc itself — its
+;; j prefix is the selection commands, which have no i of their own,
+;; keeping isolation on the capital j I — and the command belongs with
+;; them, working as it does on the part point picks out.
+(maf-bindings-define '(native) "j i" #'mafcmd-raise)
 
 ;; Group a vector's elements N at a time, N from the stack. l g is
 ;; unbound in calc itself — its l prefix is the logarithmic units,
@@ -468,6 +549,11 @@
 ;; rows where a plain list was wanted, and it sits a keystroke from
 ;; mafcmd-arrange (v a), the N-column form it degenerates from.
 (maf-bindings-define '(native) "v L" #'mafcmd-flatten)
+;; A second key for the sort, beside the table's v S: the key the
+;; legacy config bound, kept for the muscle memory and the spared
+;; shift. v o is unbound in calc itself, and the flag prefixes route
+;; through it as through v S — I v o is the descending sort.
+(maf-bindings-define '(native) "v o" #'mafcmd-sort)
 
 ;; The right triangle, all three keys together. f h keeps calc's own
 ;; hypotenuse key, for a command that answers where calc's gives up (see
@@ -512,15 +598,26 @@
 (maf-bindings-define '(native) "M-f" #'maf-forward-noun)
 (maf-bindings-define '(native) "M-b" #'maf-backward-noun)
 
-;; Motion by gap — the next space of the formula, the complement of the
-;; noun motion above. Shift on the space that draws the gaps: calc
-;; binds nothing on S-SPC, and without the binding the shifted press
-;; fell back to plain SPC (the edit module's session toggle). A prefix
-;; argument counts gaps, backward when negative. The editplus module
-;; installs the same key into `maf-edit-mode-map', so the walk carries
-;; on inside an edit session; a terminal needs the decode entries at
-;; the end of this file to say the key at all.
-(maf-bindings-define '(native) "S-SPC" #'maf-forward-space)
+;; Motion by operand — the next place point names a sub-formula, so
+;; repeated presses offer every target of the entry in turn. Shift on
+;; the space that opens an edit session: calc binds nothing on S-SPC,
+;; and without the binding the shifted press would fall back to that
+;; plain SPC. Stack mode only, deliberately: an edit session swaps the
+;; local map and turns maf-mode off, and no editplus key carries this
+;; motion into the editable text — the stack's targets are what it
+;; walks. A prefix argument counts operands, backward when negative; a
+;; terminal needs the decode entries at the end of this file to say
+;; the key at all.
+;;
+;; The reverse walk takes M-S-SPC: the forward key with meta added, so
+;; the pair reads as one gesture and its reverse. Nothing is displaced
+;; — calc binds it no more than the shifted space, and the global map
+;; leaves the shifted form free (`just-one-space' holds the plain
+;; M-SPC, which this does not touch). A terminal needs the decode
+;; entries at the end of this file for this one too: xterm.el carries
+;; keycode 32 under alt and under ctrl+alt, never under a shift.
+(maf-bindings-define '(native) "S-SPC" #'maf-forward-operand)
+(maf-bindings-define '(native) "M-S-SPC" #'maf-backward-operand)
 
 ;; Step out to the enclosing sub-formula, taking the key the global map
 ;; gives `backward-up-list' — the same gesture, over the formula rather
@@ -531,6 +628,20 @@
 ;; the sin call, and never on a b or a b + c), and it reads the buffer
 ;; text, so a Big-language rendering leaves it nothing to walk.
 (maf-bindings-define '(native) "C-M-u" #'maf-up-expression)
+
+;; Cross the relation: one key to the whole left side, one to the whole
+;; right — the largest formula there is on each, where the climb above
+;; would arrive a level at a time. The parens for the shape a relation
+;; has, two halves around a middle, and because calc's own use for them
+;; is already gone in this layout: ( is the edit module's blank-vector
+;; key and ) is unbound, both shadowing calc's complex-number
+;; delimiters, which maf's algebraic entry supplies instead. The
+;; vector-add keeps the key at home, where there is no entry to move
+;; within and the motion has nothing to do — see `maf--goto-side'; the
+;; edit module keeps its own plain "(" in the calc profile, whose
+;; layout these motions are no part of.
+(maf-bindings-define '(native) "(" #'maf-goto-left-side)
+(maf-bindings-define '(native) ")" #'maf-goto-right-side)
 
 ;; The module toggle buffer. m is calc's mode prefix (m m saves the
 ;; modes, m d is degrees mode), which is where turning maf's own
@@ -570,11 +681,12 @@
 ;; depends on whether it counts the shift that produced the | — take
 ;; both 6 (ctrl+shift) and 5 (ctrl alone).
 ;;
-;; The space-motion's S-SPC has the same gap a third way: a terminal
+;; The operand motions have the same gap a third way: a terminal
 ;; without modifyOtherKeys sends Shift+Space as the plain space it
 ;; shifts, and one with it spells the key out — but xterm.el's table
-;; carries shift alone (modifier 2) for tab and return only, so the
-;; keycode-32 form falls through undecoded like the others.
+;; carries keycode 32 under alt (modifier 3) and ctrl+alt (7) only, so
+;; neither the forward walk's shift (2) nor the reverse walk's
+;; alt+shift (4) is decoded, and both fall through like the others.
 (defun maf--tty-setup-keys ()
   "Decode terminal sequences for keys maf binds and `term/xterm.el' omits."
   (define-key input-decode-map "\e[27;7;127~" [C-M-backspace])
@@ -584,7 +696,9 @@
   (define-key input-decode-map "\e[27;5;124~" [?\C-\|])
   (define-key input-decode-map "\e[124;5u" [?\C-\|])
   (define-key input-decode-map "\e[27;2;32~" [?\S-\s])
-  (define-key input-decode-map "\e[32;2u" [?\S-\s]))
+  (define-key input-decode-map "\e[32;2u" [?\S-\s])
+  (define-key input-decode-map "\e[27;4;32~" [?\M-\S-\s])
+  (define-key input-decode-map "\e[32;4u" [?\M-\S-\s]))
 
 ;; `input-decode-map' is terminal-local, so this runs once per tty
 ;; rather than once at load.

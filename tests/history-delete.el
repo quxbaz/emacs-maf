@@ -17,13 +17,12 @@
 
   ;; D on the middle state removes just that state: the live stack is
   ;; untouched and the view lands on the next older state, position 1/2.
+  (progn (setq maf-history--index 0) (maf-history--render t))
   (with-current-buffer (maf-history--buffer)
-    (setq maf-history--index 0)
-    (maf-history--render)
     (call-interactively 'maf-history-previous)
-    (cl-assert (string-match-p "^2/3\n" (buffer-substring-no-properties (point-min) (point-max))))
+    (cl-assert (equal header-line-format "maf-history  2/3"))
     (call-interactively 'maf-history-delete)
-    (cl-assert (string-match-p "^1/2\n" (buffer-substring-no-properties (point-min) (point-max)))))
+    (cl-assert (equal header-line-format "maf-history  1/2")))
   (cl-assert (= (calc-stack-size) 3))
   (cl-assert (equal (mapcar (lambda (s) (math-format-value (car (nth 0 s))))
                             maf-history--states)
@@ -34,7 +33,7 @@
   (with-current-buffer (maf-history--buffer)
     (call-interactively 'maf-history-newest)
     (call-interactively 'maf-history-delete)
-    (cl-assert (string-match-p "^1/1\n" (buffer-substring-no-properties (point-min) (point-max)))))
+    (cl-assert (equal header-line-format "maf-history  1/1")))
   (maf-history--capture)
   (cl-assert (= (length maf-history--states) 1))
 
@@ -43,11 +42,9 @@
   (with-current-buffer (maf-history--buffer)
     (call-interactively 'maf-history-delete)
     (cl-assert (null maf-history--states))
-    ;; No states: no counter line, the header just the title, the body
+    ;; No states: no counter in the header, just the title, the log
     ;; saying so.
     (cl-assert (equal header-line-format "maf-history"))
-    (cl-assert (string-match-p "\\` h/l/u/i step"
-                               (buffer-substring-no-properties (point-min) (point-max))))
     (cl-assert (string-match-p "(no states yet)"
                                (buffer-substring-no-properties (point-min) (point-max))))
     (cl-assert (not (ignore-errors (call-interactively 'maf-history-delete) t))))
@@ -56,8 +53,6 @@
   (progn
     (calc-pop (calc-stack-size))
     (setq maf-history--states (nth 0 maf--history-del-stash)
-          maf-history--last-raw (nth 1 maf--history-del-stash))
-    (when (get-buffer "*maf-history*")
-      (with-current-buffer "*maf-history*"
-        (setq maf-history--index 0)
-        (maf-history--render)))))
+          maf-history--last-raw (nth 1 maf--history-del-stash)
+          maf-history--index 0)
+    (maf-history--render t)))
