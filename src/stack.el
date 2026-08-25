@@ -5075,7 +5075,7 @@ It acts on the whole entry — wherever point sits on its line, or the
 top entry at home; root-finding has no sub-formula meaning, so point
 within the formula is not used to narrow it. The stock form stays on
 a P (`mafcmd-roots\='), its variable taken from the stack, and
-`mafcmd-poly-roots\=' (l b) picks the variable itself.
+`mafcmd-poly-roots\=' (l T) picks the variable itself.
 
   x^2 = 4            =>  [2, -2]
   (x - 1)^2 (x + 2)  =>  [-2, 1, 1]   (multiplicity kept)

@@ -117,7 +117,7 @@
 ;; Collect's inverse beside it: a redundant second key for apart (the
 ;; table's a a), splitting a fraction into partial fractions the way
 ;; l c gathers them. t freed when poly-roots left the key; the roots
-;; sit two over in the family, on l b.
+;; keep the family on its capital, l T.
 (maf-bindings-define '(native) "l t" #'mafcmd-apart)
 ;; The float/frac toggle: any float in the target converts toward
 ;; exact, otherwise fractions float — see `mafcmd-float-frac'. The
@@ -503,15 +503,14 @@
 ;; and the terminal form both.
 (maf-bindings-define '(native) "M-<return>" #'mafcmd-let)
 (maf-bindings-define '(native) "M-RET" #'mafcmd-let)
-;; Polynomial roots by factoring, with multiplicity. Back in the l
-;; family, on a free lowercase key the log-units prefix never
-;; claimed — cheap to reach for a command asked this often, and b is
-;; the quadratic formula's own letter. Being in the family, the vim
-;; mirror carries it as o b. It sat on l t until 2026-08-23, on l a
-;; until 2026-08-25, and on k R for part of that day; before
-;; 2026-08-20 it was M-r. Those keys fall through to calc, and M-r
-;; to whatever the global map holds.
-(maf-bindings-define '(native) "l b" #'mafcmd-poly-roots)
+;; Polynomial roots by factoring, with multiplicity. In the l family
+;; on a free capital the log-units prefix never claimed, beside the
+;; family's other capitals. Being in the family, the vim mirror
+;; carries it as o T. It sat on l t until 2026-08-23, on l a until
+;; 2026-08-25, on k R for part of that day, and on l b until
+;; 2026-08-25; before 2026-08-20 it was M-r. Those keys fall through
+;; to calc, and M-r to whatever the global map holds.
+(maf-bindings-define '(native) "l T" #'mafcmd-poly-roots)
 ;; The prompting form of the roots vector beside its stock a P (the
 ;; roots row in maf-cmds.el): the variable is read from the minibuffer
 ;; as i reads it, the subject's priority variable as the default. a l
