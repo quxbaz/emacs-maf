@@ -19,12 +19,12 @@
     - [ ] trig identity table (reciprocal, quotient, the other two
       Pythagoreans, angle sum/difference, double and half angle)
 
-* review
-
 * NEXT maf-latex
   - [ ] refine stand-alone feature
   - [ ] support in maf-preview
   - [ ] support in maf-formulas
+
+* review
 
 * major features [8/9]
   - [X] bindings module
