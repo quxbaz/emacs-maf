@@ -16,9 +16,11 @@
 
 * review
   - *maf-history*
-    - [ ] on new `L` command, insert a horizontal line separator in history
-      entries at point
-    - is it possible to make it unselectable (not actually occupy a line, just display it)?
+    - [X] on new `L` command, insert a horizontal line separator in history
+      entries at point — and it takes no line: the rule is the row's own
+      underline with `:extend', run out to the window edge, so there is
+      nothing in the buffer to select or step onto (works on a tty too;
+      overline, which would draw above the row instead, does not)
   - [ ] stuff like this should be included in basic simplification (`k k`)
     2^log(x, 2) => x
     e^ln(x) => x (i think this works already, so we just need to generalize it to any base)
