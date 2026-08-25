@@ -358,12 +358,12 @@
      for the difference of squares, beside its k d; the vim mirror
      carries it as `o D`, the command's home there since vim's k is
      a motion)
-   - [X] `k R` mafcmd-poly-roots (2026-08-25: moved off `l a` onto the
-     k prefix, beside the other factoring keys k d and k f, on roots'
-     own letter; k R is unbound in calc itself. Earlier: `l t`
-     2026-08-20, off `M-r`, then `l a` 2026-08-23. Leaving the l
-     family costs the command its vim home — the o mirror carries l
-     keys only, and vim's k is a motion)
+   - [X] `l b` mafcmd-poly-roots (2026-08-25: back in the l family on
+     a free lowercase key the log-units prefix never claimed — cheap
+     for a command asked this often, and b is the quadratic
+     formula's own letter; the vim mirror carries it as `o b`.
+     Earlier: `l t` 2026-08-20, off `M-r`, then `l a` 2026-08-23,
+     then `k R` for part of 2026-08-25)
    - [X] `a l` mafcmd-roots-for (2026-08-22: the prompting form — the
      variable read as `i` reads it, the subject's priority variable
      as the default; the stock stack-argument roots stays on `a P`.
@@ -527,7 +527,7 @@
      still dies with the motion, native the escape hatch
    - [X] `l` — resolved 2026-08-21: the family rides `o` (right-hand
      home row, the most l-like key under the fingers), second letters
-     intact — o c collect-fractions, o t apart (minus l l: the
+     intact — o c collect-fractions, o b poly-roots (minus l l: the
      toggle rides M-o there) —
      mirrored in src/bindings.el from native's own l declarations, so
      a key added to the family lands in both profiles. The commands
@@ -597,8 +597,7 @@
      - maf-only: mafcmd-esimplify (k k), mafcmd-evaluate (k v),
        mafcmd-complete-square (k s), mafcmd-factor-powers (k d),
        mafcmd-factor (k f, a second key beside `a f`),
-       mafcmd-poly-roots (k R), mafcmd-perm (k p and k t, which calc
-       leaves on `H k c`)
+       mafcmd-perm (k p and k t, which calc leaves on `H k c`)
      - calc-only leftovers: calc-keep-args (k K),
        calc-random-again, calc-extended-gcd, calc-utpn/utpf/utpb
    - `l` — maf's own invented prefix, layered over calc's log-units
@@ -607,7 +606,7 @@
        mafcmd-collect-fractions (l c), mafcmd-float-frac (l l, the
        float/frac toggle; float and frac stay commands),
        mafcmd-to-degrees (l d), mafcmd-to-radians (l r),
-       mafcmd-inverse-function (l v),
+       mafcmd-poly-roots (l b), mafcmd-inverse-function (l v),
        mafcmd-swap-vars (l x), mafcmd-unique-groups (l g)
      - calc's log-units family: calc-lu-plus/minus/times/divide/quant,
        calc-db, calc-np, calc-freq, calc-midi, calc-spn
@@ -656,7 +655,7 @@
      — the [ ] lesson)
 ** modified keys
    - free meta: `M-d` `M-g` `M-j` `M-q` `M-t` `M-z`, and `M-r` since
-     poly-roots moved off it (2026-08-20, to l t; k R since
+     poly-roots moved off it (2026-08-20, to l t; l b since
      2026-08-25; `M-h` went to the history the same day). `M-a` / `M-e` went to the operand motions
      2026-08-25 — the global map's sentence keys, which a stack buffer
      has no sentences for
