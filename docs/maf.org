@@ -16,7 +16,7 @@
 
 * review
   - *maf-history*
-    - [ ] on new `L` command, insert a horizontal line separator in history
+    - [-] on new `L` command, insert a horizontal line separator in history
       entries at point
     - is it possible to make it unselectable (not actually occupy a line, just display it)?
   - [ ] stuff like this should be included in basic simplification (`k k`)
