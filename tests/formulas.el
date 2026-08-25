@@ -209,6 +209,24 @@
     ;; The filter narrows the list.
     (cl-assert (string-match-p "Volume of sphere" (buffer-string)))
     (cl-assert (not (string-match-p "triangle" (buffer-string))))
+
+    ;; Several words are several searches, not one string: each word
+    ;; has to turn up somewhere in the formula, in any order — the
+    ;; literal "sphere volume" is nowhere in the list at all.
+    (setq maf-formulas--query "sphere volume")
+    (maf-formulas--render)
+    (cl-assert (string-match-p "Volume of sphere" (buffer-string)))
+    (cl-assert (not (string-match-p "cylinder" (buffer-string))))
+    ;; And the words may land in different fields: "volume" is a title
+    ;; word, "height" a variable only the cylinder carries among the
+    ;; two the first word leaves.
+    (setq maf-formulas--query "volume height")
+    (maf-formulas--render)
+    (cl-assert (string-match-p "Volume of cylinder" (buffer-string)))
+    (cl-assert (not (string-match-p "Volume of sphere" (buffer-string))))
+    ;; Whitespace is what separates words, never something to match.
+    (cl-assert (maf-formulas--matches-p (car maf-formulas-user)
+                                        "  sphere   volume "))
     (setq maf-formulas--query "")
     (maf-formulas--render)
 

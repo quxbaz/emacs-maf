@@ -183,7 +183,7 @@ variable is the single source, so runtime additions to it persist."
 Set by RET on a group header (`maf-formulas-filter-group'), and cleared
 by RET on that header again or by `maf-formulas-clear-filter'. It sits
 beside `maf-formulas--query' rather than folding into it: the query is
-a substring matched across titles, categories and variables, where this
+words matched across titles, categories and variables, where this
 picks one group out by name — including \"Recent\", which no query can
 name, that group being a shortcut rather than a category.")
 
@@ -209,13 +209,21 @@ convenience for the sitting, not something to carry between them.")
                             (1- maf-formulas-recent-max))))))
 
 (defun maf-formulas--matches-p (f query)
-  "Non-nil if formula F matches QUERY (title, category, or a variable)."
-  (or (string-empty-p query)
-      (let ((q (downcase query)))
-        (or (string-search q (downcase (maf-formulas--title f)))
-            (string-search q (downcase (maf-formulas--category f)))
-            (cl-some (lambda (v) (string-search q (downcase (format "%s %s" (car v) (cdr v)))))
-                     (plist-get f :vars))))))
+  "Non-nil if formula F matches QUERY (title, category, or a variable).
+QUERY is read as words, not as one string: each whitespace-separated
+word has to turn up somewhere in the formula — its title, its category
+or one of its variables — but they need not turn up together, in one
+field, or in the order typed. \"power rule\" reaches a rule titled
+\"Rule for powers\" as readily as one titled \"Power rule\", and each
+further word narrows what the ones before it left."
+  (let ((fields (append (list (downcase (maf-formulas--title f))
+                              (downcase (maf-formulas--category f)))
+                        (mapcar (lambda (v)
+                                  (downcase (format "%s %s" (car v) (cdr v))))
+                                (plist-get f :vars)))))
+    (cl-every (lambda (word)
+                (cl-some (lambda (field) (string-search word field)) fields))
+              (split-string (downcase query) nil t))))
 
 (defun maf-formulas--groups ()
   "The menu's groups, an alist of (CATEGORY . FORMULAS).
@@ -774,6 +782,10 @@ back to empty after typing does widen to the full list."
 
 (defun maf-formulas-filter (&optional query)
   "Narrow the formula menu to QUERY (title, category, or variable).
+QUERY is matched a word at a time — \"power rule\" finds the formulas
+named by both words, in either order and in any of the fields a filter
+looks at (see `maf-formulas--matches-p').
+
 Called interactively, the list narrows as each character is typed, so
 the match is visible before the filter is committed; RET keeps the
 narrowing and \\[keyboard-quit] restores the one in effect before."
