@@ -611,21 +611,32 @@ instead of point.
 =maf-forward-operand= (M-e) walks the same landings sideways rather
 than upward: every /operation/ of the entry is one stop, the whole
 entry among them, each at the first glyph it renders itself, so a few
-presses offer every compound target of the entry in turn. The nouns
-are left out — a number or a variable is =maf-forward-noun='s (M-f) to
-walk — so the two motions divide the entry between them rather than
-covering the same columns, and an entry that is a bare atom offers no
-stop of its own. Where the climb asks resolve one ancestor at a time,
-the motion reads the stops off the prepared composition in one pass
+presses offer every compound target of the entry in turn. A glyph is
+the node's own when the node renders it wherever it stands — its
+operator, its function name, a vector's brackets — which the parens
+calc prints only where precedence demands them are not: they belong to
+the context that asked for them, so the sum in =3 (x - 5)= is named at
+its =-=, as it is at the top of an entry. Landing on the =(= instead
+put it one column past the juxtaposition space naming the product
+around it, and the walk stopped there with the rest of the entry ahead
+of it. Both the climb and the walk pass the pair over
+(=maf--comp-own-brackets-p=), so the stops are the operator glyphs in
+display order, an inner operand coming before an outer one whose
+operator is printed to its right. The nouns are left out — a number or
+a variable is =maf-forward-noun='s (M-f) to walk — so the two motions
+divide the entry between them rather than covering the same columns,
+and an entry that is a bare atom offers no stop of its own. Where the
+climb asks resolve one ancestor at a time, the motion reads the stops
+off the prepared composition in one pass
 (=maf--comp-landing-positions=), which is defined for flat renderings
-only: an entry drawn over several lines — Big language, a tall
-matrix — offers no stops at all, its terms still the noun motion's to
-walk, read off the rendering as text. Either way the walk is confined
-to the entry point sits in: the first and last stops are where it
-stops asking, and it signals at the margin rather than carrying point
-into a neighbouring entry, which is a line of its own to move to.
-=maf-backward-operand= (M-a) is the same walk the other way, over
-the same stops, so the two retrace each other.
+only: an entry drawn over several lines — Big language, a tall matrix
+— offers no stops at all, its terms still the noun motion's to walk,
+read off the rendering as text. Either way the walk is confined to the
+entry point sits in: the first and last stops are where it stops
+asking, and it signals at the margin rather than carrying point into a
+neighbouring entry, which is a line of its own to move to.
+=maf-backward-operand= (M-a) is the same walk the other way, over the
+same stops, so the two retrace each other.
 
 =maf-goto-left-side= (=(=) and =maf-goto-right-side= (=)=) arrive at
 one particular landing in one press: the whole of a relation's left or

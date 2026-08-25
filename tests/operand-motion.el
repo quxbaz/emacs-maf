@@ -89,27 +89,66 @@
   (cl-assert (string= (maf-test--part-at-point) "6 * x + 12"))
   (calc-pop (calc-stack-size))
 
-  ;; A delimiter is a compound operand's own first glyph: the
-  ;; parenthesized sum is named at its paren, and the whole product —
-  ;; whose glyph is the juxtaposition space between the groups — right
-  ;; after the first group closes.
+  ;; A delimiter is a compound operand's own first glyph — a vector's
+  ;; bracket, a call's paren — but the parens a context puts around an
+  ;; operand are the context's, not the operand's: calc prints them
+  ;; only where precedence asks, and the same sum renders bare at the
+  ;; top of an entry. So a parenthesized sum is named at its operator,
+  ;; like every other sum, and the whole product at the juxtaposition
+  ;; space between the groups. The stops are the operator glyphs in
+  ;; display order, which puts the inner product before the difference
+  ;; around it.
   (calc-wrapper (maf-push "(a + b) (2 c - d)"))
   (progn (goto-char (point-min)) (call-interactively 'maf-beginning-of-entry))
   (cl-assert (looking-at "(a \\+ b)"))
   (cl-assert (string= (maf-test--part-at-point) "a + b"))
   (progn (execute-kbd-macro (kbd "M-e")) nil)
+  (cl-assert (looking-at "\\+ b) (2 c - d)$"))
+  (cl-assert (string= (maf-test--part-at-point) "a + b"))
+  (progn (execute-kbd-macro (kbd "M-e")) nil)
   (cl-assert (looking-at " (2 c - d)$"))
   (cl-assert (string= (maf-test--part-at-point) "(a + b) * (2 * c - d)"))
   (progn (execute-kbd-macro (kbd "M-e")) nil)
-  (cl-assert (looking-at "(2 c - d)$"))
-  (cl-assert (string= (maf-test--part-at-point) "2 * c - d"))
-  (progn (execute-kbd-macro (kbd "M-e")) nil)
   (cl-assert (looking-at " c - d)$"))
   (cl-assert (string= (maf-test--part-at-point) "2 * c"))
+  (progn (execute-kbd-macro (kbd "M-e")) nil)
+  (cl-assert (looking-at "- d)$"))
+  (cl-assert (string= (maf-test--part-at-point) "2 * c - d"))
   (cl-assert (eq 'signalled
                  (condition-case nil
                      (progn (call-interactively 'maf-forward-operand) 'moved)
                    (user-error 'signalled))))
+  (calc-pop (calc-stack-size))
+
+  ;; The same rule is what carries the walk across an entry whose last
+  ;; operand is parenthesized. Named at its `(', the difference below
+  ;; would sit one column past the juxtaposition space its parent is
+  ;; named at, and the walk would stop there with a third of the entry
+  ;; still ahead of it; named at its `-', every operand is a step
+  ;; further right than the last. Backward retraces the same stops.
+  (calc-wrapper (maf-push "y^2 = 3 (x - 5)"))
+  (progn (goto-char (point-min)) (call-interactively 'maf-beginning-of-entry))
+  (cl-assert (looking-at "y\\^2 = 3 (x - 5)$"))
+  (progn (execute-kbd-macro (kbd "M-e")) nil)
+  (cl-assert (looking-at "\\^2 = 3 (x - 5)$"))
+  (cl-assert (string= (maf-test--part-at-point) "y^2"))
+  (progn (execute-kbd-macro (kbd "M-e")) nil)
+  (cl-assert (looking-at "= 3 (x - 5)$"))
+  (cl-assert (string= (maf-test--part-at-point) "y^2 = 3 * (x - 5)"))
+  (progn (execute-kbd-macro (kbd "M-e")) nil)
+  (cl-assert (looking-at " (x - 5)$"))
+  (cl-assert (string= (maf-test--part-at-point) "3 * (x - 5)"))
+  (progn (execute-kbd-macro (kbd "M-e")) nil)
+  (cl-assert (looking-at "- 5)$"))
+  (cl-assert (string= (maf-test--part-at-point) "x - 5"))
+  (cl-assert (eq 'signalled
+                 (condition-case nil
+                     (progn (call-interactively 'maf-forward-operand) 'moved)
+                   (user-error 'signalled))))
+  (progn (execute-kbd-macro (kbd "M-a")) nil)
+  (cl-assert (looking-at " (x - 5)$"))
+  (progn (execute-kbd-macro (kbd "M-a")) nil)
+  (cl-assert (looking-at "= 3 (x - 5)$"))
   (calc-pop (calc-stack-size))
 
   ;; An entry with no operation of its own has nowhere to step, and

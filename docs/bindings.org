@@ -427,7 +427,12 @@
      2026-08-25: confined to one entry as well — the walk signals at
      the entry's first and last stop instead of crossing the margin
      into its neighbour, both motions together. Moved to `M-e` the
-     same day, beside the noun motions on the meta row)
+     same day, beside the noun motions on the meta row. Also 2026-08-25:
+     the parens a context prints around an operand stopped counting as
+     its own first glyph, so a parenthesized operation is named at its
+     operator — the walk crosses `y^2 = 3 (x - 5)' to the `-' instead
+     of halting on the `(' beside its parent's stop, and C-M-u lands
+     there with it)
    - [X] `M-a` maf-backward-operand (2026-08-25: the forward walk's
      reverse over the same stops, stack mode only like it. It held
      `C-M-SPC` for a few hours, then `M-S-SPC`, before the pair moved
