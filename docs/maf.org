@@ -10,8 +10,6 @@
   - [ ] *maf-formulas*: add basic/fundamental identities (addition,
     multiplication, etc)
 
-* now
-
 * review
 
 * maf-latex
