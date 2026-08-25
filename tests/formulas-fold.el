@@ -218,6 +218,44 @@
       (cl-assert (= (length (fold--rows)) 3))
       (maf-formulas-quit)))
 
+  ;; The unfold happens on entering a search, not on every render one
+  ;; causes — so the fold keys go on working inside a filtered list.
+  ;; A search that casts wide is still a list of groups, and folding
+  ;; one away is the user saying so about the results in front of them.
+  (save-window-excursion
+    (maf-formulas)
+    (with-selected-window (get-buffer-window "*maf-formulas*")
+      (goto-char (point-min))
+      ;; "of" reaches all three, across both groups.
+      (execute-kbd-macro (kbd "/ o f RET"))
+      (cl-assert (equal maf-formulas--query "of"))
+      (cl-assert (= (length (fold--rows)) 3))
+      ;; TAB inside the filter folds the matching groups, and the fold
+      ;; sticks — the filter is still in force and does not overrule it.
+      (execute-kbd-macro (kbd "TAB"))
+      (cl-assert (= (length maf-formulas--collapsed) 2))
+      (cl-assert (null (fold--rows)))
+      (cl-assert (equal (fold--headers) '("Geometry — 2D" "Geometry — 3D: Sphere")))
+      ;; S-TAB likewise picks one group back out of the filtered view.
+      (maf-formulas--goto-group "Geometry — 3D: Sphere")
+      (execute-kbd-macro (kbd "<backtab>"))
+      (cl-assert (equal maf-formulas--collapsed '("Geometry — 2D")))
+      (cl-assert (equal (fold--rows)
+                        '("Volume of sphere" "Surface area of sphere")))
+      ;; A folded header inside a filter counts what the filter left it,
+      ;; not what the group holds altogether.
+      (maf-formulas-clear-filter)
+      (maf-formulas-filter "sphere")
+      (cl-assert (null maf-formulas--collapsed))   ; the new search unfolds
+      (execute-kbd-macro (kbd "TAB"))
+      (maf-formulas--goto-group "Geometry — 3D: Sphere")
+      (cl-assert (equal (buffer-substring-no-properties
+                         (line-beginning-position) (line-end-position))
+                        "Geometry — 3D: Sphere (2)"))
+      (maf-formulas-clear-filter)
+      (maf-formulas-toggle-all-groups)
+      (maf-formulas-quit)))
+
   ;; RET on a folded header unfolds it on the way in: asking for a
   ;; group is asking to see it, not to narrow to a header with nothing
   ;; under it.
