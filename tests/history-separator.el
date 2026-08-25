@@ -1,22 +1,38 @@
 (maf-step
   ;; L draws a separator rule under a state's row: a line dividing the
-  ;; log into stretches of work. The rule is a blank row of its own,
-  ;; given a background extended past the (empty) line to the window
-  ;; edge, so the band runs the log's full width and the division has
-  ;; a row of vertical margin rather than sitting glued under the text.
-  ;; Browsing is by state rather than by line, so the extra row costs
-  ;; the stepping keys nothing, and the band carries the index of the
-  ;; state it sits under.
+  ;; log into stretches of work. The rule is a row of its own, given a
+  ;; background extended past the line to the window edge, so the band
+  ;; runs the log's full width and the division has a row of vertical
+  ;; margin rather than sitting glued under the text. Setting one
+  ;; prompts for text to write into the band, titling the stretch it
+  ;; closes; an empty answer is the plain rule. Browsing is by state
+  ;; rather than by line, so the extra row costs the stepping keys
+  ;; nothing, and the band carries the index of the state it sits under.
 
   ;; The band under the log line LINE (zero-based), if there is one:
-  ;; the row after it, blank and wearing the separator face.
+  ;; the row after it wearing the separator face. Its own text is not
+  ;; part of the question -- a plain band and a titled one are the same
+  ;; row -- so this reads the index it carries either way.
   (defun maf--history-sep-band (line)
     (goto-char (point-min))
     (forward-line (1+ line))
-    (and (bolp) (eolp)
+    (and (bolp)
          (memq 'maf-history-separator
                (ensure-list (get-text-property (point) 'face)))
          (get-text-property (point) 'maf-history-index)))
+
+  ;; What the band under LINE reads, as text.
+  (defun maf--history-sep-text (line)
+    (goto-char (point-min))
+    (forward-line (1+ line))
+    (buffer-substring-no-properties (point) (line-end-position)))
+
+  ;; A press of L answering the prompt with TEXT. Through
+  ;; `call-interactively', so the command is entered the way the key
+  ;; enters it and the prompt is part of what is under test.
+  (defun maf--history-sep-press (text)
+    (cl-letf (((symbol-function 'read-string) (lambda (&rest _) text)))
+      (call-interactively 'maf-history-separate)))
 
   ;; The browser is two buffers on one selection. Stash the session's
   ;; log, work on a made-up one, and put it back at the end.
@@ -39,8 +55,12 @@
     ;; first — the selection stays on the newest state throughout.
     (progn (goto-char (point-min)) (forward-line 1))
     (cl-assert (= (get-text-property (point) 'maf-history-index) 1))
-    (call-interactively 'maf-history-separate)
+    (maf--history-sep-press "")
     (cl-assert (maf-history--separator (nth 1 maf-history--states)))
+    ;; An empty answer is the plain rule: the slot keeps the bare flag
+    ;; rather than an empty string, and the band carries no text.
+    (cl-assert (eq (maf-history--separator (nth 1 maf-history--states)) t))
+    (cl-assert (null (maf-history--separator-label (nth 1 maf-history--states))))
     ;; The selection did not move, and neither did point: the command
     ;; acted on the row under point, so that is the row it leaves it on.
     (cl-assert (= maf-history--index 0))
@@ -89,17 +109,63 @@
   (with-current-buffer (maf-history--buffer)
     (cl-assert (eql (maf--history-sep-band 2) 2)))
 
-  ;; Pressing it again on the same state takes the line off.
+  ;; Pressing it again on the same state takes the line off. The press
+  ;; that removes a rule has no text to ask for, so it does not prompt
+  ;; -- `call-interactively' with no answer prepared would hang here if
+  ;; it did.
   (with-current-buffer (maf-history--buffer)
     (progn (goto-char (point-min)) (forward-line 2))
     (call-interactively 'maf-history-separate)
     (cl-assert (null (maf-history--separator (nth 2 maf-history--states))))
     (cl-assert (null (maf--history-sep-band 2))))
 
+  ;; Answering the prompt writes the text into the band. It is the same
+  ;; row doing the same dividing -- still banded, still carrying its
+  ;; state's index, so browsing over it is unchanged -- with the text
+  ;; centred in the row.
+  (with-current-buffer (maf-history--buffer)
+    (progn (goto-char (point-min)) (forward-line 2))
+    (maf--history-sep-press "morning")
+    (cl-assert (equal (maf-history--separator (nth 2 maf-history--states))
+                      "morning"))
+    (cl-assert (equal (maf-history--separator-label (nth 2 maf-history--states))
+                      "morning"))
+    (cl-assert (eql (maf--history-sep-band 2) 2))
+    ;; One space in the buffer ahead of the text, not a run of padding:
+    ;; the centring is a display stretch on that space, measured at
+    ;; redisplay against the window, so the title re-centres when the
+    ;; window is resized rather than holding a column count worked out
+    ;; when the log was rendered. Half the text's width left of centre
+    ;; is where text of that width starts if it is to straddle it.
+    (cl-assert (equal (maf--history-sep-text 2) " morning"))
+    (progn (goto-char (point-min)) (forward-line 3))
+    (cl-assert (equal (get-text-property (point) 'display)
+                      (list 'space :align-to
+                            (list '- 'center (/ (string-width "morning") 2.0)))))
+    ;; The text wears the band, so it reads on it rather than in the
+    ;; default foreground over it. The stretch ahead of it wears it
+    ;; too, so the band is unbroken up to where the title starts.
+    (cl-assert (memq 'maf-history-separator
+                     (ensure-list (get-text-property (point) 'face))))
+    (progn (forward-char 1))
+    (cl-assert (looking-at-p "morning"))
+    (cl-assert (memq 'maf-history-separator
+                     (ensure-list (get-text-property (point) 'face))))
+    (cl-assert (face-attribute 'maf-history-separator :foreground))
+    ;; Off again, and the text goes with the rule: the next one asks
+    ;; afresh rather than keeping what this one was called.
+    (progn (goto-char (point-min)) (forward-line 2))
+    (call-interactively 'maf-history-separate)
+    (cl-assert (null (maf-history--separator (nth 2 maf-history--states))))
+    (maf--history-sep-press "")
+    (cl-assert (eq (maf-history--separator (nth 2 maf-history--states)) t))
+    (progn (goto-char (point-min)) (forward-line 2))
+    (call-interactively 'maf-history-separate))
+
   ;; Off a log row -- the stack window has none -- it marks the state
   ;; the browser has selected, which is the one that window shows.
   (with-current-buffer (maf-history--stack-buffer)
-    (call-interactively 'maf-history-separate)
+    (maf--history-sep-press "")
     (cl-assert (maf-history--separator (nth maf-history--index
                                             maf-history--states))))
   (with-current-buffer (maf-history--buffer)
@@ -119,7 +185,7 @@
                maf-history--index 0)
          (with-current-buffer (maf-history--buffer) (maf-history--render t))
          (with-current-buffer (maf-history--buffer)
-           (call-interactively 'maf-history-separate)))
+           (maf--history-sep-press "")))
   (cl-assert (equal (car maf-history--states) (list (list 5) "mul" nil t)))
 
   ;; An empty log has no state to mark, and says so.
