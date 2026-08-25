@@ -23,6 +23,9 @@
   - [ ] support in maf-preview
   - [ ] support in maf-formulas
 
+* maf-preview
+  - [ ] change options: off, always on, show on command only
+
 * review
   - [ ] fix bug:
     y^2 = 3 |(x - 5)
