@@ -969,6 +969,23 @@ pair."
          (eq (char-after start) ?\()
          (eq (char-before end) ?\)))))
 
+(defun maf-editplus--node-vacant-p (node)
+  "Non-nil when NODE is a bracketed pair with nothing inside it.
+The pair a writer has only just opened — electric parens leave point
+between them, and the parse has a group there holding no expression
+at all. Such a pair is a place for a sub-expression rather than one
+itself, so there is nothing in it a command could act on."
+  (and (eq (maf-editplus--node-kind node) 'group)
+       (null (maf-editplus--node-children node))
+       (let* ((start (maf-editplus--node-start node))
+              (end (maf-editplus--node-end node))
+              (inner-end (if (memq (char-before end) maf-editplus--closers)
+                             (1- end)
+                           end)))
+         (and (> inner-end start)
+              (string-blank-p
+               (buffer-substring-no-properties (1+ start) inner-end))))))
+
 (defun maf-editplus--node-atomic-p (node)
   "Non-nil when NODE can take an operator after it as it stands.
 A number or name, a function call and a bracketed group each read as
@@ -1238,7 +1255,9 @@ scan takes over, as at the end of the entry. A call's own closer
 names nothing even with no unit behind it (an empty call is the
 command's own answer); a bare pair's or a vector's closer with
 nothing complete behind point — an operator, the opener — still
-names the enclosure, there being no smaller expression to mean.
+names the enclosure, there being no smaller expression to mean —
+unless the pair is empty, when there is no enclosed expression
+either and a press inside it names nothing at all.
 
 Nil likewise on padding whitespace with a complete unit ending at
 point: the space beside a spelled operator, or a wrapped line's
@@ -1267,6 +1286,16 @@ so x |mod y is the mod's padding and names the x)."
                                        pos bound))
                              (maf-editplus--node-at tree at)))))
             (cond
+             ;; An empty pair holds no expression, so a press inside
+             ;; one names nothing at all — the pair is where a
+             ;; sub-expression is going to be, not one that is there.
+             ;; The command's own answer for no target takes over, and
+             ;; what it writes goes inside the pair the writer opened:
+             ;; e^(ln(|)), not a call wrapped around the empty pair.
+             ((and node
+                   (maf-editplus--node-vacant-p node)
+                   (> at (maf-editplus--node-start node)))
+              nil)
              ((and node
                    (= at (1- (maf-editplus--node-end node)))
                    (memq (char-after at) maf-editplus--closers)
@@ -1503,9 +1532,10 @@ ln((a+b)) would have been. An interval keeps its delimiters — they
 are notation, not grouping.
 
 With no subject at all — the head of an entry, just after an
-operator, the fresh entry the resolver opened when point was outside
-any — an empty call opens at point, point inside it: NAME() is a
-call waiting for its argument."
+operator, inside a pair of brackets with nothing in it yet, the fresh
+entry the resolver opened when point was outside any — an empty call
+opens at point, point inside it: NAME() is a call waiting for its
+argument."
   (maf-editplus--apply-call (maf-editplus--resolve-target) name nil))
 
 (defun maf-editplus--apply-call (target name tail)
@@ -1575,10 +1605,13 @@ typing carries on:
   x = |        =>  x = ln(|)
 
 An active region becomes the argument exactly as marked. With nothing
-behind point an empty ln() is opened instead, point inside it — and
+behind point an empty ln() is opened instead, point inside it. A pair
+the writer has only just opened is that same case — it holds nothing
+to name, so the call goes inside the pair rather than around it — and
 outside any entry, on the dot line or an empty stack, a fresh entry
 opens at the bottom to hold it, as typing would have started one:
 
+  e^(|)        =>  e^(ln(|))
   .|           =>  1+  ln(|)
                        .
 
