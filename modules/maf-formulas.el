@@ -14,7 +14,11 @@
 ;; as point reaches another formula; with `O' off, `o' shows the
 ;; formula at point and moving off its line dismisses the pane again.
 ;; `C-g' closes the pane and turns follow off. RET pushes the formula
-;; at point onto the calc stack.
+;; at point onto the calc stack, and RET on a group header narrows the
+;; menu to that group, whole — any filter in force is lifted for it,
+;; and comes back when RET on that header widens the list again.
+;; The key legend stays in the header line while the menu is narrowed,
+;; the narrowing shown at its head rather than in place of it.
 ;;
 ;; A formula is a plist. Only :expr is required; the rest are optional
 ;; and the detail pane renders just what is present:
@@ -174,6 +178,24 @@ variable is the single source, so runtime additions to it persist."
 (defvar-local maf-formulas--query ""
   "Current filter string narrowing the formula menu, or empty.")
 
+(defvar-local maf-formulas--group nil
+  "Category the menu is narrowed to, or nil for every group.
+Set by RET on a group header (`maf-formulas-filter-group'), and cleared
+by RET on that header again or by `maf-formulas-clear-filter'. It sits
+beside `maf-formulas--query' rather than folding into it: the query is
+a substring matched across titles, categories and variables, where this
+picks one group out by name — including \"Recent\", which no query can
+name, that group being a shortcut rather than a category.")
+
+(defvar-local maf-formulas--group-query nil
+  "Filter string set aside while a group narrowing is in effect, or nil.
+Narrowing to a group shows the group whole, so the filter that was in
+force is lifted rather than compounded — asking for a group is asking
+for the group, not for the part of it that survived what was typed.
+It is kept here so RET on the header again puts back the filtered list
+it was pressed from, unless something was typed inside the group in
+the meantime, which is then the filter that stands.")
+
 (defvar maf-formulas--recent nil
   "Formulas inserted this session, most recent first.
 A plain variable, so the list dies with the session — recency is a
@@ -201,13 +223,22 @@ Categories come alphabetically, each holding the formulas matching the
 current query. With no query, the recently-inserted group leads when it
 has any, so what you reached for last is where the cursor already is.
 Filtering omits that shortcut group; matching recent formulas remain
-listed under their own categories."
+listed under their own categories.
+
+`maf-formulas--group' narrows to the one group it names — \"Recent\"
+included, which a query cannot reach on its own. The two narrowings
+compose, a query still deciding which of that group's formulas are
+listed; but `maf-formulas-filter-group' lifts the filter as it
+narrows, so a group reached from a filtered list comes up whole."
   (let* ((all (maf-formulas--all))
          (match (lambda (f) (maf-formulas--matches-p f maf-formulas--query)))
+         (group maf-formulas--group)
+         (recent-only (equal group maf-formulas--recent-category))
          ;; Recents are held by identity, so formulas dropped from
          ;; `maf-formulas-user' since (a reloaded file, say) fall out.
-         (recent (and (string-empty-p maf-formulas--query)
-                      (seq-filter (lambda (f) (memq f all))
+         (recent (and (or recent-only
+                          (and (null group) (string-empty-p maf-formulas--query)))
+                      (seq-filter (lambda (f) (and (memq f all) (funcall match f)))
                                   maf-formulas--recent)))
          (groups nil))
     (dolist (f (seq-filter match all))
@@ -218,6 +249,10 @@ listed under their own categories."
           (push (list cat f) groups))))
     (setq groups (sort (mapcar (lambda (g) (cons (car g) (nreverse (cdr g)))) groups)
                        (lambda (a b) (string< (car a) (car b)))))
+    (when group
+      (setq groups (if recent-only
+                       nil
+                     (seq-filter (lambda (g) (equal (car g) group)) groups))))
     (if recent
         (cons (cons maf-formulas--recent-category recent) groups)
       groups)))
@@ -252,30 +287,44 @@ not the buffer's, so quitting the menu and opening it again brings
 the pane back the way it was left.")
 
 (defun maf-formulas--header-line ()
-  "The menu's header line: the key legend, or the filter in effect.
+  "The menu's header line: the key legend, led by the narrowing in effect.
 The legend reads like dial's controls line in *maf-options*: keys wear
 `help-key-binding', entries set apart by spaces alone, and the band
 itself takes `dial-controls' (the mode remaps `header-line' to it).
 The \"O follows\" entry renders in gold — `warning's, the one gold
 across maf's buffers — while the pane is following, so the legend
-doubles as the toggle's indicator."
-  (if (string-empty-p maf-formulas--query)
-      (let ((entry (lambda (key verb)
-                     (concat (propertize key 'face 'help-key-binding)
-                             " " verb))))
-        (mapconcat #'identity
-                   (list "maf-formulas"
-                         (funcall entry "RET" "inserts")
-                         (funcall entry "/" "filters")
-                         (funcall entry "o" "details")
-                         (if (eq maf-formulas--pane-state 'follow)
-                             (propertize "O follows" 'face 'warning)
-                           (funcall entry "O" "follows"))
-                         (funcall entry "a/i" "adds recent")
-                         (funcall entry "D" "deletes recent")
-                         (funcall entry "q" "quits"))
-                   "   "))
-    (format "maf-formulas — filter: %s  (c clears)" maf-formulas--query)))
+doubles as the toggle's indicator.
+
+A narrowing takes the place of the buffer's name at the head of the
+band, and adds the key that lifts it; the keys themselves stay put.
+The legend is what a narrowed list is read with — `o', `a' and `D' all
+still apply to the rows on show — so trading it for a line that only
+named the filter took the legend away exactly when it was in use."
+  (let* ((entry (lambda (key verb)
+                  (concat (propertize key 'face 'help-key-binding) " " verb)))
+         (state (delq nil
+                      (list (when maf-formulas--group
+                              (concat "group: "
+                                      (propertize maf-formulas--group 'face 'warning)))
+                            (unless (string-empty-p maf-formulas--query)
+                              (concat "filter: "
+                                      (propertize maf-formulas--query 'face 'warning)))))))
+    (mapconcat #'identity
+               (delq nil
+                     (list (if state (mapconcat #'identity state "  ") "maf-formulas")
+                           (funcall entry "RET" "inserts")
+                           (funcall entry "/" "filters")
+                           ;; Only while something is narrowed: the key is
+                           ;; noise until there is something for it to clear.
+                           (when state (funcall entry "c" "clears"))
+                           (funcall entry "o" "details")
+                           (if (eq maf-formulas--pane-state 'follow)
+                               (propertize "O follows" 'face 'warning)
+                             (funcall entry "O" "follows"))
+                           (funcall entry "a/i" "adds recent")
+                           (funcall entry "D" "deletes recent")
+                           (funcall entry "q" "quits")))
+               "   ")))
 
 (defun maf-formulas--refresh-header ()
   "Recompute the header line, for a state change without a re-render."
@@ -313,6 +362,7 @@ Groups are separated by a blank line."
     (goto-char (point-min))
     (while (and (not (eobp)) (not (get-text-property (point) 'maf-formula)))
       (forward-line 1))
+    (maf-formulas--item-start)
     ;; A re-render changes what every line means, so a following pane
     ;; re-renders with it, for whatever point landed on. A frozen one
     ;; holds its formula: the filter it was narrowed by is no reason to
@@ -570,6 +620,18 @@ reopens with the pane the way this left it."
 
 ;;; Commands
 
+(defun maf-formulas-select ()
+  "Act on the line at point: insert the formula, or narrow to the group.
+RET does the obvious thing for whatever the line holds — pushing the
+formula onto the stack (`maf-formulas-insert'), or narrowing the menu
+to the group whose header it is (`maf-formulas-filter-group'). The
+headers are on the way through the list, and the key already under
+the finger is the one that means \"this one\"."
+  (interactive)
+  (if (maf-formulas--group-at-point)
+      (maf-formulas-filter-group)
+    (maf-formulas-insert)))
+
 (defun maf-formulas-insert ()
   "Push the formula at point onto the calc stack, and quit the menu."
   (interactive)
@@ -616,7 +678,8 @@ neither is, point stays where the render left it."
             (unless other (setq other (line-beginning-position)))))
         (forward-line 1)))
     (when-let ((pos (or wanted other)))
-      (goto-char pos))))
+      (goto-char pos)
+      (maf-formulas--item-start))))
 
 (defun maf-formulas-add-recent ()
   "Add the formula at point to the \"Recent\" group, without inserting it.
@@ -655,15 +718,24 @@ is untouched, still listed under its own category."
     (unless (and f (maf-formulas--recent-line-p))
       (user-error "Not on a Recent entry"))
     (setq maf-formulas--recent (delq f maf-formulas--recent))
+    ;; Forgetting the last entry while narrowed to the group leaves the
+    ;; narrowing pointing at a group that no longer exists — an empty
+    ;; buffer, with the header its only way out. The group is gone, so
+    ;; the narrowing to it goes with it.
+    (unless maf-formulas--recent
+      (when (equal maf-formulas--group maf-formulas--recent-category)
+        (setq maf-formulas--group nil)))
     (let ((line (line-number-at-pos)))
       (maf-formulas--render)
       (goto-char (point-min))
       (forward-line (1- line))
       ;; The line may now lie past the shrunken group — or the group may
-      ;; be gone entirely — so settle on the nearest formula.
+      ;; be gone entirely — so settle on the nearest formula. A header
+      ;; is no landing place here, however the motion keys treat one:
+      ;; what was deleted was a row, and a row is what replaces it.
       (unless (get-text-property (line-beginning-position) 'maf-formula)
-        (or (ignore-errors (maf-formulas-prev-item) t)
-            (ignore-errors (maf-formulas-next-item) t))))
+        (or (maf-formulas--seek-item -1 t)
+            (maf-formulas--seek-item 1 t))))
     (message "Removed from Recent: %s" (maf-formulas--title f))))
 
 (defvar maf-formulas--filter-buffer nil
@@ -727,10 +799,65 @@ narrowing and \\[keyboard-quit] restores the one in effect before."
               (signal 'quit nil))))))
 
 (defun maf-formulas-clear-filter ()
-  "Clear the formula menu filter."
+  "Clear the menu's narrowing — the filter string and any group with it.
+The list can be narrowed two ways at once, by what was typed and by
+the group RET was pressed on; one key puts the whole list back rather
+than leaving the other narrowing to be found and undone."
   (interactive)
-  (setq maf-formulas--query "")
+  (setq maf-formulas--query ""
+        maf-formulas--group nil
+        maf-formulas--group-query nil)
   (maf-formulas--render))
+
+(defun maf-formulas-filter-group (&optional group)
+  "Narrow the menu to GROUP, the category header at point by default.
+A group's header is both the way in and the way out: RET on one leaves
+that group alone on screen, and RET on the header again — it is still
+there, at the top — widens back to every group. Point stays on the
+header across both, so the key can be pressed twice for a look and a
+return.
+
+The group comes up whole. A filter in force is lifted for it, not
+compounded with it: the header names a group of formulas, and reaching
+for it from a filtered list asks for that group, not for the part of
+it the filter had left standing. The filter is not lost — widening
+again puts it back, and the list returns to the one the header was
+pressed from. A filter typed with \\<maf-formulas-mode-map>\\[maf-formulas-filter] while the group is up does
+narrow within it, and being the newer word it stands after widening
+too. \\[maf-formulas-clear-filter] drops the lot, whichever way the list was narrowed.
+
+The \"Recent\" group narrows like any other, and is the one group a
+filter string cannot reach — it is a shortcut rather than a category,
+so no title or variable of its formulas names it."
+  (interactive)
+  (let ((group (or group (maf-formulas--group-at-point))))
+    (unless group (user-error "Not on a group header"))
+    (if (equal group maf-formulas--group)
+        ;; Widening: the filter the narrowing lifted comes back with the
+        ;; other groups, so the round trip lands where it started. A
+        ;; filter typed inside the group is the newer word on what to
+        ;; show, and stands in place of it.
+        (setq maf-formulas--group nil
+              maf-formulas--query (if (string-empty-p maf-formulas--query)
+                                      (or maf-formulas--group-query "")
+                                    maf-formulas--query)
+              maf-formulas--group-query nil)
+      (setq maf-formulas--group group
+            maf-formulas--group-query maf-formulas--query
+            maf-formulas--query ""))
+    (maf-formulas--render)
+    (maf-formulas--goto-group group)
+    (maf-formulas--item-start)))
+
+(defun maf-formulas--group-at-point ()
+  "The category name when point is on a group header, else nil.
+A header is a non-blank line carrying no formula, and its whole text
+is the category — the same string `maf-formulas--groups' keyed the
+group by, so it can be handed straight back as a narrowing."
+  (let ((bol (line-beginning-position)))
+    (and (> (line-end-position) bol)
+         (not (get-text-property bol 'maf-formula))
+         (buffer-substring-no-properties bol (line-end-position)))))
 
 (defun maf-formulas--group-starts ()
   "Buffer positions of each category header line."
@@ -738,37 +865,66 @@ narrowing and \\[keyboard-quit] restores the one in effect before."
     (save-excursion
       (goto-char (point-min))
       (while (not (eobp))
-        (let ((bol (line-beginning-position)))
-          ;; A header is a non-blank line carrying no formula.
-          (when (and (> (line-end-position) bol)
-                     (not (get-text-property bol 'maf-formula)))
-            (push bol starts)))
+        (when (maf-formulas--group-at-point)
+          (push (line-beginning-position) starts))
         (forward-line 1)))
     (nreverse starts)))
 
+(defun maf-formulas--goto-group (group)
+  "Put point on GROUP's header line, when the current render shows one."
+  (when-let ((pos (save-excursion
+                    (goto-char (point-min))
+                    (catch 'found
+                      (while (not (eobp))
+                        (when (equal (maf-formulas--group-at-point) group)
+                          (throw 'found (line-beginning-position)))
+                        (forward-line 1))
+                      nil))))
+    (goto-char pos)))
+
+(defun maf-formulas--item-start ()
+  "Put point on the first character of the line's entry.
+The rows are indented, so a line's own beginning is a column of blanks
+and a cursor sitting there reads as being beside the entry rather than
+on it. Headers start in column zero, and are left where they are."
+  (back-to-indentation))
+
+(defun maf-formulas--stop-p (&optional formula-only)
+  "Non-nil when the line at point is one the motion commands stop on.
+That is a formula row, or — unless FORMULA-ONLY — a group header too:
+a header is a place worth reaching now that RET on one narrows the
+menu to its group, so the same keys that walk the formulas walk the
+headers between them."
+  (if formula-only
+      (get-text-property (line-beginning-position) 'maf-formula)
+    (or (get-text-property (line-beginning-position) 'maf-formula)
+        (maf-formulas--group-at-point))))
+
+(defun maf-formulas--seek-item (step &optional formula-only)
+  "Step by STEP lines to the nearest stop, returning point, or nil for none.
+Point is left where it was when there is nothing to reach.
+FORMULA-ONLY passes through to `maf-formulas--stop-p'."
+  (let ((p (point))
+        (edge (if (> step 0) #'eobp #'bobp)))
+    (forward-line step)
+    (while (and (not (funcall edge)) (not (maf-formulas--stop-p formula-only)))
+      (forward-line step))
+    (cond ((maf-formulas--stop-p formula-only)
+           (maf-formulas--item-start)
+           (point))
+          (t (goto-char p) nil))))
+
 (defun maf-formulas-next-item ()
-  "Move to the next formula line, skipping blank and category lines."
+  "Move to the next formula or group header, skipping the blank lines."
   (interactive)
-  (let ((p (point)))
-    (forward-line 1)
-    (while (and (not (eobp)) (not (get-text-property (point) 'maf-formula)))
-      (forward-line 1))
-    (if (get-text-property (point) 'maf-formula)
-        (beginning-of-line)
-      (goto-char p)
-      (user-error "No next formula"))))
+  (unless (maf-formulas--seek-item 1)
+    (user-error "No next formula")))
 
 (defun maf-formulas-prev-item ()
-  "Move to the previous formula line, skipping blank and category lines."
+  "Move to the previous formula or group header, skipping the blank lines."
   (interactive)
-  (let ((p (point)))
-    (forward-line -1)
-    (while (and (not (bobp)) (not (get-text-property (point) 'maf-formula)))
-      (forward-line -1))
-    (if (get-text-property (point) 'maf-formula)
-        (beginning-of-line)
-      (goto-char p)
-      (user-error "No previous formula"))))
+  (unless (maf-formulas--seek-item -1)
+    (user-error "No previous formula")))
 
 (defun maf-formulas-next-group ()
   "Move to the next category header, stopping at the last one."
@@ -807,7 +963,7 @@ untouched either way."
   "Keymap for `maf-formulas-mode'.")
 
 ;; Bindings outside the defvar so reloading applies edits.
-(define-key maf-formulas-mode-map (kbd "RET") #'maf-formulas-insert)
+(define-key maf-formulas-mode-map (kbd "RET") #'maf-formulas-select)
 (define-key maf-formulas-mode-map (kbd "/")   #'maf-formulas-filter)
 (define-key maf-formulas-mode-map (kbd "g")   #'maf-formulas-clear-filter)
 (define-key maf-formulas-mode-map (kbd "c")   #'maf-formulas-clear-filter)
@@ -838,13 +994,16 @@ untouched either way."
   "Major mode for the saved-formula list.
 Formulas are grouped by category, the ones inserted this session
 repeated in a \"Recent\" group at the top, each shown beside its
-form. \\<maf-formulas-mode-map>\\[maf-formulas-insert]
-pushes the formula at point onto the stack, \\[maf-formulas-next-item] and \\[maf-formulas-prev-item] step
-between formulas, \\[maf-formulas-next-group] between groups, \\[maf-formulas-show-detail] shows the formula at
+form. \\<maf-formulas-mode-map>\\[maf-formulas-select]
+pushes the formula at point onto the stack — or, on a group header,
+narrows the list to that group, whole, and widens again when pressed
+there a second time. \\[maf-formulas-next-item] and \\[maf-formulas-prev-item] step between the rows and the headers
+alike, landing on the entry itself rather than the column before it;
+\\[maf-formulas-next-group] and \\[maf-formulas-prev-group] step group to group. \\[maf-formulas-show-detail] shows the formula at
 point in the detail pane (again to close it), \\[maf-formulas-toggle-detail] toggles the pane following point (on by
 default, remembered for the session), \\[maf-formulas-add-recent] adds the formula at point to
 the Recent group without inserting it, \\[maf-formulas-delete-recent] drops the recent entry at
-point, \\[maf-formulas-filter] filters as you type, \\[maf-formulas-clear-filter] clears the filter, \\[maf-formulas-quit] quits."
+point, \\[maf-formulas-filter] filters as you type, \\[maf-formulas-clear-filter] clears every narrowing, \\[maf-formulas-quit] quits."
   (setq truncate-lines t)
   ;; The legend's band is the options buffer's: `header-line's own look
   ;; is replaced outright, not layered under, so the two read as one
@@ -857,7 +1016,8 @@ point, \\[maf-formulas-filter] filters as you type, \\[maf-formulas-clear-filter
   "Open the saved-formula menu, its detail pane following point.
 If the menu is already on screen, go to its window instead, leaving the
 filter and the pane as they stand.
-\\<maf-formulas-mode-map>\\[maf-formulas-toggle-detail] toggles the pane, \\[maf-formulas-show-detail] freezes it on the formula at point."
+\\<maf-formulas-mode-map>\\[maf-formulas-select] on a group header narrows the list to that group.
+\\[maf-formulas-toggle-detail] toggles the pane, \\[maf-formulas-show-detail] freezes it on the formula at point."
   (interactive)
   (if-let ((win (get-buffer-window "*maf-formulas*" 0)))
       ;; Already on screen somewhere: visit it where it stands. Opening
