@@ -186,7 +186,7 @@
     profile and with the module off, not a native addition
   - module keys: `SPC` \` `C-o` `(` (edit), `?` (options), `t d` `M-h`
     (history), `l R` `l S` (persist), `M-p` `M-n` (recall), `s o`
-    (formulas), `l t` (render)
+    (formulas), `l T` (render)
 ** contextual siblings on their own calc key (outside the table)
    - `A` mafcmd-abs ← calc-abs, `f h` mafcmd-hypot ← calc-hypot,
      `a b` mafcmd-substitute ← calc-substitute,
@@ -351,8 +351,10 @@
    - [X] `l a` mafcmd-poly-roots (2026-08-23: moved off `l t` so the
      on-demand typesetter can own its mnemonic; mirrors roots-for on
      `a l`, and `M-r` remains free)
-   - [X] `l t` maf-render (2026-08-23: typeset the current entry once
-     through RaTeX; the vim profile declares its mirror on `o t`)
+   - [X] `l T` maf-render (2026-08-23: typeset the current entry once
+     through RaTeX; the vim profile declares its mirror on `o T`.
+     2026-08-24: moved off `l t`, which apart took on main while the
+     branch was away — provisional, T for typeset)
    - [X] `a l` mafcmd-roots-for (2026-08-22: the prompting form — the
      variable read as `i` reads it, the subject's priority variable
      as the default; the stock stack-argument roots stays on `a P`.
@@ -514,7 +516,7 @@
      toggle rides M-o there) —
      mirrored in src/bindings.el from native's own l declarations, so
      a default key added to the family lands in both profiles. Module
-     claims are not derived; render explicitly declares o t beside l t.
+     claims are not derived; render explicitly declares o T beside l T.
      The commands
      displaced from o's case pair trade places one step over: the
      commute takes the family's free doubled slot o o (native binds

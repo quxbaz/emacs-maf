@@ -158,9 +158,12 @@ binding; the command remains available by name."
   :group 'maf
   (maf-bindings--refresh))
 
+;; Temporary keys: l t went to mafcmd-apart (src/bindings.el), and in
+;; vim, where the l family rehomes to o, the two claims collide on o t.
+;; T for typeset, beside the key this lost.
 (maf-bindings-module-keys 'maf-render 'maf-use-render-mode
-  '(((native) "l t" maf-render)
-     ((vim) "o t" maf-render)))
+  '(((native) "l T" maf-render)
+     ((vim) "o T" maf-render)))
 
 (when (require 'maf-module nil t)
   (maf-register-module 'maf-render #'maf-use-render-mode
@@ -169,6 +172,6 @@ binding; the command remains available by name."
 Invoke the command on an entry to render it once with RaTeX. The SVG
 appears in an even split below Calc without taking focus. Nothing runs
 in the background, and the stack's own display stays unchanged."
-                       "l t" "Display"))
+                       "l T" "Display"))
 
 (provide 'maf-render)

@@ -9,9 +9,9 @@
 
   ;; The module owns the on-demand binding and removes it when off.
   (maf-use-render-mode 1)
-  (cl-assert (eq (key-binding (kbd "l t")) #'maf-render))
+  (cl-assert (eq (key-binding (kbd "l T")) #'maf-render))
   (maf-use-render-mode -1)
-  (cl-assert (not (eq (key-binding (kbd "l t")) #'maf-render)))
+  (cl-assert (not (eq (key-binding (kbd "l T")) #'maf-render)))
   (maf-use-render-mode 1)
 
   ;; Point on an older entry selects that whole entry. Calc supplies the
