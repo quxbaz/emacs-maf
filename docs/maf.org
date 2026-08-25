@@ -18,9 +18,9 @@
       - [-] if action is duplication (eg, RET on an entire entry), then action should be "dupe"
       - [-] currently on "add" items, the added item is not highlighted in
         yellow in the corresponding stack
-      - [ ] update format: next to history item (eg, `maf-del`), show the command
+      - [-] update format: next to history item (eg, `maf-del`), show the command
         name (eg, `(maf-del)`)
-      - [ ] show `C-M-k` binding in legend
+      - [-] show `C-M-k` binding in legend
   - [-] bind `C-M-SPC` to the reverse of `S-SPC`. move to the PREV operand
     - same conditions. only work in stack mode.
   - [-] find command that solves with +/i in answer, but uses a different
