@@ -6,19 +6,6 @@
   [[https://www.gnu.org/software/emacs/manual/html_mono/calc.html#Symbolic-Lisp-Functions][symbolic lisp functions]]
 
 * Todo
-  - [X] *maf-formulas*: add basic/fundamental identities (addition,
-    multiplication, etc) — 99 formulas in =maf-formulas-builtin=, in 13
-    categories the menu sorts and narrows by; every one checked as
-    arithmetic in =tests/formulas-builtin-values.el=
-    - [X] properties of real numbers (commutative, associative,
-      distributive, identities, inverses, sign rules) — shipped in
-      =maf-formulas-builtin=
-    - [X] logarithm laws (product, quotient, power; b^log_b x = x)
-    - [X] quadratic formula, discriminant, Vieta's root relations
-    - [X] radicals and the x^0 / x^1 / x^(m/n) exponent cases
-    - [X] fraction arithmetic, absolute value
-    - [X] trig identity table (reciprocal, quotient, the other two
-      Pythagoreans, angle sum/difference, double and half angle)
 
 * NEXT maf-latex
   - [ ] refine stand-alone feature
@@ -28,6 +15,18 @@
 * maf-preview
 
 * review
+  - *maf-history*
+    - [ ] on new `L` command, insert a horizontal line separator in history
+      entries at point
+    - is it possible to make it unselectable (not actually occupy a line, just display it)?
+  - [ ] stuff like this should be included in basic simplification (`k k`)
+    2^log(x, 2) => x
+    e^ln(x) => x (i think this works already, so we just need to generalize it to any base)
+  - [ ] x|
+    command: `, y`
+    expect: x y
+    actual: y
+    point is *after* the `x` here so i expect it to join the expr, not replace
 
 * major features [8/12]
   - [X] bindings module
