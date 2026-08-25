@@ -38,11 +38,13 @@ the Big-language and matrix entries here runs over several lines."
          (backward-char 1))
   (cl-assert (string= (maf-test--part-at-point) "x"))
 
-  ;; Out of x: the term it sits in. Calc prints this one's parens, and
-  ;; they are its own first glyph, so point lands on the open paren.
+  ;; Out of x: the term it sits in. Calc prints this one's parens, but
+  ;; the power around it is what asked for them — the sum renders bare
+  ;; wherever nothing does — so they are not its own glyphs and point
+  ;; lands on its operator, as it would on an unparenthesized sum.
   (call-interactively 'maf-up-expression)
   (cl-assert (string= (maf-test--part-at-point) "x + 3"))
-  (cl-assert (eq (char-after) ?\())
+  (cl-assert (eq (char-after) ?+))
 
   ;; The power. Its parens belong to the term inside it, so its own
   ;; first glyph is the ^.

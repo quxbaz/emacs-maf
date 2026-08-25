@@ -323,6 +323,41 @@ is not flat."
         (+ start (min (max offset 0) (max 0 (1- (- end start)))))
         toppt)))))
 
+(defun maf--comp-own-brackets-p (expr)
+  "Non-nil when EXPR's rendering brings its own enclosing brackets.
+A vector draws the brackets of `[1, 2]' itself, an interval the mixed
+pair of `(0 .. 1]', a complex number the parens of `(1, 2)': those
+delimiters are glyphs the node renders, as much its own as an
+operator. Every other compound is bare until its context asks for
+parens — `x - 5' renders without them at the top of an entry and
+gains them from the product in `3 (x - 5)' — so there the parens are
+the parent's punctuation rather than the node's own first glyph."
+  (memq (car-safe expr) '(vec intv cplx polar)))
+
+(defun maf--comp-drop-context-parens (own expr text)
+  "OWN glyph positions with the parens EXPR's context added dropped.
+OWN is a list of flat positions into TEXT, EXPR's own glyphs — what is
+left of its span once the direct children are excluded. Calc composes
+a precedence paren inside the tag it brackets, so a sub-formula the
+context parenthesized carries the pair at the ends of its own glyphs,
+where it would otherwise lead with its operator. Both go, leaving the
+node named by what it renders of itself: `x - 5' inside `3 (x - 5)'
+by its `-' rather than by the `(' one column past its parent's own
+stop, where the walk had nowhere left to go.
+
+A node whose brackets are its own (`maf--comp-own-brackets-p') keeps
+them, and so does one whose glyphs do not open and close with a paren
+pair."
+  (let* ((visible (cl-remove-if (lambda (p) (eq (aref text p) ?\s)) own))
+         (open (car visible))
+         (close (car (last visible))))
+    (if (and open close (/= open close)
+             (not (maf--comp-own-brackets-p expr))
+             (eq (aref text open) ?\()
+             (eq (aref text close) ?\)))
+        (remq close (remq open own))
+      own)))
+
 (defun maf--comp-landing-positions ()
   "Buffer positions naming each compound sub-formula of the entry, sorted.
 One position per tagged sub-formula that is an operation rather than an
@@ -332,7 +367,9 @@ delimiter — preferring non-blank over the padding around an operator,
 so each is a place `calc-find-selected-part' answers with that node,
 the same landing `maf--up-node-position' picks. A juxtaposed product
 draws its multiplication as nothing but a space, so its position is
-blank.
+blank. The parens a context puts around a node are not its own glyphs
+(`maf--comp-drop-context-parens'), so the sum in `3 (x + 1)' is named
+at its `+', leaving the walk somewhere to go from its parent's stop.
 
 Numbers and variables (`math-primp') are left out: an atom is one
 noun, and walking the nouns is `maf-forward-noun''s job, so an entry
@@ -388,6 +425,8 @@ composition is not flat."
                                                         (< p (cdr c))))
                                                  children)
                                          collect p))
+                                   (own (maf--comp-drop-context-parens
+                                         own expr text))
                                    (fpos (or (cl-find-if
                                               (lambda (p)
                                                 (not (eq (aref text p) ?\s)))

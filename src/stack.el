@@ -1869,7 +1869,12 @@ name, a vector at its bracket. That glyph is where resolve names the
 sub-formula, the landing `maf-up-expression' picks, so a few presses
 cross the entry target by target, offering every compound target once.
 A juxtaposed product renders its multiplication as nothing but a
-space, so its stop is that space, as in the first step above.
+space, so its stop is that space, as in the first step above. The
+parens calc prints around an operand only where precedence asks for
+them are the context's rather than the operand's own glyphs, so a
+parenthesized operation is named at its operator like any other:
+
+  1:  y^2 = 3| (x - 5)  =>  1:  y^2 = 3 (x |- 5)   (the difference)
 
 The nouns are not stops: a number or a variable is one term, and
 walking those is `maf-forward-noun''s (M-f) job, so the two motions
@@ -2068,20 +2073,46 @@ Of the positions that name NODE, the first non-blank one wins: those
 are the glyphs NODE renders itself, and landing on the operator or
 paren reads better than landing on the space before it. A juxtaposed
 product renders its multiplication as nothing but a space, so blank is
-all it has; then the first position stands.
+all it has; then the first position stands. The parens a context puts
+around NODE are none of its glyphs (`maf--comp-own-brackets-p'), so
+the pair is passed over and the sum in `3 (x + 1)' is named at its
+`+' — the same landing `maf--comp-landing-positions' reads off the
+composition for the operand walk.
 
 `calc-prepare-selection' must have run for the entry REGION covers."
+  (maf--up-pick-landing (maf--up-naming-positions node region) node))
+
+(defun maf--up-naming-positions (node region)
+  "Positions in REGION where point resolves to NODE, in order."
   (save-excursion
-    (let ((blank nil))
+    (let ((found nil))
       (goto-char (car region))
-      (catch 'found
-        (while (< (point) (cdr region))
-          (when (eq (ignore-errors (calc-find-selected-part)) node)
-            (if (memq (char-after) '(?\s ?\t ?\n))
-                (unless blank (setq blank (point)))
-              (throw 'found (point))))
-          (forward-char 1))
-        blank))))
+      (while (< (point) (cdr region))
+        (when (eq (ignore-errors (calc-find-selected-part)) node)
+          (push (point) found))
+        (forward-char 1))
+      (nreverse found))))
+
+(defun maf--up-pick-landing (positions node)
+  "The landing among POSITIONS, the places that name NODE, or nil.
+The first non-blank position wins, the first blank one standing in when
+NODE has nothing but blanks to be named by. A paren pair enclosing all
+of them is the context's punctuation rather than NODE's own glyphs, and
+drops out first, so a parenthesized operation is named inside its
+parens: `x + 1' in `3 (x + 1)' at the `+', as it is at the top of an
+entry, where nothing parenthesizes it."
+  (let* ((blankp (lambda (p) (memq (char-after p) '(?\s ?\t ?\n))))
+         (visible (cl-remove-if blankp positions))
+         (open (car visible))
+         (close (car (last visible)))
+         (positions (if (and open close (/= open close)
+                             (not (maf--comp-own-brackets-p node))
+                             (eq (char-after open) ?\()
+                             (eq (char-after close) ?\)))
+                        (remq close (remq open positions))
+                      positions)))
+    (or (cl-find-if-not blankp positions)
+        (car positions))))
 
 (defun maf--up-step (node m)
   "Return (ANCESTOR . POSITION) one step out from NODE, or nil at the root.
