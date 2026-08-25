@@ -21,7 +21,8 @@
 
 * review
 
-* maf-latex
+* NEXT maf-latex
+  - [ ] refine
   - [ ] support in maf-preview
   - [ ] support in maf-formulas
 
