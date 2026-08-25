@@ -27,7 +27,7 @@
   - [ ] change options: off, always on, show on command only
 
 * review
-  - [ ] fix bug:
+  - [-] fix bug:
     y^2 = 3 |(x - 5)
     `M-e` won't go beyond here
 
