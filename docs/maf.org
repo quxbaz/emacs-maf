@@ -38,7 +38,6 @@
     - [-] rewrite `U` as union `||`
       similar to other conversions on confirmation (`RET`)
     - [-] bind `J` to insert `*` (same as entering `*` key)
-  - [-] port binding `F` to vector fold (reduce)
   - *maf-persist*
     - [-] `l S` (maf-save-stack) should print a confirmation message in minibuffer.
 
