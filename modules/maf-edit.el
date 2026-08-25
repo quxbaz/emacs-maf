@@ -139,6 +139,22 @@ returns is re-rendered, and an edit session started on it hands the
 rendering back to this hook — or an entry could change under a commit
 that never touched it.")
 
+(defvar maf-edit-transform-text-functions nil
+  "Functions rewriting a changed entry's text before it is parsed.
+Called in order, each on the previous one's result, on the text of
+every entry whose text has changed — and on nothing else: an
+untouched entry keeps its value object and is never reparsed. nil,
+the default, hands the buffer text straight on. Each runs before
+`maf-edit-parse-text-function', so a dialect sees text already in the
+notation calc reads.
+
+The text-side counterpart of `maf-edit-transform-value-functions',
+and the extension point for a spelling calc has no reading for at
+all: a value transform can only rewrite something that parsed, so a
+module whose notation is not calc\='s — U for the union calc writes ||
+\(see maf-editplus) — has to reach the text. Confined to commit, so
+what the session shows is what was typed.")
+
 (defvar maf-edit-mode-map
   (let ((map (make-sparse-keymap)))
     ;; RET confirms; the newline gesture (split/continue) moves to
@@ -442,6 +458,20 @@ and x=1,y=2 the vector of both equations."
   (if (maf-edit--top-level-comma-p text)
       (concat "[" text "]")
     text))
+
+(defun maf-edit--parse-text (text)
+  "TEXT as `math-read-expr' should see it.
+The whole input side of a commit in one place, in the order the
+layers stand: `maf-edit-transform-text-functions' first, so a module
+may rewrite a notation calc has no reading for; then the dialect\='s
+own `maf-edit-parse-text-function'; then the brackets a top-level
+comma earns (`maf-edit--implicit-vector'). Nothing here changes the
+buffer — the session keeps showing what was typed."
+  (maf-edit--implicit-vector
+   (funcall maf-edit-parse-text-function
+            (seq-reduce (lambda (s f) (funcall f s))
+                        maf-edit-transform-text-functions
+                        text))))
 
 ;;; Colon quotients
 
@@ -1468,10 +1498,11 @@ have to read every copy back from whatever the display shows."
 Entries whose text is untouched keep their value objects and
 selections; changed or new text is parsed in the current input modes
 and committed exactly as written, never simplified — 1 + 2 + x stays
-1 + 2 + x. The one exception is deliberate:
-`maf-edit-transform-value-functions' maps each reparsed value, so a
-module can commit a spelling calc prefers over the one the session
-wanted visible.
+1 + 2 + x. The exceptions are deliberate and both belong to modules:
+`maf-edit-transform-text-functions' rewrites the text before it is
+parsed, and `maf-edit-transform-value-functions' maps each reparsed
+value, so a module can commit a spelling calc prefers over the one
+the session wanted visible (`maf-edit--parse-text').
 
 An entry emptied to blank commits as deleted, and so does one left
 holding nothing but empty parentheses: () wraps nothing and resolves
@@ -1514,9 +1545,7 @@ session `maf-edit' opened there."
           (push (overlay-get o 'maf-edit-val) vals)
           (push (overlay-get o 'maf-edit-sel) sels))
          (t
-          (let ((v (math-read-expr
-                    (maf-edit--implicit-vector
-                     (funcall maf-edit-parse-text-function text)))))
+          (let ((v (math-read-expr (maf-edit--parse-text text))))
             ;; A colon calc refused gets a second reading as a quotient
             ;; (`maf-edit--colon-quotient') — only ever for text already
             ;; refused whole, so nothing that parses is reread. A retry
@@ -1525,9 +1554,7 @@ session `maf-edit' opened there."
             (when (eq (car-safe v) 'error)
               (let ((again (maf-edit--colon-quotient text)))
                 (when again
-                  (let ((v2 (math-read-expr
-                             (maf-edit--implicit-vector
-                              (funcall maf-edit-parse-text-function again)))))
+                  (let ((v2 (math-read-expr (maf-edit--parse-text again))))
                     (unless (eq (car-safe v2) 'error)
                       (setq v v2))))))
             (if (eq (car-safe v) 'error)
