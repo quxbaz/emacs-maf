@@ -1,4 +1,4 @@
-;; `maf-forward-operand' (S-SPC) and `maf-backward-operand' (M-S-SPC),
+;; `maf-forward-operand' (M-e) and `maf-backward-operand' (M-a),
 ;; its reverse over the same stops: every operation of an entry is one
 ;; stop, the whole entry among them, each at the first glyph it renders
 ;; itself — the place resolve names it. The nouns are not stops: a
@@ -34,13 +34,13 @@
   ;; multiplies with.
   (progn (goto-char (point-min)) (call-interactively 'maf-beginning-of-entry))
   (cl-assert (looking-at "1 \\+ sqrt"))
-  (progn (execute-kbd-macro (kbd "S-SPC")) nil)
+  (progn (execute-kbd-macro (kbd "M-e")) nil)
   (cl-assert (looking-at "\\+ sqrt"))
   (cl-assert (string= (maf-test--part-at-point) "1 + sqrt(x * y)"))
-  (progn (execute-kbd-macro (kbd "S-SPC")) nil)
+  (progn (execute-kbd-macro (kbd "M-e")) nil)
   (cl-assert (looking-at "sqrt(x y)$"))
   (cl-assert (string= (maf-test--part-at-point) "sqrt(x * y)"))
-  (progn (execute-kbd-macro (kbd "S-SPC")) nil)
+  (progn (execute-kbd-macro (kbd "M-e")) nil)
   (cl-assert (looking-at " y)$"))
   (cl-assert (string= (maf-test--part-at-point) "x * y"))
 
@@ -57,7 +57,7 @@
   ;; Backward retraces the same stops on its own key, and signals in
   ;; turn at the entry's first stop rather than climbing to the entry
   ;; above.
-  (progn (execute-kbd-macro (kbd "M-S-SPC")) nil)
+  (progn (execute-kbd-macro (kbd "M-a")) nil)
   (cl-assert (looking-at "sqrt(x y)$"))
   (let ((current-prefix-arg 1)) (call-interactively 'maf-backward-operand))
   (cl-assert (looking-at "\\+ sqrt"))
@@ -80,11 +80,11 @@
   ;; margin is the noun motion's.
   (progn (calc-cursor-stack-index 1) (call-interactively 'maf-beginning-of-entry))
   (cl-assert (looking-at "6 x \\+ 12"))
-  (progn (execute-kbd-macro (kbd "S-SPC")) nil)
+  (progn (execute-kbd-macro (kbd "M-e")) nil)
   (cl-assert (looking-at " x \\+ 12"))
   (cl-assert (looking-back "1:  6" (line-beginning-position)))
   (cl-assert (string= (maf-test--part-at-point) "6 * x"))
-  (progn (execute-kbd-macro (kbd "S-SPC")) nil)
+  (progn (execute-kbd-macro (kbd "M-e")) nil)
   (cl-assert (looking-at "\\+ 12$"))
   (cl-assert (string= (maf-test--part-at-point) "6 * x + 12"))
   (calc-pop (calc-stack-size))
@@ -97,13 +97,13 @@
   (progn (goto-char (point-min)) (call-interactively 'maf-beginning-of-entry))
   (cl-assert (looking-at "(a \\+ b)"))
   (cl-assert (string= (maf-test--part-at-point) "a + b"))
-  (progn (execute-kbd-macro (kbd "S-SPC")) nil)
+  (progn (execute-kbd-macro (kbd "M-e")) nil)
   (cl-assert (looking-at " (2 c - d)$"))
   (cl-assert (string= (maf-test--part-at-point) "(a + b) * (2 * c - d)"))
-  (progn (execute-kbd-macro (kbd "S-SPC")) nil)
+  (progn (execute-kbd-macro (kbd "M-e")) nil)
   (cl-assert (looking-at "(2 c - d)$"))
   (cl-assert (string= (maf-test--part-at-point) "2 * c - d"))
-  (progn (execute-kbd-macro (kbd "S-SPC")) nil)
+  (progn (execute-kbd-macro (kbd "M-e")) nil)
   (cl-assert (looking-at " c - d)$"))
   (cl-assert (string= (maf-test--part-at-point) "2 * c"))
   (cl-assert (eq 'signalled
@@ -145,7 +145,7 @@
   ;; as it does anywhere else.
   (progn (calc-cursor-stack-index 4) (call-interactively 'maf-beginning-of-entry))
   (cl-assert (looking-at "6 x \\+ 12"))
-  (progn (execute-kbd-macro (kbd "S-SPC")) nil)
+  (progn (execute-kbd-macro (kbd "M-e")) nil)
   (cl-assert (looking-at " x \\+ 12"))
   (cl-assert (= (calc-locate-cursor-element (point)) 4))
   (call-interactively 'maf-toggle-big-language)

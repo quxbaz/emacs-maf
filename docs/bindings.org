@@ -414,22 +414,23 @@
    - [X] `M-m` maf-beginning-of-entry
    - [X] `M-f` maf-forward-noun
    - [X] `M-b` maf-backward-noun
-   - [X] `S-SPC` maf-forward-operand (2026-08-24: the freed key's new
-     tenant, after maf-forward-space was deleted 2026-08-23. Stack
-     mode only — no editplus key carries it into an edit session.
-     Later the same day the stops lost the nouns: only an operation is
-     a landing, numbers and variables being M-f's, so the two motions
-     divide the entry rather than covering the same columns. 2026-08-25:
-     confined to one entry as well — the walk signals at the entry's
-     first and last stop instead of crossing the margin into its
-     neighbour, both motions together)
-   - [X] `M-S-SPC` maf-backward-operand (2026-08-25: S-SPC's reverse
-     over the same stops — the forward key with meta added, calc and
-     the global map both unbound there, stack mode only like the
-     forward walk. Wanted a decode entry of its own: xterm.el carries
-     keycode 32 under alt and ctrl+alt, never under a shift, so
-     alt+shift falls through as the plain shift does. It held C-M-SPC
-     for a few hours the same day, the key the request meant to name)
+   - [X] `M-e` maf-forward-operand (2026-08-24 on `S-SPC`, the key
+     freed when maf-forward-space was deleted 2026-08-23. Stack mode
+     only — no editplus key carries it into an edit session. Later the
+     same day the stops lost the nouns: only an operation is a
+     landing, numbers and variables being M-f's, so the two motions
+     divide the entry rather than covering the same columns.
+     2026-08-25: confined to one entry as well — the walk signals at
+     the entry's first and last stop instead of crossing the margin
+     into its neighbour, both motions together. Moved to `M-e` the
+     same day, beside the noun motions on the meta row)
+   - [X] `M-a` maf-backward-operand (2026-08-25: the forward walk's
+     reverse over the same stops, stack mode only like it. It held
+     `C-M-SPC` for a few hours, then `M-S-SPC`, before the pair moved
+     to the meta row together. The shifted spaces cost a terminal
+     decode entry each — xterm.el carries keycode 32 under alt and
+     ctrl+alt, never under a shift — and the meta letters need none,
+     so those entries went with them)
    - [X] `C-M-u` maf-up-expression
    - [X] `C-M-k` maf-reset
    - [X] `C-M-l` maf-reset-settings
@@ -644,9 +645,11 @@
    - not weak, despite looks: `;` (calc-semi, matrix entry punctuation
      — the [ ] lesson)
 ** modified keys
-   - free meta: `M-a` `M-d` `M-e` `M-g` `M-j` `M-q` `M-t` `M-z`,
-     and `M-r` since poly-roots moved to l t (2026-08-20; `M-h` went
-     to the history the same day)
+   - free meta: `M-d` `M-g` `M-j` `M-q` `M-t` `M-z`, and `M-r` since
+     poly-roots moved to l t (2026-08-20; `M-h` went to the history
+     the same day). `M-a` / `M-e` went to the operand motions
+     2026-08-25 — the global map's sentence keys, which a stack buffer
+     has no sentences for
    - cautious meta: `M-v` (scrolling's other half), `M-y` (yank-pop
      pairs with maf-yank's C-y); never `M-x`
    - free-ish control: `C-z` (suspend, commonly rebound anyway); `C-t`

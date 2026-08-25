@@ -26,7 +26,7 @@
 * review
   - [ ] fix bug:
     y^2 = 3 |(x - 5)
-    S-SPC won't go beyond here
+    M-e won't go beyond here
 
 * major features [8/12]
   - [X] bindings module

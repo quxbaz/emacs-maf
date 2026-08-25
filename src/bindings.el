@@ -604,25 +604,22 @@
 (maf-bindings-define '(native) "M-b" #'maf-backward-noun)
 
 ;; Motion by operand — the next place point names a sub-formula, so
-;; repeated presses offer every target of the entry in turn. Shift on
-;; the space that opens an edit session: calc binds nothing on S-SPC,
-;; and without the binding the shifted press would fall back to that
-;; plain SPC. Stack mode only, deliberately: an edit session swaps the
-;; local map and turns maf-mode off, and no editplus key carries this
-;; motion into the editable text — the stack's targets are what it
-;; walks. A prefix argument counts operands, backward when negative; a
-;; terminal needs the decode entries at the end of this file to say
-;; the key at all.
+;; repeated presses offer every target of the entry in turn. On M-e
+;; and M-a, beside the noun motions on M-f and M-b: the meta row is
+;; where maf's motions over an entry live, and the two pairs read
+;; alike, forward on the right hand's key and back on the left's. The
+;; shifted spaces they were (S-SPC, M-S-SPC) cost a terminal decode
+;; table to say at all — xterm.el carries keycode 32 under alt and
+;; ctrl+alt only — where a meta letter needs nothing.
 ;;
-;; The reverse walk takes M-S-SPC: the forward key with meta added, so
-;; the pair reads as one gesture and its reverse. Nothing is displaced
-;; — calc binds it no more than the shifted space, and the global map
-;; leaves the shifted form free (`just-one-space' holds the plain
-;; M-SPC, which this does not touch). A terminal needs the decode
-;; entries at the end of this file for this one too: xterm.el carries
-;; keycode 32 under alt and under ctrl+alt, never under a shift.
-(maf-bindings-define '(native) "S-SPC" #'maf-forward-operand)
-(maf-bindings-define '(native) "M-S-SPC" #'maf-backward-operand)
+;; Calc binds neither key, so what is displaced is the global map's:
+;; the sentence motions in stock Emacs, whose sentences a stack buffer
+;; does not have. Stack mode only, deliberately: an edit session swaps
+;; the local map and turns maf-mode off, and no editplus key carries
+;; this motion into the editable text — the stack's targets are what
+;; it walks. A prefix argument counts operands, backward when negative.
+(maf-bindings-define '(native) "M-e" #'maf-forward-operand)
+(maf-bindings-define '(native) "M-a" #'maf-backward-operand)
 
 ;; Step out to the enclosing sub-formula, taking the key the global map
 ;; gives `backward-up-list' — the same gesture, over the formula rather
@@ -685,13 +682,6 @@
 ;; C-! through C-?, and | is 124). Which modifier the terminal reports
 ;; depends on whether it counts the shift that produced the | — take
 ;; both 6 (ctrl+shift) and 5 (ctrl alone).
-;;
-;; The operand motions have the same gap a third way: a terminal
-;; without modifyOtherKeys sends Shift+Space as the plain space it
-;; shifts, and one with it spells the key out — but xterm.el's table
-;; carries keycode 32 under alt (modifier 3) and ctrl+alt (7) only, so
-;; neither the forward walk's shift (2) nor the reverse walk's
-;; alt+shift (4) is decoded, and both fall through like the others.
 (defun maf--tty-setup-keys ()
   "Decode terminal sequences for keys maf binds and `term/xterm.el' omits."
   (define-key input-decode-map "\e[27;7;127~" [C-M-backspace])
@@ -699,11 +689,7 @@
   (define-key input-decode-map "\e[27;6;124~" [?\C-\|])
   (define-key input-decode-map "\e[124;6u" [?\C-\|])
   (define-key input-decode-map "\e[27;5;124~" [?\C-\|])
-  (define-key input-decode-map "\e[124;5u" [?\C-\|])
-  (define-key input-decode-map "\e[27;2;32~" [?\S-\s])
-  (define-key input-decode-map "\e[32;2u" [?\S-\s])
-  (define-key input-decode-map "\e[27;4;32~" [?\M-\S-\s])
-  (define-key input-decode-map "\e[32;4u" [?\M-\S-\s]))
+  (define-key input-decode-map "\e[124;5u" [?\C-\|]))
 
 ;; `input-decode-map' is terminal-local, so this runs once per tty
 ;; rather than once at load.

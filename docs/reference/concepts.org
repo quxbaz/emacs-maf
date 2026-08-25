@@ -608,7 +608,7 @@ row, is walked past rather than landed on — and it carries an active
 selection along with it, that being what a command would resolve to
 instead of point.
 
-=maf-forward-operand= (S-SPC) walks the same landings sideways rather
+=maf-forward-operand= (M-e) walks the same landings sideways rather
 than upward: every /operation/ of the entry is one stop, the whole
 entry among them, each at the first glyph it renders itself, so a few
 presses offer every compound target of the entry in turn. The nouns
@@ -624,7 +624,7 @@ walk, read off the rendering as text. Either way the walk is confined
 to the entry point sits in: the first and last stops are where it
 stops asking, and it signals at the margin rather than carrying point
 into a neighbouring entry, which is a line of its own to move to.
-=maf-backward-operand= (M-S-SPC) is the same walk the other way, over
+=maf-backward-operand= (M-a) is the same walk the other way, over
 the same stops, so the two retrace each other.
 
 =maf-goto-left-side= (=(=) and =maf-goto-right-side= (=)=) arrive at
