@@ -39,7 +39,7 @@
       similar to other conversions on confirmation (`RET`)
     - [-] bind `J` to insert `*` (same as entering `*` key)
   - *maf-persist*
-    - [-] `l S` (maf-save-stack) should print a confirmation message in minibuffer.
+    - [X] `l S` (maf-save-stack) should print a confirmation message in minibuffer.
 
 * maf-latex
   - [ ] support in maf-preview
