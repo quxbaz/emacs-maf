@@ -110,6 +110,33 @@
     (cl-assert (looking-at-p "2:  5"))
     (cl-assert (null (get-text-property (point) 'face))))
 
+  ;; A state's third slot is the command the change landed under, and
+  ;; the log echoes it after the label, parenthesised. The label leads —
+  ;; it names the operation — and the command names the code that ran,
+  ;; which a trail prefix like "mul" does not say.
+  (progn (setq maf-history--states
+               (list (list (list 12) "mul" 'mafcmd-mul)
+                     (list (list 4 3) "entry" 'calcDigit-nondigit)
+                     (list (list 3) "undo" 'undo)
+                     (list (list 9) "solo"))
+               maf-history--index 0)
+         (maf-history--render t))
+  (with-current-buffer (maf-history--buffer)
+    ;; A label that is already the command's name says it once; a state
+    ;; with no command recorded has no echo to give.
+    (cl-assert (equal (buffer-substring-no-properties (point-min) (point-max))
+                      (concat "▸ - mul (mafcmd-mul)\n"
+                              "  + entry (calcDigit-nondigit)\n"
+                              "  ~ undo\n"
+                              "  · solo\n")))
+    ;; The echo is shadowed, so the label still carries the line.
+    (progn (goto-char (point-min)) (search-forward "(mafcmd-mul") (backward-char 1))
+    (cl-assert (equal (get-text-property (point) 'face)
+                      '(shadow maf-history-current)))
+    ;; It is part of the row, so point anywhere along it still names the
+    ;; state -- the whole line carries the index.
+    (cl-assert (= (get-text-property (point) 'maf-history-index) 0)))
+
   ;; A state before an emptied stack is still a state to diff against, so
   ;; the first entry after one is highlighted rather than left plain.
   (progn (setq maf-history--states (list (list (list 7) "new")

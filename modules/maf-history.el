@@ -260,6 +260,19 @@ multi-value push) — so unnamed steps stay legible and 1:1 with `u'/`i'."
           ((symbolp label) (symbol-name label))
           (t "entry"))))
 
+(defun maf-history--command-name (state)
+  "Return the name of the command that made STATE, or nil to show none.
+The label names the operation and is what the log leads with — a trail
+prefix like \"fctr\", or a structural reading like \"dupe\" — while the
+command is the code that ran, which no prefix says. A label that is
+already the command's name says it once and takes no echo; a state
+recorded outside any command has no name to give."
+  (let ((command (nth 2 state)))
+    (and command
+         (symbolp command)
+         (let ((name (symbol-name command)))
+           (and (not (equal name (maf-history--label state))) name)))))
+
 (defun maf-history--marker (values older has-older)
   "Return (CHAR . FACE) marking how VALUES changed the stack from OLDER.
 The kinds a git UI shows: `+' for a state that added an entry, `-' for
@@ -345,11 +358,12 @@ the wide one; the pair is one UI, and the keys drive both."
 One line per recorded state, newest at the top and oldest at the
 bottom, so the latest work is where the eye starts. Each line is a
 change marker (see `maf-history--marker') and the action that produced
-the state, the current one marked and on `maf-history-current'. Each
-line carries its state's index, so point lands on a state rather than
-merely near one, and point is left on the current line — in the log
-the selection is where point is. The header line carries the position
-counter."
+the state — its label, and after it the command that ran (see
+`maf-history--command-name') — the current one marked and on
+`maf-history-current'. Each line carries its state's index, so point
+lands on a state rather than merely near one, and point is left on the
+current line — in the log the selection is where point is. The header
+line carries the position counter."
   (let ((total (length maf-history--states))
         (index maf-history--index)
         (target nil)
@@ -370,7 +384,15 @@ counter."
           (let ((mstart (point)))
             (insert (car marker) " ")
             (put-text-property mstart (1+ mstart) 'face (cdr marker)))
-          (insert (maf-history--label state) "\n")
+          (insert (maf-history--label state))
+          ;; The command that ran, after the operation it goes by, in
+          ;; the parentheses an elisp name is read in. On `shadow', so
+          ;; the label still carries the line and the name reads as the
+          ;; footnote it is; the log truncates rather than wraps, so a
+          ;; narrow window drops the echo and keeps the label.
+          (when-let ((name (maf-history--command-name state)))
+            (insert " " (propertize (format "(%s)" name) 'face 'shadow)))
+          (insert "\n")
           (put-text-property start (point) 'maf-history-index i)
           (when current
             ;; Appended, so the marker keeps its own colour and only
@@ -544,7 +566,8 @@ mean something else beside a stack — line motion and RET.")
   "Major mode for the calc stack history\='s action log.
 The left window of the browser: one line per recorded state, newest at
 the top, each a change marker (+ added, - removed, ~ changed in place)
-and the action that produced it, the current one marked.
+and the action that produced it — the operation it goes by, and after
+it the command that ran — the current one marked.
 The stack that action left shows in `maf-history-stack-mode' beside
 it, following point as it moves. \<maf-history-mode-map>
 \[maf-history-previous] steps to older states and \[maf-history-next]
