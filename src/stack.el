@@ -715,17 +715,41 @@ entry at home.
                     (nthcdr 3 expr)))
            (t expr))))
 
-(defun maf--anchor-on-node (m node)
+(defun maf--anchor-offset-on-node (m node)
+  "Point's character offset into NODE's rendering, or nil.
+NODE is a sub-formula of the entry at stack level M, read before a
+rewrite so the offset can be replayed against the moved node
+afterwards (see `maf--anchor-on-node'). nil when point is outside
+NODE's rendering, or the entry does not render flat.
+
+`calc-prepare-selection' sets `calc-keep-selection', which the commands
+that call this bind around their own rewrite; the binding here keeps
+the probe from leaking that flag past them."
+  (ignore-errors
+    (let ((calc-keep-selection calc-keep-selection))
+      (calc-prepare-selection m)
+      (maf--comp-node-point-offset node))))
+
+(defun maf--anchor-on-node (m node &optional offset)
   "Put point on NODE within the entry at stack level M; nil if not found.
 For the commands that hand a rewrite to calc and then want point to
 follow the term it moved. NODE is matched by identity in the freshly
 rewritten entry, so it lands only where the rewrite reused the same
 cons — true of an associative shift within a + or * chain, false once
 a - or / crossing wraps the term in a fresh neg/reciprocal. Callers
-fall back to a positional restore on nil."
+fall back to a positional restore on nil.
+
+OFFSET, from `maf--anchor-offset-on-node' before the rewrite, keeps the
+character of NODE point was on rather than pulling it back to NODE's
+first character. The term travels whole, so every grip on it survives
+the trip: from the = of an element of [h = 0, p = -4, k = 0] point is
+on that = wherever the element lands, and from the 2 of [a, b, c12] on
+that 2 — not on the p or the c. Without one, the start of NODE's
+rendering is the only placement it names."
   (ignore-errors
     (calc-prepare-selection m)
-    (when-let ((pos (maf--comp-node-start-pos node)))
+    (when-let ((pos (or (and offset (maf--comp-node-offset-pos node offset))
+                        (maf--comp-node-start-pos node))))
       (goto-char pos))))
 
 (defun maf--commute (dir arg)
@@ -756,6 +780,10 @@ does nothing rather than signaling calc's \"No term is selected\"."
         (let* ((entry  (calc-top m 'entry))
                (expr   (car entry))
                (sel    (ignore-errors (calc-auto-selection entry)))
+               ;; Read before the rewrite: where in the term point was,
+               ;; so it can ride along on that character rather than
+               ;; being pulled to the term's first one.
+               (anchor (and (consp sel) (maf--anchor-offset-on-node m sel)))
                (direct (and (consp sel)
                             (calc-find-parent-formula expr sel)))
                (parent (and (consp sel)
@@ -787,7 +815,7 @@ does nothing rather than signaling calc's \"No term is selected\"."
                   (calc-wrapper
                    (calc-pop-push-record-list 1 "cmut" (list new)
                                               m (list nil)))
-                  (or (maf--anchor-on-node m sel)
+                  (or (maf--anchor-on-node m sel anchor)
                       (maf--point-restore snapshot))
                   (maf--undo-record-cmd-point snapshot)))))
            ;; An arithmetic chain, where calc's shift is
@@ -806,7 +834,7 @@ does nothing rather than signaling calc's \"No term is selected\"."
                     (calc-commute-right arg))
                 ;; "Term is already leftmost/rightmost" — nothing to do.
                 (error nil))
-              (or (maf--anchor-on-node m sel)
+              (or (maf--anchor-on-node m sel anchor)
                   (maf--point-restore snapshot))
               ;; A single undo reverts point along with the stack.
               (maf--undo-record-cmd-point snapshot)))))))))
@@ -817,9 +845,12 @@ does nothing rather than signaling calc's \"No term is selected\"."
   a + b + c|  =>  a + c| + b   (point on c)
 
 Point selects the term as usual — the sub-formula under the cursor — and
-follows it as it moves.  The shift respects the operators it crosses: a
-term moved left past a minus becomes an addition of its negation, past a
-division a multiplication by its reciprocal, so the value is preserved.
+follows it as it moves, keeping the character of it that it had: from
+the = of an element of [h = 0, p =| -4, k = 0] point is on that = once
+the element has moved, not back on its p.  The shift respects the
+operators it crosses: a term moved left past a minus becomes an addition
+of its negation, past a division a multiplication by its reciprocal, so
+the value is preserved.
 Repeat to walk the term further left; with the entry below the top, the
 lower entry is acted on in place.
 

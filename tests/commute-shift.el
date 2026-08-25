@@ -178,6 +178,63 @@
                       "[[3, 4, 9], [1, 2], [5]]"))
   (calc-pop 1)
 
+  ;; --- Point keeps its place in the term, not the term's first character ---
+
+  ;; On the = of an element, point is on that = again once the element
+  ;; has moved -- not pulled back to the element's leading p.
+  (maf-push "[h = 0, p = -4, k = 0]")
+  (progn (goto-char (point-min)) (search-forward "p ="))
+  (call-interactively 'maf-commute-left)
+  (cl-assert (string= (math-format-value (calc-top 1 'full))
+                      "[p = -4, h = 0, k = 0]"))
+  (cl-assert (string= (buffer-substring (- (point) 3) (point)) "p ="))
+  ;; And back the other way, from the same grip.
+  (call-interactively 'maf-commute-right)
+  (cl-assert (string= (math-format-value (calc-top 1 'full))
+                      "[h = 0, p = -4, k = 0]"))
+  (cl-assert (string= (buffer-substring (- (point) 3) (point)) "p ="))
+  (calc-pop 1)
+
+  ;; The same for a composite element gripped by its comma: point is on
+  ;; the moved element's own comma, not on its opening bracket.
+  (maf-push "[[1, 2], [3, 4, 9], [5]]")
+  (progn (goto-char (point-min)) (search-forward "3,") (backward-char 1))
+  (call-interactively 'maf-commute-left)
+  (cl-assert (string= (math-format-value (calc-top 1 'full))
+                      "[[3, 4, 9], [1, 2], [5]]"))
+  (cl-assert (eq (char-after) ?,))
+  (cl-assert (eq (char-before) ?3))
+  (calc-pop 1)
+
+  ;; The term travels whole, so a grip inside one of its own operands
+  ;; is kept too: from the last digit of a multi-character name, point
+  ;; is on that digit again, not on the name's first letter.
+  (maf-push "[a, b, c12]")
+  (progn (goto-char (point-min)) (search-forward "c12") (backward-char 1))
+  (call-interactively 'maf-commute-left)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "[a, c12, b]"))
+  (cl-assert (eq (char-after) ?2))
+  (cl-assert (string= (buffer-substring (- (point) 2) (1+ (point))) "c12"))
+  (calc-pop 1)
+
+  ;; The same inside a composite element, where the inner term is what
+  ;; commutes: point holds its digit through the shift.
+  (maf-push "[a, b + c12, d]")
+  (progn (goto-char (point-min)) (search-forward "c12") (backward-char 1))
+  (call-interactively 'maf-commute-left)
+  (cl-assert (string= (math-format-value (calc-top 1 'full))
+                      "[a, c12 + b, d]"))
+  (cl-assert (eq (char-after) ?2))
+  (calc-pop 1)
+
+  ;; A single-character term has one place to be, and keeps it.
+  (maf-push "[a, b, c]")
+  (progn (goto-char (point-min)) (search-forward "b") (backward-char 1))
+  (call-interactively 'maf-commute-left)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "[b, a, c]"))
+  (cl-assert (eq (char-after) ?b))
+  (calc-pop 1)
+
   ;; A vector nested in a larger expression shifts in place.
   (maf-push "x + [a, b, c]")
   (progn (goto-char (point-min)) (search-forward "b") (backward-char 1))
