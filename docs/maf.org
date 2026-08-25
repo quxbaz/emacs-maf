@@ -25,8 +25,8 @@
 
 * review
 
-* major features [0/10]
-  - [ ] bindings module
+* major features [8/10]
+  - [X] bindings module
   - [X] persistent sub-formula highlighting
   - [X] history module (né timeline)
   - [X] omni-options menu buffer
