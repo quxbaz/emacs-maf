@@ -107,6 +107,10 @@
                   ("p" . previous-line) ("k" . previous-line)
                   ("<" . maf-history-stack-first)
                   (">" . maf-history-stack-last)
+                  ;; The same two under a modifier, for a hand already
+                  ;; holding control down.
+                  ("C-<" . maf-history-stack-first)
+                  ("C->" . maf-history-stack-last)
                   ("RET" . maf-history-insert)))
     (cl-assert (eq (lookup-key maf-history-stack-mode-map (kbd (car cell)))
                    (cdr cell))
@@ -125,6 +129,8 @@
   ;; < reaches the top of a newest-first log, > the bottom.
   (cl-assert (eq (lookup-key maf-history-mode-map (kbd "<")) 'maf-history-newest))
   (cl-assert (eq (lookup-key maf-history-mode-map (kbd ">")) 'maf-history-oldest))
+  (cl-assert (eq (lookup-key maf-history-mode-map (kbd "C-<")) 'maf-history-newest))
+  (cl-assert (eq (lookup-key maf-history-mode-map (kbd "C->")) 'maf-history-oldest))
   ;; Retired keys stay retired: none of them still runs a browsing
   ;; command. They are not asserted unbound — special-mode keeps its
   ;; own claim on some (h is `describe-mode'), which is what should
