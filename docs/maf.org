@@ -15,9 +15,8 @@
 * review
   - *maf-history* rendering
     - refine history log
-      - [ ] if action is duplication (eg, RET on an entire entry), then action
-        should be "dupe"
-      - [ ] currently on "add" items, the added item is not highlighted in
+      - [-] if action is duplication (eg, RET on an entire entry), then action should be "dupe"
+      - [-] currently on "add" items, the added item is not highlighted in
         yellow in the corresponding stack
   - [ ] bind `C-M-SPC` to the reverse of `S-SPC`. move to the PREV operand
     - same conditions. only work in stack mode.
