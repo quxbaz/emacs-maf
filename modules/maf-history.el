@@ -566,8 +566,11 @@ mean something else beside a stack — line motion and RET.")
 (define-key maf-history-mode-map (kbd "C-M-k") #'maf-history-clear)
 ;; ? describes the command a row names, the reading that makes the
 ;; echoed command name useful rather than only informative. It shadows
-;; the `describe-mode' special-mode puts here, which stays on h.
+;; the `describe-mode' special-mode puts here, which stays on h. w is
+;; the same command on a home-row key, for reading down the log without
+;; reaching for a shifted one.
 (define-key maf-history-mode-map (kbd "?") #'maf-history-describe-command)
+(define-key maf-history-mode-map (kbd "w") #'maf-history-describe-command)
 (define-key maf-history-mode-map (kbd "q") #'maf-history-quit)
 
 ;; The stack: the same keys navigate this buffer instead of the log —
@@ -732,8 +735,9 @@ so a name read off the log leads to what it does without leaving the
 browser to look it up. Point picks the state in the log; the stack
 window describes the state it is showing.
 
-On \\`?', where `special-mode' puts `describe-mode'. The mode's own
-help stays on \\`h', which runs it too."
+On \\`?', where `special-mode' puts `describe-mode' — the mode's own
+help stays on \\`h', which runs it too — and on \\`w', the same reading
+without a shifted key."
   (interactive)
   (let* ((state (or (maf-history--state-at-point)
                     (user-error "No states recorded yet")))

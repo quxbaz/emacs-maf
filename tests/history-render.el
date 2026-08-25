@@ -144,6 +144,12 @@
   ;; row and not the selection is what it reads.
   (cl-assert (eq (lookup-key maf-history-mode-map (kbd "?"))
                  'maf-history-describe-command))
+  ;; w is the same reading without a shifted key, and the stack window
+  ;; inherits both.
+  (cl-assert (eq (lookup-key maf-history-mode-map (kbd "w"))
+                 'maf-history-describe-command))
+  (cl-assert (eq (lookup-key maf-history-stack-mode-map (kbd "w"))
+                 'maf-history-describe-command))
   ;; The mode's own help keeps the h that `special-mode' also puts it on.
   (cl-assert (eq (lookup-key maf-history-mode-map (kbd "h")) 'describe-mode))
   (with-current-buffer (maf-history--buffer)
