@@ -19,7 +19,7 @@
   "Flattened (KEY-DESCRIPTION . COMMAND) rows of maf-mode-map.")
 
 (defvar maf--snapshot-digit-rows
-  '((";" . maf-digit-colon) ("C-<return>" . maf-digit-commit-here) ("C-g" . maf-digit-quit) ("P" . maf-digit-pi) ("RET" . maf-digit-commit-contextual) ("e" . maf-digit-equal-to) ("j" . maf-digit-jump) ("n" . maf-digit-pi) ("o" . maf-digit-mod-360))
+  '((":" . maf-digit-sqr) (";" . maf-digit-colon) ("C-<return>" . maf-digit-commit-here) ("C-g" . maf-digit-quit) ("P" . maf-digit-pi) ("RET" . maf-digit-commit-contextual) ("e" . maf-digit-equal-to) ("j" . maf-digit-jump) ("n" . maf-digit-pi) ("o" . maf-digit-mod-360))
   "maf's calc-digit-map overrides, plus C-g.")
 
 (defun maf--snapshot-mismatches (rows)

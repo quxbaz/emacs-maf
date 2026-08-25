@@ -23,10 +23,11 @@
   (calc-pop (calc-stack-size))
 
   ;; Replacement covers every number type the entry can produce: a
-  ;; typed fraction replaces a float leaf.
+  ;; typed fraction replaces a float leaf. The fraction goes in on `;',
+  ;; the colon's key since `:' became the square (maf-digit-sqr).
   (maf-push "2.5 x")
   (progn (goto-char (point-min)) (search-forward "2.5") (backward-char 1))
-  (execute-kbd-macro (kbd "1 : 3 RET"))
+  (execute-kbd-macro (kbd "1 ; 3 RET"))
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "1:3 x"))
   (calc-pop (calc-stack-size))
 

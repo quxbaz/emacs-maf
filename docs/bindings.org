@@ -231,7 +231,9 @@
      beside `W`, the pairing an edit session already makes — `:` and
      `W` both raise to a power there, so the stack answers the same
      way. Calc's fraction divide keeps the key in the calc profile,
-     and the mafcmd table has no fdiv row to strand)
+     and the mafcmd table has no fdiv row to strand. The digit entry
+     answers the same way on `maf-digit-sqr`, the fraction colon it
+     was having moved to `;`)
    - [X] `<` mafcmd-decrement ← calc-scroll-left
    - [X] `>` mafcmd-increment ← calc-scroll-right
    - [X] `x` mafcmd-expand ← calc-execute-extended-command
@@ -632,8 +634,11 @@
      trade already made when < > took calc's horizontal pair
    - `~` — calc-num-prefix: near-free, but a stretch to reach —
      fine for something occasional, wrong for a repeat-heavy command
-   - `:` — calc-fdiv: moderate — fraction division is real but the
-     fraction is also typed in digit entry (1 : 3). Cautious
+   - [X] `:` taken (2026-08-24, see the shadowing list): mafcmd-sqr in
+     the stack, maf-digit-sqr in the entry. The fraction it also typed
+     there (1 : 3) moved to `;`, which had been its twin since — and
+     `:` stays calc's in the two places `;` cannot be, inside an
+     incomplete object and after a radix prefix
    - not weak, despite looks: `;` (calc-semi, matrix entry punctuation
      — the [ ] lesson)
 ** modified keys
