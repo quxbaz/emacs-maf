@@ -637,7 +637,11 @@ it, and the entry's margins — the line-number prefix, the end of the
 line — cross the entry's own relation. Like the climb it asks the
 rendering where the side is nameable rather than computing a column
 (=maf--up-node-position=), so it works in Big language too, and it
-carries an active selection along for the same reason. Home is the one
+carries an active selection along for the same reason. Pressed from the
+side it already names, either key crosses to the other one instead of
+standing still — the side is as far out as that end of the relation
+goes — so one key walks the relation, and the cycle turns on where
+point stands rather than on which key put it there. Home is the one
 place the keys mean something else: there is no entry at point to move
 within, and they keep the blank-vector gesture the edit module gives
 them (=maf-edit-add-vector=).

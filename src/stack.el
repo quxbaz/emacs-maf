@@ -2185,6 +2185,9 @@ SIDE is `left' or `right'. The shared body of `maf-goto-left-side' and
 `maf-goto-right-side'; those docstrings describe what the motion
 promises.
 
+Point already standing where SIDE would land crosses to the other side
+instead, so either key walks the relation on repeat.
+
 At home the paren keys keep the meaning the edit module gives them
 there — a blank vector entry opened at the bottom of the stack — since
 there is no entry at point for the motion to work within. With that
@@ -2199,8 +2202,25 @@ module off there is nothing to fall back to and the motion signals."
              (rel (maf--side-relation expr (calc-find-selected-part))))
         (unless rel
           (user-error "No relation at point"))
-        (let* ((node (nth (if (eq side 'left) 1 2) rel))
-               (pos (maf--up-node-position node (maf--up-entry-region m))))
+        (let* ((region (maf--up-entry-region m))
+               (node (nth (if (eq side 'left) 1 2) rel))
+               (pos (maf--up-node-position node region)))
+          ;; Cycle rather than stand still. Point already on the side
+          ;; the key names has arrived: there is nowhere further out on
+          ;; that end of the relation, so the press crosses to the
+          ;; other side instead and one key walks the whole relation.
+          ;; The test is the landing itself — point sitting where this
+          ;; motion would put it — so it holds however point got there,
+          ;; the mirror key included.
+          (when (and pos (= pos (point)))
+            (let* ((other (if (eq side 'left) 'right 'left))
+                   (other-node (nth (if (eq other 'left) 1 2) rel))
+                   (other-pos (maf--up-node-position other-node region)))
+              ;; A side with nothing to name it by is no destination:
+              ;; the press stays put rather than signalling, since the
+              ;; side it was asked for is where point already is.
+              (when other-pos
+                (setq side other node other-node pos other-pos))))
           (unless pos
             (user-error "Nothing to name the %s side by"
                         (if (eq side 'left) "left" "right")))
@@ -2244,8 +2264,21 @@ used.
 
   |1:  y = (x + 3)^2  =>  1:  |y = (x + 3)^2
 
+Pressed from the side it already names, the key crosses to the other
+one rather than standing still: the side is as far out as that end of
+the relation goes, so the press that would repeat it is a crossing
+instead.
+
+  6 x |+ 12 = 18 y + 6  =>  6 x + 12 = 18 y |+ 6
+
+One key therefore walks the whole relation, and the pair are two ways
+into the same walk — `(' starting it leftward, `)' rightward. The test
+is the landing, not the key that made it, so a `)' arrival cycles under
+`(' just the same.
+
 With a selection up on the entry it travels to the side along with
-point, since a selection is what the next command would resolve.
+point, since a selection is what the next command would resolve — the
+crossing carries it too.
 
 At home, where there is no entry at point, the key keeps the meaning
 the edit module gives it there: a blank vector entry opened at the
@@ -2265,8 +2298,14 @@ that names the whole side, so the next command acts on it entire.
 
   2 x - 3| < 7  =>  2 x - 3 < |7
 
-The two keys together are the whole crossing: one press to the far
-side, one back, whatever term point started on."
+Pressed from the side it already names, it crosses back the same way
+`maf-goto-left-side' does:
+
+  6 x + 12 = 18 y |+ 6  =>  6 x |+ 12 = 18 y + 6
+
+So either key alone is the whole crossing — one press to the far side,
+one back, whatever term point started on — and the two differ only in
+which side they set out for."
   (interactive)
   (maf--goto-side 'right))
 

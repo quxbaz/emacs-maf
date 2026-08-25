@@ -305,7 +305,9 @@
    - [X] `(` maf-goto-left-side ← calc-begin-complex
    - [X] `)` maf-goto-right-side ← calc-end-complex (2026-08-25: the
      parens cross a relation — one key to the whole left side, one to
-     the whole right, the largest formula on each. Calc's own use for
+     the whole right, the largest formula on each; and either pressed
+     from the side it already names crosses to the other, so one key
+     walks the relation (2026-08-25). Calc's own use for
      them is the complex-number delimiters, which maf's algebraic
      entry supplies instead. `(` also displaces the edit module's
      blank-vector key: that gesture keeps the key at home, where there
