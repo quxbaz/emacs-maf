@@ -371,6 +371,8 @@ for it, kept only while each still runs it.")
         (maf-history-restore "restore" "r" "RET")
         (maf-history-delete "delete" "D")
         (maf-history-separate "rule" "L")
+        ((maf-history-previous-separator maf-history-next-separator)
+         "rules" "M-n" "M-p")
         ;; Beside D, the one state at a time it is the whole-log
         ;; counterpart of; the chord is what keeps the two apart on the
         ;; keyboard, so the legend showing it is what says the wipe is
@@ -633,8 +635,13 @@ mean something else beside a stack — line motion and RET.")
 (define-key maf-history-mode-map (kbd "n") #'maf-history-previous)
 (define-key maf-history-mode-map (kbd "k") #'maf-history-next)
 (define-key maf-history-mode-map (kbd "p") #'maf-history-next)
-(define-key maf-history-mode-map (kbd "M-n") #'maf-history-previous)
-(define-key maf-history-mode-map (kbd "M-p") #'maf-history-next)
+;; M-n and M-p are the step keys under a modifier, and step the same
+;; way — older down, newer up — but by sitting rather than by state,
+;; landing on the states the rules sit under. The stack window
+;; inherits them as it inherits L: the two windows are one selection,
+;; so moving it from the side showing a state is the same move.
+(define-key maf-history-mode-map (kbd "M-n") #'maf-history-previous-separator)
+(define-key maf-history-mode-map (kbd "M-p") #'maf-history-next-separator)
 ;; The ends follow the display too, as the step keys do: the log runs
 ;; newest-first, so < reaches the top of it and > the bottom. M-< and
 ;; M-> are the same two under a modifier, and the same two Emacs puts
@@ -707,7 +714,9 @@ whole of it. \[maf-history-delete] deletes the state shown from the
 log; \[maf-history-clear] clears the whole log.
 \[maf-history-separate] draws a separator band under the state at
 point, dividing the log into stretches of work and titling the one it
-closes with the text it prompts for.
+closes with the text it prompts for;
+\[maf-history-previous-separator] and \[maf-history-next-separator]
+step between those divisions, a sitting at a time.
 \[maf-history-describe-command] describes the command the row at point
 names, and \[describe-mode] this help. \[maf-history-quit] buries the
 browser."
@@ -891,6 +900,47 @@ Without a window showing calc, one is found for it."
                        (display-buffer buf)))))
 
 ;;; Browsing commands
+
+(defun maf-history-previous-separator (n)
+  "Select the Nth previous (older) state carrying a separator.
+The rules divide the log into sittings, so this steps by sitting where
+\[maf-history-previous] steps by state: past everything recorded since
+the last division, to the state the division sits under. The log runs
+newest-first, so older is downward — the direction
+\[maf-history-previous] moves in, under a modifier."
+  (interactive "p")
+  (maf-history--move-to-separator n))
+
+(defun maf-history-next-separator (n)
+  "Select the Nth next (newer) state carrying a separator.
+The counterpart of \[maf-history-previous-separator], stepping back up
+the log a sitting at a time."
+  (interactive "p")
+  (maf-history--move-to-separator (- n)))
+
+(defun maf-history--move-to-separator (n)
+  "Select the Nth nearest state carrying a rule, N positive for older.
+Point starts from the selection and skips it, so a jump from a state
+that is itself marked lands on the next mark rather than staying put.
+With no rule in the direction asked for it refuses rather than
+clamping, and a count reaching past the last one moves nothing at all:
+a jump that cannot be made is better said than half made."
+  (unless maf-history--states (user-error "No states recorded yet"))
+  (let* ((total (length maf-history--states))
+         (step (if (> n 0) 1 -1))
+         (target maf-history--index))
+    (dotimes (_ (abs n))
+      (let ((i (+ target step))
+            (found nil))
+        (while (and (not found) (>= i 0) (< i total))
+          (if (maf-history--separator (nth i maf-history--states))
+              (setq found i)
+            (setq i (+ i step))))
+        (unless found
+          (user-error (if (> n 0) "No older rule" "No newer rule")))
+        (setq target found)))
+    (setq maf-history--index target)
+    (maf-history--render t)))
 
 (defun maf-history--move (n)
   "Select the state N steps older (newer when N is negative).
