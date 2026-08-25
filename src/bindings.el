@@ -10,6 +10,11 @@
 (require 'maf-minibuffer "minibuffer")
 (require 'maf-bindings)
 
+;; The one command declared here that lives in a module: the preview
+;; peek on G, bound whether or not its module is on (see the G row).
+;; Modules load after this file; a declaration only records the symbol.
+(declare-function maf-preview-show "maf-preview")
+
 ;; Also defvar'd in maf.el and maf-cmds.el; whichever file loads first
 ;; creates the map, the rest are no-ops. The map itself stays empty:
 ;; it is the stable dispatcher, and everything lives in the parent the
@@ -179,8 +184,8 @@
 ;; the hand holds meta and taps rather than releasing between steps. A
 ;; terminal delivers these, unlike C-< / C->, so they work on a tty as
 ;; the unmodified pair does. They shadow the global `beginning-of-buffer'
-;; / `end-of-buffer', whose trip to the ends of the stack buffer G
-;; (`maf-go-home') already makes in the terms the stack is read in.
+;; / `end-of-buffer', whose trip to the ends of the stack buffer the
+;; stack's own motions already make in the terms it is read in.
 (maf-bindings-define '(native) "M-<" #'mafcmd-decrement)
 (maf-bindings-define '(native) "M->" #'mafcmd-increment)
 ;; Balanced negation, beside calc's own n (mafcmd-neg in the table,
@@ -240,27 +245,42 @@
 ;; Shadows calc-execute-extended-command.
 (maf-bindings-define '(native) "x" #'mafcmd-expand)
 ;; The reciprocal. It sat on i until the prompted solve took that key
-;; back, and takes o in turn from the home motion below; its table key
-;; & went to the big-language toggle next, so this is now its only
-;; key. Shadows calc-realign, whose bare press only undoes horizontal
-;; scrolling; M-x calc-realign still reaches that and the prefixed
-;; home motion both.
+;; back, and takes o in turn from the home motion, which held o before
+;; going unbound (below). A second key beside its own & (the inv row in
+;; maf-cmds.el, calc's key for it). Shadows calc-realign, whose bare
+;; press only undoes horizontal scrolling; M-x calc-realign still
+;; reaches that and the prefixed home motion both.
 (maf-bindings-define '(native) "o" #'mafcmd-inv)
-;; Toggle calc's Big 2D display language. Takes &, the key the
-;; reciprocal cedes above (see the inv row in maf-cmds.el); calc's own
-;; & is calc-inv, which mafcmd-inv subsumes, so nothing is lost to the
-;; shadow. The toggle held G until maf-go-home took it (below); calc's
-;; own d B / d N stay the one-way switches.
-(maf-bindings-define '(native) "&" #'maf-toggle-big-language)
-;; Send point home, the one motion the buffer needs a key for: every
-;; other command already leaves it there. Pressed at home it returns to
-;; the mark instead — its own trip out left one, as every maf command
-;; that homes point does — so the key is the whole round trip: out for
-;; a command that wants the entry, back for one that wants the term.
-;; It sat on o until the reciprocal above took that key. Takes calc's
-;; G, which mafcmd-arg cedes (see the table in maf-cmds.el);
-;; `maf-toggle-big-language' held G before and now sits on & (above).
-(maf-bindings-define '(native) "G" #'maf-go-home)
+;; Preview the entry at point: one panel over the top-right of the
+;; window, showing the entry in calc's 2D Big display, and gone again at
+;; the next command. Takes calc's G, which mafcmd-arg cedes (see the
+;; table in maf-cmds.el).
+;;
+;; Declared here rather than by the preview module (modules/), where
+;; every other key of a module's is declared, because it is not a key
+;; the module owns: the panel that *follows point* is the module, and
+;; this is one look asked for by hand, which reads an entry the same
+;; way whether the module is on, off, or not enabled at all. A key that
+;; came and went with the toggle would take with it the very way of
+;; working — no panel underfoot, a peek when wanted — that having the
+;; toggle off is for.
+(maf-bindings-define '(native) "G" #'maf-preview-show)
+;; Two commands that held keys here are now bound by nothing, both
+;; because that preview does their work better:
+;;
+;; - `maf-toggle-big-language', which had &, switched the whole stack
+;;   into 2D and back to read one entry; the preview shows that entry
+;;   in 2D with the stack left alone. & goes back to the reciprocal,
+;;   calc's own command for the key (the inv row in maf-cmds.el), and
+;;   calc's d B / d N stay the one-way switches.
+;;
+;; - `maf-go-home', which had G, is the round trip between an entry and
+;;   the . line — out for a command that wants the entry, back for one
+;;   that wants the term. C-u C-SPC still walks the marks the round
+;;   trip left.
+;;
+;; Both commands are still defined and still reachable by name, so a
+;; key here (or in a user map) brings either back.
 ;; A toggle between pair members is its own inverse, so both directions
 ;; run the same command.
 (maf-bindings-define '(native) "S-<up>" #'mafcmd-toggle-op)
