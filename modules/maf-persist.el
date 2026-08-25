@@ -117,28 +117,50 @@ live sessions, and the result is locked for this session."
 
 ;;; Saving and restoring
 
-(defun maf-save-stack ()
+(defun maf-save-stack (&optional interactive)
   "Save the calc stack to this session's file in `maf-stack-directory'.
 The file holds the stack's formula values, top first, with
 `calc-encase-atoms' wrappers stripped. Unchanged values since the last
 save — and a session with no calc buffer at all — write nothing.
-Returns non-nil when a write happened."
-  (interactive)
-  (when-let ((buf (get-buffer "*Calculator*")))
-    (let ((values (with-current-buffer buf
-                    (mapcar (lambda (entry)
-                              (maf--strip-encasing (car entry)))
-                            (cdr calc-stack)))))
-      (unless (equal values maf--stack-last-saved)
-        (setq maf--stack-last-saved values)
-        ;; Print in full: a config that caps print-length or
-        ;; print-level would silently truncate the file into garbage.
-        (let ((print-length nil)
-              (print-level nil))
-          (make-directory maf-stack-directory t)
-          (with-temp-file (maf--stack-file (maf--stack-session))
-            (prin1 values (current-buffer))))
-        t))))
+Returns non-nil when a write happened.
+
+INTERACTIVE non-nil, as when l S runs this, reports what happened in
+the echo area: the idle-timer and kill-emacs saves stay silent."
+  (interactive (list t))
+  (let ((buf (get-buffer "*Calculator*")))
+    (cond
+     ((not buf)
+      (when interactive (message "maf: no calc stack to save"))
+      nil)
+     (t
+      (let ((values (with-current-buffer buf
+                      (mapcar (lambda (entry)
+                                (maf--strip-encasing (car entry)))
+                              (cdr calc-stack)))))
+        (cond
+         ((equal values maf--stack-last-saved)
+          (when interactive
+            (message
+             (cond ((null values) "maf: nothing on the stack to save")
+                   (maf--stack-session
+                    (format "maf: stack unchanged, session %s already saved"
+                            maf--stack-session))
+                   (t "maf: stack unchanged since the last save"))))
+          nil)
+         (t
+          (setq maf--stack-last-saved values)
+          ;; Print in full: a config that caps print-length or
+          ;; print-level would silently truncate the file into garbage.
+          (let ((print-length nil)
+                (print-level nil))
+            (make-directory maf-stack-directory t)
+            (with-temp-file (maf--stack-file (maf--stack-session))
+              (prin1 values (current-buffer))))
+          (when interactive
+            (message "maf: saved %d entr%s to session %s"
+                     (length values) (if (= 1 (length values)) "y" "ies")
+                     maf--stack-session))
+          t)))))))
 
 (defun maf--stack-read (file)
   "Read and return the stack values saved in FILE."
