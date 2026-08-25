@@ -55,6 +55,12 @@
 ;; and restore it around `calc-reset'.
 (defvar maf-mode)
 (declare-function maf-mode "maf")
+;; The edit module's, for the paren keys' home fallback
+;; (`maf--goto-side'): with the module on they open a blank vector
+;; entry at home, as its own binding on "(" did before the motions
+;; took the keys.
+(defvar maf-use-edit-mode)
+(declare-function maf-edit-add-vector "maf-edit")
 (declare-function calc-normal-language "calc-lang")
 (declare-function calc-big-language "calc-lang")
 (declare-function math-solve-eqn "calcalg2")
@@ -2108,6 +2114,116 @@ command acts on.
         (setq pos (or (maf--up-node-position node (maf--up-entry-region m))
                       pos)))
       (goto-char pos))))
+
+;;; Equation sides
+
+(defun maf--side-relation (expr node)
+  "Return the innermost relation of EXPR at or above NODE, or nil.
+NODE itself counts: point on a relation's own operator names that
+relation, and its two sides are what there is to move to. Failing
+that the walk climbs, so a term inside one element of [a = 1, b = 2]
+finds the equation it sits in rather than the vector around it, and
+the outermost relation answers only when nothing nearer is one. A nil
+NODE — point on the entry's margin, where it names the whole entry —
+starts the walk at EXPR itself."
+  (let ((n (or node expr)))
+    ;; `calc-find-parent-formula' answers t at the root and nil for a
+    ;; node EXPR does not contain; either way the loop ends on a
+    ;; non-cons, which is the no-relation answer.
+    (while (and (consp n) (not (maf--relation-p n)))
+      (setq n (calc-find-parent-formula expr n)))
+    (and (consp n) n)))
+
+(defun maf--goto-side (side)
+  "Move point to the whole SIDE of the relation it sits in.
+SIDE is `left' or `right'. The shared body of `maf-goto-left-side' and
+`maf-goto-right-side'; those docstrings describe what the motion
+promises.
+
+At home the paren keys keep the meaning the edit module gives them
+there — a blank vector entry opened at the bottom of the stack — since
+there is no entry at point for the motion to work within. With that
+module off there is nothing to fall back to and the motion signals."
+  (let ((m (calc-locate-cursor-element (point))))
+    (if (<= m 0)
+        (if (bound-and-true-p maf-use-edit-mode)
+            (maf-edit-add-vector)
+          (user-error "No expression at point"))
+      (calc-prepare-selection m)
+      (let* ((expr (calc-top m 'full))
+             (rel (maf--side-relation expr (calc-find-selected-part))))
+        (unless rel
+          (user-error "No relation at point"))
+        (let* ((node (nth (if (eq side 'left) 1 2) rel))
+               (pos (maf--up-node-position node (maf--up-entry-region m))))
+          (unless pos
+            (user-error "Nothing to name the %s side by"
+                        (if (eq side 'left) "left" "right")))
+          ;; A selection outranks point when a command resolves its
+          ;; subject (see `maf--resolve-context'), so a motion that left
+          ;; one behind would move the cursor and change nothing.
+          ;; Carrying it to the side keeps the promise the motion makes,
+          ;; as `maf-up-expression' does for the climb; the re-render it
+          ;; costs rewrites the entry's lines, so point is placed after.
+          (when (calc-top m 'sel)
+            (calc-wrapper
+             (calc-prepare-selection m)
+             (calc-change-current-selection node))
+            (calc-prepare-selection m)
+            (setq pos (or (maf--up-node-position
+                           node (maf--up-entry-region m))
+                          pos)))
+          (goto-char pos))))))
+
+(defun maf-goto-left-side ()
+  "Move point to the whole left side of the relation it sits in.
+
+  6 x + 12 = 18 y| + 6  =>  6 x |+ 12 = 18 y + 6
+
+Point lands on that side's own first glyph — its operator, the parens
+calc printed around it, its function name — which is where resolve
+names it, so the next command acts on the side entire rather than on
+the term point was in. The side is the largest formula there is on the
+left: `maf-up-expression' climbs to it a level at a time, and this is
+the one key that arrives.
+
+The relation is the innermost one point sits in, so a term inside one
+element of a vector of equations finds its own equation rather than the
+vector around it. All six relations count, not just =.
+
+  2 x - 3| < 7  =>  2 x |- 3 < 7
+
+From the entry's margin — the line-number prefix, the end of the line —
+where point names the whole entry, the entry's own relation is the one
+used.
+
+  |1:  y = (x + 3)^2  =>  1:  |y = (x + 3)^2
+
+With a selection up on the entry it travels to the side along with
+point, since a selection is what the next command would resolve.
+
+At home, where there is no entry at point, the key keeps the meaning
+the edit module gives it there: a blank vector entry opened at the
+bottom of the stack (`maf-edit-add-vector'). With that module off it
+signals instead, as it does on an entry that holds no relation."
+  (interactive)
+  (maf--goto-side 'left))
+
+(defun maf-goto-right-side ()
+  "Move point to the whole right side of the relation it sits in.
+
+  6 x| + 12 = 18 y + 6  =>  6 x + 12 = 18 y |+ 6
+
+The mirror of `maf-goto-left-side', over the same relation — the
+innermost one point sits in — and landing the same way: on the glyph
+that names the whole side, so the next command acts on it entire.
+
+  2 x - 3| < 7  =>  2 x - 3 < |7
+
+The two keys together are the whole crossing: one press to the far
+side, one back, whatever term point started on."
+  (interactive)
+  (maf--goto-side 'right))
 
 (defun maf--swap-target-with-top ()
   "Swap the resolved sub-formula at point with the level-1 entry.
