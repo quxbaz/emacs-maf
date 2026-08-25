@@ -295,6 +295,15 @@
      Displaces conj's table key in native; conj's home is its family
      key `l j`, and the calc profile keeps J = conj. Vim's relocated
      selection family already owns J, so there mul keeps only *)
+   - [X] `(` maf-goto-left-side ← calc-begin-complex
+   - [X] `)` maf-goto-right-side ← calc-end-complex (2026-08-25: the
+     parens cross a relation — one key to the whole left side, one to
+     the whole right, the largest formula on each. Calc's own use for
+     them is the complex-number delimiters, which maf's algebraic
+     entry supplies instead. `(` also displaces the edit module's
+     blank-vector key: that gesture keeps the key at home, where there
+     is no entry to move within, and keeps it outright in the calc
+     profile)
 ** additions (keys calc leaves unbound)
    - [X] `W` mafcmd-sqr
    - [X] `k k` mafcmd-esimplify (2026-08-22: the extended simplify's

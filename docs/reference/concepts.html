@@ -3,10 +3,11 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2026-08-25 Tue 00:19 -->
+<!-- 2026-08-24 Mon 22:02 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>maf concepts</title>
+<meta name="author" content="David Yeung" />
 <meta name="generator" content="Org Mode" />
 <style type="text/css">
   #content { max-width: 60em; margin: auto; }
@@ -201,50 +202,50 @@
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents" role="doc-toc">
 <ul>
-<li><a href="#org13bdf14">1. The flow</a></li>
-<li><a href="#orgc1e1ccb">2. The target system</a>
+<li><a href="#org05d5ae9">1. The flow</a></li>
+<li><a href="#org43cc664">2. The target system</a>
 <ul>
-<li><a href="#orgb575494">2.1. Per-command targeting policy</a></li>
-<li><a href="#orge200a83">2.2. Whole-entry scope</a></li>
-<li><a href="#org77455ad">2.3. Entry-scoped commit</a></li>
+<li><a href="#orgf0673df">2.1. Per-command targeting policy</a></li>
+<li><a href="#orga150948">2.2. Whole-entry scope</a></li>
+<li><a href="#org55fd2ee">2.3. Entry-scoped commit</a></li>
 </ul>
 </li>
-<li><a href="#orgdb6201c">3. The region target</a>
+<li><a href="#org3ec1d5f">3. The region target</a>
 <ul>
-<li><a href="#orgeb63937">3.1. Runs and signs</a></li>
-<li><a href="#org8fd7629">3.2. Region commit</a></li>
+<li><a href="#org1a113aa">3.1. Runs and signs</a></li>
+<li><a href="#org31d03a5">3.2. Region commit</a></li>
 </ul>
 </li>
-<li><a href="#orgec5f638">4. The context alist</a>
+<li><a href="#org4ea0800">4. The context alist</a>
 <ul>
-<li><a href="#org513c11f">4.1. Point restoration</a></li>
-<li><a href="#org8d8d8b8">4.2. Relation mapping</a></li>
-<li><a href="#org5d8d4a5">4.3. The map flag</a></li>
+<li><a href="#org32097b8">4.1. Point restoration</a></li>
+<li><a href="#org08b1c4c">4.2. Relation mapping</a></li>
+<li><a href="#orgef3415c">4.3. The map flag</a></li>
 </ul>
 </li>
-<li><a href="#org0a3bcfb">5. Encasing</a></li>
-<li><a href="#orga6dfef0">6. :expr vs :expr-ref</a></li>
-<li><a href="#orgd14a697">7. Reselect</a></li>
-<li><a href="#org4c47e5f">8. Keep-args</a></li>
-<li><a href="#org08893db">9. The commit recipe</a></li>
-<li><a href="#org5b457cf">10. Multi-value commit</a></li>
-<li><a href="#org2ffc1e2">11. Widening the sub-formula target</a>
+<li><a href="#org46f7cbd">5. Encasing</a></li>
+<li><a href="#orgfb295a8">6. :expr vs :expr-ref</a></li>
+<li><a href="#org774b2d0">7. Reselect</a></li>
+<li><a href="#orgce1e65d">8. Keep-args</a></li>
+<li><a href="#org6ef8e73">9. The commit recipe</a></li>
+<li><a href="#orgd95cbd4">10. Multi-value commit</a></li>
+<li><a href="#org92132ec">11. Widening the sub-formula target</a>
 <ul>
-<li><a href="#org4ebba5f">11.1. Widening a rewrite marker</a>
+<li><a href="#org2c158fd">11.1. Widening a rewrite marker</a>
 <ul>
-<li><a href="#orgc4caf3a">11.1.1. Scoping the rewrite to the site</a></li>
-<li><a href="#orgff82cbc">11.1.2. Ordering without folding</a></li>
-<li><a href="#orgeba2c9f">11.1.3. Correcting calc's power-merge rules</a></li>
+<li><a href="#org7054c7b">11.1.1. Scoping the rewrite to the site</a></li>
+<li><a href="#org3bd175f">11.1.2. Ordering without folding</a></li>
+<li><a href="#org2f9de7e">11.1.3. Correcting calc's power-merge rules</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a href="#orgbc2e575">12. Binary on selection-like targets</a></li>
-<li><a href="#orge209628">13. Inverse / Hyperbolic variants</a></li>
-<li><a href="#org246b70e">14. Contextual digit entry</a></li>
-<li><a href="#org0e50403">15. Files</a></li>
-<li><a href="#orgfc3b7a9">16. Modules</a></li>
-<li><a href="#orgc06bf2b">17. See also</a></li>
+<li><a href="#orgebdb01b">12. Binary on selection-like targets</a></li>
+<li><a href="#org3fc5128">13. Inverse / Hyperbolic variants</a></li>
+<li><a href="#orgedf0885">14. Contextual digit entry</a></li>
+<li><a href="#org885f570">15. Files</a></li>
+<li><a href="#org5de12a6">16. Modules</a></li>
+<li><a href="#org7f761c5">17. See also</a></li>
 </ul>
 </div>
 </div>
@@ -252,8 +253,8 @@
 Architectural overview of the maf codebase. Read this before diving into
 any specific file.
 </p>
-<div id="outline-container-org13bdf14" class="outline-2">
-<h2 id="org13bdf14"><span class="section-number-2">1.</span> The flow</h2>
+<div id="outline-container-org05d5ae9" class="outline-2">
+<h2 id="org05d5ae9"><span class="section-number-2">1.</span> The flow</h2>
 <div class="outline-text-2" id="text-1">
 <p>
 A maf command runs in four phases:
@@ -271,7 +272,7 @@ bindings, computes a result, calls <code>commit</code>.</li>
 per the context's instructions.</li>
 </ol>
 
-<pre class="example" id="org821861b">
+<pre class="example" id="orge53f862">
 maf-defcmd declaration                        (load time)
     │
     ▼
@@ -294,8 +295,8 @@ schema documented at the top of <a href="../../core/maf-resolve.el">maf-resolve.
 </p>
 </div>
 </div>
-<div id="outline-container-orgc1e1ccb" class="outline-2">
-<h2 id="orgc1e1ccb"><span class="section-number-2">2.</span> The target system</h2>
+<div id="outline-container-org43cc664" class="outline-2">
+<h2 id="org43cc664"><span class="section-number-2">2.</span> The target system</h2>
 <div class="outline-text-2" id="text-2">
 <p>
 Resolve dispatches to one of six <i>targets</i> based on where point is and
@@ -373,18 +374,18 @@ produces the target-specific portion of the context alist.
 <p>
 The equation target also fires by <i>conversion</i>: when home, entry, or
 subexpr resolves an <code>:expr</code> that is itself a relation, the context is
-rewritten to equation after the fact (see <a href="#org8d8d8b8">Relation mapping</a>).
+rewritten to equation after the fact (see <a href="#org08b1c4c">Relation mapping</a>).
 </p>
 
 <p>
 The region target frequently resolves <i>as</i> another target: whenever the
 region denotes something a plain subexpr could express, it collapses
 into a subexpr context and only the pointing gesture was new (see
-<a href="#orgdb6201c">The region target</a>).
+<a href="#org3ec1d5f">The region target</a>).
 </p>
 </div>
-<div id="outline-container-orgb575494" class="outline-3">
-<h3 id="orgb575494"><span class="section-number-3">2.1.</span> Per-command targeting policy</h3>
+<div id="outline-container-orgf0673df" class="outline-3">
+<h3 id="orgf0673df"><span class="section-number-3">2.1.</span> Per-command targeting policy</h3>
 <div class="outline-text-3" id="text-2-1">
 <p>
 Every conventional defcmd generates a <code>NAME-targets</code> variable — the
@@ -421,8 +422,8 @@ variant's own variable decides only its direct invocation.
 </p>
 </div>
 </div>
-<div id="outline-container-orge200a83" class="outline-3">
-<h3 id="orge200a83"><span class="section-number-3">2.2.</span> Whole-entry scope</h3>
+<div id="outline-container-orga150948" class="outline-3">
+<h3 id="orga150948"><span class="section-number-3">2.2.</span> Whole-entry scope</h3>
 <div class="outline-text-3" id="text-2-2">
 <p>
 <code>:scope entry</code> in a command's options bypasses the cascade above: the
@@ -461,8 +462,8 @@ targeting difference is the whole of what separates them.
 </p>
 </div>
 </div>
-<div id="outline-container-org77455ad" class="outline-3">
-<h3 id="org77455ad"><span class="section-number-3">2.3.</span> Entry-scoped commit</h3>
+<div id="outline-container-org55fd2ee" class="outline-3">
+<h3 id="org55fd2ee"><span class="section-number-3">2.3.</span> Entry-scoped commit</h3>
 <div class="outline-text-3" id="text-2-3">
 <p>
 <code>:commit-scope entry</code> is the other half of the same idea, and
@@ -491,8 +492,8 @@ to throw away.
 </div>
 </div>
 </div>
-<div id="outline-container-orgdb6201c" class="outline-2">
-<h2 id="orgdb6201c"><span class="section-number-2">3.</span> The region target</h2>
+<div id="outline-container-org3ec1d5f" class="outline-2">
+<h2 id="org3ec1d5f"><span class="section-number-2">3.</span> The region target</h2>
 <div class="outline-text-2" id="text-3">
 <p>
 Calc stores a sum as a left-nested binary tree and a product as a
@@ -532,8 +533,8 @@ sum run (<code>a + b</code> in <code>a + b + c</code>) or right-anchored product
 real subtree and never reaches it.
 </p>
 </div>
-<div id="outline-container-orgeb63937" class="outline-3">
-<h3 id="orgeb63937"><span class="section-number-3">3.1.</span> Runs and signs</h3>
+<div id="outline-container-org1a113aa" class="outline-3">
+<h3 id="org1a113aa"><span class="section-number-3">3.1.</span> Runs and signs</h3>
 <div class="outline-text-3" id="text-3-1">
 <p>
 <a href="../../core/maf-chain.el">core/maf-chain.el</a> views a chain as its rendered term list — each term
@@ -553,8 +554,8 @@ value-preserving: the sign is structural, not textual.
 </p>
 </div>
 </div>
-<div id="outline-container-org8fd7629" class="outline-3">
-<h3 id="org8fd7629"><span class="section-number-3">3.2.</span> Region commit</h3>
+<div id="outline-container-org31d03a5" class="outline-3">
+<h3 id="org31d03a5"><span class="section-number-3">3.2.</span> Region commit</h3>
 <div class="outline-text-3" id="text-3-2">
 <p>
 A synthesized run has no cons to <code>eq</code>-splice, but its container does:
@@ -577,8 +578,8 @@ structural readings diverge (<code>b / c</code> inside <code>a / b / c</code> co
 </div>
 </div>
 </div>
-<div id="outline-container-orgec5f638" class="outline-2">
-<h2 id="orgec5f638"><span class="section-number-2">4.</span> The context alist</h2>
+<div id="outline-container-org4ea0800" class="outline-2">
+<h2 id="org4ea0800"><span class="section-number-2">4.</span> The context alist</h2>
 <div class="outline-text-2" id="text-4">
 <p>
 Everything resolve learns is carried in one flat alist — the <i>context</i>
@@ -595,14 +596,14 @@ keys are <code>:arity</code> (the symbol <code>unary</code> or <code>binary</cod
 trail label string), <code>:map</code> (<code>-1</code> opts out of relation mapping),
 <code>:pair</code> (<code>-1</code> keeps a relation argument whole at an equation target),
 <code>:commit-scope</code> (<code>entry</code> lands the value as the whole entry — see
-<a href="#org77455ad">Entry-scoped commit</a>), and the I/H variant links (command symbols);
+<a href="#org55fd2ee">Entry-scoped commit</a>), and the I/H variant links (command symbols);
 any other keyword
 passes through untouched, so resolve/commit extensions can define
 their own.</li>
 <li><b>Ambient state</b> — snapshots taken at resolve time: <code>:keep</code> (the
 <code>calc-keep-args-flag</code> boolean) and <code>:point</code> (an alist of point's
 placement, captured before the rewrite destroys it — see
-<a href="#org513c11f">Point restoration</a> for its keys).</li>
+<a href="#org32097b8">Point restoration</a> for its keys).</li>
 </ol>
 
 <p>
@@ -611,7 +612,7 @@ point on the <code>x</code> of <code>2: 6 x + 12</code>, with <code>5</code> at 
 resolves to:
 </p>
 
-<pre class="example" id="org356d54f">
+<pre class="example" id="org4d83e94">
 ((:target    . subexpr)                ; target keys
  (:expr      . (var x var-x))
  (:expr-ref  . (var x var-x))          ; the encased cons from the entry
@@ -637,7 +638,7 @@ Two consumers read it. The macro-generated command wires the body:
 vs once per side); commit also dispatches on it to pick the splice
 path. The macro also binds it to the dynamic variable <code>maf-target</code>
 around the body, for bodies whose <i>result shape</i> depends on where it
-lands (see <a href="#org5b457cf">Multi-value commit</a>); most bodies
+lands (see <a href="#orgd95cbd4">Multi-value commit</a>); most bodies
 ignore it and just act on EXPR.</li>
 <li><code>:expr</code> — the clean operand, a normalized calc formula, bound as the
 body's EXPR.</li>
@@ -659,15 +660,15 @@ reassembled under <code>:rel-op</code> before a single commit.</li>
 <li><code>:commit-m</code>, <code>:commit-n</code>, <code>:post-pop</code> — integers encoding the
 push/pop recipe: the stack level to push at, the entries popped
 there first, and the entries popped from the top afterward (see
-<a href="#org08893db">The commit recipe</a>).</li>
+<a href="#org6ef8e73">The commit recipe</a>).</li>
 <li><code>:m</code> — integer stack level (1 = top) of the target entry; where
 commit fetches the full formula for splicing.</li>
 <li><code>:expr-ref</code> — the encased cons cell for the eq-based splice.
-Selection and subexpr only (see <a href="#org0a3bcfb">Encasing</a>).</li>
+Selection and subexpr only (see <a href="#org46f7cbd">Encasing</a>).</li>
 <li><code>:chain-ref</code>, <code>:chain-kind</code>, <code>:pre-terms</code>, <code>:post-terms</code> — region
 target only: the chain cons commit splices the rebuilt chain at, its
 kind (<code>sum</code> or <code>prod</code>), and the untouched terms on each side of the
-run (see <a href="#orgdb6201c">The region target</a>).</li>
+run (see <a href="#org3ec1d5f">The region target</a>).</li>
 <li><code>:reselect</code> — boolean: whether the committed result becomes the new
 selection.</li>
 <li><code>:prefix</code> — string: trail label recorded with the operation.</li>
@@ -686,8 +687,8 @@ The authoritative key-by-key schema lives at the top of
 <a href="../../core/maf-resolve.el">maf-resolve.el</a>.
 </p>
 </div>
-<div id="outline-container-org513c11f" class="outline-3">
-<h3 id="org513c11f"><span class="section-number-3">4.1.</span> Point restoration</h3>
+<div id="outline-container-org32097b8" class="outline-3">
+<h3 id="org32097b8"><span class="section-number-3">4.1.</span> Point restoration</h3>
 <div class="outline-text-3" id="text-4-1">
 <p>
 Calc's command epilogue parks point at home after every command. The
@@ -750,8 +751,8 @@ deferred.
 </p>
 </div>
 </div>
-<div id="outline-container-org8d8d8b8" class="outline-3">
-<h3 id="org8d8d8b8"><span class="section-number-3">4.2.</span> Relation mapping</h3>
+<div id="outline-container-org08b1c4c" class="outline-3">
+<h3 id="org08b1c4c"><span class="section-number-3">4.2.</span> Relation mapping</h3>
 <div class="outline-text-3" id="text-4-2">
 <p>
 A relation can become the subject without point sitting on a relation
@@ -788,8 +789,8 @@ side like any subexpr would.
 </p>
 </div>
 </div>
-<div id="outline-container-org5d8d4a5" class="outline-3">
-<h3 id="org5d8d4a5"><span class="section-number-3">4.3.</span> The map flag</h3>
+<div id="outline-container-orgef3415c" class="outline-3">
+<h3 id="orgef3415c"><span class="section-number-3">4.3.</span> The map flag</h3>
 <div class="outline-text-3" id="text-4-3">
 <p>
 <code>mafcmd-map-flag</code> (<code>M</code>) sets <code>maf-map-flag</code> through calc's fancy-prefix
@@ -816,8 +817,8 @@ calc's <code>V M</code> has.
 </div>
 </div>
 </div>
-<div id="outline-container-org0a3bcfb" class="outline-2">
-<h2 id="org0a3bcfb"><span class="section-number-2">5.</span> Encasing</h2>
+<div id="outline-container-org46f7cbd" class="outline-2">
+<h2 id="org46f7cbd"><span class="section-number-2">5.</span> Encasing</h2>
 <div class="outline-text-2" id="text-5">
 <p>
 Calc's mechanism for distinguishing duplicate atoms by <code>eq</code>.
@@ -834,7 +835,7 @@ can't tell them apart structurally.
 each naked atom with <code>(cplx atom 0)</code> — a fresh cons cell each time:
 </p>
 
-<pre class="example" id="org44f71c2">
+<pre class="example" id="org9119cb3">
 (+ 1 1)    →    (+ (cplx 1 0) (cplx 1 0))
                 ;; ^^^^^^^^^^  ^^^^^^^^^^
                 ;; cons #A     cons #B   ← now distinguishable by eq
@@ -869,8 +870,8 @@ cons cell — for commit to use.</li>
 </ol>
 </div>
 </div>
-<div id="outline-container-orga6dfef0" class="outline-2">
-<h2 id="orga6dfef0"><span class="section-number-2">6.</span> :expr vs :expr-ref</h2>
+<div id="outline-container-orgfb295a8" class="outline-2">
+<h2 id="orgfb295a8"><span class="section-number-2">6.</span> :expr vs :expr-ref</h2>
 <div class="outline-text-2" id="text-6">
 <p>
 The body and commit operate on the same sub-formula but at different
@@ -896,8 +897,8 @@ Commit instead rebuilds the containing chain and splices it at
 </p>
 </div>
 </div>
-<div id="outline-container-orgd14a697" class="outline-2">
-<h2 id="orgd14a697"><span class="section-number-2">7.</span> Reselect</h2>
+<div id="outline-container-org774b2d0" class="outline-2">
+<h2 id="org774b2d0"><span class="section-number-2">7.</span> Reselect</h2>
 <div class="outline-text-2" id="text-7">
 <p>
 When commit pushes the new entry, should the result be re-selected?
@@ -920,8 +921,8 @@ arg to <code>calc-pop-push-record-list</code>.
 </p>
 </div>
 </div>
-<div id="outline-container-org4c47e5f" class="outline-2">
-<h2 id="org4c47e5f"><span class="section-number-2">8.</span> Keep-args</h2>
+<div id="outline-container-orgce1e65d" class="outline-2">
+<h2 id="orgce1e65d"><span class="section-number-2">8.</span> Keep-args</h2>
 <div class="outline-text-2" id="text-8">
 <p>
 <code>calc-keep-args-flag</code> is calc's mode where operations don't consume
@@ -1009,8 +1010,8 @@ inert — <code>maf-dup</code> branches on it.
 </p>
 </div>
 </div>
-<div id="outline-container-org08893db" class="outline-2">
-<h2 id="org08893db"><span class="section-number-2">9.</span> The commit recipe</h2>
+<div id="outline-container-org6ef8e73" class="outline-2">
+<h2 id="org6ef8e73"><span class="section-number-2">9.</span> The commit recipe</h2>
 <div class="outline-text-2" id="text-9">
 <p>
 Three context keys describe what commit should do:
@@ -1030,7 +1031,7 @@ This consumes the binary arg in non-keep mode.</li>
 Visualization for binary selection at <code>:m = 2</code> (non-keep):
 </p>
 
-<pre class="example" id="org1a91f5c">
+<pre class="example" id="org6f38299">
 Before:                              commit-m=2, commit-n=1, post-pop=1
 1: arg                ──┐
 2: selected entry  ──┐  │
@@ -1050,8 +1051,8 @@ Two operations, one push and one optional post-pop. See <code>maf--commit-push</
 </p>
 </div>
 </div>
-<div id="outline-container-org5b457cf" class="outline-2">
-<h2 id="org5b457cf"><span class="section-number-2">10.</span> Multi-value commit</h2>
+<div id="outline-container-orgd95cbd4" class="outline-2">
+<h2 id="orgd95cbd4"><span class="section-number-2">10.</span> Multi-value commit</h2>
 <div class="outline-text-2" id="text-10">
 <p>
 A body normally commits one expression. At a <i>whole-entry</i> target
@@ -1073,7 +1074,7 @@ expression fits. Committing a list there signals.
 Bodies that can produce either read <code>maf-target</code> to tell which applies:
 </p>
 
-<pre class="example" id="orgc4b63be">
+<pre class="example" id="orge9d4af5">
 (cond ((eq maf-target 'equation)                ; forced per-side run
        (if (cdr parts) expr (car parts)))       ; a side's slot fits one
       (t parts))                                ; one entry per part
@@ -1087,8 +1088,8 @@ part.
 </p>
 </div>
 </div>
-<div id="outline-container-org2ffc1e2" class="outline-2">
-<h2 id="org2ffc1e2"><span class="section-number-2">11.</span> Widening the sub-formula target</h2>
+<div id="outline-container-org92132ec" class="outline-2">
+<h2 id="org92132ec"><span class="section-number-2">11.</span> Widening the sub-formula target</h2>
 <div class="outline-text-2" id="text-11">
 <p>
 A slot fits one expression, so a command whose result does not fit the
@@ -1113,7 +1114,7 @@ remove", so the command means <b>flatten the innermost nested vector
 around point</b>:
 </p>
 
-<pre class="example" id="org2a457f7">
+<pre class="example" id="org50f56be">
 [[1|, 2], [3, 4]]      =&gt;  [1, 2, 3, 4]      ; point names the flat row
                                              ; [1, 2]; the matrix holding
                                              ; it has the nesting
@@ -1157,9 +1158,26 @@ noun motion's to walk, read off the rendering as text.
 <code>maf-backward-operand</code> (C-M-SPC) is the same walk the other way, over
 the same stops, so the two retrace each other.
 </p>
+
+<p>
+<code>maf-goto-left-side</code> (<code>(</code>) and <code>maf-goto-right-side</code> (<code>)</code>) arrive at
+one particular landing in one press: the whole of a relation's left or
+right side, the largest formula there is on it, where the climb would
+reach it a level at a time. The relation is the innermost one point
+sits in, so a term inside one element of <code>[h = 0, p = -4, k = 0]</code>
+crosses within its own equation rather than finding the vector around
+it, and the entry's margins — the line-number prefix, the end of the
+line — cross the entry's own relation. Like the climb it asks the
+rendering where the side is nameable rather than computing a column
+(<code>maf--up-node-position</code>), so it works in Big language too, and it
+carries an active selection along for the same reason. Home is the one
+place the keys mean something else: there is no entry at point to move
+within, and they keep the blank-vector gesture the edit module gives
+them (<code>maf-edit-add-vector</code>).
+</p>
 </div>
-<div id="outline-container-org4ebba5f" class="outline-3">
-<h3 id="org4ebba5f"><span class="section-number-3">11.1.</span> Widening a rewrite marker</h3>
+<div id="outline-container-org2c158fd" class="outline-3">
+<h3 id="org2c158fd"><span class="section-number-3">11.1.</span> Widening a rewrite marker</h3>
 <div class="outline-text-3" id="text-11-1">
 <p>
 <code>maf-distribute</code> (j D) and <code>maf-merge</code> (j M) widen along the same
@@ -1170,7 +1188,7 @@ in them matches the formula <i>around</i> the marker rather than the marker
 itself —
 </p>
 
-<pre class="example" id="org5dd1f4c">
+<pre class="example" id="org7254a24">
 x * select(a + b)   :=  x*select(a) + x*b
 </pre>
 
@@ -1201,7 +1219,7 @@ the part point is in. The upshot is that every column of an entry
 reaches the same rewrite:
 </p>
 
-<pre class="example" id="org3e5b400">
+<pre class="example" id="orgb6a6749">
 ln|(x^2)  ln(x|^2)  ln(x^2|)   =&gt;  2 ln(x)      ; all of them
 x|*(a+b)  x*|(a+b)  x*(a|+b)   =&gt;  x b + x a    ; all of them
 </pre>
@@ -1246,7 +1264,7 @@ marker there is, and sitting early in the set they claim the first
 level the walk tries, before the rule the gesture meant:
 </p>
 
-<pre class="example" id="org0564fcb">
+<pre class="example" id="org13ec7d2">
 ln(x|^2)   =&gt;  ln((-1)^2 (-x)^2)   ; the sign rule, equal and useless
 ln(x|^2)   =&gt;  2 ln(x)             ; the log-of-a-power rule, one out
 </pre>
@@ -1259,7 +1277,7 @@ the marked node itself, not the marker relationship, so a genuinely
 negative operand still splits (<code>sqrt(-x)</code> <code>&gt; =sqrt(-1) sqrt(x)</code>). Both
 nodes compared are read back out of whole expressions the rewriter saw,
 never off the stack entry — an entry's atoms are encased (see
-<a href="#org0a3bcfb">Encasing</a>), and <code>(cplx 4 0)</code> would never match a plain <code>4</code>.
+<a href="#org46f7cbd">Encasing</a>), and <code>(cplx 4 0)</code> would never match a plain <code>4</code>.
 </p>
 
 <p>
@@ -1271,8 +1289,8 @@ standing on a lower entry is the subject even when point has wandered
 to another.
 </p>
 </div>
-<div id="outline-container-orgc4caf3a" class="outline-4">
-<h4 id="orgc4caf3a"><span class="section-number-4">11.1.1.</span> Scoping the rewrite to the site</h4>
+<div id="outline-container-org7054c7b" class="outline-4">
+<h4 id="org7054c7b"><span class="section-number-4">11.1.1.</span> Scoping the rewrite to the site</h4>
 <div class="outline-text-4" id="text-11-1-1">
 <p>
 Only the site is handed to the rewriter, and the rest of the entry is
@@ -1288,7 +1306,7 @@ where the rule matches, being the formula around the marker.
 <p>
 The same reasoning applies after the rewrite. There is no normalizing
 pass over the finished result and no <code>calc-encase-atoms</code> (see
-<a href="#org0a3bcfb">Encasing</a>) — the rewriter already normalized the site, and re-running
+<a href="#org46f7cbd">Encasing</a>) — the rewriter already normalized the site, and re-running
 either over the whole entry would undo the scoping. The coefficient
 ordering is likewise confined to products carrying the marker, so
 distributing the logarithm in <code>ln(x^2) + y 3</code> does not also reorder the
@@ -1296,8 +1314,8 @@ distributing the logarithm in <code>ln(x^2) + y 3</code> does not also reorder t
 </p>
 </div>
 </div>
-<div id="outline-container-orgff82cbc" class="outline-4">
-<h4 id="orgff82cbc"><span class="section-number-4">11.1.2.</span> Ordering without folding</h4>
+<div id="outline-container-org3bd175f" class="outline-4">
+<h4 id="org3bd175f"><span class="section-number-4">11.1.2.</span> Ordering without folding</h4>
 <div class="outline-text-4" id="text-11-1-2">
 <p>
 A distribution has to commit unsimplified, or calc's simplifier undoes
@@ -1364,8 +1382,8 @@ exponent and the outer product folds around it.
 </p>
 </div>
 </div>
-<div id="outline-container-orgeba2c9f" class="outline-4">
-<h4 id="orgeba2c9f"><span class="section-number-4">11.1.3.</span> Correcting calc's power-merge rules</h4>
+<div id="outline-container-org2f9de7e" class="outline-4">
+<h4 id="org2f9de7e"><span class="section-number-4">11.1.3.</span> Correcting calc's power-merge rules</h4>
 <div class="outline-text-4" id="text-11-1-3">
 <p>
 Four MergeRules gather powers of unlike bases wrongly, and each loses
@@ -1378,7 +1396,7 @@ Two divide by the wrong base, reading the numerator's base as <code>b</code> whe
 every sibling reads <code>a</code>:
 </p>
 
-<pre class="example" id="orgf75ba7b">
+<pre class="example" id="orgcba80d4">
 (a^x) / select(b^x)  :=  select((b / b) ^ x)     ; b/b = 1
 (a^x) / select(b^y)  :=  select((b / b^(y-x)) ^ x)
 </pre>
@@ -1389,7 +1407,7 @@ under a single power of <code>x</code> needs <code>(b^(y/x))^x = b^y</code>, but
 subtract where they must divide, yielding <code>b^(x(y-x))</code>:
 </p>
 
-<pre class="example" id="org10ecca7">
+<pre class="example" id="org3320329">
  (a^x) * select(b^y)  :=  select((a * b^(y-x)) ^ x)
 select(a^x) / (b^y)   :=  select((a / b^(y-x)) ^ x)
 </pre>
@@ -1427,8 +1445,8 @@ expressions, calc's own product ordering being decided inside
 </div>
 </div>
 </div>
-<div id="outline-container-orgbc2e575" class="outline-2">
-<h2 id="orgbc2e575"><span class="section-number-2">12.</span> Binary on selection-like targets</h2>
+<div id="outline-container-orgebdb01b" class="outline-2">
+<h2 id="orgebdb01b"><span class="section-number-2">12.</span> Binary on selection-like targets</h2>
 <div class="outline-text-2" id="text-12">
 <p>
 Selection, subexpr, entry: each can support binary commands, but the
@@ -1457,8 +1475,8 @@ near this entry" (entry — shift is friendlier).
 </p>
 </div>
 </div>
-<div id="outline-container-orge209628" class="outline-2">
-<h2 id="orge209628"><span class="section-number-2">13.</span> Inverse / Hyperbolic variants</h2>
+<div id="outline-container-org3fc5128" class="outline-2">
+<h2 id="org3fc5128"><span class="section-number-2">13.</span> Inverse / Hyperbolic variants</h2>
 <div class="outline-text-2" id="text-13">
 <p>
 Calc's I and H prefix flags reroute a defcmd to a declared variant
@@ -1472,8 +1490,8 @@ flags, so the next command starts clean.
 </p>
 </div>
 </div>
-<div id="outline-container-org246b70e" class="outline-2">
-<h2 id="org246b70e"><span class="section-number-2">14.</span> Contextual digit entry</h2>
+<div id="outline-container-orgedf0885" class="outline-2">
+<h2 id="orgedf0885"><span class="section-number-2">14.</span> Contextual digit entry</h2>
 <div class="outline-text-2" id="text-14">
 <p>
 The digit keys (and <code>_</code>, <code>.</code>, <code>#</code>, <code>@</code>) start calc's normal number
@@ -1568,8 +1586,8 @@ multiples of pi.
 </p>
 </div>
 </div>
-<div id="outline-container-org0e50403" class="outline-2">
-<h2 id="org0e50403"><span class="section-number-2">15.</span> Files</h2>
+<div id="outline-container-org885f570" class="outline-2">
+<h2 id="org885f570"><span class="section-number-2">15.</span> Files</h2>
 <div class="outline-text-2" id="text-15">
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
@@ -1726,8 +1744,8 @@ helper; the require is idempotent.)
 </p>
 </div>
 </div>
-<div id="outline-container-orgfc3b7a9" class="outline-2">
-<h2 id="orgfc3b7a9"><span class="section-number-2">16.</span> Modules</h2>
+<div id="outline-container-org5de12a6" class="outline-2">
+<h2 id="org5de12a6"><span class="section-number-2">16.</span> Modules</h2>
 <div class="outline-text-2" id="text-16">
 <p>
 Major features that stand apart from the contextual-command core live
@@ -1862,8 +1880,8 @@ so it stays out of the default and is opt-in — the dev instance adds
 </p>
 </div>
 </div>
-<div id="outline-container-orgc06bf2b" class="outline-2">
-<h2 id="orgc06bf2b"><span class="section-number-2">17.</span> See also</h2>
+<div id="outline-container-org7f761c5" class="outline-2">
+<h2 id="org7f761c5"><span class="section-number-2">17.</span> See also</h2>
 <div class="outline-text-2" id="text-17">
 <ul class="org-ul">
 <li><a href="../../core/maf-resolve.el">core/maf-resolve.el</a> — context schema reference at top of file</li>
@@ -1873,7 +1891,8 @@ so it stays out of the default and is opt-in — the dev instance adds
 </div>
 </div>
 <div id="postamble" class="status">
-<p class="date">Created: 2026-08-25 Tue 00:19</p>
+<p class="author">Author: David Yeung</p>
+<p class="date">Created: 2026-08-24 Mon 22:02</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>

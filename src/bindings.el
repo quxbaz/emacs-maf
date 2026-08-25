@@ -271,10 +271,12 @@
 (dotimes (i 10)
   (maf-bindings-define '(calc native) (format "r %d" i)
                        #'maf-recall-quick))
-;; The in-place editing entry keys (SPC / ` / C-o / "(") are
-;; installed by the edit module when it is enabled (see
-;; modules/edit.el), not here. ` shadows calc-edit, the command the
-;; whole module replaces.
+;; The in-place editing entry keys (SPC / ` / C-o) are installed by the
+;; edit module when it is enabled (see modules/edit.el), not here. `
+;; shadows calc-edit, the command the whole module replaces. The
+;; module's fourth key, "(" for a blank vector, is native's relation
+;; motion below and reaches the module through it; the module still
+;; declares its own plain "(" for the calc profile.
 (maf-bindings-define '(calc native) "U" #'maf-undo)
 (maf-bindings-define '(calc native) "D" #'maf-redo)
 ;; Catch every key that dispatches to undo/redo, so point handling
@@ -617,6 +619,20 @@
 ;; the sin call, and never on a b or a b + c), and it reads the buffer
 ;; text, so a Big-language rendering leaves it nothing to walk.
 (maf-bindings-define '(native) "C-M-u" #'maf-up-expression)
+
+;; Cross the relation: one key to the whole left side, one to the whole
+;; right — the largest formula there is on each, where the climb above
+;; would arrive a level at a time. The parens for the shape a relation
+;; has, two halves around a middle, and because calc's own use for them
+;; is already gone in this layout: ( is the edit module's blank-vector
+;; key and ) is unbound, both shadowing calc's complex-number
+;; delimiters, which maf's algebraic entry supplies instead. The
+;; vector-add keeps the key at home, where there is no entry to move
+;; within and the motion has nothing to do — see `maf--goto-side'; the
+;; edit module keeps its own plain "(" in the calc profile, whose
+;; layout these motions are no part of.
+(maf-bindings-define '(native) "(" #'maf-goto-left-side)
+(maf-bindings-define '(native) ")" #'maf-goto-right-side)
 
 ;; The module toggle buffer. m is calc's mode prefix (m m saves the
 ;; modes, m d is degrees mode), which is where turning maf's own

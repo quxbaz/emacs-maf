@@ -624,6 +624,21 @@ noun motion's to walk, read off the rendering as text.
 =maf-backward-operand= (C-M-SPC) is the same walk the other way, over
 the same stops, so the two retrace each other.
 
+=maf-goto-left-side= (=(=) and =maf-goto-right-side= (=)=) arrive at
+one particular landing in one press: the whole of a relation's left or
+right side, the largest formula there is on it, where the climb would
+reach it a level at a time. The relation is the innermost one point
+sits in, so a term inside one element of =[h = 0, p = -4, k = 0]=
+crosses within its own equation rather than finding the vector around
+it, and the entry's margins — the line-number prefix, the end of the
+line — cross the entry's own relation. Like the climb it asks the
+rendering where the side is nameable rather than computing a column
+(=maf--up-node-position=), so it works in Big language too, and it
+carries an active selection along for the same reason. Home is the one
+place the keys mean something else: there is no entry at point to move
+within, and they keep the blank-vector gesture the edit module gives
+them (=maf-edit-add-vector=).
+
 ** Widening a rewrite marker
 
 =maf-distribute= (j D) and =maf-merge= (j M) widen along the same
