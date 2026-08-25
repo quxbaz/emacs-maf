@@ -7,7 +7,7 @@
 ;; entry from a composition tree whose `tag' nodes reference the actual
 ;; formula conses; walking it connects the formula structure to buffer
 ;; text. Consumers: sub-formula highlighting (maf-hl), anchor-based
-;; point restoration (maf-lib), and the operand motion (src/stack.el).
+;; point restoration (maf-lib), and the landing rules (src/stack.el).
 ;;
 ;; All entry points assume `calc-prepare-selection' has run for the
 ;; entry in question, and handle only flat (single-height) renderings —
@@ -333,107 +333,5 @@ parens — `x - 5' renders without them at the top of an entry and
 gains them from the product in `3 (x - 5)' — so there the parens are
 the parent's punctuation rather than the node's own first glyph."
   (memq (car-safe expr) '(vec intv cplx polar)))
-
-(defun maf--comp-drop-context-parens (own expr text)
-  "OWN glyph positions with the parens EXPR's context added dropped.
-OWN is a list of flat positions into TEXT, EXPR's own glyphs — what is
-left of its span once the direct children are excluded. Calc composes
-a precedence paren inside the tag it brackets, so a sub-formula the
-context parenthesized carries the pair at the ends of its own glyphs,
-where it would otherwise lead with its operator. Both go, leaving the
-node named by what it renders of itself: `x - 5' inside `3 (x - 5)'
-by its `-' rather than by the `(' one column past its parent's own
-stop, where the walk had nowhere left to go.
-
-A node whose brackets are its own (`maf--comp-own-brackets-p') keeps
-them, and so does one whose glyphs do not open and close with a paren
-pair."
-  (let* ((visible (cl-remove-if (lambda (p) (eq (aref text p) ?\s)) own))
-         (open (car visible))
-         (close (car (last visible))))
-    (if (and open close (/= open close)
-             (not (maf--comp-own-brackets-p expr))
-             (eq (aref text open) ?\()
-             (eq (aref text close) ?\)))
-        (remq close (remq open own))
-      own)))
-
-(defun maf--comp-landing-positions ()
-  "Buffer positions naming each compound sub-formula of the entry, sorted.
-One position per tagged sub-formula that is an operation rather than an
-atom — the whole entry among them when it is one: the first of the
-glyphs the node renders itself — its operator, function name, opening
-delimiter — preferring non-blank over the padding around an operator,
-so each is a place `calc-find-selected-part' answers with that node,
-the same landing `maf--up-node-position' picks. A juxtaposed product
-draws its multiplication as nothing but a space, so its position is
-blank. The parens a context puts around a node are not its own glyphs
-(`maf--comp-drop-context-parens'), so the sum in `3 (x + 1)' is named
-at its `+', leaving the walk somewhere to go from its parent's stop.
-
-Numbers and variables (`math-primp') are left out: an atom is one
-noun, and walking the nouns is `maf-forward-noun''s job, so an entry
-that is nothing but an atom offers no position at all. nil when the
-composition is not flat."
-  (when (math-comp-is-flat calc-selection-cache-comp)
-    (let ((math-comp-pos 0)
-          (pieces nil)
-          ;; open tags, innermost first: (START EXPR . CHILD-SPANS)
-          (frames nil)
-          ;; closed tags: (START END EXPR CHILD-SPANS)
-          (records nil))
-      (cl-labels
-          ((walk (c)
-             (cond
-              ((not (consp c))
-               (push c pieces)
-               (setq math-comp-pos (+ math-comp-pos (length c))))
-              ((memq (car c) '(set break)))
-              ((eq (car c) 'horiz)
-               (dolist (sub (cdr c)) (walk sub)))
-              ((eq (car c) 'tag)
-               (push (list math-comp-pos (nth 1 c)) frames)
-               (walk (nth 2 c))
-               (let ((frame (pop frames)))
-                 (when frames
-                   ;; A direct child of the enclosing tag: its span is
-                   ;; what the parent's own-glyph scan below excludes.
-                   (push (cons (car frame) math-comp-pos)
-                         (cddr (car frames))))
-                 (push (list (car frame) math-comp-pos (nth 1 frame)
-                             (nreverse (cddr frame)))
-                       records)))
-              (t (walk (nth 2 c))))))
-        (walk calc-selection-cache-comp))
-      (let ((text (apply #'concat (nreverse pieces)))
-            (toppt (save-excursion
-                     (calc-cursor-stack-index calc-selection-cache-num)
-                     (point))))
-        (delete-dups
-         (sort (delq nil
-                     (mapcar
-                      (lambda (r)
-                        (pcase-let ((`(,start ,end ,expr ,children) r))
-                          ;; An atom is one noun, and the nouns are
-                          ;; `maf-forward-noun''s to walk.
-                          (unless (math-primp expr)
-                            (let* ((own (cl-loop
-                                         for p from start below end
-                                         unless (cl-some
-                                                 (lambda (c)
-                                                   (and (<= (car c) p)
-                                                        (< p (cdr c))))
-                                                 children)
-                                         collect p))
-                                   (own (maf--comp-drop-context-parens
-                                         own expr text))
-                                   (fpos (or (cl-find-if
-                                              (lambda (p)
-                                                (not (eq (aref text p) ?\s)))
-                                              own)
-                                             (car own) start)))
-                              (maf--comp-flat-to-pos fpos toppt)))))
-                      records))
-               #'<))))))
 
 (provide 'maf-comp)

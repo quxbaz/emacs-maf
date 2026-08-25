@@ -429,7 +429,10 @@
      its own first glyph, so a parenthesized operation is named at its
      operator — the walk crosses `y^2 = 3 (x - 5)' to the `-' instead
      of halting on the `(' beside its parent's stop, and C-M-u lands
-     there with it)
+     there with it. Also 2026-08-25: the stops are asked of resolve
+     column by column rather than counted off the composition, so the
+     walk works in Big language and over a matrix's own lines, where a
+     flat character count is no address at all)
    - [X] `M-a` maf-backward-operand (2026-08-25: the forward walk's
      reverse over the same stops, stack mode only like it. It held
      `C-M-SPC` for a few hours, then `M-S-SPC`, before the pair moved

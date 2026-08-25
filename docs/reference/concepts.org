@@ -626,17 +626,25 @@ operator is printed to its right. The nouns are left out — a number or
 a variable is =maf-forward-noun='s (M-f) to walk — so the two motions
 divide the entry between them rather than covering the same columns,
 and an entry that is a bare atom offers no stop of its own. Where the
-climb asks resolve one ancestor at a time, the motion reads the stops
-off the prepared composition in one pass
-(=maf--comp-landing-positions=), which is defined for flat renderings
-only: an entry drawn over several lines — Big language, a tall matrix
-— offers no stops at all, its terms still the noun motion's to walk,
-read off the rendering as text. Either way the walk is confined to the
-entry point sits in: the first and last stops are where it stops
-asking, and it signals at the margin rather than carrying point into a
-neighbouring entry, which is a line of its own to move to.
-=maf-backward-operand= (M-a) is the same walk the other way, over the
-same stops, so the two retrace each other.
+climb asks resolve one ancestor at a time, the motion asks it at every
+column of the entry and keeps one landing per node
+(=maf--operand-positions=), so both read the rendering back through
+the resolver rather than computing a column and trusting it. That is
+what lets the walk work in every rendering. The composition carries
+the formula's shape either way, but what a walk of it yields is a flat
+character count, and that is an address only when the entry is drawn
+as one row of glyphs: Big language draws a quotient as three lines, a
+raised exponent above its base, a matrix as one line per row. Asking
+costs a resolve per column and pays for itself — the stops come back
+in the order the rendering draws them, down the lines as well as
+across, and a node the rendering gives point no way to name (a matrix
+row, whose brackets calc tags to the matrix itself) is simply no stop,
+having nowhere to be named at. The walk is confined to the entry point
+sits in: the first and last stops are where it stops asking, and it
+signals at the margin rather than carrying point into a neighbouring
+entry, which is a line of its own to move to. =maf-backward-operand=
+(M-a) is the same walk the other way, over the same stops, so the two
+retrace each other.
 
 =maf-goto-left-side= (=(=) and =maf-goto-right-side= (=)=) arrive at
 one particular landing in one press: the whole of a relation's left or

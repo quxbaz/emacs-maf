@@ -1824,11 +1824,46 @@ two motions retrace each other."
 
 (defun maf--operand-positions (m)
   "Sorted buffer positions of the operand stops in the entry at level M.
-nil when the entry offers the motion no stops: a bare atom, all of it
-one noun, or a rendering that is not flat — Big language, a tall
-matrix."
+The entry is read column by column and every position handed to
+resolve, so each stop is a place `calc-find-selected-part' already
+answers with the node the motion advertises there, rather than a column
+computed from the composition and trusted to resolve to it. Asking
+rather than computing is what lets the walk work in every rendering:
+the composition carries the formula's shape but a flat character count
+is only an address when the entry is drawn as one row of glyphs, and
+Big language draws a quotient as three (`math-comp-is-flat'), a matrix
+as one row per line, a radical with its overbar above.
+
+One stop per node, at the landing `maf--up-pick-landing' picks out of
+the positions naming it — the rule the climb lands by, so the walk and
+`maf-up-expression' agree by construction rather than by two
+computations arriving at the same column.
+
+nil when the entry offers no stop: a bare atom is all noun
+\(`math-primp'), and the nouns are `maf-forward-noun''s to walk. A node
+the rendering gives point no way to name — a matrix row, whose brackets
+calc tags to the matrix itself — offers none either, having nowhere to
+be named at."
   (calc-prepare-selection m)
-  (maf--comp-landing-positions))
+  (let ((region (maf--up-entry-region m))
+        ;; (NODE . POSITIONS) per operation met, positions reversed.
+        (nodes nil))
+    (save-excursion
+      (goto-char (car region))
+      (while (< (point) (cdr region))
+        (let ((node (ignore-errors (calc-find-selected-part))))
+          (when (and node (not (math-primp node)))
+            (let ((cell (assq node nodes)))
+              (if cell
+                  (push (point) (cdr cell))
+                (push (list node (point)) nodes)))))
+        (forward-char 1)))
+    (sort (delq nil
+                (mapcar (lambda (cell)
+                          (maf--up-pick-landing (nreverse (cdr cell))
+                                                (car cell)))
+                        nodes))
+          #'<)))
 
 (defun maf--operand-position (dir)
   "Return the position of the nearest operand stop in direction DIR, or nil.
@@ -1880,8 +1915,9 @@ The nouns are not stops: a number or a variable is one term, and
 walking those is `maf-forward-noun''s (M-f) job, so the two motions
 divide the entry between them rather than covering the same columns.
 An entry that is a bare atom offers no stop of its own and is crossed
-whole, as is one drawn over several lines (Big language, a tall
-matrix).
+whole. An entry drawn over several lines is walked like any other: in
+Big language the stops run down the rendering as they run across it,
+a quotient named at its bar with the numerator's own stops above it.
 
 The walk stays inside the entry it starts in: the last operand is
 where it stops asking, and it signals there rather than crossing the
