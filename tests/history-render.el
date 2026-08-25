@@ -139,6 +139,30 @@
     ;; state -- the whole line carries the index.
     (cl-assert (= (get-text-property (point) 'maf-history-index) 0)))
 
+  ;; ? opens the help of the command a row names, so a name read off the
+  ;; log leads to what it does. Point picks the row, which is why the
+  ;; row and not the selection is what it reads.
+  (cl-assert (eq (lookup-key maf-history-mode-map (kbd "?"))
+                 'maf-history-describe-command))
+  ;; The mode's own help keeps the h that `special-mode' also puts it on.
+  (cl-assert (eq (lookup-key maf-history-mode-map (kbd "h")) 'describe-mode))
+  (with-current-buffer (maf-history--buffer)
+    (progn (goto-char (point-min)) (forward-line 1))
+    (cl-assert (eq (nth 2 (maf-history--state-at-point)) 'calcDigit-nondigit))
+    (save-window-excursion (call-interactively 'maf-history-describe-command))
+    (cl-assert (string-match-p "calcDigit-nondigit"
+                               (with-current-buffer "*Help*" (buffer-string))))
+    ;; The oldest row here recorded no command, so there is nothing to
+    ;; describe and it says so rather than describing the wrong thing.
+    (progn (goto-char (point-min)) (forward-line 3))
+    (cl-assert (null (nth 2 (maf-history--state-at-point))))
+    (cl-assert (not (ignore-errors
+                      (call-interactively 'maf-history-describe-command) t))))
+  ;; Off a log row -- the stack window has none -- it falls back to the
+  ;; state the browser has selected, which is the one that window shows.
+  (with-current-buffer (maf-history--stack-buffer)
+    (cl-assert (eq (nth 2 (maf-history--state-at-point)) 'mafcmd-mul)))
+
   ;; A state before an emptied stack is still a state to diff against, so
   ;; the first entry after one is highlighted rather than left plain.
   (progn (setq maf-history--states (list (list (list 7) "new")

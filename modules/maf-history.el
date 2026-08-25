@@ -564,6 +564,10 @@ mean something else beside a stack — line motion and RET.")
 ;; A deliberate chord for wiping the whole log, well out of fingerslip
 ;; range of the single-key commands.
 (define-key maf-history-mode-map (kbd "C-M-k") #'maf-history-clear)
+;; ? describes the command a row names, the reading that makes the
+;; echoed command name useful rather than only informative. It shadows
+;; the `describe-mode' special-mode puts here, which stays on h.
+(define-key maf-history-mode-map (kbd "?") #'maf-history-describe-command)
 (define-key maf-history-mode-map (kbd "q") #'maf-history-quit)
 
 ;; The stack: the same keys navigate this buffer instead of the log —
@@ -599,8 +603,10 @@ to the ends. \[maf-history-restore] takes the state at point, making
 it the live stack again, and quits. \[maf-history-switch] crosses into
 the stack instead, to take one entry out of a state rather than the
 whole of it. \[maf-history-delete] deletes the state shown from the
-log; \[maf-history-clear] clears the whole log. \[maf-history-quit]
-buries the browser."
+log; \[maf-history-clear] clears the whole log.
+\[maf-history-describe-command] describes the command the row at point
+names, and \[describe-mode] this help. \[maf-history-quit] buries the
+browser."
   (setq truncate-lines t)
   (setq-local revert-buffer-function
               (lambda (&rest _) (maf-history--render))))
@@ -707,6 +713,35 @@ to push."
   (goto-char (point-max))
   (forward-line (if (bolp) -1 0))
   (beginning-of-line))
+
+(defun maf-history--state-at-point ()
+  "Return the state point names, else the one the browser has selected.
+Every log row carries its state's index, so in the log this is the row
+under point even where point has drifted off the selection. The stack
+window has no rows of states to read, and there falls back to the
+selected state, which is the one it is showing."
+  (let ((index (or (get-text-property (point) 'maf-history-index)
+                   maf-history--index)))
+    (nth index maf-history--states)))
+
+(defun maf-history-describe-command ()
+  "Describe the command that produced the state at point.
+The log names the operation and echoes the command that ran beside it
+\(see `maf-history--command-name'); this opens that command's own help,
+so a name read off the log leads to what it does without leaving the
+browser to look it up. Point picks the state in the log; the stack
+window describes the state it is showing.
+
+On \\`?', where `special-mode' puts `describe-mode'. The mode's own
+help stays on \\`h', which runs it too."
+  (interactive)
+  (let* ((state (or (maf-history--state-at-point)
+                    (user-error "No states recorded yet")))
+         (command (nth 2 state)))
+    (unless (and command (symbolp command) (fboundp command))
+      (user-error "No command recorded for this state (%s)"
+                  (maf-history--label state)))
+    (describe-function command)))
 
 (defun maf-history-switch ()
   "Switch between the action log and the stack beside it.
