@@ -479,12 +479,19 @@ line carries the position counter."
           ;; text's own width — halved as a float, so a title of odd
           ;; width sits on the centre rather than a character off it,
           ;; `:align-to' being measured in pixels and taking a
-          ;; fractional column happily. Centred against the window rather than
-          ;; against a column worked out here: the log window is
-          ;; resizable, and `:align-to' is measured at redisplay, so
-          ;; the title re-centres as the window is dragged instead of
-          ;; holding padding computed for the width it was rendered
-          ;; at. Text wider than the window leaves the stretch nothing
+          ;; fractional column happily.
+          ;;
+          ;; Less a further column on top of that. Measured centre
+          ;; reads a touch right of centre here: the rows above the
+          ;; band start a two-column gutter in, and the eye squares the
+          ;; title against that text rather than against the window.
+          ;;
+          ;; Centred against the window rather than against a column
+          ;; worked out here: the log window is resizable, and
+          ;; `:align-to' is measured at redisplay, so the title
+          ;; re-centres as the window is dragged instead of holding
+          ;; padding computed for the width it was rendered at. Text
+          ;; wider than the window leaves the stretch nothing
           ;; to reach and collapses it, which starts the text at the
           ;; margin and truncates it as any other log row is.
           ;;
@@ -497,7 +504,7 @@ line carries the position counter."
               (when text
                 (insert (propertize
                          " " 'display `(space :align-to
-                                              (- center ,(/ (string-width text) 2.0)))
+                                              (- center ,(+ (/ (string-width text) 2.0) 1)))
                          'face 'maf-history-separator))
                 (insert (propertize text 'face 'maf-history-separator)))
               (insert (propertize "\n" 'face 'maf-history-separator))

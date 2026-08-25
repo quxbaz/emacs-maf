@@ -136,12 +136,15 @@
     ;; redisplay against the window, so the title re-centres when the
     ;; window is resized rather than holding a column count worked out
     ;; when the log was rendered. Half the text's width left of centre
-    ;; is where text of that width starts if it is to straddle it.
+    ;; is where text of that width starts if it is to straddle it, and
+    ;; a column further left again is the optical nudge -- the log's
+    ;; rows start a gutter in, so measured centre reads right of it.
     (cl-assert (equal (maf--history-sep-text 2) " morning"))
     (progn (goto-char (point-min)) (forward-line 3))
     (cl-assert (equal (get-text-property (point) 'display)
                       (list 'space :align-to
-                            (list '- 'center (/ (string-width "morning") 2.0)))))
+                            (list '- 'center
+                                  (+ (/ (string-width "morning") 2.0) 1)))))
     ;; The text wears the band, so it reads on it rather than in the
     ;; default foreground over it. The stretch ahead of it wears it
     ;; too, so the band is unbroken up to where the title starts.
