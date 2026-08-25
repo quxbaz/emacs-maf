@@ -28,10 +28,10 @@
   - [-] overload `(` and `)` to move point to largest expression on left/right side of
     equation/relation. only in stack mode (not edit mode).
   - *maf-formulas*
-    - [ ] retain the legend even in filtered results view
-    - [ ] npjk should move to first character of entry, instead of first column
-    - [ ] RET on group name should filter for that group (should work in filtered and non-filtered views)
-    - [ ] npjk should also land on group names
+    - [X] retain the legend even in filtered results view
+    - [X] npjk should move to first character of entry, instead of first column
+    - [X] RET on group name should filter for that group (should work in filtered and non-filtered views)
+    - [X] npjk should also land on group names
   - [ ] given something like: [h = 0, p =| -4, k = 0]
     on `j l` or `j r`, point should stay next to the `=`
   - *maf-editplus*
