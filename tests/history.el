@@ -54,8 +54,9 @@
   (with-current-buffer (maf-history--stack-buffer)
     (cl-assert (equal (buffer-substring-no-properties (point-min) (point-max))
                       "2:  6 x + 12\n1:  a + b\n"))
-    (cl-assert (string-match-p " n/p move .* o/t switch .* r restore .* D delete "
-                               (format-mode-line header-line-format)))
+    (cl-assert (string-match-p
+                " n/p move .* TAB/o/t switch .* r restore .* D delete .* q quit"
+                (format-mode-line header-line-format)))
     ;; The entry this step produced is highlighted; the one carried
     ;; over from the state before is not.
     (progn (goto-char (point-min)) (search-forward "a + b") (backward-char 1))

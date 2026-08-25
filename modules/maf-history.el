@@ -311,7 +311,13 @@ for it, kept only while each still runs it.")
         ((maf-history-oldest maf-history-newest
           maf-history-stack-first maf-history-stack-last)
          "ends" "<" ">")
-        (maf-history-switch "switch" "o" "t")
+        ;; TAB crosses too, by naming the side it leads to rather than
+        ;; toggling, so it belongs to this control even though it runs a
+        ;; different command in each window — which is also why the
+        ;; commands are listed: a preferred key is kept only while it
+        ;; still runs one of them.
+        ((maf-history-switch maf-history-focus-log maf-history-focus-stack)
+         "switch" "TAB" "o" "t")
         (maf-history-insert "insert" "RET")
         (maf-history-restore "restore" "r" "RET")
         (maf-history-delete "delete" "D")
@@ -342,7 +348,13 @@ the binding face, its verb after. Keys are looked up in the current
 buffer's live keymaps, so the legend follows a rebinding — and shows
 the keys that window actually uses, the two browsing maps differing on
 a few. It heads the stack window rather than the log because that is
-the wide one; the pair is one UI, and the keys drive both."
+the wide one; the pair is one UI, and the keys drive both.
+
+Controls are set two spaces apart rather than three: the line has
+grown past what three would fit, and the keys carry `help-key-binding'
+while the verbs are plain, so the two already read apart without the
+extra column. A header line truncates rather than wraps, so the width
+it costs comes off the end of the line."
   (concat
    " "
    (mapconcat
@@ -354,7 +366,7 @@ the wide one; the pair is one UI, and the keys drive both."
                            "/")
                 " " verb)))
     maf-history--controls
-    "   ")))
+    "  ")))
 
 (defun maf-history--render-log ()
   "Render the action log into the current buffer, the browser's left window.
