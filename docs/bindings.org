@@ -251,6 +251,11 @@
      and beside the rest of the factoring family under k and l.
      Displaces prfac's table key in native; prfac keeps no key, and the
      calc profile keeps k f = prime factors)
+   - [X] `F` mafcmd-reduce ← calc-floor (2026-08-24: a second key for
+     the fold beside its `v R` — the combinator reached for most, and
+     one that spends a key on the operation it reads, so the prefix is
+     the one worth dropping. Displaces floor's table key in native;
+     floor keeps no key, and the calc profile keeps F = floor)
    - [X] `l f` mafcmd-factor-by ← calc-freq
    - [X] `l s` mafcmd-complete-square ← calc-spn (2026-08-21: a
      family key on the square's letter, beside its k s; the vim
