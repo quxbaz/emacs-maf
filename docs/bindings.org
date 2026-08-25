@@ -292,10 +292,19 @@
    - [X] `l d` mafcmd-to-degrees ← calc-db
    - [X] `f L` mafcmd-unit-cath ← calc-lnp1
    - [X] `M-k` mafcmd-coordinate-toggle ← calc-copy-as-kill
-   - [X] `G` maf-go-home ← calc-argument
+   - [X] `G` maf-preview-show ← calc-argument (2026-08-25: was
+     maf-go-home, which is now bound by nothing — the preview panel
+     reads an entry without leaving it. A native declaration, not a
+     module key, though the command lives in modules/maf-preview.el:
+     the peek works with the module off, which is the state it is
+     most for)
    - [X] `j e` maf-jump-equals ← calc-enable-selections
    - [X] `@` maf-toggle-simplify ← calcDigit-start
-   - [X] `&` maf-toggle-big-language ← calc-inv
+   - [X] `&` mafcmd-inv ← calc-inv (2026-08-25: was
+     maf-toggle-big-language, now bound by nothing — the preview panel
+     shows one entry in Big without switching the stack over. & is the
+     inv row's table key again, maf's sibling on calc's own key for
+     the command, so nothing is shadowed here any more)
    - [X] `J` mafcmd-mul ← mafcmd-conj (2026-08-23: a second key for
      multiplication beside its table key `*` — the most-struck binary
      operator on a home-row shift where * is a reach to shift-8.
@@ -456,7 +465,8 @@
    - mafcmd-idiv — integer division; its stock \ went to mafcmd-sqrt
    - mafcmd-lud — LU decomposition; its stock v L went to
      mafcmd-flatten
-   - mafcmd-arg — complex argument; its stock G went to maf-go-home
+   - mafcmd-arg — complex argument; its stock G went to
+     maf-preview-show (to maf-go-home before that)
    - mafcmd-map, mafcmd-map-stack — explicit mapping commands; the M
      flag is the bound workflow
    - maf-dup, maf-dup-here, maf-clear-selections — split-out halves of
@@ -510,7 +520,9 @@
      Displaces the inherited mod-360, which rides the family
      instead: `o w`, wrapping the angle into range (`l w` through the
      mirror)
-   - already vim-shaped for free: `G` is maf-go-home in native
+   - `G` was maf-go-home in native, the one key vim-shaped for free;
+     2026-08-25 it went unbound and native's G became
+     maf-preview-show, which vim inherits with the rest
    - deliberately no `0` / `$` / `gg`: digits are digit-entry
      starters, $ is auto-algebraic entry, g is reserved for the
      plotting module; M-m stays beginning-of-entry
