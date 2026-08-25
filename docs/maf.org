@@ -43,16 +43,7 @@
   - [ ] main docs for users (new features, changes)
   - [ ] technical docs for devs
 
-* feedback
-  - [ ] single-key (no modifiers) to force next cmd to target line
-  - following cmds should be bound to single keys (no modifiers):
-    - [X] home (make sure to set mark)
-    - [ ] expand
-    - [ ] simplify
-    - [ ] factor
-    - [ ] target-line
-
-* later::plotting module
+* later::graph module
   - [ ] my/calc-graph-quick / -with-range (g l / g i) — plot the top entry straight to
     gnuplot (see Todo: interval form for the range prompt)
   - [ ] my/calc-to-gnuplot-string — calc expr → gnuplot formula (fortran mode + fixups)
