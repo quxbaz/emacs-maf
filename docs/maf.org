@@ -22,7 +22,7 @@
 * review
 
 * NEXT maf-latex
-  - [ ] refine
+  - [ ] refine stand-alone feature
   - [ ] support in maf-preview
   - [ ] support in maf-formulas
 
