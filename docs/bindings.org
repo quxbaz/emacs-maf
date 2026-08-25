@@ -411,11 +411,13 @@
      Later the same day the stops lost the nouns: only an operation is
      a landing, numbers and variables being M-f's, so the two motions
      divide the entry rather than covering the same columns)
-   - [X] `C-M-SPC` maf-backward-operand (2026-08-25: S-SPC's reverse
-     over the same stops — space again under two modifiers, calc
-     unbound there, stack mode only like the forward walk. A terminal
-     needs no decode entry for it: xterm.el carries keycode 32 under
-     ctrl+alt, the entry it lacks for shift alone)
+   - [X] `M-S-SPC` maf-backward-operand (2026-08-25: S-SPC's reverse
+     over the same stops — the forward key with meta added, calc and
+     the global map both unbound there, stack mode only like the
+     forward walk. Wanted a decode entry of its own: xterm.el carries
+     keycode 32 under alt and ctrl+alt, never under a shift, so
+     alt+shift falls through as the plain shift does. It held C-M-SPC
+     for a few hours the same day, the key the request meant to name)
    - [X] `C-M-u` maf-up-expression
    - [X] `C-M-k` maf-reset
    - [X] `C-M-l` maf-reset-settings

@@ -1,4 +1,4 @@
-;; `maf-forward-operand' (S-SPC) and `maf-backward-operand' (C-M-SPC),
+;; `maf-forward-operand' (S-SPC) and `maf-backward-operand' (M-S-SPC),
 ;; its reverse over the same stops: every operation of an entry is one
 ;; stop, the whole entry among them, each at the first glyph it renders
 ;; itself — the place resolve names it. The nouns are not stops: a
@@ -65,9 +65,9 @@
   ;; Backward retraces the same stops on its own key, crosses back up
   ;; into the entry above, and signals in turn before the stack's first
   ;; stop.
-  (progn (execute-kbd-macro (kbd "C-M-SPC")) nil)
+  (progn (execute-kbd-macro (kbd "M-S-SPC")) nil)
   (cl-assert (looking-at " x \\+ 12"))
-  (progn (execute-kbd-macro (kbd "C-M-SPC")) nil)
+  (progn (execute-kbd-macro (kbd "M-S-SPC")) nil)
   (cl-assert (looking-at " y)$"))
   (cl-assert (= (calc-locate-cursor-element (point)) 2))
   (let ((current-prefix-arg 2)) (call-interactively 'maf-backward-operand))

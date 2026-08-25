@@ -21,7 +21,7 @@
       - [-] update format: next to history item (eg, `maf-del`), show the command
         name (eg, `(maf-del)`)
       - [-] show `C-M-k` binding in legend
-  - [X] bind `C-M-SPC` to the reverse of `S-SPC`. move to the PREV operand
+  - [X] bind `M-S-SPC` to the reverse of `S-SPC`. move to the PREV operand
     - same conditions. only work in stack mode.
   - *maf-formulas*
     - [X] retain the legend even in filtered results view

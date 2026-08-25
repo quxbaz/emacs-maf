@@ -601,14 +601,15 @@
 ;; terminal needs the decode entries at the end of this file to say
 ;; the key at all.
 ;;
-;; The reverse walk takes C-M-SPC: space again, so the pair reads as one
-;; gesture under two modifiers, and calc binds nothing there either —
-;; all the binding shadows is the global map's `mark-sexp', which has
-;; no sexp to mark in a stack buffer. A terminal says this key without
-;; help: xterm.el's table carries keycode 32 under ctrl+alt, the entry
-;; it lacks for shift alone.
+;; The reverse walk takes M-S-SPC: the forward key with meta added, so
+;; the pair reads as one gesture and its reverse. Nothing is displaced
+;; — calc binds it no more than the shifted space, and the global map
+;; leaves the shifted form free (`just-one-space' holds the plain
+;; M-SPC, which this does not touch). A terminal needs the decode
+;; entries at the end of this file for this one too: xterm.el carries
+;; keycode 32 under alt and under ctrl+alt, never under a shift.
 (maf-bindings-define '(native) "S-SPC" #'maf-forward-operand)
-(maf-bindings-define '(native) "C-M-SPC" #'maf-backward-operand)
+(maf-bindings-define '(native) "M-S-SPC" #'maf-backward-operand)
 
 ;; Step out to the enclosing sub-formula, taking the key the global map
 ;; gives `backward-up-list' — the same gesture, over the formula rather
@@ -672,11 +673,12 @@
 ;; depends on whether it counts the shift that produced the | — take
 ;; both 6 (ctrl+shift) and 5 (ctrl alone).
 ;;
-;; The operand motion's S-SPC has the same gap a third way: a terminal
+;; The operand motions have the same gap a third way: a terminal
 ;; without modifyOtherKeys sends Shift+Space as the plain space it
 ;; shifts, and one with it spells the key out — but xterm.el's table
-;; carries shift alone (modifier 2) for tab and return only, so the
-;; keycode-32 form falls through undecoded like the others.
+;; carries keycode 32 under alt (modifier 3) and ctrl+alt (7) only, so
+;; neither the forward walk's shift (2) nor the reverse walk's
+;; alt+shift (4) is decoded, and both fall through like the others.
 (defun maf--tty-setup-keys ()
   "Decode terminal sequences for keys maf binds and `term/xterm.el' omits."
   (define-key input-decode-map "\e[27;7;127~" [C-M-backspace])
@@ -686,7 +688,9 @@
   (define-key input-decode-map "\e[27;5;124~" [?\C-\|])
   (define-key input-decode-map "\e[124;5u" [?\C-\|])
   (define-key input-decode-map "\e[27;2;32~" [?\S-\s])
-  (define-key input-decode-map "\e[32;2u" [?\S-\s]))
+  (define-key input-decode-map "\e[32;2u" [?\S-\s])
+  (define-key input-decode-map "\e[27;4;32~" [?\M-\S-\s])
+  (define-key input-decode-map "\e[32;4u" [?\M-\S-\s]))
 
 ;; `input-decode-map' is terminal-local, so this runs once per tty
 ;; rather than once at load.

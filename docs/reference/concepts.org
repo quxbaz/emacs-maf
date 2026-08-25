@@ -621,7 +621,7 @@ the motion reads the stops off the prepared composition in one pass
 only: an entry drawn over several lines — Big language, a tall
 matrix — offers no stops and is crossed whole, its terms still the
 noun motion's to walk, read off the rendering as text.
-=maf-backward-operand= (C-M-SPC) is the same walk the other way, over
+=maf-backward-operand= (M-S-SPC) is the same walk the other way, over
 the same stops, so the two retrace each other.
 
 =maf-goto-left-side= (=(=) and =maf-goto-right-side= (=)=) arrive at
