@@ -303,7 +303,7 @@ for it, kept only while each still runs it.")
 ;; n/p/j/k and </> move within whichever window they are pressed in —
 ;; between states in the log, between lines in the stack — so each
 ;; control names both meanings and the legend stays true wherever it
-;; is rendered. It names n/p and < >, leaving j/k and C-< / C-> as
+;; is rendered. It names n/p and < >, leaving j/k and M-< / M-> as
 ;; unadvertised aliases rather than spending the width on every pair.
 (setq maf-history--controls
       '(((maf-history-previous maf-history-next next-line previous-line)
@@ -541,15 +541,14 @@ mean something else beside a stack — line motion and RET.")
 (define-key maf-history-mode-map (kbd "M-n") #'maf-history-previous)
 (define-key maf-history-mode-map (kbd "M-p") #'maf-history-next)
 ;; The ends follow the display too, as the step keys do: the log runs
-;; newest-first, so < reaches the top of it and > the bottom. C-< and
-;; C-> are the same two under a modifier, for a hand already holding
-;; control down; they are GUI events a terminal cannot deliver, so the
-;; unmodified pair stays the one the legend names and the one a tty
-;; has.
+;; newest-first, so < reaches the top of it and > the bottom. M-< and
+;; M-> are the same two under a modifier, and the same two Emacs puts
+;; the ends of a buffer on — which for a log rendered newest-first is
+;; the reading they already have here.
 (define-key maf-history-mode-map (kbd "<") #'maf-history-newest)
 (define-key maf-history-mode-map (kbd ">") #'maf-history-oldest)
-(define-key maf-history-mode-map (kbd "C-<") #'maf-history-newest)
-(define-key maf-history-mode-map (kbd "C->") #'maf-history-oldest)
+(define-key maf-history-mode-map (kbd "M-<") #'maf-history-newest)
+(define-key maf-history-mode-map (kbd "M->") #'maf-history-oldest)
 ;; Either of these crosses between the two windows, either way.
 (define-key maf-history-mode-map (kbd "o") #'maf-history-switch)
 (define-key maf-history-mode-map (kbd "t") #'maf-history-switch)
@@ -585,8 +584,8 @@ mean something else beside a stack — line motion and RET.")
 (define-key maf-history-stack-mode-map (kbd "k") #'previous-line)
 (define-key maf-history-stack-mode-map (kbd "<") #'maf-history-stack-first)
 (define-key maf-history-stack-mode-map (kbd ">") #'maf-history-stack-last)
-(define-key maf-history-stack-mode-map (kbd "C-<") #'maf-history-stack-first)
-(define-key maf-history-stack-mode-map (kbd "C->") #'maf-history-stack-last)
+(define-key maf-history-stack-mode-map (kbd "M-<") #'maf-history-stack-first)
+(define-key maf-history-stack-mode-map (kbd "M->") #'maf-history-stack-last)
 (define-key maf-history-stack-mode-map (kbd "RET") #'maf-history-insert)
 (define-key maf-history-stack-mode-map (kbd "C-<return>")
             #'maf-history-insert-stay)
