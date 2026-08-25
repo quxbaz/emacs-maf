@@ -21,7 +21,10 @@
       background with `:extend' so the band runs out to the window edge
       (works on a tty too). A row of its own rather than the state row's
       underline: the underline left the rule no vertical margin
-  - [-] x|
+  - [ ] stuff like this should be included in basic simplification (`k k`)
+    2^log(x, 2) => x
+    e^ln(x) => x (i think this works already, so we just need to generalize it to any base)
+  - [X] x|
     command: `, y`
     expect: x y
     actual: y

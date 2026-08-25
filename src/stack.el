@@ -1335,30 +1335,85 @@ point, each side of an equation, the top entry at home.
 (defvar maf--quick-variable nil
   "Variable read by `maf-quick-variable', for the contextual body.")
 
+(defvar maf--quick-variable-path nil
+  "Path to the sub-formula `mafcmd--quick-variable-join' joins onto.
+A `maf--node-path' path into the entry, from `maf-quick-variable'.")
+
 (maf-defcmd mafcmd--quick-variable-mul (expr _arg commit)
   "Apply `maf--quick-variable' to the resolved expression.
 Internal: `maf-quick-variable' reads the variable, binds it, and
-dispatches here when point is on an expression. A target that is
-itself a variable is overwritten — naming a name means renaming it —
-anything else is multiplied, variable on the left."
+dispatches here when point names an expression rather than sitting
+just past one. A target the user pointed at — a selection, a region,
+the sub-formula under point — that is itself a variable is
+overwritten: naming a name means renaming it. Anything else is
+multiplied, variable on the left; a target reached from a margin is
+never renamed, a margin being where the entry is taken whole rather
+than a name pointed at."
   :arity unary
   :prefix "qvar"
   :targets-var maf-quick-variable-targets
-  (commit (if (eq (car-safe expr) 'var)
+  (commit (if (and (eq (car-safe expr) 'var)
+                   (memq maf-target '(subexpr selection region)))
               maf--quick-variable
             (calcFunc-mul maf--quick-variable expr))))
+
+(maf-defcmd mafcmd--quick-variable-join (expr _arg commit)
+  "Join `maf--quick-variable' onto the sub-formula at `maf--quick-variable-path'.
+Internal: `maf-quick-variable' dispatches here when point sits just
+past a sub-formula, where the gesture is to carry on writing rather
+than to name what is there. The variable multiplies that sub-formula
+on its right, in place; the rest of the entry is untouched, so nothing
+else re-simplifies. The entry is the subject whole — a relation
+included, since the variable lands at one place inside it rather than
+once per side."
+  :arity unary
+  :prefix "qvar"
+  :scope entry
+  :map -1
+  (commit (maf--splice-path
+           expr maf--quick-variable-path
+           (lambda (node) (calcFunc-mul node maf--quick-variable)))))
+
+(defun maf--quick-variable-join-path ()
+  "Path for `mafcmd--quick-variable-join', or nil to target normally.
+Non-nil when point sits just past a sub-formula (`maf--path-just-past-point')
+and no narrowing gesture this command honors is in play: a region or a
+calc selection is a deliberate naming of what to act on, and outranks
+the position of point within it."
+  (and (not (and (use-region-p)
+                 (memq 'region maf-quick-variable-targets)))
+       (not (and (maf--sel-any-p)
+                 (memq 'selection maf-quick-variable-targets)))
+       (maf--path-just-past-point)))
 
 (defun maf-quick-variable ()
   "Read a letter and apply it as a variable, contextually.
 
-  x on a + 2|  =>  a + 2 x
-  x on a| + 2  =>  x + 2      (a variable target is overwritten)
+  y on |x         =>  y            (a name pointed at is renamed)
+  y on x|         =>  x y          (past it, the variable joins on)
+  y on a = x| + 2 =>  a = x y + 2
+  y on x + 2|     =>  x + 2 y
+  y on x +| 2     =>  y (x + 2)
 
 At home with no selection active, the variable is pushed as a new
-stack entry instead. A target that is itself a variable is replaced by
-the new one — naming a name means renaming it. Any other target is
-multiplied by it, variable on the left: the selection, the sub-formula
-at point, each side of an equation, the whole entry from its margin.
+stack entry instead.
+
+Point just past a sub-formula — exactly at the end of its text — joins
+the variable onto it, multiplied on its right, leaving the rest of the
+entry alone. Where several formulas end at point the smallest one
+takes it, so at the end of x + 2 the variable joins the 2 rather than
+the sum, and at the end of a relation it joins the tail of the right
+side rather than landing once per side.
+
+Anywhere else the position names a target instead: the selection, the
+region, the sub-formula under point (its operator glyph names the
+whole formula), each side of an equation, the whole entry from a
+margin. A target that is itself a variable is replaced by the new
+one — naming a name means renaming it — but only where the user
+pointed at that name; a margin is not a name pointed at, so nothing
+reached from one is ever renamed. Every other target is multiplied by
+the variable, on the left.
+
 Any letter is a valid variable; anything else aborts."
   (interactive)
   (let ((char (read-char-from-minibuffer "Variable: ")))
@@ -1366,11 +1421,18 @@ Any letter is a valid variable; anything else aborts."
       (user-error "Invalid variable '%c'; must be a letter" char))
     (let ((var (list 'var
                      (intern (char-to-string char))
-                     (intern (concat "var-" (char-to-string char))))))
-      (if (and (maf--at-home-p) (not (maf--sel-any-p)))
-          (calc-wrapper (calc-push var))
+                     (intern (concat "var-" (char-to-string char)))))
+          (path (maf--quick-variable-join-path)))
+      (cond
+       ((and (maf--at-home-p) (not (maf--sel-any-p)))
+        (calc-wrapper (calc-push var)))
+       (path
+        (let ((maf--quick-variable var)
+              (maf--quick-variable-path (cdr path)))
+          (mafcmd--quick-variable-join)))
+       (t
         (let ((maf--quick-variable var))
-          (mafcmd--quick-variable-mul))))))
+          (mafcmd--quick-variable-mul)))))))
 
 (maf-defcmd mafcmd--pi-mul (expr _arg commit)
   "Multiply the resolved expression by the symbolic constant pi.
