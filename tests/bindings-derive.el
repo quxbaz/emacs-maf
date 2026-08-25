@@ -52,7 +52,10 @@
   (cl-assert (eq (key-binding (kbd "W")) 'mafcmd-sqr))
 
   ;; The families the motions displace are gone whole, not in part.
+  ;; k stays a motion, so poly-roots — native's k R since 2026-08-25,
+  ;; off the mirrored l family — has no vim key at all.
   (cl-assert (null (key-binding (kbd "j x"))))
+  (cl-assert (null (key-binding (kbd "o a"))))
   (cl-assert (null (key-binding (kbd "l l"))))
   (cl-assert (null (key-binding (kbd "k k"))))
   (cl-assert (null (key-binding (kbd "b a"))))
@@ -62,7 +65,6 @@
   ;; from o's case pair trade places one step over: commute on the
   ;; doubled o o, the reciprocal on the capital O commute vacates.
   (cl-assert (eq (key-binding (kbd "o c")) 'mafcmd-collect-fractions))
-  (cl-assert (eq (key-binding (kbd "o a")) 'mafcmd-poly-roots))
   (cl-assert (eq (key-binding (kbd "o F")) 'mafcmd-factor-gcd))
   (cl-assert (eq (key-binding (kbd "o o")) 'mafcmd-commute))
   (cl-assert (eq (key-binding (kbd "O")) 'mafcmd-inv))
