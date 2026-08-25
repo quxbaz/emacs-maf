@@ -410,7 +410,10 @@
      mode only — no editplus key carries it into an edit session.
      Later the same day the stops lost the nouns: only an operation is
      a landing, numbers and variables being M-f's, so the two motions
-     divide the entry rather than covering the same columns)
+     divide the entry rather than covering the same columns. 2026-08-25:
+     confined to one entry as well — the walk signals at the entry's
+     first and last stop instead of crossing the margin into its
+     neighbour, both motions together)
    - [X] `M-S-SPC` maf-backward-operand (2026-08-25: S-SPC's reverse
      over the same stops — the forward key with meta added, calc and
      the global map both unbound there, stack mode only like the

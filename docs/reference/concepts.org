@@ -619,8 +619,11 @@ stop of its own. Where the climb asks resolve one ancestor at a time,
 the motion reads the stops off the prepared composition in one pass
 (=maf--comp-landing-positions=), which is defined for flat renderings
 only: an entry drawn over several lines — Big language, a tall
-matrix — offers no stops and is crossed whole, its terms still the
-noun motion's to walk, read off the rendering as text.
+matrix — offers no stops at all, its terms still the noun motion's to
+walk, read off the rendering as text. Either way the walk is confined
+to the entry point sits in: the first and last stops are where it
+stops asking, and it signals at the margin rather than carrying point
+into a neighbouring entry, which is a line of its own to move to.
 =maf-backward-operand= (M-S-SPC) is the same walk the other way, over
 the same stops, so the two retrace each other.
 

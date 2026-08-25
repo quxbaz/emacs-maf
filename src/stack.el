@@ -1833,32 +1833,27 @@ matrix."
 (defun maf--operand-position (dir)
   "Return the position of the nearest operand stop in direction DIR, or nil.
 DIR is 1 forward, -1 back. Strictly past point, so the stop point
-already sits on is never its own answer. The scan crosses entries,
-over the whole stack: forward runs on into the entry below, backward
-into the one above."
-  (let ((from (point))
-        (size (calc-stack-size)))
-    (catch 'found
-      (let ((m (calc-locate-cursor-element from)))
+already sits on is never its own answer. The scan is confined to the
+entry point sits in: it never runs on into the entry below or above,
+so each entry's first and last stops are where the walk stops asking.
+nil at home as well, there being no entry there to walk."
+  (let* ((from (point))
+         (m (calc-locate-cursor-element from)))
+    (when (and (>= m 1) (<= m (calc-stack-size)))
+      (let ((stops (maf--operand-positions m)))
         (if (> dir 0)
-            (cl-loop for lvl from (min m size) downto 1
-                     for hit = (seq-find (lambda (p) (> p from))
-                                         (maf--operand-positions lvl))
-                     when hit do (throw 'found hit))
-          (cl-loop for lvl from (max m 1) to size
-                   for hit = (seq-find (lambda (p) (< p from))
-                                       (nreverse (maf--operand-positions lvl)))
-                   when hit do (throw 'found hit))))
-      nil)))
+            (seq-find (lambda (p) (> p from)) stops)
+          (seq-find (lambda (p) (< p from)) (reverse stops)))))))
 
 (defun maf--operand-move (n)
   "Move point over N operand stops, backward when N is negative.
-Signals at the end of the stack, having taken the steps it could."
+Signals at the entry's edge, having taken the steps it could."
   (let ((dir (if (< n 0) -1 1)))
     (dotimes (_ (abs n))
       (let ((pos (maf--operand-position dir)))
         (unless pos
-          (user-error "No operand %s point" (if (> dir 0) "after" "before")))
+          (user-error "No operand %s point in this entry"
+                      (if (> dir 0) "after" "before")))
         (goto-char pos)))))
 
 (defun maf-forward-operand (&optional n)
@@ -1883,10 +1878,10 @@ An entry that is a bare atom offers no stop of its own and is crossed
 whole, as is one drawn over several lines (Big language, a tall
 matrix).
 
-The walk crosses entries — from the last operand of one to the first
-of the next, the line-number margin never a stop — and signals at the
-end of the stack. A numeric prefix N moves over that many operands,
-backward when negative."
+The walk stays inside the entry it starts in: the last operand is
+where it stops asking, and it signals there rather than crossing the
+line-number margin into the entry below. A numeric prefix N moves over
+that many operands, backward when negative."
   (interactive "p")
   (maf--operand-move (or n 1)))
 
@@ -1899,10 +1894,9 @@ backward when negative."
 The mirror of `maf-forward-operand', over the same stops — every
 operation of the entry at the first glyph it renders itself, the nouns
 left to `maf-backward-noun' — so the two motions retrace each other.
-The walk crosses entries the other way, from the first operand of one
-to the last of the entry above, and signals before the stack's first
-stop. A numeric prefix N moves over that many operands, forward when
-negative."
+It stays inside its entry the same way, signalling at the first
+operand rather than climbing to the entry above. A numeric prefix N
+moves over that many operands, forward when negative."
   (interactive "p")
   (maf--operand-move (- (or n 1))))
 

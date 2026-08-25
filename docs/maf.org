@@ -13,21 +13,6 @@
 * now
 
 * review
-  - *maf-history* rendering
-    - refine history log
-      - [X] if action is duplication (eg, RET on an entire entry), then action should be "dupe"
-      - [X] currently on "add" items, the added item is not highlighted in
-        yellow in the corresponding stack
-      - [-] update format: next to history item (eg, `maf-del`), show the command
-        name (eg, `(maf-del)`)
-      - [-] show `C-M-k` binding in legend
-  - [X] bind `M-S-SPC` to the reverse of `S-SPC`. move to the PREV operand
-    - same conditions. only work in stack mode.
-  - *maf-formulas*
-    - [X] retain the legend even in filtered results view
-    - [X] npjk should move to first character of entry, instead of first column
-    - [X] RET on group name should filter for that group (should work in filtered and non-filtered views)
-    - [X] npjk should also land on group names
 
 * maf-latex
   - [ ] support in maf-preview
