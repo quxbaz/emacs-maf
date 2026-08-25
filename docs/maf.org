@@ -6,16 +6,18 @@
   [[https://www.gnu.org/software/emacs/manual/html_mono/calc.html#Symbolic-Lisp-Functions][symbolic lisp functions]]
 
 * Todo
-  - [-] *maf-formulas*: add basic/fundamental identities (addition,
-    multiplication, etc)
+  - [X] *maf-formulas*: add basic/fundamental identities (addition,
+    multiplication, etc) — 99 formulas in =maf-formulas-builtin=, in 13
+    categories the menu sorts and narrows by; every one checked as
+    arithmetic in =tests/formulas-builtin-values.el=
     - [X] properties of real numbers (commutative, associative,
       distributive, identities, inverses, sign rules) — shipped in
       =maf-formulas-builtin=
-    - [ ] logarithm laws (product, quotient, power; b^log_b x = x)
-    - [ ] quadratic formula, discriminant, Vieta's root relations
-    - [ ] radicals and the x^0 / x^1 / x^(m/n) exponent cases
-    - [ ] fraction arithmetic, absolute value
-    - [ ] trig identity table (reciprocal, quotient, the other two
+    - [X] logarithm laws (product, quotient, power; b^log_b x = x)
+    - [X] quadratic formula, discriminant, Vieta's root relations
+    - [X] radicals and the x^0 / x^1 / x^(m/n) exponent cases
+    - [X] fraction arithmetic, absolute value
+    - [X] trig identity table (reciprocal, quotient, the other two
       Pythagoreans, angle sum/difference, double and half angle)
 
 * NEXT maf-latex
