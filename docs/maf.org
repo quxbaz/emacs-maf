@@ -25,7 +25,7 @@
 
 * review
 
-* major features [8/10]
+* major features [8/11]
   - [X] bindings module
   - [X] persistent sub-formula highlighting
   - [X] history module (né timeline)
@@ -36,6 +36,7 @@
   - [X] recall ring for typed entries (maf-recall)
   - [ ] discovery document for useful features, behaviors, modules, etc
   - [ ] readme
+  - [ ] main docs
 
 * feedback
   - [ ] single-key (no modifiers) to force next cmd to target line
