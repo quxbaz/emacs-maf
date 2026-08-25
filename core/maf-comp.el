@@ -289,6 +289,40 @@ composition (identity lost, or a non-flat rendering)."
                     (point))))
        (maf--comp-flat-to-pos start toppt)))))
 
+(defun maf--comp-node-point-offset (node)
+  "Point's character offset into NODE's rendering, or nil when outside it.
+The counterpart of `maf--comp-node-offset-pos', read before a rewrite
+that moves NODE somewhere else intact. Where
+`maf--comp-node-anchor-index' counts only the glyphs NODE renders
+itself — and so answers nil for point inside an operand, and for an
+atom, which has none — this counts every character of NODE, so any
+grip on it has a place to come back to. nil when NODE has no tag in
+the prepared composition, or point is outside its span."
+  (pcase (maf--comp-node-span node)
+    (`(,start ,end ,_children ,_text)
+     (let ((cpos (maf--comp-point-cpos)))
+       (when (and cpos (<= start cpos) (< cpos end))
+         (- cpos start))))))
+
+(defun maf--comp-node-offset-pos (node offset)
+  "Buffer position OFFSET characters into NODE's rendering, or nil.
+OFFSET clamps into NODE's span, so a node that came back narrower still
+lands inside itself. Where `maf--comp-node-start-pos' names NODE's
+first character — the placement for a command that put a different
+value in the slot — this keeps the character of NODE point already had,
+which is what a command that moves NODE itself elsewhere wants: from
+the = of p = -4, point is on that = again wherever the element lands.
+nil when NODE has no tag in the prepared composition, or the rendering
+is not flat."
+  (pcase (maf--comp-node-span node)
+    (`(,start ,end ,_children ,_text)
+     (let ((toppt (save-excursion
+                    (calc-cursor-stack-index calc-selection-cache-num)
+                    (point))))
+       (maf--comp-flat-to-pos
+        (+ start (min (max offset 0) (max 0 (1- (- end start)))))
+        toppt)))))
+
 (defun maf--comp-landing-positions ()
   "Buffer positions naming each compound sub-formula of the entry, sorted.
 One position per tagged sub-formula that is an operation rather than an

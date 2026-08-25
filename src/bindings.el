@@ -189,6 +189,16 @@
 ;; j l / j r (calc binds the shifts to capital j L / j R, left reachable).
 (maf-bindings-define '(native) "j l" #'maf-commute-left)
 (maf-bindings-define '(native) "j r" #'maf-commute-right)
+;; The same two on the shifted arrows, which say the direction the term
+;; travels and repeat without leaving the key. They join the S-arrow
+;; family the stack already reads as "act on what is under point":
+;; S-<up>/S-<down> toggle its operator (below), and the plain arrows
+;; stay the buffer's motion keys, so shift is the modifier that moves
+;; the formula rather than the cursor. Calc binds neither key; outside
+;; calc S-<left> is a global transpose, which this shadows only in the
+;; calc buffer.
+(maf-bindings-define '(native) "S-<left>" #'maf-commute-left)
+(maf-bindings-define '(native) "S-<right>" #'maf-commute-right)
 ;; Move the term under point across the = (or !=) it sits in. Lowercase
 ;; j e, beside the shifts above, for the same reason: calc keeps the
 ;; jump on the capital j E, which stays reachable and unshadowed for
