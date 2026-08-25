@@ -6,16 +6,18 @@
 ;; narrowed, with the narrowing shown at its head.
 ;;
 ;; Self-contained the way formulas.el is: its own fixture in
-;; `maf-formulas-user', the file marked already-consulted so nothing on
-;; disk is read, and the session's state put back at the end.
+;; `maf-formulas-user' with `maf-formulas-builtin' set aside, the file
+;; marked already-consulted so nothing on disk is read, and the
+;; session's state put back at the end.
 
 (maf-step
   (setq grp--stash (list maf-formulas-user maf-formulas--loaded
                          maf-formulas--recent maf-use-formulas-mode
-                         maf-formulas--pane-state)
+                         maf-formulas--pane-state maf-formulas-builtin)
         maf-formulas--loaded t
         maf-formulas--recent nil
         maf-formulas--pane-state nil    ; no detail pane in the way
+        maf-formulas-builtin nil        ; the fixture stands alone
         maf-formulas-user
         '((:name "vol-sphere" :title "Volume of sphere"
            :category "Geometry — 3D: Sphere"
@@ -234,7 +236,8 @@
     (setq maf-formulas-user (nth 0 grp--stash)
           maf-formulas--loaded (nth 1 grp--stash)
           maf-formulas--recent (nth 2 grp--stash)
-          maf-formulas--pane-state (nth 4 grp--stash))
+          maf-formulas--pane-state (nth 4 grp--stash)
+          maf-formulas-builtin (nth 5 grp--stash))
     (when (nth 3 grp--stash)
       (maf-use-formulas-mode 1))
     :restored))

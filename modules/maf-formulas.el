@@ -36,13 +36,16 @@
 ;; `D' drops the entry at point from the group (the formula itself
 ;; stays, under its own category).
 ;;
-;; The formulas live in `maf-formulas-file' (a file in your Emacs config
-;; by default); it is loaded on first use and sets `maf-formulas-user'.
-;; Set that variable directly in your init to skip the file. Enabling
-;; the module (see `maf-modules') registers every formula as a calc
+;; The menu draws on two sources. `maf-formulas-builtin' is the set maf
+;; ships with — the properties of real numbers — and yours follow it:
+;; they live in `maf-formulas-file' (a file in your Emacs config by
+;; default), which is loaded on first use and sets `maf-formulas-user'.
+;; Set that variable directly in your init to skip the file, or set
+;; `maf-formulas-builtin' to nil to keep only your own. Enabling the
+;; module (see `maf-modules') registers every formula as a calc
 ;; `var-eq-<name>' variable, so calc's own recall and rewrite see them
-;; too — `maf-formulas-user' is the single source, calc's variables
-;; generated from it.
+;; too — the two variables are the single source, calc's variables
+;; generated from them.
 
 (require 'calc)
 (require 'maf-lib)
@@ -139,15 +142,145 @@ so the side split is only taken when both halves clear this width."
 (defvar maf-formulas--loaded nil
   "Non-nil once `maf-formulas-file' has been consulted this session.")
 
+(defvar maf-formulas-builtin
+  '((:name "commutative-property-of-addition"
+     :title "Commutative property of addition"
+     :category "Algebra — Properties of real numbers"
+     :expr (calcFunc-eq (+ (var a var-a) (var b var-b))
+                        (+ (var b var-b) (var a var-a)))
+     :doc "Addition gives the same sum in either order."
+     :vars ((a . "any number") (b . "any number")))
+    (:name "commutative-property-of-multiplication"
+     :title "Commutative property of multiplication"
+     :category "Algebra — Properties of real numbers"
+     :expr (calcFunc-eq (* (var a var-a) (var b var-b))
+                        (* (var b var-b) (var a var-a)))
+     :doc "Multiplication gives the same product in either order."
+     :vars ((a . "any number") (b . "any number")))
+    (:name "associative-property-of-addition"
+     :title "Associative property of addition"
+     :category "Algebra — Properties of real numbers"
+     :expr (calcFunc-eq (+ (+ (var a var-a) (var b var-b)) (var c var-c))
+                        (+ (var a var-a) (+ (var b var-b) (var c var-c))))
+     :doc "Grouping does not change a sum."
+     :vars ((a . "any number") (b . "any number") (c . "any number")))
+    (:name "associative-property-of-multiplication"
+     :title "Associative property of multiplication"
+     :category "Algebra — Properties of real numbers"
+     :expr (calcFunc-eq (* (* (var a var-a) (var b var-b)) (var c var-c))
+                        (* (var a var-a) (* (var b var-b) (var c var-c))))
+     :doc "Grouping does not change a product."
+     :vars ((a . "any number") (b . "any number") (c . "any number")))
+    (:name "distributive-property"
+     :title "Distributive property"
+     :category "Algebra — Properties of real numbers"
+     :expr (calcFunc-eq (* (var a var-a) (+ (var b var-b) (var c var-c)))
+                        (+ (* (var a var-a) (var b var-b))
+                           (* (var a var-a) (var c var-c))))
+     :doc "Multiplication distributes over addition."
+     :vars ((a . "multiplier") (b . "first term") (c . "second term")))
+    (:name "distributive-property-over-subtraction"
+     :title "Distributive property over subtraction"
+     :category "Algebra — Properties of real numbers"
+     :expr (calcFunc-eq (* (var a var-a) (- (var b var-b) (var c var-c)))
+                        (- (* (var a var-a) (var b var-b))
+                           (* (var a var-a) (var c var-c))))
+     :doc "Multiplication distributes over subtraction."
+     :vars ((a . "multiplier") (b . "first term") (c . "second term")))
+    (:name "additive-identity"
+     :title "Additive identity"
+     :category "Algebra — Properties of real numbers"
+     :expr (calcFunc-eq (+ (var a var-a) 0) (var a var-a))
+     :doc "Zero added to a number leaves it unchanged."
+     :vars ((a . "any number")))
+    (:name "multiplicative-identity"
+     :title "Multiplicative identity"
+     :category "Algebra — Properties of real numbers"
+     :expr (calcFunc-eq (* (var a var-a) 1) (var a var-a))
+     :doc "One times a number leaves it unchanged."
+     :vars ((a . "any number")))
+    (:name "additive-inverse"
+     :title "Additive inverse"
+     :category "Algebra — Properties of real numbers"
+     :expr (calcFunc-eq (+ (var a var-a) (neg (var a var-a))) 0)
+     :doc "A number plus its opposite is zero."
+     :vars ((a . "any number")))
+    (:name "multiplicative-inverse"
+     :title "Multiplicative inverse"
+     :category "Algebra — Properties of real numbers"
+     :expr (calcFunc-eq (* (var a var-a) (/ 1 (var a var-a))) 1)
+     :doc "A nonzero number times its reciprocal is one."
+     :vars ((a . "any nonzero number")))
+    (:name "multiplication-by-zero"
+     :title "Multiplication by zero"
+     :category "Algebra — Properties of real numbers"
+     :expr (calcFunc-eq (* (var a var-a) 0) 0)
+     :doc "Anything times zero is zero."
+     :vars ((a . "any number")))
+    (:name "zero-product-property"
+     :title "Zero product property"
+     :category "Algebra — Properties of real numbers"
+     :expr (calcFunc-lor (calcFunc-eq (var a var-a) 0)
+                         (calcFunc-eq (var b var-b) 0))
+     :doc "When a b = 0, at least one factor is zero."
+     :vars ((a . "first factor") (b . "second factor"))
+     :examples ("(x - 2) (x - 3) = 0 gives x = 2 or x = 3."))
+    (:name "double-negation"
+     :title "Double negation"
+     :category "Algebra — Properties of real numbers"
+     :expr (calcFunc-eq (neg (neg (var a var-a))) (var a var-a))
+     :doc "Negating twice returns the original number."
+     :vars ((a . "any number")))
+    (:name "subtraction-as-addition"
+     :title "Subtraction as addition"
+     :category "Algebra — Properties of real numbers"
+     :expr (calcFunc-eq (- (var a var-a) (var b var-b))
+                        (+ (var a var-a) (neg (var b var-b))))
+     :doc "Subtracting is adding the opposite."
+     :vars ((a . "minuend") (b . "subtrahend")))
+    (:name "division-as-multiplication"
+     :title "Division as multiplication"
+     :category "Algebra — Properties of real numbers"
+     :expr (calcFunc-eq (/ (var a var-a) (var b var-b))
+                        (* (var a var-a) (/ 1 (var b var-b))))
+     :doc "Dividing is multiplying by the reciprocal."
+     :vars ((a . "numerator") (b . "nonzero denominator")))
+    (:name "sign-rule-for-a-product"
+     :title "Sign rule for a product"
+     :category "Algebra — Properties of real numbers"
+     :expr (calcFunc-eq (* (neg (var a var-a)) (var b var-b))
+                        (* (var a var-a) (neg (var b var-b))))
+     :doc "Negating a factor negates the product: (-a) b = a (-b) = -(a b)."
+     :vars ((a . "first factor") (b . "second factor")))
+    (:name "product-of-two-negatives"
+     :title "Product of two negatives"
+     :category "Algebra — Properties of real numbers"
+     :expr (calcFunc-eq (* (neg (var a var-a)) (neg (var b var-b)))
+                        (* (var a var-a) (var b var-b)))
+     :doc "A product of two negatives is positive."
+     :vars ((a . "first factor") (b . "second factor"))))
+  "The formulas maf ships with, in the plist shape of `maf-formulas-user'.
+They are the properties of real numbers — the identities every other
+piece of algebra rests on, and the ones a rewrite is most often reaching
+for. Calc applies all of them in its own default simplifications, so
+these earn their place by being readable and by naming what a rewrite is
+doing, not by teaching calc anything.
+
+Package data rather than a preference, so it is a `defvar' and not a
+`defcustom'; set it to nil in your init to keep only your own.")
+
 (defun maf-formulas--all ()
-  "All saved formulas, loading `maf-formulas-file' the first time.
-The file, when present, populates `maf-formulas-user'; after that the
-variable is the single source, so runtime additions to it persist."
+  "Every formula: the set maf ships with, then your own.
+`maf-formulas-file' is consulted the first time; the file, when present,
+populates `maf-formulas-user', and after that the variable is the single
+source for yours, so runtime additions to it persist.
+`maf-formulas-builtin' leads because yours follow: a formula of yours
+sharing a :name registers its `var-eq-' variable last, and so wins."
   (unless maf-formulas--loaded
     (setq maf-formulas--loaded t)
     (when (and maf-formulas-file (file-exists-p maf-formulas-file))
       (load (expand-file-name maf-formulas-file) nil t)))
-  maf-formulas-user)
+  (append maf-formulas-builtin maf-formulas-user))
 
 (defun maf-formulas--title (f)
   "Menu title for formula F, derived from its name when :title is absent."
@@ -1055,9 +1188,10 @@ For example, a saved formula named distance can be inserted from the
 menu instead of typed again. While this mode is on, Calc can also use
 saved formulas as variables in recall and rewrite commands.
 
-The formulas come from `maf-formulas-file'. Turning the mode off
-removes the key and Calc variable registrations, but does not change
-that file. You can still open the menu with M-x maf-formulas."
+The formulas come from `maf-formulas-builtin' (the set maf ships with)
+and `maf-formulas-file' (your own). Turning the mode off removes the
+key and Calc variable registrations, but does not change that file.
+You can still open the menu with M-x maf-formulas."
   :global t
   :group 'maf
   (if maf-use-formulas-mode
@@ -1075,8 +1209,8 @@ that file. You can still open the menu with M-x maf-formulas."
                        "Keep a library of formulas and push them onto the stack.
 
 Press s o to open your formula library. RET pushes the formula at
-point onto the stack; o shows its purpose and variable names. The
-library is stored in `maf-formulas-file'."
+point onto the stack; o shows its purpose and variable names. Basic
+identities ship with maf; your own are stored in `maf-formulas-file'."
                        "s o" "Memory"))
 
 (provide 'maf-formulas)
