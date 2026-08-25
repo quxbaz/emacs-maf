@@ -70,11 +70,11 @@
 ;; the window edge, so the rule runs the log's full width. A row rather
 ;; than the row's own underline, which leaves the mark no vertical
 ;; margin — glued under the text above it and against the text below.
-;; Low contrast against the default background: the band divides the
-;; log without competing with anything written in it.
+;; A tint set well clear of the background, so the band reads as a rule
+;; at a glance rather than having to be looked for.
 (defface maf-history-separator
-  '((((background dark)) :background "#303030" :extend t)
-    (t :background "#dcdcdc" :extend t))
+  '((((background dark)) :background "#ffe4c4" :extend t)
+    (t :background "#d2b48c" :extend t))
   "Face drawing the separator band under a state's row in the history log."
   :group 'maf)
 
