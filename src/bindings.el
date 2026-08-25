@@ -164,6 +164,14 @@
 ;; the ulp-stepping originals, and [ ] stay calc's vector delimiters.
 (maf-bindings-define '(native) "<" #'mafcmd-decrement)
 (maf-bindings-define '(native) ">" #'mafcmd-increment)
+;; The same step under a modifier, for the run of them a nudge invites:
+;; the hand holds meta and taps rather than releasing between steps. A
+;; terminal delivers these, unlike C-< / C->, so they work on a tty as
+;; the unmodified pair does. They shadow the global `beginning-of-buffer'
+;; / `end-of-buffer', whose trip to the ends of the stack buffer G
+;; (`maf-go-home') already makes in the terms the stack is read in.
+(maf-bindings-define '(native) "M-<" #'mafcmd-decrement)
+(maf-bindings-define '(native) "M->" #'mafcmd-increment)
 ;; Balanced negation, beside calc's own n (mafcmd-neg in the table,
 ;; which flips the sign and lets the value change with it). Shadows
 ;; calc-eval-num; N is also one of the two V M operator codes that are
