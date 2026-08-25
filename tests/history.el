@@ -54,8 +54,9 @@
   (with-current-buffer (maf-history--stack-buffer)
     (cl-assert (equal (buffer-substring-no-properties (point-min) (point-max))
                       "2:  6 x + 12\n1:  a + b\n"))
-    (cl-assert (string-match-p " n/p move .* o/t switch .* r restore .* D delete "
-                               (format-mode-line header-line-format)))
+    (cl-assert (string-match-p
+                " n/p move .* TAB/o/t switch .* r restore .* D delete .* q quit"
+                (format-mode-line header-line-format)))
     ;; The entry this step produced is highlighted; the one carried
     ;; over from the state before is not.
     (progn (goto-char (point-min)) (search-forward "a + b") (backward-char 1))
@@ -107,6 +108,10 @@
                   ("p" . previous-line) ("k" . previous-line)
                   ("<" . maf-history-stack-first)
                   (">" . maf-history-stack-last)
+                  ;; The same two under a modifier, and the two Emacs
+                  ;; puts the ends of a buffer on.
+                  ("M-<" . maf-history-stack-first)
+                  ("M->" . maf-history-stack-last)
                   ("RET" . maf-history-insert)))
     (cl-assert (eq (lookup-key maf-history-stack-mode-map (kbd (car cell)))
                    (cdr cell))
@@ -125,6 +130,8 @@
   ;; < reaches the top of a newest-first log, > the bottom.
   (cl-assert (eq (lookup-key maf-history-mode-map (kbd "<")) 'maf-history-newest))
   (cl-assert (eq (lookup-key maf-history-mode-map (kbd ">")) 'maf-history-oldest))
+  (cl-assert (eq (lookup-key maf-history-mode-map (kbd "M-<")) 'maf-history-newest))
+  (cl-assert (eq (lookup-key maf-history-mode-map (kbd "M->")) 'maf-history-oldest))
   ;; Retired keys stay retired: none of them still runs a browsing
   ;; command. They are not asserted unbound — special-mode keeps its
   ;; own claim on some (h is `describe-mode'), which is what should
@@ -221,6 +228,14 @@
   (maf-history--capture)
   (cl-assert (= (length maf-history--states) 2))
   (cl-assert (null (nth 0 (car maf-history--states))))
+
+  ;; Beside the label, a state carries the command the change landed
+  ;; under. The label names the operation — a trail prefix like "fctr",
+  ;; or a structural reading — and the command names the code that ran,
+  ;; which no trail prefix says.
+  (progn (calc-wrapper (maf-push "z"))
+         (let ((this-command 'my-fake-command)) (maf-history--capture))
+         (cl-assert (eq (nth 2 (car maf-history--states)) 'my-fake-command)))
 
   ;; Put the session's log back and re-render the browser over it.
   (progn

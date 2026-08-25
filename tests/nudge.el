@@ -10,6 +10,16 @@
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "x + 6"))
   (execute-kbd-macro (kbd "<"))
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "x + 5"))
+  ;; M-> and M-< are the same step under a modifier, for the run of them
+  ;; a nudge invites — the hand holds meta and taps. Without them the
+  ;; keys reach the global `end-of-buffer' / `beginning-of-buffer', so
+  ;; this also pins that a step never turns into a jump out of the stack.
+  (execute-kbd-macro (kbd "M-> M->"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "x + 7"))
+  (execute-kbd-macro (kbd "M-<"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "x + 6"))
+  (cl-assert (derived-mode-p 'calc-mode))
+  (execute-kbd-macro (kbd "<"))
   (calc-pop (calc-stack-size))
 
   ;; At home the whole entry steps; a vector elementwise.
