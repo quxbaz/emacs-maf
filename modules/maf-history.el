@@ -299,6 +299,11 @@ for it, kept only while each still runs it.")
         (maf-history-insert "insert" "RET")
         (maf-history-restore "restore" "r" "RET")
         (maf-history-delete "delete" "D")
+        ;; Beside D, the one state at a time it is the whole-log
+        ;; counterpart of; the chord is what keeps the two apart on the
+        ;; keyboard, so the legend showing it is what says the wipe is
+        ;; deliberately out of fingerslip range.
+        (maf-history-clear "clear" "C-M-k")
         (maf-history-quit "quit" "q")))
 
 (defun maf-history--control-keys (command preferred)

@@ -65,6 +65,10 @@
       (cl-assert (not (string-match-p "j/k" legend)))
       (cl-assert (string-match-p "RET insert" legend))
       (cl-assert (string-match-p "o/t switch" legend))
+      ;; Clearing the whole log is on the legend beside the D that
+      ;; deletes one state, chord and all: the key is what keeps a wipe
+      ;; out of fingerslip range, so it is the part worth showing.
+      (cl-assert (string-match-p "C-M-k clear" legend))
       (cl-assert (not (string-match-p "calc" legend)))))
 
   ;; Selecting the older state re-renders both: the marker moves, and
