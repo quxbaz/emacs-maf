@@ -172,6 +172,8 @@ variant's own variable governs only its direct invocation."
   (sqrt unary calcFunc-sqrt "Q" :inv sqr)
   (min binary calcFunc-min "f n")
   (max binary calcFunc-max "f x")
+  ;; floor cedes F in native to a second key for mafcmd-reduce
+  ;; (bindings.el); the calc profile keeps F = floor.
   (floor unary calcFunc-floor "F" :inv ceil :hyp ffloor :invhyp fceil)
   (round unary calcFunc-round "R" :inv trunc :hyp fround :invhyp ftrunc)
   (sin unary calcFunc-sin "S" :inv arcsin :hyp sinh :invhyp arcsinh)
