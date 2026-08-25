@@ -34,17 +34,41 @@
   (let ((names (mapcar (lambda (f) (plist-get f :name)) maf-formulas-builtin)))
     (cl-assert (= (length names) (length (delete-dups names)))))
 
-  ;; One category today, and the identities it promises are in it.
-  (cl-assert (equal (delete-dups (mapcar (lambda (f) (plist-get f :category))
-                                         maf-formulas-builtin))
-                    '("Algebra — Properties of real numbers")))
+  ;; The categories shipped, each holding formulas. The menu sorts its
+  ;; groups by name, so this is also the order they come up in — which
+  ;; is why the trig groups name their subject after the dash rather
+  ;; than all being "Trigonometry — Identities" run together.
+  (cl-assert (equal (sort (delete-dups (mapcar (lambda (f) (plist-get f :category))
+                                               maf-formulas-builtin))
+                          #'string<)
+                    '("Algebra — Absolute value"
+                      "Algebra — Exponents"
+                      "Algebra — Fractions"
+                      "Algebra — Logarithms"
+                      "Algebra — Properties of real numbers"
+                      "Algebra — Quadratic equations"
+                      "Algebra — Radicals"
+                      "Trigonometry — Angle sum and difference"
+                      "Trigonometry — Double angle"
+                      "Trigonometry — Even and odd"
+                      "Trigonometry — Half angle"
+                      "Trigonometry — Pythagorean identities"
+                      "Trigonometry — Reciprocal and quotient")))
+
+  ;; A formula each group promises is in it.
   (cl-assert (seq-every-p
               (lambda (n) (seq-find (lambda (f) (equal (plist-get f :name) n))
                                     maf-formulas-builtin))
               '("commutative-property-of-addition"
                 "associative-property-of-addition" "distributive-property"
                 "additive-identity" "multiplicative-identity"
-                "additive-inverse" "multiplicative-inverse")))
+                "additive-inverse" "multiplicative-inverse"
+                "triangle-inequality" "zero-exponent" "addition-of-fractions"
+                "logarithm-of-a-product" "quadratic-formula-first-root"
+                "product-of-radicals" "sine-of-a-sum"
+                "sine-of-a-double-angle" "cosine-is-even"
+                "tangent-of-a-half-angle" "pythagorean-identity"
+                "cosecant-as-a-reciprocal")))
 
   ;; `maf-formulas--all' is the shipped set and then the user's, so a
   ;; library of one's own extends the menu rather than replacing it.
