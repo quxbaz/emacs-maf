@@ -23,23 +23,11 @@
       - [-] show `C-M-k` binding in legend
   - [X] bind `C-M-SPC` to the reverse of `S-SPC`. move to the PREV operand
     - same conditions. only work in stack mode.
-  - [-] find command that solves with +/i in answer, but uses a different
-    representation (port it)
-  - [-] overload `(` and `)` to move point to largest expression on left/right side of
-    equation/relation. only in stack mode (not edit mode).
   - *maf-formulas*
     - [X] retain the legend even in filtered results view
     - [X] npjk should move to first character of entry, instead of first column
     - [X] RET on group name should filter for that group (should work in filtered and non-filtered views)
     - [X] npjk should also land on group names
-  - [-] given something like: [h = 0, p =| -4, k = 0]
-    on `j l` or `j r`, point should stay next to the `=`
-  - *maf-editplus*
-    - [-] rewrite `U` as union `||`
-      similar to other conversions on confirmation (`RET`)
-    - [-] bind `J` to insert `*` (same as entering `*` key)
-  - *maf-persist*
-    - [X] `l S` (maf-save-stack) should print a confirmation message in minibuffer.
 
 * maf-latex
   - [ ] support in maf-preview
