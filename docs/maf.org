@@ -24,6 +24,9 @@
   - [ ] support in maf-formulas
 
 * review
+  bug:
+  1: y^2 = 3 |(x - 5)
+  S-SPC won't go beyond here
 
 * major features [8/12]
   - [X] bindings module
