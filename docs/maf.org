@@ -25,16 +25,17 @@
 
 * review
 
-* major features [8/9]
-  - [X] bindings module
-  - [X] Persistent sub-formula highlighting
-  - [X] History module (né timeline)
-  - [X] Omni-options menu buffer
-  - [X] Formulas module
-  - [X] Modules manager
-  - [X] Use module architecture (maf-history, maf-edit)
-  - [X] Recall ring for typed entries (maf-recall)
-  - [ ] Discovery document for useful features, behaviors, modules, etc
+* major features [8/10]
+  - [x] bindings module
+  - [x] persistent sub-formula highlighting
+  - [x] history module (né timeline)
+  - [x] omni-options menu buffer
+  - [x] formulas module
+  - [x] modules manager
+  - [x] use module architecture (maf-history, maf-edit)
+  - [x] recall ring for typed entries (maf-recall)
+  - [ ] discovery document for useful features, behaviors, modules, etc
+  - [ ] readme
 
 * feedback
   - [ ] single-key (no modifiers) to force next cmd to target line
