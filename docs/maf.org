@@ -7,6 +7,17 @@
 
 * Todo
   - [-] preview as latex
+  - [-] *maf-formulas*: add basic/fundamental identities (addition,
+    multiplication, etc)
+    - [X] properties of real numbers (commutative, associative,
+      distributive, identities, inverses, sign rules) — shipped in
+      =maf-formulas-builtin=
+    - [ ] logarithm laws (product, quotient, power; b^log_b x = x)
+    - [ ] quadratic formula, discriminant, Vieta's root relations
+    - [ ] radicals and the x^0 / x^1 / x^(m/n) exponent cases
+    - [ ] fraction arithmetic, absolute value
+    - [ ] trig identity table (reciprocal, quotient, the other two
+      Pythagoreans, angle sum/difference, double and half angle)
 
 * review
 

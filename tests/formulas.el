@@ -1,15 +1,18 @@
 ;; Self-contained: the real formulas now live in `maf-formulas-file'
 ;; (the user's Emacs config), so this test supplies its own fixture in
-;; `maf-formulas-user' and marks the file already-consulted so nothing
-;; on disk is read. The last form restores the session state.
+;; `maf-formulas-user', sets `maf-formulas-builtin' aside, and marks
+;; the file already-consulted so nothing on disk is read. The last
+;; form restores the session state.
 
 (maf-step
   (setq maf--formulas-stash (list maf-formulas-user maf-formulas--loaded
                                   maf-formulas--recent maf-use-formulas-mode
-                                  maf-formulas--pane-state)
+                                  maf-formulas--pane-state
+                                  maf-formulas-builtin)
         maf-formulas--loaded t          ; skip loading maf-formulas-file
         maf-formulas--recent nil        ; a clean session's recents
         maf-formulas--pane-state 'follow  ; a fresh session's default
+        maf-formulas-builtin nil        ; the fixture stands alone
         maf-formulas-user
         '((:name "volume-of-sphere" :title "Volume of sphere"
            :category "Geometry — 3D: Sphere"
@@ -355,6 +358,7 @@
     (setq maf-formulas-user (nth 0 maf--formulas-stash)
           maf-formulas--loaded (nth 1 maf--formulas-stash)
           maf-formulas--recent (nth 2 maf--formulas-stash)
-          maf-formulas--pane-state (nth 4 maf--formulas-stash))
+          maf-formulas--pane-state (nth 4 maf--formulas-stash)
+          maf-formulas-builtin (nth 5 maf--formulas-stash))
     (when (nth 3 maf--formulas-stash)
       (maf-use-formulas-mode 1))))
