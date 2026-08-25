@@ -24,7 +24,6 @@
   - [ ] support in maf-formulas
 
 * maf-preview
-  - [ ] change options: off, always on, show on command only
 
 * review
   - [-] fix bug:
