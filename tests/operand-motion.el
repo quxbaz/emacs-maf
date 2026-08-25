@@ -1,4 +1,5 @@
-;; `maf-forward-operand' (S-SPC): every operation of an entry is one
+;; `maf-forward-operand' (S-SPC) and `maf-backward-operand' (C-M-SPC),
+;; its reverse over the same stops: every operation of an entry is one
 ;; stop, the whole entry among them, each at the first glyph it renders
 ;; itself — the place resolve names it. The nouns are not stops: a
 ;; number or a variable belongs to `maf-forward-noun' (M-f), so the two
@@ -6,10 +7,11 @@
 ;; stops come in display order, skipping the atoms, and each landing
 ;; resolves to the sub-formula the motion advertised
 ;; (`maf-test--part-at-point' reads that back); the walk crosses
-;; entries, a numeric prefix counts stops (backward when negative), the
-;; ends of the stack signal, and an entry offering no stop of its own —
-;; a bare atom, a Big-language fraction with no flat rendering — is
-;; crossed whole. A step passes when it raises no error.
+;; entries in both directions, a numeric prefix counts stops (the other
+;; way when negative), the ends of the stack signal, and an entry
+;; offering no stop of its own — a bare atom, a Big-language fraction
+;; with no flat rendering — is crossed whole. A step passes when it
+;; raises no error.
 
 (defun maf-test--flat (expr)
   "EXPR in flat notation, with the selection machinery's encasing gone."
@@ -60,21 +62,27 @@
                      (progn (call-interactively 'maf-forward-operand) 'moved)
                    (user-error 'signalled))))
 
-  ;; Backward retraces the same stops, crosses back up into the entry
-  ;; above, and signals in turn before the stack's first stop.
-  (let ((current-prefix-arg -1)) (call-interactively 'maf-forward-operand))
+  ;; Backward retraces the same stops on its own key, crosses back up
+  ;; into the entry above, and signals in turn before the stack's first
+  ;; stop.
+  (progn (execute-kbd-macro (kbd "C-M-SPC")) nil)
   (cl-assert (looking-at " x \\+ 12"))
-  (let ((current-prefix-arg -1)) (call-interactively 'maf-forward-operand))
+  (progn (execute-kbd-macro (kbd "C-M-SPC")) nil)
   (cl-assert (looking-at " y)$"))
   (cl-assert (= (calc-locate-cursor-element (point)) 2))
-  (let ((current-prefix-arg -2)) (call-interactively 'maf-forward-operand))
+  (let ((current-prefix-arg 2)) (call-interactively 'maf-backward-operand))
   (cl-assert (looking-at "\\+ sqrt"))
   (cl-assert (eq 'signalled
                  (condition-case nil
-                     (progn (let ((current-prefix-arg -1))
-                              (call-interactively 'maf-forward-operand))
-                            'moved)
+                     (progn (call-interactively 'maf-backward-operand) 'moved)
                    (user-error 'signalled))))
+
+  ;; A negative prefix turns either motion into the other, so the two
+  ;; retrace each other from either key.
+  (let ((current-prefix-arg -1)) (call-interactively 'maf-backward-operand))
+  (cl-assert (looking-at "sqrt(x y)$"))
+  (let ((current-prefix-arg -1)) (call-interactively 'maf-forward-operand))
+  (cl-assert (looking-at "\\+ sqrt"))
   (calc-pop (calc-stack-size))
 
   ;; A delimiter is a compound operand's own first glyph: the

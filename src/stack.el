@@ -1814,6 +1814,16 @@ into the one above."
                    when hit do (throw 'found hit))))
       nil)))
 
+(defun maf--operand-move (n)
+  "Move point over N operand stops, backward when N is negative.
+Signals at the end of the stack, having taken the steps it could."
+  (let ((dir (if (< n 0) -1 1)))
+    (dotimes (_ (abs n))
+      (let ((pos (maf--operand-position dir)))
+        (unless pos
+          (user-error "No operand %s point" (if (> dir 0) "after" "before")))
+        (goto-char pos)))))
+
 (defun maf-forward-operand (&optional n)
   "Move point to the next operand: the next operation, where resolve names it.
 
@@ -1841,13 +1851,23 @@ of the next, the line-number margin never a stop — and signals at the
 end of the stack. A numeric prefix N moves over that many operands,
 backward when negative."
   (interactive "p")
-  (let* ((count (or n 1))
-         (dir (if (< count 0) -1 1)))
-    (dotimes (_ (abs count))
-      (let ((pos (maf--operand-position dir)))
-        (unless pos
-          (user-error "No operand %s point" (if (> dir 0) "after" "before")))
-        (goto-char pos)))))
+  (maf--operand-move (or n 1)))
+
+(defun maf-backward-operand (&optional n)
+  "Move point to the previous operand: the operation before point.
+
+  1:  1 + sqrt(x| y)  =>  1:  1 + |sqrt(x y)   (the sqrt call)
+  1:  1 + |sqrt(x y)  =>  1:  1 |+ sqrt(x y)   (the whole sum)
+
+The mirror of `maf-forward-operand', over the same stops — every
+operation of the entry at the first glyph it renders itself, the nouns
+left to `maf-backward-noun' — so the two motions retrace each other.
+The walk crosses entries the other way, from the first operand of one
+to the last of the entry above, and signals before the stack's first
+stop. A numeric prefix N moves over that many operands, forward when
+negative."
+  (interactive "p")
+  (maf--operand-move (- (or n 1))))
 
 (defun maf--home-drop-mark (pos)
   "Drop the mark at POS that `maf-go-home' just returned to.
