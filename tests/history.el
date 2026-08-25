@@ -222,6 +222,14 @@
   (cl-assert (= (length maf-history--states) 2))
   (cl-assert (null (nth 0 (car maf-history--states))))
 
+  ;; Beside the label, a state carries the command the change landed
+  ;; under. The label names the operation — a trail prefix like "fctr",
+  ;; or a structural reading — and the command names the code that ran,
+  ;; which no trail prefix says.
+  (progn (calc-wrapper (maf-push "z"))
+         (let ((this-command 'my-fake-command)) (maf-history--capture))
+         (cl-assert (eq (nth 2 (car maf-history--states)) 'my-fake-command)))
+
   ;; Put the session's log back and re-render the browser over it.
   (progn
     (setq maf-history--states (nth 0 maf--history-stash)

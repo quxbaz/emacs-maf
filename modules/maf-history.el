@@ -83,11 +83,14 @@ history stays cheap."
 
 (defvar maf-history--states nil
   "Recorded stack states, newest first, at most `maf-history-size'.
-Each state is a list (VALUES LABEL): VALUES the stack's formula values
-top first, with `calc-encase-atoms' wrappers stripped, and LABEL what
-produced the state — the change's trail prefix (a string, \"fctr\"),
-else \"undo\"/\"redo\", else a structural classification of the change
-against the previous stack (see `maf-history--classify').")
+Each state is a list (VALUES LABEL COMMAND): VALUES the stack's formula
+values top first, with `calc-encase-atoms' wrappers stripped; LABEL
+what produced the state — the change's trail prefix (a string,
+\"fctr\"), else \"undo\"/\"redo\", else a structural classification of
+the change against the previous stack (see `maf-history--classify');
+and COMMAND the `this-command' the change landed under, the precise
+name behind a label that names an operation rather than a command.
+COMMAND is nil for a state recorded outside any command.")
 
 (defvar maf-history--last-raw nil
   "Raw stack values at the last capture, for cheap change detection.")
@@ -194,13 +197,26 @@ swallowed so a bad calc state can never get the hook disabled."
                        ((memq this-command '(maf-undo calc-undo)) "undo")
                        ((memq this-command '(maf-redo calc-redo)) "redo")
                        ((and (stringp trail) (> (length trail) 0)) trail)
-                       (t (maf-history--classify old raw)))))
+                       (t (maf-history--typed old raw prefix)))))
                 (setq maf-history--last-raw raw)
                 (maf-history--record (mapcar #'maf--strip-encasing raw)
-                                      label)))))))))
+                                      label this-command)))))))))
 
-(defun maf-history--record (values label)
-  "Record VALUES as the newest state, produced by the command LABEL.
+(defun maf-history--typed (old new prefix)
+  "Classify OLD to NEW, reading a typed value as new input, not a copy.
+`maf-history--classify' calls an added entry the stack already held a
+duplication, which is what it looks like from the stack alone. Typing a
+value that happens to be on the stack already is not one, though: the
+user entered it rather than copying it, and the log's business is the
+action. Calc tells the two apart without a roster of commands to keep —
+an entry goes through `calc-record' and lands a trail line, so PREFIX
+is a stashed (PREFIX) even when the prefix itself is nil, while the dup
+commands push with `calc-push' and record nothing, leaving PREFIX nil."
+  (let ((kind (maf-history--classify old new)))
+    (if (and (equal kind "dupe") prefix) "new" kind)))
+
+(defun maf-history--record (values label &optional command)
+  "Record VALUES as the newest state, named LABEL and made by COMMAND.
 Skipped when VALUES matches the newest state — a selection was made or
 cleared, changing the entry conses but not the formulas — and when
 VALUES is an empty stack with no history yet, so the log never starts
@@ -208,7 +224,7 @@ with an empty baseline."
   (unless (or (and maf-history--states
                    (equal values (nth 0 (car maf-history--states))))
               (and (null values) (null maf-history--states)))
-    (push (list values label) maf-history--states)
+    (push (list values label command) maf-history--states)
     (when-let ((cell (nthcdr (1- maf-history-size) maf-history--states)))
       (setcdr cell nil))
     (maf-history--refresh t)))
