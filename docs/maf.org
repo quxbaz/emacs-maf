@@ -36,7 +36,7 @@
   - [X] recall ring for typed entries (maf-recall)
   - [ ] discovery document for useful features, behaviors, modules, etc
   - [ ] readme
-  - [ ] main docs (new features, changes)
+  - [ ] main docs for users (new features, changes)
 
 * feedback
   - [ ] single-key (no modifiers) to force next cmd to target line
