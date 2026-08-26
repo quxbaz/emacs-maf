@@ -24,6 +24,8 @@
 ;; Defined in lazily-loaded Calc and maf modules; declared for the byte
 ;; compiler because this module can also be loaded on its own.
 (declare-function calc-top "calc-ext")
+(defvar maf-preview-render-function)     ; modules/maf-preview.el
+
 (declare-function maf-bindings--refresh "maf-bindings")
 (declare-function maf-bindings-module-keys "maf-bindings")
 (declare-function maf-register-module "maf-module")
@@ -141,6 +143,56 @@ rendered. The stack, point, and Calc display language are unchanged."
            (svg (maf-render--ratex latex)))
       (maf-render--show svg latex))))
 
+;;; The preview panel
+
+(defvar maf-render--panel-cache nil
+  "Cons of the last thing the panel typeset and the string it became.
+The panel asks once per command and the answer changes only when the
+formula or the colour it is drawn in does, so the key is both. RaTeX is
+cheap — a few milliseconds — but a subprocess per keystroke is not
+something to spend on a formula that has not moved.
+
+A failure is cached under its key too, as nil. A formula Calc's LaTeX
+language cannot write is not going to start working on the next
+keystroke, and retrying it every command would spend the subprocess
+this cache exists to save.")
+
+(defun maf-render--panel-bounds ()
+  "Pixels the panel's image is kept within: (WIDTH . HEIGHT).
+Most of the frame's width and half its height. A rendering wide enough
+to leave the screen is a preview of nothing — the half hanging off it is
+the half being looked for — and a tall one buries the stack it is a
+second view of. The image is scaled down whole to fit, never clipped:
+a formula cut off mid-term gives no sign it was cut."
+  (let ((frame (selected-frame)))
+    (cons (round (* 0.9 (frame-pixel-width frame)))
+          (round (* 0.5 (frame-pixel-height frame))))))
+
+(defun maf-render--panel (value)
+  "Return VALUE typeset, as one space carrying the rendered image.
+Nil when this display cannot show an SVG at all, or when the formula
+does not survive the trip through LaTeX — either way the panel falls
+back to its Big rendering rather than going dark. Installed as
+`maf-preview-render-function' while `maf-use-render-mode' is on."
+  (when (image-type-available-p 'svg)
+    ;; Colour and bounds are read here rather than left to the renderer
+    ;; so they can be part of the key: a theme change and a resized
+    ;; frame both have to invalidate the cache, and they are the inputs
+    ;; that move without the formula moving.
+    (let* ((bounds (maf-render--panel-bounds))
+           (key (list value (face-foreground 'default nil t) bounds)))
+      (unless (equal (car maf-render--panel-cache) key)
+        (setq maf-render--panel-cache
+              (cons key
+                    (ignore-errors
+                      (let* ((svg (maf-render--ratex (maf--latex-string value)))
+                             (image (create-image svg 'svg t
+                                                  :ascent 'center :scale 1
+                                                  :max-width (car bounds)
+                                                  :max-height (cdr bounds))))
+                        (and image (propertize " " 'display image)))))))
+      (cdr maf-render--panel-cache))))
+
 ;;; The module
 
 ;;;###autoload
@@ -152,11 +204,21 @@ to the configured RaTeX executable, and displays the returned SVG in the
 lower half of the invoking Calc window. It neither changes the stack nor
 selects the preview.
 
-Nothing renders in the background. Turning this mode off hands G back
-to `maf-preview-show', whose panel shows the same entry in Big; the
-command remains available by name."
+With the preview module also on, its panel — the one that follows
+point — is typeset too, in place of its Big rendering; that panel is
+the only thing here that renders without being asked, and only for the
+entry it was already showing. Nothing else runs between invocations.
+
+Turning this mode off hands G back to `maf-preview-show' and the panel
+back to Big; the command remains available by name."
   :global t
   :group 'maf
+  ;; The panel is the preview module's, and it asks rather than being
+  ;; told: this sets what it draws with and never draws anything itself,
+  ;; so with the preview off there is nothing here to turn on.
+  (setq maf-preview-render-function
+        (and maf-use-render-mode #'maf-render--panel)
+        maf-render--panel-cache nil)
   (maf-bindings--refresh))
 
 ;; G, shadowing `maf-preview-show' (src/bindings.el) rather than taking
@@ -177,12 +239,13 @@ command remains available by name."
                        "Preview one stack entry as typeset mathematics.
 
 Invoke the command on an entry to render it once with RaTeX. The SVG
-appears in an even split below Calc without taking focus. Nothing runs
-in the background, and the stack's own display stays unchanged.
+appears in an even split below Calc without taking focus, and the
+stack's own display stays unchanged.
 
 The key is G, which the Big-display peek holds while this is off: the
 module decides which rendering one look comes back in, not whether
-that look is available."
+that look is available. With the preview module on, its following
+panel is typeset instead of drawn in Big."
                        "G" "Display"))
 
 (provide 'maf-render)

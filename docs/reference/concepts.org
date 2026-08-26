@@ -1074,15 +1074,16 @@ Two module shapes have appeared, matching the feature's state:
   feature switch) being separate.
 
   The render module (=modules/maf-render.el=) is the same global-mode
-  shape with no background work: =maf-use-render-mode= owns only which
-  command =G= runs, shadowing the Big-display peek rather than taking a
-  key of its own (see /A module's key over a default's/ below).
-  =maf-render= formats the whole entry at point with Calc's
-  LaTeX language, runs =maf-render-program= once, and displays the
-  returned SVG in an even split below Calc without selecting it. The
-  program defaults to
-  =render-svg= on =exec-path=, then =~/pkgs/ratex/render-svg=; both
-  the executable and RaTeX font size are customizable.
+  shape with no background work of its own: =maf-use-render-mode= owns
+  which command =G= runs, shadowing the Big-display peek rather than
+  taking a key of its own (see /A module's key over a default's/
+  below), and what the preview panel draws with (see /One module's
+  rendering, in another's panel/). =maf-render= formats the whole entry
+  at point with Calc's LaTeX language, runs =maf-render-program= once,
+  and displays the returned SVG in an even split below Calc without
+  selecting it. The program defaults to =render-svg= on =exec-path=,
+  then =~/pkgs/ratex/render-svg=; both the executable and RaTeX font
+  size are customizable.
 
 - *Globalized buffer-local mode.* Highlighting is inherently
   per-buffer (an overlay per calc buffer), so =modules/maf-hl.el= keeps
@@ -1133,6 +1134,35 @@ Two module shapes have appeared, matching the feature's state:
   more — a module may not turn a default's command key into a prefix,
   or bury a prefix family under a command, since neither is something a
   toggle could put back the way it found it.
+
+- *One module's rendering, in another's panel.* The same two commands
+  meet again away from the keymap: the preview panel that /follows/
+  point is typeset too while the render module is on. The panel asks
+  rather than being told — =maf-preview-render-function= is a variable
+  =modules/maf-preview.el= consults before falling back to Big, and
+  =modules/maf-render.el= is what sets it — so neither module requires
+  the other and the preview keeps working with the renderer absent.
+  What comes back may carry a display property, an image included, so
+  what a module can put in the panel is not limited to what Calc has a
+  display language for. It is asked only where the panel can show that
+  much: the child frame is a real buffer in a real frame, while the
+  in-window panel is rows of text laid over stack lines, sized and
+  clipped in columns, where an image has no width the arithmetic could
+  use. A refusal — nil, or an error — is not a failure state but the
+  Big rendering, so a formula LaTeX cannot write leaves the panel
+  standing rather than taking it down.
+
+  The panel asks once per command, which is the one thing here that
+  renders without being asked to. RaTeX costs a few milliseconds, but a
+  subprocess per keystroke is not worth spending on a formula that has
+  not moved, so the module caches the last answer under the formula,
+  the colour it was drawn in, and the size it was fitted to — the three
+  inputs that can move it — and caches a failure under its key too,
+  since a formula that will not typeset now will not typeset on the
+  next keystroke either. The image is scaled to fit most of the frame:
+  a rendering wide enough to leave the screen is a preview of nothing,
+  and scaling it down whole beats clipping a formula off mid-term with
+  no sign it was cut.
 
 A module owns its whole lifecycle, including bindings: =maf-mode= no
 longer enables highlighting or the history, and =bindings.el= no longer

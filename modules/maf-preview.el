@@ -77,34 +77,65 @@ is opaque: it covers whatever face the stack line beneath it carries."
 
 ;;; Rendering the entry
 
+(defvar maf-preview-render-function nil
+  "Function drawing the panel's contents, or nil for the Big rendering.
+
+Called with the value the panel is standing over — the selected
+sub-formula where there is a selection, the whole entry otherwise, the
+same value the Big rendering below would have received — and returns
+the string to draw, or nil to leave this entry to that rendering. The
+string may carry a display property, an image included, so a module can
+put something in the panel that Calc has no display language for.
+
+It is consulted only where the panel can show that much (see
+`maf-preview--rich-p'), so what it returns is never asked to survive as
+characters. Errors are contained the same way a nil is: the Big
+rendering draws instead, and the panel stays up.
+
+The render module sets this while `maf-use-render-mode' is on, which is
+how a typeset entry reaches this panel without this file knowing what
+LaTeX is.")
+
 (defun maf-preview--render ()
-  "Return the active entry rendered in the Big language, or nil.
+  "Return the active entry rendered for the panel, or nil.
 The active entry is the one at point, or the top entry when point is at
 home. Returns nil when there is nothing to preview: an empty stack, an
 active maf-edit session (whose text the stack no longer matches), or a
-buffer already showing the Big language (the panel would be redundant)."
-  (unless (or (eq calc-language 'big)
-              (bound-and-true-p maf-edit-mode))
+buffer already showing the Big language with nothing but the Big
+rendering to offer (the panel would be redundant).
+
+`maf-preview-render-function' is asked first where the panel can show
+what it draws. A rendering of its own is never redundant with the
+buffer's language, so the Big test guards only the Big fallback: a
+typeset panel over a Big stack is still the second view it was turned
+on to be."
+  (unless (bound-and-true-p maf-edit-mode)
     (let ((size (calc-stack-size)))
       (unless (zerop size)
         (let* ((idx (calc-locate-cursor-element (point)))
-               (level (if (> idx 0) (min idx size) 1)))
-          ;; The stored value, via `calc-top' rather than `calc-top-n':
-          ;; the preview is a second view of the entry as it stands on
-          ;; the stack, so it must show what the stack line shows.
-          ;; `calc-top-n' normalizes, which under a simplification mode
-          ;; would preview `6 x + 12 = 18 y + 6' as `x + 1 = 3 y' — a
-          ;; different formula from the one being worked on. This is the
-          ;; value calc itself composes the stack line from.
-          ;;
-          ;; Rendered in Big without disturbing the buffer's own display
-          ;; language (see this file's commentary). Long vectors are
-          ;; always abbreviated (`[1, 2, 3, ..., 100]'), whatever the
-          ;; buffer's `v .' setting: a full 100-element vector would make
-          ;; the panel taller than the window it sits in.
-          (let ((calc-language 'big)
-                (calc-full-vectors nil))
-            (math-format-value (calc-top level))))))))
+               (level (if (> idx 0) (min idx size) 1))
+               ;; The stored value, via `calc-top' rather than
+               ;; `calc-top-n': the preview is a second view of the
+               ;; entry as it stands on the stack, so it must show what
+               ;; the stack line shows. `calc-top-n' normalizes, which
+               ;; under a simplification mode would preview
+               ;; `6 x + 12 = 18 y + 6' as `x + 1 = 3 y' — a different
+               ;; formula from the one being worked on. This is the
+               ;; value calc itself composes the stack line from.
+               (value (calc-top level)))
+          (or (and maf-preview-render-function
+                   (maf-preview--rich-p)
+                   (ignore-errors (funcall maf-preview-render-function value)))
+              ;; Rendered in Big without disturbing the buffer's own
+              ;; display language (see this file's commentary). Long
+              ;; vectors are always abbreviated (`[1, 2, 3, ..., 100]'),
+              ;; whatever the buffer's `v .' setting: a full 100-element
+              ;; vector would make the panel taller than the window it
+              ;; sits in.
+              (unless (eq calc-language 'big)
+                (let ((calc-language 'big)
+                      (calc-full-vectors nil))
+                  (math-format-value value)))))))))
 
 ;;; The child-frame backend
 
@@ -123,6 +154,15 @@ not crowd the corner. A posframe poshandler; see `posframe-show'."
   "Non-nil when the child-frame backend can be used on this frame.
 False on a text terminal, and whenever posframe is not installed."
   (and (featurep 'posframe) (posframe-workable-p)))
+
+(defun maf-preview--rich-p ()
+  "Non-nil when the panel can show more than the characters of a string.
+The child frame is a real buffer in a real frame, so a display property
+draws there as it draws anywhere. The in-window panel is rows of text
+laid over stack lines, sized and clipped in columns and spliced into
+`display' properties of its own — an image has no column width that
+arithmetic could use, and nowhere to go once the row is one."
+  (and (display-graphic-p) (maf-preview--posframe-p)))
 
 (defun maf-preview--posframe-show (str)
   "Show STR in the preview child frame."

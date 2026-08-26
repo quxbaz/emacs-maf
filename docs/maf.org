@@ -9,7 +9,10 @@
 
 * NEXT maf-latex
   - [ ] refine stand-alone feature
-  - [ ] support in maf-preview
+  - [X] support in maf-preview (2026-08-25: the render module installs
+    =maf-preview-render-function=, and the panel that follows point is
+    typeset in place of its Big rendering — on the child-frame backend,
+    the only one that can show an image)
   - [ ] support in maf-formulas
 
 * maf-preview
