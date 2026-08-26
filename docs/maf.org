@@ -9,7 +9,7 @@
   - [ ] on RET in certain modules in *maf-modules*, invoke the primary command
     for that module
 
-* DONE maf-pretty
+* TODO maf-pretty
   - in *maf-formulas*
     - [ ] formulas detail view, `&&` and `||` don't render property in pretty
       mode. these should be intersection and union, right?
