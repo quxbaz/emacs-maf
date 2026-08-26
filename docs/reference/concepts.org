@@ -1152,6 +1152,14 @@ Two module shapes have appeared, matching the feature's state:
   Big rendering, so a formula LaTeX cannot write leaves the panel
   standing rather than taking it down.
 
+  What the panel draws is one space whatever the formula, the rendering
+  being in a display property rather than in the characters, so the
+  check that leaves an unchanged panel alone compares text properties
+  too (=equal-including-properties=). On characters alone every entry's
+  panel reads as the same panel, and the first one previewed stays up
+  however far point moves — the panel stops following, which is the
+  whole of what it is.
+
   The panel asks once per command, which is the one thing here that
   renders without being asked to. RaTeX costs a few milliseconds, but a
   subprocess per keystroke is not worth spending on a formula that has

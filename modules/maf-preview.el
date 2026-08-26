@@ -403,7 +403,15 @@ session."
         ;; up, where the cache would go on suppressing the one call that
         ;; puts it back. Nothing outside reports the child frame being
         ;; iconified, so the panel is asked on every update instead.
-        (unless (and (equal state maf-preview--state)
+        ;;
+        ;; Compared including text properties, because a rendering need
+        ;; not be in the characters: what
+        ;; `maf-preview-render-function' returns is one space carrying
+        ;; a display property, so every entry it draws has the same
+        ;; string and only the property tells them apart. Plain `equal'
+        ;; read them all as one panel and left the first one up for the
+        ;; rest of the session.
+        (unless (and (equal-including-properties state maf-preview--state)
                      (maf-preview--on-screen-p))
           (setq maf-preview--state state)
           (with-demoted-errors "maf-preview: %S"

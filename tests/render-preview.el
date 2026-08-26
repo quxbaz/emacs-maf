@@ -14,16 +14,21 @@
   (setq maf--rp-render-stash maf-use-render-mode
         maf--rp-preview-stash maf-use-preview-mode
         maf--rp-calls 0
-        maf--rp-svg
-        "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"10\" height=\"10\"><path d=\"M0 0h10v10H0z\"/></svg>")
+        maf--rp-shown nil)
 
   ;; A counting stand-in for the renderer, and a panel that says it can
   ;; show what comes back. Both are installed per assertion below; these
   ;; are the definitions they share.
   (progn
-    (defun maf--rp-ratex (_latex)
+    (defun maf--rp-ratex (latex)
+      "Count the call and answer an SVG that differs per formula.
+A fixed answer would make every entry's panel identical, which is the
+one thing the change detection below has to be able to see."
       (setq maf--rp-calls (1+ maf--rp-calls))
-      maf--rp-svg)
+      (format (concat "<svg xmlns=\"http://www.w3.org/2000/svg\""
+                      " width=\"10\" height=\"10\"><desc>%d</desc>"
+                      "<path d=\"M0 0h10v10H0z\"/></svg>")
+              (sxhash-equal latex)))
     (defun maf--rp-imagep (str)
       "Non-nil when STR is a panel string carrying an image."
       (and (stringp str) (> (length str) 0)
@@ -148,6 +153,48 @@
     (setq maf--rp-calls 0)
     (cl-assert (equal (maf-preview--render) "a\n-\nb"))
     (cl-assert (= maf--rp-calls 0)))
+
+  ;; What the panel draws is one space whatever the formula — the
+  ;; rendering is in a display property, not in the characters — so the
+  ;; check that leaves an unchanged panel alone has to compare the
+  ;; property too. Comparing the characters alone read every entry as
+  ;; the same panel, and the first one previewed stayed up for the rest
+  ;; of the session however far point moved.
+  (maf-use-render-mode 1)
+  (progn (calc-pop (calc-stack-size))
+         (calc-push '(/ (var a var-a) (var b var-b)))
+         (calc-push '(^ (var x var-x) 2))
+         (calc-refresh))
+  (cl-letf (((symbol-function 'maf-render--ratex) #'maf--rp-ratex)
+            ((symbol-function 'maf-preview--rich-p) (lambda () t))
+            ((symbol-function 'maf-preview--on-screen-p) (lambda () t))
+            ((symbol-function 'maf-preview--show)
+             (lambda (str _win _start) (push str maf--rp-shown))))
+    (setq maf--rp-shown nil)
+    (progn (calc-cursor-stack-index 1) (end-of-line))
+    (maf-preview--update)
+    (progn (calc-cursor-stack-index 2) (end-of-line))
+    (maf-preview--update)
+    (cl-assert (= (length maf--rp-shown) 2))
+    (cl-assert (maf--rp-imagep (nth 0 maf--rp-shown)))
+    (cl-assert (maf--rp-imagep (nth 1 maf--rp-shown)))
+    (cl-assert (not (equal-including-properties (nth 0 maf--rp-shown)
+                                                (nth 1 maf--rp-shown)))))
+
+  ;; The same check still spares the panel a redraw it does not need:
+  ;; point that has not left the entry draws once, not once a command.
+  (cl-letf (((symbol-function 'maf-render--ratex) #'maf--rp-ratex)
+            ((symbol-function 'maf-preview--rich-p) (lambda () t))
+            ((symbol-function 'maf-preview--on-screen-p) (lambda () t))
+            ((symbol-function 'maf-preview--show)
+             (lambda (str _win _start) (push str maf--rp-shown))))
+    (setq maf--rp-shown nil)
+    (progn (calc-cursor-stack-index 1) (end-of-line))
+    (maf-preview--update)
+    (maf-preview--update)
+    (maf-preview--update)
+    (cl-assert (= (length maf--rp-shown) 1)))
+  (maf-use-render-mode -1)
 
   ;; Restore the shared dev session.
   (progn
