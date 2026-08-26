@@ -72,6 +72,16 @@ is opaque: it covers whatever face the stack line beneath it carries."
   "Face for the border of the in-window preview panel."
   :group 'maf)
 
+(defface maf-preview-big
+  '((t :inherit default :height 1.1))
+  "Face for the Big-rendered text of the child-frame panel.
+A little larger than the buffer's own text, so the second view reads
+at a glance instead of blending into the stack beside it. Only the
+child frame honors it: the in-window panel draws its rows in
+`maf-preview-panel', whose column arithmetic needs canonical-width
+characters."
+  :group 'maf)
+
 ;;; Rendering the entry
 
 (defvar maf-preview-render-function nil
@@ -132,7 +142,8 @@ on to be."
               (unless (eq calc-language 'big)
                 (let ((calc-language 'big)
                       (calc-full-vectors nil))
-                  (math-format-value value)))))))))
+                  (propertize (math-format-value value)
+                              'face 'maf-preview-big)))))))))
 
 ;;; The child-frame backend
 
