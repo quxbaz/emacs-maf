@@ -188,7 +188,7 @@ laid over stack lines, sized and clipped in columns and spliced into
 arithmetic could use, and nowhere to go once the row is one."
   (and (display-graphic-p) (maf-preview--posframe-p)))
 
-(defconst maf-preview--posframe-pad '(7 . 5)
+(defconst maf-preview--posframe-pad '(3 . 2)
   "Vertical padding inside the child frame, in pixels (TOP . BOTTOM).
 The bottom runs tighter: a rendered formula carries a sliver of
 clearance of its own below the baseline, and matching the top's
@@ -214,8 +214,8 @@ full-height glyph props the line open."
                 :poshandler #'maf-preview--poshandler
                 :internal-border-width 2
                 :internal-border-color "gray50"
-                :left-fringe 10
-                :right-fringe 10
+                :left-fringe 5
+                :right-fringe 5
                 :accept-focus nil)))
     ;; posframe-show can leave a previously-hidden child frame
     ;; iconified rather than visible on some window managers; force it
