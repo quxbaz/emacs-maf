@@ -136,16 +136,32 @@ on to be."
 
 ;;; The child-frame backend
 
+(defconst maf-preview--posframe-inset 18
+  "Pixels between the child frame's right edge and the window's.
+The top margin is derived from this so the frame sits equidistant
+from the window's text area: see `maf-preview--poshandler'.")
+
 (defun maf-preview--poshandler (info)
   "Position the preview inset from the calc window's top-right corner.
-Down from the header line and in from the right edge, so the frame does
-not crowd the corner. A posframe poshandler; see `posframe-show'."
-  (let ((window-left  (plist-get info :parent-window-left))
-        (window-top   (plist-get info :parent-window-top))
-        (window-width (plist-get info :parent-window-width))
-        (posframe-width (plist-get info :posframe-width)))
-    (cons (- (+ window-left window-width) posframe-width 18)  ; in from the right
-          (+ window-top 40))))                                ; down past the header
+The right margin is `maf-preview--posframe-inset' in from the window's
+pixel edge. Part of that run is dead space text never reaches — the
+fringe, and any scroll bar or divider — while above the frame every
+pixel below the header line is text area. An inset repeated verbatim
+therefore reads top-heavy, so the top margin is the same inset less
+that right-edge padding: equidistant from the text area, which is the
+margin the eye measures. A posframe poshandler; see `posframe-show'."
+  (let* ((win (plist-get info :parent-window))
+         ;; Frame-relative text-area edges, past the fringes and below
+         ;; the header and tab lines — like the window coordinates in
+         ;; INFO, which posframe reads off the same frame.
+         (edges (window-inside-pixel-edges win))
+         (window-right (+ (plist-get info :parent-window-left)
+                          (plist-get info :parent-window-width)))
+         (pad (- window-right (nth 2 edges))))
+    (cons (- window-right (plist-get info :posframe-width)
+             maf-preview--posframe-inset)
+          (+ (nth 1 edges)
+             (max 0 (- maf-preview--posframe-inset pad))))))
 
 (defun maf-preview--posframe-p ()
   "Non-nil when the child-frame backend can be used on this frame.
