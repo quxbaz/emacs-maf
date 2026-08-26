@@ -15,6 +15,7 @@
     the only one that can show an image)
   - [ ] support in maf-formulas
   - [ ] fix `G` behavior
+  - [ ] spec out behavior in relation to maf-preview
 
 * maf-preview
 
