@@ -61,6 +61,9 @@
 ;; Defined in lazily-loaded calc modules; declared for the byte compiler.
 (declare-function math-format-value "calc-ext")
 (declare-function calc-pop-push-record-list "calc-ext")
+(declare-function maf-register-module "maf-module")
+(declare-function maf-bindings-module-keys "maf-bindings")
+(declare-function maf-bindings--refresh "maf-bindings")
 
 (defface maf-formulas-category
   '((t :inherit font-lock-keyword-face :weight bold))
@@ -2062,17 +2065,22 @@ repeated in a \"Recent\" group at the top, each shown beside its
 form. \\<maf-formulas-mode-map>\\[maf-formulas-select]
 pushes the formula at point onto the stack — or, on a group header,
 narrows the list to that group, whole, and widens again when pressed
-there a second time. \\[maf-formulas-next-item] and \\[maf-formulas-prev-item] step between the rows and the headers
+there a second time. \\[maf-formulas-next-item] and
+\\[maf-formulas-prev-item] step between the rows and the headers
 alike, landing on the entry itself rather than the column before it;
-\\[maf-formulas-next-group] and \\[maf-formulas-prev-group] step group to group.
-\\[maf-formulas-toggle-all-groups] folds every group away to its header
-and unfolds them all again, so a long list can be read as its group
-names; \\[maf-formulas-toggle-group] folds or unfolds the one group at
-point. \\[maf-formulas-show-detail] shows the formula at
-point in the detail pane (again to close it), \\[maf-formulas-toggle-detail] toggles the pane following point (on by
-default, remembered for the session), \\[maf-formulas-add-recent] adds the formula at point to
-the Recent group without inserting it, \\[maf-formulas-delete-recent] drops the recent entry at
-point, \\[maf-formulas-filter] filters as you type, \\[maf-formulas-clear-filter] clears every narrowing, \\[maf-formulas-quit] quits."
+\\[maf-formulas-next-group] and \\[maf-formulas-prev-group] step
+group to group. \\[maf-formulas-toggle-all-groups] folds every group
+away to its header and unfolds them all again, so a long list can be
+read as its group names; \\[maf-formulas-toggle-group] folds or
+unfolds the one group at point. \\[maf-formulas-show-detail] shows
+the formula at point in the detail pane (again to close it),
+\\[maf-formulas-toggle-detail] toggles the pane following point (on
+by default, remembered for the session), \\[maf-formulas-add-recent]
+adds the formula at point to the Recent group without inserting it,
+\\[maf-formulas-delete-recent] drops the recent entry at point,
+\\[maf-formulas-filter] filters as you type,
+\\[maf-formulas-clear-filter] clears every narrowing,
+\\[maf-formulas-quit] quits."
   (setq truncate-lines t)
   ;; The legend's band is the options buffer's: `header-line's own look
   ;; is replaced outright, not layered under, so the two read as one
