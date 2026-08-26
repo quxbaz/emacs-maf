@@ -8,7 +8,6 @@
 * Todo
   - [ ] on RET in certain modules in *maf-modules*, invoke the primary command
     for that module
-  - [ ] increase big rendering size
 
 * NEXT maf-pretty
   - [ ] refine standalone mode/command (without *maf-preview* enabled)
