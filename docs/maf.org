@@ -19,7 +19,7 @@
   - [ ] support in maf-formulas
   - [ ] fix `G` behavior
   - [ ] spec out behavior in relation to maf-preview
-  - [ ] rename module (eg, maf-latex-preview)
+  - [X] rename module (eg, maf-pretty)
 
 * review
 
