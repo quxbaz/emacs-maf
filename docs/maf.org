@@ -14,6 +14,7 @@
     typeset in place of its Big rendering — on the child-frame backend,
     the only one that can show an image)
   - [ ] support in maf-formulas
+  - [ ] fix `G` behavior
 
 * maf-preview
 
