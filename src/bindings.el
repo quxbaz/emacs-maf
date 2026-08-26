@@ -11,7 +11,7 @@
 (require 'maf-bindings)
 
 ;; The one command declared here that lives in a module: the preview
-;; peek on G, bound whether or not its module is on (see the G row).
+;; look on G, bound whether or not its module is on (see the G row).
 ;; Modules load after this file; a declaration only records the symbol.
 (declare-function maf-preview-show "maf-preview")
 
@@ -263,7 +263,7 @@
 ;; this is one look asked for by hand, which reads an entry the same
 ;; way whether the module is on, off, or not enabled at all. A key that
 ;; came and went with the toggle would take with it the very way of
-;; working — no panel underfoot, a peek when wanted — that having the
+;; working — no panel underfoot, a look when wanted — that having the
 ;; toggle off is for. The pretty module shadows this key while it is on
 ;; (modules/maf-pretty.el): one look at the entry, come back typeset
 ;; instead of in Big — which rendering is what that toggle is for, and

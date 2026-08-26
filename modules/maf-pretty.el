@@ -5,9 +5,10 @@
 ;; On-demand typeset preview of a Calc stack entry. `maf-pretty' takes
 ;; the whole entry at point (the top entry at home), asks Calc for its
 ;; LaTeX form, sends that one line to RaTeX, and displays the returned
-;; SVG in the lower half of the invoking window without selecting it.
-;; Nothing runs between invocations: there are no update hooks and no
-;; rendered-image cache.
+;; SVG in the lower half of the invoking window, which splits evenly
+;; and hands the preview focus; q deletes the preview window and hands
+;; both height and focus back. Nothing runs between invocations: there
+;; are no update hooks and no rendered-image cache.
 ;;
 ;; RaTeX is the only external requirement. Its executable is configured
 ;; by `maf-pretty-program'; SVG decoding and display are built into a
@@ -54,11 +55,31 @@ with its `--stdout' option."
     map)
   "Keymap for `maf-pretty-mode'.")
 
+(defvar maf-pretty--return-window nil
+  "The window focus goes back to when the preview is dismissed, or nil.
+Set each time the preview takes focus; `maf-pretty-quit' reads it.")
+
+(defun maf-pretty-quit ()
+  "Dismiss the typeset preview.
+Deletes the preview's window — the calc window gets its height back —
+and returns focus to the window the preview was invoked from."
+  (interactive)
+  (let ((window (get-buffer-window maf-pretty--buffer)))
+    (when (window-live-p window)
+      (if (window-parent window)
+          (delete-window window)
+        (quit-window nil window))))
+  (when (window-live-p maf-pretty--return-window)
+    (select-window maf-pretty--return-window)))
+
+;; Outside the defvar so a reload applies edits to the map.
+(define-key maf-pretty-mode-map "q" #'maf-pretty-quit)
+
 (define-derived-mode maf-pretty-mode special-mode "maf-pretty"
   "Major mode for an on-demand typeset Calc preview."
   (setq-local cursor-type nil)
   (setq-local truncate-lines t)
-  (setq-local header-line-format " RaTeX preview    q closes"))
+  (setq-local header-line-format " Preview    q closes"))
 
 (defun maf-pretty--program ()
   "Return the configured RaTeX executable, or signal a `user-error'."
@@ -99,31 +120,67 @@ with its `--stdout' option."
           (user-error "RaTeX returned no SVG"))
         (buffer-string)))))
 
+(defun maf-pretty--display (fill)
+  "Show the preview window in an even split below and select it.
+FILL is called with the empty, writable preview buffer current to
+insert the content — an SVG for `maf-pretty', Big text for
+`maf-preview-show'. The preview and the invoking window end up an
+even split of the height they share, whatever the preview window's
+history — a reused window keeps its old size and `display-buffer'
+sizes only windows it creates, so the split is evened by hand
+afterwards. Focus moves to the preview; `maf-pretty-quit' hands it
+back."
+  (let ((buffer (get-buffer-create maf-pretty--buffer))
+        (height (max window-min-height
+                     (/ (window-total-height (selected-window)) 2))))
+    (with-current-buffer buffer
+      (unless (derived-mode-p 'maf-pretty-mode)
+        (maf-pretty-mode))
+      (let ((inhibit-read-only t))
+        (erase-buffer)
+        (funcall fill)
+        (goto-char (point-min))))
+    (when-let ((window
+                (display-buffer
+                 buffer
+                 `((display-buffer-reuse-window
+                    display-buffer-below-selected)
+                   (inhibit-same-window . t)
+                   (window-height . ,height)))))
+      (set-window-start window (point-min))
+      ;; Meet in the middle: growing the preview by half the
+      ;; difference shrinks the sibling by the same. `ignore-errors'
+      ;; covers the windows resize refuses to touch.
+      (ignore-errors
+        (window-resize window
+                       (/ (- (window-total-height)
+                             (window-total-height window))
+                          2)))
+      (unless (eq (selected-window) window)
+        (setq maf-pretty--return-window (selected-window)))
+      (select-window window))))
+
 (defun maf-pretty--show (svg latex)
-  "Show SVG in the preview buffer, using LATEX as image fallback text."
+  "Show SVG in the preview window and select it.
+LATEX is the image's fallback text; the window behavior is
+`maf-pretty--display's."
   (let ((image (create-image svg 'svg t :ascent 'center :scale 1)))
     (unless image
       (user-error "Emacs could not create an image from RaTeX's SVG"))
-    (let ((buffer (get-buffer-create maf-pretty--buffer))
-          (height (max window-min-height
-                       (/ (window-total-height (selected-window)) 2))))
-      (with-current-buffer buffer
-        (unless (derived-mode-p 'maf-pretty-mode)
-          (maf-pretty-mode))
-        (let ((inhibit-read-only t))
-          (erase-buffer)
-          (insert-image image latex)
-          (insert "\n")
-          (goto-char (point-min))))
-      (when-let ((window
-                  (display-buffer
-                   buffer
-                   `((display-buffer-reuse-window
-                      display-buffer-below-selected)
-                     (inhibit-same-window . t)
-                     (window-height . ,height)))))
-        (set-window-start window (point-min)))
-      buffer)))
+    (maf-pretty--display
+     (lambda ()
+       (insert-image image latex)
+       (insert "\n")))))
+
+(defun maf-pretty--show-text (str)
+  "Show STR in the preview window and select it.
+The same window, split, and dismissal as an SVG preview — what
+`maf-preview-show' fills the window with when this module's renderer
+is off."
+  (maf-pretty--display
+   (lambda ()
+     (insert str)
+     (insert "\n"))))
 
 ;;;###autoload
 (defun maf-pretty ()
@@ -133,8 +190,10 @@ with its `--stdout' option."
 
 The whole entry at point is formatted using Calc's LaTeX language and
 shown as SVG in a preview window below Calc. The preview and Calc
-split the original Calc window evenly. At home, the top entry is
-rendered. The stack, point, and Calc display language are unchanged."
+split the original Calc window evenly, and focus moves to the
+preview; `maf-pretty-quit' in it hands the height and focus back. At
+home, the top entry is rendered. The stack and Calc display language
+are unchanged."
   (interactive)
   (unless (display-images-p)
     (user-error "The selected frame cannot display images"))
@@ -203,10 +262,11 @@ back to its Big rendering rather than going dark. Installed as
 (define-minor-mode maf-use-pretty-mode
   "Make on-demand typeset previews available in Calc.
 
-The command formats the whole entry at point as LaTeX, passes it
-to the configured RaTeX executable, and displays the returned SVG in the
-lower half of the invoking Calc window. It neither changes the stack nor
-selects the preview.
+The command formats the whole entry at point as LaTeX, passes it to
+the configured RaTeX executable, and displays the returned SVG in the
+lower half of the invoking Calc window, taking focus; dismissing the
+preview (q) hands both height and focus back. The stack is never
+changed.
 
 With the preview module also on, its panel — the one that follows
 point — is typeset too, in place of its Big rendering; that panel is
@@ -230,10 +290,10 @@ back to Big; the command remains available by name."
 ;; entry at point, in a rendering the stack is not switched over to —
 ;; and which rendering that look comes back in is the only thing this
 ;; module decides. So the toggle chooses what G shows rather than
-;; whether G is there at all, and the peek keeps the key untouched for
+;; whether G is there at all, and the Big look keeps the key untouched for
 ;; everyone who never turns the module on. vim inherits G from native,
 ;; but module claims are not derived: the shadow is declared once per
-;; profile that has a peek to cover.
+;; profile that has a look to cover.
 (maf-bindings-module-keys 'maf-pretty 'maf-use-pretty-mode
   '(((native) "G" maf-pretty)
      ((vim) "G" maf-pretty)))
@@ -243,10 +303,10 @@ back to Big; the command remains available by name."
                        "Preview one stack entry as typeset mathematics.
 
 Invoke the command on an entry to render it once with RaTeX. The SVG
-appears in an even split below Calc without taking focus, and the
-stack's own display stays unchanged.
+appears in an even split below Calc and takes focus — q hands it
+back — and the stack's own display stays unchanged.
 
-The key is G, which the Big-display peek holds while this is off: the
+The key is G, which the Big-display preview holds while this is off: the
 module decides which rendering one look comes back in, not whether
 that look is available. With the preview module on, its following
 panel is typeset instead of drawn in Big."

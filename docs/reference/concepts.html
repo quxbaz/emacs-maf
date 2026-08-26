@@ -1722,7 +1722,7 @@ multiples of pi.
 
 <tr>
 <td class="org-left"><a href="../../modules/maf-preview.el">modules/maf-preview.el</a></td>
-<td class="org-left">Preview module: <code>maf-use-preview-mode</code> shows the entry at point in Big display in a floating panel (posframe child frame, else in-window); <code>maf-preview-show</code> (<code>G</code>) peeks at one entry with the module off</td>
+<td class="org-left">Preview module: <code>maf-use-preview-mode</code> shows the entry at point in Big display in a floating panel (posframe child frame, else in-window); <code>maf-preview-show</code> (<code>G</code>) opens one entry in the preview window below the stack, module on or off</td>
 </tr>
 
 <tr>
@@ -1874,7 +1874,7 @@ feature switch) being separate.
 <p>
 The pretty module (<code>modules/maf-pretty.el</code>) is the same global-mode
 shape with no background work of its own: <code>maf-use-pretty-mode</code> owns
-which command <code>G</code> runs, shadowing the Big-display peek rather than
+which command <code>G</code> runs, shadowing the Big-display preview rather than
 taking a key of its own (see <i>A module's key over a default's</i>
 below), and what the preview panel draws with (see <i>One module's
 rendering, in another's panel</i>). <code>maf-pretty</code> formats the whole entry
@@ -1910,10 +1910,11 @@ whole buffer is already in Big display and during a <code>maf-edit</code>
 session.</li>
 
 <li><b>A command of a module's, bound outside it.</b> <code>maf-preview-show</code> (<code>G</code>,
-declared in <code>src/bindings.el</code>) puts up one panel over the entry at
-point — a <i>peek</i>, taken down again by the next command — and needs
-nothing of the module: no buffer-local mode, no globalized toggle.
-That is why its key is not declared through
+declared in <code>src/bindings.el</code>) opens the entry at point in the
+preview window below the stack — the pretty module's window, split
+evenly, focused, and handed back on q, filled with Big text — and
+needs nothing of the module: no buffer-local mode, no globalized
+toggle. That is why its key is not declared through
 <code>maf-bindings-module-keys</code> like every other module key: a key that
 came and went with the toggle would take with it the way of working
 the toggle is turned <b>off</b> for — no panel underfoot, a look when
@@ -1921,8 +1922,8 @@ wanted. The module toggle stays a plain on/off, and what it decides
 is only whether a panel follows point.</li>
 
 <li><b>A module's key over a default's: a shadow.</b> <code>maf-pretty</code> claims <code>G</code>
-through <code>maf-bindings-module-keys</code>, the key the peek above already
-holds. The compiler refuses two modules on one key — nothing there
+through <code>maf-bindings-module-keys</code>, the key the preview command
+above already holds. The compiler refuses two modules on one key — nothing there
 says which wins — but a module over a default it lets stand, because
 the toggle says it: the module's command holds the key while its mode
 is on and the default comes back when it goes off, so the key keeps
@@ -1941,8 +1942,8 @@ meet again away from the keymap: the preview panel that <i>follows</i>
 point is typeset too while the pretty module is on. The panel asks
 rather than being told — <code>maf-preview-render-function</code> is a variable
 <code>modules/maf-preview.el</code> consults before falling back to Big, and
-<code>modules/maf-pretty.el</code> is what sets it — so neither module requires
-the other and the preview keeps working with the renderer absent.
+<code>modules/maf-pretty.el</code> is what sets it — so the panel keeps working
+with the renderer absent.
 What comes back may carry a display property, an image included, so
 what a module can put in the panel is not limited to what Calc has a
 display language for. It is asked only where the panel can show that

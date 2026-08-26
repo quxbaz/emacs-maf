@@ -974,7 +974,7 @@ multiples of pi.
 | [[file:../../modules/maf-history.el][modules/maf-history.el]]  | History module: =maf-use-history-mode= records stack snapshots, browse in =*maf-history*= |
 | [[file:../../modules/maf-persist.el][modules/maf-persist.el]]   | Persist module: =maf-persist-mode= saves/restores the stack across sessions |
 | [[file:../../modules/maf-edit.el][modules/maf-edit.el]]      | Edit module: =maf-use-edit-mode= binds SPC/`/C-o/"(" to =maf-edit= in-place stack editing (=maf-edit-mode= session) |
-| [[file:../../modules/maf-preview.el][modules/maf-preview.el]]   | Preview module: =maf-use-preview-mode= shows the entry at point in Big display in a floating panel (posframe child frame, else in-window); =maf-preview-show= (=G=) peeks at one entry with the module off |
+| [[file:../../modules/maf-preview.el][modules/maf-preview.el]]   | Preview module: =maf-use-preview-mode= shows the entry at point in Big display in a floating panel (posframe child frame, else in-window); =maf-preview-show= (=G=) opens one entry in the preview window below the stack, module on or off |
 | [[file:../../modules/maf-pretty.el][modules/maf-pretty.el]]    | Render module: =maf-pretty= sends the entry at point through Calc LaTeX and RaTeX, then displays the SVG on demand |
 | [[file:../../modules/maf-formulas.el][modules/maf-formulas.el]]  | Formulas module: =maf-formulas= menu of saved formulas by category (detail + RET-insert); data in =maf-formulas-builtin= (shipped) plus =maf-formulas-file= (the user's) |
 | [[file:../../debug/maf-step.el][debug/maf-step.el]]       | Step-through harness (cockpit) that drives the tests        |
@@ -1075,7 +1075,7 @@ Two module shapes have appeared, matching the feature's state:
 
   The pretty module (=modules/maf-pretty.el=) is the same global-mode
   shape with no background work of its own: =maf-use-pretty-mode= owns
-  which command =G= runs, shadowing the Big-display peek rather than
+  which command =G= runs, shadowing the Big-display preview rather than
   taking a key of its own (see /A module's key over a default's/
   below), and what the preview panel draws with (see /One module's
   rendering, in another's panel/). =maf-pretty= formats the whole entry
@@ -1110,10 +1110,11 @@ Two module shapes have appeared, matching the feature's state:
   session.
 
 - *A command of a module's, bound outside it.* =maf-preview-show= (=G=,
-  declared in =src/bindings.el=) puts up one panel over the entry at
-  point — a /peek/, taken down again by the next command — and needs
-  nothing of the module: no buffer-local mode, no globalized toggle.
-  That is why its key is not declared through
+  declared in =src/bindings.el=) opens the entry at point in the
+  preview window below the stack — the pretty module's window, split
+  evenly, focused, and handed back on q, filled with Big text — and
+  needs nothing of the module: no buffer-local mode, no globalized
+  toggle. That is why its key is not declared through
   =maf-bindings-module-keys= like every other module key: a key that
   came and went with the toggle would take with it the way of working
   the toggle is turned *off* for — no panel underfoot, a look when
@@ -1121,8 +1122,8 @@ Two module shapes have appeared, matching the feature's state:
   is only whether a panel follows point.
 
 - *A module's key over a default's: a shadow.* =maf-pretty= claims =G=
-  through =maf-bindings-module-keys=, the key the peek above already
-  holds. The compiler refuses two modules on one key — nothing there
+  through =maf-bindings-module-keys=, the key the preview command
+  above already holds. The compiler refuses two modules on one key — nothing there
   says which wins — but a module over a default it lets stand, because
   the toggle says it: the module's command holds the key while its mode
   is on and the default comes back when it goes off, so the key keeps
@@ -1140,8 +1141,8 @@ Two module shapes have appeared, matching the feature's state:
   point is typeset too while the pretty module is on. The panel asks
   rather than being told — =maf-preview-render-function= is a variable
   =modules/maf-preview.el= consults before falling back to Big, and
-  =modules/maf-pretty.el= is what sets it — so neither module requires
-  the other and the preview keeps working with the renderer absent.
+  =modules/maf-pretty.el= is what sets it — so the panel keeps working
+  with the renderer absent.
   What comes back may carry a display property, an image included, so
   what a module can put in the panel is not limited to what Calc has a
   display language for. It is asked only where the panel can show that

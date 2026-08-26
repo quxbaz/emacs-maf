@@ -36,11 +36,13 @@
 ;; buffer-local mode on in every calc buffer and registers with the
 ;; module system as `maf-preview' (see `maf-modules'). What it decides
 ;; is whether a panel *follows point*, and that is all it decides:
-;; `maf-preview-show' (G) puts up a panel over the entry at point
-;; whenever it is called — a peek, taken down again by the next command
-;; — module on or off, on the same two backends and without the
-;; buffer-local mode. So the two states are one panel always, or one
-;; panel when asked for; there is no third to configure.
+;; `maf-preview-show' (G) opens the entry at point in the preview
+;; window below the stack — the pretty module's window, in an even
+;; split that takes focus and hands it back on q (see
+;; modules/maf-pretty.el), drawn in Big rather than typeset — module
+;; on or off, without the buffer-local mode. So the two states are one
+;; panel always, or a look when asked for; there is no third to
+;; configure.
 
 (require 'calc)
 (require 'calc-yank)         ; calc-locate-cursor-element
@@ -51,6 +53,7 @@
 
 ;; Rendered on demand; the byte compiler needs the declarations.
 (declare-function math-format-value "calc-ext")
+(declare-function maf-pretty--show-text "maf-pretty")
 (declare-function posframe-show "posframe")
 (declare-function posframe-hide "posframe")
 (declare-function posframe-delete "posframe")
@@ -203,6 +206,12 @@ a larger allowance — plus a space column each side, added where these
 numbers are used — to meet the border at about the distance the RaTeX
 rendering keeps.")
 
+(defvar maf-preview--frame nil
+  "The child frame `posframe-show' last handed back, or nil.
+Kept so `maf-preview--on-screen-p' can ask the panel whether it is
+really displayed without searching `frame-list' or reaching into
+posframe's own variables.")
+
 (defun maf-preview--posframe-show (str)
   "Show STR in the preview child frame.
 The frame's border is its visible edge, so the room between it and the
@@ -257,11 +266,6 @@ an image — see `maf-preview--posframe-text-pad'."
 Global, like the single child frame of the other backend: the panel
 exists in at most one window at a time.")
 
-(defvar maf-preview--frame nil
-  "The child frame `posframe-show' last handed back, or nil.
-Kept so `maf-preview--on-screen-p' can ask the panel whether it is
-really displayed without searching `frame-list' or reaching into
-posframe's own variables.")
 
 (defun maf-preview--border-row (left right inner)
   "Return a horizontal panel border INNER columns wide between LEFT and RIGHT.
@@ -373,13 +377,6 @@ off the first line shown there, not off any particular stack entry."
 Compared against the same data on each update so an unchanged panel is
 left alone instead of being torn down and rebuilt every command.")
 
-(defvar maf-preview--peek-buffer nil
-  "The calc buffer a peek is standing over, or nil.
-A peek is the panel `maf-preview-show' puts up on request, which the
-buffer-local mode has no part in — so with the mode off there is
-nothing else to say the panel exists. Declared here, beside the state
-it belongs with; the code that sets it is under The peek, below.")
-
 (defun maf-preview--window ()
   "Return the window the preview belongs over, or nil if there is none.
 The selected one, and only when it is showing this buffer: there is a
@@ -490,18 +487,15 @@ costs nothing — the update at the end of the command draws it afresh."
 
 (defun maf-preview--target-window ()
   "Return the window the panel belongs over, or nil if there is none.
-The first window on the frame showing a buffer the panel is for — one
-with `maf-preview-mode' on, or the one a peek is standing over (see
-`maf-preview-show') — and `window-list' starts from the selected
+The first window on the frame showing a buffer with
+`maf-preview-mode' on — and `window-list' starts from the selected
 window, so with the stack in two windows the panel goes over the one
 the user is working in. Unlike `maf-preview--window' this does not
 need the user to be in the stack at all: the mode toggled from the
 module menu, or an echo area growing or shrinking under the menu,
 still finds the calc window on display beside it."
   (seq-find (lambda (win)
-              (let ((buf (window-buffer win)))
-                (or (buffer-local-value 'maf-preview-mode buf)
-                    (eq buf maf-preview--peek-buffer))))
+              (buffer-local-value 'maf-preview-mode (window-buffer win)))
             (window-list)))
 
 (defun maf-preview--on-window-change (&rest _)
@@ -575,70 +569,24 @@ otherwise it is drawn inside the Calc window."
     (remove-hook 'after-change-functions #'maf-preview--on-change t)
     (maf-preview--hide)))
 
-;;; The peek
-
-;; The other way to have a panel: one drawn on request over the entry
-;; at point, and gone again at the next command. It needs nothing of
-;; the module — no buffer-local mode, no hooks of its own beyond the
-;; ones that take it down — which is why its key is declared outside
-;; the module (src/bindings.el) and works with the module off. A peek
-;; deliberately does not switch the mode on either: asking for a look
-;; at this entry is not asking to be shown every entry from here on.
-;;
-;; A peek lives exactly as long as the command that asked for it plus
-;; the pause after it. The takedown rides `post-command-hook' globally,
-;; which fires for the asking command itself — that press is the one
-;; command a peek must survive, so it is passed over by name, and a
-;; second G peeks afresh rather than closing what is up.
-
-(defun maf-preview--peek-end ()
-  "End the peek unless the command that just ran is the one asking for it.
-On `post-command-hook' while a peek is up; see The peek, above."
-  (unless (eq this-command 'maf-preview-show)
-    (maf-preview--peek-stop)))
-
-(defun maf-preview--peek-stop ()
-  "Take down a standing peek and drop the hooks holding it up.
-Harmless when there is no peek, which is what makes it the safe thing
-for the module's own teardown to call."
-  (remove-hook 'post-command-hook #'maf-preview--peek-end)
-  (when (buffer-live-p maf-preview--peek-buffer)
-    (with-current-buffer maf-preview--peek-buffer
-      (remove-hook 'after-change-functions #'maf-preview--on-change t)))
-  (when maf-preview--peek-buffer
-    (setq maf-preview--peek-buffer nil)
-    (maf-preview--hide)))
-
 ;;;###autoload
 (defun maf-preview-show ()
   "Show the entry at point in Calc's two-dimensional Big display.
 
-The panel appears over the top-right of the Calc window and stays
-until the next command, so a look at how an entry is really shaped —
-(x+1)/2 as x+1 over a fraction bar — costs one key and leaves nothing
-behind. Press the key again for another look, or for the entry you
-have since moved to.
-
-This works whether or not the preview module is on: the module is the
-panel that follows point (see `maf-preview-mode'), and where it is
-already showing this entry the command only refreshes it."
+The entry appears in a preview window below Calc — the same even
+split, focus move, and q dismissal as `maf-pretty', which shadows
+this key while the pretty module is on to give the same look typeset.
+The stack, point, and Calc display language are unchanged. Works
+whether or not the preview module is on: the module is the panel that
+follows point, and this is a look asked for by hand."
   (interactive)
   (unless (derived-mode-p 'calc-mode)
     (user-error "Not in a Calc buffer"))
-  (cond
-   ;; The mode's own panel is live here: nothing to put up.
-   (maf-preview-mode (maf-preview--update (get-buffer-window)))
-   ((not (ignore-errors (maf-preview--render)))
-    (message "Nothing to preview"))
-   (t
-    (maf-preview--update (get-buffer-window))
-    (unless maf-preview--peek-buffer
-      (setq maf-preview--peek-buffer (current-buffer))
-      (add-hook 'post-command-hook #'maf-preview--peek-end)
-      ;; The stack is rewritten wholesale, which piles the in-window
-      ;; panel's overlays onto one line; the mode takes this hook for
-      ;; the same reason (see `maf-preview--on-change').
-      (add-hook 'after-change-functions #'maf-preview--on-change nil t)))))
+  (require 'maf-pretty)    ; loaded with maf; standalone loads catch up here
+  (let ((str (ignore-errors (maf-preview--render))))
+    (if (not str)
+        (message "Nothing to preview")
+      (maf-pretty--show-text str))))
 
 ;;; The module
 
@@ -661,7 +609,6 @@ The per-buffer arm of `maf-use-preview-mode'."
         (add-hook 'window-configuration-change-hook #'maf-preview--on-window-change))
     (remove-hook 'window-selection-change-functions #'maf-preview--on-window-change)
     (remove-hook 'window-configuration-change-hook #'maf-preview--on-window-change)
-    (maf-preview--peek-stop)
     (maf-preview--hide)
     (when (and (featurep 'posframe) (get-buffer maf-preview--buffer))
       (posframe-delete maf-preview--buffer))))
@@ -677,9 +624,9 @@ The per-buffer arm of `maf-use-preview-mode'."
 
 A panel follows point, showing the entry you are on as it would look
 in Calc's Big display — (x+1)/2 as a vertical fraction — while the
-stack itself stays compact, one entry per line. With this off, G
-still previews the entry at point whenever you ask, for as long as it
-takes the next key to arrive."
+stack itself stays compact, one entry per line. Module on or off, G
+still opens the entry at point in a preview window below the stack —
+one look, asked for by hand and dismissed with q."
                        nil "Display"))
 
 (provide 'maf-preview)

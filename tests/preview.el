@@ -134,52 +134,55 @@
     (maf-preview--hide))
   (calc-pop (calc-stack-size))
 
-  ;; --- the peek: a panel asked for by hand ---
+  ;; --- G: a look asked for by hand ---
 
   ;; The module is the panel that *follows point*, and with it off
   ;; nothing is previewed on its own. G is not the module's key,
-  ;; though, so it still answers here — one look, asked for by hand.
+  ;; though, so it still answers here: the entry at point opens in the
+  ;; preview window below the stack — the pretty module's window,
+  ;; filled with Big text — split evenly, focused, and dismissed the
+  ;; way a typeset preview is.
   (maf-use-preview-mode -1)
   (cl-assert (null maf-preview-mode))
   (cl-assert (null maf-preview--overlays))
   (cl-assert (eq (key-binding (kbd "G")) 'maf-preview-show))
 
   (progn (maf-push "a / b") (calc-cursor-stack-index 1) (end-of-line))
-
-  ;; A peek is one panel over the entry at point, put up by G and taken
-  ;; down by the next command — which is why each press and the checks
-  ;; on what it left are one step here: stepping is itself a command,
-  ;; and would take the peek down before the next form ran.
-  ;;
-  ;; Driven on the in-window backend, the one whose panel is
-  ;; inspectable on a terminal and off it alike.
-  (cl-letf (((symbol-function 'maf-preview--posframe-p) (lambda () nil)))
-    ;; Asking for a look at this entry is not asking to be shown every
-    ;; entry after it: the peek leaves the mode off.
+  (let ((source (selected-window)))
     (execute-kbd-macro (kbd "G"))
-    (cl-assert (eq maf-preview--peek-buffer (current-buffer)))
-    (cl-assert maf-preview--overlays)
-    (cl-assert (null maf-preview-mode))
-
-    ;; The asking key is the one command a peek survives, so a second
-    ;; press is another look rather than a dismissal.
-    (execute-kbd-macro (kbd "G"))
-    (cl-assert maf-preview--overlays)
-
-    ;; Any other command takes it down, and the hooks holding it up go
-    ;; with it.
-    (execute-kbd-macro (kbd "C-n"))
-    (cl-assert (null maf-preview--overlays))
-    (cl-assert (null maf-preview--peek-buffer))
-    (cl-assert (not (memq 'maf-preview--peek-end post-command-hook))))
+    (let ((win (get-buffer-window maf-pretty--buffer)))
+      (cl-assert win)
+      (cl-assert (eq (selected-window) win))
+      (cl-assert (<= (abs (- (window-total-height source)
+                             (window-total-height win)))
+                     1))
+      (with-current-buffer maf-pretty--buffer
+        (cl-assert (string-match-p "a\n-\nb"
+                                   (buffer-substring-no-properties
+                                    (point-min) (point-max)))))
+      ;; Asking for a look leaves the mode off.
+      (cl-assert (null maf-preview-mode))
+      ;; Dismissing hands the height and the focus back.
+      (maf-pretty-quit)
+      (cl-assert (null (get-buffer-window maf-pretty--buffer)))
+      (cl-assert (eq (selected-window) source))))
 
   ;; With the module back on the mode is on again in the calc buffer,
-  ;; and the panel is drawn without anything asking for it.
+  ;; and the panel is drawn without anything asking for it. G answers
+  ;; the same either way — the same window, not a panel refresh.
   (maf-use-preview-mode 1)
   (cl-assert maf-preview-mode)
+  (progn (calc-cursor-stack-index 1) (end-of-line))
+  (call-interactively 'maf-preview-show)
+  (cl-assert (get-buffer-window maf-pretty--buffer))
+  (maf-pretty-quit)
+
   (cl-letf (((symbol-function 'maf-preview--posframe-p) (lambda () nil)))
     (progn (calc-cursor-stack-index 1) (end-of-line))
     (maf-preview--update)
     (cl-assert maf-preview--overlays)
     (maf-preview--hide))
-  (calc-pop (calc-stack-size)))
+  (progn
+    (when-let ((buf (get-buffer maf-pretty--buffer)))
+      (kill-buffer buf))
+    (calc-pop (calc-stack-size))))

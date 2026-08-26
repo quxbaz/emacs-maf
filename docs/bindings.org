@@ -303,11 +303,11 @@
      maf-go-home, which is now bound by nothing — the preview panel
      reads an entry without leaving it. A native declaration, not a
      module key, though the command lives in modules/maf-preview.el:
-     the peek works with the module off, which is the state it is
+     the look works with the module off, which is the state it is
      most for. maf-pretty shadows the key while maf-use-pretty-mode
      is on, the same look come back typeset instead of in Big; the
-     peek returns when it goes off, so the shadow is what the toggle
-     decides rather than a second key to learn)
+     Big look returns when it goes off, so the shadow is what the
+     toggle decides rather than a second key to learn)
    - [X] `j e` maf-jump-equals ← calc-enable-selections
    - [X] `@` maf-toggle-simplify ← calcDigit-start
    - [X] `&` mafcmd-inv ← calc-inv (2026-08-25: was

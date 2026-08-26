@@ -8,7 +8,7 @@
         "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"10\" height=\"10\"><path d=\"M0 0h10v10H0z\"/></svg>")
 
   ;; The module shadows G while it is on, and hands the key back to the
-  ;; Big-display peek — not to nothing — when it goes off.
+  ;; Big-display preview — not to nothing — when it goes off.
   (maf-use-pretty-mode 1)
   (cl-assert (eq (key-binding (kbd "G")) #'maf-pretty))
   (maf-use-pretty-mode -1)
@@ -29,7 +29,19 @@
              (lambda (latex)
                (setq maf--pretty-latex latex)
                maf--render-svg-fixture)))
-    (call-interactively 'maf-pretty))
+    (call-interactively 'maf-pretty)
+    ;; The preview takes the selection, and the two windows are an
+    ;; even split of the height they came from.
+    (let ((pretty-window (get-buffer-window maf-pretty--buffer)))
+      (cl-assert (eq (selected-window) pretty-window))
+      (cl-assert (<= (abs (- (window-total-height maf--pretty-source-window)
+                             (window-total-height pretty-window)))
+                     1))
+      ;; Dismissing takes the window down, hands the height back, and
+      ;; returns focus to the invoking window.
+      (maf-pretty-quit)
+      (cl-assert (null (get-buffer-window maf-pretty--buffer)))
+      (cl-assert (eq (selected-window) maf--pretty-source-window))))
   (cl-assert (string= maf--pretty-latex "\\frac{\\sqrt{x}}{3}"))
   (cl-assert (= (calc-stack-size) 2))
   (cl-assert (null calc-language))
@@ -37,10 +49,6 @@
     (cl-assert (derived-mode-p 'maf-pretty-mode))
     (cl-assert (eq (car-safe (get-text-property (point-min) 'display))
                    'image)))
-  (let ((pretty-window (get-buffer-window maf-pretty--buffer)))
-    (cl-assert (<= (abs (- (window-total-height maf--pretty-source-window)
-                           (window-total-height pretty-window)))
-                   1)))
 
   ;; At home the same command renders the top entry.
   (goto-char (point-max))
