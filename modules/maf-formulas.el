@@ -1381,7 +1381,14 @@ graphics, or a formula LaTeX cannot write)."
     (concat
      "\n  " (propertize (maf-formulas--title f) 'face 'maf-formulas-category) "\n\n"
      (if pretty
-         (concat "  " pretty)
+         ;; A thin box frames the typeset formula, with a margin added
+         ;; to this copy of the image so the ink sits well clear of the
+         ;; frame — the panel's own rendering is left as it came.
+         (concat "  " (propertize
+                       " "
+                       'display (append (get-text-property 0 'display pretty)
+                                        '(:margin 8))
+                       'face '(:box (:line-width 1 :color "gray40"))))
        (maf-formulas--color-vars
         (propertize
          (mapconcat (lambda (l) (concat "  " l)) (split-string (or big "") "\n") "\n")
