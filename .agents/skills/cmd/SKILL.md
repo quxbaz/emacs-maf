@@ -50,6 +50,24 @@ Decisions to make deliberately, not by default:
 - **Prompts** read their input before touching any calc state, so C-g
   aborts cleanly.
 
+### Command options
+
+A command with more than one defensible behavior keeps both: the
+common reading is the default, the other sits behind a defcustom
+(worked example: `maf-abs-assume-real` for `mafcmd-abs`). Any command
+may carry options — a table row that grows one moves to `maf-defcmd`,
+since a row has no body to read it from.
+
+- Name: `maf-<name>-<aspect>`, where `<name>` is the command's short
+  name (`mafcmd-abs` → `maf-abs-...`).
+- Home: `src/conf.el`, in the section for the command's file. `:group
+  'maf`; the simplest `:type` that fits, boolean preferred.
+- The command's docstring names the option and shows both readings in
+  its examples — the default plain, the other as an annotated line
+  (`(option off)`).
+- The step test covers both values: the default as the file finds it,
+  the other let-bound around its assertions.
+
 ## 3. Set the default binding
 
 - Table rows carry their key in the row.
