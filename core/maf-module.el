@@ -92,9 +92,10 @@ checkbox tag — this is the part that goes there."
   "Build a Customize `:type' for `maf-modules' from `maf-module-registry'.
 A checkbox per registered module, labelled with the name to set from
 Lisp and the summary line of the description the module gives for
-itself — a tag is one line, so only that part fits. Sorted by name:
-`maf-module-registry' is in reverse registration order, an artifact of
-the load order in maf.el that should not decide how the option reads."
+itself — a tag is one line, so only that part fits. Sorted as the menu sorts
+names (see `maf-module--sort-key'): `maf-module-registry' is in
+reverse registration order, an artifact of the load order in maf.el
+that should not decide how the option reads."
   `(set ,@(mapcar (lambda (entry)
                     (let ((name (car entry))
                           (desc (maf-module--summary (caddr entry))))
@@ -103,7 +104,9 @@ the load order in maf.el that should not decide how the option reads."
                                       (symbol-name name))
                               ,name)))
                   (sort (copy-sequence maf-module-registry)
-                        (lambda (a b) (string< (car a) (car b)))))))
+                        (lambda (a b)
+                          (string< (maf-module--sort-key (car a))
+                                   (maf-module--sort-key (car b))))))))
 
 (defun maf-register-module (name mode &optional description keys group values-fn)
   "Register module NAME with its global minor mode MODE.
@@ -299,6 +302,25 @@ A group not listed here files after all of these, alphabetically —
 so a new group still shows up without an edit here, just not in a
 chosen spot.")
 
+(defvar maf-module--follows '((maf-pretty . maf-preview))
+  "Modules that read directly under another, not at their own letter.
+Each entry is (MODULE . ANCHOR): MODULE files right after ANCHOR
+wherever modules are sorted by name — for a module that extends
+another and reads best beneath it, as pretty retints the panel that
+preview puts up. Anchor and follower should register the same group,
+or the group ordering separates them anyway.")
+
+(defun maf-module--sort-key (name)
+  "Return the string module NAME sorts by among its neighbors.
+A module listed in `maf-module--follows' borrows its anchor's name
+with its own appended behind a `~' — which outsorts every letter, so
+the follower lands directly after the anchor and before whatever
+followed the anchor alphabetically."
+  (let ((anchor (alist-get name maf-module--follows)))
+    (if anchor
+        (concat (symbol-name anchor) "~" (symbol-name name))
+      (symbol-name name))))
+
 (defun maf-module--items ()
   "Compile `maf-module-registry' into dial items, grouped and sorted.
 Each module files under the group it registered — the menu's sections
@@ -342,7 +364,9 @@ should not decide how the menu reads."
                          (gb (or (nth 4 b) "Modules"))
                          (ia (seq-position maf-module--group-order ga))
                          (ib (seq-position maf-module--group-order gb)))
-                    (cond ((string= ga gb) (string< (car a) (car b)))
+                    (cond ((string= ga gb)
+                           (string< (maf-module--sort-key (car a))
+                                    (maf-module--sort-key (car b))))
                           ((and ia ib) (< ia ib))
                           (ia t)
                           (ib nil)
