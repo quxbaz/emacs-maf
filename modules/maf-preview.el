@@ -61,7 +61,8 @@
   "Name of the buffer backing the preview child frame.")
 
 (defconst maf-preview--title "PREVIEW"
-  "Label the preview carries, so the panel is not mistaken for the stack.")
+  "Label the preview carries, so the panel is not mistaken for the stack.
+Worn only by a panel that could be: see `maf-preview--label-p'.")
 
 (defface maf-preview-panel
   '((t :inherit default))
@@ -164,13 +165,24 @@ laid over stack lines, sized and clipped in columns and spliced into
 arithmetic could use, and nowhere to go once the row is one."
   (and (display-graphic-p) (maf-preview--posframe-p)))
 
+(defun maf-preview--label-p (str)
+  "Non-nil when STR is text the panel should wear its label over.
+The label is there because a panel of Calc's own text reads as the
+stack it hangs over — `a / b' in a corner is an entry until something
+says otherwise. A rendering carried in a display property cannot be
+read as an entry by anyone, and a word above it only spends a line of
+a panel that exists to show a formula."
+  (null (get-text-property 0 'display str)))
+
 (defun maf-preview--posframe-show (str)
   "Show STR in the preview child frame."
   (let ((frame (posframe-show
                 maf-preview--buffer
-                :string (concat (propertize (concat maf-preview--title "\n")
-                                            'face 'shadow)
-                                str)
+                :string (if (maf-preview--label-p str)
+                            (concat (propertize (concat maf-preview--title "\n")
+                                                'face 'shadow)
+                                    str)
+                          str)
                 :poshandler #'maf-preview--poshandler
                 :internal-border-width 2
                 :internal-border-color "gray50"

@@ -196,6 +196,15 @@ one thing the change detection below has to be able to see."
     (cl-assert (= (length maf--rp-shown) 1)))
   (maf-use-render-mode -1)
 
+  ;; The panel's label is worn only by a panel that could be mistaken
+  ;; for the stack. Calc's own text in a corner reads as an entry until
+  ;; something says otherwise; a rendering carried in a display
+  ;; property does not, and the word over it would only spend a line of
+  ;; a panel that is there to show a formula.
+  (cl-assert (maf-preview--label-p "a\n-\nb"))
+  (cl-assert (not (maf-preview--label-p
+                   (propertize " " 'display '(image :type svg)))))
+
   ;; Restore the shared dev session.
   (progn
     (calc-normal-language)

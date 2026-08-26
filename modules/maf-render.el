@@ -40,7 +40,7 @@ with its `--stdout' option."
   :type 'file
   :group 'maf)
 
-(defcustom maf-render-font-size 28
+(defcustom maf-render-font-size 18
   "Base font size passed to RaTeX by `maf-render'."
   :type 'number
   :group 'maf)
@@ -175,12 +175,16 @@ does not survive the trip through LaTeX — either way the panel falls
 back to its Big rendering rather than going dark. Installed as
 `maf-preview-render-function' while `maf-use-render-mode' is on."
   (when (image-type-available-p 'svg)
-    ;; Colour and bounds are read here rather than left to the renderer
-    ;; so they can be part of the key: a theme change and a resized
-    ;; frame both have to invalidate the cache, and they are the inputs
-    ;; that move without the formula moving.
+    ;; Colour, size and bounds are read here rather than left to the
+    ;; renderer so they can be part of the key. A theme change, a
+    ;; customized font size and a resized frame each move the image
+    ;; without the formula moving, and a cache that watched only the
+    ;; formula would go on answering with the last one drawn.
     (let* ((bounds (maf-render--panel-bounds))
-           (key (list value (face-foreground 'default nil t) bounds)))
+           (key (list value
+                      (face-foreground 'default nil t)
+                      maf-render-font-size
+                      bounds)))
       (unless (equal (car maf-render--panel-cache) key)
         (setq maf-render--panel-cache
               (cons key

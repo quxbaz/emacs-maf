@@ -1152,6 +1152,12 @@ Two module shapes have appeared, matching the feature's state:
   Big rendering, so a formula LaTeX cannot write leaves the panel
   standing rather than taking it down.
 
+  The panel's =PREVIEW= label goes with the text it was for: a panel of
+  Calc's own text reads as the stack it hangs over — =a / b= in a
+  corner is an entry until something says otherwise — while a
+  rendering cannot be read as one by anyone, and the word above it only
+  spends a line of a panel that is there to show a formula.
+
   What the panel draws is one space whatever the formula, the rendering
   being in a display property rather than in the characters, so the
   check that leaves an unchanged panel alone compares text properties
