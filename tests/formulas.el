@@ -233,9 +233,13 @@
     (setq maf-formulas--query "")
     (maf-formulas--render)
 
-    ;; TAB steps formula to formula, like n; M-n walks the groups and
-    ;; stops dead at the last one rather than cycling.
-    (cl-assert (eq (key-binding (kbd "TAB")) #'maf-formulas-next-item))
+    ;; n steps formula to formula; M-n walks the groups and stops dead
+    ;; at the last one rather than cycling. TAB was a second key for
+    ;; the item motion until it became the fold — n/p/j/k covered that
+    ;; twice over, and the fold had no other key it would be looked
+    ;; for on (tests/formulas-fold.el).
+    (cl-assert (eq (key-binding (kbd "n")) #'maf-formulas-next-item))
+    (cl-assert (eq (key-binding (kbd "TAB")) #'maf-formulas-toggle-all-groups))
     (cl-assert (eq (key-binding (kbd "M-n")) #'maf-formulas-next-group))
     (goto-char (point-min))
     (maf-formulas-next-item)

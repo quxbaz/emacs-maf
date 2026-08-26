@@ -6,23 +6,13 @@
   [[https://www.gnu.org/software/emacs/manual/html_mono/calc.html#Symbolic-Lisp-Functions][symbolic lisp functions]]
 
 * Todo
-  - [X] preview as latex (on demand via RaTeX)
-  - [-] *maf-formulas*: add basic/fundamental identities (addition,
-    multiplication, etc)
-    - [X] properties of real numbers (commutative, associative,
-      distributive, identities, inverses, sign rules) — shipped in
-      =maf-formulas-builtin=
-    - [ ] logarithm laws (product, quotient, power; b^log_b x = x)
-    - [ ] quadratic formula, discriminant, Vieta's root relations
-    - [ ] radicals and the x^0 / x^1 / x^(m/n) exponent cases
-    - [ ] fraction arithmetic, absolute value
-    - [ ] trig identity table (reciprocal, quotient, the other two
-      Pythagoreans, angle sum/difference, double and half angle)
 
 * NEXT maf-latex
   - [ ] refine stand-alone feature
   - [ ] support in maf-preview
   - [ ] support in maf-formulas
+
+* maf-preview
 
 * review
 
@@ -40,16 +30,7 @@
   - [ ] main docs for users (new features, changes)
   - [ ] technical docs for devs
 
-* feedback
-  - [ ] single-key (no modifiers) to force next cmd to target line
-  - following cmds should be bound to single keys (no modifiers):
-    - [X] home (make sure to set mark)
-    - [ ] expand
-    - [ ] simplify
-    - [ ] factor
-    - [ ] target-line
-
-* later::plotting module
+* later::graph module
   - [ ] my/calc-graph-quick / -with-range (g l / g i) — plot the top entry straight to
     gnuplot (see Todo: interval form for the range prompt)
   - [ ] my/calc-to-gnuplot-string — calc expr → gnuplot formula (fortran mode + fixups)

@@ -7,7 +7,7 @@
 ;; entry from a composition tree whose `tag' nodes reference the actual
 ;; formula conses; walking it connects the formula structure to buffer
 ;; text. Consumers: sub-formula highlighting (maf-hl), anchor-based
-;; point restoration (maf-lib), and the operand motion (src/stack.el).
+;; point restoration (maf-lib), and the landing rules (src/stack.el).
 ;;
 ;; All entry points assume `calc-prepare-selection' has run for the
 ;; entry in question, and handle only flat (single-height) renderings —
@@ -323,78 +323,15 @@ is not flat."
         (+ start (min (max offset 0) (max 0 (1- (- end start)))))
         toppt)))))
 
-(defun maf--comp-landing-positions ()
-  "Buffer positions naming each compound sub-formula of the entry, sorted.
-One position per tagged sub-formula that is an operation rather than an
-atom — the whole entry among them when it is one: the first of the
-glyphs the node renders itself — its operator, function name, opening
-delimiter — preferring non-blank over the padding around an operator,
-so each is a place `calc-find-selected-part' answers with that node,
-the same landing `maf--up-node-position' picks. A juxtaposed product
-draws its multiplication as nothing but a space, so its position is
-blank.
-
-Numbers and variables (`math-primp') are left out: an atom is one
-noun, and walking the nouns is `maf-forward-noun''s job, so an entry
-that is nothing but an atom offers no position at all. nil when the
-composition is not flat."
-  (when (math-comp-is-flat calc-selection-cache-comp)
-    (let ((math-comp-pos 0)
-          (pieces nil)
-          ;; open tags, innermost first: (START EXPR . CHILD-SPANS)
-          (frames nil)
-          ;; closed tags: (START END EXPR CHILD-SPANS)
-          (records nil))
-      (cl-labels
-          ((walk (c)
-             (cond
-              ((not (consp c))
-               (push c pieces)
-               (setq math-comp-pos (+ math-comp-pos (length c))))
-              ((memq (car c) '(set break)))
-              ((eq (car c) 'horiz)
-               (dolist (sub (cdr c)) (walk sub)))
-              ((eq (car c) 'tag)
-               (push (list math-comp-pos (nth 1 c)) frames)
-               (walk (nth 2 c))
-               (let ((frame (pop frames)))
-                 (when frames
-                   ;; A direct child of the enclosing tag: its span is
-                   ;; what the parent's own-glyph scan below excludes.
-                   (push (cons (car frame) math-comp-pos)
-                         (cddr (car frames))))
-                 (push (list (car frame) math-comp-pos (nth 1 frame)
-                             (nreverse (cddr frame)))
-                       records)))
-              (t (walk (nth 2 c))))))
-        (walk calc-selection-cache-comp))
-      (let ((text (apply #'concat (nreverse pieces)))
-            (toppt (save-excursion
-                     (calc-cursor-stack-index calc-selection-cache-num)
-                     (point))))
-        (delete-dups
-         (sort (delq nil
-                     (mapcar
-                      (lambda (r)
-                        (pcase-let ((`(,start ,end ,expr ,children) r))
-                          ;; An atom is one noun, and the nouns are
-                          ;; `maf-forward-noun''s to walk.
-                          (unless (math-primp expr)
-                            (let* ((own (cl-loop
-                                         for p from start below end
-                                         unless (cl-some
-                                                 (lambda (c)
-                                                   (and (<= (car c) p)
-                                                        (< p (cdr c))))
-                                                 children)
-                                         collect p))
-                                   (fpos (or (cl-find-if
-                                              (lambda (p)
-                                                (not (eq (aref text p) ?\s)))
-                                              own)
-                                             (car own) start)))
-                              (maf--comp-flat-to-pos fpos toppt)))))
-                      records))
-               #'<))))))
+(defun maf--comp-own-brackets-p (expr)
+  "Non-nil when EXPR's rendering brings its own enclosing brackets.
+A vector draws the brackets of `[1, 2]' itself, an interval the mixed
+pair of `(0 .. 1]', a complex number the parens of `(1, 2)': those
+delimiters are glyphs the node renders, as much its own as an
+operator. Every other compound is bare until its context asks for
+parens — `x - 5' renders without them at the top of an entry and
+gains them from the product in `3 (x - 5)' — so there the parens are
+the parent's punctuation rather than the node's own first glyph."
+  (memq (car-safe expr) '(vec intv cplx polar)))
 
 (provide 'maf-comp)

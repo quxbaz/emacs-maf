@@ -154,8 +154,15 @@
     module off — stock calc, no maf keys but the escape map's `m c`,
     the way back to this menu
   - the registry compiler validates at build time: a key cannot be both
-    a command and a live prefix in one profile; module/profile and
-    module/module key conflicts are errors, not precedence accidents
+    a command and a live prefix in one profile, and module/module key
+    conflicts are errors, not precedence accidents. A module over a
+    profile default is the one exception — a *shadow*, the module's
+    command holding the key while its mode is on and the default
+    returning when it goes off (2026-08-25, for maf-render over
+    maf-preview-show on G). It is confined to the whole key: a module
+    may not turn a default's command key into a prefix, or bury a
+    prefix family under a command, since neither survives the toggle
+    intact
 
 * calc profile
   - promise: zero surprises for a calc user; layout untouched. The one
@@ -227,6 +234,13 @@
    - [X] `N` mafcmd-negate ← calc-eval-num
    - [X] `o` mafcmd-inv ← calc-realign
    - [X] `\` mafcmd-sqrt ← calc-idiv
+   - [X] `:` mafcmd-sqr ← calc-fdiv (2026-08-24: an unshifted key
+     beside `W`, the pairing an edit session already makes — `:` and
+     `W` both raise to a power there, so the stack answers the same
+     way. Calc's fraction divide keeps the key in the calc profile,
+     and the mafcmd table has no fdiv row to strand. The digit entry
+     answers the same way on `maf-digit-sqr`, the fraction colon it
+     was having moved to `;`)
    - [X] `<` mafcmd-decrement ← calc-scroll-left
    - [X] `>` mafcmd-increment ← calc-scroll-right
    - [X] `x` mafcmd-expand ← calc-execute-extended-command
@@ -285,10 +299,22 @@
    - [X] `l d` mafcmd-to-degrees ← calc-db
    - [X] `f L` mafcmd-unit-cath ← calc-lnp1
    - [X] `M-k` mafcmd-coordinate-toggle ← calc-copy-as-kill
-   - [X] `G` maf-go-home ← calc-argument
+   - [X] `G` maf-preview-show ← calc-argument (2026-08-25: was
+     maf-go-home, which is now bound by nothing — the preview panel
+     reads an entry without leaving it. A native declaration, not a
+     module key, though the command lives in modules/maf-preview.el:
+     the peek works with the module off, which is the state it is
+     most for. maf-render shadows the key while maf-use-render-mode
+     is on, the same look come back typeset instead of in Big; the
+     peek returns when it goes off, so the shadow is what the toggle
+     decides rather than a second key to learn)
    - [X] `j e` maf-jump-equals ← calc-enable-selections
    - [X] `@` maf-toggle-simplify ← calcDigit-start
-   - [X] `&` maf-toggle-big-language ← calc-inv
+   - [X] `&` mafcmd-inv ← calc-inv (2026-08-25: was
+     maf-toggle-big-language, now bound by nothing — the preview panel
+     shows one entry in Big without switching the stack over. & is the
+     inv row's table key again, maf's sibling on calc's own key for
+     the command, so nothing is shadowed here any more)
    - [X] `J` mafcmd-mul ← mafcmd-conj (2026-08-23: a second key for
      multiplication beside its table key `*` — the most-struck binary
      operator on a home-row shift where * is a reach to shift-8.
@@ -298,14 +324,17 @@
    - [X] `(` maf-goto-left-side ← calc-begin-complex
    - [X] `)` maf-goto-right-side ← calc-end-complex (2026-08-25: the
      parens cross a relation — one key to the whole left side, one to
-     the whole right, the largest formula on each. Calc's own use for
+     the whole right, the largest formula on each; and either pressed
+     from the side it already names crosses to the other, so one key
+     walks the relation (2026-08-25). Calc's own use for
      them is the complex-number delimiters, which maf's algebraic
      entry supplies instead. `(` also displaces the edit module's
      blank-vector key: that gesture keeps the key at home, where there
      is no entry to move within, and keeps it outright in the calc
      profile)
 ** additions (keys calc leaves unbound)
-   - [X] `W` mafcmd-sqr
+   - [X] `W` mafcmd-sqr (a second key, `:`, shadows calc-fdiv — see
+     the shadowing list above)
    - [X] `k k` mafcmd-esimplify (2026-08-22: the extended simplify's
      doubled-k chord beside its table key `a s` — the most-reached-for
      command on the cheapest key; evaluate, which held it, moved to
@@ -348,13 +377,11 @@
      for the difference of squares, beside its k d; the vim mirror
      carries it as `o D`, the command's home there since vim's k is
      a motion)
-   - [X] `l a` mafcmd-poly-roots (2026-08-23: moved off `l t` so the
-     on-demand typesetter can own its mnemonic; mirrors roots-for on
-     `a l`, and `M-r` remains free)
-   - [X] `l T` maf-render (2026-08-23: typeset the current entry once
-     through RaTeX; the vim profile declares its mirror on `o T`.
-     2026-08-24: moved off `l t`, which apart took on main while the
-     branch was away — provisional, T for typeset)
+   - [X] `l T` mafcmd-poly-roots (2026-08-25: the l family on a free
+     capital the log-units prefix never claimed, beside the family's
+     other capitals; the vim mirror carries it as `o T`.
+     Earlier: `l t` 2026-08-20, off `M-r`, then `l a` 2026-08-23,
+     then `k R` and `l b` for parts of 2026-08-25)
    - [X] `a l` mafcmd-roots-for (2026-08-22: the prompting form — the
      variable read as `i` reads it, the subject's priority variable
      as the default; the stock stack-argument roots stays on `a P`.
@@ -409,22 +436,31 @@
    - [X] `M-m` maf-beginning-of-entry
    - [X] `M-f` maf-forward-noun
    - [X] `M-b` maf-backward-noun
-   - [X] `S-SPC` maf-forward-operand (2026-08-24: the freed key's new
-     tenant, after maf-forward-space was deleted 2026-08-23. Stack
-     mode only — no editplus key carries it into an edit session.
-     Later the same day the stops lost the nouns: only an operation is
-     a landing, numbers and variables being M-f's, so the two motions
-     divide the entry rather than covering the same columns. 2026-08-25:
-     confined to one entry as well — the walk signals at the entry's
-     first and last stop instead of crossing the margin into its
-     neighbour, both motions together)
-   - [X] `M-S-SPC` maf-backward-operand (2026-08-25: S-SPC's reverse
-     over the same stops — the forward key with meta added, calc and
-     the global map both unbound there, stack mode only like the
-     forward walk. Wanted a decode entry of its own: xterm.el carries
-     keycode 32 under alt and ctrl+alt, never under a shift, so
-     alt+shift falls through as the plain shift does. It held C-M-SPC
-     for a few hours the same day, the key the request meant to name)
+   - [X] `M-e` maf-forward-operand (2026-08-24 on `S-SPC`, the key
+     freed when maf-forward-space was deleted 2026-08-23. Stack mode
+     only — no editplus key carries it into an edit session. Later the
+     same day the stops lost the nouns: only an operation is a
+     landing, numbers and variables being M-f's, so the two motions
+     divide the entry rather than covering the same columns.
+     2026-08-25: confined to one entry as well — the walk signals at
+     the entry's first and last stop instead of crossing the margin
+     into its neighbour, both motions together. Moved to `M-e` the
+     same day, beside the noun motions on the meta row. Also 2026-08-25:
+     the parens a context prints around an operand stopped counting as
+     its own first glyph, so a parenthesized operation is named at its
+     operator — the walk crosses `y^2 = 3 (x - 5)' to the `-' instead
+     of halting on the `(' beside its parent's stop, and C-M-u lands
+     there with it. Also 2026-08-25: the stops are asked of resolve
+     column by column rather than counted off the composition, so the
+     walk works in Big language and over a matrix's own lines, where a
+     flat character count is no address at all)
+   - [X] `M-a` maf-backward-operand (2026-08-25: the forward walk's
+     reverse over the same stops, stack mode only like it. It held
+     `C-M-SPC` for a few hours, then `M-S-SPC`, before the pair moved
+     to the meta row together. The shifted spaces cost a terminal
+     decode entry each — xterm.el carries keycode 32 under alt and
+     ctrl+alt, never under a shift — and the meta letters need none,
+     so those entries went with them)
    - [X] `C-M-u` maf-up-expression
    - [X] `C-M-k` maf-reset
    - [X] `C-M-l` maf-reset-settings
@@ -438,7 +474,8 @@
    - mafcmd-idiv — integer division; its stock \ went to mafcmd-sqrt
    - mafcmd-lud — LU decomposition; its stock v L went to
      mafcmd-flatten
-   - mafcmd-arg — complex argument; its stock G went to maf-go-home
+   - mafcmd-arg — complex argument; its stock G went to
+     maf-preview-show (to maf-go-home before that)
    - mafcmd-map, mafcmd-map-stack — explicit mapping commands; the M
      flag is the bound workflow
    - maf-dup, maf-dup-here, maf-clear-selections — split-out halves of
@@ -492,7 +529,9 @@
      Displaces the inherited mod-360, which rides the family
      instead: `o w`, wrapping the angle into range (`l w` through the
      mirror)
-   - already vim-shaped for free: `G` is maf-go-home in native
+   - `G` was maf-go-home in native, the one key vim-shaped for free;
+     2026-08-25 it went unbound and native's G became
+     maf-preview-show, which vim inherits with the rest
    - deliberately no `0` / `$` / `gg`: digits are digit-entry
      starters, $ is auto-algebraic entry, g is reserved for the
      plotting module; M-m stays beginning-of-entry
@@ -512,11 +551,13 @@
      still dies with the motion, native the escape hatch
    - [X] `l` — resolved 2026-08-21: the family rides `o` (right-hand
      home row, the most l-like key under the fingers), second letters
-     intact — o c collect-fractions, o a poly-roots (minus l l: the
+     intact — o c collect-fractions, o T poly-roots (minus l l: the
      toggle rides M-o there) —
      mirrored in src/bindings.el from native's own l declarations, so
      a default key added to the family lands in both profiles. Module
-     claims are not derived; render explicitly declares o T beside l T.
+     claims are not derived, so a module wanting the family in both
+     profiles declares each side; render, which shadows G rather than
+     riding l, declares that key twice for the same reason.
      The commands
      displaced from o's case pair trade places one step over: the
      commute takes the family's free doubled slot o o (native binds
@@ -593,8 +634,7 @@
        mafcmd-collect-fractions (l c), mafcmd-float-frac (l l, the
        float/frac toggle; float and frac stay commands),
        mafcmd-to-degrees (l d), mafcmd-to-radians (l r),
-       mafcmd-poly-roots (l a), maf-render (l t; module),
-       mafcmd-inverse-function (l v),
+       mafcmd-poly-roots (l T), mafcmd-inverse-function (l v),
        mafcmd-swap-vars (l x), mafcmd-unique-groups (l g)
      - calc's log-units family: calc-lu-plus/minus/times/divide/quant,
        calc-db, calc-np, calc-freq, calc-midi, calc-spn
@@ -634,14 +674,19 @@
      trade already made when < > took calc's horizontal pair
    - `~` — calc-num-prefix: near-free, but a stretch to reach —
      fine for something occasional, wrong for a repeat-heavy command
-   - `:` — calc-fdiv: moderate — fraction division is real but the
-     fraction is also typed in digit entry (1 : 3). Cautious
+   - [X] `:` taken (2026-08-24, see the shadowing list): mafcmd-sqr in
+     the stack, maf-digit-sqr in the entry. The fraction it also typed
+     there (1 : 3) moved to `;`, which had been its twin since — and
+     `:` stays calc's in the two places `;` cannot be, inside an
+     incomplete object and after a radix prefix
    - not weak, despite looks: `;` (calc-semi, matrix entry punctuation
      — the [ ] lesson)
 ** modified keys
-   - free meta: `M-a` `M-d` `M-e` `M-g` `M-j` `M-q` `M-t` `M-z`,
-     and `M-r` (poly-roots left it for l a on 2026-08-23; `M-h` went
-     to the history on 2026-08-20)
+   - free meta: `M-d` `M-g` `M-j` `M-q` `M-t` `M-z`, and `M-r` since
+     poly-roots moved off it (2026-08-20, to l t; l T since
+     2026-08-25; `M-h` went to the history the same day). `M-a` / `M-e` went to the operand motions
+     2026-08-25 — the global map's sentence keys, which a stack buffer
+     has no sentences for
    - cautious meta: `M-v` (scrolling's other half), `M-y` (yank-pop
      pairs with maf-yank's C-y); never `M-x`
    - free-ish control: `C-z` (suspend, commonly rebound anyway); `C-t`
@@ -673,8 +718,9 @@
     custom profile is in no module's list — inherit the clone source's
     module targeting (provenance), or require the profile author to
     declare?
-  resolved: module-vs-profile precedence (conflicts are compiler errors,
-  so precedence rarely decides anything); profile persistence (customize
+  resolved: module-vs-profile precedence (module/module conflicts are
+  compiler errors; a module over a default is a shadow the toggle owns);
+  profile persistence (customize
   only — maf-persist is a separate concern); user profile seeding for
   the profile's own defaults (declaration-level clone); bindings module
   off keeps one bootstrap key — `m c`, the escape map — because

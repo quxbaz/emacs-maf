@@ -5,6 +5,7 @@
 ;; maf library functions
 
 (require 'calc)
+(require 'cl-lib)
 
 ;; Defined in lazily-loaded calc modules; calc-ext's autoload registry
 ;; resolves them at runtime, but the byte compiler needs declarations.
@@ -61,13 +62,20 @@ Signals an error if no calc buffer exists."
              (and (looking-at " *[0-9]+: +")
                   (< col (- (match-end 0) (point)))))))))
 
+(defun maf--at-right-margin-p ()
+  "Return t if point is at EOL on a stack entry line.
+The far side of the formula text: past everything written, where a
+command may read the position as carrying on rather than as pointing
+at what is there."
+  (maf--with-calc-buffer
+    (and (> (calc-locate-cursor-element (point)) 0)
+         (eolp))))
+
 (defun maf--at-line-margin-p ()
   "Return t if point is in the line-prefix zone or at EOL on a stack entry line.
 Marks the positions outside the formula text — used by the entry target in
 the resolve cascade."
-  (maf--with-calc-buffer
-    (and (> (calc-locate-cursor-element (point)) 0)
-         (or (eolp) (maf--at-line-prefix-p)))))
+  (or (maf--at-right-margin-p) (maf--at-line-prefix-p)))
 
 (defun maf--at-subexpr-p ()
   "Return t if point is on a sub-expression within an entry's formula text.
@@ -92,6 +100,38 @@ undoes it structurally, without re-normalizing the formula — unlike
    ((consp expr)
     (cons (car expr) (mapcar #'maf--strip-encasing (cdr expr))))
    (t expr)))
+
+(defun maf--node-path (root node)
+  "Return NODE's path within ROOT as (t . INDICES), or nil when it is absent.
+NODE is matched by `eq', so it must be a cons taken from ROOT itself —
+the encased node `calc-find-selected-part' returns, not a copy. Each
+index is an operand position (1 for the first operand), so the path is
+`(t)' for ROOT itself and `(t 2 1)' for the second operand's first.
+Unlike `eq' on the nodes, a path survives a rebuild of the tree: the
+encased copy `calc-prepare-selection' caches and the clean one a
+command body sees are walked by the same indices."
+  (cl-labels ((walk (cur path)
+                (cond ((eq cur node) (cons t (nreverse path)))
+                      ((consp cur)
+                       (let ((i 0) found)
+                         (dolist (kid (cdr cur) found)
+                           (setq i (1+ i))
+                           (unless found
+                             (setq found (walk kid (cons i path))))))))))
+    (walk root nil)))
+
+(defun maf--splice-path (expr path fn)
+  "Return EXPR with the node at PATH replaced by FN\='s value on it.
+PATH is a list of operand indices as `maf--node-path' returns them (its
+`t' head dropped); the empty path names EXPR itself. Structural: the
+nodes along the way are copied rather than mutated, and nothing is
+re-normalized."
+  (if (null path)
+      (funcall fn expr)
+    (let ((copy (copy-sequence expr)))
+      (setf (nth (car path) copy)
+            (maf--splice-path (nth (car path) expr) (cdr path) fn))
+      copy)))
 
 (defmacro maf--literal (&rest body)
   "Evaluate BODY with simplification off: it builds the shape that commits.

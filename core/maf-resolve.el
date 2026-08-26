@@ -308,6 +308,33 @@ NODE is matched by `eq', so it must be a cons taken from FORMULA itself
       (walk formula nil))
     found))
 
+(defun maf--path-just-past-point ()
+  "Path to the sub-formula point sits just past, in the entry under point.
+Point exactly at the end of a sub-formula\='s rendering is where writing
+carries on from. Several formulas can end at one position — in x + 2|
+the 2, the sum, and the entry all do — and the smallest of them is the
+one point is just past in the narrowest sense, so that is the one
+returned: the 2. A command reading a position that way (`,\=' joins its
+variable there) gets a `maf--node-path\=' path into the entry, which
+survives the re-preparation of the selection cache its own resolve
+does.
+
+nil where nothing ends exactly at point: in either margin, mid-token,
+on an operator glyph (x +| 2 is past the +, which no formula ends
+with), or under a rendering too tall to be flat."
+  (maf--with-calc-buffer
+    (let ((m (calc-locate-cursor-element (point))))
+      (when (> m 0)
+        (save-excursion
+          (ignore-errors
+            (calc-prepare-selection m)
+            (let ((cpos (maf--comp-point-cpos)))
+              (when (and cpos (> cpos 0))
+                (let ((node (maf--comp-node-at-range (1- cpos) (1- cpos))))
+                  (when (and node
+                             (eql (nth 1 (maf--comp-node-span node)) cpos))
+                    (maf--node-path (calc-top m 'full) node)))))))))))
+
 (defun maf--resolve-widen (encased m opts)
   "Widen ENCASED outward to the innermost node OPTS' `:widen' predicate accepts.
 The predicate is called with each candidate's clean form, starting at

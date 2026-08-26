@@ -152,9 +152,10 @@ variant's own variable governs only its direct invocation."
   ;; own \ is shadowed with it. Reachable by name, and I / is not it.
   (idiv binary calcFunc-idiv)
   (fact unary calcFunc-fact "!")
-  ;; inv cedes & to maf-toggle-big-language (bindings.el); calc's own
-  ;; & is shadowed with it. The reciprocal's key is o (bindings.el).
-  (inv unary calcFunc-inv)
+  ;; & is calc's own key for the reciprocal; the big-language toggle
+  ;; borrowed it while it had one and has since gone unbound
+  ;; (bindings.el). o is a second key for it, also there.
+  (inv unary calcFunc-inv "&")
   (neg unary calcFunc-neg "n")
   ;; abs has left the table for `mafcmd-abs' (stack.el, A), which reads
   ;; a vector as its norm through `maf--abs' rather than `calcFunc-abs',
@@ -167,7 +168,9 @@ variant's own variable governs only its direct invocation."
   ;; (bindings.el); the calc profile keeps it, and native's conj
   ;; home is l j.
   (conj unary calcFunc-conj "J")
-  ;; arg cedes calc's G to maf-go-home (bindings.el).
+  ;; arg cedes calc's G to the preview module, whose maf-preview-show
+  ;; declares it (modules/maf-preview.el); the key stays the module's
+  ;; whether it is on or off, so the row keeps none.
   (arg unary calcFunc-arg)
   (sqrt unary calcFunc-sqrt "Q" :inv sqr)
   (min binary calcFunc-min "f n")

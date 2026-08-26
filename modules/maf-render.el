@@ -152,18 +152,25 @@ to the configured RaTeX executable, and displays the returned SVG in the
 lower half of the invoking Calc window. It neither changes the stack nor
 selects the preview.
 
-Nothing renders in the background. Turning this mode off removes its
-binding; the command remains available by name."
+Nothing renders in the background. Turning this mode off hands G back
+to `maf-preview-show', whose panel shows the same entry in Big; the
+command remains available by name."
   :global t
   :group 'maf
   (maf-bindings--refresh))
 
-;; Temporary keys: l t went to mafcmd-apart (src/bindings.el), and in
-;; vim, where the l family rehomes to o, the two claims collide on o t.
-;; T for typeset, beside the key this lost.
+;; G, shadowing `maf-preview-show' (src/bindings.el) rather than taking
+;; a key of its own. The two are one gesture — a single look at the
+;; entry at point, in a rendering the stack is not switched over to —
+;; and which rendering that look comes back in is the only thing this
+;; module decides. So the toggle chooses what G shows rather than
+;; whether G is there at all, and the peek keeps the key untouched for
+;; everyone who never turns the module on. vim inherits G from native,
+;; but module claims are not derived: the shadow is declared once per
+;; profile that has a peek to cover.
 (maf-bindings-module-keys 'maf-render 'maf-use-render-mode
-  '(((native) "l T" maf-render)
-     ((vim) "o T" maf-render)))
+  '(((native) "G" maf-render)
+     ((vim) "G" maf-render)))
 
 (when (require 'maf-module nil t)
   (maf-register-module 'maf-render #'maf-use-render-mode
@@ -171,7 +178,11 @@ binding; the command remains available by name."
 
 Invoke the command on an entry to render it once with RaTeX. The SVG
 appears in an even split below Calc without taking focus. Nothing runs
-in the background, and the stack's own display stays unchanged."
-                       "l T" "Display"))
+in the background, and the stack's own display stays unchanged.
+
+The key is G, which the Big-display peek holds while this is off: the
+module decides which rendering one look comes back in, not whether
+that look is available."
+                       "G" "Display"))
 
 (provide 'maf-render)

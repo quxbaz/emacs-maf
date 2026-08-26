@@ -64,6 +64,24 @@
   "Face for the marker on a state that changed the stack in place."
   :group 'maf)
 
+;; The separator a state can carry (`maf-history-separate'), drawn as a
+;; row of its own under the state's row: a band of background colour,
+;; `:extend' carrying it past the end of the line to the window edge,
+;; so the rule runs the log's full width whether the row is blank or
+;; carries a line of text, centred, naming the stretch it closes. A row rather
+;; than the row's own underline, which leaves the mark no vertical
+;; margin — glued under the text above it and against the text below.
+;; A tint set well clear of the background, so the band reads as a rule
+;; at a glance rather than having to be looked for. The band can carry
+;; text (a name for the stretch it closes), so it sets a foreground as
+;; well: both variants are light, and the default foreground of a dark
+;; theme would be unreadable on them.
+(defface maf-history-separator
+  '((((background dark)) :background "#ffe4c4" :foreground "#2f2f2f" :extend t)
+    (t :background "#d2b48c" :foreground "#2f2f2f" :extend t))
+  "Face drawing the separator band under a state's row in the history log."
+  :group 'maf)
+
 (defcustom maf-history-log-width (/ 1.0 3)
   "Share of the width given to the action log in the history browser.
 `maf-history' shows the log on the left and the state's stack on the
@@ -93,7 +111,12 @@ what produced the state — the change's trail prefix (a string,
 the change against the previous stack (see `maf-history--classify');
 and COMMAND the `this-command' the change landed under, the precise
 name behind a label that names an operation rather than a command.
-COMMAND is nil for a state recorded outside any command.")
+COMMAND is nil for a state recorded outside any command.
+
+A state may carry a fourth slot, SEPARATOR, non-nil when the log draws
+a rule under its row (see `maf-history-separate'): t for a plain band,
+or a string for one carrying that text. A state without one is simply
+the three-slot list `maf-history--record' makes.")
 
 (defvar maf-history--last-raw nil
   "Raw stack values at the last capture, for cheap change detection.")
@@ -276,6 +299,32 @@ recorded outside any command has no name to give."
          (let ((name (symbol-name command)))
            (and (not (equal name (maf-history--label state))) name)))))
 
+(defun maf-history--separator (state)
+  "Return non-nil when the log draws a separator rule under STATE."
+  (nth 3 state))
+
+(defun maf-history--separator-label (state)
+  "Return the text STATE's separator band carries, else nil.
+The slot doubles as the flag and the text: t is a plain band, a string
+is a band with that string written in it. A band with no text is the
+same rule, and reads as one either way."
+  (let ((sep (maf-history--separator state)))
+    (and (stringp sep) sep)))
+
+(defun maf-history--set-separator (state flag)
+  "Set STATE's separator slot to FLAG, in place.
+FLAG is nil for no rule, t for a plain band, or a string for a band
+carrying that text.
+The slot is the state's fourth, and a state that stops short of it —
+`maf-history--record' makes three-slot states, and only a marked one
+needs the fourth — is padded out to reach it. The state is modified
+where it sits in `maf-history--states', so the mark travels with it:
+it shifts as the log shifts under it, and a deleted state takes its
+rule with it."
+  (while (< (length state) 4)
+    (nconc state (list nil)))
+  (setcar (nthcdr 3 state) flag))
+
 (defun maf-history--marker (values older has-older)
   "Return (CHAR . FACE) marking how VALUES changed the stack from OLDER.
 The kinds a git UI shows: `+' for a state that added an entry, `-' for
@@ -321,6 +370,9 @@ for it, kept only while each still runs it.")
         (maf-history-insert "insert" "RET")
         (maf-history-restore "restore" "r" "RET")
         (maf-history-delete "delete" "D")
+        (maf-history-separate "rule" "L")
+        ((maf-history-previous-separator maf-history-next-separator)
+         "rules" "M-n" "M-p")
         ;; Beside D, the one state at a time it is the whole-log
         ;; counterpart of; the chord is what keeps the two apart on the
         ;; keyboard, so the legend showing it is what says the wipe is
@@ -375,8 +427,12 @@ bottom, so the latest work is where the eye starts. Each line is a
 change marker (see `maf-history--marker') and the action that produced
 the state — its label, and after it the command that ran (see
 `maf-history--command-name') — the current one marked and on
-`maf-history-current'. Each line carries its state's index, so point
-lands on a state rather than merely near one, and point is left on the
+`maf-history-current'. A state marked with `maf-history-separate' is
+followed by a row banded to the window edge — blank, or carrying the
+text the mark was given, centred in it — the separator that divides
+the log into stretches of work. Every line carries a state's
+index, the band under a state the index of that state, so point lands
+on a state rather than merely near one, and point is left on the
 current line — in the log the selection is where point is. The header
 line carries the position counter."
   (let ((total (length maf-history--states))
@@ -413,7 +469,48 @@ line carries the position counter."
             ;; Appended, so the marker keeps its own colour and only
             ;; picks up the current state's weight.
             (add-face-text-property start (point) 'maf-history-current t)
-            (setq target start)))))
+            (setq target start))
+          ;; The rule the state carries, drawn as a row under it: the
+          ;; text it carries if it has any, then the newline, which
+          ;; `:extend' is what carries the band past to the window
+          ;; edge. A band with no text is the newline alone, the whole
+          ;; of an empty line.
+          ;;
+          ;; The text is centred by a stretch of space ahead of it,
+          ;; aligned to the middle of the text area less half the
+          ;; text's own width — halved as a float, so a title of odd
+          ;; width sits on the centre rather than a character off it,
+          ;; `:align-to' being measured in pixels and taking a
+          ;; fractional column happily.
+          ;;
+          ;; Less a further column on top of that. Measured centre
+          ;; reads a touch right of centre here: the rows above the
+          ;; band start a two-column gutter in, and the eye squares the
+          ;; title against that text rather than against the window.
+          ;;
+          ;; Centred against the window rather than against a column
+          ;; worked out here: the log window is resizable, and
+          ;; `:align-to' is measured at redisplay, so the title
+          ;; re-centres as the window is dragged instead of holding
+          ;; padding computed for the width it was rendered at. Text
+          ;; wider than the window leaves the stretch nothing
+          ;; to reach and collapses it, which starts the text at the
+          ;; margin and truncates it as any other log row is.
+          ;;
+          ;; The row still names the state it divides off, so point
+          ;; drifting onto the band reads as the state above it rather
+          ;; than as nothing.
+          (when (maf-history--separator state)
+            (let ((sep (point))
+                  (text (maf-history--separator-label state)))
+              (when text
+                (insert (propertize
+                         " " 'display `(space :align-to
+                                              (- center ,(+ (/ (string-width text) 2.0) 1)))
+                         'face 'maf-history-separator))
+                (insert (propertize text 'face 'maf-history-separator)))
+              (insert (propertize "\n" 'face 'maf-history-separator))
+              (put-text-property sep (point) 'maf-history-index i))))))
     (setq header-line-format
           (if (zerop total) "maf-history"
             (format "maf-history  %d/%d" (- total index) total)))
@@ -538,8 +635,13 @@ mean something else beside a stack — line motion and RET.")
 (define-key maf-history-mode-map (kbd "n") #'maf-history-previous)
 (define-key maf-history-mode-map (kbd "k") #'maf-history-next)
 (define-key maf-history-mode-map (kbd "p") #'maf-history-next)
-(define-key maf-history-mode-map (kbd "M-n") #'maf-history-previous)
-(define-key maf-history-mode-map (kbd "M-p") #'maf-history-next)
+;; M-n and M-p are the step keys under a modifier, and step the same
+;; way — older down, newer up — but by sitting rather than by state,
+;; landing on the states the rules sit under. The stack window
+;; inherits them as it inherits L: the two windows are one selection,
+;; so moving it from the side showing a state is the same move.
+(define-key maf-history-mode-map (kbd "M-n") #'maf-history-previous-separator)
+(define-key maf-history-mode-map (kbd "M-p") #'maf-history-next-separator)
 ;; The ends follow the display too, as the step keys do: the log runs
 ;; newest-first, so < reaches the top of it and > the bottom. M-< and
 ;; M-> are the same two under a modifier, and the same two Emacs puts
@@ -560,6 +662,10 @@ mean something else beside a stack — line motion and RET.")
 (define-key maf-history-mode-map (kbd "r") #'maf-history-restore)
 ;; Capital, so a fingerslip on the motion keys cannot reach a delete.
 (define-key maf-history-mode-map (kbd "D") #'maf-history-delete)
+;; L for the line it draws. Capital, beside the other key that edits
+;; the log rather than browses it, and out of the way of the lowercase
+;; keys the hand rests on while stepping.
+(define-key maf-history-mode-map (kbd "L") #'maf-history-separate)
 ;; A deliberate chord for wiping the whole log, well out of fingerslip
 ;; range of the single-key commands.
 (define-key maf-history-mode-map (kbd "C-M-k") #'maf-history-clear)
@@ -606,6 +712,11 @@ it the live stack again, and quits. \[maf-history-switch] crosses into
 the stack instead, to take one entry out of a state rather than the
 whole of it. \[maf-history-delete] deletes the state shown from the
 log; \[maf-history-clear] clears the whole log.
+\[maf-history-separate] draws a separator band under the state at
+point, dividing the log into stretches of work and titling the one it
+closes with the text it prompts for;
+\[maf-history-previous-separator] and \[maf-history-next-separator]
+step between those divisions, a sitting at a time.
 \[maf-history-describe-command] describes the command the row at point
 names, and \[describe-mode] this help. \[maf-history-quit] buries the
 browser."
@@ -726,6 +837,18 @@ selected state, which is the one it is showing."
                    maf-history--index)))
     (nth index maf-history--states)))
 
+(defun maf-history--goto-index (index)
+  "Put point on the log row for INDEX, if the buffer has one.
+Rendering leaves point on the selected state; this is for a command
+that acted on the row under point instead, which after a re-render is
+where it was rather than where the selection is."
+  (goto-char (point-min))
+  (while (and (not (eobp))
+              (not (eql (get-text-property (point) 'maf-history-index) index)))
+    (forward-line 1))
+  (when (eobp)
+    (goto-char (point-min))))
+
 (defun maf-history-describe-command ()
   "Describe the command that produced the state at point.
 The log names the operation and echoes the command that ran beside it
@@ -777,6 +900,47 @@ Without a window showing calc, one is found for it."
                        (display-buffer buf)))))
 
 ;;; Browsing commands
+
+(defun maf-history-previous-separator (n)
+  "Select the Nth previous (older) state carrying a separator.
+The rules divide the log into sittings, so this steps by sitting where
+\[maf-history-previous] steps by state: past everything recorded since
+the last division, to the state the division sits under. The log runs
+newest-first, so older is downward — the direction
+\[maf-history-previous] moves in, under a modifier."
+  (interactive "p")
+  (maf-history--move-to-separator n))
+
+(defun maf-history-next-separator (n)
+  "Select the Nth next (newer) state carrying a separator.
+The counterpart of \[maf-history-previous-separator], stepping back up
+the log a sitting at a time."
+  (interactive "p")
+  (maf-history--move-to-separator (- n)))
+
+(defun maf-history--move-to-separator (n)
+  "Select the Nth nearest state carrying a rule, N positive for older.
+Point starts from the selection and skips it, so a jump from a state
+that is itself marked lands on the next mark rather than staying put.
+With no rule in the direction asked for it refuses rather than
+clamping, and a count reaching past the last one moves nothing at all:
+a jump that cannot be made is better said than half made."
+  (unless maf-history--states (user-error "No states recorded yet"))
+  (let* ((total (length maf-history--states))
+         (step (if (> n 0) 1 -1))
+         (target maf-history--index))
+    (dotimes (_ (abs n))
+      (let ((i (+ target step))
+            (found nil))
+        (while (and (not found) (>= i 0) (< i total))
+          (if (maf-history--separator (nth i maf-history--states))
+              (setq found i)
+            (setq i (+ i step))))
+        (unless found
+          (user-error (if (> n 0) "No older rule" "No newer rule")))
+        (setq target found)))
+    (setq maf-history--index target)
+    (maf-history--render t)))
 
 (defun maf-history--move (n)
   "Select the state N steps older (newer when N is negative).
@@ -881,6 +1045,65 @@ newest remaining when the oldest was the one deleted."
       (maf-history--render t)
       (message "Deleted state %d/%d (%s)" (- total index) total
                (maf-history--label state)))))
+
+(defun maf-history-separate (&optional text)
+  "Toggle a separator band under the state at point, carrying TEXT.
+The log is one running record, but work comes in sittings: this draws
+a line under a state, so what sits above it reads as its own stretch
+of work. Pressing it again on the same state takes the line off.
+Point picks the state in the log; the stack window marks the state it
+is showing.
+
+Setting one prompts for TEXT, written into the band and centred in it
+— a name for the stretch of work it closes off, so a long log reads as
+titled sections rather than as runs divided by anonymous rules.
+Answering with an empty string is the plain rule, which is all the
+mark ever was; the prompt is skipped when the press is the one taking
+a line off, there being no text to ask for. Retitling is the pair:
+off, then on again with the new text.
+
+The rule is a row under the state, banded to the window edge (see
+`maf-history-separator'): a row of its own, so the division has the
+vertical margin an underline on the state's own row cannot give it.
+Browsing is unchanged — stepping and the ends move by state, not by
+line, and the band names the state it sits under, so point drifting
+onto it still reads as that state.
+
+The mark belongs to the state it is under and goes where that state
+goes: it shifts down as new states land on top, and a deleted state
+takes its rule with it. Like the log itself it is kept across Emacs
+sessions when the persist module is on (see `maf-persist-mode'), and
+is the session's alone when it is not."
+  (interactive
+   ;; Only the press that sets a rule has text to ask for, and only
+   ;; when there is a state to set it on: with an empty log the body
+   ;; refuses, and a prompt ahead of that would ask for text for a
+   ;; mark that is never made.
+   (list (let ((state (maf-history--state-at-point)))
+           (and state
+                (not (maf-history--separator state))
+                (read-string "Separator text (empty for a plain rule): ")))))
+  (let* ((state (or (maf-history--state-at-point)
+                    (user-error "No states recorded yet")))
+         (index (or (get-text-property (point) 'maf-history-index)
+                    maf-history--index))
+         (on (not (maf-history--separator state))))
+    ;; The slot doubles as the flag and the text, so an empty answer
+    ;; falls back to t: a band with an empty string in it and a band
+    ;; with nothing in it are the same row, and t is the plain one.
+    (maf-history--set-separator
+     state (and on (if (and (stringp text) (not (string-empty-p text)))
+                       text
+                     t)))
+    ;; Only the log draws it, and only the log is re-rendered: the
+    ;; state's stack is unchanged, and rendering it again would pull
+    ;; point in that window back to the top of the stack.
+    (when-let ((buf (get-buffer maf-history--log-buffer)))
+      (with-current-buffer buf
+        (maf-history--render-log)
+        (maf-history--goto-index index)))
+    (message "Separator %s %s" (if on "under" "off")
+             (maf-history--label state))))
 
 (defun maf-history-clear ()
   "Discard every recorded stack state, keeping the live stack.

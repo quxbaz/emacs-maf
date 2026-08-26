@@ -10,6 +10,11 @@
 (require 'maf-minibuffer "minibuffer")
 (require 'maf-bindings)
 
+;; The one command declared here that lives in a module: the preview
+;; peek on G, bound whether or not its module is on (see the G row).
+;; Modules load after this file; a declaration only records the symbol.
+(declare-function maf-preview-show "maf-preview")
+
 ;; Also defvar'd in maf.el and maf-cmds.el; whichever file loads first
 ;; creates the map, the rest are no-ops. The map itself stays empty:
 ;; it is the stable dispatcher, and everything lives in the parent the
@@ -55,6 +60,11 @@
 ;; inverse flag, and W is free in both maps. The next key over from
 ;; Q, and the shape of the two square-root keys' inverse.
 (maf-bindings-define '(native) "W" #'mafcmd-sqr)
+;; And an unshifted key beside it, the pairing an edit session already
+;; makes: : and W both raise to a power there, so the stack answers
+;; the same way. Displaces calc's fraction divide, which the mafcmd
+;; table keeps no key for.
+(maf-bindings-define '(native) ":" #'mafcmd-sqr)
 
 ;; The combinators, on calc's own keys for them: each reads its
 ;; operation from the next key press, as calc's V R and V O do, but
@@ -106,7 +116,8 @@
 (maf-bindings-define '(native) "l c" #'mafcmd-collect-fractions)
 ;; Collect's inverse beside it: a redundant second key for apart (the
 ;; table's a a), splitting a fraction into partial fractions the way
-;; l c gathers them. t freed when poly-roots moved to l a.
+;; l c gathers them. t freed when poly-roots left the key; the roots
+;; keep the family on its capital, l T.
 (maf-bindings-define '(native) "l t" #'mafcmd-apart)
 ;; The float/frac toggle: any float in the target converts toward
 ;; exact, otherwise fractions float — see `mafcmd-float-frac'. The
@@ -174,8 +185,8 @@
 ;; the hand holds meta and taps rather than releasing between steps. A
 ;; terminal delivers these, unlike C-< / C->, so they work on a tty as
 ;; the unmodified pair does. They shadow the global `beginning-of-buffer'
-;; / `end-of-buffer', whose trip to the ends of the stack buffer G
-;; (`maf-go-home') already makes in the terms the stack is read in.
+;; / `end-of-buffer', whose trip to the ends of the stack buffer the
+;; stack's own motions already make in the terms it is read in.
 (maf-bindings-define '(native) "M-<" #'mafcmd-decrement)
 (maf-bindings-define '(native) "M->" #'mafcmd-increment)
 ;; Balanced negation, beside calc's own n (mafcmd-neg in the table,
@@ -235,27 +246,45 @@
 ;; Shadows calc-execute-extended-command.
 (maf-bindings-define '(native) "x" #'mafcmd-expand)
 ;; The reciprocal. It sat on i until the prompted solve took that key
-;; back, and takes o in turn from the home motion below; its table key
-;; & went to the big-language toggle next, so this is now its only
-;; key. Shadows calc-realign, whose bare press only undoes horizontal
-;; scrolling; M-x calc-realign still reaches that and the prefixed
-;; home motion both.
+;; back, and takes o in turn from the home motion, which held o before
+;; going unbound (below). A second key beside its own & (the inv row in
+;; maf-cmds.el, calc's key for it). Shadows calc-realign, whose bare
+;; press only undoes horizontal scrolling; M-x calc-realign still
+;; reaches that and the prefixed home motion both.
 (maf-bindings-define '(native) "o" #'mafcmd-inv)
-;; Toggle calc's Big 2D display language. Takes &, the key the
-;; reciprocal cedes above (see the inv row in maf-cmds.el); calc's own
-;; & is calc-inv, which mafcmd-inv subsumes, so nothing is lost to the
-;; shadow. The toggle held G until maf-go-home took it (below); calc's
-;; own d B / d N stay the one-way switches.
-(maf-bindings-define '(native) "&" #'maf-toggle-big-language)
-;; Send point home, the one motion the buffer needs a key for: every
-;; other command already leaves it there. Pressed at home it returns to
-;; the mark instead — its own trip out left one, as every maf command
-;; that homes point does — so the key is the whole round trip: out for
-;; a command that wants the entry, back for one that wants the term.
-;; It sat on o until the reciprocal above took that key. Takes calc's
-;; G, which mafcmd-arg cedes (see the table in maf-cmds.el);
-;; `maf-toggle-big-language' held G before and now sits on & (above).
-(maf-bindings-define '(native) "G" #'maf-go-home)
+;; Preview the entry at point: one panel over the top-right of the
+;; window, showing the entry in calc's 2D Big display, and gone again at
+;; the next command. Takes calc's G, which mafcmd-arg cedes (see the
+;; table in maf-cmds.el).
+;;
+;; Declared here rather than by the preview module (modules/), where
+;; every other key of a module's is declared, because it is not a key
+;; the module owns: the panel that *follows point* is the module, and
+;; this is one look asked for by hand, which reads an entry the same
+;; way whether the module is on, off, or not enabled at all. A key that
+;; came and went with the toggle would take with it the very way of
+;; working — no panel underfoot, a peek when wanted — that having the
+;; toggle off is for. The render module shadows this key while it is on
+;; (modules/maf-render.el): one look at the entry, come back typeset
+;; instead of in Big — which rendering is what that toggle is for, and
+;; the declaration here is what G falls back to.
+(maf-bindings-define '(native) "G" #'maf-preview-show)
+;; Two commands that held keys here are now bound by nothing, both
+;; because that preview does their work better:
+;;
+;; - `maf-toggle-big-language', which had &, switched the whole stack
+;;   into 2D and back to read one entry; the preview shows that entry
+;;   in 2D with the stack left alone. & goes back to the reciprocal,
+;;   calc's own command for the key (the inv row in maf-cmds.el), and
+;;   calc's d B / d N stay the one-way switches.
+;;
+;; - `maf-go-home', which had G, is the round trip between an entry and
+;;   the . line — out for a command that wants the entry, back for one
+;;   that wants the term. C-u C-SPC still walks the marks the round
+;;   trip left.
+;;
+;; Both commands are still defined and still reachable by name, so a
+;; key here (or in a user map) brings either back.
 ;; A toggle between pair members is its own inverse, so both directions
 ;; run the same command.
 (maf-bindings-define '(native) "S-<up>" #'mafcmd-toggle-op)
@@ -477,12 +506,14 @@
 ;; and the terminal form both.
 (maf-bindings-define '(native) "M-<return>" #'mafcmd-let)
 (maf-bindings-define '(native) "M-RET" #'mafcmd-let)
-;; Polynomial roots by factoring, with multiplicity. On the l prefix
-;; with the other maf-only algebra keys; l a is unbound in calc
-;; itself, and mirrors a l, the prompting form of the same answer.
-;; It sat on l t until 2026-08-23, and on M-r before 2026-08-20 —
-;; that key falls through to whatever the global map holds.
-(maf-bindings-define '(native) "l a" #'mafcmd-poly-roots)
+;; Polynomial roots by factoring, with multiplicity. In the l family
+;; on a free capital the log-units prefix never claimed, beside the
+;; family's other capitals. Being in the family, the vim mirror
+;; carries it as o T. It sat on l t until 2026-08-23, on l a until
+;; 2026-08-25, on k R for part of that day, and on l b until
+;; 2026-08-25; before 2026-08-20 it was M-r. Those keys fall through
+;; to calc, and M-r to whatever the global map holds.
+(maf-bindings-define '(native) "l T" #'mafcmd-poly-roots)
 ;; The prompting form of the roots vector beside its stock a P (the
 ;; roots row in maf-cmds.el): the variable is read from the minibuffer
 ;; as i reads it, the subject's priority variable as the default. a l
@@ -599,25 +630,22 @@
 (maf-bindings-define '(native) "M-b" #'maf-backward-noun)
 
 ;; Motion by operand — the next place point names a sub-formula, so
-;; repeated presses offer every target of the entry in turn. Shift on
-;; the space that opens an edit session: calc binds nothing on S-SPC,
-;; and without the binding the shifted press would fall back to that
-;; plain SPC. Stack mode only, deliberately: an edit session swaps the
-;; local map and turns maf-mode off, and no editplus key carries this
-;; motion into the editable text — the stack's targets are what it
-;; walks. A prefix argument counts operands, backward when negative; a
-;; terminal needs the decode entries at the end of this file to say
-;; the key at all.
+;; repeated presses offer every target of the entry in turn. On M-e
+;; and M-a, beside the noun motions on M-f and M-b: the meta row is
+;; where maf's motions over an entry live, and the two pairs read
+;; alike, forward on the right hand's key and back on the left's. The
+;; shifted spaces they were (S-SPC, M-S-SPC) cost a terminal decode
+;; table to say at all — xterm.el carries keycode 32 under alt and
+;; ctrl+alt only — where a meta letter needs nothing.
 ;;
-;; The reverse walk takes M-S-SPC: the forward key with meta added, so
-;; the pair reads as one gesture and its reverse. Nothing is displaced
-;; — calc binds it no more than the shifted space, and the global map
-;; leaves the shifted form free (`just-one-space' holds the plain
-;; M-SPC, which this does not touch). A terminal needs the decode
-;; entries at the end of this file for this one too: xterm.el carries
-;; keycode 32 under alt and under ctrl+alt, never under a shift.
-(maf-bindings-define '(native) "S-SPC" #'maf-forward-operand)
-(maf-bindings-define '(native) "M-S-SPC" #'maf-backward-operand)
+;; Calc binds neither key, so what is displaced is the global map's:
+;; the sentence motions in stock Emacs, whose sentences a stack buffer
+;; does not have. Stack mode only, deliberately: an edit session swaps
+;; the local map and turns maf-mode off, and no editplus key carries
+;; this motion into the editable text — the stack's targets are what
+;; it walks. A prefix argument counts operands, backward when negative.
+(maf-bindings-define '(native) "M-e" #'maf-forward-operand)
+(maf-bindings-define '(native) "M-a" #'maf-backward-operand)
 
 ;; Step out to the enclosing sub-formula, taking the key the global map
 ;; gives `backward-up-list' — the same gesture, over the formula rather
@@ -680,13 +708,6 @@
 ;; C-! through C-?, and | is 124). Which modifier the terminal reports
 ;; depends on whether it counts the shift that produced the | — take
 ;; both 6 (ctrl+shift) and 5 (ctrl alone).
-;;
-;; The operand motions have the same gap a third way: a terminal
-;; without modifyOtherKeys sends Shift+Space as the plain space it
-;; shifts, and one with it spells the key out — but xterm.el's table
-;; carries keycode 32 under alt (modifier 3) and ctrl+alt (7) only, so
-;; neither the forward walk's shift (2) nor the reverse walk's
-;; alt+shift (4) is decoded, and both fall through like the others.
 (defun maf--tty-setup-keys ()
   "Decode terminal sequences for keys maf binds and `term/xterm.el' omits."
   (define-key input-decode-map "\e[27;7;127~" [C-M-backspace])
@@ -694,11 +715,7 @@
   (define-key input-decode-map "\e[27;6;124~" [?\C-\|])
   (define-key input-decode-map "\e[124;6u" [?\C-\|])
   (define-key input-decode-map "\e[27;5;124~" [?\C-\|])
-  (define-key input-decode-map "\e[124;5u" [?\C-\|])
-  (define-key input-decode-map "\e[27;2;32~" [?\S-\s])
-  (define-key input-decode-map "\e[32;2u" [?\S-\s])
-  (define-key input-decode-map "\e[27;4;32~" [?\M-\S-\s])
-  (define-key input-decode-map "\e[32;4u" [?\M-\S-\s]))
+  (define-key input-decode-map "\e[124;5u" [?\C-\|]))
 
 ;; `input-decode-map' is terminal-local, so this runs once per tty
 ;; rather than once at load.

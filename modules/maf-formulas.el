@@ -37,9 +37,10 @@
 ;; stays, under its own category).
 ;;
 ;; The menu draws on two sources. `maf-formulas-builtin' is the set maf
-;; ships with — the properties of real numbers — and yours follow it:
-;; they live in `maf-formulas-file' (a file in your Emacs config by
-;; default), which is loaded on first use and sets `maf-formulas-user'.
+;; ships with — the identities of school algebra and trigonometry — and
+;; yours follow it: they live in `maf-formulas-file' (a file in your
+;; Emacs config by default), which is loaded on first use and sets
+;; `maf-formulas-user'.
 ;; Set that variable directly in your init to skip the file, or set
 ;; `maf-formulas-builtin' to nil to keep only your own. Enabling the
 ;; module (see `maf-modules') registers every formula as a calc
@@ -258,13 +259,739 @@ so the side split is only taken when both halves clear this width."
      :expr (calcFunc-eq (* (neg (var a var-a)) (neg (var b var-b)))
                         (* (var a var-a) (var b var-b)))
      :doc "A product of two negatives is positive."
-     :vars ((a . "first factor") (b . "second factor"))))
+     :vars ((a . "first factor") (b . "second factor")))
+    (:name "logarithm-of-a-product"
+     :title "Logarithm of a product"
+     :category "Algebra — Logarithms"
+     :expr (calcFunc-eq (calcFunc-log (* (var x var-x) (var y var-y))
+                                      (var b var-b))
+                        (+ (calcFunc-log (var x var-x) (var b var-b))
+                           (calcFunc-log (var y var-y) (var b var-b))))
+     :doc "The log of a product is the sum of the logs."
+     :vars ((x . "positive number")
+            (y . "positive number")
+            (b . "base, positive and not 1")))
+    (:name "logarithm-of-a-quotient"
+     :title "Logarithm of a quotient"
+     :category "Algebra — Logarithms"
+     :expr (calcFunc-eq (calcFunc-log (/ (var x var-x) (var y var-y))
+                                      (var b var-b))
+                        (- (calcFunc-log (var x var-x) (var b var-b))
+                           (calcFunc-log (var y var-y) (var b var-b))))
+     :doc "The log of a quotient is the difference of the logs."
+     :vars ((x . "positive number")
+            (y . "positive number")
+            (b . "base, positive and not 1")))
+    (:name "logarithm-of-a-power"
+     :title "Logarithm of a power"
+     :category "Algebra — Logarithms"
+     :expr (calcFunc-eq (calcFunc-log (^ (var x var-x) (var p var-p))
+                                      (var b var-b))
+                        (* (var p var-p)
+                           (calcFunc-log (var x var-x) (var b var-b))))
+     :doc "An exponent inside a log comes out as a factor."
+     :vars ((x . "positive number")
+            (p . "any exponent")
+            (b . "base, positive and not 1")))
+    (:name "logarithm-of-a-root"
+     :title "Logarithm of a root"
+     :category "Algebra — Logarithms"
+     :expr (calcFunc-eq (calcFunc-log (^ (var x var-x) (/ 1 (var n var-n)))
+                                      (var b var-b))
+                        (/ (calcFunc-log (var x var-x) (var b var-b))
+                           (var n var-n)))
+     :doc "A root inside a log comes out as a divisor."
+     :vars ((x . "positive number")
+            (n . "nonzero root index")
+            (b . "base, positive and not 1")))
+    (:name "logarithm-of-a-reciprocal"
+     :title "Logarithm of a reciprocal"
+     :category "Algebra — Logarithms"
+     :expr (calcFunc-eq (calcFunc-log (/ 1 (var x var-x)) (var b var-b))
+                        (neg (calcFunc-log (var x var-x) (var b var-b))))
+     :doc "Inverting the argument negates the log."
+     :vars ((x . "positive number") (b . "base, positive and not 1")))
+    (:name "base-to-a-logarithm"
+     :title "Base raised to a logarithm"
+     :category "Algebra — Logarithms"
+     :expr (calcFunc-eq (^ (var b var-b)
+                           (calcFunc-log (var x var-x) (var b var-b)))
+                        (var x var-x))
+     :doc "Exponentiation undoes the logarithm of the same base."
+     :vars ((x . "positive number") (b . "base, positive and not 1")))
+    (:name "logarithm-of-a-power-of-the-base"
+     :title "Logarithm of a power of the base"
+     :category "Algebra — Logarithms"
+     :expr (calcFunc-eq (calcFunc-log (^ (var b var-b) (var x var-x))
+                                      (var b var-b))
+                        (var x var-x))
+     :doc "The logarithm undoes exponentiation of the same base."
+     :vars ((x . "any number") (b . "base, positive and not 1")))
+    (:name "change-of-base"
+     :title "Change of base"
+     :category "Algebra — Logarithms"
+     :expr (calcFunc-eq (calcFunc-log (var x var-x) (var b var-b))
+                        (/ (calcFunc-ln (var x var-x))
+                           (calcFunc-ln (var b var-b))))
+     :doc "Any log is a ratio of logs in another base."
+     :vars ((x . "positive number") (b . "base, positive and not 1"))
+     :examples ("log(8, 2) = ln(8) / ln(2) = 3."))
+    (:name "logarithm-of-one"
+     :title "Logarithm of one"
+     :category "Algebra — Logarithms"
+     :expr (calcFunc-eq (calcFunc-log 1 (var b var-b)) 0)
+     :doc "One is what any base raised to zero gives."
+     :vars ((b . "base, positive and not 1")))
+    (:name "logarithm-of-the-base"
+     :title "Logarithm of the base"
+     :category "Algebra — Logarithms"
+     :expr (calcFunc-eq (calcFunc-log (var b var-b) (var b var-b)) 1)
+     :doc "A base raised to one gives itself."
+     :vars ((b . "base, positive and not 1")))
+    (:name "exponential-of-a-natural-logarithm"
+     :title "Exponential of a natural logarithm"
+     :category "Algebra — Logarithms"
+     :expr (calcFunc-eq (calcFunc-exp (calcFunc-ln (var x var-x)))
+                        (var x var-x))
+     :doc "e to the natural log of a positive number returns it."
+     :vars ((x . "positive number")))
+    (:name "natural-logarithm-of-an-exponential"
+     :title "Natural logarithm of an exponential"
+     :category "Algebra — Logarithms"
+     :expr (calcFunc-eq (calcFunc-ln (calcFunc-exp (var x var-x)))
+                        (var x var-x))
+     :doc "The natural log undoes e to a power."
+     :vars ((x . "any number")))
+    (:name "quadratic-formula-first-root"
+     :title "Quadratic formula, first root"
+     :category "Algebra — Quadratic equations"
+     :expr (calcFunc-eq (var x var-x)
+                        (/ (+ (neg (var b var-b))
+                              (calcFunc-sqrt
+                               (- (^ (var b var-b) 2)
+                                  (* 4 (* (var a var-a) (var c var-c))))))
+                           (* 2 (var a var-a))))
+     :doc "The larger root of a x^2 + b x + c = 0 when a > 0."
+     :vars ((a . "coefficient of x^2, nonzero")
+            (b . "coefficient of x")
+            (c . "constant term"))
+     :examples ("x^2 - 5 x + 6 = 0 gives 3 here and 2 from the other root."))
+    (:name "quadratic-formula-second-root"
+     :title "Quadratic formula, second root"
+     :category "Algebra — Quadratic equations"
+     :expr (calcFunc-eq (var x var-x)
+                        (/ (- (neg (var b var-b))
+                              (calcFunc-sqrt
+                               (- (^ (var b var-b) 2)
+                                  (* 4 (* (var a var-a) (var c var-c))))))
+                           (* 2 (var a var-a))))
+     :doc "The other root: the same formula with the root subtracted."
+     :vars ((a . "coefficient of x^2, nonzero")
+            (b . "coefficient of x")
+            (c . "constant term")))
+    (:name "discriminant"
+     :title "Discriminant"
+     :category "Algebra — Quadratic equations"
+     :expr (calcFunc-eq (var d var-d)
+                        (- (^ (var b var-b) 2)
+                           (* 4 (* (var a var-a) (var c var-c)))))
+     :doc "Positive gives two real roots, zero gives one, negative none."
+     :vars ((a . "coefficient of x^2, nonzero")
+            (b . "coefficient of x")
+            (c . "constant term")
+            (d . "the discriminant")))
+    (:name "sum-of-the-roots"
+     :title "Sum of the roots (Vieta)"
+     :category "Algebra — Quadratic equations"
+     :expr (calcFunc-eq (+ (var r1 var-r1) (var r2 var-r2))
+                        (/ (neg (var b var-b)) (var a var-a)))
+     :doc "The roots of a x^2 + b x + c = 0 add to -b/a."
+     :vars ((a . "coefficient of x^2, nonzero")
+            (b . "coefficient of x")
+            (r1 . "first root")
+            (r2 . "second root")))
+    (:name "product-of-the-roots"
+     :title "Product of the roots (Vieta)"
+     :category "Algebra — Quadratic equations"
+     :expr (calcFunc-eq (* (var r1 var-r1) (var r2 var-r2))
+                        (/ (var c var-c) (var a var-a)))
+     :doc "The roots of a x^2 + b x + c = 0 multiply to c/a."
+     :vars ((a . "coefficient of x^2, nonzero")
+            (c . "constant term")
+            (r1 . "first root")
+            (r2 . "second root")))
+    (:name "factored-form-of-a-quadratic"
+     :title "Factored form of a quadratic"
+     :category "Algebra — Quadratic equations"
+     :expr (calcFunc-eq (+ (+ (* (var a var-a) (^ (var x var-x) 2))
+                              (* (var b var-b) (var x var-x)))
+                           (var c var-c))
+                        (* (var a var-a)
+                           (* (- (var x var-x) (var r1 var-r1))
+                              (- (var x var-x) (var r2 var-r2)))))
+     :doc "A quadratic written from its roots."
+     :vars ((a . "coefficient of x^2, nonzero")
+            (b . "coefficient of x")
+            (c . "constant term")
+            (x . "the variable")
+            (r1 . "first root")
+            (r2 . "second root")))
+    (:name "completing-the-square"
+     :title "Completing the square"
+     :category "Algebra — Quadratic equations"
+     :expr (calcFunc-eq (+ (+ (* (var a var-a) (^ (var x var-x) 2))
+                              (* (var b var-b) (var x var-x)))
+                           (var c var-c))
+                        (+ (* (var a var-a)
+                              (^ (+ (var x var-x)
+                                    (/ (var b var-b) (* 2 (var a var-a))))
+                                 2))
+                           (- (var c var-c)
+                              (/ (^ (var b var-b) 2) (* 4 (var a var-a))))))
+     :doc "A quadratic as a shifted square, which is where the formula comes from."
+     :vars ((a . "coefficient of x^2, nonzero")
+            (b . "coefficient of x")
+            (c . "constant term")
+            (x . "the variable")))
+    (:name "vertex-of-a-parabola"
+     :title "Vertex of a parabola"
+     :category "Algebra — Quadratic equations"
+     :expr (calcFunc-eq (var x var-x)
+                        (/ (neg (var b var-b)) (* 2 (var a var-a))))
+     :doc "The turning point sits halfway between the roots."
+     :vars ((a . "coefficient of x^2, nonzero") (b . "coefficient of x")))
+    (:name "zero-exponent"
+     :title "Zero exponent"
+     :category "Algebra — Exponents"
+     :expr (calcFunc-eq (^ (var x var-x) 0) 1)
+     :doc "Anything nonzero to the zeroth power is one."
+     :vars ((x . "any nonzero number")))
+    (:name "first-power"
+     :title "First power"
+     :category "Algebra — Exponents"
+     :expr (calcFunc-eq (^ (var x var-x) 1) (var x var-x))
+     :doc "A number to the first power is itself."
+     :vars ((x . "any number")))
+    (:name "negative-exponent"
+     :title "Negative exponent"
+     :category "Algebra — Exponents"
+     :expr (calcFunc-eq (^ (var x var-x) (neg (var n var-n)))
+                        (/ 1 (^ (var x var-x) (var n var-n))))
+     :doc "A negative exponent inverts the power."
+     :vars ((x . "any nonzero number") (n . "any exponent")))
+    (:name "product-of-powers"
+     :title "Product of powers"
+     :category "Algebra — Exponents"
+     :expr (calcFunc-eq (* (^ (var x var-x) (var m var-m))
+                           (^ (var x var-x) (var n var-n)))
+                        (^ (var x var-x) (+ (var m var-m) (var n var-n))))
+     :doc "Multiplying like bases adds the exponents."
+     :vars ((x . "the base") (m . "first exponent") (n . "second exponent")))
+    (:name "quotient-of-powers"
+     :title "Quotient of powers"
+     :category "Algebra — Exponents"
+     :expr (calcFunc-eq (/ (^ (var x var-x) (var m var-m))
+                           (^ (var x var-x) (var n var-n)))
+                        (^ (var x var-x) (- (var m var-m) (var n var-n))))
+     :doc "Dividing like bases subtracts the exponents."
+     :vars ((x . "nonzero base")
+            (m . "first exponent")
+            (n . "second exponent")))
+    (:name "power-of-a-power"
+     :title "Power of a power"
+     :category "Algebra — Exponents"
+     :expr (calcFunc-eq (^ (^ (var x var-x) (var m var-m)) (var n var-n))
+                        (^ (var x var-x) (* (var m var-m) (var n var-n))))
+     :doc "Raising a power to a power multiplies the exponents."
+     :vars ((x . "the base") (m . "inner exponent") (n . "outer exponent")))
+    (:name "power-of-a-product"
+     :title "Power of a product"
+     :category "Algebra — Exponents"
+     :expr (calcFunc-eq (^ (* (var x var-x) (var y var-y)) (var n var-n))
+                        (* (^ (var x var-x) (var n var-n))
+                           (^ (var y var-y) (var n var-n))))
+     :doc "An exponent distributes over a product."
+     :vars ((x . "first factor") (y . "second factor") (n . "any exponent")))
+    (:name "power-of-a-quotient"
+     :title "Power of a quotient"
+     :category "Algebra — Exponents"
+     :expr (calcFunc-eq (^ (/ (var x var-x) (var y var-y)) (var n var-n))
+                        (/ (^ (var x var-x) (var n var-n))
+                           (^ (var y var-y) (var n var-n))))
+     :doc "An exponent distributes over a quotient."
+     :vars ((x . "numerator")
+            (y . "nonzero denominator")
+            (n . "any exponent")))
+    (:name "rational-exponent"
+     :title "Rational exponent"
+     :category "Algebra — Exponents"
+     :expr (calcFunc-eq (^ (var x var-x) (/ (var m var-m) (var n var-n)))
+                        (^ (^ (var x var-x) (/ 1 (var n var-n)))
+                           (var m var-m)))
+     :doc "A fractional exponent is a root raised to a power."
+     :vars ((x . "nonnegative for even n")
+            (m . "numerator of the exponent")
+            (n . "nonzero root index")))
+    (:name "square-root-as-an-exponent"
+     :title "Square root as an exponent"
+     :category "Algebra — Radicals"
+     :expr (calcFunc-eq (calcFunc-sqrt (var x var-x))
+                        (^ (var x var-x) (/ 1 2)))
+     :doc "A square root is the one-half power."
+     :vars ((x . "nonnegative number")))
+    (:name "nth-root-as-an-exponent"
+     :title "Nth root as an exponent"
+     :category "Algebra — Radicals"
+     :expr (calcFunc-eq (calcFunc-nroot (var x var-x) (var n var-n))
+                        (^ (var x var-x) (/ 1 (var n var-n))))
+     :doc "An nth root is the 1/n power."
+     :vars ((x . "nonnegative for even n") (n . "nonzero root index")))
+    (:name "product-of-radicals"
+     :title "Product of radicals"
+     :category "Algebra — Radicals"
+     :expr (calcFunc-eq (calcFunc-sqrt (* (var x var-x) (var y var-y)))
+                        (* (calcFunc-sqrt (var x var-x))
+                           (calcFunc-sqrt (var y var-y))))
+     :doc "A root of a product splits into a product of roots."
+     :vars ((x . "nonnegative number") (y . "nonnegative number")))
+    (:name "quotient-of-radicals"
+     :title "Quotient of radicals"
+     :category "Algebra — Radicals"
+     :expr (calcFunc-eq (calcFunc-sqrt (/ (var x var-x) (var y var-y)))
+                        (/ (calcFunc-sqrt (var x var-x))
+                           (calcFunc-sqrt (var y var-y))))
+     :doc "A root of a quotient splits into a quotient of roots."
+     :vars ((x . "nonnegative number") (y . "positive number")))
+    (:name "root-of-a-square"
+     :title "Root of a square"
+     :category "Algebra — Radicals"
+     :expr (calcFunc-eq (calcFunc-sqrt (^ (var x var-x) 2))
+                        (calcFunc-abs (var x var-x)))
+     :doc "The square root of a square is the absolute value, not the number."
+     :vars ((x . "any real number"))
+     :examples ("sqrt((-3)^2) = 3, not -3."))
+    (:name "rationalize-a-root-denominator"
+     :title "Rationalize a root denominator"
+     :category "Algebra — Radicals"
+     :expr (calcFunc-eq (/ 1 (calcFunc-sqrt (var x var-x)))
+                        (/ (calcFunc-sqrt (var x var-x)) (var x var-x)))
+     :doc "Multiplying above and below by the root clears it from the denominator."
+     :vars ((x . "positive number")))
+    (:name "rationalize-by-the-conjugate"
+     :title "Rationalize by the conjugate"
+     :category "Algebra — Radicals"
+     :expr (calcFunc-eq (/ 1
+                           (+ (var a var-a) (calcFunc-sqrt (var b var-b))))
+                        (/ (- (var a var-a) (calcFunc-sqrt (var b var-b)))
+                           (- (^ (var a var-a) 2) (var b var-b))))
+     :doc "The conjugate clears a root from a two-term denominator."
+     :vars ((a . "rational part") (b . "nonnegative, with a^2 not b")))
+    (:name "addition-of-fractions"
+     :title "Addition of fractions"
+     :category "Algebra — Fractions"
+     :expr (calcFunc-eq (+ (/ (var a var-a) (var b var-b))
+                           (/ (var c var-c) (var d var-d)))
+                        (/ (+ (* (var a var-a) (var d var-d))
+                              (* (var b var-b) (var c var-c)))
+                           (* (var b var-b) (var d var-d))))
+     :doc "Cross-multiply over the common denominator b d."
+     :vars ((a . "first numerator")
+            (b . "nonzero denominator")
+            (c . "second numerator")
+            (d . "nonzero denominator")))
+    (:name "subtraction-of-fractions"
+     :title "Subtraction of fractions"
+     :category "Algebra — Fractions"
+     :expr (calcFunc-eq (- (/ (var a var-a) (var b var-b))
+                           (/ (var c var-c) (var d var-d)))
+                        (/ (- (* (var a var-a) (var d var-d))
+                              (* (var b var-b) (var c var-c)))
+                           (* (var b var-b) (var d var-d))))
+     :doc "The same common denominator, with the numerators subtracted."
+     :vars ((a . "first numerator")
+            (b . "nonzero denominator")
+            (c . "second numerator")
+            (d . "nonzero denominator")))
+    (:name "common-denominator"
+     :title "Common denominator"
+     :category "Algebra — Fractions"
+     :expr (calcFunc-eq (+ (/ (var a var-a) (var c var-c))
+                           (/ (var b var-b) (var c var-c)))
+                        (/ (+ (var a var-a) (var b var-b)) (var c var-c)))
+     :doc "Fractions over one denominator add across the top."
+     :vars ((a . "first numerator")
+            (b . "second numerator")
+            (c . "nonzero denominator")))
+    (:name "multiplication-of-fractions"
+     :title "Multiplication of fractions"
+     :category "Algebra — Fractions"
+     :expr (calcFunc-eq (* (/ (var a var-a) (var b var-b))
+                           (/ (var c var-c) (var d var-d)))
+                        (/ (* (var a var-a) (var c var-c))
+                           (* (var b var-b) (var d var-d))))
+     :doc "Multiply the numerators and the denominators."
+     :vars ((a . "first numerator")
+            (b . "nonzero denominator")
+            (c . "second numerator")
+            (d . "nonzero denominator")))
+    (:name "division-of-fractions"
+     :title "Division of fractions"
+     :category "Algebra — Fractions"
+     :expr (calcFunc-eq (/ (/ (var a var-a) (var b var-b))
+                           (/ (var c var-c) (var d var-d)))
+                        (/ (* (var a var-a) (var d var-d))
+                           (* (var b var-b) (var c var-c))))
+     :doc "Dividing by a fraction multiplies by its reciprocal."
+     :vars ((a . "first numerator")
+            (b . "nonzero denominator")
+            (c . "nonzero numerator")
+            (d . "nonzero denominator")))
+    (:name "cancel-a-common-factor"
+     :title "Cancel a common factor"
+     :category "Algebra — Fractions"
+     :expr (calcFunc-eq (/ (* (var a var-a) (var c var-c))
+                           (* (var b var-b) (var c var-c)))
+                        (/ (var a var-a) (var b var-b)))
+     :doc "A factor shared above and below cancels."
+     :vars ((a . "numerator")
+            (b . "nonzero denominator")
+            (c . "nonzero common factor")))
+    (:name "cross-multiplication"
+     :title "Cross multiplication"
+     :category "Algebra — Fractions"
+     :expr (calcFunc-eq (* (var a var-a) (var d var-d))
+                        (* (var b var-b) (var c var-c)))
+     :doc "What a/b = c/d becomes with the denominators cleared."
+     :vars ((a . "first numerator")
+            (b . "nonzero denominator")
+            (c . "second numerator")
+            (d . "nonzero denominator"))
+     :examples ("x/3 = 4/6 gives 6 x = 12, so x = 2."))
+    (:name "reciprocal-of-a-fraction"
+     :title "Reciprocal of a fraction"
+     :category "Algebra — Fractions"
+     :expr (calcFunc-eq (/ 1 (/ (var a var-a) (var b var-b)))
+                        (/ (var b var-b) (var a var-a)))
+     :doc "Inverting a fraction swaps its parts."
+     :vars ((a . "nonzero numerator") (b . "nonzero denominator")))
+    (:name "sign-of-a-fraction"
+     :title "Sign of a fraction"
+     :category "Algebra — Fractions"
+     :expr (calcFunc-eq (neg (/ (var a var-a) (var b var-b)))
+                        (/ (neg (var a var-a)) (var b var-b)))
+     :doc "A minus sign can sit out front, on top, or below: it is also a/(-b)."
+     :vars ((a . "numerator") (b . "nonzero denominator")))
+    (:name "absolute-value-as-a-root"
+     :title "Absolute value as a root"
+     :category "Algebra — Absolute value"
+     :expr (calcFunc-eq (calcFunc-abs (var x var-x))
+                        (calcFunc-sqrt (^ (var x var-x) 2)))
+     :doc "Squaring then taking the root drops the sign."
+     :vars ((x . "any real number")))
+    (:name "absolute-value-is-nonnegative"
+     :title "Absolute value is nonnegative"
+     :category "Algebra — Absolute value"
+     :expr (calcFunc-geq (calcFunc-abs (var x var-x)) 0)
+     :doc "A magnitude is never negative."
+     :vars ((x . "any real number")))
+    (:name "absolute-value-of-a-negative"
+     :title "Absolute value of a negative"
+     :category "Algebra — Absolute value"
+     :expr (calcFunc-eq (calcFunc-abs (neg (var x var-x)))
+                        (calcFunc-abs (var x var-x)))
+     :doc "A number and its opposite have the same magnitude."
+     :vars ((x . "any real number")))
+    (:name "absolute-value-of-a-product"
+     :title "Absolute value of a product"
+     :category "Algebra — Absolute value"
+     :expr (calcFunc-eq (calcFunc-abs (* (var a var-a) (var b var-b)))
+                        (* (calcFunc-abs (var a var-a))
+                           (calcFunc-abs (var b var-b))))
+     :doc "The magnitude of a product is the product of the magnitudes."
+     :vars ((a . "first factor") (b . "second factor")))
+    (:name "absolute-value-of-a-quotient"
+     :title "Absolute value of a quotient"
+     :category "Algebra — Absolute value"
+     :expr (calcFunc-eq (calcFunc-abs (/ (var a var-a) (var b var-b)))
+                        (/ (calcFunc-abs (var a var-a))
+                           (calcFunc-abs (var b var-b))))
+     :doc "The magnitude of a quotient is the quotient of the magnitudes."
+     :vars ((a . "numerator") (b . "nonzero denominator")))
+    (:name "triangle-inequality"
+     :title "Triangle inequality"
+     :category "Algebra — Absolute value"
+     :expr (calcFunc-leq (calcFunc-abs (+ (var a var-a) (var b var-b)))
+                         (+ (calcFunc-abs (var a var-a))
+                            (calcFunc-abs (var b var-b))))
+     :doc "A sum is never longer than its parts laid end to end."
+     :vars ((a . "first term") (b . "second term")))
+    (:name "reverse-triangle-inequality"
+     :title "Reverse triangle inequality"
+     :category "Algebra — Absolute value"
+     :expr (calcFunc-leq (calcFunc-abs (- (calcFunc-abs (var a var-a))
+                                          (calcFunc-abs (var b var-b))))
+                         (calcFunc-abs (- (var a var-a) (var b var-b))))
+     :doc "Magnitudes differ by no more than the distance between the numbers."
+     :vars ((a . "first term") (b . "second term")))
+    (:name "absolute-value-equation"
+     :title "Absolute value equation"
+     :category "Algebra — Absolute value"
+     :expr (calcFunc-lor (calcFunc-eq (var x var-x) (var a var-a))
+                         (calcFunc-eq (var x var-x) (neg (var a var-a))))
+     :doc "What abs(x) = a splits into, for a nonnegative."
+     :vars ((x . "the unknown") (a . "nonnegative number"))
+     :examples ("abs(x - 1) = 5 gives x = 6 or x = -4."))
+    (:name "absolute-value-less-than"
+     :title "Absolute value less than"
+     :category "Algebra — Absolute value"
+     :expr (calcFunc-land (calcFunc-lt (neg (var a var-a)) (var x var-x))
+                          (calcFunc-lt (var x var-x) (var a var-a)))
+     :doc "What abs(x) < a splits into: a band around zero."
+     :vars ((x . "the unknown") (a . "positive number")))
+    (:name "absolute-value-greater-than"
+     :title "Absolute value greater than"
+     :category "Algebra — Absolute value"
+     :expr (calcFunc-lor (calcFunc-lt (var x var-x) (neg (var a var-a)))
+                         (calcFunc-gt (var x var-x) (var a var-a)))
+     :doc "What abs(x) > a splits into: everything outside the band."
+     :vars ((x . "the unknown") (a . "positive number")))
+    (:name "distance-between-two-numbers"
+     :title "Distance between two numbers"
+     :category "Algebra — Absolute value"
+     :expr (calcFunc-eq (calcFunc-abs (- (var x var-x) (var y var-y)))
+                        (calcFunc-abs (- (var y var-y) (var x var-x))))
+     :doc "Distance on the line, measured from either end."
+     :vars ((x . "first number") (y . "second number")))
+    (:name "cosecant-as-a-reciprocal"
+     :title "Cosecant as a reciprocal"
+     :category "Trigonometry — Reciprocal and quotient"
+     :expr (calcFunc-eq (calcFunc-csc (var x var-x))
+                        (/ 1 (calcFunc-sin (var x var-x))))
+     :doc "Cosecant is the reciprocal of sine."
+     :vars ((x . "any angle with sin(x) not 0")))
+    (:name "secant-as-a-reciprocal"
+     :title "Secant as a reciprocal"
+     :category "Trigonometry — Reciprocal and quotient"
+     :expr (calcFunc-eq (calcFunc-sec (var x var-x))
+                        (/ 1 (calcFunc-cos (var x var-x))))
+     :doc "Secant is the reciprocal of cosine."
+     :vars ((x . "any angle with cos(x) not 0")))
+    (:name "cotangent-as-a-reciprocal"
+     :title "Cotangent as a reciprocal"
+     :category "Trigonometry — Reciprocal and quotient"
+     :expr (calcFunc-eq (calcFunc-cot (var x var-x))
+                        (/ 1 (calcFunc-tan (var x var-x))))
+     :doc "Cotangent is the reciprocal of tangent."
+     :vars ((x . "any angle with tan(x) not 0")))
+    (:name "tangent-as-a-quotient"
+     :title "Tangent as a quotient"
+     :category "Trigonometry — Reciprocal and quotient"
+     :expr (calcFunc-eq (calcFunc-tan (var x var-x))
+                        (/ (calcFunc-sin (var x var-x))
+                           (calcFunc-cos (var x var-x))))
+     :doc "Tangent is sine over cosine."
+     :vars ((x . "any angle with cos(x) not 0")))
+    (:name "cotangent-as-a-quotient"
+     :title "Cotangent as a quotient"
+     :category "Trigonometry — Reciprocal and quotient"
+     :expr (calcFunc-eq (calcFunc-cot (var x var-x))
+                        (/ (calcFunc-cos (var x var-x))
+                           (calcFunc-sin (var x var-x))))
+     :doc "Cotangent is cosine over sine."
+     :vars ((x . "any angle with sin(x) not 0")))
+    (:name "pythagorean-identity"
+     :title "Pythagorean identity"
+     :category "Trigonometry — Pythagorean identities"
+     :expr (calcFunc-eq (+ (^ (calcFunc-sin (var x var-x)) 2)
+                           (^ (calcFunc-cos (var x var-x)) 2))
+                        1)
+     :doc "Pythagoras on the unit circle, where the two legs are sine and cosine."
+     :vars ((x . "any angle")))
+    (:name "pythagorean-identity-for-tangent"
+     :title "Pythagorean identity for tangent"
+     :category "Trigonometry — Pythagorean identities"
+     :expr (calcFunc-eq (+ 1 (^ (calcFunc-tan (var x var-x)) 2))
+                        (^ (calcFunc-sec (var x var-x)) 2))
+     :doc "The identity divided through by cos(x)^2."
+     :vars ((x . "any angle with cos(x) not 0")))
+    (:name "pythagorean-identity-for-cotangent"
+     :title "Pythagorean identity for cotangent"
+     :category "Trigonometry — Pythagorean identities"
+     :expr (calcFunc-eq (+ 1 (^ (calcFunc-cot (var x var-x)) 2))
+                        (^ (calcFunc-csc (var x var-x)) 2))
+     :doc "The identity divided through by sin(x)^2."
+     :vars ((x . "any angle with sin(x) not 0")))
+    (:name "sine-of-a-sum"
+     :title "Sine of a sum"
+     :category "Trigonometry — Angle sum and difference"
+     :expr (calcFunc-eq (calcFunc-sin (+ (var a var-a) (var b var-b)))
+                        (+ (* (calcFunc-sin (var a var-a))
+                              (calcFunc-cos (var b var-b)))
+                           (* (calcFunc-cos (var a var-a))
+                              (calcFunc-sin (var b var-b)))))
+     :doc "Sine of a sum, in the sines and cosines of the parts."
+     :vars ((a . "first angle") (b . "second angle")))
+    (:name "sine-of-a-difference"
+     :title "Sine of a difference"
+     :category "Trigonometry — Angle sum and difference"
+     :expr (calcFunc-eq (calcFunc-sin (- (var a var-a) (var b var-b)))
+                        (- (* (calcFunc-sin (var a var-a))
+                              (calcFunc-cos (var b var-b)))
+                           (* (calcFunc-cos (var a var-a))
+                              (calcFunc-sin (var b var-b)))))
+     :doc "The sum formula with the second angle negated."
+     :vars ((a . "first angle") (b . "second angle")))
+    (:name "cosine-of-a-sum"
+     :title "Cosine of a sum"
+     :category "Trigonometry — Angle sum and difference"
+     :expr (calcFunc-eq (calcFunc-cos (+ (var a var-a) (var b var-b)))
+                        (- (* (calcFunc-cos (var a var-a))
+                              (calcFunc-cos (var b var-b)))
+                           (* (calcFunc-sin (var a var-a))
+                              (calcFunc-sin (var b var-b)))))
+     :doc "Cosine of a sum, where the sign flips against the angle."
+     :vars ((a . "first angle") (b . "second angle")))
+    (:name "cosine-of-a-difference"
+     :title "Cosine of a difference"
+     :category "Trigonometry — Angle sum and difference"
+     :expr (calcFunc-eq (calcFunc-cos (- (var a var-a) (var b var-b)))
+                        (+ (* (calcFunc-cos (var a var-a))
+                              (calcFunc-cos (var b var-b)))
+                           (* (calcFunc-sin (var a var-a))
+                              (calcFunc-sin (var b var-b)))))
+     :doc "The sum formula with the second angle negated."
+     :vars ((a . "first angle") (b . "second angle")))
+    (:name "tangent-of-a-sum"
+     :title "Tangent of a sum"
+     :category "Trigonometry — Angle sum and difference"
+     :expr (calcFunc-eq (calcFunc-tan (+ (var a var-a) (var b var-b)))
+                        (/ (+ (calcFunc-tan (var a var-a))
+                              (calcFunc-tan (var b var-b)))
+                           (- 1
+                              (* (calcFunc-tan (var a var-a))
+                                 (calcFunc-tan (var b var-b))))))
+     :doc "Tangent of a sum, in the tangents of the parts."
+     :vars ((a . "first angle") (b . "second angle")))
+    (:name "tangent-of-a-difference"
+     :title "Tangent of a difference"
+     :category "Trigonometry — Angle sum and difference"
+     :expr (calcFunc-eq (calcFunc-tan (- (var a var-a) (var b var-b)))
+                        (/ (- (calcFunc-tan (var a var-a))
+                              (calcFunc-tan (var b var-b)))
+                           (+ 1
+                              (* (calcFunc-tan (var a var-a))
+                                 (calcFunc-tan (var b var-b))))))
+     :doc "The sum formula with the second angle negated."
+     :vars ((a . "first angle") (b . "second angle")))
+    (:name "sine-of-a-double-angle"
+     :title "Sine of a double angle"
+     :category "Trigonometry — Double angle"
+     :expr (calcFunc-eq (calcFunc-sin (* 2 (var x var-x)))
+                        (* 2
+                           (* (calcFunc-sin (var x var-x))
+                              (calcFunc-cos (var x var-x)))))
+     :doc "The sum formula with both angles the same."
+     :vars ((x . "any angle")))
+    (:name "cosine-of-a-double-angle"
+     :title "Cosine of a double angle"
+     :category "Trigonometry — Double angle"
+     :expr (calcFunc-eq (calcFunc-cos (* 2 (var x var-x)))
+                        (- (^ (calcFunc-cos (var x var-x)) 2)
+                           (^ (calcFunc-sin (var x var-x)) 2)))
+     :doc "The sum formula with both angles the same."
+     :vars ((x . "any angle")))
+    (:name "cosine-of-a-double-angle-in-sine"
+     :title "Cosine of a double angle, in sine"
+     :category "Trigonometry — Double angle"
+     :expr (calcFunc-eq (calcFunc-cos (* 2 (var x var-x)))
+                        (- 1 (* 2 (^ (calcFunc-sin (var x var-x)) 2))))
+     :doc "The same, with the cosine traded away by the Pythagorean identity."
+     :vars ((x . "any angle")))
+    (:name "cosine-of-a-double-angle-in-cosine"
+     :title "Cosine of a double angle, in cosine"
+     :category "Trigonometry — Double angle"
+     :expr (calcFunc-eq (calcFunc-cos (* 2 (var x var-x)))
+                        (- (* 2 (^ (calcFunc-cos (var x var-x)) 2)) 1))
+     :doc "The same, with the sine traded away instead."
+     :vars ((x . "any angle")))
+    (:name "tangent-of-a-double-angle"
+     :title "Tangent of a double angle"
+     :category "Trigonometry — Double angle"
+     :expr (calcFunc-eq (calcFunc-tan (* 2 (var x var-x)))
+                        (/ (* 2 (calcFunc-tan (var x var-x)))
+                           (- 1 (^ (calcFunc-tan (var x var-x)) 2))))
+     :doc "The sum formula for tangent with both angles the same."
+     :vars ((x . "any angle with tan(x)^2 not 1")))
+    (:name "sine-of-a-half-angle-squared"
+     :title "Sine of a half angle, squared"
+     :category "Trigonometry — Half angle"
+     :expr (calcFunc-eq (^ (calcFunc-sin (/ (var x var-x) 2)) 2)
+                        (/ (- 1 (calcFunc-cos (var x var-x))) 2))
+     :doc "Squared, so no sign to choose; the root takes the quadrant's sign."
+     :vars ((x . "any angle")))
+    (:name "cosine-of-a-half-angle-squared"
+     :title "Cosine of a half angle, squared"
+     :category "Trigonometry — Half angle"
+     :expr (calcFunc-eq (^ (calcFunc-cos (/ (var x var-x) 2)) 2)
+                        (/ (+ 1 (calcFunc-cos (var x var-x))) 2))
+     :doc "Squared, so no sign to choose; the root takes the quadrant's sign."
+     :vars ((x . "any angle")))
+    (:name "tangent-of-a-half-angle"
+     :title "Tangent of a half angle"
+     :category "Trigonometry — Half angle"
+     :expr (calcFunc-eq (calcFunc-tan (/ (var x var-x) 2))
+                        (/ (- 1 (calcFunc-cos (var x var-x)))
+                           (calcFunc-sin (var x var-x))))
+     :doc "No sign to choose here: the quotient carries it."
+     :vars ((x . "any angle with sin(x) not 0")))
+    (:name "tangent-of-a-half-angle-by-sine"
+     :title "Tangent of a half angle, by sine"
+     :category "Trigonometry — Half angle"
+     :expr (calcFunc-eq (calcFunc-tan (/ (var x var-x) 2))
+                        (/ (calcFunc-sin (var x var-x))
+                           (+ 1 (calcFunc-cos (var x var-x)))))
+     :doc "The same value, useful when cos(x) is not near -1."
+     :vars ((x . "any angle with cos(x) not -1")))
+    (:name "sine-is-odd"
+     :title "Sine is odd"
+     :category "Trigonometry — Even and odd"
+     :expr (calcFunc-eq (calcFunc-sin (neg (var x var-x)))
+                        (neg (calcFunc-sin (var x var-x))))
+     :doc "Negating the angle negates the sine."
+     :vars ((x . "any angle")))
+    (:name "cosine-is-even"
+     :title "Cosine is even"
+     :category "Trigonometry — Even and odd"
+     :expr (calcFunc-eq (calcFunc-cos (neg (var x var-x)))
+                        (calcFunc-cos (var x var-x)))
+     :doc "Negating the angle leaves the cosine alone."
+     :vars ((x . "any angle")))
+    (:name "tangent-is-odd"
+     :title "Tangent is odd"
+     :category "Trigonometry — Even and odd"
+     :expr (calcFunc-eq (calcFunc-tan (neg (var x var-x)))
+                        (neg (calcFunc-tan (var x var-x))))
+     :doc "Negating the angle negates the tangent."
+     :vars ((x . "any angle with cos(x) not 0"))))
   "The formulas maf ships with, in the plist shape of `maf-formulas-user'.
-They are the properties of real numbers — the identities every other
-piece of algebra rests on, and the ones a rewrite is most often reaching
-for. Calc applies all of them in its own default simplifications, so
-these earn their place by being readable and by naming what a rewrite is
-doing, not by teaching calc anything.
+The identities school algebra and trigonometry rest on, and the ones a
+rewrite is most often reaching for. They come in categories the menu
+sorts by name and narrows to one at a time: the properties of real
+numbers, absolute value, exponents, fractions, logarithms, quadratic
+equations and radicals, then the trig identities in six groups of their
+own. The properties of real numbers calc applies in its own default
+simplifications, so those earn their place by being readable and by
+naming what a rewrite is doing rather than by teaching calc anything;
+the rest calc will not supply on its own.
+
+An equation cannot carry its own conditions — that x is positive, that
+a base is not 1, that a denominator is nonzero — so each is named in
+:vars and, where it matters, in :doc. Rewriting with one of these does
+not check them; that is the reader\'s job, as it is on paper.
+
+Two formulas that would want a ± are split in two instead, one entry
+per sign — the quadratic formula\'s roots — or given squared, leaving
+the sign to the quadrant, as the half-angle sine and cosine are.
 
 Package data rather than a preference, so it is a `defvar' and not a
 `defcustom'; set it to nil in your init to keep only your own.")
@@ -329,6 +1056,55 @@ for the group, not for the part of it that survived what was typed.
 It is kept here so RET on the header again puts back the filtered list
 it was pressed from. The two narrowings are never in force together:
 filtering from inside a group leaves the group, taking this with it.")
+
+(defvar-local maf-formulas--collapsed nil
+  "Categories folded away to their headers, or nil for none.
+A third narrowing, and the only one that is not a narrowing of what
+the list holds: the folded groups are still in it, still counted in
+their headers, and a fold is undone where it was made rather than
+from a key that clears the lot. What it buys is the whole list read
+as its group names, which is how a list this long is navigated —
+glance down the headers, unfold the one wanted.
+
+Held by category name, the same string `maf-formulas--groups' keys a
+group by, so a fold survives the re-renders a filter and a group
+narrowing cause. A name no longer in the list simply never matches.")
+
+(defvar-local maf-formulas--searching nil
+  "Non-nil when the last render ran under a filter.
+Lets `maf-formulas--sync-collapse' tell entering a search from being
+in one, which is the difference between unfolding for the results and
+overruling a fold the user has just made among them.")
+
+(defun maf-formulas--sync-collapse ()
+  "Unfold every group on entering a search, before a render reads the folds.
+A search that left its groups folded would hide the very rows it
+found — there would be no way to see the results — so starting one
+flips the toggle to shown.
+
+Once. Not on every render a filter causes, which would leave the fold
+keys dead for as long as a filter was in force: a filtered list is
+still a list of groups, still worth reading as its headers when the
+search casts wide, and folding one away is the user saying so about
+the results in front of them. Inside a search the folds are theirs.
+
+And the toggle stays flipped afterwards. The folds are dropped rather
+than set aside: what a search leaves behind is the list it found, open
+and readable, and a list that re-folded itself the moment the filter
+lifted would take the results away again from a user still reading
+them. Folding is one key away when it is wanted.
+
+Called from `maf-formulas--render', so every path that sets a query —
+filtering, clearing, abandoning a filter, stepping into a group — is
+covered by the one rule, none of them having to know it."
+  (let ((searching (not (string-empty-p maf-formulas--query))))
+    (when (and searching (not maf-formulas--searching))
+      (setq maf-formulas--collapsed nil))
+    (setq maf-formulas--searching searching)))
+
+(defun maf-formulas--collapsed-p (group)
+  "Non-nil when GROUP is folded away to its header."
+  (and (member group maf-formulas--collapsed) t))
 
 (defvar maf-formulas--recent nil
   "Formulas inserted this session, most recent first.
@@ -456,6 +1232,7 @@ named the filter took the legend away exactly when it was in use."
                      (list (if state (mapconcat #'identity state "  ") "maf-formulas")
                            (funcall entry "RET" "inserts")
                            (funcall entry "/" "filters")
+                           (funcall entry "TAB" "folds")
                            ;; Only while something is narrowed: the key is
                            ;; noise until there is something for it to clear.
                            (when state (funcall entry "c" "clears"))
@@ -475,22 +1252,42 @@ named the filter took the legend away exactly when it was in use."
 
 (defun maf-formulas--render ()
   "Render the categorized list: each formula beside its one-line form.
-Groups are separated by a blank line."
-  (let* ((inhibit-read-only t) (first t)
+Groups are separated by a blank line. A folded group renders as its
+header alone, wearing the count of what it holds so the list still
+says how much is down there; consecutive folded groups drop the blank
+between them, the fold view being worth reading in one glance.
+
+The header carries its category in a `maf-formula-group' text
+property rather than being read back off the line, the count having
+made the line and the name two different strings."
+  (maf-formulas--sync-collapse)
+  (let* ((inhibit-read-only t) (first t) (prev-folded nil)
          (groups (maf-formulas--groups))
-         (fs (apply #'append (mapcar #'cdr groups))))
+         ;; Folded rows are not drawn, so they are no reason to widen
+         ;; the column the drawn ones align on.
+         (fs (apply #'append (mapcar (lambda (g)
+                                       (unless (maf-formulas--collapsed-p (car g))
+                                         (cdr g)))
+                                     groups))))
     (erase-buffer)
     (setq header-line-format (maf-formulas--header-line))
     (let ((w (apply #'max 0 (mapcar (lambda (f) (length (maf-formulas--title f))) fs))))
       (dolist (g groups)
-        (unless first (insert "\n"))    ; blank line above each group
-        (setq first nil)
-        (insert (propertize (car g) 'face
-                            (if (equal (car g) maf-formulas--recent-category)
-                                'maf-formulas-recent
-                              'maf-formulas-category))
-                "\n")
-        (dolist (f (cdr g))
+        (let ((folded (maf-formulas--collapsed-p (car g)))
+              hstart)
+          (unless (or first (and folded prev-folded))
+            (insert "\n"))             ; blank line above each group
+          (setq first nil prev-folded folded hstart (point))
+          (insert (propertize (car g) 'face
+                              (if (equal (car g) maf-formulas--recent-category)
+                                  'maf-formulas-recent
+                                'maf-formulas-category)))
+          (when folded
+            (insert " " (propertize (format "(%d)" (length (cdr g)))
+                                    'face 'maf-formulas-leader)))
+          (insert "\n")
+          (put-text-property hstart (point) 'maf-formula-group (car g)))
+        (dolist (f (unless (maf-formulas--collapsed-p (car g)) (cdr g)))
           (let* ((start (point))
                  (title (maf-formulas--title f))
                  ;; A dotted leader bridges the gap to the aligned formula
@@ -800,7 +1597,7 @@ decides."
     (and header
          (equal (save-excursion
                   (goto-char header)
-                  (buffer-substring-no-properties header (line-end-position)))
+                  (maf-formulas--group-at-point))
                 maf-formulas--recent-category))))
 
 (defun maf-formulas--goto-formula (f recent)
@@ -1032,7 +1829,11 @@ so no title or variable of its formulas names it."
         (setq maf-formulas--group nil
               maf-formulas--query (or maf-formulas--group-query "")
               maf-formulas--group-query nil)
-      (setq maf-formulas--group group
+      ;; Asking for a group is asking to see it, so a fold on the way
+      ;; in is lifted rather than left to hide what was just reached
+      ;; for — the same courtesy a filter gets in `maf-formulas--sync-collapse'.
+      (setq maf-formulas--collapsed (remove group maf-formulas--collapsed)
+            maf-formulas--group group
             maf-formulas--group-query maf-formulas--query
             maf-formulas--query ""))
     (maf-formulas--render)
@@ -1041,13 +1842,18 @@ so no title or variable of its formulas names it."
 
 (defun maf-formulas--group-at-point ()
   "The category name when point is on a group header, else nil.
-A header is a non-blank line carrying no formula, and its whole text
-is the category — the same string `maf-formulas--groups' keyed the
-group by, so it can be handed straight back as a narrowing."
+A header is a non-blank line carrying no formula, and the renderer
+puts the category in its `maf-formula-group' property — the same
+string `maf-formulas--groups' keyed the group by, so it can be handed
+straight back as a narrowing. The line's own text no longer serves
+for that: a folded header wears its count as well as its name. The
+text is still read when the property is missing, for a buffer
+rendered before the property existed."
   (let ((bol (line-beginning-position)))
     (and (> (line-end-position) bol)
          (not (get-text-property bol 'maf-formula))
-         (buffer-substring-no-properties bol (line-end-position)))))
+         (or (get-text-property bol 'maf-formula-group)
+             (buffer-substring-no-properties bol (line-end-position))))))
 
 (defun maf-formulas--group-starts ()
   "Buffer positions of each category header line."
@@ -1137,6 +1943,66 @@ header, a second to the header before it."
           (before (goto-char before))
           (t (user-error "No previous group")))))
 
+(defun maf-formulas--group-of-point ()
+  "The category the line at point belongs to.
+Its own name on a header, and the nearest header above on a formula
+row — so a key meaning \"this group\" can be pressed anywhere in it."
+  (or (maf-formulas--group-at-point)
+      (let* ((p (line-beginning-position))
+             (header (car (last (seq-filter (lambda (s) (<= s p))
+                                            (maf-formulas--group-starts))))))
+        (and header (save-excursion (goto-char header)
+                                    (maf-formulas--group-at-point))))))
+
+(defun maf-formulas-toggle-group ()
+  "Fold the group at point away to its header, or unfold it again.
+A folded group keeps its header and wears the count of what it holds,
+so a list too long to read is read as its group names instead — fold
+what is not wanted, glance down the headers, unfold the one that is.
+Pressed on a formula row it folds the group that row is in, point
+coming to rest on the header; pressed on that header it unfolds.
+
+\\<maf-formulas-mode-map>\\[maf-formulas-toggle-all-groups] folds or
+unfolds every group at once, and is the key the fold view is reached
+by; this one picks a single group out of it.
+
+Folds are not a narrowing: the folded formulas are still in the list,
+still counted, and \\[maf-formulas-clear-filter] leaves them folded —
+a fold is undone where it was made. Starting a search is the
+exception, and unfolds everything so that what it turns up can be
+seen; the list stays unfolded once the filter lifts. Inside a search
+the keys fold and unfold the matching groups as they always do
+\\(`maf-formulas--sync-collapse')."
+  (interactive)
+  (let ((group (maf-formulas--group-of-point)))
+    (unless group (user-error "No group here"))
+    (setq maf-formulas--collapsed
+          (if (maf-formulas--collapsed-p group)
+              (remove group maf-formulas--collapsed)
+            (cons group maf-formulas--collapsed)))
+    (maf-formulas--render)
+    (maf-formulas--goto-group group)
+    (maf-formulas--item-start)))
+
+(defun maf-formulas-toggle-all-groups ()
+  "Fold every group away to its headers, or unfold them all.
+The fold view for the whole list in one key: with anything folded this
+unfolds the lot, otherwise it folds the lot. Point keeps its group,
+landing on that header when the rows it was among have gone.
+
+What it folds does not depend on where it is pressed — the key is for
+a view of the whole list, and means the same thing from any line in
+it. Folding one group at a time is
+\\<maf-formulas-mode-map>\\[maf-formulas-toggle-group]."
+  (interactive)
+  (let ((group (maf-formulas--group-of-point)))
+    (setq maf-formulas--collapsed
+          (unless maf-formulas--collapsed
+            (mapcar #'car (maf-formulas--groups))))
+    (maf-formulas--render)
+    (when group (maf-formulas--goto-group group))
+    (maf-formulas--item-start)))
+
 (defun maf-formulas-quit ()
   "Quit the formula menu, closing the detail pane too.
 The menu's window is deleted if `maf-formulas' made one, or goes back to
@@ -1168,17 +2034,26 @@ untouched either way."
 (define-key maf-formulas-mode-map (kbd "i")   #'maf-formulas-add-recent)
 (define-key maf-formulas-mode-map (kbd "D")   #'maf-formulas-delete-recent)
 (define-key maf-formulas-mode-map (kbd "C-g") #'maf-formulas-keyboard-quit)
-;; Two levels of motion: n/p/j/k and TAB/S-TAB step formula to formula
-;; (headers and the blank lines between groups are skipped), M-n/M-p
-;; step group to group.
+;; Two levels of motion: n/p/j/k step formula to formula (headers and
+;; the blank lines between groups are skipped), M-n/M-p step group to
+;; group.
 (define-key maf-formulas-mode-map (kbd "n")   #'maf-formulas-next-item)
 (define-key maf-formulas-mode-map (kbd "p")   #'maf-formulas-prev-item)
 (define-key maf-formulas-mode-map (kbd "j")   #'maf-formulas-next-item)
 (define-key maf-formulas-mode-map (kbd "k")   #'maf-formulas-prev-item)
-(define-key maf-formulas-mode-map (kbd "TAB")       #'maf-formulas-next-item)
-(define-key maf-formulas-mode-map (kbd "<backtab>") #'maf-formulas-prev-item)
 (define-key maf-formulas-mode-map (kbd "M-n") #'maf-formulas-next-group)
 (define-key maf-formulas-mode-map (kbd "M-p") #'maf-formulas-prev-group)
+;; TAB folds, the outline reflex — and the list is long enough now to
+;; be read as its headers. It had been a third key for the item
+;; motion, which n/p/j/k already cover twice over; the fold has no
+;; other key it would be looked for on.
+;;
+;; The whole list, not the group under point: TAB means the same thing
+;; wherever it is pressed, which is what makes it the key for a view
+;; of the list rather than an edit to one corner of it. S-TAB is the
+;; one group, for picking the wanted one out of a folded list.
+(define-key maf-formulas-mode-map (kbd "TAB")       #'maf-formulas-toggle-all-groups)
+(define-key maf-formulas-mode-map (kbd "<backtab>") #'maf-formulas-toggle-group)
 
 (define-derived-mode maf-formulas-mode special-mode "maf-formulas"
   "Major mode for the saved-formula list.
@@ -1189,7 +2064,11 @@ pushes the formula at point onto the stack — or, on a group header,
 narrows the list to that group, whole, and widens again when pressed
 there a second time. \\[maf-formulas-next-item] and \\[maf-formulas-prev-item] step between the rows and the headers
 alike, landing on the entry itself rather than the column before it;
-\\[maf-formulas-next-group] and \\[maf-formulas-prev-group] step group to group. \\[maf-formulas-show-detail] shows the formula at
+\\[maf-formulas-next-group] and \\[maf-formulas-prev-group] step group to group.
+\\[maf-formulas-toggle-all-groups] folds every group away to its header
+and unfolds them all again, so a long list can be read as its group
+names; \\[maf-formulas-toggle-group] folds or unfolds the one group at
+point. \\[maf-formulas-show-detail] shows the formula at
 point in the detail pane (again to close it), \\[maf-formulas-toggle-detail] toggles the pane following point (on by
 default, remembered for the session), \\[maf-formulas-add-recent] adds the formula at point to
 the Recent group without inserting it, \\[maf-formulas-delete-recent] drops the recent entry at

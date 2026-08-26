@@ -7,11 +7,12 @@
         maf--render-svg-fixture
         "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"10\" height=\"10\"><path d=\"M0 0h10v10H0z\"/></svg>")
 
-  ;; The module owns the on-demand binding and removes it when off.
+  ;; The module shadows G while it is on, and hands the key back to the
+  ;; Big-display peek — not to nothing — when it goes off.
   (maf-use-render-mode 1)
-  (cl-assert (eq (key-binding (kbd "l T")) #'maf-render))
+  (cl-assert (eq (key-binding (kbd "G")) #'maf-render))
   (maf-use-render-mode -1)
-  (cl-assert (not (eq (key-binding (kbd "l T")) #'maf-render)))
+  (cl-assert (eq (key-binding (kbd "G")) #'maf-preview-show))
   (maf-use-render-mode 1)
 
   ;; Point on an older entry selects that whole entry. Calc supplies the

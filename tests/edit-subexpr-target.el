@@ -217,6 +217,61 @@
                     "(ln(a+b)"))
   (call-interactively 'maf-edit-discard)
 
+  ;; An empty pair names nothing: it is where a sub-expression is
+  ;; going to be, not one that is there. Electric parens leave point
+  ;; inside it the moment the opener is typed, so this is the state a
+  ;; writer reaching for `L' is most often in — and the command's own
+  ;; answer for no target is what it wants, an empty call opened at
+  ;; point, inside the pair rather than wrapped around it.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (execute-kbd-macro "e^(") nil)
+  (call-interactively 'maf-editplus-wrap-ln)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "e^(ln())"))
+  ;; Point is between the call's own parens, so the argument is typed
+  ;; straight into it.
+  (cl-assert (eq (char-after) ?\)))
+  (progn (execute-kbd-macro "x") nil)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "e^(ln(x))"))
+  (call-interactively 'maf-edit-discard)
+
+  ;; The same for an empty vector, and for a pair holding nothing but
+  ;; the space the writer left in it — blank is blank to the scan.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (insert "[]") (backward-char 1) nil)
+  (call-interactively 'maf-editplus-wrap-sqrt)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "[sqrt()]"))
+  (call-interactively 'maf-edit-discard)
+
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (insert "2*(  )") (backward-char 2) nil)
+  (call-interactively 'maf-editplus-wrap-ln)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "2*( ln() )"))
+  (call-interactively 'maf-edit-discard)
+
+  ;; A pair with something in it is unaffected, blank around it or
+  ;; not: the rule is about the pair being empty, not about the
+  ;; whitespace.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (insert "e^(a)") (backward-char 1) nil)
+  (call-interactively 'maf-editplus-wrap-ln)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "e^(ln(a))"))
+  (call-interactively 'maf-edit-discard)
+
+  ;; And the empty pair is still a node from outside: point on its
+  ;; opener is not inside it, so the pair comes along as written —
+  ;; only a press between the two characters has nothing to name.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (insert "()") (maf-edit-move-beginning-of-line 1) nil)
+  (call-interactively 'maf-editplus-wrap-ln)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "ln(())"))
+  (call-interactively 'maf-edit-discard)
+
   ;; Juxtaposition is multiplication, so the space between two factors
   ;; is an operator glyph like any other and names the product.
   (call-interactively 'maf-edit-add-entry-below)

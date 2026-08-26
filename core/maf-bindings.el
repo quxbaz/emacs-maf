@@ -272,18 +272,35 @@ cycle instead of looping."
 
 (defun maf-bindings--validate (name defaults module-claims)
   "Signal on conflicting claims for profile NAME.
-Two owners on one key with different commands, or a key that is both
+Two modules on one key with different commands, or a key that is both
 a command and a live prefix of another claim, are errors — never
-precedence accidents. One `kbd' parse and one hash probe per claim
-plus one per proper prefix: this runs on every recompile, and a
-recompile runs on every module toggle, so it must cost nothing."
-  (let ((seen (make-hash-table :test #'equal)))
-    (dolist (claim (append defaults module-claims))
+precedence accidents.
+
+A module claiming a key a default also claims is not one of those: it
+is a shadow, and the one thing a module toggle is for that a fresh key
+cannot say. The module's command holds the key while its mode is on
+and the default comes back when it goes off, so the key keeps its
+plain meaning for everyone who never turns the module on. Shadowing is
+confined to the whole key — a module may not turn a default's command
+key into a prefix, or bury a prefix family under a command, since
+neither survives the toggle intact.
+
+One `kbd' parse and one hash probe per claim plus one per proper
+prefix: this runs on every recompile, and a recompile runs on every
+module toggle, so it must cost nothing."
+  (let ((seen (make-hash-table :test #'equal))
+        (by-modules (make-hash-table :test #'equal)))
+    (dolist (claim defaults)
+      (puthash (maf-bindings--key-vector (car claim)) claim seen))
+    (dolist (claim module-claims)
       (let* ((kv (maf-bindings--key-vector (car claim)))
-             (prior (gethash kv seen)))
+             (prior (gethash kv by-modules)))
         (when (and prior (not (eq (cdr prior) (cdr claim))))
           (error "maf-bindings: %s: key %S claimed as %s and %s"
                  name (car claim) (cdr prior) (cdr claim)))
+        (puthash kv claim by-modules)
+        ;; The shadow stands in for the default it covers, so the
+        ;; prefix check below reads the map a compile actually writes.
         (puthash kv claim seen)))
     (maphash
      (lambda (kv claim)

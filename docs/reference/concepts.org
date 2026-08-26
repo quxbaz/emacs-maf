@@ -608,24 +608,43 @@ row, is walked past rather than landed on — and it carries an active
 selection along with it, that being what a command would resolve to
 instead of point.
 
-=maf-forward-operand= (S-SPC) walks the same landings sideways rather
+=maf-forward-operand= (M-e) walks the same landings sideways rather
 than upward: every /operation/ of the entry is one stop, the whole
 entry among them, each at the first glyph it renders itself, so a few
-presses offer every compound target of the entry in turn. The nouns
-are left out — a number or a variable is =maf-forward-noun='s (M-f) to
-walk — so the two motions divide the entry between them rather than
-covering the same columns, and an entry that is a bare atom offers no
-stop of its own. Where the climb asks resolve one ancestor at a time,
-the motion reads the stops off the prepared composition in one pass
-(=maf--comp-landing-positions=), which is defined for flat renderings
-only: an entry drawn over several lines — Big language, a tall
-matrix — offers no stops at all, its terms still the noun motion's to
-walk, read off the rendering as text. Either way the walk is confined
-to the entry point sits in: the first and last stops are where it
-stops asking, and it signals at the margin rather than carrying point
-into a neighbouring entry, which is a line of its own to move to.
-=maf-backward-operand= (M-S-SPC) is the same walk the other way, over
-the same stops, so the two retrace each other.
+presses offer every compound target of the entry in turn. A glyph is
+the node's own when the node renders it wherever it stands — its
+operator, its function name, a vector's brackets — which the parens
+calc prints only where precedence demands them are not: they belong to
+the context that asked for them, so the sum in =3 (x - 5)= is named at
+its =-=, as it is at the top of an entry. Landing on the =(= instead
+put it one column past the juxtaposition space naming the product
+around it, and the walk stopped there with the rest of the entry ahead
+of it. Both the climb and the walk pass the pair over
+(=maf--comp-own-brackets-p=), so the stops are the operator glyphs in
+display order, an inner operand coming before an outer one whose
+operator is printed to its right. The nouns are left out — a number or
+a variable is =maf-forward-noun='s (M-f) to walk — so the two motions
+divide the entry between them rather than covering the same columns,
+and an entry that is a bare atom offers no stop of its own. Where the
+climb asks resolve one ancestor at a time, the motion asks it at every
+column of the entry and keeps one landing per node
+(=maf--operand-positions=), so both read the rendering back through
+the resolver rather than computing a column and trusting it. That is
+what lets the walk work in every rendering. The composition carries
+the formula's shape either way, but what a walk of it yields is a flat
+character count, and that is an address only when the entry is drawn
+as one row of glyphs: Big language draws a quotient as three lines, a
+raised exponent above its base, a matrix as one line per row. Asking
+costs a resolve per column and pays for itself — the stops come back
+in the order the rendering draws them, down the lines as well as
+across, and a node the rendering gives point no way to name (a matrix
+row, whose brackets calc tags to the matrix itself) is simply no stop,
+having nowhere to be named at. The walk is confined to the entry point
+sits in: the first and last stops are where it stops asking, and it
+signals at the margin rather than carrying point into a neighbouring
+entry, which is a line of its own to move to. =maf-backward-operand=
+(M-a) is the same walk the other way, over the same stops, so the two
+retrace each other.
 
 =maf-goto-left-side= (=(=) and =maf-goto-right-side= (=)=) arrive at
 one particular landing in one press: the whole of a relation's left or
@@ -637,7 +656,11 @@ it, and the entry's margins — the line-number prefix, the end of the
 line — cross the entry's own relation. Like the climb it asks the
 rendering where the side is nameable rather than computing a column
 (=maf--up-node-position=), so it works in Big language too, and it
-carries an active selection along for the same reason. Home is the one
+carries an active selection along for the same reason. Pressed from the
+side it already names, either key crosses to the other one instead of
+standing still — the side is as far out as that end of the relation
+goes — so one key walks the relation, and the cycle turns on where
+point stands rather than on which key put it there. Home is the one
 place the keys mean something else: there is no entry at point to move
 within, and they keep the blank-vector gesture the edit module gives
 them (=maf-edit-add-vector=).
@@ -951,7 +974,7 @@ multiples of pi.
 | [[file:../../modules/maf-history.el][modules/maf-history.el]]  | History module: =maf-use-history-mode= records stack snapshots, browse in =*maf-history*= |
 | [[file:../../modules/maf-persist.el][modules/maf-persist.el]]   | Persist module: =maf-persist-mode= saves/restores the stack across sessions |
 | [[file:../../modules/maf-edit.el][modules/maf-edit.el]]      | Edit module: =maf-use-edit-mode= binds SPC/`/C-o/"(" to =maf-edit= in-place stack editing (=maf-edit-mode= session) |
-| [[file:../../modules/maf-preview.el][modules/maf-preview.el]]   | Preview module: =maf-use-preview-mode= shows the entry at point in Big display in a floating panel (posframe child frame, else in-window) |
+| [[file:../../modules/maf-preview.el][modules/maf-preview.el]]   | Preview module: =maf-use-preview-mode= shows the entry at point in Big display in a floating panel (posframe child frame, else in-window); =maf-preview-show= (=G=) peeks at one entry with the module off |
 | [[file:../../modules/maf-render.el][modules/maf-render.el]]    | Render module: =maf-render= sends the entry at point through Calc LaTeX and RaTeX, then displays the SVG on demand |
 | [[file:../../modules/maf-formulas.el][modules/maf-formulas.el]]  | Formulas module: =maf-formulas= menu of saved formulas by category (detail + RET-insert); data in =maf-formulas-builtin= (shipped) plus =maf-formulas-file= (the user's) |
 | [[file:../../debug/maf-step.el][debug/maf-step.el]]       | Step-through harness (cockpit) that drives the tests        |
@@ -1051,8 +1074,10 @@ Two module shapes have appeared, matching the feature's state:
   feature switch) being separate.
 
   The render module (=modules/maf-render.el=) is the same global-mode
-  shape with no background work: =maf-use-render-mode= owns only its
-  binding. =maf-render= formats the whole entry at point with Calc's
+  shape with no background work: =maf-use-render-mode= owns only which
+  command =G= runs, shadowing the Big-display peek rather than taking a
+  key of its own (see /A module's key over a default's/ below).
+  =maf-render= formats the whole entry at point with Calc's
   LaTeX language, runs =maf-render-program= once, and displays the
   returned SVG in an even split below Calc without selecting it. The
   program defaults to
@@ -1082,6 +1107,32 @@ Two module shapes have appeared, matching the feature's state:
   away once the stack outgrows the window. It hides itself while the
   whole buffer is already in Big display and during a =maf-edit=
   session.
+
+- *A command of a module's, bound outside it.* =maf-preview-show= (=G=,
+  declared in =src/bindings.el=) puts up one panel over the entry at
+  point — a /peek/, taken down again by the next command — and needs
+  nothing of the module: no buffer-local mode, no globalized toggle.
+  That is why its key is not declared through
+  =maf-bindings-module-keys= like every other module key: a key that
+  came and went with the toggle would take with it the way of working
+  the toggle is turned *off* for — no panel underfoot, a look when
+  wanted. The module toggle stays a plain on/off, and what it decides
+  is only whether a panel follows point.
+
+- *A module's key over a default's: a shadow.* =maf-render= claims =G=
+  through =maf-bindings-module-keys=, the key the peek above already
+  holds. The compiler refuses two modules on one key — nothing there
+  says which wins — but a module over a default it lets stand, because
+  the toggle says it: the module's command holds the key while its mode
+  is on and the default comes back when it goes off, so the key keeps
+  its plain meaning for everyone who never turns the module on. It fits
+  here because the two commands are one gesture: a single look at the
+  entry at point, in a rendering the stack is not switched over to, and
+  which rendering that look comes back in is the only thing
+  =maf-use-render-mode= decides. A shadow covers the whole key and no
+  more — a module may not turn a default's command key into a prefix,
+  or bury a prefix family under a command, since neither is something a
+  toggle could put back the way it found it.
 
 A module owns its whole lifecycle, including bindings: =maf-mode= no
 longer enables highlighting or the history, and =bindings.el= no longer

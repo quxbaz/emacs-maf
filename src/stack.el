@@ -1335,30 +1335,85 @@ point, each side of an equation, the top entry at home.
 (defvar maf--quick-variable nil
   "Variable read by `maf-quick-variable', for the contextual body.")
 
+(defvar maf--quick-variable-path nil
+  "Path to the sub-formula `mafcmd--quick-variable-join' joins onto.
+A `maf--node-path' path into the entry, from `maf-quick-variable'.")
+
 (maf-defcmd mafcmd--quick-variable-mul (expr _arg commit)
   "Apply `maf--quick-variable' to the resolved expression.
 Internal: `maf-quick-variable' reads the variable, binds it, and
-dispatches here when point is on an expression. A target that is
-itself a variable is overwritten — naming a name means renaming it —
-anything else is multiplied, variable on the left."
+dispatches here when point names an expression rather than sitting
+just past one. A target the user pointed at — a selection, a region,
+the sub-formula under point — that is itself a variable is
+overwritten: naming a name means renaming it. Anything else is
+multiplied, variable on the left; a target reached from a margin is
+never renamed, a margin being where the entry is taken whole rather
+than a name pointed at."
   :arity unary
   :prefix "qvar"
   :targets-var maf-quick-variable-targets
-  (commit (if (eq (car-safe expr) 'var)
+  (commit (if (and (eq (car-safe expr) 'var)
+                   (memq maf-target '(subexpr selection region)))
               maf--quick-variable
             (calcFunc-mul maf--quick-variable expr))))
+
+(maf-defcmd mafcmd--quick-variable-join (expr _arg commit)
+  "Join `maf--quick-variable' onto the sub-formula at `maf--quick-variable-path'.
+Internal: `maf-quick-variable' dispatches here when point sits just
+past a sub-formula, where the gesture is to carry on writing rather
+than to name what is there. The variable multiplies that sub-formula
+on its right, in place; the rest of the entry is untouched, so nothing
+else re-simplifies. The entry is the subject whole — a relation
+included, since the variable lands at one place inside it rather than
+once per side."
+  :arity unary
+  :prefix "qvar"
+  :scope entry
+  :map -1
+  (commit (maf--splice-path
+           expr maf--quick-variable-path
+           (lambda (node) (calcFunc-mul node maf--quick-variable)))))
+
+(defun maf--quick-variable-join-path ()
+  "Path for `mafcmd--quick-variable-join', or nil to target normally.
+Non-nil when point sits just past a sub-formula (`maf--path-just-past-point')
+and no narrowing gesture this command honors is in play: a region or a
+calc selection is a deliberate naming of what to act on, and outranks
+the position of point within it."
+  (and (not (and (use-region-p)
+                 (memq 'region maf-quick-variable-targets)))
+       (not (and (maf--sel-any-p)
+                 (memq 'selection maf-quick-variable-targets)))
+       (maf--path-just-past-point)))
 
 (defun maf-quick-variable ()
   "Read a letter and apply it as a variable, contextually.
 
-  x on a + 2|  =>  a + 2 x
-  x on a| + 2  =>  x + 2      (a variable target is overwritten)
+  y on |x         =>  y            (a name pointed at is renamed)
+  y on x|         =>  x y          (past it, the variable joins on)
+  y on a = x| + 2 =>  a = x y + 2
+  y on x + 2|     =>  x + 2 y
+  y on x +| 2     =>  y (x + 2)
 
 At home with no selection active, the variable is pushed as a new
-stack entry instead. A target that is itself a variable is replaced by
-the new one — naming a name means renaming it. Any other target is
-multiplied by it, variable on the left: the selection, the sub-formula
-at point, each side of an equation, the whole entry from its margin.
+stack entry instead.
+
+Point just past a sub-formula — exactly at the end of its text — joins
+the variable onto it, multiplied on its right, leaving the rest of the
+entry alone. Where several formulas end at point the smallest one
+takes it, so at the end of x + 2 the variable joins the 2 rather than
+the sum, and at the end of a relation it joins the tail of the right
+side rather than landing once per side.
+
+Anywhere else the position names a target instead: the selection, the
+region, the sub-formula under point (its operator glyph names the
+whole formula), each side of an equation, the whole entry from a
+margin. A target that is itself a variable is replaced by the new
+one — naming a name means renaming it — but only where the user
+pointed at that name; a margin is not a name pointed at, so nothing
+reached from one is ever renamed. Every other target is multiplied by
+the variable, on the left.
+
 Any letter is a valid variable; anything else aborts."
   (interactive)
   (let ((char (read-char-from-minibuffer "Variable: ")))
@@ -1366,11 +1421,18 @@ Any letter is a valid variable; anything else aborts."
       (user-error "Invalid variable '%c'; must be a letter" char))
     (let ((var (list 'var
                      (intern (char-to-string char))
-                     (intern (concat "var-" (char-to-string char))))))
-      (if (and (maf--at-home-p) (not (maf--sel-any-p)))
-          (calc-wrapper (calc-push var))
+                     (intern (concat "var-" (char-to-string char)))))
+          (path (maf--quick-variable-join-path)))
+      (cond
+       ((and (maf--at-home-p) (not (maf--sel-any-p)))
+        (calc-wrapper (calc-push var)))
+       (path
+        (let ((maf--quick-variable var)
+              (maf--quick-variable-path (cdr path)))
+          (mafcmd--quick-variable-join)))
+       (t
         (let ((maf--quick-variable var))
-          (mafcmd--quick-variable-mul))))))
+          (mafcmd--quick-variable-mul)))))))
 
 (maf-defcmd mafcmd--pi-mul (expr _arg commit)
   "Multiply the resolved expression by the symbolic constant pi.
@@ -1824,11 +1886,46 @@ two motions retrace each other."
 
 (defun maf--operand-positions (m)
   "Sorted buffer positions of the operand stops in the entry at level M.
-nil when the entry offers the motion no stops: a bare atom, all of it
-one noun, or a rendering that is not flat — Big language, a tall
-matrix."
+The entry is read column by column and every position handed to
+resolve, so each stop is a place `calc-find-selected-part' already
+answers with the node the motion advertises there, rather than a column
+computed from the composition and trusted to resolve to it. Asking
+rather than computing is what lets the walk work in every rendering:
+the composition carries the formula's shape but a flat character count
+is only an address when the entry is drawn as one row of glyphs, and
+Big language draws a quotient as three (`math-comp-is-flat'), a matrix
+as one row per line, a radical with its overbar above.
+
+One stop per node, at the landing `maf--up-pick-landing' picks out of
+the positions naming it — the rule the climb lands by, so the walk and
+`maf-up-expression' agree by construction rather than by two
+computations arriving at the same column.
+
+nil when the entry offers no stop: a bare atom is all noun
+\(`math-primp'), and the nouns are `maf-forward-noun''s to walk. A node
+the rendering gives point no way to name — a matrix row, whose brackets
+calc tags to the matrix itself — offers none either, having nowhere to
+be named at."
   (calc-prepare-selection m)
-  (maf--comp-landing-positions))
+  (let ((region (maf--up-entry-region m))
+        ;; (NODE . POSITIONS) per operation met, positions reversed.
+        (nodes nil))
+    (save-excursion
+      (goto-char (car region))
+      (while (< (point) (cdr region))
+        (let ((node (ignore-errors (calc-find-selected-part))))
+          (when (and node (not (math-primp node)))
+            (let ((cell (assq node nodes)))
+              (if cell
+                  (push (point) (cdr cell))
+                (push (list node (point)) nodes)))))
+        (forward-char 1)))
+    (sort (delq nil
+                (mapcar (lambda (cell)
+                          (maf--up-pick-landing (nreverse (cdr cell))
+                                                (car cell)))
+                        nodes))
+          #'<)))
 
 (defun maf--operand-position (dir)
   "Return the position of the nearest operand stop in direction DIR, or nil.
@@ -1869,14 +1966,20 @@ name, a vector at its bracket. That glyph is where resolve names the
 sub-formula, the landing `maf-up-expression' picks, so a few presses
 cross the entry target by target, offering every compound target once.
 A juxtaposed product renders its multiplication as nothing but a
-space, so its stop is that space, as in the first step above.
+space, so its stop is that space, as in the first step above. The
+parens calc prints around an operand only where precedence asks for
+them are the context's rather than the operand's own glyphs, so a
+parenthesized operation is named at its operator like any other:
+
+  1:  y^2 = 3| (x - 5)  =>  1:  y^2 = 3 (x |- 5)   (the difference)
 
 The nouns are not stops: a number or a variable is one term, and
 walking those is `maf-forward-noun''s (M-f) job, so the two motions
 divide the entry between them rather than covering the same columns.
 An entry that is a bare atom offers no stop of its own and is crossed
-whole, as is one drawn over several lines (Big language, a tall
-matrix).
+whole. An entry drawn over several lines is walked like any other: in
+Big language the stops run down the rendering as they run across it,
+a quotient named at its bar with the numerator's own stops above it.
 
 The walk stays inside the entry it starts in: the last operand is
 where it stops asking, and it signals there rather than crossing the
@@ -2068,20 +2171,46 @@ Of the positions that name NODE, the first non-blank one wins: those
 are the glyphs NODE renders itself, and landing on the operator or
 paren reads better than landing on the space before it. A juxtaposed
 product renders its multiplication as nothing but a space, so blank is
-all it has; then the first position stands.
+all it has; then the first position stands. The parens a context puts
+around NODE are none of its glyphs (`maf--comp-own-brackets-p'), so
+the pair is passed over and the sum in `3 (x + 1)' is named at its
+`+' — the same landing `maf--comp-landing-positions' reads off the
+composition for the operand walk.
 
 `calc-prepare-selection' must have run for the entry REGION covers."
+  (maf--up-pick-landing (maf--up-naming-positions node region) node))
+
+(defun maf--up-naming-positions (node region)
+  "Positions in REGION where point resolves to NODE, in order."
   (save-excursion
-    (let ((blank nil))
+    (let ((found nil))
       (goto-char (car region))
-      (catch 'found
-        (while (< (point) (cdr region))
-          (when (eq (ignore-errors (calc-find-selected-part)) node)
-            (if (memq (char-after) '(?\s ?\t ?\n))
-                (unless blank (setq blank (point)))
-              (throw 'found (point))))
-          (forward-char 1))
-        blank))))
+      (while (< (point) (cdr region))
+        (when (eq (ignore-errors (calc-find-selected-part)) node)
+          (push (point) found))
+        (forward-char 1))
+      (nreverse found))))
+
+(defun maf--up-pick-landing (positions node)
+  "The landing among POSITIONS, the places that name NODE, or nil.
+The first non-blank position wins, the first blank one standing in when
+NODE has nothing but blanks to be named by. A paren pair enclosing all
+of them is the context's punctuation rather than NODE's own glyphs, and
+drops out first, so a parenthesized operation is named inside its
+parens: `x + 1' in `3 (x + 1)' at the `+', as it is at the top of an
+entry, where nothing parenthesizes it."
+  (let* ((blankp (lambda (p) (memq (char-after p) '(?\s ?\t ?\n))))
+         (visible (cl-remove-if blankp positions))
+         (open (car visible))
+         (close (car (last visible)))
+         (positions (if (and open close (/= open close)
+                             (not (maf--comp-own-brackets-p node))
+                             (eq (char-after open) ?\()
+                             (eq (char-after close) ?\)))
+                        (remq close (remq open positions))
+                      positions)))
+    (or (cl-find-if-not blankp positions)
+        (car positions))))
 
 (defun maf--up-step (node m)
   "Return (ANCESTOR . POSITION) one step out from NODE, or nil at the root.
@@ -2185,6 +2314,9 @@ SIDE is `left' or `right'. The shared body of `maf-goto-left-side' and
 `maf-goto-right-side'; those docstrings describe what the motion
 promises.
 
+Point already standing where SIDE would land crosses to the other side
+instead, so either key walks the relation on repeat.
+
 At home the paren keys keep the meaning the edit module gives them
 there — a blank vector entry opened at the bottom of the stack — since
 there is no entry at point for the motion to work within. With that
@@ -2199,8 +2331,25 @@ module off there is nothing to fall back to and the motion signals."
              (rel (maf--side-relation expr (calc-find-selected-part))))
         (unless rel
           (user-error "No relation at point"))
-        (let* ((node (nth (if (eq side 'left) 1 2) rel))
-               (pos (maf--up-node-position node (maf--up-entry-region m))))
+        (let* ((region (maf--up-entry-region m))
+               (node (nth (if (eq side 'left) 1 2) rel))
+               (pos (maf--up-node-position node region)))
+          ;; Cycle rather than stand still. Point already on the side
+          ;; the key names has arrived: there is nowhere further out on
+          ;; that end of the relation, so the press crosses to the
+          ;; other side instead and one key walks the whole relation.
+          ;; The test is the landing itself — point sitting where this
+          ;; motion would put it — so it holds however point got there,
+          ;; the mirror key included.
+          (when (and pos (= pos (point)))
+            (let* ((other (if (eq side 'left) 'right 'left))
+                   (other-node (nth (if (eq other 'left) 1 2) rel))
+                   (other-pos (maf--up-node-position other-node region)))
+              ;; A side with nothing to name it by is no destination:
+              ;; the press stays put rather than signalling, since the
+              ;; side it was asked for is where point already is.
+              (when other-pos
+                (setq side other node other-node pos other-pos))))
           (unless pos
             (user-error "Nothing to name the %s side by"
                         (if (eq side 'left) "left" "right")))
@@ -2244,8 +2393,21 @@ used.
 
   |1:  y = (x + 3)^2  =>  1:  |y = (x + 3)^2
 
+Pressed from the side it already names, the key crosses to the other
+one rather than standing still: the side is as far out as that end of
+the relation goes, so the press that would repeat it is a crossing
+instead.
+
+  6 x |+ 12 = 18 y + 6  =>  6 x + 12 = 18 y |+ 6
+
+One key therefore walks the whole relation, and the pair are two ways
+into the same walk — `(' starting it leftward, `)' rightward. The test
+is the landing, not the key that made it, so a `)' arrival cycles under
+`(' just the same.
+
 With a selection up on the entry it travels to the side along with
-point, since a selection is what the next command would resolve.
+point, since a selection is what the next command would resolve — the
+crossing carries it too.
 
 At home, where there is no entry at point, the key keeps the meaning
 the edit module gives it there: a blank vector entry opened at the
@@ -2265,8 +2427,14 @@ that names the whole side, so the next command acts on it entire.
 
   2 x - 3| < 7  =>  2 x - 3 < |7
 
-The two keys together are the whole crossing: one press to the far
-side, one back, whatever term point started on."
+Pressed from the side it already names, it crosses back the same way
+`maf-goto-left-side' does:
+
+  6 x + 12 = 18 y |+ 6  =>  6 x |+ 12 = 18 y + 6
+
+So either key alone is the whole crossing — one press to the far side,
+one back, whatever term point started on — and the two differ only in
+which side they set out for."
   (interactive)
   (maf--goto-side 'right))
 
@@ -4969,7 +5137,7 @@ It acts on the whole entry — wherever point sits on its line, or the
 top entry at home; root-finding has no sub-formula meaning, so point
 within the formula is not used to narrow it. The stock form stays on
 a P (`mafcmd-roots\='), its variable taken from the stack, and
-`mafcmd-poly-roots\=' (l t) picks the variable itself.
+`mafcmd-poly-roots\=' (l T) picks the variable itself.
 
   x^2 = 4            =>  [2, -2]
   (x - 1)^2 (x + 2)  =>  [-2, 1, 1]   (multiplicity kept)

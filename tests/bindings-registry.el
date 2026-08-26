@@ -97,13 +97,50 @@ prefix — as absent as nil, for these assertions."
   (maf-bindings-compile)
   (cl-assert (eq (maf-test-br--lookup 'test-b "0") 'ignore))
 
-  ;; Conflicts are compile errors, not precedence accidents: another
-  ;; owner claiming a module's key, and a command that prefixes a
-  ;; longer claim, both refuse — toggle state notwithstanding.
+  ;; A default beneath a module's key is a shadow, not a conflict: the
+  ;; module's command holds the key while the mode is on, and the
+  ;; default comes back — unmutated, never overwritten — when it goes
+  ;; off.
   (maf-bindings-define '(test-b) "0" #'undefined)
-  (cl-assert (eq 'refused (condition-case nil
-                              (progn (maf-bindings-compile) 'compiled)
-                            (error 'refused))))
+  (maf-bindings-compile)
+  (cl-assert (eq (maf-test-br--lookup 'test-b "0") 'ignore))
+  (setq maf-test-br--mode nil)
+  (maf-bindings-compile)
+  (cl-assert (eq (maf-test-br--lookup 'test-b "0") 'undefined))
+  (setq maf-test-br--mode t)
+  (maf-bindings-compile)
+
+  ;; What a shadow is not: two modules on one key have no toggle to
+  ;; tell them apart, so that stays a compile error — toggle state
+  ;; notwithstanding. A declaration refreshes, so the refusal can
+  ;; surface there rather than at the explicit compile; the assertion
+  ;; covers both, and the claim is withdrawn either way.
+  (cl-assert (eq 'refused
+                 (condition-case nil
+                     (progn (maf-bindings-module-keys
+                             'test-mod-2 'maf-test-br--mode
+                             '(((test-b) "0" undefined)))
+                            (maf-bindings-compile)
+                            'compiled)
+                   (error 'refused))))
+  (maf-bindings-module-keys 'test-mod-2 'maf-test-br--mode nil)
+
+  ;; And a shadow covers the whole key and no more: a module may not
+  ;; bury a default's prefix family under a command of its own, which
+  ;; no toggle could put back the way it found it.
+  (maf-bindings-defprofile 'test-b)
+  (maf-bindings-define '(test-b) "z z" #'undefined)
+  (cl-assert (eq 'refused
+                 (condition-case nil
+                     (progn (maf-bindings-module-keys
+                             'test-mod 'maf-test-br--mode
+                             '(((test-b) "z" ignore)))
+                            (maf-bindings-compile)
+                            'compiled)
+                   (error 'refused))))
+  (maf-bindings-module-keys 'test-mod 'maf-test-br--mode nil)
+
+  ;; A command that prefixes a longer claim refuses among defaults too.
   (maf-bindings-defprofile 'test-b)
   (maf-bindings-define '(test-b) "z" #'ignore)
   (maf-bindings-define '(test-b) "z z" #'undefined)
@@ -111,7 +148,6 @@ prefix — as absent as nil, for these assertions."
                               (progn (maf-bindings-compile) 'compiled)
                             (error 'refused))))
   (maf-bindings-defprofile 'test-b)
-  (maf-bindings-module-keys 'test-mod 'maf-test-br--mode nil)
   (maf-bindings-compile)
 
   ;; The digit tracker: installs only onto the declared stock binding,
