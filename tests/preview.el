@@ -33,29 +33,32 @@
   (progn (calc-pop 1) (calc-refresh)
          (goto-char (point-min)) (search-forward "a / b") (backward-char 3))
 
-  ;; The rendered entry is laid out as a bordered, titled panel whose
-  ;; rows are all one width — what both backends put on screen.
+  ;; The rendered entry is laid out as a bordered panel whose rows are
+  ;; all one width — what both backends put on screen. The border
+  ;; carries nothing: the panel is the formula and its frame.
   (cl-assert (equal (maf-preview--panel-rows "a\n-\nb" 40 10)
-                    '("┌─PREVIEW──┐"
-                      "│ a        │"
-                      "│ -        │"
-                      "│ b        │"
-                      "└──────────┘")))
+                    '("┌───┐"
+                      "│ a │"
+                      "│ - │"
+                      "│ b │"
+                      "└───┘")))
 
   ;; The panel is clipped to the room it is given, in both directions,
-  ;; with an ellipsis for what was cut — and refused outright when even
-  ;; the title would not fit.
+  ;; with an ellipsis for what was cut — and refused outright when not
+  ;; even one column of formula would fit.
   (cl-assert (equal (maf-preview--panel-rows "abcdefghijklmnopqrst" 16 10)
-                    '("┌─PREVIEW──────┐"
+                    '("┌──────────────┐"
                       "│ abcdefghijk… │"
                       "└──────────────┘")))
   (cl-assert (equal (maf-preview--panel-rows "1\n2\n3\n4" 40 5)
-                    '("┌─PREVIEW──┐"
-                      "│ 1        │"
-                      "│ 2        │"
-                      "│ …        │"
-                      "└──────────┘")))
-  (cl-assert (null (maf-preview--panel-rows "x" 11 10)))
+                    '("┌───┐"
+                      "│ 1 │"
+                      "│ 2 │"
+                      "│ … │"
+                      "└───┘")))
+  (cl-assert (equal (maf-preview--panel-rows "x" 5 10)
+                    '("┌───┐" "│ x │" "└───┘")))
+  (cl-assert (null (maf-preview--panel-rows "x" 4 10)))
 
   ;; Without a child frame — on a text terminal, or with no posframe —
   ;; that panel is drawn inside the window itself. It lives entirely in
@@ -72,10 +75,10 @@
                             ;; row of the panel is the last one.
                             (reverse maf-preview--overlays)
                             "\n")))
-      (cl-assert (string-match-p "PREVIEW" drawn))
+      (cl-assert (string-match-p "┌─" drawn))
       (cl-assert (string-match-p "│ a" drawn))
-      (cl-assert (not (string-match-p "PREVIEW" (buffer-substring-no-properties
-                                                 (point-min) (point-max)))))
+      (cl-assert (not (string-match-p "┌─" (buffer-substring-no-properties
+                                            (point-min) (point-max)))))
       (cl-assert (= (line-number-at-pos
                      (overlay-start (car (last maf-preview--overlays))))
                     (1+ (line-number-at-pos (window-start))))))

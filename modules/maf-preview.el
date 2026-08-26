@@ -60,10 +60,6 @@
 (defconst maf-preview--buffer " *maf-preview*"
   "Name of the buffer backing the preview child frame.")
 
-(defconst maf-preview--title "PREVIEW"
-  "Label the preview carries, so the panel is not mistaken for the stack.
-Worn only by a panel that could be: see `maf-preview--label-p'.")
-
 (defface maf-preview-panel
   '((t :inherit default))
   "Face for the text inside the in-window preview panel.
@@ -165,24 +161,11 @@ laid over stack lines, sized and clipped in columns and spliced into
 arithmetic could use, and nowhere to go once the row is one."
   (and (display-graphic-p) (maf-preview--posframe-p)))
 
-(defun maf-preview--label-p (str)
-  "Non-nil when STR is text the panel should wear its label over.
-The label is there because a panel of Calc's own text reads as the
-stack it hangs over — `a / b' in a corner is an entry until something
-says otherwise. A rendering carried in a display property cannot be
-read as an entry by anyone, and a word above it only spends a line of
-a panel that exists to show a formula."
-  (null (get-text-property 0 'display str)))
-
 (defun maf-preview--posframe-show (str)
   "Show STR in the preview child frame."
   (let ((frame (posframe-show
                 maf-preview--buffer
-                :string (if (maf-preview--label-p str)
-                            (concat (propertize (concat maf-preview--title "\n")
-                                                'face 'shadow)
-                                    str)
-                          str)
+                :string str
                 :poshandler #'maf-preview--poshandler
                 :internal-border-width 2
                 :internal-border-color "gray50"
@@ -220,16 +203,13 @@ Kept so `maf-preview--on-screen-p' can ask the panel whether it is
 really displayed without searching `frame-list' or reaching into
 posframe's own variables.")
 
-(defun maf-preview--border-row (left right inner &optional label)
+(defun maf-preview--border-row (left right inner)
   "Return a horizontal panel border INNER columns wide between LEFT and RIGHT.
-LEFT and RIGHT are the corner characters. LABEL, when given, is written
-into the border one column in from LEFT."
-  (let ((text (if label (concat "─" label) "")))
-    (propertize (concat (string left)
-                        text
-                        (make-string (- inner (string-width text)) ?─)
-                        (string right))
-                'face 'maf-preview-border)))
+LEFT and RIGHT are the corner characters."
+  (propertize (concat (string left)
+                      (make-string inner ?─)
+                      (string right))
+              'face 'maf-preview-border))
 
 (defun maf-preview--body-row (line inner)
   "Return the panel row holding LINE, INNER columns wide between its borders."
@@ -247,8 +227,7 @@ the same width. STR is clipped — lines to MAX-WIDTH columns, the panel
 to MAX-HEIGHT rows — with an ellipsis marking what was cut."
   (let ((body-width (- max-width 4))       ; two borders plus a pad column each side
         (body-height (- max-height 2)))    ; the top and bottom borders
-    (when (and (> body-width (string-width maf-preview--title))
-               (>= body-height 1))
+    (when (and (>= body-width 1) (>= body-height 1))
       (let* ((lines (split-string str "\n"))
              (lines (if (> (length lines) body-height)
                         (append (seq-take lines (1- body-height))
@@ -257,9 +236,8 @@ to MAX-HEIGHT rows — with an ellipsis marking what was cut."
              (lines (mapcar (lambda (line)
                               (truncate-string-to-width line body-width nil nil t))
                             lines))
-             (inner (max (+ 2 (apply #'max (mapcar #'string-width lines)))
-                         (+ 3 (string-width maf-preview--title)))))
-        (append (list (maf-preview--border-row ?┌ ?┐ inner maf-preview--title))
+             (inner (+ 2 (apply #'max (mapcar #'string-width lines)))))
+        (append (list (maf-preview--border-row ?┌ ?┐ inner))
                 (mapcar (lambda (line) (maf-preview--body-row line inner)) lines)
                 (list (maf-preview--border-row ?└ ?┘ inner)))))))
 
