@@ -391,9 +391,11 @@ Exact entries keep an exact answer, as in `maf--pythagoras': the root
 is taken in symbolic mode, so [3, 4] gives 5 and [2, 1] gives sqrt(5)
 rather than 2.2360679775. A float anywhere in the vector has already
 forfeited exactness, so the root evaluates numerically instead.
-Symbolic entries stay written out — [a, b] gives
-sqrt(abssqr(a) + abssqr(b)), a formula that still composes, where the
-inert hypot call does not.
+Symbolic entries stay written out as a formula that still composes,
+where the inert hypot call does not: [a, b] gives sqrt(a^2 + b^2)
+under `maf-abs-assume-real' (the default), or the complex-safe
+sqrt(abssqr(a) + abssqr(b)) with that option off — see
+`maf--abssqr-to-squares'.
 
 Anything else — scalars, complex numbers, the degenerate empty and
 one-element vectors — is `calcFunc-abs' under the ambient calc modes,
@@ -408,10 +410,27 @@ this function."
   (if (and (eq (car-safe a) 'vec) (cddr a))
       (let* ((exact (not (maf--contains-float-p a)))
              (calc-symbolic-mode exact)
-             (calc-prefer-frac exact))
-        (math-normalize
-         (list 'calcFunc-sqrt (list 'calcFunc-abssqr a))))
+             (calc-prefer-frac exact)
+             (norm (math-normalize
+                    (list 'calcFunc-sqrt (list 'calcFunc-abssqr a)))))
+        (if maf-abs-assume-real
+            (math-normalize (maf--abssqr-to-squares norm))
+          norm))
     (math-normalize (list 'calcFunc-abs a))))
+
+(defun maf--abssqr-to-squares (expr)
+  "Rewrite every inert abssqr call in EXPR to a plain square.
+An abssqr left standing after normalization is one calc could not
+decide the realness of its argument for — a bare variable, an unknown
+formula. Reading it as the square is exactly the assumption
+`maf-abs-assume-real' licenses. Everything calc did decide never
+reaches here: a literal complex entry's abssqr is already its squared
+modulus, a declared-real variable's already its square."
+  (if (eq (car-safe expr) 'calcFunc-abssqr)
+      (list '^ (maf--abssqr-to-squares (nth 1 expr)) 2)
+    (if (and (consp expr) (symbolp (car expr)))
+        (cons (car expr) (mapcar #'maf--abssqr-to-squares (cdr expr)))
+      expr)))
 
 (defun maf--terms-gcd (terms)
   "Return the GCD of TERMS via `calcFunc-pgcd', iterated to a fixpoint.

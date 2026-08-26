@@ -43,11 +43,30 @@
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "5"))
   (calc-pop (calc-stack-size))
 
-  ;; Symbolic entries stay written out as a formula that composes.
+  ;; Symbolic entries stay written out as a formula that composes —
+  ;; assumed real by default, so the textbook form.
+  (cl-assert maf-abs-assume-real)
   (maf-push "[a, b]")
   (call-interactively 'mafcmd-abs)
   (cl-assert (string= (math-format-value (calc-top 1 'full))
-                      "sqrt(abssqr(a) + abssqr(b))"))
+                      "sqrt(a^2 + b^2)"))
+  (calc-pop (calc-stack-size))
+
+  ;; With the assumption off, the complex-safe form: abssqr keeps the
+  ;; modulus reading for entries that might not be real.
+  (let ((maf-abs-assume-real nil))
+    (maf-push "[a, b]")
+    (call-interactively 'mafcmd-abs)
+    (cl-assert (string= (math-format-value (calc-top 1 'full))
+                        "sqrt(abssqr(a) + abssqr(b))"))
+    (calc-pop (calc-stack-size)))
+
+  ;; The assumption touches only entries calc could not decide: a
+  ;; literal complex entry still contributes its squared modulus.
+  (maf-push "[x, (3, 4)]")
+  (call-interactively 'mafcmd-abs)
+  (cl-assert (string= (math-format-value (calc-top 1 'full))
+                      "sqrt(x^2 + 25)"))
   (calc-pop (calc-stack-size))
 
   ;; A float entry forfeits exactness: the root evaluates rather than

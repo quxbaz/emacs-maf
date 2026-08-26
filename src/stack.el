@@ -621,15 +621,18 @@ two-element [2, sqrt(3)] with an inert hypot(2, sqrt(3)) where the
 same entries one longer give sqrt(7); here every length takes the
 general recipe, so both give sqrt(7), and exact entries keep an exact
 answer while a float in any evaluates numerically — see `maf--abs'.
-Scalars are calc's own `calcFunc-abs' untouched. Point picks the
-target as usual: a sub-formula at point, each side of an equation, the
-top entry at home.
+A symbolic entry is assumed real, giving the textbook form; turn
+`maf-abs-assume-real' off for the complex-safe abssqr form. Scalars
+are calc's own `calcFunc-abs' untouched. Point picks the target as
+usual: a sub-formula at point, each side of an equation, the top
+entry at home.
 
   [3, 4]        =>  5
   [2, sqrt(3)]  =>  sqrt(7)
   [2, 1]        =>  sqrt(5)
   [(3, 4), 0]   =>  5
-  [a, b]        =>  sqrt(abssqr(a) + abssqr(b))
+  [a, b]        =>  sqrt(a^2 + b^2)
+  [a, b]        =>  sqrt(abssqr(a) + abssqr(b))   (option off)
   [0.6, 0.8]    =>  1.
   (3, 4)        =>  5    (complex modulus)
   x             =>  abs(x)"

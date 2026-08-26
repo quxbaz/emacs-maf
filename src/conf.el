@@ -46,6 +46,21 @@ symbols: +, -, *, /, ^, neg, or a calcFunc- name."
   :type '(alist :key-type symbol :value-type symbol)
   :group 'maf)
 
+(defcustom maf-abs-assume-real t
+  "Non-nil reads symbolic vector entries as real when taking a norm.
+`mafcmd-abs' answers a vector with its Frobenius norm. With this on
+(the default), an entry whose realness calc cannot decide — a bare
+variable, an unknown formula — is assumed real, so [a, b] answers the
+common textbook form sqrt(a^2 + b^2). Set to nil for the complex-safe
+form sqrt(abssqr(a) + abssqr(b)), which stays a norm when entries may
+be complex.
+
+Only undecided entries are affected. A literal complex entry always
+contributes its modulus, and a declaration (see the Decls variable)
+always wins: with x declared complex, abssqr(x) stands either way."
+  :type 'boolean
+  :group 'maf)
+
 (defcustom maf-coordinate-name-sets
   '(((var x var-x) (var y var-y) (var z var-z) (var w var-w))
     ((var h var-h) (var k var-k) (var l var-l) (var m var-m))
