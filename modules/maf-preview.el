@@ -190,10 +190,18 @@ arithmetic could use, and nowhere to go once the row is one."
 
 (defconst maf-preview--posframe-pad '(3 . 2)
   "Vertical padding inside the child frame, in pixels (TOP . BOTTOM).
-The bottom runs tighter: a rendered formula carries a sliver of
-clearance of its own below the baseline, and matching the top's
-padding verbatim reads bottom-heavy. Both numbers were set by eye
-against the RaTeX rendering.")
+For content carrying a display property — a RaTeX rendering, which
+brings a margin of its own inside the image. The bottom runs tighter:
+a rendered formula carries a sliver of clearance of its own below the
+baseline, and matching the top's padding verbatim reads bottom-heavy.
+Both numbers were set by eye against the RaTeX rendering.")
+
+(defconst maf-preview--posframe-text-pad '(7 . 6)
+  "Vertical padding inside the child frame for plain text (TOP . BOTTOM).
+Bare text has no margin of its own the way an image does, so it gets
+a larger allowance — plus a space column each side, added where these
+numbers are used — to meet the border at about the distance the RaTeX
+rendering keeps.")
 
 (defun maf-preview--posframe-show (str)
   "Show STR in the preview child frame.
@@ -201,16 +209,23 @@ The frame's border is its visible edge, so the room between it and the
 content is made here: the fringes pad the sides, and STR is framed by
 two blank lines of exactly `maf-preview--posframe-pad' pixels — each a
 stretch glyph, with the top line's newline shrunk under it so no
-full-height glyph props the line open."
-  (let ((frame (posframe-show
+full-height glyph props the line open. Plain text is padded more than
+an image — see `maf-preview--posframe-text-pad'."
+  (let* ((imagep (get-text-property 0 'display str))
+         (pad (if imagep maf-preview--posframe-pad
+                maf-preview--posframe-text-pad))
+         (body (if imagep str
+                 (mapconcat (lambda (line) (concat " " line " "))
+                            (split-string str "\n") "\n")))
+         (frame (posframe-show
                 maf-preview--buffer
                 :string (concat
                          (propertize " " 'face '(:height 0.1)
-                                     'display `(space :height (,(car maf-preview--posframe-pad))))
+                                     'display `(space :height (,(car pad))))
                          (propertize "\n" 'face '(:height 0.1))
-                         str
+                         body
                          "\n"
-                         (propertize " " 'display `(space :height (,(cdr maf-preview--posframe-pad)))))
+                         (propertize " " 'display `(space :height (,(cdr pad)))))
                 :poshandler #'maf-preview--poshandler
                 :internal-border-width 2
                 :internal-border-color "gray50"
