@@ -10,10 +10,9 @@
     for that module
 
 * DONE maf-pretty
-  - [X] support in maf-formulas (2026-08-26: the detail pane asks
-    =maf-preview-render-function= like the preview panel does, so the
-    formula shows typeset while the module is on; Big, with colored
-    variables, remains the fallback)
+  - in *maf-formulas*
+    - [ ] formulas detail view, `&&` and `||` don't render property in pretty
+      mode. these should be intersection and union, right?
 
 * review
 
