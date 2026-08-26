@@ -3,17 +3,17 @@
 ;; installed binary itself.
 
 (maf-step
-  (setq maf--render-mode-stash maf-use-render-mode
+  (setq maf--pretty-mode-stash maf-use-pretty-mode
         maf--render-svg-fixture
         "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"10\" height=\"10\"><path d=\"M0 0h10v10H0z\"/></svg>")
 
   ;; The module shadows G while it is on, and hands the key back to the
   ;; Big-display peek — not to nothing — when it goes off.
-  (maf-use-render-mode 1)
-  (cl-assert (eq (key-binding (kbd "G")) #'maf-render))
-  (maf-use-render-mode -1)
+  (maf-use-pretty-mode 1)
+  (cl-assert (eq (key-binding (kbd "G")) #'maf-pretty))
+  (maf-use-pretty-mode -1)
   (cl-assert (eq (key-binding (kbd "G")) #'maf-preview-show))
-  (maf-use-render-mode 1)
+  (maf-use-pretty-mode 1)
 
   ;; Point on an older entry selects that whole entry. Calc supplies the
   ;; LaTeX, the renderer receives exactly that string, and neither stack
@@ -23,51 +23,51 @@
   (progn (calc-cursor-stack-index 2)
          (search-forward "sqrt" (line-end-position))
          (backward-char 2))
-  (setq maf--render-latex nil
-        maf--render-source-window (selected-window))
-  (cl-letf (((symbol-function 'maf-render--ratex)
+  (setq maf--pretty-latex nil
+        maf--pretty-source-window (selected-window))
+  (cl-letf (((symbol-function 'maf-pretty--ratex)
              (lambda (latex)
-               (setq maf--render-latex latex)
+               (setq maf--pretty-latex latex)
                maf--render-svg-fixture)))
-    (call-interactively 'maf-render))
-  (cl-assert (string= maf--render-latex "\\frac{\\sqrt{x}}{3}"))
+    (call-interactively 'maf-pretty))
+  (cl-assert (string= maf--pretty-latex "\\frac{\\sqrt{x}}{3}"))
   (cl-assert (= (calc-stack-size) 2))
   (cl-assert (null calc-language))
-  (with-current-buffer maf-render--buffer
-    (cl-assert (derived-mode-p 'maf-render-mode))
+  (with-current-buffer maf-pretty--buffer
+    (cl-assert (derived-mode-p 'maf-pretty-mode))
     (cl-assert (eq (car-safe (get-text-property (point-min) 'display))
                    'image)))
-  (let ((render-window (get-buffer-window maf-render--buffer)))
-    (cl-assert (<= (abs (- (window-total-height maf--render-source-window)
-                           (window-total-height render-window)))
+  (let ((pretty-window (get-buffer-window maf-pretty--buffer)))
+    (cl-assert (<= (abs (- (window-total-height maf--pretty-source-window)
+                           (window-total-height pretty-window)))
                    1)))
 
   ;; At home the same command renders the top entry.
   (goto-char (point-max))
-  (setq maf--render-latex nil)
-  (cl-letf (((symbol-function 'maf-render--ratex)
+  (setq maf--pretty-latex nil)
+  (cl-letf (((symbol-function 'maf-pretty--ratex)
              (lambda (latex)
-               (setq maf--render-latex latex)
+               (setq maf--pretty-latex latex)
                maf--render-svg-fixture)))
-    (call-interactively 'maf-render))
-  (cl-assert (string= maf--render-latex "a + b"))
+    (call-interactively 'maf-pretty))
+  (cl-assert (string= maf--pretty-latex "a + b"))
 
   ;; A missing executable and an empty stack both fail clearly before a
   ;; preview can pretend to have succeeded.
-  (let ((maf-render-program "/definitely/not/a/ratex-renderer"))
+  (let ((maf-pretty-program "/definitely/not/a/ratex-renderer"))
     (cl-assert (condition-case nil
-                   (progn (maf-render--program) nil)
+                   (progn (maf-pretty--program) nil)
                  (user-error t))))
   (calc-pop (calc-stack-size))
   (cl-assert (condition-case nil
-                 (progn (maf-render--entry) nil)
+                 (progn (maf-pretty--entry) nil)
                (user-error t)))
 
   ;; Restore the shared dev session and remove the preview window/buffer.
   (progn
-    (when-let ((win (get-buffer-window maf-render--buffer)))
+    (when-let ((win (get-buffer-window maf-pretty--buffer)))
       (quit-window nil win))
-    (when-let ((buf (get-buffer maf-render--buffer)))
+    (when-let ((buf (get-buffer maf-pretty--buffer)))
       (kill-buffer buf))
-    (unless maf--render-mode-stash
-      (maf-use-render-mode -1))))
+    (unless maf--pretty-mode-stash
+      (maf-use-pretty-mode -1))))

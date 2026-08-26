@@ -1,4 +1,4 @@
-;; The render module drawing the preview panel. modules/maf-render.el
+;; The pretty module drawing the preview panel. modules/maf-pretty.el
 ;; installs `maf-preview-render-function' while its mode is on, and
 ;; modules/maf-preview.el asks that before falling back to Big — so what
 ;; this file pins is the agreement between the two, not either alone:
@@ -8,10 +8,10 @@
 ;; RaTeX is mocked, and so is the panel's own test for a backend that
 ;; can display an image, so the file says the same thing on a machine
 ;; without the renderer and in a session without posframe. That the SVG
-;; itself draws is tests/render.el's and the live drive's to show.
+;; itself draws is tests/pretty.el's and the live drive's to show.
 
 (maf-step
-  (setq maf--rp-render-stash maf-use-render-mode
+  (setq maf--rp-pretty-stash maf-use-pretty-mode
         maf--rp-preview-stash maf-use-preview-mode
         maf--rp-calls 0
         maf--rp-shown nil)
@@ -46,19 +46,19 @@ one thing the change detection below has to be able to see."
 
   ;; With the module off nothing is installed and the panel is Big, as
   ;; it is for everyone who never turns the module on.
-  (maf-use-render-mode -1)
+  (maf-use-pretty-mode -1)
   (cl-assert (null maf-preview-render-function))
   (cl-assert (equal (maf-preview--render) "a\n-\nb"))
 
   ;; Turning it on installs the renderer; turning it off withdraws it.
   ;; The panel is asked for, never pushed to: this is the whole of the
   ;; wiring between the two modules.
-  (maf-use-render-mode 1)
-  (cl-assert (eq maf-preview-render-function #'maf-render--panel))
+  (maf-use-pretty-mode 1)
+  (cl-assert (eq maf-preview-render-function #'maf-pretty--panel))
 
   ;; Asked, on a panel that can show an image, the entry comes back
   ;; typeset — one space carrying the rendering — instead of in Big.
-  (cl-letf (((symbol-function 'maf-render--ratex) #'maf--rp-ratex)
+  (cl-letf (((symbol-function 'maf-pretty--ratex) #'maf--rp-ratex)
             ((symbol-function 'maf-preview--rich-p) (lambda () t)))
     (setq maf--rp-calls 0)
     (cl-assert (maf--rp-imagep (maf-preview--render)))
@@ -67,7 +67,7 @@ one thing the change detection below has to be able to see."
   ;; The panel asks once per command and the entry rarely moves, so an
   ;; unchanged formula is answered from the cache rather than by a
   ;; second subprocess.
-  (cl-letf (((symbol-function 'maf-render--ratex) #'maf--rp-ratex)
+  (cl-letf (((symbol-function 'maf-pretty--ratex) #'maf--rp-ratex)
             ((symbol-function 'maf-preview--rich-p) (lambda () t)))
     (setq maf--rp-calls 0)
     (cl-assert (maf--rp-imagep (maf-preview--render)))
@@ -80,7 +80,7 @@ one thing the change detection below has to be able to see."
          (goto-char (point-min))
          (search-forward "x^2")
          (backward-char 2))
-  (cl-letf (((symbol-function 'maf-render--ratex) #'maf--rp-ratex)
+  (cl-letf (((symbol-function 'maf-pretty--ratex) #'maf--rp-ratex)
             ((symbol-function 'maf-preview--rich-p) (lambda () t)))
     (setq maf--rp-calls 0)
     (cl-assert (maf--rp-imagep (maf-preview--render)))
@@ -92,7 +92,7 @@ one thing the change detection below has to be able to see."
   ;; the in-window backend lays rows of text over stack lines, measured
   ;; in columns, and an image has no column width to lay out with. Big
   ;; is what that panel gets, module on or off.
-  (cl-letf (((symbol-function 'maf-render--ratex) #'maf--rp-ratex)
+  (cl-letf (((symbol-function 'maf-pretty--ratex) #'maf--rp-ratex)
             ((symbol-function 'maf-preview--rich-p) (lambda () nil)))
     (setq maf--rp-calls 0)
     (cl-assert (equal (maf-preview--render) "a\n-\nb"))
@@ -104,7 +104,7 @@ one thing the change detection below has to be able to see."
   ;; it was turned on to be, where a Big panel over it showed nothing
   ;; new.
   (calc-big-language)
-  (cl-letf (((symbol-function 'maf-render--ratex) #'maf--rp-ratex)
+  (cl-letf (((symbol-function 'maf-pretty--ratex) #'maf--rp-ratex)
             ((symbol-function 'maf-preview--rich-p) (lambda () t)))
     (cl-assert (maf--rp-imagep (maf-preview--render))))
   (cl-letf (((symbol-function 'maf-preview--rich-p) (lambda () nil)))
@@ -123,7 +123,7 @@ one thing the change detection below has to be able to see."
          (goto-char (point-min))
          (search-forward "y^3")
          (backward-char 2))
-  (cl-letf (((symbol-function 'maf-render--ratex)
+  (cl-letf (((symbol-function 'maf-pretty--ratex)
              (lambda (_latex) (user-error "RaTeX failed with status 1")))
             ((symbol-function 'maf-preview--rich-p) (lambda () t)))
     (let ((str (maf-preview--render)))
@@ -133,7 +133,7 @@ one thing the change detection below has to be able to see."
   ;; And the failure is remembered under its own key: a formula LaTeX
   ;; cannot write will not start working on the next keystroke, so the
   ;; retry the panel would otherwise make every command is not made.
-  (cl-letf (((symbol-function 'maf-render--ratex) #'maf--rp-ratex)
+  (cl-letf (((symbol-function 'maf-pretty--ratex) #'maf--rp-ratex)
             ((symbol-function 'maf-preview--rich-p) (lambda () t)))
     (setq maf--rp-calls 0)
     (let ((str (maf-preview--render)))
@@ -145,10 +145,10 @@ one thing the change detection below has to be able to see."
 
   ;; Turning the module off withdraws the renderer and drops what it
   ;; cached, so the next time on starts from the formula in front of it.
-  (maf-use-render-mode -1)
+  (maf-use-pretty-mode -1)
   (cl-assert (null maf-preview-render-function))
-  (cl-assert (null maf-render--panel-cache))
-  (cl-letf (((symbol-function 'maf-render--ratex) #'maf--rp-ratex)
+  (cl-assert (null maf-pretty--panel-cache))
+  (cl-letf (((symbol-function 'maf-pretty--ratex) #'maf--rp-ratex)
             ((symbol-function 'maf-preview--rich-p) (lambda () t)))
     (setq maf--rp-calls 0)
     (cl-assert (equal (maf-preview--render) "a\n-\nb"))
@@ -160,12 +160,12 @@ one thing the change detection below has to be able to see."
   ;; property too. Comparing the characters alone read every entry as
   ;; the same panel, and the first one previewed stayed up for the rest
   ;; of the session however far point moved.
-  (maf-use-render-mode 1)
+  (maf-use-pretty-mode 1)
   (progn (calc-pop (calc-stack-size))
          (calc-push '(/ (var a var-a) (var b var-b)))
          (calc-push '(^ (var x var-x) 2))
          (calc-refresh))
-  (cl-letf (((symbol-function 'maf-render--ratex) #'maf--rp-ratex)
+  (cl-letf (((symbol-function 'maf-pretty--ratex) #'maf--rp-ratex)
             ((symbol-function 'maf-preview--rich-p) (lambda () t))
             ((symbol-function 'maf-preview--on-screen-p) (lambda () t))
             ((symbol-function 'maf-preview--show)
@@ -183,7 +183,7 @@ one thing the change detection below has to be able to see."
 
   ;; The same check still spares the panel a redraw it does not need:
   ;; point that has not left the entry draws once, not once a command.
-  (cl-letf (((symbol-function 'maf-render--ratex) #'maf--rp-ratex)
+  (cl-letf (((symbol-function 'maf-pretty--ratex) #'maf--rp-ratex)
             ((symbol-function 'maf-preview--rich-p) (lambda () t))
             ((symbol-function 'maf-preview--on-screen-p) (lambda () t))
             ((symbol-function 'maf-preview--show)
@@ -194,11 +194,11 @@ one thing the change detection below has to be able to see."
     (maf-preview--update)
     (maf-preview--update)
     (cl-assert (= (length maf--rp-shown) 1)))
-  (maf-use-render-mode -1)
+  (maf-use-pretty-mode -1)
 
   ;; Restore the shared dev session.
   (progn
     (calc-normal-language)
     (calc-pop (calc-stack-size))
-    (maf-use-render-mode (if maf--rp-render-stash 1 -1))
+    (maf-use-pretty-mode (if maf--rp-pretty-stash 1 -1))
     (maf-use-preview-mode (if maf--rp-preview-stash 1 -1))))

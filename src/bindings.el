@@ -264,8 +264,8 @@
 ;; way whether the module is on, off, or not enabled at all. A key that
 ;; came and went with the toggle would take with it the very way of
 ;; working — no panel underfoot, a peek when wanted — that having the
-;; toggle off is for. The render module shadows this key while it is on
-;; (modules/maf-render.el): one look at the entry, come back typeset
+;; toggle off is for. The pretty module shadows this key while it is on
+;; (modules/maf-pretty.el): one look at the entry, come back typeset
 ;; instead of in Big — which rendering is what that toggle is for, and
 ;; the declaration here is what G falls back to.
 (maf-bindings-define '(native) "G" #'maf-preview-show)

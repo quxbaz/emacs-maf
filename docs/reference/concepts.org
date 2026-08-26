@@ -975,7 +975,7 @@ multiples of pi.
 | [[file:../../modules/maf-persist.el][modules/maf-persist.el]]   | Persist module: =maf-persist-mode= saves/restores the stack across sessions |
 | [[file:../../modules/maf-edit.el][modules/maf-edit.el]]      | Edit module: =maf-use-edit-mode= binds SPC/`/C-o/"(" to =maf-edit= in-place stack editing (=maf-edit-mode= session) |
 | [[file:../../modules/maf-preview.el][modules/maf-preview.el]]   | Preview module: =maf-use-preview-mode= shows the entry at point in Big display in a floating panel (posframe child frame, else in-window); =maf-preview-show= (=G=) peeks at one entry with the module off |
-| [[file:../../modules/maf-render.el][modules/maf-render.el]]    | Render module: =maf-render= sends the entry at point through Calc LaTeX and RaTeX, then displays the SVG on demand |
+| [[file:../../modules/maf-pretty.el][modules/maf-pretty.el]]    | Render module: =maf-pretty= sends the entry at point through Calc LaTeX and RaTeX, then displays the SVG on demand |
 | [[file:../../modules/maf-formulas.el][modules/maf-formulas.el]]  | Formulas module: =maf-formulas= menu of saved formulas by category (detail + RET-insert); data in =maf-formulas-builtin= (shipped) plus =maf-formulas-file= (the user's) |
 | [[file:../../debug/maf-step.el][debug/maf-step.el]]       | Step-through harness (cockpit) that drives the tests        |
 | [[file:../../debug/maf-hl-verify.el][debug/maf-hl-verify.el]]  | Programmatic highlight verification (overlay state + render) |
@@ -986,7 +986,7 @@ multiples of pi.
 Load order in =maf.el=: =conf= → =module= → =comp= → =chain= → =lib= →
 =sel= → =step= → =hl-verify= → =resolve= → =commit= → =defcmd= →
 =cmds= → =math= → =stack= → =bindings= → =minibuffer=, then the feature
-modules (=maf-hl=, =maf-history=, =maf-persist=, =maf-edit=, =maf-preview=, =maf-render=,
+modules (=maf-hl=, =maf-history=, =maf-persist=, =maf-edit=, =maf-preview=, =maf-pretty=,
 =maf-formulas=), then
 =maf-modules-apply=. Each layer depends only on earlier ones; modules
 load last so =maf-mode-map= exists for any key bindings they install.
@@ -1073,13 +1073,13 @@ Two module shapes have appeared, matching the feature's state:
   editing session (=maf-edit-mode=, turned on per gesture, not a
   feature switch) being separate.
 
-  The render module (=modules/maf-render.el=) is the same global-mode
-  shape with no background work of its own: =maf-use-render-mode= owns
+  The pretty module (=modules/maf-pretty.el=) is the same global-mode
+  shape with no background work of its own: =maf-use-pretty-mode= owns
   which command =G= runs, shadowing the Big-display peek rather than
   taking a key of its own (see /A module's key over a default's/
   below), and what the preview panel draws with (see /One module's
-  rendering, in another's panel/). =maf-render= formats the whole entry
-  at point with Calc's LaTeX language, runs =maf-render-program= once,
+  rendering, in another's panel/). =maf-pretty= formats the whole entry
+  at point with Calc's LaTeX language, runs =maf-pretty-program= once,
   and displays the returned SVG in an even split below Calc without
   selecting it. The program defaults to =render-svg= on =exec-path=,
   then =~/pkgs/ratex/render-svg=; both the executable and RaTeX font
@@ -1120,7 +1120,7 @@ Two module shapes have appeared, matching the feature's state:
   wanted. The module toggle stays a plain on/off, and what it decides
   is only whether a panel follows point.
 
-- *A module's key over a default's: a shadow.* =maf-render= claims =G=
+- *A module's key over a default's: a shadow.* =maf-pretty= claims =G=
   through =maf-bindings-module-keys=, the key the peek above already
   holds. The compiler refuses two modules on one key — nothing there
   says which wins — but a module over a default it lets stand, because
@@ -1130,17 +1130,17 @@ Two module shapes have appeared, matching the feature's state:
   here because the two commands are one gesture: a single look at the
   entry at point, in a rendering the stack is not switched over to, and
   which rendering that look comes back in is the only thing
-  =maf-use-render-mode= decides. A shadow covers the whole key and no
+  =maf-use-pretty-mode= decides. A shadow covers the whole key and no
   more — a module may not turn a default's command key into a prefix,
   or bury a prefix family under a command, since neither is something a
   toggle could put back the way it found it.
 
 - *One module's rendering, in another's panel.* The same two commands
   meet again away from the keymap: the preview panel that /follows/
-  point is typeset too while the render module is on. The panel asks
+  point is typeset too while the pretty module is on. The panel asks
   rather than being told — =maf-preview-render-function= is a variable
   =modules/maf-preview.el= consults before falling back to Big, and
-  =modules/maf-render.el= is what sets it — so neither module requires
+  =modules/maf-pretty.el= is what sets it — so neither module requires
   the other and the preview keeps working with the renderer absent.
   What comes back may carry a display property, an image included, so
   what a module can put in the panel is not limited to what Calc has a
@@ -1177,7 +1177,7 @@ longer enables highlighting or the history, and =bindings.el= no longer
 holds the =t d= or in-place-editing keys.
 
 The default =maf-modules= holds the features that belong in the base
-UX — =maf-history=, =maf-hl=, =maf-edit=, =maf-render=, and =maf-formulas=.
+UX — =maf-history=, =maf-hl=, =maf-edit=, =maf-pretty=, and =maf-formulas=.
 The continuously-updating =maf-preview= remains available but is opt-in.
 The persist module
 (=modules/maf-persist.el=) is the exception: it writes save files to disk,

@@ -59,7 +59,7 @@
 (require 'maf-editvars)
 (require 'maf-recall)
 (require 'maf-preview)
-(require 'maf-render)
+(require 'maf-pretty)
 (require 'maf-formulas)
 (require 'maf-selplus)
 (require 'maf-poly-order)

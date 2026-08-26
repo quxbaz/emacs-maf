@@ -1,8 +1,8 @@
 ;; -*- lexical-binding: t; -*-
 ;;
-;; modules/maf-render.el
+;; modules/maf-pretty.el
 ;;
-;; On-demand typeset preview of a Calc stack entry. `maf-render' takes
+;; On-demand typeset preview of a Calc stack entry. `maf-pretty' takes
 ;; the whole entry at point (the top entry at home), asks Calc for its
 ;; LaTeX form, sends that one line to RaTeX, and displays the returned
 ;; SVG in the lower half of the invoking window without selecting it.
@@ -10,7 +10,7 @@
 ;; rendered-image cache.
 ;;
 ;; RaTeX is the only external requirement. Its executable is configured
-;; by `maf-render-program'; SVG decoding and display are built into a
+;; by `maf-pretty-program'; SVG decoding and display are built into a
 ;; graphical Emacs. The formula color is read from the current default
 ;; face for each invocation, so a preview follows light/dark theme
 ;; changes without maintaining any theme hooks.
@@ -30,48 +30,48 @@
 (declare-function maf-bindings-module-keys "maf-bindings")
 (declare-function maf-register-module "maf-module")
 
-(defcustom maf-render-program
+(defcustom maf-pretty-program
   (or (executable-find "render-svg")
       (expand-file-name "~/pkgs/ratex/render-svg"))
-  "RaTeX SVG renderer used by `maf-render'.
+  "RaTeX SVG renderer used by `maf-pretty'.
 This may be an executable name found on `exec-path' or a file name. The
 program must accept one LaTeX formula on standard input and emit an SVG
 with its `--stdout' option."
   :type 'file
   :group 'maf)
 
-(defcustom maf-render-font-size 16
-  "Base font size passed to RaTeX by `maf-render'."
+(defcustom maf-pretty-font-size 16
+  "Base font size passed to RaTeX by `maf-pretty'."
   :type 'number
   :group 'maf)
 
-(defconst maf-render--buffer "*maf-render*"
+(defconst maf-pretty--buffer "*maf-pretty*"
   "Name of the buffer displaying the last rendered entry.")
 
-(defvar maf-render-mode-map
+(defvar maf-pretty-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map special-mode-map)
     map)
-  "Keymap for `maf-render-mode'.")
+  "Keymap for `maf-pretty-mode'.")
 
-(define-derived-mode maf-render-mode special-mode "maf-render"
+(define-derived-mode maf-pretty-mode special-mode "maf-pretty"
   "Major mode for an on-demand typeset Calc preview."
   (setq-local cursor-type nil)
   (setq-local truncate-lines t)
   (setq-local header-line-format " RaTeX preview    q closes"))
 
-(defun maf-render--program ()
+(defun maf-pretty--program ()
   "Return the configured RaTeX executable, or signal a `user-error'."
-  (let* ((configured (substitute-in-file-name maf-render-program))
+  (let* ((configured (substitute-in-file-name maf-pretty-program))
          (program (if (file-name-directory configured)
                       (expand-file-name configured)
                     (executable-find configured))))
     (unless (and program (file-executable-p program))
-      (user-error "RaTeX renderer is not executable: %s (customize `maf-render-program')"
-                  maf-render-program))
+      (user-error "RaTeX renderer is not executable: %s (customize `maf-pretty-program')"
+                  maf-pretty-program))
     program))
 
-(defun maf-render--entry ()
+(defun maf-pretty--entry ()
   "Return the whole stack entry at point, or the top entry at home."
   (when (bound-and-true-p maf-edit-mode)
     (user-error "Finish or discard the active edit before rendering"))
@@ -81,16 +81,16 @@ with its `--stdout' option."
     (let ((level (calc-locate-cursor-element (point))))
       (calc-top (if (> level 0) (min level size) 1) 'full))))
 
-(defun maf-render--ratex (latex)
+(defun maf-pretty--ratex (latex)
   "Render one-line LATEX with RaTeX and return its SVG output."
-  (let ((program (maf-render--program))
+  (let ((program (maf-pretty--program))
         (color (or (face-foreground 'default nil t) "black")))
     (with-temp-buffer
       (let ((status
              (call-process-region
               latex nil program nil '(t nil) nil
               "--stdout"
-              "--font-size" (number-to-string maf-render-font-size)
+              "--font-size" (number-to-string maf-pretty-font-size)
               "--color" color)))
         (unless (and (integerp status) (zerop status))
           (user-error "RaTeX failed with status %s" status))
@@ -99,17 +99,17 @@ with its `--stdout' option."
           (user-error "RaTeX returned no SVG"))
         (buffer-string)))))
 
-(defun maf-render--show (svg latex)
+(defun maf-pretty--show (svg latex)
   "Show SVG in the preview buffer, using LATEX as image fallback text."
   (let ((image (create-image svg 'svg t :ascent 'center :scale 1)))
     (unless image
       (user-error "Emacs could not create an image from RaTeX's SVG"))
-    (let ((buffer (get-buffer-create maf-render--buffer))
+    (let ((buffer (get-buffer-create maf-pretty--buffer))
           (height (max window-min-height
                        (/ (window-total-height (selected-window)) 2))))
       (with-current-buffer buffer
-        (unless (derived-mode-p 'maf-render-mode)
-          (maf-render-mode))
+        (unless (derived-mode-p 'maf-pretty-mode)
+          (maf-pretty-mode))
         (let ((inhibit-read-only t))
           (erase-buffer)
           (insert-image image latex)
@@ -126,7 +126,7 @@ with its `--stdout' option."
       buffer)))
 
 ;;;###autoload
-(defun maf-render ()
+(defun maf-pretty ()
   "Render the current stack entry as typeset mathematics with RaTeX.
 
   sqrt(x) / 3  =>  a vertical fraction with a radical numerator
@@ -139,13 +139,13 @@ rendered. The stack, point, and Calc display language are unchanged."
   (unless (display-images-p)
     (user-error "The selected frame cannot display images"))
   (maf--with-calc-buffer
-    (let* ((latex (maf--latex-string (maf-render--entry)))
-           (svg (maf-render--ratex latex)))
-      (maf-render--show svg latex))))
+    (let* ((latex (maf--latex-string (maf-pretty--entry)))
+           (svg (maf-pretty--ratex latex)))
+      (maf-pretty--show svg latex))))
 
 ;;; The preview panel
 
-(defvar maf-render--panel-cache nil
+(defvar maf-pretty--panel-cache nil
   "Cons of the last thing the panel typeset and the string it became.
 The panel asks once per command and the answer changes only when the
 formula or the colour it is drawn in does, so the key is both. RaTeX is
@@ -157,7 +157,7 @@ language cannot write is not going to start working on the next
 keystroke, and retrying it every command would spend the subprocess
 this cache exists to save.")
 
-(defun maf-render--panel-bounds ()
+(defun maf-pretty--panel-bounds ()
   "Pixels the panel's image is kept within: (WIDTH . HEIGHT).
 Most of the frame's width and half its height. A rendering wide enough
 to leave the screen is a preview of nothing — the half hanging off it is
@@ -168,42 +168,42 @@ a formula cut off mid-term gives no sign it was cut."
     (cons (round (* 0.9 (frame-pixel-width frame)))
           (round (* 0.5 (frame-pixel-height frame))))))
 
-(defun maf-render--panel (value)
+(defun maf-pretty--panel (value)
   "Return VALUE typeset, as one space carrying the rendered image.
 Nil when this display cannot show an SVG at all, or when the formula
 does not survive the trip through LaTeX — either way the panel falls
 back to its Big rendering rather than going dark. Installed as
-`maf-preview-render-function' while `maf-use-render-mode' is on."
+`maf-preview-render-function' while `maf-use-pretty-mode' is on."
   (when (image-type-available-p 'svg)
     ;; Colour, size and bounds are read here rather than left to the
     ;; renderer so they can be part of the key. A theme change, a
     ;; customized font size and a resized frame each move the image
     ;; without the formula moving, and a cache that watched only the
     ;; formula would go on answering with the last one drawn.
-    (let* ((bounds (maf-render--panel-bounds))
+    (let* ((bounds (maf-pretty--panel-bounds))
            (key (list value
                       (face-foreground 'default nil t)
-                      maf-render-font-size
+                      maf-pretty-font-size
                       bounds)))
-      (unless (equal (car maf-render--panel-cache) key)
-        (setq maf-render--panel-cache
+      (unless (equal (car maf-pretty--panel-cache) key)
+        (setq maf-pretty--panel-cache
               (cons key
                     (ignore-errors
-                      (let* ((svg (maf-render--ratex (maf--latex-string value)))
+                      (let* ((svg (maf-pretty--ratex (maf--latex-string value)))
                              (image (create-image svg 'svg t
                                                   :ascent 'center :scale 1
                                                   :max-width (car bounds)
                                                   :max-height (cdr bounds))))
                         (and image (propertize " " 'display image)))))))
-      (cdr maf-render--panel-cache))))
+      (cdr maf-pretty--panel-cache))))
 
 ;;; The module
 
 ;;;###autoload
-(define-minor-mode maf-use-render-mode
+(define-minor-mode maf-use-pretty-mode
   "Make on-demand typeset previews available in Calc.
 
-The render command formats the whole entry at point as LaTeX, passes it
+The command formats the whole entry at point as LaTeX, passes it
 to the configured RaTeX executable, and displays the returned SVG in the
 lower half of the invoking Calc window. It neither changes the stack nor
 selects the preview.
@@ -221,8 +221,8 @@ back to Big; the command remains available by name."
   ;; told: this sets what it draws with and never draws anything itself,
   ;; so with the preview off there is nothing here to turn on.
   (setq maf-preview-render-function
-        (and maf-use-render-mode #'maf-render--panel)
-        maf-render--panel-cache nil)
+        (and maf-use-pretty-mode #'maf-pretty--panel)
+        maf-pretty--panel-cache nil)
   (maf-bindings--refresh))
 
 ;; G, shadowing `maf-preview-show' (src/bindings.el) rather than taking
@@ -234,12 +234,12 @@ back to Big; the command remains available by name."
 ;; everyone who never turns the module on. vim inherits G from native,
 ;; but module claims are not derived: the shadow is declared once per
 ;; profile that has a peek to cover.
-(maf-bindings-module-keys 'maf-render 'maf-use-render-mode
-  '(((native) "G" maf-render)
-     ((vim) "G" maf-render)))
+(maf-bindings-module-keys 'maf-pretty 'maf-use-pretty-mode
+  '(((native) "G" maf-pretty)
+     ((vim) "G" maf-pretty)))
 
 (when (require 'maf-module nil t)
-  (maf-register-module 'maf-render #'maf-use-render-mode
+  (maf-register-module 'maf-pretty #'maf-use-pretty-mode
                        "Preview one stack entry as typeset mathematics.
 
 Invoke the command on an entry to render it once with RaTeX. The SVG
@@ -252,4 +252,4 @@ that look is available. With the preview module on, its following
 panel is typeset instead of drawn in Big."
                        "G" "Display"))
 
-(provide 'maf-render)
+(provide 'maf-pretty)

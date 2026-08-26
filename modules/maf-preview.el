@@ -99,7 +99,7 @@ It is consulted only where the panel can show that much (see
 characters. Errors are contained the same way a nil is: the Big
 rendering draws instead, and the panel stays up.
 
-The render module sets this while `maf-use-render-mode' is on, which is
+The pretty module sets this while `maf-use-pretty-mode' is on, which is
 how a typeset entry reaches this panel without this file knowing what
 LaTeX is.")
 
