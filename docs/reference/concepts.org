@@ -1142,7 +1142,9 @@ Two module shapes have appeared, matching the feature's state:
   rather than being told — =maf-preview-render-function= is a variable
   =modules/maf-preview.el= consults before falling back to Big, and
   =modules/maf-pretty.el= is what sets it — so the panel keeps working
-  with the renderer absent.
+  with the renderer absent. The formula menu's detail pane asks
+  through the same variable, so a saved formula's detail is typeset
+  under the same toggle.
   What comes back may carry a display property, an image included, so
   what a module can put in the panel is not limited to what Calc has a
   display language for. It is asked only where the panel can show that

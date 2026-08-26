@@ -9,8 +9,11 @@
   - [ ] on RET in certain modules in *maf-modules*, invoke the primary command
     for that module
 
-* IN-PROGRESS maf-pretty
-  - [ ] support in maf-formulas
+* DONE maf-pretty
+  - [X] support in maf-formulas (2026-08-26: the detail pane asks
+    =maf-preview-render-function= like the preview panel does, so the
+    formula shows typeset while the module is on; Big, with colored
+    variables, remains the fallback)
 
 * review
 

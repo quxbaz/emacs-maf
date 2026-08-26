@@ -1363,20 +1363,30 @@ color."
           (setq from (match-end 1)))))))
 
 (defun maf-formulas--detail-string (f width)
-  "Detail text for F: title, Big rendering, description, variable meanings.
-WIDTH is the pane's width in columns; the description fills to it."
+  "Detail text for F: title, rendered formula, description, variable meanings.
+WIDTH is the pane's width in columns; the description fills to it.
+The formula is typeset while the pretty module is on — the same ask
+the preview panel makes, through `maf-preview-render-function' — and
+drawn in Big otherwise, or whenever the renderer answers nil (no
+graphics, or a formula LaTeX cannot write)."
   (let* ((expr (plist-get f :expr))
          (doc (plist-get f :doc))
          (examples (plist-get f :examples))
          (vars (plist-get f :vars))
-         (big (ignore-errors (let ((calc-language 'big)) (math-format-value expr)))))
+         (pretty (and (display-graphic-p)
+                      (bound-and-true-p maf-preview-render-function)
+                      (ignore-errors (funcall maf-preview-render-function expr))))
+         (big (unless pretty
+                (ignore-errors (let ((calc-language 'big)) (math-format-value expr))))))
     (concat
      "\n  " (propertize (maf-formulas--title f) 'face 'maf-formulas-category) "\n\n"
-     (maf-formulas--color-vars
-      (propertize
-       (mapconcat (lambda (l) (concat "  " l)) (split-string (or big "") "\n") "\n")
-       'face 'maf-formulas-form)
-      vars)
+     (if pretty
+         (concat "  " pretty)
+       (maf-formulas--color-vars
+        (propertize
+         (mapconcat (lambda (l) (concat "  " l)) (split-string (or big "") "\n") "\n")
+         'face 'maf-formulas-form)
+        vars))
      "\n"
      (when doc
        (concat "\n"

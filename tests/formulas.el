@@ -72,7 +72,10 @@
     (cl-assert (null (lookup-key maf-formulas-mode-map (kbd "d"))))
     (cl-assert (eq (key-binding (kbd "O")) #'maf-formulas-toggle-detail))
     (cl-assert (eq (key-binding (kbd "D")) #'maf-formulas-delete-recent))
-    (maf-formulas--update-detail)
+    ;; The Big rendering is asserted with the pretty module's renderer
+    ;; pinned off: installed, it would answer with an image instead.
+    (let ((maf-preview-render-function nil))
+      (maf-formulas--update-detail))
     (with-current-buffer maf-formulas--detail-buffer
       (cl-assert (> (buffer-size) 0))
       ;; A variable in the Big rendering wears the same face as its
@@ -87,6 +90,26 @@
                        'maf-formulas-var)))
       (cl-assert (eq (get-text-property (match-beginning 2) 'face)
                      'maf-formulas-form)))
+
+    ;; With the pretty module's renderer installed the detail is
+    ;; typeset instead — the same ask the preview panel makes, through
+    ;; `maf-preview-render-function'. Mocked here; what marks a
+    ;; rendering is its display property. A renderer that refuses
+    ;; (nil) leaves the Big fallback standing.
+    (when (display-graphic-p)
+      (let ((maf-preview-render-function
+             (lambda (_value) (propertize " " 'display '(image :type svg)))))
+        (maf-formulas--update-detail))
+      (with-current-buffer maf-formulas--detail-buffer
+        (cl-assert (text-property-not-all (point-min) (point-max)
+                                          'display nil))))
+    (let ((maf-preview-render-function (lambda (_value) nil)))
+      (maf-formulas--update-detail))
+    (with-current-buffer maf-formulas--detail-buffer
+      (cl-assert (null (text-property-not-all (point-min) (point-max)
+                                              'display nil)))
+      (goto-char (point-min))
+      (cl-assert (re-search-forward "^  \\(A\\)\\( = \\)- \\(b\\) \\(h\\)$" nil t)))
 
     ;; The pane borrows a window before it takes one: shown from a menu
     ;; that has calc beside it, it lands in calc's window and closing

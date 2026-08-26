@@ -1943,7 +1943,9 @@ point is typeset too while the pretty module is on. The panel asks
 rather than being told — <code>maf-preview-render-function</code> is a variable
 <code>modules/maf-preview.el</code> consults before falling back to Big, and
 <code>modules/maf-pretty.el</code> is what sets it — so the panel keeps working
-with the renderer absent.
+with the renderer absent. The formula menu's detail pane asks
+through the same variable, so a saved formula's detail is typeset
+under the same toggle.
 What comes back may carry a display property, an image included, so
 what a module can put in the panel is not limited to what Calc has a
 display language for. It is asked only where the panel can show that
