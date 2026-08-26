@@ -98,7 +98,7 @@ any variable by name, whatever is excluded here."
 ;;; Modules (maf-module.el)
 
 (defcustom maf-modules '(maf-bindings maf-history maf-hl maf-edit
-                         maf-editplus maf-editvars maf-recall
+                         maf-editplus maf-editvars maf-recall maf-preview
                          maf-formulas maf-selplus maf-poly-order maf-e-power
                          maf-log-power maf-options)
   "Names of the maf feature modules to enable.
