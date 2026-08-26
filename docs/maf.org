@@ -10,6 +10,7 @@
   - [ ] preview module should be on by default
   - [ ] on RET in certain modules in *maf-modules*, invoke the primary command
     for that module
+  - [ ] increase big rendering size
 
 * NEXT maf-latex
   - [ ] refine stand-alone feature
