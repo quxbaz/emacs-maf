@@ -16,8 +16,7 @@
   - [ ] support in maf-formulas
   - [ ] fix `G` behavior
   - [ ] spec out behavior in relation to maf-preview
-
-* maf-preview
+  - [ ] rename module (eg, maf-latex-preview)
 
 * review
 
