@@ -188,16 +188,34 @@ laid over stack lines, sized and clipped in columns and spliced into
 arithmetic could use, and nowhere to go once the row is one."
   (and (display-graphic-p) (maf-preview--posframe-p)))
 
+(defconst maf-preview--posframe-pad '(7 . 5)
+  "Vertical padding inside the child frame, in pixels (TOP . BOTTOM).
+The bottom runs tighter: a rendered formula carries a sliver of
+clearance of its own below the baseline, and matching the top's
+padding verbatim reads bottom-heavy. Both numbers were set by eye
+against the RaTeX rendering.")
+
 (defun maf-preview--posframe-show (str)
-  "Show STR in the preview child frame."
+  "Show STR in the preview child frame.
+The frame's border is its visible edge, so the room between it and the
+content is made here: the fringes pad the sides, and STR is framed by
+two blank lines of exactly `maf-preview--posframe-pad' pixels — each a
+stretch glyph, with the top line's newline shrunk under it so no
+full-height glyph props the line open."
   (let ((frame (posframe-show
                 maf-preview--buffer
-                :string str
+                :string (concat
+                         (propertize " " 'face '(:height 0.1)
+                                     'display `(space :height (,(car maf-preview--posframe-pad))))
+                         (propertize "\n" 'face '(:height 0.1))
+                         str
+                         "\n"
+                         (propertize " " 'display `(space :height (,(cdr maf-preview--posframe-pad)))))
                 :poshandler #'maf-preview--poshandler
                 :internal-border-width 2
                 :internal-border-color "gray50"
-                :left-fringe 8
-                :right-fringe 8
+                :left-fringe 10
+                :right-fringe 10
                 :accept-focus nil)))
     ;; posframe-show can leave a previously-hidden child frame
     ;; iconified rather than visible on some window managers; force it
