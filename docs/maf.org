@@ -51,7 +51,6 @@
 
 * cleanup
   - [ ] delete my/calc
-  - [ ] use stock bindings
   - [ ] generate tests full coverage
   - [ ] remove seed entries
   - [ ] remove project-init.el
