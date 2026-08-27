@@ -118,10 +118,10 @@ function render({stack, flags, error}) {
 * Phases
 
 ** Phase 1 — Core (working prototype)
-- [ ] ~calc-web.el~: server, key router (single keys only), stack serializer
-- [ ] ~calc-web.html~: connect, keydown capture, MathJax stack render
-- [ ] ~post-command-hook~ push
-- [ ] Basic CSS layout
+- [X] ~calc-web.el~: server, key router (single keys only), stack serializer
+- [X] ~calc-web.html~: connect, keydown capture, MathJax stack render
+- [X] ~post-command-hook~ push
+- [X] Basic CSS layout
 
 ** Phase 2 — Polish
 - [ ] Chord support (~f l~, ~a f~, etc.)

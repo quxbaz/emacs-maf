@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>calc-web</title>
+<link rel="stylesheet" href="calc-web.css">
+<script>
+  MathJax = { options: { enableMenu: false } };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+</head>
+<body>
+<header id="bar">
+  <span id="title">Emacs Calc</span>
+  <span id="flag-hyp" class="flag">HYP</span>
+  <span id="flag-inv" class="flag">INV</span>
+  <span id="flag-opt" class="flag">OPT</span>
+  <span id="status">connecting…</span>
+</header>
+<main id="stack"></main>
+<footer id="error"></footer>
+<script src="calc-web.js"></script>
+</body>
+</html>

@@ -1,0 +1,80 @@
+/* calc-web.css — stack layout and chrome. */
+
+:root {
+  --bg: #1e1e2e;
+  --fg: #cdd6f4;
+  --dim: #6c7086;
+  --accent: #89b4fa;
+  --alert: #f38ba8;
+  --band: #313244;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: system-ui, sans-serif;
+}
+
+#bar {
+  display: flex;
+  align-items: baseline;
+  gap: 1em;
+  padding: 0.4em 1em;
+  background: var(--band);
+  font-size: 0.85em;
+}
+
+#title { font-weight: 600; }
+
+.flag {
+  color: var(--dim);
+  letter-spacing: 0.05em;
+}
+.flag.on { color: var(--accent); font-weight: 600; }
+
+#status {
+  margin-left: auto;
+  color: var(--dim);
+}
+
+#stack {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;   /* stack grows upward, calc-style */
+  padding: 1em 1.5em 1.5em;
+  overflow-y: auto;
+}
+
+.entry {
+  display: flex;
+  align-items: center;
+  gap: 0.8em;
+  padding: 0.35em 0;
+  font-size: 1.3em;
+}
+
+.entry .label {
+  color: var(--dim);
+  font-family: ui-monospace, monospace;
+  font-size: 0.75em;
+  min-width: 2ch;
+  text-align: right;
+}
+
+.entry.typing .expr { color: var(--accent); }
+.mono { font-family: ui-monospace, monospace; }
+
+#error {
+  min-height: 1.6em;
+  padding: 0.3em 1.5em;
+  color: var(--alert);
+  font-family: ui-monospace, monospace;
+  font-size: 0.85em;
+}
