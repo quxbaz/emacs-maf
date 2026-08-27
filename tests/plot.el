@@ -89,6 +89,26 @@
                           (error (error-message-string e)))))
                 (and err (string-match-p "2 variables" err))))
 
+  ;; A vector entry is a curve set: one curve per element, labeled by
+  ;; element; a relation element still contributes its rhs. Empty
+  ;; vectors refuse. Desmos gets the elements whole, one expression
+  ;; each.
+  (cl-assert (equal (maf-plot--curve-exprs
+                     (math-read-expr "[2 sin(x), cos(x)]"))
+                    (list (cons (math-read-expr "2 sin(x)") "2 sin(x)")
+                          (cons (math-read-expr "cos(x)") "cos(x)"))))
+  (cl-assert (equal (maf-plot--curve-exprs (math-read-expr "x^2"))
+                    (list (cons (math-read-expr "x^2") "x^2"))))
+  (cl-assert (condition-case nil
+                 (progn (maf-plot--curve-exprs (math-read-expr "[]")) nil)
+               (error t)))
+  (cl-assert (equal (maf-plot--desmos-expressions
+                     (list (math-read-expr "[sin(x), cos(x)]")
+                           (math-read-expr "x^2")))
+                    (list (math-read-expr "sin(x)")
+                          (math-read-expr "cos(x)")
+                          (math-read-expr "x^2"))))
+
   ;; A relation plots its right side on the gnuplot backends.
   (cl-assert (equal (maf-plot--function-of (math-read-expr "y = x^2"))
                     (math-read-expr "x^2")))

@@ -156,6 +156,32 @@ The next prompt's default; plain invocations still auto-range.")
   "Return what ENTRY plots as a function: itself, or a relation's rhs."
   (if (maf--relation-p entry) (nth 2 entry) entry))
 
+(defun maf-plot--curve-exprs (entry)
+  "Return ENTRY's curves as (EXPR . LABEL) pairs.
+Most entries are one curve. A vector entry is a curve set — one curve
+per element, each labeled by the element — so a subset of the stack
+worth plotting together can be built with calc's own grouping and
+replotted as one thing. Relations contribute their rhs either way."
+  (if (eq (car-safe entry) 'vec)
+      (progn
+        (unless (cdr entry)
+          (user-error "Nothing to plot in an empty vector"))
+        (mapcar (lambda (element)
+                  (cons (maf-plot--function-of element)
+                        (maf-plot--label element)))
+                (cdr entry)))
+    (list (cons (maf-plot--function-of entry)
+                (maf-plot--label entry)))))
+
+(defun maf-plot--desmos-expressions (entries)
+  "Flatten ENTRIES for desmos: a vector entry contributes per element.
+Relations stay whole — Desmos graphs equations natively."
+  (mapcan (lambda (entry)
+            (if (eq (car-safe entry) 'vec)
+                (copy-sequence (cdr entry))
+              (list entry)))
+          entries))
+
 (defun maf-plot--variable (expr)
   "Return the var node EXPR is sampled over, or nil for a constant.
 Signals for an expression in two or more variables — a curve needs
@@ -546,8 +572,8 @@ fixed asset and the URL is the graph."
                     :d (if (eq calc-angle-mode 'deg) t :false)
                     :k maf-plot-desmos-api-key))))))
 
-(defun maf-plot--show-desmos (entries)
-  "Open the Desmos page on ENTRIES in the configured browser.
+(defun maf-plot--show-desmos (expressions)
+  "Open the Desmos page on EXPRESSIONS in the configured browser.
 The browser binary gets the URL directly: `browse-url' via xdg-open
 resolves a file:// URL to a bare path and silently drops the
 fragment, opening an empty calculator."
@@ -556,30 +582,30 @@ fragment, opening an empty calculator."
       (user-error
        "No browser configured: set `maf-plot-browser' (xdg-open would drop the graph)"))
     (start-process "maf-plot-browser" nil program
-                   (maf-plot--desmos-url entries))
-    (message "Sent %d %s to Desmos" (length entries)
-             (if (cdr entries) "entries" "entry"))))
+                   (maf-plot--desmos-url expressions))
+    (message "Sent %d %s to Desmos" (length expressions)
+             (if (cdr expressions) "expressions" "expression"))))
 
 ;;; Commands
 
-(defun maf-plot--gnuplot-curves (entries range)
-  "Sample ENTRIES over RANGE into (DATA-FILE . LABEL) curves.
-An entry that cannot be sampled — several variables, no real points —
-is skipped with a message when others remain, so one odd entry does
-not sink a whole-stack plot; a lone entry's error surfaces."
+(defun maf-plot--gnuplot-curves (specs range)
+  "Sample SPECS — (EXPR . LABEL) pairs — into (DATA-FILE . LABEL) curves.
+A curve that cannot be sampled — several variables, no real points —
+is skipped with a message when others remain, so one odd curve does
+not sink a whole plot; a lone curve's error surfaces."
   (let ((index 0)
         (curves nil)
         (skipped nil))
-    (dolist (entry entries)
+    (dolist (spec specs)
       (setq index (1+ index))
       (condition-case err
           (push (cons (maf-plot--sample
-                       (maf-plot--function-of entry) range
+                       (car spec) range
                        (maf-plot--work-file (format "curve-%d.dat" index)))
-                      (maf-plot--label entry))
+                      (cdr spec))
                 curves)
         (error
-         (if (cdr entries)
+         (if (cdr specs)
              (push (error-message-string err) skipped)
            (signal (car err) (cdr err))))))
     (unless curves
@@ -591,14 +617,14 @@ not sink a whole-stack plot; a lone entry's error surfaces."
 (defun maf-plot--dispatch (entries arg)
   "Plot ENTRIES on the configured backend; prefix ARG prompts a range."
   (pcase maf-plot-backend
-    ('desmos (maf-plot--show-desmos entries))
+    ('desmos (maf-plot--show-desmos (maf-plot--desmos-expressions entries)))
     (backend
-     (let* ((range (maf-plot--range
-                    (mapcar #'maf-plot--function-of entries) arg))
-            (curves (maf-plot--gnuplot-curves entries range))
-            (title (if (cdr entries)
-                       (format "%d stack entries" (length entries))
-                     (maf-plot--label (car entries)))))
+     (let* ((specs (mapcan #'maf-plot--curve-exprs entries))
+            (range (maf-plot--range (mapcar #'car specs) arg))
+            (curves (maf-plot--gnuplot-curves specs range))
+            (title (cond ((null (cdr curves)) (cdr (car curves)))
+                         ((cdr entries) (format "%d curves" (length curves)))
+                         (t (maf-plot--label (car entries))))))
        (if (eq backend 'gnuplot-external)
            (maf-plot--show-external curves title)
          (maf-plot--show-embedded curves title))))))
@@ -613,8 +639,10 @@ not sink a whole-stack plot; a lone entry's error surfaces."
 Point anywhere in an entry plots that entry — sub-formula and
 selection make no difference — and at home the top entry plots. A
 relation plots its right side as the curve on the gnuplot backends
-and goes to Desmos whole. With prefix ARG, prompt for the x range
-\(lo:hi, or n for -n:n) instead of auto-ranging."
+and goes to Desmos whole. A vector entry is a curve set: one curve
+per element, so [2 sin(x), cos(x)] overlays both — the way to keep a
+replottable subset of the stack. With prefix ARG, prompt for the x
+range \(lo:hi, :hi, or n for -n:n) instead of auto-ranging."
   (interactive "P")
   (maf-plot--dispatch (list (maf-plot--entry-at-point)) arg))
 
