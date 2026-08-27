@@ -288,6 +288,13 @@ keys mid-chord go to the resolver instead of their usual meaning:
           (calc-web--commit-entry)
           (calc-web--key key)))
       (error (setq calc-web--error (error-message-string err))))
+    ;; Point moved here is buffer point; a calc window that is not
+    ;; selected displays — and, on reselection, snaps back to — its own
+    ;; window point. Sync it, so browser-driven motion shows in the
+    ;; parallel Emacs window and survives the user clicking back in.
+    (let ((win (get-buffer-window (current-buffer) t)))
+      (when (and win (not (eq win (selected-window))))
+        (set-window-point win (point))))
     (calc-web--push)))
 
 ;;; Server
