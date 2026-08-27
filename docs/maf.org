@@ -13,7 +13,7 @@
   - in *maf-formulas*
     - [ ] formulas detail view, `&&` and `||` don't render property in pretty
       mode. these should be intersection and union, right?
-  - [ ] on enabling, should activate immediately whereever applicable (eg,
+  - [-] on enabling, should activate immediately whereever applicable (eg,
     preview pane)
 
 * review
