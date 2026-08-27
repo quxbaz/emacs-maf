@@ -26,6 +26,7 @@
   - [ ] technical docs for devs
 
 * later::graph module
+  - [ ] can we recreate graphing functionality inside emacs instead of using gnuplot?
   - [ ] my/calc-graph-quick / -with-range (g l / g i) — plot the top entry straight to
     gnuplot (see Todo: interval form for the range prompt)
   - [ ] my/calc-to-gnuplot-string — calc expr → gnuplot formula (fortran mode + fixups)
