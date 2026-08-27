@@ -6,8 +6,6 @@
   [[https://www.gnu.org/software/emacs/manual/html_mono/calc.html#Symbolic-Lisp-Functions][symbolic lisp functions]]
 
 * Todo
-  - [ ] on RET in certain modules in *maf-modules*, invoke the primary command
-    for that module
 
 * maf-pretty
 
