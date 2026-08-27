@@ -217,19 +217,20 @@ fallback for modules not yet declaring through it."
   "Build the help echoed for module NAME from its DESCRIPTION and KEYS.
 The name heads the text on a line of its own — KEYS beside it in
 parens, for the modules that have entry keys, in `maf-module-keys' so
-the name stays the line's loudest word — then the description as the
-module wrote it (see `maf-module-registry'). Point moving off
-the row leaves the help standing in the echo area, where a paragraph
-with nothing above it says nothing about which module it is for — so
-the row's own name comes along. Nil for a module that gave no
-description, which leaves dial silent rather than echoing a bare name
-the row already shows."
+the name stays the line's loudest word — then the description's
+summary line alone. The paragraph under it stays in the details view
+(\\`w'), where it was asked for; echoed at every row it made the
+minibuffer a lecture. Point moving off the row leaves the help
+standing in the echo area, where a line with nothing above it says
+nothing about which module it is for — so the row's own name comes
+along. Nil for a module that gave no description, which leaves dial
+silent rather than echoing a bare name the row already shows."
   (and description
        (concat (symbol-name name)
                (if keys
                    (propertize (format " (%s)" keys) 'face 'maf-module-keys)
                  "")
-               "\n\n" description)))
+               "\n\n" (maf-module--summary description))))
 
 (defun maf-module--mode-doc (mode)
   "MODE's docstring without the minor-mode boilerplate, or nil.
@@ -393,8 +394,8 @@ dial's availability gate drops it again should no such row remain.")
   "Show the maf module toggle buffer in another window and select it.
 Each registered module is a row; TAB or SPC flips the one on the
 current line, and what that module is for echoes as point rests on it
-— its name, a line saying what it does, and a paragraph on what that
-means in practice (see `dial-mode' and `maf-module-registry').
+— its name and a line saying what it does (see `dial-mode' and
+`maf-module-registry').
 \\<dial-mode-map>\\[dial-describe] goes further: the module's full
 details — state, description, and its minor mode's own docstring —
 shown in another window (see `maf-module--details'). The
