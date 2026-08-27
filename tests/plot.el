@@ -11,8 +11,8 @@
   ;; On, the module claims its g keys; the rest of the prefix still
   ;; reaches stock calc-graph. Off restores stock wholly.
   (maf-use-plot-mode 1)
-  (cl-assert (eq (key-binding (kbd "g g")) 'maf-plot-entry))
-  (cl-assert (eq (key-binding (kbd "g l")) 'maf-plot-all))
+  (cl-assert (eq (key-binding (kbd "g g")) 'maf-plot-all))
+  (cl-assert (eq (key-binding (kbd "g l")) 'maf-plot-entry))
   (cl-assert (eq (key-binding (kbd "g i")) 'maf-plot-entry-with-range))
   (cl-assert (eq (key-binding (kbd "g I")) 'maf-plot-all-with-range))
   (cl-assert (eq (key-binding (kbd "g f")) 'calc-graph-fast))

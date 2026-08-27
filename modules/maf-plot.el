@@ -2,9 +2,9 @@
 ;;
 ;; modules/maf-plot.el
 ;;
-;; Plotting. Four gestures — g g plots the whole entry at point, g l
-;; every stack entry in one picture, g i and g I the same with the x
-;; range asked for — behind a three-way backend choice:
+;; Plotting. Four gestures — g g plots every stack entry in one
+;; picture, g l the whole entry at point, g i and g I the same with
+;; the x range asked for — behind a three-way backend choice:
 ;;
 ;;   gnuplot-external  interactive gnuplot window (mouse zoom, readout)
 ;;   gnuplot-embed     gnuplot-rendered SVG in a split buffer below
@@ -392,7 +392,7 @@ window; the launch itself is fire and forget."
     (select-window maf-plot--return-window)))
 
 ;; Outside the defvar so a reload applies edits to the map. g closes as
-;; well as opens (the gesture is g g), and RET reads as done-here.
+;; well as opens (a plot gesture starts with g), and RET reads as done-here.
 (define-key maf-plot-mode-map "q" #'maf-plot-quit)
 (define-key maf-plot-mode-map "g" #'maf-plot-quit)
 (define-key maf-plot-mode-map (kbd "RET") #'maf-plot-quit)
@@ -633,7 +633,7 @@ not sink a whole plot; a lone curve's error surfaces."
 (defun maf-plot-entry (arg)
   "Plot the whole stack entry at point.
 
-  2:  y = (x - 2)^2 + 5      g g  =>  the parabola, wherever
+  2:  y = (x - 2)^2 + 5      g l  =>  the parabola, wherever
   1:  42                               point sits in entry 2
 
 Point anywhere in an entry plots that entry — sub-formula and
@@ -666,7 +666,7 @@ sibling."
 (defun maf-plot-all (arg)
   "Plot every stack entry in one picture.
 
-  2:  2 sin(x)     g l  =>  both curves overlaid, shared x
+  2:  2 sin(x)     g g  =>  both curves overlaid, shared x
   1:  cos(x)                 range, a legend naming each
 
 On the gnuplot backends the curves share one x range and one y axis —
@@ -687,8 +687,8 @@ interactively. With prefix ARG, prompt for the x range."
 (define-minor-mode maf-use-plot-mode
   "Make maf's plotting available on the g prefix in Calc.
 
-g g plots the whole entry at point; g l plots every stack entry in
-one picture; g i and g I are the same with the x range asked for. Where the plot appears
+g g plots every stack entry in one picture; g l plots the whole
+entry at point; g i and g I are the same with the x range asked for. Where the plot appears
 is `maf-plot-backend': gnuplot's
 own interactive window, an SVG panel split below Calc, or the Desmos
 calculator in a browser. Off, calc's stock g-prefix graphing is
@@ -701,12 +701,12 @@ untouched."
 
 (when (require 'maf-bindings nil t)
   (maf-bindings-module-keys 'maf-plot 'maf-use-plot-mode
-    '(((native) "g g" maf-plot-entry)
-      ((native) "g l" maf-plot-all)
+    '(((native) "g g" maf-plot-all)
+      ((native) "g l" maf-plot-entry)
       ((native) "g i" maf-plot-entry-with-range)
       ((native) "g I" maf-plot-all-with-range)
-      ((vim) "g g" maf-plot-entry)
-      ((vim) "g l" maf-plot-all)
+      ((vim) "g g" maf-plot-all)
+      ((vim) "g l" maf-plot-entry)
       ((vim) "g i" maf-plot-entry-with-range)
       ((vim) "g I" maf-plot-all-with-range))))
 
@@ -714,8 +714,8 @@ untouched."
   (maf-register-module 'maf-plot #'maf-use-plot-mode
                        "Plot stack entries: gnuplot window, embedded SVG, or Desmos.
 
-g g plots the whole entry at point, g l the whole stack in one
-picture; g i and g I ask for the x range first. The row's value picks the
+g g plots the whole stack in one picture, g l the whole entry at
+point; g i and g I ask for the x range first. The row's value picks the
 surface: an interactive gnuplot
 window, an SVG panel split below Calc themed from the live faces, or
 a fire-and-forget Desmos page in the browser. Trig curves auto-range
