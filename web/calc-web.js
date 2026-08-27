@@ -9,7 +9,7 @@
 const PORT = 7070;
 // Shown beside the connection status; bump on client changes so a
 // stale cached page is visible at a glance.
-const VERSION = 5;
+const VERSION = 6;
 
 const stackEl = document.getElementById("stack");
 const trailEl = document.getElementById("trail");
@@ -101,12 +101,14 @@ window.addEventListener("mathjax-ready", () => {
   if (lastState) render(lastState);
 });
 
-function row(labelText, content, cls) {
+function row(labelText, content, cls, line, col) {
   const div = document.createElement("div");
   div.className = cls ? `entry ${cls}` : "entry";
   const label = document.createElement("span");
   label.className = "label";
   label.textContent = labelText;
+  const body = document.createElement("span");
+  body.className = "body";
   const expr = document.createElement("span");
   expr.className = "expr";
   if (typeof content === "string") {
@@ -115,7 +117,18 @@ function row(labelText, content, cls) {
   } else {
     expr.append(content);
   }
-  div.append(label, expr);
+  body.append(expr);
+  if (line != null) {
+    // The buffer line behind the typeset formula, caret at point's
+    // column — the browser's exact view of where point stands.
+    const src = document.createElement("span");
+    src.className = "srcline";
+    const caret = document.createElement("span");
+    caret.className = "tcaret";
+    src.append(line.slice(0, col), caret, line.slice(col));
+    body.append(src);
+  }
+  div.append(label, body);
   return div;
 }
 
@@ -138,8 +151,9 @@ function editRow(text, col) {
 function render(state) {
   lastState = state;
   if (!mjReady) return;
-  const { stack = [], cursor = 0, entry, edit, editCol = 0, prompt,
-          minibuf, pending, flags = {}, trail = [], error } = state;
+  const { stack = [], cursor = 0, entry, edit, editCol = 0, line,
+          col = 0, prompt, minibuf, pending, flags = {}, trail = [],
+          error } = state;
 
   // stack[0] is the top (level 1); calc shows levels descending, the
   // top on the last line, then calc's home line — replaced by the
@@ -152,7 +166,9 @@ function render(state) {
     .map((tex, i) =>
       edit != null && cursor === i + 1
         ? editRow(edit, editCol)
-        : row(`${i + 1}:`, texNode(tex), cursor === i + 1 ? "current" : null))
+        : row(`${i + 1}:`, texNode(tex),
+              cursor === i + 1 ? "current" : null,
+              cursor === i + 1 ? line : null, col))
     .reverse()
     .forEach((r) => frag.append(r));
   if (prompt != null) {

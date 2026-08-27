@@ -214,6 +214,16 @@ error — null (or all-false, for flags) when there is nothing to say."
         :editCol ,(if (bound-and-true-p maf-edit-mode)
                       (- (point) (line-beginning-position))
                     0)
+        ;; The cursor entry's buffer line and point's column in it —
+        ;; the browser's only exact view of point, drawn as a small
+        ;; source line under the typeset formula. The typeset SVG has
+        ;; no character positions to put a caret between.
+        :line ,(if (and (> cursor 0)
+                        (not (bound-and-true-p maf-edit-mode)))
+                   (buffer-substring-no-properties (line-beginning-position)
+                                                   (line-end-position))
+                 :null)
+        :col ,(- (point) (line-beginning-position))
         ;; A live minibuffer, mirrored: the prompt a blocked command
         ;; put up and whatever has been typed at it so far. This is
         ;; how ", x"'s \"Variable:\" or an algebraic entry shows in

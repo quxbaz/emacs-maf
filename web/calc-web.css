@@ -108,9 +108,25 @@ body {
 }
 .entry.current .label { color: var(--accent); }
 
-/* Caret block at the end of the current row, calc's cursor made
-   visible. */
-.entry.current .expr::after {
+.entry .body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+/* The buffer line mirrored under the current row's typeset formula;
+   its caret is the exact point position. */
+.srcline {
+  font-family: ui-monospace, monospace;
+  font-size: 0.55em;
+  color: var(--dim);
+  white-space: pre;
+  margin-top: 0.15em;
+}
+
+/* Caret block on the home row, where there is no source line to
+   carry the real one. */
+.entry.home.current .expr::after {
   content: "";
   display: inline-block;
   width: 0.45em;
