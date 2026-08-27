@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>maf-plot</title>
+<style>html, body, #calc { height: 100%; margin: 0; }</style>
+</head>
+<body>
+<div id="calc"></div>
+<script>
+  // The URL fragment is the whole handoff from maf (see
+  // maf-plot--desmos-url): a URI-encoded JSON object
+  //   {e: [latex, ...], d: degreeMode, k: apiKey}
+  // The page is a fixed asset — the fragment carries everything,
+  // including the API key calculator.js loads with, so the key stays
+  // an Emacs defcustom. Fragments never leave the browser.
+  var spec = {};
+  try { spec = JSON.parse(decodeURIComponent(location.hash.slice(1))); } catch (err) {}
+  var script = document.createElement('script');
+  script.src = 'https://www.desmos.com/api/v1.12/calculator.js?apiKey='
+    + encodeURIComponent(spec.k || '');
+  script.onload = function () {
+    var calc = Desmos.GraphingCalculator(document.getElementById('calc'), {
+      degreeMode: !!spec.d
+    });
+    (spec.e || []).forEach(function (latex, i) {
+      calc.setExpression({ id: 'maf' + i, latex: latex });
+    });
+  };
+  script.onerror = function () {
+    document.getElementById('calc').textContent =
+      'Could not load the Desmos calculator (network? API key?).';
+  };
+  document.head.appendChild(script);
+</script>
+</body>
+</html>
