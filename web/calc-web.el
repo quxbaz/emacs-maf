@@ -214,6 +214,18 @@ error — null (or all-false, for flags) when there is nothing to say."
         :editCol ,(if (bound-and-true-p maf-edit-mode)
                       (- (point) (line-beginning-position))
                     0)
+        ;; A live minibuffer, mirrored: the prompt a blocked command
+        ;; put up and whatever has been typed at it so far. This is
+        ;; how ", x"'s \"Variable:\" or an algebraic entry shows in
+        ;; the browser while the keys stream through the event queue.
+        :prompt ,(if-let ((w (active-minibuffer-window)))
+                     (with-current-buffer (window-buffer w)
+                       (minibuffer-prompt))
+                   :null)
+        :minibuf ,(if-let ((w (active-minibuffer-window)))
+                      (with-current-buffer (window-buffer w)
+                        (minibuffer-contents-no-properties))
+                    :null)
         :pending ,(if calc-web--prefix
                       (string-join calc-web--prefix " ")
                     :null)
@@ -245,9 +257,21 @@ payload, so a formula LaTeX cannot write still reports itself."
 This is what keeps a browser current while calc is driven natively in
 Emacs — keys routed from the browser push explicitly in
 `calc-web--dispatch', which never passes through the command loop."
-  (when (and (derived-mode-p 'calc-mode)
+  (when (and (or (derived-mode-p 'calc-mode)
+                 ;; Typing at a mirrored minibuffer: each key is a
+                 ;; command in the minibuffer's own buffer, and the
+                 ;; browser echo has to follow it.
+                 (minibufferp))
              (not calc-web--dispatching))
     (calc-web--push)))
+
+(defun calc-web--on-minibuffer (&rest _)
+  "Push when a minibuffer opens or closes; on its setup/exit hooks.
+A blocked read's prompt reaches the browser through this: the read
+sits between commands, so no command hook fires until it is answered
+— setup is the one moment the prompt can be announced. Bound checks
+aside, the push itself is cheap and clientless pushes are no-ops."
+  (calc-web--push))
 
 ;;; Key router
 
@@ -383,10 +407,23 @@ push."
                 (json-parse-string (websocket-frame-text frame)
                                    :object-type 'plist)))
          (key (plist-get msg :key)))
-    (if (stringp key)
-        (calc-web--dispatch key)
+    (cond
+     ((not (stringp key))
       (websocket-send-text
-       ws (json-serialize '(:error "expected {\"key\": \"...\"}"))))))
+       ws (json-serialize '(:error "expected {\"key\": \"...\"}"))))
+     ;; A dispatched command is mid-flight, blocked in an input read of
+     ;; its own — `maf-quick-variable's letter, an algebraic entry's
+     ;; minibuffer, a y-or-n-p. Filters run inside such waits, which is
+     ;; how this message got here at all; the key is the input the
+     ;; command is waiting for, so it goes to the event queue rather
+     ;; than to a second dispatch.
+     (calc-web--dispatching
+      (when-let ((seq (condition-case nil (kbd key) (error nil))))
+        (setq unread-command-events
+              (nconc unread-command-events
+                     (listify-key-sequence seq)))))
+     (t
+      (calc-web--dispatch key)))))
 
 (defun calc-web--on-close (ws)
   "Forget WS."
@@ -402,11 +439,15 @@ push."
                           :on-open #'calc-web--on-open
                           :on-message #'calc-web--on-message
                           :on-close #'calc-web--on-close))
-  (add-hook 'post-command-hook #'calc-web--on-command))
+  (add-hook 'post-command-hook #'calc-web--on-command)
+  (add-hook 'minibuffer-setup-hook #'calc-web--on-minibuffer)
+  (add-hook 'minibuffer-exit-hook #'calc-web--on-minibuffer))
 
 (defun calc-web--stop ()
   "Close every client, stop the server, and unhook the push."
   (remove-hook 'post-command-hook #'calc-web--on-command)
+  (remove-hook 'minibuffer-setup-hook #'calc-web--on-minibuffer)
+  (remove-hook 'minibuffer-exit-hook #'calc-web--on-minibuffer)
   (dolist (ws calc-web--clients)
     (ignore-errors (websocket-close ws)))
   (setq calc-web--clients nil)

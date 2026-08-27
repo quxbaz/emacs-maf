@@ -9,7 +9,7 @@
 const PORT = 7070;
 // Shown beside the connection status; bump on client changes so a
 // stale cached page is visible at a glance.
-const VERSION = 4;
+const VERSION = 5;
 
 const stackEl = document.getElementById("stack");
 const trailEl = document.getElementById("trail");
@@ -138,8 +138,8 @@ function editRow(text, col) {
 function render(state) {
   lastState = state;
   if (!mjReady) return;
-  const { stack = [], cursor = 0, entry, edit, editCol = 0, pending,
-          flags = {}, trail = [], error } = state;
+  const { stack = [], cursor = 0, entry, edit, editCol = 0, prompt,
+          minibuf, pending, flags = {}, trail = [], error } = state;
 
   // stack[0] is the top (level 1); calc shows levels descending, the
   // top on the last line, then calc's home line — replaced by the
@@ -155,7 +155,11 @@ function render(state) {
         : row(`${i + 1}:`, texNode(tex), cursor === i + 1 ? "current" : null))
     .reverse()
     .forEach((r) => frag.append(r));
-  if (edit != null && cursor === 0) {
+  if (prompt != null) {
+    // A blocked command's minibuffer, mirrored: prompt, what has been
+    // typed at it, caret at the end. Keys go straight to it.
+    frag.append(editRow(`${prompt}${minibuf ?? ""}`, `${prompt}${minibuf ?? ""}`.length));
+  } else if (edit != null && cursor === 0) {
     frag.append(editRow(edit, editCol));
   } else if (entry != null) {
     frag.append(row(">", entry, "typing current"));
