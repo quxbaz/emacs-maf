@@ -74,14 +74,18 @@ and returns focus to the window the preview was invoked from."
   (when (window-live-p maf-pretty--return-window)
     (select-window maf-pretty--return-window)))
 
-;; Outside the defvar so a reload applies edits to the map.
+;; Outside the defvar so a reload applies edits to the map. G closes
+;; as well as opens — one key in, same key out — and RET reads as
+;; done-here, as it does in the module menu.
 (define-key maf-pretty-mode-map "q" #'maf-pretty-quit)
+(define-key maf-pretty-mode-map "G" #'maf-pretty-quit)
+(define-key maf-pretty-mode-map (kbd "RET") #'maf-pretty-quit)
 
 (define-derived-mode maf-pretty-mode special-mode "maf-pretty"
   "Major mode for an on-demand typeset Calc preview."
   (setq-local cursor-type nil)
   (setq-local truncate-lines t)
-  (setq-local header-line-format " Preview    q closes"))
+  (setq-local header-line-format " Preview    q / G / RET closes"))
 
 (defun maf-pretty--program ()
   "Return the configured RaTeX executable, or signal a `user-error'."
