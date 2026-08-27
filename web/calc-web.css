@@ -13,7 +13,8 @@
 
 body {
   margin: 0;
-  min-height: 100vh;
+  height: 100vh;      /* the viewport is the app; panes scroll inside */
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   background: var(--bg);
@@ -122,7 +123,20 @@ body {
 
 .entry.home { min-height: 1.4em; }
 .entry.typing .expr { color: var(--accent); }
-.mono { font-family: ui-monospace, monospace; }
+/* The edit line carries its own text caret; the row-end block would
+   be a second cursor. */
+.entry.typing .expr::after { content: none; }
+.mono { font-family: ui-monospace, monospace; white-space: pre; }
+
+/* Text caret inside the maf-edit line. */
+.tcaret {
+  display: inline-block;
+  width: 2px;
+  height: 1.1em;
+  margin: 0 -1px;
+  vertical-align: text-bottom;
+  background: var(--accent);
+}
 
 #error {
   min-height: 1.6em;

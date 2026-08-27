@@ -26,6 +26,10 @@
 (require 'cl-lib)
 (require 'websocket)
 
+;; Loaded on demand through calc's autoload machinery.
+(declare-function calc-prepare-selection "calc-sel")
+(declare-function calc-find-selected-part "calc-sel")
+
 (defgroup calc-web nil
   "Browser rendering layer for Emacs Calc."
   :group 'calc)
@@ -66,6 +70,12 @@ keystroke, as it does in calc itself.")
   "Error text for the client from the last dispatch, or nil.
 Sent in the next push and cleared: an error belongs to the keystroke
 that caused it, not to every render after.")
+
+(defvar calc-web--dispatching nil
+  "Non-nil while a browser key's command is running.
+`calc-web--on-command' sits on `post-command-hook', which the
+dispatcher now runs too; this keeps that from pushing a half-done
+state — the dispatcher pushes once itself when the key is finished.")
 
 (defun calc-web--buffer ()
   "The calc buffer, created without display if it does not exist."
@@ -150,7 +160,10 @@ follows point through the formula."
 the entry's composition with position tags and
 `calc-find-selected-part' reads the node under point's column out of
 it. Errors — a home line, a mid-redraw call — just mean no highlight."
-  (when (> (calc-web--cursor) 0)
+  (when (and (> (calc-web--cursor) 0)
+             ;; Mid-edit the buffer is plain text: the composition the
+             ;; resolver would read no longer matches it.
+             (not (bound-and-true-p maf-edit-mode)))
     (ignore-errors
       (save-excursion
         (calc-prepare-selection)
@@ -190,6 +203,17 @@ error — null (or all-false, for flags) when there is nothing to say."
                                      (and (= (cl-incf level) cursor) part))))
           :cursor ,cursor
         :entry ,(or calc-web--entry :null)
+        ;; An active maf-edit session: the stack is plain editable
+        ;; text, and the browser shows the line being edited with the
+        ;; caret at its column, since the serialized stack still holds
+        ;; the values from before the edit.
+        :edit ,(if (bound-and-true-p maf-edit-mode)
+                   (buffer-substring-no-properties (line-beginning-position)
+                                                   (line-end-position))
+                 :null)
+        :editCol ,(if (bound-and-true-p maf-edit-mode)
+                      (- (point) (line-beginning-position))
+                    0)
         :pending ,(if calc-web--prefix
                       (string-join calc-web--prefix " ")
                     :null)
@@ -221,7 +245,8 @@ payload, so a formula LaTeX cannot write still reports itself."
 This is what keeps a browser current while calc is driven natively in
 Emacs — keys routed from the browser push explicitly in
 `calc-web--dispatch', which never passes through the command loop."
-  (when (derived-mode-p 'calc-mode)
+  (when (and (derived-mode-p 'calc-mode)
+             (not calc-web--dispatching))
     (calc-web--push)))
 
 ;;; Key router
@@ -236,54 +261,82 @@ Emacs — keys routed from the browser push explicitly in
             (calc-push n)
           (setq calc-web--error (format "bad number: %s" str)))))))
 
-(defun calc-web--toggle-flag (key)
-  "Toggle the pending modifier KEY stands for: H, I or O."
-  (let ((flag (pcase key ("H" :hyp) ("I" :inv) ("O" :opt))))
-    (setq calc-web--flags
-          (plist-put calc-web--flags flag
-                     (not (plist-get calc-web--flags flag))))))
+(defconst calc-web--digit-starters '(calcDigit-start maf-digit-start)
+  "Commands whose whole job is a minibuffer number read.
+Both read the rest of the number themselves, recursively — a wait no
+process filter can satisfy — so a key resolving to one goes to the
+`calc-web--entry' accumulator instead.")
+
+(defconst calc-web--modifier-commands
+  '((calc-hyperbolic . :hyp) (calc-inverse . :inv) (calc-option . :opt))
+  "Modifier commands and the pending flag each arms.
+They work through `calc-fancy-prefix', which needs the command loop;
+here the resolved command toggles its flag in `calc-web--flags' and
+the next dispatched command runs under it.")
 
 (defun calc-web--key (key)
-  "Resolve the chord so far plus KEY against `calc-mode-map'.
-A keymap answer keeps the chord growing; a command runs under the
-armed modifier flags, which are bound around the call and cleared
-after it, so a modifier covers exactly one command; anything else is
-a dead end, reported whole (`unbound: a X')."
+  "Resolve the chord so far plus KEY against the buffer's active maps.
+`key-binding' rather than `calc-mode-map': the browser is a thin
+terminal onto this buffer, so a key means exactly what it would mean
+typed there — maf's bindings when maf-mode is on, an active maf-edit
+session's editing keys, the global map's motion commands.
+
+A keymap answer keeps the chord growing. A digit-starter or modifier
+command is intercepted (see `calc-web--digit-starters' and
+`calc-web--modifier-commands'). Any other command commits a pending
+number entry first, then runs under the armed modifier flags, bound
+around the call and cleared after, so a modifier covers exactly one
+command. A dead end is reported whole (`unbound: a X')."
   (let* ((keys (append calc-web--prefix (list key)))
          (desc (string-join keys " "))
          (seq (condition-case nil (kbd desc) (error nil)))
-         (cmd (and seq (lookup-key calc-mode-map seq))))
+         (cmd (and seq (key-binding seq))))
     (cond
      ((keymapp cmd)
       (setq calc-web--prefix keys))
+     ((memq cmd calc-web--digit-starters)
+      (setq calc-web--entry (concat (or calc-web--entry "") key)))
+     ((assq cmd calc-web--modifier-commands)
+      (let ((flag (cdr (assq cmd calc-web--modifier-commands))))
+        (setq calc-web--flags
+              (plist-put calc-web--flags flag
+                         (not (plist-get calc-web--flags flag))))))
      ((commandp cmd)
       (setq calc-web--prefix nil)
-      ;; Many calc commands read the key they were invoked by —
-      ;; `calc-minus' and friends — so the event has to be the
-      ;; browser's key, not whatever Emacs saw last.
+      (calc-web--commit-entry)
+      ;; A slice of the command loop, not a bare funcall: the event
+      ;; has to be the browser's key — `calc-minus' and friends read
+      ;; it — and the command hooks have to run, because that is where
+      ;; modes keep their between-keys discipline (maf-edit's
+      ;; machine-owned prefixes, the preview's redraw). Without them a
+      ;; dispatched key behaves almost, but not exactly, like a typed
+      ;; one.
       (let ((last-command-event (aref seq (1- (length seq))))
+            (this-command cmd)
+            (calc-web--dispatching t)
             (calc-hyperbolic-flag (plist-get calc-web--flags :hyp))
             (calc-inverse-flag (plist-get calc-web--flags :inv))
             (calc-option-flag (plist-get calc-web--flags :opt)))
         (unwind-protect
-            (call-interactively cmd)
-          (setq calc-web--flags nil))))
+            (progn
+              (run-hooks 'pre-command-hook)
+              (call-interactively cmd)
+              (run-hooks 'post-command-hook))
+          (setq calc-web--flags nil)
+          (setq last-command cmd))))
      (t
       (setq calc-web--prefix nil)
       (setq calc-web--error (format "unbound: %s" desc))))))
 
 (defun calc-web--dispatch (key)
   "Route KEY, a key description string from the browser, into calc.
-Digits and the decimal point accumulate in `calc-web--entry' (along
-with `:'/`;', `e' and `#' once one is underway); DEL edits it and
-RET commits it, calc-style. H, I and O arm their modifier flags for
-the next command. <up> and <down> move point across stack levels.
-ESC abandons whatever is pending — entry, chord, and flags. Any
-other key commits the pending number first, then goes to the chord
-resolver (`calc-web--key'). Errors are trapped into
-`calc-web--error'; every path ends in one push. Digit and modifier
-keys mid-chord go to the resolver instead of their usual meaning:
-`a 0' is a chord, not the start of a number."
+Nearly everything resolves through the buffer's own keymaps in
+`calc-web--key'; what is handled here is the state no keymap knows:
+ESC abandons whatever is pending — entry, chord, flags — and while a
+number entry is underway DEL edits it, RET and SPC commit it, and
+`;' appends the fraction colon, as it does in maf's entry map.
+Errors are trapped into `calc-web--error'; every path ends in one
+push."
   (with-current-buffer (calc-web--buffer)
     (condition-case err
         (cond
@@ -291,42 +344,23 @@ keys mid-chord go to the resolver instead of their usual meaning:
           (setq calc-web--entry nil
                 calc-web--prefix nil
                 calc-web--flags nil))
-         ;; Digits and the point start an entry; the fraction,
-         ;; exponent and radix characters only extend one, keeping
-         ;; their command meanings otherwise. `;' is `:' here, as in
-         ;; maf — the fraction key without the shift.
-         ((and (null calc-web--prefix)
-               (or (and (= (length key) 1)
-                        (cl-find (aref key 0) "0123456789."))
-                   (and calc-web--entry
-                        (member key '(":" ";" "e" "#")))))
-          (setq calc-web--entry (concat (or calc-web--entry "")
-                                        (if (equal key ";") ":" key))))
-         ((member key '("<up>" "<down>"))
-          (calc-web--commit-entry)
-          (calc-cursor-stack-index
-           (max 0 (min (calc-stack-size)
-                       (+ (calc-web--cursor)
-                          (if (equal key "<up>") 1 -1))))))
-         ;; Clamped to the line: level motion is the vertical pair's,
-         ;; and the wrap char motion would do at a line edge reads as
-         ;; nothing but a stuck caret in the browser.
-         ((member key '("<left>" "<right>"))
-          (calc-web--commit-entry)
-          (let ((target (+ (point) (if (equal key "<right>") 1 -1))))
-            (when (<= (line-beginning-position) target (line-end-position))
-              (goto-char target))))
          ((and calc-web--entry (equal key "DEL"))
           (setq calc-web--entry (and (> (length calc-web--entry) 1)
                                      (substring calc-web--entry 0 -1))))
-         ((and calc-web--entry (equal key "RET"))
+         ((and calc-web--entry (member key '("RET" "SPC")))
           (calc-web--commit-entry))
-         ((and (null calc-web--prefix) (member key '("H" "I" "O")))
-          (calc-web--toggle-flag key))
+         ((and calc-web--entry (equal key ";"))
+          (setq calc-web--entry (concat calc-web--entry ":")))
          (t
-          (calc-web--commit-entry)
           (calc-web--key key)))
       (error (setq calc-web--error (error-message-string err))))
+    ;; The cursor-intangible bounce lives in redisplay and adjusts the
+    ;; selected window's point; a dispatched key never goes through
+    ;; it. Without this, maf-edit's machine-owned prefixes could hold
+    ;; point — and silently take the next self-insert.
+    (when (get-text-property (point) 'cursor-intangible)
+      (goto-char (or (next-single-property-change (point) 'cursor-intangible)
+                     (point-max))))
     ;; Point moved here is buffer point; a calc window that is not
     ;; selected displays — and, on reselection, snaps back to — its own
     ;; window point. Sync it, so browser-driven motion shows in the

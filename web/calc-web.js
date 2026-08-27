@@ -7,6 +7,9 @@
 // No state is kept here beyond the socket and the typeset cache.
 
 const PORT = 7070;
+// Shown beside the connection status; bump on client changes so a
+// stale cached page is visible at a glance.
+const VERSION = 4;
 
 const stackEl = document.getElementById("stack");
 const trailEl = document.getElementById("trail");
@@ -33,15 +36,20 @@ const KEYMAP = {
   ArrowDown: "<down>",
   ArrowLeft: "<left>",
   ArrowRight: "<right>",
+  // Pre-standard names some engines still report.
+  Up: "<up>",
+  Down: "<down>",
+  Left: "<left>",
+  Right: "<right>",
 };
 
 let ws = null;
 
 function connect() {
   ws = new WebSocket(`ws://localhost:${PORT}`);
-  ws.onopen = () => { statusEl.textContent = "connected"; };
+  ws.onopen = () => { statusEl.textContent = `connected · v${VERSION}`; };
   ws.onclose = () => {
-    statusEl.textContent = "disconnected — retrying";
+    statusEl.textContent = `disconnected — retrying · v${VERSION}`;
     setTimeout(connect, 1000);
   };
   ws.onmessage = ({ data }) => render(JSON.parse(data));
@@ -111,23 +119,45 @@ function row(labelText, content, cls) {
   return div;
 }
 
+// The maf-edit line: raw buffer text with a caret at the edit column.
+function editRow(text, col) {
+  const div = document.createElement("div");
+  div.className = "entry typing current";
+  const label = document.createElement("span");
+  label.className = "label";
+  label.textContent = "edit";
+  const expr = document.createElement("span");
+  expr.className = "expr mono";
+  const caret = document.createElement("span");
+  caret.className = "tcaret";
+  expr.append(text.slice(0, col), caret, text.slice(col));
+  div.append(label, expr);
+  return div;
+}
+
 function render(state) {
   lastState = state;
   if (!mjReady) return;
-  const { stack = [], cursor = 0, entry, pending, flags = {}, trail = [],
-          error } = state;
+  const { stack = [], cursor = 0, entry, edit, editCol = 0, pending,
+          flags = {}, trail = [], error } = state;
 
   // stack[0] is the top (level 1); calc shows levels descending, the
   // top on the last line, then calc's home line — replaced by the
   // number entry while one is being typed. The row point stands on
-  // (level `cursor`, home when 0) carries the caret.
+  // (level `cursor`, home when 0) carries the caret. During a
+  // maf-edit session that row shows the buffer line being edited —
+  // the serialized value behind it is stale until the commit.
   const frag = document.createDocumentFragment();
   stack
-    .map((tex, i) => row(`${i + 1}:`, texNode(tex),
-                         cursor === i + 1 ? "current" : null))
+    .map((tex, i) =>
+      edit != null && cursor === i + 1
+        ? editRow(edit, editCol)
+        : row(`${i + 1}:`, texNode(tex), cursor === i + 1 ? "current" : null))
     .reverse()
     .forEach((r) => frag.append(r));
-  if (entry != null) {
+  if (edit != null && cursor === 0) {
+    frag.append(editRow(edit, editCol));
+  } else if (entry != null) {
     frag.append(row(">", entry, "typing current"));
   } else {
     frag.append(row(".", "", cursor === 0 ? "home current" : "home"));
