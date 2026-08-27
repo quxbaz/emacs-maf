@@ -28,9 +28,9 @@
   ;; New entry: RET at a balanced EOL opens a pending line; typing on
   ;; it adopts it, stamps a prefix, and renumbers everything live.
   (execute-kbd-macro (kbd "S-<return> x * y"))
-  ;; Edited and new entries are flagged dirty in the prefix (N*);
-  ;; untouched ones keep N:.
-  (cl-assert (string-prefix-p "4*  a + b + 1\n3*  x*y\n2:  [ 2,"
+  ;; Edited entries are flagged dirty in the prefix (N*), new ones as
+  ;; N+; untouched ones keep N:.
+  (cl-assert (string-prefix-p "4*  a + b + 1\n3+  x*y\n2:  [ 2,"
                               (buffer-substring-no-properties (point-min)
                                                               (point-max))))
 
