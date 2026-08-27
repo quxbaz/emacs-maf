@@ -121,7 +121,7 @@ test re-*expands* macros against the *currently loaded* definitions. Always
 reload after editing:
 
 ```elisp
-(load-file "/home/david/lab/emacs-maf/debug/maf-step.el")
+(load-file "debug/maf-step.el")   ; relative to default-directory, the repo root
 ```
 
 When in doubt, confirm the loaded definition rather than trusting the file:

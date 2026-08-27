@@ -121,8 +121,8 @@ hand if you want a box shaped differently:
 
 ```sh
 sudo docker run -it --name maf-my-feature \
-  -v ~/lab/emacs-maf/.worktrees/my-feature:/work \
-  -v ~/lab/emacs-maf/.git:/home/david/lab/emacs-maf/.git \
+  -v "$HOME/lab/emacs-maf/.worktrees/my-feature:/work" \
+  -v "$HOME/lab/emacs-maf/.git:$HOME/lab/emacs-maf/.git" \
   -e CLAUDE_CODE_OAUTH_TOKEN="$(< ~/.claude/box-token)" \
   -v ~/.claude.json:/seed/claude.json:ro \
   -v ~/.codex/auth.json:/seed/codex-auth.json:ro \
