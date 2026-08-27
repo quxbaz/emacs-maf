@@ -44,6 +44,7 @@
     - add cards for missing bindings
 
 * maybe
+  - [ ] browser client
 
 * cleanup
   - [ ] delete my/calc
