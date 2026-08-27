@@ -99,36 +99,62 @@ scannable handle on where the selection landed in the string."
 (defconst calc-web--sel-open "\\bbox[2px, border: 1.5px solid #89b4fa]{"
   "LaTeX opening the selection highlight; MathJax's \\bbox.")
 
-(defun calc-web--marked-latex (value sel)
+(defconst calc-web--point-open "\\bbox[2px, border: 1.5px dashed #b4befe]{"
+  "LaTeX opening the at-point highlight: dashed, an eye lighter than a
+selection's solid box — point rests somewhere all the time, and the
+always-on box should read as where you are, not as something held.")
+
+(defun calc-web--marked-latex (value sel open)
   "Format VALUE as LaTeX with SEL boxed, via the calcwebsel marker.
-The marker's own parentheses are traded for the \\bbox braces — the
-box already draws the selection's boundary, the way maf's highlight
-does in the buffer."
+OPEN is the highlight's opening LaTeX. The marker's own parentheses
+are traded for the \\bbox braces — the box already draws the
+selection's boundary, the way maf's highlight does in the buffer."
   (let* ((str (calc-web--latex (calc-web--mark value sel)))
-         (start (string-search "calcwebsel(" str)))
-    (if (null start)
+         (start (string-search "calcwebsel" str))
+         (oparen (and start (string-search "(" str start))))
+    (if (null oparen)
         str
-      (let* ((open (+ start (length "calcwebsel(")))
-             (depth 1)
-             (i open))
+      ;; The argument's parentheses may be plain or \left( \right) —
+      ;; calc picks per argument. Scan to the balanced close, then
+      ;; drop the \right the \left( form leaves inside the span.
+      (let ((depth 1)
+            (i (1+ oparen)))
         (while (and (> depth 0) (< i (length str)))
           (pcase (aref str i)
             (?\( (setq depth (1+ depth)))
             (?\) (setq depth (1- depth))))
           (setq i (1+ i)))
         (concat (substring str 0 start)
-                calc-web--sel-open
-                (substring str open (1- i))
+                open
+                (replace-regexp-in-string
+                 " *\\\\right *\\'" ""
+                 (substring str (1+ oparen) (1- i)))
                 "}"
                 (substring str i))))))
 
-(defun calc-web--entry-latex (entry)
-  "Format stack ENTRY as LaTeX, selection highlighted when it has one."
+(defun calc-web--entry-latex (entry part)
+  "Format stack ENTRY as LaTeX, its highlight baked in if it has one.
+An explicit selection gets the solid box. PART, non-nil only for the
+entry point stands on, is the sub-formula at point; without a
+selection it gets the dashed box — the always-on highlight that
+follows point through the formula."
   (let ((value (car entry))
         (sel (nth 2 entry)))
-    (if sel
-        (calc-web--marked-latex value sel)
-      (calc-web--latex value))))
+    (cond (sel (calc-web--marked-latex value sel calc-web--sel-open))
+          (part (calc-web--marked-latex value part calc-web--point-open))
+          (t (calc-web--latex value)))))
+
+(defun calc-web--part-at-point ()
+  "The sub-formula point is on, or nil off the stack or between parts.
+`calc-select-here's own resolver: `calc-prepare-selection' rebuilds
+the entry's composition with position tags and
+`calc-find-selected-part' reads the node under point's column out of
+it. Errors — a home line, a mid-redraw call — just mean no highlight."
+  (when (> (calc-web--cursor) 0)
+    (ignore-errors
+      (save-excursion
+        (calc-prepare-selection)
+        (calc-find-selected-part)))))
 
 (defun calc-web--cursor ()
   "The stack level point is on: 1 is the top, 0 is home."
@@ -152,12 +178,17 @@ number being typed, `:pending' the chord so far, `:flags' the armed
 modifiers, `:trail' the trail's tail, `:error' the last dispatch
 error — null (or all-false, for flags) when there is nothing to say."
   (with-current-buffer (calc-web--buffer)
-    (json-serialize
-     `( :stack ,(vconcat
-                 (cl-loop for entry in calc-stack
-                          unless (eq (car entry) 'top-of-stack)
-                          collect (calc-web--entry-latex entry)))
-        :cursor ,(calc-web--cursor)
+    (let ((cursor (calc-web--cursor))
+          (part (calc-web--part-at-point))
+          (level 0))
+      (json-serialize
+       `( :stack ,(vconcat
+                   (cl-loop for entry in calc-stack
+                            unless (eq (car entry) 'top-of-stack)
+                            collect (calc-web--entry-latex
+                                     entry
+                                     (and (= (cl-incf level) cursor) part))))
+          :cursor ,cursor
         :entry ,(or calc-web--entry :null)
         :pending ,(if calc-web--prefix
                       (string-join calc-web--prefix " ")
@@ -166,7 +197,7 @@ error — null (or all-false, for flags) when there is nothing to say."
                  :inv ,(if (plist-get calc-web--flags :inv) t :false)
                  :opt ,(if (plist-get calc-web--flags :opt) t :false))
         :trail ,(vconcat (calc-web--trail))
-        :error ,(or calc-web--error :null)))))
+        :error ,(or calc-web--error :null))))))
 
 (defun calc-web--push ()
   "Send the current state to every connected client.
@@ -277,6 +308,14 @@ keys mid-chord go to the resolver instead of their usual meaning:
            (max 0 (min (calc-stack-size)
                        (+ (calc-web--cursor)
                           (if (equal key "<up>") 1 -1))))))
+         ;; Clamped to the line: level motion is the vertical pair's,
+         ;; and the wrap char motion would do at a line edge reads as
+         ;; nothing but a stuck caret in the browser.
+         ((member key '("<left>" "<right>"))
+          (calc-web--commit-entry)
+          (let ((target (+ (point) (if (equal key "<right>") 1 -1))))
+            (when (<= (line-beginning-position) target (line-end-position))
+              (goto-char target))))
          ((and calc-web--entry (equal key "DEL"))
           (setq calc-web--entry (and (> (length calc-web--entry) 1)
                                      (substring calc-web--entry 0 -1))))

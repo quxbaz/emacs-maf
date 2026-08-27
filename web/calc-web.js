@@ -31,6 +31,8 @@ const KEYMAP = {
   " ": "SPC",
   ArrowUp: "<up>",
   ArrowDown: "<down>",
+  ArrowLeft: "<left>",
+  ArrowRight: "<right>",
 };
 
 let ws = null;
