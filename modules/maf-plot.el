@@ -2,9 +2,9 @@
 ;;
 ;; modules/maf-plot.el
 ;;
-;; Plotting. Three gestures — g g plots the whole entry at point, g l
-;; every stack entry in one picture, g i the entry with the x range
-;; asked for — behind a three-way backend choice:
+;; Plotting. Four gestures — g g plots the whole entry at point, g l
+;; every stack entry in one picture, g i and g I the same with the x
+;; range asked for — behind a three-way backend choice:
 ;;
 ;;   gnuplot-external  interactive gnuplot window (mouse zoom, readout)
 ;;   gnuplot-embed     gnuplot-rendered SVG in a split buffer below
@@ -627,6 +627,14 @@ prefix argument — the g i gesture of the legacy config."
   (maf-plot-entry '(4)))
 
 ;;;###autoload
+(defun maf-plot-all-with-range ()
+  "Plot every stack entry in one picture, asking for the x range first.
+`maf-plot-all' with the prompt unconditional — g i's whole-stack
+sibling."
+  (interactive)
+  (maf-plot-all '(4)))
+
+;;;###autoload
 (defun maf-plot-all (arg)
   "Plot every stack entry in one picture.
 
@@ -652,7 +660,7 @@ interactively. With prefix ARG, prompt for the x range."
   "Make maf's plotting available on the g prefix in Calc.
 
 g g plots the whole entry at point; g l plots every stack entry in
-one picture; g i asks for the x range first. Where the plot appears
+one picture; g i and g I are the same with the x range asked for. Where the plot appears
 is `maf-plot-backend': gnuplot's
 own interactive window, an SVG panel split below Calc, or the Desmos
 calculator in a browser. Off, calc's stock g-prefix graphing is
@@ -668,22 +676,24 @@ untouched."
     '(((native) "g g" maf-plot-entry)
       ((native) "g l" maf-plot-all)
       ((native) "g i" maf-plot-entry-with-range)
+      ((native) "g I" maf-plot-all-with-range)
       ((vim) "g g" maf-plot-entry)
       ((vim) "g l" maf-plot-all)
-      ((vim) "g i" maf-plot-entry-with-range))))
+      ((vim) "g i" maf-plot-entry-with-range)
+      ((vim) "g I" maf-plot-all-with-range))))
 
 (when (require 'maf-module nil t)
   (maf-register-module 'maf-plot #'maf-use-plot-mode
                        "Plot stack entries: gnuplot window, embedded SVG, or Desmos.
 
 g g plots the whole entry at point, g l the whole stack in one
-picture, g i asks for the x range first. The row's value picks the
+picture; g i and g I ask for the x range first. The row's value picks the
 surface: an interactive gnuplot
 window, an SVG panel split below Calc themed from the live faces, or
 a fire-and-forget Desmos page in the browser. Trig curves auto-range
 one period in the current angle mode; a prefix argument asks for the
 range. Off, calc's own g-prefix graphing is untouched."
-                       "g g / g l / g i" "Plotting"
+                       "g g / g l / g i / g I" "Plotting"
                        (lambda ()
                          (list :values
                                '((off "off" (maf-use-plot-mode -1))

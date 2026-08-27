@@ -14,6 +14,7 @@
   (cl-assert (eq (key-binding (kbd "g g")) 'maf-plot-entry))
   (cl-assert (eq (key-binding (kbd "g l")) 'maf-plot-all))
   (cl-assert (eq (key-binding (kbd "g i")) 'maf-plot-entry-with-range))
+  (cl-assert (eq (key-binding (kbd "g I")) 'maf-plot-all-with-range))
   (cl-assert (eq (key-binding (kbd "g f")) 'calc-graph-fast))
   (maf-use-plot-mode -1)
   (cl-assert (eq (key-binding (kbd "g g")) 'calc-graph-grid))
