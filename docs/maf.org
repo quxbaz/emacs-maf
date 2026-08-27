@@ -48,7 +48,6 @@
     - add cards for missing bindings
 
 * maybe
-** DONE preview entry as latex
 
 * cleanup
   - [ ] delete my/calc
