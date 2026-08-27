@@ -79,8 +79,17 @@ body {
   display: flex;
   align-items: center;
   gap: 0.8em;
-  padding: 0.35em 0;
+  padding: 0.05em 0.4em;
   font-size: 1.3em;
+  border-left: 3px solid transparent;
+}
+
+/* MathJax gives display math a tall vertical margin and a block box;
+   the rows are the spacing here, and inline keeps the caret beside
+   the formula rather than under it. */
+.entry .expr mjx-container {
+  margin: 0.1em 0 !important;
+  display: inline-block !important;
 }
 
 .entry .label {
@@ -91,6 +100,27 @@ body {
   text-align: right;
 }
 
+/* The row point stands on. */
+.entry.current {
+  border-left-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+.entry.current .label { color: var(--accent); }
+
+/* Caret block at the end of the current row, calc's cursor made
+   visible. */
+.entry.current .expr::after {
+  content: "";
+  display: inline-block;
+  width: 0.45em;
+  height: 1em;
+  margin-left: 0.35em;
+  vertical-align: text-bottom;
+  background: var(--accent);
+  opacity: 0.8;
+}
+
+.entry.home { min-height: 1.4em; }
 .entry.typing .expr { color: var(--accent); }
 .mono { font-family: ui-monospace, monospace; }
 

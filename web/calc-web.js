@@ -29,6 +29,8 @@ const KEYMAP = {
   Escape: "ESC",
   Tab: "TAB",
   " ": "SPC",
+  ArrowUp: "<up>",
+  ArrowDown: "<down>",
 };
 
 let ws = null;
@@ -61,7 +63,15 @@ const texCache = new Map();
 function texNode(tex) {
   let svg = texCache.get(tex);
   if (!svg) {
-    svg = MathJax.tex2svg(tex, { display: true });
+    // A formula MathJax cannot typeset falls back to its TeX source
+    // rather than taking the whole render down with it. Failures are
+    // not cached: they are cheap to reproduce and may be transient
+    // (an extension still loading).
+    try {
+      svg = MathJax.tex2svg(tex, { display: true });
+    } catch {
+      return document.createTextNode(tex);
+    }
     // Manual tex2svg leaves the page stylesheet stale; refresh it so
     // the new formula's characters get their font rules.
     MathJax.startup.document.updateDocument();
@@ -102,17 +112,26 @@ function row(labelText, content, cls) {
 function render(state) {
   lastState = state;
   if (!mjReady) return;
-  const { stack = [], entry, pending, flags = {}, trail = [], error } = state;
+  const { stack = [], cursor = 0, entry, pending, flags = {}, trail = [],
+          error } = state;
 
   // stack[0] is the top (level 1); calc shows levels descending, the
-  // top on the last line, any in-progress number entry below it.
+  // top on the last line, then calc's home line — replaced by the
+  // number entry while one is being typed. The row point stands on
+  // (level `cursor`, home when 0) carries the caret.
   const frag = document.createDocumentFragment();
   stack
-    .map((tex, i) => row(`${i + 1}:`, texNode(tex)))
+    .map((tex, i) => row(`${i + 1}:`, texNode(tex),
+                         cursor === i + 1 ? "current" : null))
     .reverse()
     .forEach((r) => frag.append(r));
-  if (entry != null) frag.append(row(">", entry, "typing"));
+  if (entry != null) {
+    frag.append(row(">", entry, "typing current"));
+  } else {
+    frag.append(row(".", "", cursor === 0 ? "home current" : "home"));
+  }
   stackEl.replaceChildren(frag);
+  stackEl.scrollTop = stackEl.scrollHeight;
 
   trailEl.replaceChildren(
     ...trail.map((line) => {

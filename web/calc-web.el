@@ -86,6 +86,55 @@ display never changes."
                (math-format-value value))
       (calc-set-language lang opt t))))
 
+(defun calc-web--mark (value sel)
+  "Copy VALUE with SEL, an eq subtree of it, wrapped in the marker.
+The marker is an unknown function, which calc's latex language prints
+by name — `calcwebsel(...)' — giving `calc-web--marked-latex' a
+scannable handle on where the selection landed in the string."
+  (cond ((eq value sel) (list 'calcFunc-calcwebsel sel))
+        ((Math-primp value) value)
+        (t (cons (car value)
+                 (mapcar (lambda (x) (calc-web--mark x sel)) (cdr value))))))
+
+(defconst calc-web--sel-open "\\bbox[2px, border: 1.5px solid #89b4fa]{"
+  "LaTeX opening the selection highlight; MathJax's \\bbox.")
+
+(defun calc-web--marked-latex (value sel)
+  "Format VALUE as LaTeX with SEL boxed, via the calcwebsel marker.
+The marker's own parentheses are traded for the \\bbox braces — the
+box already draws the selection's boundary, the way maf's highlight
+does in the buffer."
+  (let* ((str (calc-web--latex (calc-web--mark value sel)))
+         (start (string-search "calcwebsel(" str)))
+    (if (null start)
+        str
+      (let* ((open (+ start (length "calcwebsel(")))
+             (depth 1)
+             (i open))
+        (while (and (> depth 0) (< i (length str)))
+          (pcase (aref str i)
+            (?\( (setq depth (1+ depth)))
+            (?\) (setq depth (1- depth))))
+          (setq i (1+ i)))
+        (concat (substring str 0 start)
+                calc-web--sel-open
+                (substring str open (1- i))
+                "}"
+                (substring str i))))))
+
+(defun calc-web--entry-latex (entry)
+  "Format stack ENTRY as LaTeX, selection highlighted when it has one."
+  (let ((value (car entry))
+        (sel (nth 2 entry)))
+    (if sel
+        (calc-web--marked-latex value sel)
+      (calc-web--latex value))))
+
+(defun calc-web--cursor ()
+  "The stack level point is on: 1 is the top, 0 is home."
+  (let ((idx (calc-locate-cursor-element (point))))
+    (if (> idx 0) (min idx (calc-stack-size)) 0)))
+
 (defun calc-web--trail ()
   "The last `calc-web-trail-lines' lines of the calc trail."
   (with-current-buffer (calc-trail-buffer)
@@ -107,7 +156,8 @@ error — null (or all-false, for flags) when there is nothing to say."
      `( :stack ,(vconcat
                  (cl-loop for entry in calc-stack
                           unless (eq (car entry) 'top-of-stack)
-                          collect (calc-web--latex (car entry))))
+                          collect (calc-web--entry-latex entry)))
+        :cursor ,(calc-web--cursor)
         :entry ,(or calc-web--entry :null)
         :pending ,(if calc-web--prefix
                       (string-join calc-web--prefix " ")
@@ -193,14 +243,16 @@ a dead end, reported whole (`unbound: a X')."
 
 (defun calc-web--dispatch (key)
   "Route KEY, a key description string from the browser, into calc.
-Digits and the decimal point accumulate in `calc-web--entry'; DEL
-edits it and RET commits it, calc-style. H, I and O arm their
-modifier flags for the next command. ESC abandons whatever is
-pending — entry, chord, and flags. Any other key commits the pending
-number first, then goes to the chord resolver (`calc-web--key').
-Errors are trapped into `calc-web--error'; every path ends in one
-push. Digit and modifier keys mid-chord go to the resolver instead
-of their usual meaning: `a 0' is a chord, not the start of a number."
+Digits and the decimal point accumulate in `calc-web--entry' (along
+with `:'/`;', `e' and `#' once one is underway); DEL edits it and
+RET commits it, calc-style. H, I and O arm their modifier flags for
+the next command. <up> and <down> move point across stack levels.
+ESC abandons whatever is pending — entry, chord, and flags. Any
+other key commits the pending number first, then goes to the chord
+resolver (`calc-web--key'). Errors are trapped into
+`calc-web--error'; every path ends in one push. Digit and modifier
+keys mid-chord go to the resolver instead of their usual meaning:
+`a 0' is a chord, not the start of a number."
   (with-current-buffer (calc-web--buffer)
     (condition-case err
         (cond
@@ -208,10 +260,23 @@ of their usual meaning: `a 0' is a chord, not the start of a number."
           (setq calc-web--entry nil
                 calc-web--prefix nil
                 calc-web--flags nil))
+         ;; Digits and the point start an entry; the fraction,
+         ;; exponent and radix characters only extend one, keeping
+         ;; their command meanings otherwise. `;' is `:' here, as in
+         ;; maf — the fraction key without the shift.
          ((and (null calc-web--prefix)
-               (= (length key) 1)
-               (cl-find (aref key 0) "0123456789."))
-          (setq calc-web--entry (concat (or calc-web--entry "") key)))
+               (or (and (= (length key) 1)
+                        (cl-find (aref key 0) "0123456789."))
+                   (and calc-web--entry
+                        (member key '(":" ";" "e" "#")))))
+          (setq calc-web--entry (concat (or calc-web--entry "")
+                                        (if (equal key ";") ":" key))))
+         ((member key '("<up>" "<down>"))
+          (calc-web--commit-entry)
+          (calc-cursor-stack-index
+           (max 0 (min (calc-stack-size)
+                       (+ (calc-web--cursor)
+                          (if (equal key "<up>") 1 -1))))))
          ((and calc-web--entry (equal key "DEL"))
           (setq calc-web--entry (and (> (length calc-web--entry) 1)
                                      (substring calc-web--entry 0 -1))))

@@ -6,6 +6,11 @@
 <link rel="stylesheet" href="calc-web.css">
 <script>
   MathJax = {
+    // bbox draws the selection highlight; preloaded because the
+    // client typesets synchronously, and an extension that arrives
+    // mid-call aborts the conversion instead.
+    loader: { load: ["[tex]/bbox"] },
+    tex: { packages: { "[+]": ["bbox"] } },
     startup: {
       typeset: false,   // entries are typeset one by one, cached by source
       ready() {
