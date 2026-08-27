@@ -124,11 +124,11 @@ function render({stack, flags, error}) {
 - [X] Basic CSS layout
 
 ** Phase 2 — Polish
-- [ ] Chord support (~f l~, ~a f~, etc.)
-- [ ] Modifier flag display and routing (~H~, ~I~, ~J~)
-- [ ] Error forwarding and display
-- [ ] Trail display
-- [ ] Smooth MathJax re-render (diff and retypeset only changed entries)
+- [X] Chord support (~f l~, ~a f~, etc.)
+- [X] Modifier flag display and routing (~H~, ~I~, ~O~ in stock calc)
+- [X] Error forwarding and display
+- [X] Trail display
+- [X] Smooth MathJax re-render (diff and retypeset only changed entries)
 
 ** Phase 3 — Release prep
 - [ ] Configurable port

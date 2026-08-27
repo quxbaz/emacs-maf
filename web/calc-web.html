@@ -5,7 +5,17 @@
 <title>calc-web</title>
 <link rel="stylesheet" href="calc-web.css">
 <script>
-  MathJax = { options: { enableMenu: false } };
+  MathJax = {
+    startup: {
+      typeset: false,   // entries are typeset one by one, cached by source
+      ready() {
+        MathJax.startup.defaultReady();
+        MathJax.startup.promise.then(() =>
+          window.dispatchEvent(new Event("mathjax-ready")));
+      },
+    },
+    options: { enableMenu: false, enableAssistiveMml: false },
+  };
 </script>
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
 </head>
@@ -15,9 +25,13 @@
   <span id="flag-hyp" class="flag">HYP</span>
   <span id="flag-inv" class="flag">INV</span>
   <span id="flag-opt" class="flag">OPT</span>
+  <span id="pending"></span>
   <span id="status">connecting…</span>
 </header>
-<main id="stack"></main>
+<div id="panes">
+  <main id="stack"></main>
+  <aside id="trail"></aside>
+</div>
 <footer id="error"></footer>
 <script src="calc-web.js"></script>
 </body>

@@ -9,9 +9,14 @@
 ;; usable in parallel: a `post-command-hook' pushes after native
 ;; keystrokes too, so both views show the same stack.
 ;;
-;; Phase 1 (docs/plans/web-client.org): single-key routing only. One
-;; wrinkle the plan's lookup-key sketch runs into: calc binds digits to
-;; `calcDigit-start', which reads the rest of the number itself in a
+;; Phase 2 (docs/plans/web-client.org): the router accumulates chords
+;; (`a x', `v p', ...) until the sequence resolves in `calc-mode-map',
+;; routes the H/I/O modifier keys into their calc flags around the next
+;; command, and the serializer carries the calc trail's tail. ESC
+;; abandons everything pending.
+;;
+;; One wrinkle the plan's lookup-key sketch runs into: calc binds digits
+;; to `calcDigit-start', which reads the rest of the number itself in a
 ;; recursive minibuffer edit — inside a process filter that read would
 ;; block the connection. The router accumulates digits here instead and
 ;; pushes the finished number when a non-digit key arrives.
@@ -41,6 +46,22 @@
 See the commentary: digits accumulate here rather than dispatching
 into `calcDigit-start'.")
 
+(defvar calc-web--prefix nil
+  "Key descriptions of the chord typed so far, oldest first, or nil.
+Grows while `lookup-key' answers a keymap; a command or a dead end
+clears it either way.")
+
+(defvar calc-web--flags nil
+  "Pending modifier flags, as a plist of :hyp :inv :opt booleans.
+Toggled by the H, I and O keys; bound into calc's flag variables
+around the next command and cleared, so a modifier arms exactly one
+keystroke, as it does in calc itself.")
+
+(defcustom calc-web-trail-lines 30
+  "How many trailing calc-trail lines are sent to clients."
+  :type 'integer
+  :group 'calc-web)
+
 (defvar calc-web--error nil
   "Error text for the client from the last dispatch, or nil.
 Sent in the next push and cleared: an error belongs to the keystroke
@@ -65,11 +86,22 @@ display never changes."
                (math-format-value value))
       (calc-set-language lang opt t))))
 
+(defun calc-web--trail ()
+  "The last `calc-web-trail-lines' lines of the calc trail."
+  (with-current-buffer (calc-trail-buffer)
+    (save-excursion
+      (goto-char (point-max))
+      (let ((end (point)))
+        (forward-line (- calc-web-trail-lines))
+        (split-string (buffer-substring-no-properties (point) end)
+                      "\n" t)))))
+
 (defun calc-web--payload ()
   "The current calc state as a JSON string.
 Stack entries are LaTeX, ordered top of stack first. `:entry' is the
-number being typed, `:flags' the pending modifier flags, `:error' the
-last dispatch error — each null when there is nothing to say."
+number being typed, `:pending' the chord so far, `:flags' the armed
+modifiers, `:trail' the trail's tail, `:error' the last dispatch
+error — null (or all-false, for flags) when there is nothing to say."
   (with-current-buffer (calc-web--buffer)
     (json-serialize
      `( :stack ,(vconcat
@@ -77,9 +109,13 @@ last dispatch error — each null when there is nothing to say."
                           unless (eq (car entry) 'top-of-stack)
                           collect (calc-web--latex (car entry))))
         :entry ,(or calc-web--entry :null)
-        :flags ( :hyp ,(if calc-hyperbolic-flag t :false)
-                 :inv ,(if calc-inverse-flag t :false)
-                 :opt ,(if (bound-and-true-p calc-option-flag) t :false))
+        :pending ,(if calc-web--prefix
+                      (string-join calc-web--prefix " ")
+                    :null)
+        :flags ( :hyp ,(if (plist-get calc-web--flags :hyp) t :false)
+                 :inv ,(if (plist-get calc-web--flags :inv) t :false)
+                 :opt ,(if (plist-get calc-web--flags :opt) t :false))
+        :trail ,(vconcat (calc-web--trail))
         :error ,(or calc-web--error :null)))))
 
 (defun calc-web--push ()
@@ -119,19 +155,61 @@ Emacs — keys routed from the browser push explicitly in
             (calc-push n)
           (setq calc-web--error (format "bad number: %s" str)))))))
 
+(defun calc-web--toggle-flag (key)
+  "Toggle the pending modifier KEY stands for: H, I or O."
+  (let ((flag (pcase key ("H" :hyp) ("I" :inv) ("O" :opt))))
+    (setq calc-web--flags
+          (plist-put calc-web--flags flag
+                     (not (plist-get calc-web--flags flag))))))
+
+(defun calc-web--key (key)
+  "Resolve the chord so far plus KEY against `calc-mode-map'.
+A keymap answer keeps the chord growing; a command runs under the
+armed modifier flags, which are bound around the call and cleared
+after it, so a modifier covers exactly one command; anything else is
+a dead end, reported whole (`unbound: a X')."
+  (let* ((keys (append calc-web--prefix (list key)))
+         (desc (string-join keys " "))
+         (seq (condition-case nil (kbd desc) (error nil)))
+         (cmd (and seq (lookup-key calc-mode-map seq))))
+    (cond
+     ((keymapp cmd)
+      (setq calc-web--prefix keys))
+     ((commandp cmd)
+      (setq calc-web--prefix nil)
+      ;; Many calc commands read the key they were invoked by —
+      ;; `calc-minus' and friends — so the event has to be the
+      ;; browser's key, not whatever Emacs saw last.
+      (let ((last-command-event (aref seq (1- (length seq))))
+            (calc-hyperbolic-flag (plist-get calc-web--flags :hyp))
+            (calc-inverse-flag (plist-get calc-web--flags :inv))
+            (calc-option-flag (plist-get calc-web--flags :opt)))
+        (unwind-protect
+            (call-interactively cmd)
+          (setq calc-web--flags nil))))
+     (t
+      (setq calc-web--prefix nil)
+      (setq calc-web--error (format "unbound: %s" desc))))))
+
 (defun calc-web--dispatch (key)
   "Route KEY, a key description string from the browser, into calc.
 Digits and the decimal point accumulate in `calc-web--entry'; DEL
-edits it and RET commits it, calc-style. Any other key commits the
-pending number first, then dispatches through `calc-mode-map' —
-single keys only in this phase, so a prefix key answers with an
-error instead of waiting for a sequel that would arrive as its own
-message. Errors are trapped into `calc-web--error'; every path ends
-in one push."
+edits it and RET commits it, calc-style. H, I and O arm their
+modifier flags for the next command. ESC abandons whatever is
+pending — entry, chord, and flags. Any other key commits the pending
+number first, then goes to the chord resolver (`calc-web--key').
+Errors are trapped into `calc-web--error'; every path ends in one
+push. Digit and modifier keys mid-chord go to the resolver instead
+of their usual meaning: `a 0' is a chord, not the start of a number."
   (with-current-buffer (calc-web--buffer)
     (condition-case err
         (cond
-         ((and (= (length key) 1)
+         ((equal key "ESC")
+          (setq calc-web--entry nil
+                calc-web--prefix nil
+                calc-web--flags nil))
+         ((and (null calc-web--prefix)
+               (= (length key) 1)
                (cl-find (aref key 0) "0123456789."))
           (setq calc-web--entry (concat (or calc-web--entry "") key)))
          ((and calc-web--entry (equal key "DEL"))
@@ -139,21 +217,11 @@ in one push."
                                      (substring calc-web--entry 0 -1))))
          ((and calc-web--entry (equal key "RET"))
           (calc-web--commit-entry))
+         ((and (null calc-web--prefix) (member key '("H" "I" "O")))
+          (calc-web--toggle-flag key))
          (t
           (calc-web--commit-entry)
-          (let* ((seq (condition-case nil (kbd key) (error nil)))
-                 (cmd (and seq (lookup-key calc-mode-map seq))))
-            (cond
-             ((commandp cmd)
-              ;; Many calc commands read the key they were invoked by
-              ;; — `calc-minus' and friends — so the event has to be
-              ;; the browser's key, not whatever Emacs saw last.
-              (let ((last-command-event (aref seq (1- (length seq)))))
-                (call-interactively cmd)))
-             ((keymapp cmd)
-              (setq calc-web--error (format "prefix keys not yet supported: %s" key)))
-             (t
-              (setq calc-web--error (format "unbound: %s" key)))))))
+          (calc-web--key key)))
       (error (setq calc-web--error (error-message-string err))))
     (calc-web--push)))
 

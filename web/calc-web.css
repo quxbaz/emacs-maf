@@ -38,9 +38,20 @@ body {
 }
 .flag.on { color: var(--accent); font-weight: 600; }
 
+#pending {
+  color: var(--accent);
+  font-family: ui-monospace, monospace;
+}
+
 #status {
   margin-left: auto;
   color: var(--dim);
+}
+
+#panes {
+  flex: 1;
+  display: flex;
+  min-height: 0;               /* let the children scroll, not the page */
 }
 
 #stack {
@@ -51,6 +62,18 @@ body {
   padding: 1em 1.5em 1.5em;
   overflow-y: auto;
 }
+
+#trail {
+  width: 18em;
+  padding: 0.8em 1em;
+  border-left: 1px solid var(--band);
+  overflow-y: auto;
+  font-family: ui-monospace, monospace;
+  font-size: 0.8em;
+  color: var(--dim);
+}
+
+.trail-line { white-space: pre; }
 
 .entry {
   display: flex;
