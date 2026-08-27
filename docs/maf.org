@@ -35,8 +35,6 @@
 
 * later
 ** thin web client w/ mathjax rendering
-** rework preview
-   it feels awkward in actual usage
 ** modules suboptions
 
 * when done
