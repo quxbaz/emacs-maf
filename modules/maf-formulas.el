@@ -1481,6 +1481,17 @@ list's own layout."
         (when-let ((win (get-buffer-window dbuf)))
           (maf-formulas--fit-detail win))))))
 
+(defun maf-formulas-refresh-detail ()
+  "Re-render the detail pane, if one is on screen.
+For a caller that changed what the pane draws with rather than which
+formula it shows: the pretty module's toggle swaps the renderer from
+the module menu, and the pane otherwise repaints only when point in
+the list reaches another formula."
+  (when (get-buffer-window maf-formulas--detail-buffer)
+    (when-let ((buf (get-buffer "*maf-formulas*")))
+      (with-current-buffer buf
+        (maf-formulas--update-detail)))))
+
 (defun maf-formulas--close-detail ()
   "Put the detail pane's window back the way it was, when one is showing.
 `quit-restore-window' undoes exactly what `display-buffer' did: the

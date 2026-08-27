@@ -530,6 +530,16 @@ keypress always did."
             (maf-preview--update win))
         (maf-preview--hide)))))
 
+(defun maf-preview-refresh ()
+  "Redraw the panel now, wherever one is showing.
+For a caller that changed what the panel draws rather than where it
+sits: the pretty module's toggle swaps `maf-preview-render-function'
+from the module menu, where no command runs in the calc buffer and no
+layout changes, so neither of the panel's own triggers fires until the
+next keypress in the stack. Finding the stack's window from outside it
+and redrawing are `maf-preview--on-window-change's."
+  (maf-preview--on-window-change))
+
 ;;;###autoload
 (define-minor-mode maf-preview-mode
   "Show the stack entry at point in Calc's two-dimensional display.

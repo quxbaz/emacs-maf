@@ -28,6 +28,8 @@
 (defvar maf-preview-render-function)     ; modules/maf-preview.el
 
 (declare-function maf-bindings--refresh "maf-bindings")
+(declare-function maf-preview-refresh "maf-preview")
+(declare-function maf-formulas-refresh-detail "maf-formulas")
 (declare-function maf-bindings-module-keys "maf-bindings")
 (declare-function maf-register-module "maf-module")
 
@@ -283,6 +285,15 @@ back to Big; the command remains available by name."
   (setq maf-preview-render-function
         (and maf-use-pretty-mode #'maf-pretty--panel)
         maf-pretty--panel-cache nil)
+  ;; Whatever is showing through that renderer re-renders now, both
+  ;; ways. The toggle usually runs in the module menu, where no command
+  ;; ever reaches the calc buffer or the formula list, so their panes
+  ;; would otherwise keep the old rendering until the next keypress in
+  ;; each. Guarded: this module loads on its own, without its consumers.
+  (when (fboundp 'maf-preview-refresh)
+    (maf-preview-refresh))
+  (when (fboundp 'maf-formulas-refresh-detail)
+    (maf-formulas-refresh-detail))
   (maf-bindings--refresh))
 
 ;; G, shadowing `maf-preview-show' (src/bindings.el) rather than taking

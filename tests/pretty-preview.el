@@ -14,7 +14,8 @@
   (setq maf--rp-pretty-stash maf-use-pretty-mode
         maf--rp-preview-stash maf-use-preview-mode
         maf--rp-calls 0
-        maf--rp-shown nil)
+        maf--rp-shown nil
+        maf--rp-repaints nil)
 
   ;; A counting stand-in for the renderer, and a panel that says it can
   ;; show what comes back. Both are installed per assertion below; these
@@ -58,9 +59,12 @@ one thing the change detection below has to be able to see."
 
   ;; Asked, on a panel that can show an image, the entry comes back
   ;; typeset — one space carrying the rendering — instead of in Big.
+  ;; From a cold cache: the toggle above repainted any showing panel
+  ;; with the real renderer, and this count is the mock's alone.
   (cl-letf (((symbol-function 'maf-pretty--ratex) #'maf--rp-ratex)
             ((symbol-function 'maf-preview--rich-p) (lambda () t)))
-    (setq maf--rp-calls 0)
+    (setq maf--rp-calls 0
+          maf-pretty--panel-cache nil)
     (cl-assert (maf--rp-imagep (maf-preview--render)))
     (cl-assert (= maf--rp-calls 1)))
 
@@ -195,6 +199,22 @@ one thing the change detection below has to be able to see."
     (maf-preview--update)
     (cl-assert (= (length maf--rp-shown) 1)))
   (maf-use-pretty-mode -1)
+
+  ;; The toggle repaints what is already showing through the renderer,
+  ;; both ways. It usually runs in the module menu, where no command
+  ;; ever reaches the calc buffer or the formula list, so a pane that
+  ;; waited for the next keypress in each kept the old rendering until
+  ;; one came. What is pinned is the ask: one repaint of each consumer
+  ;; per flip, panel first.
+  (cl-letf (((symbol-function 'maf-preview-refresh)
+             (lambda () (push 'panel maf--rp-repaints)))
+            ((symbol-function 'maf-formulas-refresh-detail)
+             (lambda () (push 'detail maf--rp-repaints))))
+    (setq maf--rp-repaints nil)
+    (maf-use-pretty-mode 1)
+    (cl-assert (equal maf--rp-repaints '(detail panel)))
+    (maf-use-pretty-mode -1)
+    (cl-assert (equal maf--rp-repaints '(detail panel detail panel))))
 
   ;; Restore the shared dev session.
   (progn
