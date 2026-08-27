@@ -2,9 +2,9 @@
 ;;
 ;; modules/maf-plot.el
 ;;
-;; Plotting. Two gestures — g g plots the whole entry at point, g a
-;; plots every stack entry in one picture — behind a three-way backend
-;; choice:
+;; Plotting. Three gestures — g g plots the whole entry at point, g l
+;; every stack entry in one picture, g i the entry with the x range
+;; asked for — behind a three-way backend choice:
 ;;
 ;;   gnuplot-external  interactive gnuplot window (mouse zoom, readout)
 ;;   gnuplot-embed     gnuplot-rendered SVG in a split buffer below
@@ -28,8 +28,8 @@
 ;; this file encodes.
 ;;
 ;; With the module off, calc's own g-prefix graphing is untouched. On,
-;; the g prefix is this module's to use — g g and g a shadow
-;; calc-graph-grid and calc-graph-add, and future gestures may take
+;; the g prefix is this module's to use — g g and g l shadow
+;; calc-graph-grid and calc-graph-log-x, and future gestures may take
 ;; more of it; the stock keys underneath are not a compatibility
 ;; obligation (decided).
 
@@ -198,31 +198,38 @@ current angle mode; otherwise `maf-plot-default-range'."
     (cons (float (car maf-plot-default-range))
           (float (cdr maf-plot-default-range)))))
 
-(defun maf-plot--read-range ()
-  "Prompt for an x range and return (LO . HI).
-Accepts \"lo:hi\", or a single number N for -N:N. What is given
-becomes the next prompt's default."
-  (let* ((default (and maf-plot--prompted-range
-                       (format "%g:%g"
-                               (car maf-plot--prompted-range)
-                               (cdr maf-plot--prompted-range))))
-         (input (string-trim
-                 (read-string
-                  (format-prompt "X range (lo:hi or n)" default)
-                  nil nil default)))
-         (range
-          (cond
-           ((string-match
-             "\\`\\(-?[0-9.]+\\)[ \t]*:[ \t]*\\(-?[0-9.]+\\)\\'" input)
-            (cons (string-to-number (match-string 1 input))
-                  (string-to-number (match-string 2 input))))
-           ((string-match "\\`[0-9.]+\\'" input)
-            (let ((n (string-to-number input)))
-              (cons (- n) n)))
-           (t (user-error "Unreadable range: %s" input)))))
+(defun maf-plot--parse-range (input)
+  "Return (LO . HI) read from range INPUT.
+\"lo:hi\"; \":hi\" for 0:hi; a single number N for -N:N."
+  (let ((range
+         (cond
+          ((string-match
+            "\\`\\(-?[0-9.]+\\)[ \t]*:[ \t]*\\(-?[0-9.]+\\)\\'" input)
+           (cons (string-to-number (match-string 1 input))
+                 (string-to-number (match-string 2 input))))
+          ((string-match "\\`:[ \t]*\\(-?[0-9.]+\\)\\'" input)
+           (cons 0 (string-to-number (match-string 1 input))))
+          ((string-match "\\`[0-9.]+\\'" input)
+           (let ((n (string-to-number input)))
+             (cons (- n) n)))
+          (t (user-error "Unreadable range: %s" input)))))
     (unless (< (car range) (cdr range))
       (user-error "Empty range: %g:%g" (car range) (cdr range)))
-    (setq maf-plot--prompted-range range)))
+    range))
+
+(defun maf-plot--read-range ()
+  "Prompt for an x range and return (LO . HI).
+What is given becomes the next prompt's default."
+  (let ((default (and maf-plot--prompted-range
+                      (format "%g:%g"
+                              (car maf-plot--prompted-range)
+                              (cdr maf-plot--prompted-range)))))
+    (setq maf-plot--prompted-range
+          (maf-plot--parse-range
+           (string-trim
+            (read-string
+             (format-prompt "X range (lo:hi, :hi, or n)" default)
+             nil nil default))))))
 
 (defun maf-plot--range (exprs arg)
   "Return the x range for EXPRS; prefix ARG means ask."
@@ -612,10 +619,18 @@ and goes to Desmos whole. With prefix ARG, prompt for the x range
   (maf-plot--dispatch (list (maf-plot--entry-at-point)) arg))
 
 ;;;###autoload
+(defun maf-plot-entry-with-range ()
+  "Plot the whole stack entry at point, asking for the x range first.
+`maf-plot-entry' with the prompt unconditional rather than behind a
+prefix argument — the g i gesture of the legacy config."
+  (interactive)
+  (maf-plot-entry '(4)))
+
+;;;###autoload
 (defun maf-plot-all (arg)
   "Plot every stack entry in one picture.
 
-  2:  2 sin(x)     g a  =>  both curves overlaid, shared x
+  2:  2 sin(x)     g l  =>  both curves overlaid, shared x
   1:  cos(x)                 range, a legend naming each
 
 On the gnuplot backends the curves share one x range and one y axis —
@@ -636,8 +651,9 @@ interactively. With prefix ARG, prompt for the x range."
 (define-minor-mode maf-use-plot-mode
   "Make maf's plotting available on the g prefix in Calc.
 
-g g plots the whole entry at point; g a plots every stack entry in
-one picture. Where the plot appears is `maf-plot-backend': gnuplot's
+g g plots the whole entry at point; g l plots every stack entry in
+one picture; g i asks for the x range first. Where the plot appears
+is `maf-plot-backend': gnuplot's
 own interactive window, an SVG panel split below Calc, or the Desmos
 calculator in a browser. Off, calc's stock g-prefix graphing is
 untouched."
@@ -650,21 +666,24 @@ untouched."
 (when (require 'maf-bindings nil t)
   (maf-bindings-module-keys 'maf-plot 'maf-use-plot-mode
     '(((native) "g g" maf-plot-entry)
-      ((native) "g a" maf-plot-all)
+      ((native) "g l" maf-plot-all)
+      ((native) "g i" maf-plot-entry-with-range)
       ((vim) "g g" maf-plot-entry)
-      ((vim) "g a" maf-plot-all))))
+      ((vim) "g l" maf-plot-all)
+      ((vim) "g i" maf-plot-entry-with-range))))
 
 (when (require 'maf-module nil t)
   (maf-register-module 'maf-plot #'maf-use-plot-mode
                        "Plot stack entries: gnuplot window, embedded SVG, or Desmos.
 
-g g plots the whole entry at point, g a the whole stack in one
-picture. The row's value picks the surface: an interactive gnuplot
+g g plots the whole entry at point, g l the whole stack in one
+picture, g i asks for the x range first. The row's value picks the
+surface: an interactive gnuplot
 window, an SVG panel split below Calc themed from the live faces, or
 a fire-and-forget Desmos page in the browser. Trig curves auto-range
 one period in the current angle mode; a prefix argument asks for the
 range. Off, calc's own g-prefix graphing is untouched."
-                       "g g / g a" "Plotting"
+                       "g g / g l / g i" "Plotting"
                        (lambda ()
                          (list :values
                                '((off "off" (maf-use-plot-mode -1))

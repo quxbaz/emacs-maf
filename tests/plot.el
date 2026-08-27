@@ -12,11 +12,12 @@
   ;; reaches stock calc-graph. Off restores stock wholly.
   (maf-use-plot-mode 1)
   (cl-assert (eq (key-binding (kbd "g g")) 'maf-plot-entry))
-  (cl-assert (eq (key-binding (kbd "g a")) 'maf-plot-all))
+  (cl-assert (eq (key-binding (kbd "g l")) 'maf-plot-all))
+  (cl-assert (eq (key-binding (kbd "g i")) 'maf-plot-entry-with-range))
   (cl-assert (eq (key-binding (kbd "g f")) 'calc-graph-fast))
   (maf-use-plot-mode -1)
   (cl-assert (eq (key-binding (kbd "g g")) 'calc-graph-grid))
-  (cl-assert (eq (key-binding (kbd "g a")) 'calc-graph-add))
+  (cl-assert (eq (key-binding (kbd "g l")) 'calc-graph-log-x))
   (maf-use-plot-mode 1)
 
   ;; Auto-range: trig widens to one period in the current angle mode —
@@ -69,6 +70,15 @@
   (cl-assert (member "0.0 5." (with-temp-buffer
                                 (insert-file-contents maf-plot-test--file)
                                 (split-string (buffer-string) "\n" t))))
+
+  ;; The range grammar: lo:hi, :hi from 0, a single n symmetric.
+  (cl-assert (equal (maf-plot--parse-range "2:8") '(2 . 8)))
+  (cl-assert (equal (maf-plot--parse-range ":5") '(0 . 5)))
+  (cl-assert (equal (maf-plot--parse-range "5") '(-5 . 5)))
+  (cl-assert (let ((err (condition-case e
+                            (progn (maf-plot--parse-range "8:2") nil)
+                          (error t))))
+                err))
 
   ;; Two variables have no axis to share; the sampler refuses.
   (cl-assert (let ((err (condition-case e
