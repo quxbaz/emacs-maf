@@ -4820,7 +4820,11 @@ passes through as calc solved it."
     (if (or (not (memq head maf--solve-order-heads))
             (and plain (memq (car-safe plain) maf--solve-order-heads)))
         plain
-      (let* ((coeffs (math-is-polynomial
+      ;; Built under default simplifications whatever the session's
+      ;; simplify mode, so the split's own normalize folds the bound
+      ;; the same way every time (mode none would keep x < 2/(2 k)).
+      (let* ((calc-simplify-mode nil)
+             (coeffs (math-is-polynomial
                       (math-sub (nth 1 rel) (nth 2 rel)) var 1))
              (lead (nth 1 coeffs)))
         (cond
