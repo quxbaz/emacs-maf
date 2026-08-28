@@ -217,6 +217,11 @@
 ;; Shadows calc-enable-selections, whose toggle maf has no use for —
 ;; every maf command resolves its subject from point.
 (maf-bindings-define '(native) "j e" #'maf-jump-equals)
+;; Gather every term of a variable on the side of the relation at
+;; point — the whole-family sibling of the single-term jump above. On
+;; the capital of a c (mafcmd-collect), whose polynomial collect it is
+;; the cross-equation cousin of; l C is unbound in calc itself.
+(maf-bindings-define '(native) "l C" #'mafcmd-gather)
 ;; Spread the formula around the target inward over its parts, and the
 ;; reverse. These take calc's own keys rather than a lowercase twin:
 ;; unlike the jump and the shifts above, the contextual versions have
