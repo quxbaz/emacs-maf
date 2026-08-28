@@ -17,8 +17,9 @@
 ;; anything calc can evaluate can be plotted. The desmos backend sends
 ;; the formula instead — Desmos resamples as you zoom, and calc's own
 ;; LaTeX language (`maf--latex-string') is the entire translation
-;; layer. Relation entries plot: gnuplot samples the rhs of y = f(x);
-;; desmos receives the equation whole and graphs it natively.
+;; layer. Relation entries plot: gnuplot samples the rhs of y = f(x)
+;; and refuses any other relation toward g o; desmos receives the
+;; equation whole and graphs it natively.
 ;;
 ;; The x range is never prompted for (y always autoscales): trig
 ;; expressions get one period around 0, angle-mode-aware, everything
@@ -153,25 +154,34 @@ The next prompt's default; plain invocations still auto-range.")
       entries)))
 
 (defun maf-plot--function-of (entry)
-  "Return what ENTRY plots as a function: itself, or a relation's rhs."
-  (if (maf--relation-p entry) (nth 2 entry) entry))
+  "Return what ENTRY samples as a function: itself, or a y = f(x) rhs.
+Any other relation — an implicit equation, an equation between two
+expressions, an inequality — has no single curve to sample; the
+refusal points at g o, since Desmos graphs relations whole."
+  (cond
+   ((not (maf--relation-p entry)) entry)
+   ((and (eq (car entry) 'calcFunc-eq)
+         (eq (car-safe (nth 1 entry)) 'var))
+    (nth 2 entry))
+   (t (user-error "Cannot sample %s; g o plots it in Desmos"
+                  (maf-plot--label entry)))))
 
 (defun maf-plot--curve-exprs (entry)
-  "Return ENTRY's curves as (EXPR . LABEL) pairs.
-Most entries are one curve. A vector entry is a curve set — one curve
-per element, each labeled by the element — so a subset of the stack
-worth plotting together can be built with calc's own grouping and
-replotted as one thing. Relations contribute their rhs either way."
+  "Return ENTRY's curves as (ENTRY-OR-ELEMENT . LABEL) pairs.
+Most entries are one curve. A vector entry is a curve set — one
+curve per element, each labeled by the element — so a subset of the
+stack worth plotting together can be built with calc's own grouping
+and replotted as one thing. A relation's rhs is taken at sampling
+time, where a curve that refuses can be skipped without sinking an
+overlay."
   (if (eq (car-safe entry) 'vec)
       (progn
         (unless (cdr entry)
           (user-error "Nothing to plot in an empty vector"))
         (mapcar (lambda (element)
-                  (cons (maf-plot--function-of element)
-                        (maf-plot--label element)))
+                  (cons element (maf-plot--label element)))
                 (cdr entry)))
-    (list (cons (maf-plot--function-of entry)
-                (maf-plot--label entry)))))
+    (list (cons entry (maf-plot--label entry)))))
 
 (defun maf-plot--desmos-expressions (entries)
   "Flatten ENTRIES for desmos: a vector entry contributes per element.
@@ -589,10 +599,10 @@ fragment, opening an empty calculator."
 ;;; Commands
 
 (defun maf-plot--gnuplot-curves (specs range)
-  "Sample SPECS — (EXPR . LABEL) pairs — into (DATA-FILE . LABEL) curves.
-A curve that cannot be sampled — several variables, no real points —
-is skipped with a message when others remain, so one odd curve does
-not sink a whole plot; a lone curve's error surfaces."
+  "Sample SPECS — (ENTRY . LABEL) pairs — into (DATA-FILE . LABEL) curves.
+A curve that refuses — an implicit relation, several variables, no
+real points — is skipped with a message when others remain, so one
+odd curve does not sink a whole plot; a lone curve's error surfaces."
   (let ((index 0)
         (curves nil)
         (skipped nil))
@@ -600,7 +610,7 @@ not sink a whole plot; a lone curve's error surfaces."
       (setq index (1+ index))
       (condition-case err
           (push (cons (maf-plot--sample
-                       (car spec) range
+                       (maf-plot--function-of (car spec)) range
                        (maf-plot--work-file (format "curve-%d.dat" index)))
                       (cdr spec))
                 curves)

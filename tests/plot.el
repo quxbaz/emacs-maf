@@ -91,9 +91,10 @@
                 (and err (string-match-p "2 variables" err))))
 
   ;; A vector entry is a curve set: one curve per element, labeled by
-  ;; element; a relation element still contributes its rhs. Empty
-  ;; vectors refuse. Desmos gets the elements whole, one expression
-  ;; each.
+  ;; element; a relation element keeps its shape here — its rhs is
+  ;; taken at sampling, where a refusal can be skipped per curve.
+  ;; Empty vectors refuse. Desmos gets the elements whole, one
+  ;; expression each.
   (cl-assert (equal (maf-plot--curve-exprs
                      (math-read-expr "[2 sin(x), cos(x)]"))
                     (list (cons (math-read-expr "2 sin(x)") "2 sin(x)")
@@ -110,11 +111,27 @@
                           (math-read-expr "cos(x)")
                           (math-read-expr "x^2"))))
 
-  ;; A relation plots its right side on the gnuplot backends.
+  ;; Only y = f(x) plots its right side on the gnuplot backends. An
+  ;; implicit equation, an equation between two expressions, or an
+  ;; inequality would draw a lying curve; each refuses toward g o
+  ;; (Desmos graphs relations whole).
   (cl-assert (equal (maf-plot--function-of (math-read-expr "y = x^2"))
                     (math-read-expr "x^2")))
   (cl-assert (equal (maf-plot--function-of (math-read-expr "x^2 + 1"))
                     (math-read-expr "x^2 + 1")))
+  (cl-assert (let ((err (condition-case e
+                            (progn (maf-plot--function-of
+                                    (math-read-expr "x^2 + y^2 = 4"))
+                                   nil)
+                          (error (error-message-string e)))))
+                (and err (string-match-p "Desmos" err))))
+  (cl-assert (condition-case nil
+                 (progn (maf-plot--function-of (math-read-expr "sin(x) = x/2"))
+                        nil)
+               (error t)))
+  (cl-assert (condition-case nil
+                 (progn (maf-plot--function-of (math-read-expr "x < 3")) nil)
+               (error t)))
 
   ;; Desmos reads a stricter LaTeX than calc writes: brace arguments
   ;; become parens, bare-pipe abs becomes \left|...\right| (lifted at
