@@ -3307,7 +3307,15 @@ point.
 Calc's keep-args prefix asks for the same hold: K RET duplicates and
 keeps point, the modifier route to what C-u RET does. The flag reads as
 it always does, as \"consume nothing\" — and a duplicate consumes
-nothing on the stack to begin with, so what it spares here is point."
+nothing on the stack to begin with, so what it spares here is point.
+
+The Hyperbolic flag widens the target to the whole entry: H RET copies
+the entry at point however deep within it point rests — sub-formula
+and selection make no difference — the way the solve commands take
+their subject.
+
+  1:  (a +| b) c   H RET  =>   2:  (a + b) c
+                               1:  (a + b) c    (whole entry, not b)"
   (interactive "P")
   (maf--with-calc-buffer
     (when (zerop (calc-stack-size))
@@ -3320,8 +3328,13 @@ nothing on the stack to begin with, so what it spares here is point."
     (let* ((origin (unless (maf--at-home-p) (point)))
            ;; Unary resolution (no arg, so no below-top restriction) with
            ;; :map -1 so a relation stays whole in :expr rather than mapping
-           ;; per side. We only read :expr and push it.
-           (context (maf--resolve-context '((:arity . unary) (:map . -1))))
+           ;; per side. We only read :expr and push it. The Hyperbolic
+           ;; flag widens to the whole entry (:scope entry); calc-wrapper's
+           ;; epilogue below consumes the flag as it does every prefix.
+           (context (maf--resolve-context
+                     (if calc-hyperbolic-flag
+                         '((:arity . unary) (:map . -1) (:scope . entry))
+                       '((:arity . unary) (:map . -1)))))
            (expr (alist-get :expr context))
            ;; K RET holds point just as C-u RET does. The flag is read
            ;; from resolve's snapshot: calc-wrapper's epilogue clears it
@@ -3470,7 +3483,10 @@ which then keeps point instead of homing — RET's prefix must reach
 `maf-dup' through this dispatcher, since RET is bound here. The clear
 moves point nowhere to begin with, so the prefix does not vary it.
 Calc's keep-args flag (K RET) holds point the same way; `maf-dup' reads
-it, and `maf--fancy-prefix-keep' is what lets it survive the key."
+it, and `maf--fancy-prefix-keep' is what lets it survive the key. The
+Hyperbolic flag (H RET) reaches `maf-dup' the same way and widens the
+copy to the whole entry at point; with a selection active the clear
+still wins, flag or no flag."
   (interactive "P")
   (if (maf--sel-any-p)
       (maf-clear-selections)
@@ -3548,9 +3564,12 @@ sequence has resolved.
 Either way the flag clears where every command's does, in the epilogue of
 the `calc-wrapper' the command itself runs.
 
-Only for keep-args in a maf buffer — plain calc, and I/H/O, keep calc's
-own behavior."
-  (let ((def (and calc-keep-args-flag
+Only for keep-args and hyperbolic in a maf buffer — plain calc, and
+I/O, keep calc's own behavior. Hyperbolic joined keep-args when H RET
+learned to widen the copy to the whole entry: RET is a control
+character, exactly the class ORIG strips the flags from, so without
+this the flag never reached the dispatcher."
+  (let ((def (and (or calc-keep-args-flag calc-hyperbolic-flag)
                   (maf--with-calc-buffer maf-mode)
                   (maf--fancy-prefix-binding last-command-event))))
     (if (or (and (symbolp def) (get def 'maf-command))

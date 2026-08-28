@@ -156,6 +156,44 @@
   (cl-assert (= (calc-stack-size) 2))
   (calc-pop (calc-stack-size))
 
+  ;; --- The Hyperbolic flag widens the copy to the whole entry ---
+
+  ;; Point on the b, flag set: the entry copies whole, not the b.
+  (maf-push "(a + b) c")
+  (progn (goto-char (point-min)) (search-forward "b") (backward-char 1))
+  (let ((calc-hyperbolic-flag t))
+    (call-interactively 'maf-dup))
+  (cl-assert (= (calc-stack-size) 2))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "(a + b) c"))
+  (calc-pop (calc-stack-size))
+
+  ;; H RET is the key route, real keys for the same fancy-prefix
+  ;; reason as K RET above; the flag is consumed, not leaked. Two
+  ;; entries, point on the lower one: the top must not answer — the
+  ;; single-entry form of this test once passed with H falling through
+  ;; to calc, which cleared the flag, homed point, and copied the top,
+  ;; indistinguishable there from the right answer.
+  (maf-push "a + b")
+  (maf-push "x y")
+  (progn (calc-cursor-stack-index 2) (beginning-of-line)
+         (search-forward "b") (backward-char 1)
+         (execute-kbd-macro (kbd "H RET")) nil)
+  (cl-assert (= (calc-stack-size) 3))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "a + b"))
+  (cl-assert (not calc-hyperbolic-flag))
+  (calc-pop (calc-stack-size))
+
+  ;; A calc selection loses to the flag as well: :scope entry bypasses
+  ;; every narrowing, so H copies the entry the selection sits in.
+  (maf-push "(a + b) c")
+  (progn (goto-char (point-min)) (search-forward "b") (backward-char 1)
+         (call-interactively 'calc-select-here))
+  (let ((calc-hyperbolic-flag t))
+    (call-interactively 'maf-dup))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "(a + b) c"))
+  (calc-clear-selections)
+  (calc-pop (calc-stack-size))
+
   ;; --- A homing dup leaves a mark to pop back to ---
 
   ;; From an entry margin, dup pushes the copy and parks point home, but
