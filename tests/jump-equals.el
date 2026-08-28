@@ -1,7 +1,8 @@
 ;; maf-jump-equals (j e): move the term under point across the relation
 ;; it sits in, unselecting after and sending point along with it. An
-;; ordered relation (<, <=, >, >=) takes added and subtracted terms
-;; only — see the ordered block below.
+;; ordered relation (<, <=, >, >=) takes added and subtracted terms and
+;; lone factors — sign-known ones directly, sign-unknown ones as the
+;; three-way sign split — see the ordered block below.
 ;;
 ;; Expected results are calc's own, unsimplified: JumpRules produce
 ;; -a + y and x y, and maf commits what the rewrite gives rather than
@@ -116,25 +117,84 @@
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "0 <= -x + y"))
   (calc-pop (calc-stack-size))
 
-  ;; A factor under an ordered relation stays put: crossing it flips the
-  ;; direction on the factor's sign, which no rewrite rule can decide.
-  ;; Nothing is pushed or popped — the entry is not even re-normalized.
+  ;; A sign-unknown factor under an ordered relation crosses as the
+  ;; three-way sign split (the shape the solve commands write): keep
+  ;; the direction dividing by a positive, flip for a negative, and
+  ;; the zero case — the relation with the factor substituted by 0 —
+  ;; last. Point lands on the factor's copy in the first branch.
   (maf-push "a x <= y")
   (jump-at " x <" 3)
   (call-interactively 'maf-jump-equals)
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "a x <= y"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full))
+                      "x > 0 ? a <= y / x : x < 0 ? a >= y / x : 0 <= y"))
   (cl-assert (= (calc-stack-size) 1))
+  (cl-assert (eq (char-after) ?x))
   (calc-pop (calc-stack-size))
 
-  ;; Nor an exponent: a^2 <= y says nothing about a <= sqrt(y).
+  ;; The reported entry: every lone factor of the side crosses now.
+  (maf-push "2 x k < 2")
+  (jump-at "k <" 3)
+  (call-interactively 'maf-jump-equals)
+  (cl-assert (string= (math-format-value (calc-top 1 'full))
+                      "k > 0 ? 2 x < 2 / k : k < 0 ? 2 x > 2 / k : 0 < 2"))
+  (calc-pop (calc-stack-size))
+
+  ;; A factor whose sign calc knows crosses directly — a positive
+  ;; divides straight over, a negative flips the direction with it.
+  (maf-push "2 x k < 2")
+  (jump-at "2 x" 3)
+  (call-interactively 'maf-jump-equals)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "x k < 1"))
+  (calc-pop (calc-stack-size))
+
+  (maf-push "-3 x < 6")
+  (jump-at "-3")
+  (call-interactively 'maf-jump-equals)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "x > -2"))
+  (calc-pop (calc-stack-size))
+
+  ;; The construction is pinned to default simplifications: under a
+  ;; session simplify mode of none the direct move still folds the
+  ;; crossed factor away (not 1 x k < 2/2).
+  (maf-push "2 x k < 2")
+  (jump-at "2 x" 3)
+  (let ((calc-simplify-mode 'none))
+    (call-interactively 'maf-jump-equals))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "x k < 1"))
+  (calc-pop (calc-stack-size))
+
+  ;; Point lands on the factor's moved copy — the divisor — not on an
+  ;; equal-looking occurrence already in the formula (the numerator's
+  ;; x here would be found first by a naive search).
+  (maf-push "x y < x + 1")
+  (jump-at "x y" 3)
+  (call-interactively 'maf-jump-equals)
+  (cl-assert (string= (math-format-value (calc-top 1 'full))
+                      "x > 0 ? y < (x + 1) / x : x < 0 ? y > (x + 1) / x : 0 < 1"))
+  (cl-assert (eq (char-after) ?x))
+  (cl-assert (string= (buffer-substring (- (point) 2) (point)) "/ "))
+  (calc-pop (calc-stack-size))
+
+  ;; A factor on the greater side moves the same way, the orientation
+  ;; of the relation preserved.
+  (maf-push "y <= a b")
+  (jump-at " b" 1)
+  (call-interactively 'maf-jump-equals)
+  (cl-assert (string= (math-format-value (calc-top 1 'full))
+                      "b > 0 ? y / b <= a : b < 0 ? y / b >= a : y <= 0"))
+  (calc-pop (calc-stack-size))
+
+  ;; An exponent still stays put: a^2 <= y says nothing about
+  ;; a <= sqrt(y). The entry is untouched (and a message says why).
   (maf-push "a^2 <= y")
   (jump-at "2 <" 3)
   (call-interactively 'maf-jump-equals)
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "a^2 <= y"))
   (calc-pop (calc-stack-size))
 
-  ;; The additive test is on the path to the relation, not the whole
-  ;; entry: a x is a factor even though the sum above it is additive.
+  ;; The lone-factor test is on the path to the relation, not the whole
+  ;; entry: under b + a x the x is a factor of only part of the side,
+  ;; and no sound move exists.
   (maf-push "b + a x <= y")
   (jump-at " x <" 3)
   (call-interactively 'maf-jump-equals)

@@ -3579,9 +3579,17 @@ own behavior."
 ;; one with a power is not a term move at all (a^2 <= y says nothing
 ;; about a <= sqrt(y)). Adding and subtracting are the moves that hold
 ;; whatever the sign, so the rules built from + and - alone carry over
-;; unchanged, and a term standing anywhere else under a < stays put —
-;; `mafcmd-isolate' handles those, reasoning about the solution rather
-;; than shuffling terms.
+;; unchanged.
+;;
+;; A lone factor under a < does cross, but outside the rules:
+;; `maf--jump-ordered-move' divides it across by hand, where the sign
+;; can be consulted. Known-sign factors move directly, the direction
+;; flipped for a negative; sign-unknown ones move as the three-way
+;; sign split the solve commands write (see `maf--solve-relation').
+;; What remains — exponents, log arguments, factors of only part of a
+;; side — has no sound move, and the command messages toward
+;; `mafcmd-isolate', which reasons about the solution rather than
+;; shuffling terms.
 
 (defconst maf--jump-relations
   '(calcFunc-eq calcFunc-neq calcFunc-lt calcFunc-leq calcFunc-gt calcFunc-geq)
@@ -3674,6 +3682,114 @@ refusing here keeps it a clean no-op."
          (or additive (not (memq (car n) maf--jump-ordered-relations)))
          n)))
 
+(defun maf--jump-ordered-factor (expr node)
+  "Return (REL . SIDE) when NODE is a lone factor under an ordered relation.
+REL is the innermost relation above NODE in EXPR, of
+`maf--jump-ordered-relations'; SIDE is 1 or 2, the side NODE stands
+in; and every node between NODE and REL is a product — the shape
+where moving NODE across is exactly a division by it. Any other
+position, or a non-ordered relation (those go through the rules),
+returns nil."
+  (let ((n node) (inside nil) (pure t) parent)
+    (while (and (consp (setq parent (calc-find-parent-formula expr n)))
+                (not (memq (car parent) maf--jump-relations)))
+      (setq inside t)
+      (unless (eq (car parent) '*) (setq pure nil))
+      (setq n parent))
+    (and inside pure
+         (consp parent)
+         (memq (car parent) maf--jump-ordered-relations)
+         (cons parent (if (eq n (nth 1 parent)) 1 2)))))
+
+(defun maf--jump-ordered-blocked-p (expr node)
+  "Non-nil when NODE stands under an ordered relation it cannot cross."
+  (let ((n node))
+    (while (and (consp (setq n (calc-find-parent-formula expr n)))
+                (not (memq (car n) maf--jump-relations))))
+    (and (consp n) (memq (car n) maf--jump-ordered-relations))))
+
+(defun maf--jump-drop-factor (expr node)
+  "Return EXPR with the exact cons NODE replaced by 1.
+Identity, not equality: in x x only the factor point named goes."
+  (cond ((eq expr node) 1)
+        ((Math-primp expr) expr)
+        (t (cons (car expr)
+                 (mapcar (lambda (sub) (maf--jump-drop-factor sub node))
+                         (cdr expr))))))
+
+(defun maf--jump-node-equal (tree value)
+  "Return the first subtree of TREE `equal' to VALUE, depth-first."
+  (if (equal tree value)
+      tree
+    (and (consp tree)
+         (cl-some (lambda (sub) (maf--jump-node-equal sub value))
+                  (cdr tree)))))
+
+(defun maf--jump-landed-factor (tree node)
+  "Return NODE's moved copy in TREE: the divisor of a quotient by it.
+The ordered move writes the factor as / NODE on the far side, so the
+landing must find that copy — in x y < x + 1 the numerator already
+holds an equal-looking x that a plain first-match would stop on.
+Falls back to the first equal subtree when no such quotient survived
+the normalize (a numeric factor folds away)."
+  (or (letrec ((divisor
+                (lambda (tree)
+                  (and (consp tree)
+                       (if (and (eq (car tree) '/)
+                                (equal (nth 2 tree) node))
+                           (nth 2 tree)
+                         (cl-some divisor (cdr tree)))))))
+        (funcall divisor tree))
+      (maf--jump-node-equal tree node)))
+
+(defun maf--jump-ordered-move (rel side node)
+  "Return REL with factor NODE moved across, the direction handled.
+NODE is a lone factor of REL's SIDE (1 or 2) — see
+`maf--jump-ordered-factor'. A factor whose sign calc knows moves
+directly, the direction flipped when it is negative. A sign-unknown
+factor moves as calc's if, split three ways on its sign, the zero
+case last: the relation with NODE substituted by 0, each side
+normalized so it reads as the residue it is. A zero factor cannot
+move — dividing by it is undefined — and returns nil with a
+message.
+
+Built under default simplifications whatever the session's simplify
+mode: the construction's own normalize must fold the crossed factor
+and its quotient the same way every time — mode none would commit
+1 x k < 2/2."
+  (let* ((calc-simplify-mode nil)
+         (head (car rel))
+         (lhs (nth 1 rel)) (rhs (nth 2 rel))
+         (src (if (= side 1) lhs rhs))
+         (dst (if (= side 1) rhs lhs))
+         (dropped (maf--jump-drop-factor src node))
+         ;; The drop is by identity; a NODE from another tree would
+         ;; leave SRC intact and the factor on both sides. Signal
+         ;; rather than commit that.
+         (rest (if (equal dropped src)
+                   (error "maf--jump-ordered-move: NODE is not a factor of SIDE")
+                 (math-normalize dropped)))
+         (moved (list '/ dst node))
+         (keep (if (= side 1) (list head rest moved) (list head moved rest)))
+         (flip-op (maf--flip-relation-op head))
+         (flip (if (= side 1) (list flip-op rest moved)
+                 (list flip-op moved rest))))
+    (cond
+     ((Math-zerop node)
+      (message "A zero factor cannot cross: dividing by it is undefined")
+      nil)
+     ((math-known-posp node) (math-normalize keep))
+     ((math-known-negp node) (math-normalize flip))
+     (t (math-normalize
+         (list 'calcFunc-if (list 'calcFunc-gt node 0)
+               keep
+               (list 'calcFunc-if (list 'calcFunc-lt node 0)
+                     flip
+                     (list head
+                           (math-normalize (math-expr-subst lhs node 0))
+                           (math-normalize
+                            (math-expr-subst rhs node 0))))))))))
+
 (defun maf-jump-equals ()
   "Move the term under point across the relation it sits in.
 
@@ -3692,24 +3808,33 @@ is left behind for the next keystroke to trip over.
   y = a + b|  =>  y - b| = a
 
 A != is handled alongside =, on rules maf derives from calc's own. The
-ordered relations (<, <=, >, >=) take added and subtracted terms only,
-which cross without disturbing the direction:
+ordered relations (<, <=, >, >=) take added and subtracted terms, which
+cross without disturbing the direction, and lone factors — a factor of
+a whole side, every node above it a product:
 
   x + a| <= y  =>  x <= -a| + y
   y > a - b|   =>  y + b| > a
+  -3 x| < 6    =>  x > -2     (negative factor: the direction flips)
+  2 x k| < 2   =>  k > 0 ? 2 x < 2 / k| : k < 0 ? 2 x > 2 / k : 0 < 2
 
-A term anywhere else under an ordered relation — a factor, an exponent,
-a log argument — stays put, since crossing it can flip the direction on
-a sign no rewrite rule can determine. Use `mafcmd-isolate' on those.
+A factor whose sign calc knows crosses directly, the direction flipped
+when it is negative. A sign-unknown factor crosses as calc's if, split
+three ways on its sign with the zero case last — the same shape the
+solve commands write; the move is then one-way, the ternary having no
+relation at top level to jump back across. A zero factor stays put:
+dividing by it is undefined. Anywhere else under an ordered relation —
+an exponent, a log argument, a factor of only part of a side — no
+sound move exists and the command says so; `mafcmd-isolate' (j j)
+solves for those instead.
 
 A selection standing anywhere is the term to move, whatever entry point
 is on — it is the more deliberate gesture, and this is where the rest
 of maf takes its subject too. With none, the term under point.
 
 With no term to move — at home with nothing selected, on a whole entry,
-on a term outside any relation, on a non-additive term under an ordered
-one, or on one the rules do not reach — the command does nothing rather
-than signaling."
+on a term outside any relation, or on one the rules do not reach — the
+command does nothing rather than signaling; the blocked ordered cases
+above message instead, since there the silence read as breakage."
   (interactive)
   (maf--with-calc-buffer
     (let* ((at-point (calc-locate-cursor-element (point)))
@@ -3734,7 +3859,9 @@ than signaling."
           ;; a selection the rules cannot match would still pop and push
           ;; the entry — an undo step, and a re-normalization — for a
           ;; result identical to what was there.
-          (when (and (consp sel) (maf--jump-relation (car entry) sel))
+          (cond
+           ((not (consp sel)))
+           ((maf--jump-relation (car entry) sel)
             (let ((snapshot (maf--point-snapshot))
                   (var-JumpRules (maf--jump-rules))
                   ;; Calc's `calc-rewrite-selection' runs `calc-normalize'
@@ -3766,7 +3893,30 @@ than signaling."
                 (or (and moved (maf--anchor-on-node m moved))
                     (maf--point-restore snapshot)))
               ;; A single undo reverts point along with the stack.
-              (maf--undo-record-cmd-point snapshot))))))))
+              (maf--undo-record-cmd-point snapshot)))
+           ((maf--jump-ordered-factor (car entry) sel)
+            (let* ((info (maf--jump-ordered-factor (car entry) sel))
+                   (new (maf--jump-ordered-move (car info) (cdr info) sel)))
+              (when new
+                (let ((snapshot (maf--point-snapshot))
+                      ;; Committed unsimplified, as the rules path is.
+                      (calc-simplify-mode 'none))
+                  ;; `calc-wrapper' makes the commit one undoable unit.
+                  (calc-wrapper
+                   (calc-pop-push-record-list 1 "jump" (list new) m (list nil)))
+                  ;; Land point on the moved factor on the far side — in
+                  ;; a split, on its copy in the first branch.
+                  (let* ((committed (car (calc-top m 'entry)))
+                         (region (if (maf--solve-split-p committed)
+                                     (nth 2 committed)
+                                   committed))
+                         (landed (maf--jump-landed-factor region sel)))
+                    (or (and landed (maf--anchor-on-node m landed))
+                        (maf--point-restore snapshot)))
+                  ;; A single undo reverts point along with the stack.
+                  (maf--undo-record-cmd-point snapshot)))))
+           ((maf--jump-ordered-blocked-p (car entry) sel)
+            (message "No sound move across an ordered relation from here; j j (isolate) solves for it instead"))))))))
 
 ;; Calc's DistribRules and MergeRules are written against a marked
 ;; sub-formula: every rule mentions select(...) somewhere, and matches
