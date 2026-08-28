@@ -1,0 +1,64 @@
+#+title: maf-plot Codex review
+
+* Verdict
+
+=maf-plot= is a strong prototype, but I would not merge it as complete yet. The architecture and basic UX are good; several ordinary expressions can currently produce either the wrong graph or no graph.
+
+* Must fix
+
+- Relations are interpreted too broadly. [[file:modules/maf-plot.el::155][maf-plot.el:155]] plots the right-hand side of every relation. On gnuplot, =x² + y² = 1= therefore becomes the horizontal line =y = 1=; inequalities are similarly misleading. Either support implicit relations or accept only a documented =y = f(x)= form and reject the rest.
+
+- Undefined regions are not actually gaps. [[file:modules/maf-plot.el::266][maf-plot.el:266]] simply omits invalid samples, so gnuplot connects the valid points on either side. =1/x= gets a line through its pole; =sqrt(x² - 1)= gets bridged across =[-1,1]=. Emit discontinuity markers and address off-grid poles such as =tan(x)=.
+
+- Requested ranges are not preserved. The range controls sampling, but no =set xrange= reaches gnuplot. Rendering =sqrt(x)= over the default =-10:10= produced an SVG whose x-axis was =0:10=. Pass the range through both renderers and set it explicitly.
+
+- Common constants are mistaken for variables. [[file:modules/maf-plot.el::185][maf-plot.el:185]] uses the raw syntactic variable walker, so =sin(pi x)= and =e^x= fail with “Cannot plot in 2 variables.” Define independent-variable selection that recognizes Calc constants and decide how stored parameters should work.
+
+- The Desmos release posture is unresolved. [[file:modules/maf-plot.el::104][maf-plot.el:104]] ships a public demo key and [[file:modules/maf-plot.html::20][maf-plot.html:20]] pins v1.12. Current Desmos documentation says applications should obtain their own key; current terms associate a key with an application and require it to be kept confidential. By Desmos's release policy, v1.12 is also frozen now that v1.13 is current. Require a user key with no committed default, update the API version, and document the terms/network dependency before treating this as distributable. See [[https://www.desmos.com/api/v1.13/docs/index.html][Desmos API documentation]] and [[https://www.desmos.com/api-terms][Desmos API terms]].
+
+* Important follow-ups
+
+- On the Desmos backend, =g i=, =g I=, and =C-u= silently ignore the range because [[file:modules/maf-plot.el::617][the Desmos dispatch branch]] bypasses range handling. Desmos exposes =setMathBounds=, so the range can be honored.
+
+- Calc's documented =hms= angle mode is degree-based, but both auto-ranging and Desmos treat every non-=deg= mode as radians.
+
+- External plots reuse =plot-window.gp= and =curve-N.dat= while processes run asynchronously. Two quick plots can race or cause an old window to reread new data. Give every invocation unique files and attach a process sentinel so launch failures are visible.
+
+- =maf-plot-samples= accepts zero, which produces the vague error “Wrong type argument.” Validate samples greater than zero and validate =maf-plot-default-range= ordering.
+
+- Empty vectors error on gnuplot but open an empty Desmos page. Normalize validation across backends.
+
+- “One period around zero” is currently two periods: =-360:360= and =-2π:2π=. Either change to =±180=/=±π= or describe it as two periods.
+
+* Coverage
+
+[[file:tests/plot.el::1][tests/plot.el]] passes all 56 forms, but coverage is not yet sufficient for completion. It validates helpers rather than the actual feature. Add tests for:
+
+- =sin(pi x)=, =e^x=, parameters, HMS mode, and zero samples.
+- Explicit range preservation and discontinuity separators.
+- Unsupported equations and inequalities.
+- Actual entry-at-point/home targeting and stack ordering.
+- Desmos range dispatch and empty vectors.
+- Per-invocation external files and process errors.
+- Real SVG/dumb-terminal generation.
+- Module dial state, panel focus, and close/return behavior.
+
+The plan itself promises sticky prompt and per-backend dispatch tests that were never added. It also still says “Not yet implemented” and contains obsolete bindings in [[file:docs/plans/maf-plot.md::5][maf-plot.md]]. [[file:docs/maf.org::28][maf.org]] still lists plotting as undone.
+
+* UI/UX
+
+The foundation is good:
+
+- Module-off restores stock Calc bindings.
+- Whole-entry targeting works at home and within older entries.
+- =g g=/=g l=/=g i=/=g I= form a coherent family.
+- The embedded SVG renders successfully, takes focus, and =q= returns to Calc.
+- Vector curve sets and the one-off =g o= idea are useful.
+
+I would improve:
+
+- Preflight gnuplot, browser, and Desmos-key availability when selecting a backend.
+- Consider allowing replot/open-in-Desmos directly from the plot pane; the current static pane makes repeated plotting modal.
+- Add axis-variable labels and a save/export gesture later.
+
+For a complete v1, define the scope as “2D single-variable function plotting, overlays, ranges, and three reliable surfaces.” Explicitly reject implicit relations, data plots, polar/parametric curves, and 3D until implemented. That gives you a genuinely complete feature without chasing all of Calc graphing.
