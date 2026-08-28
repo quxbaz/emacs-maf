@@ -64,6 +64,7 @@
 (declare-function calc-normal-language "calc-lang")
 (declare-function calc-big-language "calc-lang")
 (declare-function math-solve-eqn "calcalg2")
+(declare-function math-is-polynomial "calc-alg")
 (declare-function math-expr-subst "calc-alg")
 (declare-function math-expr-contains "calc-alg")
 (declare-function calc-find-selected-part "calc-sel")
@@ -4769,6 +4770,76 @@ an equation or an inequality."
       (setq n (1+ n)))
     var))
 
+(defconst maf--solve-order-heads
+  '(calcFunc-lt calcFunc-leq calcFunc-gt calcFunc-geq)
+  "Relation heads with a direction the solver must not lose.")
+
+(defun maf--solve-split-p (expr)
+  "Non-nil when EXPR is the sign-split `maf--solve-relation' writes.
+Calc's if with a relation in the true branch; the false branch is
+the next case — another such if, a relation, or the zero case's
+residue: the truth value (1, 0) the coefficient-free relation
+collapsed to, or that relation itself when its constant term stays
+symbolic."
+  (and (eq (car-safe expr) 'calcFunc-if)
+       (= (length expr) 4)
+       (maf--relation-p (nth 2 expr))
+       (let ((tail (nth 3 expr)))
+         (or (maf--relation-p tail)
+             (memql tail '(0 1))
+             (maf--solve-split-p tail)))))
+
+(defun maf--solve-relation (rel var)
+  "Solve REL for VAR as `math-solve-eqn' does, direction preserved.
+Calc keeps an inequality's direction only while it knows the sign of
+what it divides by: solving 2 x k - 2 < 0 for x degrades to
+x != 1/k, and the <= form fails outright, the direction thrown away
+either way. When REL is linear in VAR the direction is exactly the
+sign of the leading coefficient, so those solves come back as calc's
+if, split three ways on that sign:
+
+  2 k > 0 ? x < 1/k : 2 k < 0 ? x > 1/k : -2 < 0
+
+the zero case last — the relation with its variable term gone, so no
+branch quietly claims x > 1/0. The if collapses to the case that
+holds once k is known — substitute a value and it evaluates away, the
+zero case to plain truth (1 here: -2 < 0 holds for every x). A degradation past
+linear (x^2 < 4 asks for an interval, which calc cannot say) returns
+nil with a message, keeping the misleading != off the stack; all
+else — equations, !=, an inequality whose signs calc can see —
+passes through as calc solved it."
+  (let ((head (car-safe rel))
+        (plain (math-solve-eqn rel var nil)))
+    (if (or (not (memq head maf--solve-order-heads))
+            (and plain (memq (car-safe plain) maf--solve-order-heads)))
+        plain
+      (let* ((coeffs (math-is-polynomial
+                      (math-sub (nth 1 rel) (nth 2 rel)) var 1))
+             (lead (nth 1 coeffs)))
+        (cond
+         ((and (= (length coeffs) 2) (not (Math-zerop lead)))
+          (let ((bound (math-normalize
+                        (math-div (math-neg (car coeffs)) lead)))
+                (keep head)
+                (flip (maf--flip-relation-op head)))
+            ;; A leading coefficient written negative reads better
+            ;; positive: -c > 0 ? A : B becomes c > 0 ? B : A.
+            (when (math-looks-negp lead)
+              (setq lead (math-neg lead))
+              (cl-rotatef keep flip))
+            (math-normalize
+             (list 'calcFunc-if (list 'calcFunc-gt lead 0)
+                   (list keep var bound)
+                   (list 'calcFunc-if (list 'calcFunc-lt lead 0)
+                         (list flip var bound)
+                         ;; The zero case: the variable term gone, the
+                         ;; relation is its constant term against 0 —
+                         ;; a truth value once that term is numeric.
+                         (list head (car coeffs) 0))))))
+         ((math-expr-contains rel var)
+          (message "Sign unknown past linear: the direction cannot be kept; solve the = form instead")
+          nil))))))
+
 (defun maf--solve-for-subexpr (rel target)
   "Solve relation REL for the sub-expression TARGET, or nil.
 A plain variable is solved directly. A compound sub-expression is
@@ -4776,9 +4847,9 @@ isolated by substituting a fresh variable for it — calc cannot solve
 for a compound directly through a nonlinear operator like sqrt — then
 solving for that variable and substituting the sub-expression back."
   (if (eq (car-safe target) 'var)
-      (math-solve-eqn rel target nil)
+      (maf--solve-relation rel target)
     (let* ((u (maf--solve-fresh-var rel))
-           (soln (math-solve-eqn (math-expr-subst rel target u) u nil)))
+           (soln (maf--solve-relation (math-expr-subst rel target u) u)))
       (and soln (math-expr-subst soln u target)))))
 
 (defvar maf--solve-target nil
@@ -4835,7 +4906,9 @@ bare expression is treated as = 0; nothing solvable commits unchanged."
                    (and maf--solve-target
                         (maf--solve-for-subexpr rel maf--solve-target))))
               (setq maf--solve-target-isolated
-                    (and (maf--relation-p target-result) t))
+                    (and (or (maf--relation-p target-result)
+                             (maf--solve-split-p target-result))
+                         t))
               (or
                (and maf--solve-target-isolated target-result)
                ;; If the target cannot be isolated, solve for a variable,
@@ -4853,10 +4926,10 @@ bare expression is treated as = 0; nothing solvable commits unchanged."
                                   (nth (mod (1+ pos) n) vars)
                                 (car vars))))
                         (setq maf--solve-solved-var var)
-                        (math-solve-eqn rel var nil)))))))))
+                        (maf--solve-relation rel var)))))))))
     ;; Nothing solvable: the subject commits unchanged, so no variable
     ;; was isolated after all and point has nothing to land on.
-    (if (maf--relation-p result)
+    (if (or (maf--relation-p result) (maf--solve-split-p result))
         (commit result)
       (setq maf--solve-solved-var nil)
       (commit expr))))
@@ -4888,10 +4961,13 @@ point where it was."
   (let ((m (maf--with-calc-buffer (calc-locate-cursor-element (point)))))
     (when (> m 0)
       (let* ((formula (maf--with-calc-buffer (calc-top m 'full)))
+             ;; A sign-split lands on the variable in its first branch.
+             (rel (cond ((maf--relation-p formula) formula)
+                        ((maf--solve-split-p formula) (nth 2 formula))))
              ;; The matched cons comes from the formula itself, which is
              ;; what the composition machinery can locate on screen.
-             (side (and (maf--relation-p formula)
-                        (cl-find var (list (nth 1 formula) (nth 2 formula))
+             (side (and rel
+                        (cl-find var (list (nth 1 rel) (nth 2 rel))
                                  :test #'equal))))
         (when side
           (maf--point-restore-start `((:node . ,side) (:m . ,m))))))))
@@ -4938,12 +5014,18 @@ on a relation already solved for one moves on to the next.
 
   x + y = 5    =>  x = -y + 5   (again: y = -x + 5)
   2 x - 3 < 7  =>  x < 5
+  k x < 1      =>  k > 0 ? x < 1/k : k < 0 ? x > 1/k : -1 < 0
   x + 3 != 7   =>  x != 4
   3 = 3        =>  3 = 3       (no variable: unchanged)
 
 Equations and inequalities alike, the relation kept — calc flips an
-inequality's sense when it must. A bare expression is treated as = 0.
-The result stays exact: a root gives sqrt(2), a ratio 1:2.
+inequality's sense when it must, and a direction that hinges on a
+sign calc cannot see comes back as calc's if, split on that sign;
+substituting a value for k later collapses the if to the branch that
+holds. A direction that cannot be kept at all (x^2 < 4 asks for an
+interval) leaves the entry unchanged with a message. A bare
+expression is treated as = 0. The result stays exact: a root gives
+sqrt(2), a ratio 1:2.
 
 Point lands on the variable that ended up isolated, whichever side calc
 put it on — solving 5 - x > 2 gives 3 > x, and point goes to the x on
@@ -5049,7 +5131,14 @@ entry unchanged instead — unchanged means as written, so nothing turns."
   :scope entry
   (let ((result (let ((calc-symbolic-mode t) (calc-prefer-frac t))
                   (condition-case nil
-                      (funcall maf--solve-for-func expr maf--solve-for-vars)
+                      ;; An order inequality solved for one variable goes
+                      ;; through the direction-preserving wrapper; the
+                      ;; other solvers and vector subjects go to calc.
+                      (if (and (eq maf--solve-for-func 'calcFunc-solve)
+                               (eq (car-safe maf--solve-for-vars) 'var)
+                               (memq (car-safe expr) maf--solve-order-heads))
+                          (maf--solve-relation expr maf--solve-for-vars)
+                        (funcall maf--solve-for-func expr maf--solve-for-vars))
                     (error nil)))))
     (commit (if (or (null result)
                     (eq (car-safe result) maf--solve-for-func))
@@ -5088,8 +5177,10 @@ meaning, so point within the formula is not used to narrow it. To solve
 for something Calc cannot solve for directly — a compound
 sub-expression, under a nonlinear operator — use `mafcmd-isolate',
 which isolates the sub-expression under point. A bare expression is
-treated as = 0, inequalities keep their relation, and an input Calc
-cannot solve for the named variable commits unchanged.
+treated as = 0, inequalities keep their relation — one whose direction
+hinges on a sign calc cannot see comes back as calc's if, split on
+that sign — and an input Calc cannot solve for the named variable
+commits unchanged.
 
 The solution is written with its variable on the left. Calc leaves an
 inequality whose sign flipped reading the other way round (-2 < x); it
@@ -5099,6 +5190,7 @@ variable that was solved for.
   x + y = 5                     =>  y = 5 - x       (typed: y)
   [x + y = 3, x - y = 1]        =>  [x = 2, y = 1]  (typed: x,y)
   2 x - 3 < 7                   =>  x < 5
+  k x < 1                       =>  k > 0 ? x < 1/k : k < 0 ? x > 1/k : -1 < 0
   -2 x < 4                      =>  x > -2          (turned, sense kept)
   x^2 + y^2 = r^2               =>  y = sqrt(r^2 - x^2)
   x + 3                         =>  x = -3          (bare: solved = 0)
