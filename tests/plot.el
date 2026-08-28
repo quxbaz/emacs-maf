@@ -202,6 +202,17 @@
   (cl-assert (eq (alist-get 'd maf-plot-test--spec) t))
   (cl-assert (equal (alist-get 'k maf-plot-test--spec)
                     maf-plot-desmos-api-key))
+  ;; No range given, no bounds sent — Desmos keeps its own viewport.
+  (cl-assert (null (alist-get 'b maf-plot-test--spec)))
+  ;; A range becomes the b pair: the viewport's opening x bounds.
+  (cl-assert (equal (let* ((url (maf-plot--desmos-url
+                                 (list (math-read-expr "sin(x)"))
+                                 '(-5.0 . 5.0)))
+                           (json (url-unhex-string
+                                  (substring url (1+ (string-match "#" url))))))
+                      (alist-get 'b (json-parse-string
+                                     json :object-type 'alist)))
+                    [-5.0 5.0]))
   ;; Radians mode turns degreeMode off.
   (calc-radians-mode)
   (cl-assert (eq (let* ((url (maf-plot--desmos-url

@@ -25,7 +25,8 @@
 ;; The x range is never prompted for (y always autoscales): trig
 ;; expressions get one period around 0, angle-mode-aware, everything
 ;; else `maf-plot-default-range'. A prefix argument prompts, and the
-;; last prompted range is the next prompt's default. See
+;; last prompted range is the next prompt's default; on desmos the
+;; prompted range is the viewport's opening x bounds. See
 ;; docs/plans/maf-plot.md for the decisions and the prototype findings
 ;; this file encodes.
 ;;
@@ -605,12 +606,13 @@ offer for a genuinely multi-variable expression."
         (math-expr-subst expr (car foreign) '(var x var-x))
       expr)))
 
-(defun maf-plot--desmos-url (entries)
+(defun maf-plot--desmos-url (entries &optional range)
   "Return the local Desmos page URL plotting ENTRIES.
 The fragment is the whole handoff: a URI-encoded JSON object with the
 entries as calc-formatted LaTeX (relations go whole — Desmos graphs
 equations natively; a preformatted string passes through), the angle
-mode, and the API key the page loads calculator.js with. Nothing is
+mode, the API key the page loads calculator.js with, and — when
+RANGE is given — the x bounds the viewport opens on. Nothing is
 generated per plot; the page is a fixed asset and the URL is the
 graph."
   (let ((page (expand-file-name "maf-plot.html" maf-plot--load-directory)))
@@ -619,26 +621,32 @@ graph."
     (concat "file://" page "#"
             (url-hexify-string
              (json-serialize
-              (list :e (vconcat
-                        (mapcar (lambda (e)
-                                  (if (stringp e) e
-                                    (maf-plot--desmos-latex
-                                     (maf-plot--desmos-normalize e))))
-                                entries))
-                    :d (if (eq calc-angle-mode 'deg) t :false)
-                    :k maf-plot-desmos-api-key))))))
+              (append
+               (list :e (vconcat
+                         (mapcar (lambda (e)
+                                   (if (stringp e) e
+                                     (maf-plot--desmos-latex
+                                      (maf-plot--desmos-normalize e))))
+                                 entries))
+                     :d (if (eq calc-angle-mode 'deg) t :false)
+                     :k maf-plot-desmos-api-key)
+               (and range (list :b (vector (float (car range))
+                                           (float (cdr range)))))))))))
 
-(defun maf-plot--show-desmos (expressions)
+(defun maf-plot--show-desmos (expressions &optional range)
   "Open the Desmos page on EXPRESSIONS in the configured browser.
+RANGE, when given, is the (LO . HI) x bounds the viewport opens on.
 The browser binary gets the URL directly: `browse-url' via xdg-open
 resolves a file:// URL to a bare path and silently drops the
 fragment, opening an empty calculator."
+  (unless expressions
+    (user-error "Nothing to send to Desmos"))
   (let ((program (or maf-plot-browser browse-url-generic-program)))
     (unless program
       (user-error
        "No browser configured: set `maf-plot-browser' (xdg-open would drop the graph)"))
     (start-process "maf-plot-browser" nil program
-                   (maf-plot--desmos-url expressions))
+                   (maf-plot--desmos-url expressions range))
     (message "Sent %d %s to Desmos" (length expressions)
              (if (cdr expressions) "expressions" "expression"))))
 
@@ -689,9 +697,12 @@ error surfaces."
     (nreverse curves)))
 
 (defun maf-plot--dispatch (entries arg)
-  "Plot ENTRIES on the configured backend; prefix ARG prompts a range."
+  "Plot ENTRIES on the configured backend; prefix ARG prompts a range.
+On desmos the prompted range becomes the viewport's opening x
+bounds; unprompted, Desmos keeps its own."
   (pcase maf-plot-backend
-    ('desmos (maf-plot--show-desmos (maf-plot--desmos-expressions entries)))
+    ('desmos (maf-plot--show-desmos (maf-plot--desmos-expressions entries)
+                                    (and arg (maf-plot--read-range))))
     (backend
      (let* ((specs (mapcan #'maf-plot--curve-exprs entries))
             (range (maf-plot--range (mapcar #'car specs) arg))
@@ -747,18 +758,21 @@ On the gnuplot backends the curves share one x range and one y axis —
 a mismatched-scale curve is honestly squashed rather than silently
 moved to its own axis — and entries that cannot be sampled are
 skipped with a message. Desmos receives every entry and scales
-interactively. With prefix ARG, prompt for the x range."
+interactively. With prefix ARG, prompt for the x range — on desmos
+it becomes the viewport's opening bounds."
   (interactive "P")
   (maf-plot--dispatch (maf-plot--entries) arg))
 
 ;;;###autoload
-(defun maf-plot-entry-desmos ()
+(defun maf-plot-entry-desmos (arg)
   "Plot the whole stack entry at point in Desmos, whatever the backend.
 The dial keeps its setting; this gesture is the one-off escape to the
-interactive grapher when the configured surface is a gnuplot one."
-  (interactive)
+interactive grapher when the configured surface is a gnuplot one.
+With prefix ARG, prompt for the x bounds the viewport opens on."
+  (interactive "P")
   (maf-plot--show-desmos
-   (maf-plot--desmos-expressions (list (maf-plot--entry-at-point)))))
+   (maf-plot--desmos-expressions (list (maf-plot--entry-at-point)))
+   (and arg (maf-plot--read-range))))
 
 ;;; Module
 

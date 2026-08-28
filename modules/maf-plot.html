@@ -10,7 +10,7 @@
 <script>
   // The URL fragment is the whole handoff from maf (see
   // maf-plot--desmos-url): a URI-encoded JSON object
-  //   {e: [latex, ...], d: degreeMode, k: apiKey}
+  //   {e: [latex, ...], d: degreeMode, k: apiKey, b: [xlo, xhi]?}
   // The page is a fixed asset — the fragment carries everything,
   // including the API key calculator.js loads with, so the key stays
   // an Emacs defcustom. Fragments never leave the browser.
@@ -23,6 +23,15 @@
     var calc = Desmos.GraphingCalculator(document.getElementById('calc'), {
       degreeMode: !!spec.d
     });
+    if (spec.b && spec.b.length === 2) {
+      // Only x was asked for; keep the default vertical span so y
+      // still reads as auto.
+      var v = calc.graphpaperBounds.mathCoordinates;
+      calc.setMathBounds({
+        left: spec.b[0], right: spec.b[1],
+        bottom: v.bottom, top: v.top
+      });
+    }
     (spec.e || []).forEach(function (latex, i) {
       calc.setExpression({ id: 'maf' + i, latex: latex });
     });
