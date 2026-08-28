@@ -677,6 +677,15 @@ interactively. With prefix ARG, prompt for the x range."
   (interactive "P")
   (maf-plot--dispatch (maf-plot--entries) arg))
 
+;;;###autoload
+(defun maf-plot-entry-desmos ()
+  "Plot the whole stack entry at point in Desmos, whatever the backend.
+The dial keeps its setting; this gesture is the one-off escape to the
+interactive grapher when the configured surface is a gnuplot one."
+  (interactive)
+  (maf-plot--show-desmos
+   (maf-plot--desmos-expressions (list (maf-plot--entry-at-point)))))
+
 ;;; Module
 
 (defun maf-plot--engage (backend)
@@ -688,10 +697,11 @@ interactively. With prefix ARG, prompt for the x range."
   "Make maf's plotting available on the g prefix in Calc.
 
 g g plots every stack entry in one picture; g l plots the whole
-entry at point; g i and g I are the same with the x range asked for. Where the plot appears
-is `maf-plot-backend': gnuplot's
-own interactive window, an SVG panel split below Calc, or the Desmos
-calculator in a browser. Off, calc's stock g-prefix graphing is
+entry at point; g i and g I are the same with the x range asked
+for. Where the plot appears is `maf-plot-backend': gnuplot's own
+interactive window, an SVG panel split below Calc, or the Desmos
+calculator in a browser. g o plots the entry at point in Desmos
+regardless of the backend. Off, calc's stock g-prefix graphing is
 untouched."
   :global t
   :group 'maf
@@ -705,10 +715,12 @@ untouched."
       ((native) "g l" maf-plot-entry)
       ((native) "g i" maf-plot-entry-with-range)
       ((native) "g I" maf-plot-all-with-range)
+      ((native) "g o" maf-plot-entry-desmos)
       ((vim) "g g" maf-plot-all)
       ((vim) "g l" maf-plot-entry)
       ((vim) "g i" maf-plot-entry-with-range)
-      ((vim) "g I" maf-plot-all-with-range))))
+      ((vim) "g I" maf-plot-all-with-range)
+      ((vim) "g o" maf-plot-entry-desmos))))
 
 (when (require 'maf-module nil t)
   (maf-register-module 'maf-plot #'maf-use-plot-mode
@@ -718,10 +730,11 @@ g g plots the whole stack in one picture, g l the whole entry at
 point; g i and g I ask for the x range first. The row's value picks the
 surface: an interactive gnuplot
 window, an SVG panel split below Calc themed from the live faces, or
-a fire-and-forget Desmos page in the browser. Trig curves auto-range
+a fire-and-forget Desmos page in the browser. g o goes to Desmos
+regardless of the row's value. Trig curves auto-range
 one period in the current angle mode; a prefix argument asks for the
 range. Off, calc's own g-prefix graphing is untouched."
-                       "g g / g l / g i / g I" "Plotting"
+                       "g g / g l / g i / g I / g o" "Plotting"
                        (lambda ()
                          (list :values
                                '((off "off" (maf-use-plot-mode -1))
