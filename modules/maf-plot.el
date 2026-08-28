@@ -19,7 +19,8 @@
 ;; LaTeX language (`maf--latex-string') is the entire translation
 ;; layer. Relation entries plot: gnuplot samples the rhs of y = f(x)
 ;; and refuses any other relation toward g o; desmos receives the
-;; equation whole and graphs it natively.
+;; equation whole and graphs it natively. A vector of numbers is data
+;; — index→value points — on every backend.
 ;;
 ;; The x range is never prompted for (y always autoscales): trig
 ;; expressions get one period around 0, angle-mode-aware, everything
@@ -166,30 +167,48 @@ refusal points at g o, since Desmos graphs relations whole."
    (t (user-error "Cannot sample %s; g o plots it in Desmos"
                   (maf-plot--label entry)))))
 
+(defun maf-plot--data-vector-p (entry)
+  "Non-nil when ENTRY is a nonempty vector of real numbers — data.
+Plotted as index→value points, the series reading of a numeric
+vector, rather than as a set of horizontal constant curves."
+  (and (eq (car-safe entry) 'vec)
+       (cdr entry)
+       (cl-every #'Math-realp (cdr entry))))
+
 (defun maf-plot--curve-exprs (entry)
   "Return ENTRY's curves as (ENTRY-OR-ELEMENT . LABEL) pairs.
-Most entries are one curve. A vector entry is a curve set — one
-curve per element, each labeled by the element — so a subset of the
-stack worth plotting together can be built with calc's own grouping
-and replotted as one thing. A relation's rhs is taken at sampling
-time, where a curve that refuses can be skipped without sinking an
-overlay."
-  (if (eq (car-safe entry) 'vec)
-      (progn
-        (unless (cdr entry)
-          (user-error "Nothing to plot in an empty vector"))
-        (mapcar (lambda (element)
-                  (cons element (maf-plot--label element)))
-                (cdr entry)))
-    (list (cons entry (maf-plot--label entry)))))
+Most entries are one curve. A vector of expressions is a curve set —
+one curve per element, each labeled by the element — so a subset of
+the stack worth plotting together can be built with calc's own
+grouping and replotted as one thing. A vector of numbers is one data
+curve. A relation's rhs is taken at sampling time, where a curve
+that refuses can be skipped without sinking an overlay."
+  (cond
+   ((maf-plot--data-vector-p entry)
+    (list (cons entry (maf-plot--label entry))))
+   ((eq (car-safe entry) 'vec)
+    (unless (cdr entry)
+      (user-error "Nothing to plot in an empty vector"))
+    (mapcar (lambda (element)
+              (cons element (maf-plot--label element)))
+            (cdr entry)))
+   (t (list (cons entry (maf-plot--label entry))))))
 
 (defun maf-plot--desmos-expressions (entries)
   "Flatten ENTRIES for desmos: a vector entry contributes per element.
-Relations stay whole — Desmos graphs equations natively."
+Relations stay whole — Desmos graphs equations natively. A vector of
+numbers becomes index→value points, one preformatted latex string
+per element (Desmos draws a bare coordinate pair as a point)."
   (mapcan (lambda (entry)
-            (if (eq (car-safe entry) 'vec)
-                (copy-sequence (cdr entry))
-              (list entry)))
+            (cond
+             ((maf-plot--data-vector-p entry)
+              (let ((index 0))
+                (mapcar (lambda (v)
+                          (format "\\left(%d,%s\\right)"
+                                  (cl-incf index) (maf--latex-string v)))
+                        (cdr entry))))
+             ((eq (car-safe entry) 'vec) (copy-sequence (cdr entry)))
+             (t (list entry))))
           entries))
 
 (defun maf-plot--variable (expr)
@@ -320,19 +339,21 @@ file render as gaps in the curve, which is right."
 
 (defun maf-plot--plot-clauses (curves)
   "Return the gnuplot plot command for CURVES.
-Each curve is (DATA-FILE . LABEL). One curve plots untitled — its
-label is the plot title; several get legend entries."
+Each curve is (DATA-FILE LABEL STYLE), STYLE nil for plain lines.
+One curve plots untitled — its label is the plot title; several get
+legend entries."
   (let ((single (null (cdr curves)))
         (index -1))
     (concat "plot "
             (mapconcat
              (lambda (curve)
                (setq index (1+ index))
-               (format "\"%s\" with lines linewidth 2 linecolor rgb \"%s\" %s"
+               (format "\"%s\" with %s linewidth 2 linecolor rgb \"%s\" %s"
                        (car curve)
+                       (or (nth 2 curve) "lines")
                        (maf-plot--curve-color index)
                        (if single "notitle"
-                         (format "title \"%s\"" (cdr curve)))))
+                         (format "title \"%s\"" (nth 1 curve)))))
              curves ", "))))
 
 (defun maf-plot--theme-lines ()
@@ -569,16 +590,21 @@ Each lifted abs's finished latex is pushed on
   "Return the local Desmos page URL plotting ENTRIES.
 The fragment is the whole handoff: a URI-encoded JSON object with the
 entries as calc-formatted LaTeX (relations go whole — Desmos graphs
-equations natively), the angle mode, and the API key the page loads
-calculator.js with. Nothing is generated per plot; the page is a
-fixed asset and the URL is the graph."
+equations natively; a preformatted string passes through), the angle
+mode, and the API key the page loads calculator.js with. Nothing is
+generated per plot; the page is a fixed asset and the URL is the
+graph."
   (let ((page (expand-file-name "maf-plot.html" maf-plot--load-directory)))
     (unless (file-exists-p page)
       (error "maf-plot.html missing beside maf-plot.el"))
     (concat "file://" page "#"
             (url-hexify-string
              (json-serialize
-              (list :e (vconcat (mapcar #'maf-plot--desmos-latex entries))
+              (list :e (vconcat
+                        (mapcar (lambda (e)
+                                  (if (stringp e) e
+                                    (maf-plot--desmos-latex e)))
+                                entries))
                     :d (if (eq calc-angle-mode 'deg) t :false)
                     :k maf-plot-desmos-api-key))))))
 
@@ -598,22 +624,40 @@ fragment, opening an empty calculator."
 
 ;;; Commands
 
+(defun maf-plot--write-data (entry file)
+  "Write data-vector ENTRY into FILE as index→value gnuplot data.
+Values go through `math-float' so a fraction lands as a decimal
+gnuplot can read, not calc's 1:2."
+  (let ((index 0))
+    (with-temp-file file
+      (dolist (v (cdr entry))
+        (insert (format "%d %s\n" (cl-incf index)
+                        (math-format-value (math-float v) 1000))))))
+  file)
+
 (defun maf-plot--gnuplot-curves (specs range)
-  "Sample SPECS — (ENTRY . LABEL) pairs — into (DATA-FILE . LABEL) curves.
-A curve that refuses — an implicit relation, several variables, no
-real points — is skipped with a message when others remain, so one
-odd curve does not sink a whole plot; a lone curve's error surfaces."
+  "Turn SPECS — (ENTRY . LABEL) pairs — into (FILE LABEL STYLE) curves.
+A function entry samples over RANGE with the default line style; a
+data vector writes its points directly, drawn as linespoints on its
+indices. A curve that refuses — an implicit relation, several
+variables, no real points — is skipped with a message when others
+remain, so one odd curve does not sink a whole plot; a lone curve's
+error surfaces."
   (let ((index 0)
         (curves nil)
         (skipped nil))
     (dolist (spec specs)
       (setq index (1+ index))
       (condition-case err
-          (push (cons (maf-plot--sample
-                       (maf-plot--function-of (car spec)) range
-                       (maf-plot--work-file (format "curve-%d.dat" index)))
-                      (cdr spec))
-                curves)
+          (let ((entry (car spec))
+                (file (maf-plot--work-file (format "curve-%d.dat" index))))
+            (push (if (maf-plot--data-vector-p entry)
+                      (list (maf-plot--write-data entry file)
+                            (cdr spec) "linespoints pointtype 7")
+                    (list (maf-plot--sample
+                           (maf-plot--function-of entry) range file)
+                          (cdr spec) nil))
+                  curves))
         (error
          (if (cdr specs)
              (push (error-message-string err) skipped)
@@ -632,7 +676,7 @@ odd curve does not sink a whole plot; a lone curve's error surfaces."
      (let* ((specs (mapcan #'maf-plot--curve-exprs entries))
             (range (maf-plot--range (mapcar #'car specs) arg))
             (curves (maf-plot--gnuplot-curves specs range))
-            (title (cond ((null (cdr curves)) (cdr (car curves)))
+            (title (cond ((null (cdr curves)) (nth 1 (car curves)))
                          ((cdr entries) (format "%d curves" (length curves)))
                          (t (maf-plot--label (car entries))))))
        (if (eq backend 'gnuplot-external)

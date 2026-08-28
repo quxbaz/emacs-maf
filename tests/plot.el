@@ -73,6 +73,20 @@
                                 (insert-file-contents maf-plot-test--file)
                                 (split-string (buffer-string) "\n" t))))
 
+  ;; A vector of numbers is data, not a curve set: one curve of
+  ;; index→value points, values floated so a fraction is gnuplot-readable.
+  (cl-assert (maf-plot--data-vector-p (math-read-expr "[1, 3, 2, 5]")))
+  (cl-assert (not (maf-plot--data-vector-p (math-read-expr "[sin(x), 1]"))))
+  (cl-assert (not (maf-plot--data-vector-p (math-read-expr "[]"))))
+  (cl-assert (equal (maf-plot--curve-exprs (math-read-expr "[1, 3, 2, 5]"))
+                    (list (cons (math-read-expr "[1, 3, 2, 5]")
+                                "[1, 3, 2, 5]"))))
+  (maf-plot--write-data (math-read-expr "[1, 3:2]") maf-plot-test--file)
+  (cl-assert (equal (with-temp-buffer
+                      (insert-file-contents maf-plot-test--file)
+                      (split-string (buffer-string) "\n" t))
+                    '("1 1." "2 1.5")))
+
   ;; The range grammar: lo:hi, :hi from 0, a single n symmetric.
   (cl-assert (equal (maf-plot--parse-range "2:8") '(2 . 8)))
   (cl-assert (equal (maf-plot--parse-range ":5") '(0 . 5)))
@@ -152,6 +166,11 @@
                     "\\sqrt{x}"))
   (cl-assert (equal (maf-plot--desmos-latex (math-read-expr "log10(x)"))
                     "\\log_{10}\\left( x \\right)"))
+
+  ;; A data vector goes to Desmos as points, preformatted.
+  (cl-assert (equal (maf-plot--desmos-expressions
+                     (list (math-read-expr "[1, 3]")))
+                    (list "\\left(1,1\\right)" "\\left(2,3\\right)")))
 
   ;; The desmos URL: the fragment alone carries the graph — latex per
   ;; entry (relations whole), the angle mode, and the API key.
