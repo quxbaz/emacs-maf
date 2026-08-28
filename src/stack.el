@@ -3112,14 +3112,21 @@ is a \\left( group, where it falls back to \\times — its flatness
 test is structural, so even a factor that renders flat can trip it.
 Juxtaposition is unambiguous there too, so the \\times goes; it stays
 in the remaining cases (a negated right factor), where dropping it
-would turn the product into a difference."
+would turn the product into a difference.
+
+Calc writes if(c, a, b) as c ? a : b, but TeX ignores the source
+spaces and ? is an ordinary character, so it typesets crammed
+(0?x) while the : beside it, a relation to TeX, gets spaced. The ?
+is reclassed \\mathrel to match."
   (maf--with-calc-buffer
     (let ((lang calc-language)
           (opt calc-language-option))
       (unwind-protect
           (progn (calc-set-language 'latex nil t)
-                 (replace-regexp-in-string "\\\\times \\(\\\\left(\\)" "\\1"
-                                           (math-format-value expr)))
+                 (replace-regexp-in-string
+                  " \\? " " \\\\mathrel{?} "
+                  (replace-regexp-in-string "\\\\times \\(\\\\left(\\)" "\\1"
+                                            (math-format-value expr))))
         (calc-set-language lang opt t)))))
 
 (defun maf--copy-squeeze (text)
