@@ -105,7 +105,7 @@
 ;; mafcmd-totient cedes it — see the table in maf-cmds.el.
 (maf-bindings-define '(native) "k t" #'mafcmd-perm)
 ;; A second key for the factor, beside its table key a f: the whole
-;; factoring family already gathers under k and l (k d, l f, l F, l D),
+;; factoring family already collects under k and l (k d, l f, l F, l D),
 ;; and f is factor's letter. mafcmd-prfac cedes it — see the table in
 ;; maf-cmds.el.
 (maf-bindings-define '(native) "k f" #'mafcmd-factor)
@@ -116,7 +116,7 @@
 (maf-bindings-define '(native) "l c" #'mafcmd-collect-fractions)
 ;; Collect's inverse beside it: a redundant second key for apart (the
 ;; table's a a), splitting a fraction into partial fractions the way
-;; l c gathers them. t freed when poly-roots left the key; the roots
+;; l c collects them. t freed when poly-roots left the key; the roots
 ;; keep the family on its capital, l T.
 (maf-bindings-define '(native) "l t" #'mafcmd-apart)
 ;; The float/frac toggle: any float in the target converts toward
@@ -217,11 +217,11 @@
 ;; Shadows calc-enable-selections, whose toggle maf has no use for —
 ;; every maf command resolves its subject from point.
 (maf-bindings-define '(native) "j e" #'maf-jump-equals)
-;; Gather every term of a variable on the side of the relation at
+;; Collect every term of a variable on the side of the relation at
 ;; point — the whole-family sibling of the single-term jump above. On
 ;; the capital of a c (mafcmd-collect), whose polynomial collect it is
 ;; the cross-equation cousin of; l C is unbound in calc itself.
-(maf-bindings-define '(native) "l C" #'mafcmd-gather)
+(maf-bindings-define '(native) "l C" #'mafcmd-collect-terms)
 ;; Spread the formula around the target inward over its parts, and the
 ;; reverse. These take calc's own keys rather than a lowercase twin:
 ;; unlike the jump and the shifts above, the contextual versions have

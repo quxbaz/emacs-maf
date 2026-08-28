@@ -3760,37 +3760,37 @@ than signaling."
               ;; A single undo reverts point along with the stack.
               (maf--undo-record-cmd-point snapshot))))))))
 
-;;; Gathering
+;;; Collecting terms
 
-(defvar maf--gather-vars nil
-  "Variable (or vector of them) `maf--gather-run' gathers.
-Bound per `mafcmd-gather' call, from the prompt it reads.")
+(defvar maf--collect-vars nil
+  "Variable (or vector of them) `maf--collect-run' collects.
+Bound per `mafcmd-collect-terms' call, from the prompt it reads.")
 
-(defvar maf--gather-side nil
-  "Side of the relation the gathered terms land on: 1 left, 2 right.
-Bound per `mafcmd-gather' call, from where point stood.")
+(defvar maf--collect-side nil
+  "Side of the relation the collected terms land on: 1 left, 2 right.
+Bound per `mafcmd-collect-terms' call, from where point stood.")
 
-(defun maf--gather-terms (expr)
+(defun maf--collect-addends (expr)
   "Return EXPR's top-level additive terms, subtraction folded to negation."
   (pcase (car-safe expr)
-    ('+ (append (maf--gather-terms (nth 1 expr))
-                (maf--gather-terms (nth 2 expr))))
-    ('- (append (maf--gather-terms (nth 1 expr))
-                (mapcar #'math-neg (maf--gather-terms (nth 2 expr)))))
-    ('neg (mapcar #'math-neg (maf--gather-terms (nth 1 expr))))
+    ('+ (append (maf--collect-addends (nth 1 expr))
+                (maf--collect-addends (nth 2 expr))))
+    ('- (append (maf--collect-addends (nth 1 expr))
+                (mapcar #'math-neg (maf--collect-addends (nth 2 expr)))))
+    ('neg (mapcar #'math-neg (maf--collect-addends (nth 1 expr))))
     (_ (list expr))))
 
-(defun maf--gather-contains-p (term vars)
+(defun maf--collect-contains-p (term vars)
   "Non-nil when TERM contains VARS: one var node, or any of a vector."
   (if (eq (car-safe vars) 'vec)
       (cl-some (lambda (v) (math-expr-contains term v)) (cdr vars))
     (math-expr-contains term vars)))
 
-(defun maf--gather-sum (terms)
+(defun maf--collect-sum (terms)
   "Return the sum of TERMS, 0 when there are none."
   (if terms (cl-reduce #'math-add terms) 0))
 
-(defun maf--gather-point-side ()
+(defun maf--collect-point-side ()
   "Return the relation side point stands in for the entry at point: 1 or 2.
 The sub-formula under point decides, by which side of the innermost
 relation it sits in. Anywhere that names no side — home, the entry's
@@ -3816,31 +3816,31 @@ margin, the relation operator — reads as 1, the left."
                            (if (eq n (nth 2 parent)) 2 1)))))))))
         1)))
 
-(maf-defcmd maf--gather-run (expr _arg commit)
-  "Gather every term containing `maf--gather-vars' on `maf--gather-side'.
-The worker behind `mafcmd-gather' — see there. Takes the whole
+(maf-defcmd maf--collect-run (expr _arg commit)
+  "Collect every term containing `maf--collect-vars' on `maf--collect-side'.
+The worker behind `mafcmd-collect-terms' — see there. Takes the whole
 relation (:scope entry, :map -1) and rearranges it: the terms
 containing a named variable collect on the side point stood on,
 every other term moves to the other side. Both moves are additions
 and subtractions on both sides, so any relation keeps its direction.
 Sums are rebuilt under default simplifications whatever the session's
-simplify mode, so gathered like terms fold the same way every time.
+simplify mode, so collected like terms fold the same way every time.
 A bare expression, or a relation no term of which contains a named
 variable, commits unchanged."
   :arity unary
-  :prefix "gthr"
+  :prefix "clct"
   :map -1
   :scope entry
   (if (not (maf--relation-p expr))
       (commit expr)
     (let ((head (car expr))
           with-l without-l with-r without-r)
-      (dolist (term (maf--gather-terms (nth 1 expr)))
-        (if (maf--gather-contains-p term maf--gather-vars)
+      (dolist (term (maf--collect-addends (nth 1 expr)))
+        (if (maf--collect-contains-p term maf--collect-vars)
             (push term with-l)
           (push term without-l)))
-      (dolist (term (maf--gather-terms (nth 2 expr)))
-        (if (maf--gather-contains-p term maf--gather-vars)
+      (dolist (term (maf--collect-addends (nth 2 expr)))
+        (if (maf--collect-contains-p term maf--collect-vars)
             (push term with-r)
           (push term without-r)))
       (setq with-l (nreverse with-l) without-l (nreverse without-l)
@@ -3850,23 +3850,23 @@ variable, commits unchanged."
         (let* ((calc-simplify-mode nil)
                (flip (lambda (terms) (mapcar #'math-neg terms)))
                (new
-                (if (eql maf--gather-side 2)
+                (if (eql maf--collect-side 2)
                     (list head
-                          (maf--gather-sum
+                          (maf--collect-sum
                            (append without-l (funcall flip without-r)))
-                          (maf--gather-sum
+                          (maf--collect-sum
                            (append with-r (funcall flip with-l))))
                   (list head
-                        (maf--gather-sum
+                        (maf--collect-sum
                          (append with-l (funcall flip with-r)))
-                        (maf--gather-sum
+                        (maf--collect-sum
                          (append without-r (funcall flip without-l)))))))
           (commit (math-normalize new)))))))
 
-(defun mafcmd-gather ()
-  "Gather every term of a variable on the side of the relation at point.
+(defun mafcmd-collect-terms ()
+  "Collect every term of a variable on the side of the relation at point.
 
-  1:  x| + 2 k = x^2 - x + 3   gather x  =>  -x^2 + 2 x = -2 k + 3
+  1:  x| + 2 k = x^2 - x + 3   collect x  =>  -x^2 + 2 x = -2 k + 3
 
 Point names the side: the terms containing the variable collect on
 the side point stands in, and every other term moves to the other —
@@ -3874,7 +3874,7 @@ here point in the right side would collect them there instead. Home,
 the entry's margin, and the relation operator read as the left. The
 variable is read from the minibuffer as `mafcmd-solve-for' reads it:
 the subject's priority variable as the default, several names
-separated by commas or spaces gathering the terms of them all.
+separated by commas or spaces collecting the terms of them all.
 
 Terms move whole, by containment, wherever the variable appears in
 them; both moves are additions and subtractions on both sides, so
@@ -3882,15 +3882,15 @@ every relation keeps its direction, inequalities included. A side
 left with no terms becomes 0. A relation no term of which contains
 the variable, or a bare expression, commits unchanged.
 
-  1:  a x| <= b - x   gather x  =>  a x + x <= b
-  1:  x + 2 k| = 3    gather z  =>  x + 2 k = 3   (no z: unchanged)"
+  1:  a x| <= b - x   collect x  =>  a x + x <= b
+  1:  x + 2 k| = 3    collect z  =>  x + 2 k = 3   (no z: unchanged)"
   (interactive)
   (let ((vars (maf--solve-for-read-vars (maf--solve-for-default-var)
-                                        "Gather"))
-        (side (maf--gather-point-side)))
-    (let ((maf--gather-vars vars)
-          (maf--gather-side side))
-      (call-interactively #'maf--gather-run))))
+                                        "Collect variable on one side of equation"))
+        (side (maf--collect-point-side)))
+    (let ((maf--collect-vars vars)
+          (maf--collect-side side))
+      (call-interactively #'maf--collect-run))))
 
 ;; Calc's DistribRules and MergeRules are written against a marked
 ;; sub-formula: every rule mentions select(...) somewhere, and matches
@@ -3914,7 +3914,7 @@ the variable, or a bare expression, commits unchanged.
 (defvar math-rewrite-selections)
 (defvar math-rewrite-default-iters)
 
-;; Four of calc's MergeRules gather powers of unlike bases wrongly, in
+;; Four of calc's MergeRules collect powers of unlike bases wrongly, in
 ;; two ways, and both lose the value rather than merely spell it oddly.
 ;; Stock `calc-sel-merge' has the same answers; none of this is maf's
 ;; doing.
@@ -3928,7 +3928,7 @@ the variable, or a bare expression, commits unchanged.
 ;; so a^x / b^x with the denominator marked answers b/b = 1.
 ;;
 ;; The second is the exponent arithmetic shared by the whole
-;; differing-exponent family. Gathering a^x and b^y under one power of
+;; differing-exponent family. Collecting a^x and b^y under one power of
 ;; x needs (b^(y/x))^x = b^y, but the rules subtract where they must
 ;; divide, giving b^(x(y-x)):
 ;;
@@ -4431,7 +4431,7 @@ is left untouched, nothing pushed or popped, rather than signaling."
   (maf--sel-rewrite (calc-var-value 'var-DistribRules) "dist" t t))
 
 (defun maf-merge ()
-  "Gather the target into the formula around it.
+  "Collect the target into the formula around it.
 
   x a + x b|  =>  x*(a + b|)
 
@@ -4464,13 +4464,13 @@ selection is never widened, as everywhere else in maf, and only the
 formula the rule matches is rewritten — a second site the gesture
 never named keeps its shape.
 
-Two of calc's rules for gathering powers of unlike bases answer with
+Two of calc's rules for collecting powers of unlike bases answer with
 the wrong value, and two more get the exponent wrong; maf corrects all
-four, so a^x / b^x gathers to (a / b)^x from either end of the
+four, so a^x / b^x collects to (a / b)^x from either end of the
 quotient rather than to 1.
 
 One rule fires per invocation. With no rule matching — nothing beside
-the target to gather it with — the entry is left untouched, nothing
+the target to collect it with — the entry is left untouched, nothing
 pushed or popped, rather than signaling."
   (interactive)
   (maf--sel-rewrite (maf--merge-rules) "merg"))
@@ -6128,7 +6128,7 @@ See `maf--map-flag-entry'."
   (let ((map (make-sparse-keymap)))
     (define-key map "$" #'maf--map-flag-stack)
     (define-key map ":" #'maf--map-flag-entry)
-    ;; The parent gathers digits as a prefix argument, but maf's
+    ;; The parent collects digits as a prefix argument, but maf's
     ;; digits start a numeric entry: give them the fall-through every
     ;; other key gets, so M 1 + types the 1 and adds it plainly (the
     ;; entry is a command with no reading of the flag, which drops
