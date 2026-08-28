@@ -389,7 +389,9 @@ set title textcolor rgb \"%s\"
   "Plot CURVES in gnuplot's own interactive window.
 No terminal line — gnuplot picks its interactive default (qt, x11).
 The script pauses until the window closes, so the process holds the
-window; the launch itself is fire and forget."
+window; the launch is fire and forget, but a sentinel reports a
+nonzero exit — a script gnuplot rejects would otherwise show
+nothing and say nothing."
   (let ((program (executable-find maf-plot-gnuplot-program)))
     (unless program
       (user-error "gnuplot not found (customize `maf-plot-gnuplot-program')"))
@@ -399,7 +401,26 @@ window; the launch itself is fire and forget."
                         title
                         (if (cdr curves) "set key top center\n" "set key off\n")
                         (maf-plot--plot-clauses curves))))
-      (start-process "maf-plot-gnuplot" nil program file))))
+      (set-process-sentinel
+       (start-process "maf-plot-gnuplot"
+                      (generate-new-buffer " *maf-plot-gnuplot*")
+                      program file)
+       (lambda (process _event)
+         (when (memq (process-status process) '(exit signal))
+           (let* ((buffer (process-buffer process))
+                  (output (and (buffer-live-p buffer)
+                               (string-trim
+                                (with-current-buffer buffer
+                                  (buffer-string))))))
+             (unless (and (eq (process-status process) 'exit)
+                          (zerop (process-exit-status process)))
+               (message "gnuplot window failed (%s)%s"
+                        (process-exit-status process)
+                        (if (and output (not (string-empty-p output)))
+                            (concat ": " output)
+                          "")))
+             (when (buffer-live-p buffer)
+               (kill-buffer buffer)))))))))
 
 ;;; gnuplot-embed
 
