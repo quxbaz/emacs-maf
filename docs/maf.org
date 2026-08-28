@@ -28,13 +28,7 @@
   - [ ] main docs for users (new features, changes)
   - [ ] technical docs for devs
 
-* graph module
-  - [ ] my/calc-graph-quick / -with-range (g l / g i) — plot the top entry straight to
-    gnuplot (see Todo: interval form for the range prompt)
-  - [ ] gnuplot session defaults (index.el) — resolution 1000, qt device, seeded
-    \"set grid / set nokey\"
-  - [ ] my/calc-to-gnuplot-string — calc expr → gnuplot formula (fortran mode + fixups)
-  - [ ] g i (my/calc-graph-quick-with-range) interval form a:b should work with spaces 'a b'
+* maf-plot
 
 * later
 ** thin web client w/ mathjax rendering
