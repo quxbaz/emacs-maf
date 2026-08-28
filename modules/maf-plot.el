@@ -586,6 +586,25 @@ Each lifted abs's finished latex is pushed on
     (dolist (lifted maf-plot--desmos-lifted latex)
       (setq latex (string-replace (car lifted) (cdr lifted) latex)))))
 
+(defconst maf-plot--desmos-known-vars '(x y e pi phi gamma i inf uinf nan)
+  "Variable names Desmos already reads: the axes and the constants.")
+
+(defun maf-plot--desmos-normalize (expr)
+  "Return EXPR with a lone foreign free variable renamed to x.
+Desmos graphs in x and y; \\sin(t) as sent would offer a slider for
+t where a curve is meant. The rename fires only when exactly one
+variable is neither an axis nor a constant Desmos knows and x itself
+is absent; anything else keeps its variables — a slider is the right
+offer for a genuinely multi-variable expression."
+  (let* ((vars (cl-delete-duplicates (maf--expr-vars expr) :test #'equal))
+         (names (mapcar (lambda (v) (nth 1 v)) vars))
+         (foreign (cl-remove-if
+                   (lambda (v) (memq (nth 1 v) maf-plot--desmos-known-vars))
+                   vars)))
+    (if (and foreign (null (cdr foreign)) (not (memq 'x names)))
+        (math-expr-subst expr (car foreign) '(var x var-x))
+      expr)))
+
 (defun maf-plot--desmos-url (entries)
   "Return the local Desmos page URL plotting ENTRIES.
 The fragment is the whole handoff: a URI-encoded JSON object with the
@@ -603,7 +622,8 @@ graph."
               (list :e (vconcat
                         (mapcar (lambda (e)
                                   (if (stringp e) e
-                                    (maf-plot--desmos-latex e)))
+                                    (maf-plot--desmos-latex
+                                     (maf-plot--desmos-normalize e))))
                                 entries))
                     :d (if (eq calc-angle-mode 'deg) t :false)
                     :k maf-plot-desmos-api-key))))))

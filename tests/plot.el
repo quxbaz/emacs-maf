@@ -167,6 +167,21 @@
   (cl-assert (equal (maf-plot--desmos-latex (math-read-expr "log10(x)"))
                     "\\log_{10}\\left( x \\right)"))
 
+  ;; Desmos graphs in x and y: a lone foreign variable is renamed to x
+  ;; (sin(t) as sent would offer a slider, not a curve). Constants
+  ;; Desmos knows don't count as foreign; x present, or two foreign
+  ;; variables, leave the expression alone.
+  (cl-assert (equal (maf-plot--desmos-normalize (math-read-expr "sin(t)"))
+                    (math-read-expr "sin(x)")))
+  (cl-assert (equal (maf-plot--desmos-normalize (math-read-expr "y = 2 t"))
+                    (math-read-expr "y = 2 x")))
+  (cl-assert (equal (maf-plot--desmos-normalize (math-read-expr "pi t"))
+                    (math-read-expr "pi x")))
+  (cl-assert (equal (maf-plot--desmos-normalize (math-read-expr "sin(x) + t"))
+                    (math-read-expr "sin(x) + t")))
+  (cl-assert (equal (maf-plot--desmos-normalize (math-read-expr "a t"))
+                    (math-read-expr "a t")))
+
   ;; A data vector goes to Desmos as points, preformatted.
   (cl-assert (equal (maf-plot--desmos-expressions
                      (list (math-read-expr "[1, 3]")))
