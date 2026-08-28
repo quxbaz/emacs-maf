@@ -52,3 +52,13 @@
   - [ ] generate tests full coverage
   - [ ] remove seed entries
   - [ ] remove project-init.el
+
+# much later
+
+* webapp
+  - multi-pane design
+  - pane 1 (main): calc stack
+    - entries show text and mathjax rendering
+  - pane 2: current plot
+  - pane 3: modules
+  - pane 4: options
