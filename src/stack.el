@@ -3937,6 +3937,138 @@ above message instead, since there the silence read as breakage."
            ((maf--jump-ordered-blocked-p (car entry) sel)
             (message "No sound move across an ordered relation from here; j j (isolate) solves for it instead"))))))))
 
+;;; Gathering
+
+(defvar maf--gather-vars nil
+  "Variable (or vector of them) `maf--gather-run' gathers.
+Bound per `mafcmd-gather' call, from the prompt it reads.")
+
+(defvar maf--gather-side nil
+  "Side of the relation the gathered terms land on: 1 left, 2 right.
+Bound per `mafcmd-gather' call, from where point stood.")
+
+(defun maf--gather-terms (expr)
+  "Return EXPR's top-level additive terms, subtraction folded to negation."
+  (pcase (car-safe expr)
+    ('+ (append (maf--gather-terms (nth 1 expr))
+                (maf--gather-terms (nth 2 expr))))
+    ('- (append (maf--gather-terms (nth 1 expr))
+                (mapcar #'math-neg (maf--gather-terms (nth 2 expr)))))
+    ('neg (mapcar #'math-neg (maf--gather-terms (nth 1 expr))))
+    (_ (list expr))))
+
+(defun maf--gather-contains-p (term vars)
+  "Non-nil when TERM contains VARS: one var node, or any of a vector."
+  (if (eq (car-safe vars) 'vec)
+      (cl-some (lambda (v) (math-expr-contains term v)) (cdr vars))
+    (math-expr-contains term vars)))
+
+(defun maf--gather-sum (terms)
+  "Return the sum of TERMS, 0 when there are none."
+  (if terms (cl-reduce #'math-add terms) 0))
+
+(defun maf--gather-point-side ()
+  "Return the relation side point stands in for the entry at point: 1 or 2.
+The sub-formula under point decides, by which side of the innermost
+relation it sits in. Anywhere that names no side — home, the entry's
+margin, the relation operator — reads as 1, the left."
+  (maf--with-calc-buffer
+    (or (when (and (not (maf--at-home-p)) (maf--at-subexpr-p))
+          (save-excursion
+            (let ((m (calc-locate-cursor-element (point))))
+              (when (> m 0)
+                (calc-prepare-selection m)
+                ;; The part stays unstripped: encasing is what gives an
+                ;; atom a cons the parent walk can identify in the tree.
+                (let* ((formula (car (calc-top m 'entry)))
+                       (sub (ignore-errors (calc-find-selected-part))))
+                  (when (and (consp sub) (not (eq sub formula)))
+                    (let ((n sub) parent)
+                      (while (and (consp (setq parent
+                                               (calc-find-parent-formula
+                                                formula n)))
+                                  (not (maf--relation-p parent)))
+                        (setq n parent))
+                      (and (consp parent)
+                           (if (eq n (nth 2 parent)) 2 1)))))))))
+        1)))
+
+(maf-defcmd maf--gather-run (expr _arg commit)
+  "Gather every term containing `maf--gather-vars' on `maf--gather-side'.
+The worker behind `mafcmd-gather' — see there. Takes the whole
+relation (:scope entry, :map -1) and rearranges it: the terms
+containing a named variable collect on the side point stood on,
+every other term moves to the other side. Both moves are additions
+and subtractions on both sides, so any relation keeps its direction.
+Sums are rebuilt under default simplifications whatever the session's
+simplify mode, so gathered like terms fold the same way every time.
+A bare expression, or a relation no term of which contains a named
+variable, commits unchanged."
+  :arity unary
+  :prefix "gthr"
+  :map -1
+  :scope entry
+  (if (not (maf--relation-p expr))
+      (commit expr)
+    (let ((head (car expr))
+          with-l without-l with-r without-r)
+      (dolist (term (maf--gather-terms (nth 1 expr)))
+        (if (maf--gather-contains-p term maf--gather-vars)
+            (push term with-l)
+          (push term without-l)))
+      (dolist (term (maf--gather-terms (nth 2 expr)))
+        (if (maf--gather-contains-p term maf--gather-vars)
+            (push term with-r)
+          (push term without-r)))
+      (setq with-l (nreverse with-l) without-l (nreverse without-l)
+            with-r (nreverse with-r) without-r (nreverse without-r))
+      (if (not (or with-l with-r))
+          (commit expr)
+        (let* ((calc-simplify-mode nil)
+               (flip (lambda (terms) (mapcar #'math-neg terms)))
+               (new
+                (if (eql maf--gather-side 2)
+                    (list head
+                          (maf--gather-sum
+                           (append without-l (funcall flip without-r)))
+                          (maf--gather-sum
+                           (append with-r (funcall flip with-l))))
+                  (list head
+                        (maf--gather-sum
+                         (append with-l (funcall flip with-r)))
+                        (maf--gather-sum
+                         (append without-r (funcall flip without-l)))))))
+          (commit (math-normalize new)))))))
+
+(defun mafcmd-gather ()
+  "Gather every term of a variable on the side of the relation at point.
+
+  1:  x| + 2 k = x^2 - x + 3   gather x  =>  -x^2 + 2 x = -2 k + 3
+
+Point names the side: the terms containing the variable collect on
+the side point stands in, and every other term moves to the other —
+here point in the right side would collect them there instead. Home,
+the entry's margin, and the relation operator read as the left. The
+variable is read from the minibuffer as `mafcmd-solve-for' reads it:
+the subject's priority variable as the default, several names
+separated by commas or spaces gathering the terms of them all.
+
+Terms move whole, by containment, wherever the variable appears in
+them; both moves are additions and subtractions on both sides, so
+every relation keeps its direction, inequalities included. A side
+left with no terms becomes 0. A relation no term of which contains
+the variable, or a bare expression, commits unchanged.
+
+  1:  a x| <= b - x   gather x  =>  a x + x <= b
+  1:  x + 2 k| = 3    gather z  =>  x + 2 k = 3   (no z: unchanged)"
+  (interactive)
+  (let ((vars (maf--solve-for-read-vars (maf--solve-for-default-var)
+                                        "Gather"))
+        (side (maf--gather-point-side)))
+    (let ((maf--gather-vars vars)
+          (maf--gather-side side))
+      (call-interactively #'maf--gather-run))))
+
 ;; Calc's DistribRules and MergeRules are written against a marked
 ;; sub-formula: every rule mentions select(...) somewhere, and matches
 ;; the formula *around* it — `x * select(a + b)' rewrites the product,
