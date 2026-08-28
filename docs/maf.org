@@ -53,7 +53,7 @@
   - [ ] remove seed entries
   - [ ] remove project-init.el
 
-# much later
+# much later below
 
 * webapp
   - multi-pane design
