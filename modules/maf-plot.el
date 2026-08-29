@@ -490,13 +490,16 @@ sizes only windows it creates, so a reused window is evened by hand."
 
 (defun maf-plot--show-embedded (curves title)
   "Render CURVES to SVG and show them in the plot panel.
-Sized to the window the plot will occupy: full width, half height.
-On a non-graphic display gnuplot's dumb terminal draws the plot as
-text into the same panel instead."
+Sized to the window the plot will occupy: the body width of the calc
+window (the below split inherits it; fringes and scroll bars are not
+drawable room), and half its height less the panel's header and mode
+lines. On a non-graphic display gnuplot's dumb terminal draws the
+plot as text into the same panel instead."
   (if (not (display-graphic-p))
       (maf-plot--show-dumb curves title)
-    (let* ((width (max 320 (window-pixel-width)))
-           (height (max 200 (/ (window-pixel-height) 2)))
+    (let* ((width (max 320 (window-body-width nil t)))
+           (height (max 200 (- (/ (window-pixel-height) 2)
+                               (* 2 (frame-char-height)))))
            (bg (maf-plot--face-color 'default :background "white"))
            (svg (maf-plot--work-file "plot.svg")))
       (maf-plot--run-gnuplot
@@ -508,7 +511,12 @@ set output \"%s\"
                (maf-plot--theme-lines) title
                (if (cdr curves) "set key top center\n" "set key off\n")
                (maf-plot--plot-clauses curves)))
-      (let ((image (create-image svg 'svg nil :ascent 'center)))
+      ;; :scale 1 pins the image to the svg's own pixels: the default
+      ;; auto scaling factor enlarges images on hidpi displays, which
+      ;; would push a window-sized render past the window. :max-width
+      ;; clamps the odd case of the panel reusing a narrower window.
+      (let ((image (create-image svg 'svg nil :ascent 'center :scale 1
+                                 :max-width width :max-height height)))
         ;; The svg path is reused across renders, and Emacs caches
         ;; rendered images by their whole spec: the flush must use this
         ;; exact image, or the cached previous plot keeps displaying.
