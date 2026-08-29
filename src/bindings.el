@@ -506,13 +506,13 @@
 (maf-bindings-define '(native) "M-<return>" #'mafcmd-let)
 (maf-bindings-define '(native) "M-RET" #'mafcmd-let)
 ;; Polynomial roots by factoring, with multiplicity. In the l family
-;; on a free capital the log-units prefix never claimed, beside the
-;; family's other capitals. Being in the family, the vim mirror
-;; carries it as o T. It sat on l t until 2026-08-23, on l a until
-;; 2026-08-25, on k R for part of that day, and on l b until
-;; 2026-08-25; before 2026-08-20 it was M-r. Those keys fall through
-;; to calc, and M-r to whatever the global map holds.
-(maf-bindings-define '(native) "l T" #'mafcmd-poly-roots)
+;; on a, the letter of its stock a P sibling, unclaimed by the
+;; log-units prefix. Being in the family, the vim mirror carries it
+;; as o a. Back on the l a it held 2026-08-23..25; it sat on l t
+;; until 2026-08-23, on k R and l b for parts of 2026-08-25, and on
+;; l T until 2026-08-29; before 2026-08-20 it was M-r. Those keys
+;; fall through to calc, and M-r to whatever the global map holds.
+(maf-bindings-define '(native) "l a" #'mafcmd-poly-roots)
 ;; The prompting form of the roots vector beside its stock a P (the
 ;; roots row in maf-cmds.el): the variable is read from the minibuffer
 ;; as i reads it, the subject's priority variable as the default. a l
