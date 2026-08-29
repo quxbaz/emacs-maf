@@ -41,7 +41,6 @@
     - add cards for missing bindings
 
 * cleanup
-  - [-] delete my/calc
   - [ ] generate tests full coverage
   - [ ] remove seed entries
   - [ ] remove project-init.el
