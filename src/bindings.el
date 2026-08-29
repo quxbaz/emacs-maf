@@ -226,10 +226,12 @@
 ;; every maf command resolves its subject from point.
 (maf-bindings-define '(native) "j e" #'maf-jump-equals)
 ;; Collect every term of a variable on the side of the relation at
-;; point — the whole-family sibling of the single-term jump above. On
-;; the capital of a c (mafcmd-collect), whose polynomial collect it is
-;; the cross-equation cousin of; l C is unbound in calc itself.
-(maf-bindings-define '(native) "l C" #'mafcmd-collect-terms)
+;; point — the whole-family sibling of the single-term jump above, and
+;; it sits beside it: j c, on collect's own letter, one key over from
+;; the j e it repeats for a whole family at once. Shadows
+;; calc-clear-selections, which nothing needs any more — RET clears
+;; every selection when one stands (maf-dup-or-clear-selections).
+(maf-bindings-define '(native) "j c" #'mafcmd-collect-terms)
 ;; Spread the formula around the target inward over its parts, and the
 ;; reverse. These take calc's own keys rather than a lowercase twin:
 ;; unlike the jump and the shifts above, the contextual versions have
