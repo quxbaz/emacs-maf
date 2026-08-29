@@ -15,7 +15,7 @@
 ;; (default "#emacs" — a joint agent/human session), allowing multiple
 ;; instances, e.g. one per worktree:
 ;;
-;;   cd /home/david/lab/emacs-maf && \
+;;   cd "$(git rev-parse --show-toplevel)" && \
 ;;     MAF_SERVER_NAME=maf-refactor \
 ;;     nohup emacs -title maf-refactor -l agent/emacs-init.el >/dev/null 2>&1 &
 

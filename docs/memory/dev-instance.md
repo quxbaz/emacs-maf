@@ -25,7 +25,7 @@ initialization). `MAF_SERVER_NAME` sets the server name; omit it for the
 default `#emacs`:
 
 ```sh
-cd /home/david/lab/emacs-maf && \
+cd "$(git rev-parse --show-toplevel)" && \
   MAF_SERVER_NAME='#emacs' \
   nohup emacs -title '#emacs' -l agent/emacs-init.el >/dev/null 2>&1 &
 ```

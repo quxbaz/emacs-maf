@@ -126,6 +126,22 @@
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "x <= -3"))
   (calc-pop (calc-stack-size))
 
+  ;; A direction hinging on a sign calc cannot see splits as calc's if;
+  ;; substituting a value for k later collapses it to the holding branch.
+  (maf-push "k x < 1")
+  (goto-char (point-max))
+  (maf-with-input nil (call-interactively 'mafcmd-solve-for))
+  (cl-assert (string= (math-format-value (calc-top 1 'full))
+                      "k > 0 ? x < 1 / k : k < 0 ? x > 1 / k : -1 < 0"))
+  (calc-pop (calc-stack-size))
+
+  ;; Past linear the direction cannot be kept: unchanged, not x != 2.
+  (maf-push "x^2 < 4")
+  (goto-char (point-max))
+  (maf-with-input nil (call-interactively 'mafcmd-solve-for))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "x^2 < 4"))
+  (calc-pop (calc-stack-size))
+
   ;; An unsolvable entry commits as written — "unchanged" means unchanged,
   ;; so nothing is turned round on the way out.
   (maf-push "5 = y")

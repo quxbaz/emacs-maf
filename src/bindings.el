@@ -181,14 +181,6 @@
 ;; the ulp-stepping originals, and [ ] stay calc's vector delimiters.
 (maf-bindings-define '(native) "<" #'mafcmd-decrement)
 (maf-bindings-define '(native) ">" #'mafcmd-increment)
-;; The same step under a modifier, for the run of them a nudge invites:
-;; the hand holds meta and taps rather than releasing between steps. A
-;; terminal delivers these, unlike C-< / C->, so they work on a tty as
-;; the unmodified pair does. They shadow the global `beginning-of-buffer'
-;; / `end-of-buffer', whose trip to the ends of the stack buffer the
-;; stack's own motions already make in the terms it is read in.
-(maf-bindings-define '(native) "M-<" #'mafcmd-decrement)
-(maf-bindings-define '(native) "M->" #'mafcmd-increment)
 ;; Balanced negation, beside calc's own n (mafcmd-neg in the table,
 ;; which flips the sign and lets the value change with it). Shadows
 ;; calc-eval-num; N is also one of the two V M operator codes that are
@@ -475,7 +467,7 @@
 ;; leaves j j unbound — its j prefix is the selection commands, which
 ;; have no j of their own — and keeps the operation on the capital
 ;; j I (calc-sel-isolate), unshadowed and reachable either way. The
-;; literal sense of the word is next door on j i (mafcmd-raise).
+;; literal sense of the word is on j R (mafcmd-raise).
 (maf-bindings-define '(native) "j j" #'mafcmd-isolate)
 ;; The same solve again, with the variable named rather than picked.
 ;; It held i before, yielded the key to the reciprocal, and takes it
@@ -559,16 +551,16 @@
 (maf-bindings-define '(native) "v RET" #'maf-index)
 
 ;; Keep only the part point names: it becomes the whole entry, the
-;; formula around it discarded. On i for the plainest reading of
-;; "isolate" — this is the one that isolates a sub-formula literally,
-;; lifting it out of what surrounded it, where `mafcmd-isolate' next
-;; door on j j isolates a variable by solving for it. "Raise" is the
+;; formula around it discarded. On R for the name — this is the one
+;; that isolates a sub-formula literally, lifting it out of what
+;; surrounded it, where `mafcmd-isolate' on j j isolates a variable by
+;; solving for it. "Raise" is the
 ;; name because it is `raise-sexp's operation, the form at point
-;; replacing the form around it. j i is unbound in calc itself — its
-;; j prefix is the selection commands, which have no i of their own,
-;; keeping isolation on the capital j I — and the command belongs with
-;; them, working as it does on the part point picks out.
-(maf-bindings-define '(native) "j i" #'mafcmd-raise)
+;; replacing the form around it. j R shadows calc-commute-right,
+;; whose operation maf already keeps on j r (maf-commute-right)
+;; above; the command belongs with the selection commands, working as
+;; it does on the part point picks out.
+(maf-bindings-define '(native) "j R" #'mafcmd-raise)
 
 ;; Group a vector's elements N at a time, N from the stack. l g is
 ;; unbound in calc itself — its l prefix is the logarithmic units,
