@@ -148,7 +148,7 @@ sudo docker run -it --name maf-my-feature \
 | `-v ~/.codex/auth.json:/seed/...:ro` | codex auth, seeded as a copy. Optional: without it a box still starts and codex asks you to sign in there |
 | `-v ~/.gitconfig:...:ro` | your name/email, so commits from inside are attributed |
 | `-v ~/conf/claude/...:ro` (×6) | your agent config, each file where its agent reads it — on the host these paths are symlinks into `~/conf`, a box takes the real files. `AGENTS.md` appears twice: for codex, and at the path `CLAUDE.md` imports. Any that is missing is skipped; `$MAF_CONF` names another `conf` |
-| `-v ~/.emacs.d:/seed/emacs.d:ro` | my Emacs config, copied in at startup by the entrypoint rather than mounted, since Emacs writes into it. `--bare` swaps this for `-v ~/.emacs.d/my/calc:...:ro` alone — the legacy Calc config the `port` skill reads, at the path that skill names |
+| `-v ~/.emacs.d:/seed/emacs.d:ro` | my Emacs config, copied in at startup by the entrypoint rather than mounted, since Emacs writes into it. `--bare` leaves it out entirely — which also costs the `port` skill its source, the legacy my/calc config in this repo's git history |
 | (no `-e MAF_SERVER_NAME`) | the image names the Emacs server `#emacs`, the name the `emacs` skill uses when given none — a container holds one instance, so the skills' examples work in a box unchanged |
 
 ## Inside the box

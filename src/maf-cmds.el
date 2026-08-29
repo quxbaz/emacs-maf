@@ -56,6 +56,20 @@ one source of truth.")
       (setq maf-cmds--table-keys
             (append maf-cmds--table-keys (list (cons key command)))))))
 
+(defvar maf-cmds--table nil
+  "Every mafcmd table row, as data: (NAME ARITY FUNC KEY INV HYP INVHYP).
+NAME is the command symbol, ARITY `unary' or `binary', FUNC what the
+body applies, KEY the row's `kbd' string or nil, and the last three
+the flag-variant command symbols or nil. The sweep test walks this
+list; a reload of the table replaces rows by NAME, keeping one row
+per command.")
+
+(defun maf-cmds--table-row (row)
+  "Record ROW in `maf-cmds--table', replacing a prior row of its name."
+  (let ((cell (assq (car row) maf-cmds--table)))
+    (if cell (setcdr cell (cdr row))
+      (setq maf-cmds--table (append maf-cmds--table (list row))))))
+
 (defvar maf-mode-map (make-sparse-keymap)
   "Keymap for `maf-mode'.")
 
@@ -125,6 +139,9 @@ variant's own variable governs only its direct invocation."
              ;; by stamping the property itself.
              (list `(put ',name 'maf-operation
                          '(,func . ,(if (eq arity 'binary) 2 1))))
+             ;; And the whole row as data, for the sweep test.
+             (list `(maf-cmds--table-row
+                     '(,name ,arity ,func ,key ,inv ,hyp ,invhyp)))
              (when key
                (list `(maf-cmds--table-key ,key #',name))))))
         specs)))
