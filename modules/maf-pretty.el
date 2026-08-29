@@ -16,6 +16,7 @@
 ;; face for each invocation, so a preview follows light/dark theme
 ;; changes without maintaining any theme hooks.
 
+(require 'cl-lib)
 (require 'calc)
 (require 'calc-yank)       ; calc-locate-cursor-element
 (require 'maf-lib)
@@ -107,6 +108,92 @@ and returns focus to the window the preview was invoked from."
       (user-error "Stack is empty"))
     (let ((level (calc-locate-cursor-element (point))))
       (calc-top (if (> level 0) (min level size) 1) 'full))))
+
+(defun maf-pretty--sign-var-p (x)
+  "Non-nil when X is one of calc's arbitrary-sign variables.
+H a S writes each solution branch with s1, s2, ... standing for an
+arbitrary +-1; they are ordinary calc variables, recognized here by
+name alone, so a user's own variable named s1 typesets the same way
+calc's own display leaves it ambiguous."
+  (and (eq (car-safe x) 'var)
+       (string-match-p "\\`s[0-9]+\\'" (symbol-name (nth 1 x)))))
+
+(defun maf-pretty--hoist-signs (expr)
+  "Move arbitrary-sign factors to the front of their product chains.
+Calc leaves s1 wherever normalization put it — 5 s1 i sqrt(3) — but
+the +- it typesets as belongs in front of the whole product. A bare
+sign outside any product becomes (* sign 1), so it can still print
+as +-1 rather than a naked sign. Formatting-only: the result is
+never committed."
+  (cond
+   ((maf-pretty--sign-var-p expr) (list '* expr 1))
+   ((eq (car-safe expr) 'neg)
+    ;; -(s1 X) typesets with calc's parens, which the fold below
+    ;; cannot see through. The minus moves onto the sign itself —
+    ;; -(+-X) is -+X — where calc prints it bare and the fold reads it.
+    (let ((inner (maf-pretty--hoist-signs (nth 1 expr))))
+      (if (and (eq (car-safe inner) '*)
+               (maf-pretty--sign-var-p (nth 1 inner)))
+          (list '* (list 'neg (nth 1 inner)) (nth 2 inner))
+        (list 'neg inner))))
+   ((eq (car-safe expr) '*)
+    (let (signs rest)
+      (letrec ((walk (lambda (e)
+                       (if (eq (car-safe e) '*)
+                           (progn (funcall walk (nth 1 e))
+                                  (funcall walk (nth 2 e)))
+                         ;; A negated sign is still a sign — it rides
+                         ;; to the front wearing its minus, which the
+                         ;; fold below turns into the flip.
+                         (if (or (maf-pretty--sign-var-p e)
+                                 (and (eq (car-safe e) 'neg)
+                                      (maf-pretty--sign-var-p (nth 1 e))))
+                             (push e signs)
+                           (push (maf-pretty--hoist-signs e) rest))))))
+        (funcall walk expr))
+      (let ((prod (if rest
+                      (cl-reduce (lambda (a b) (list '* a b))
+                                 (nreverse rest) :from-end t)
+                    1)))
+        (dolist (sign signs prod)
+          (setq prod (list '* sign prod))))))
+   ((eq (car-safe expr) 'var) expr)
+   ((consp expr)
+    (cons (car expr) (mapcar #'maf-pretty--hoist-signs (cdr expr))))
+   (t expr)))
+
+(defun maf-pretty--latex (expr)
+  "Format EXPR as LaTeX with calc's arbitrary signs typeset as +-.
+
+  x = 5 s1 i sqrt(3)   =>   x = \\pm 5 i \\sqrt{3}
+  1 - s1 x             =>   1 \\mp x
+  x = s1               =>   x = \\pm 1
+
+The signs are hoisted to the front of their products, printed as
+\\pm — subscripted when the entry carries several distinct signs,
+which stay independent — and a + or - the sign follows folds into
+it, - flipping to \\mp. Everything else is `maf--latex-string'."
+  (let* ((names nil)
+         (scan (lambda (scan e)
+                 (if (maf-pretty--sign-var-p e)
+                     (cl-pushnew (symbol-name (nth 1 e)) names
+                                 :test #'equal)
+                   (when (and (consp e) (not (eq (car e) 'var)))
+                     (dolist (child (cdr e)) (funcall scan scan child))))))
+         (latex (progn (funcall scan scan expr)
+                       (maf--latex-string
+                        (if names (maf-pretty--hoist-signs expr) expr)))))
+    (when names
+      (let ((lone (null (cdr names))))
+        (setq latex (replace-regexp-in-string
+                     "\\bs\\([0-9]+\\)\\b"
+                     (lambda (m)
+                       (if lone "\\pm"
+                         (concat "\\pm_{" (match-string 1 m) "}")))
+                     latex t t)))
+      (setq latex (replace-regexp-in-string "\\+ \\\\pm" "\\pm" latex t t))
+      (setq latex (replace-regexp-in-string "- ?\\\\pm" "\\mp" latex t t)))
+    latex))
 
 (defun maf-pretty--ratex (latex)
   "Render one-line LATEX with RaTeX and return its SVG output."
@@ -204,7 +291,7 @@ are unchanged."
   (unless (display-images-p)
     (user-error "The selected frame cannot display images"))
   (maf--with-calc-buffer
-    (let* ((latex (maf--latex-string (maf-pretty--entry)))
+    (let* ((latex (maf-pretty--latex (maf-pretty--entry)))
            (svg (maf-pretty--ratex latex)))
       (maf-pretty--show svg latex))))
 
@@ -254,7 +341,7 @@ back to its Big rendering rather than going dark. Installed as
         (setq maf-pretty--panel-cache
               (cons key
                     (ignore-errors
-                      (let* ((svg (maf-pretty--ratex (maf--latex-string value)))
+                      (let* ((svg (maf-pretty--ratex (maf-pretty--latex value)))
                              (image (create-image svg 'svg t
                                                   :ascent 'center :scale 1
                                                   :max-width (car bounds)
