@@ -40,18 +40,15 @@
     - update outdated bindings
     - add cards for missing bindings
 
-* maybe
-  - [ ] browser client
-
 * cleanup
   - [-] delete my/calc
   - [ ] generate tests full coverage
   - [ ] remove seed entries
   - [ ] remove project-init.el
 
-# much later belowq
+# much later below
 
-* webapp
+* later: standalone web app
   - multi-pane design
   - pane 1 (main): calc stack
     - entries show text and mathjax rendering
