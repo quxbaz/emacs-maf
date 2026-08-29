@@ -41,7 +41,12 @@
     - add cards for missing bindings
 
 * cleanup
-  - [-] generate tests full coverage
+  - [X] generate tests full coverage (2026-08-29: tests/table-sweep.el
+    runs every mafcmd table row from the maf-cmds--table registry —
+    application, maf-operation stamp, I/H flag routes; the audit found
+    the rest of the suite already covers the hand-written commands,
+    and the remaining untested symbols are internals or the step
+    cockpit itself)
   - [ ] remove seed entries
   - [ ] remove project-init.el
 
