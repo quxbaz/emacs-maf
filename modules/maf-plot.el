@@ -868,6 +868,6 @@ range. Off, calc's own g-prefix graphing is untouched."
                                           (if maf-use-plot-mode
                                               maf-plot-backend
                                             'off))
-                               :default 'off))))
+                               :default 'gnuplot-embed))))
 
 (provide 'maf-plot)
