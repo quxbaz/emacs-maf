@@ -5,7 +5,7 @@
   [[https://www.gnu.org/software/emacs/manual/html_mono/calc.html#Stack-Access][stack access]]
   [[https://www.gnu.org/software/emacs/manual/html_mono/calc.html#Symbolic-Lisp-Functions][symbolic lisp functions]]
 
-* current
+* IN-PROGRESS current
   - [-] hardening
 
 * Todo
