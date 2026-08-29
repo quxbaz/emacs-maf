@@ -1,4 +1,4 @@
-;; mafcmd-collect-terms (l C): collect every term of a variable on the side of
+;; mafcmd-collect-terms (j c): collect every term of a variable on the side of
 ;; the relation at point, every other term moving to the other side.
 ;; Both moves are additions and subtractions on both sides, so every
 ;; relation keeps its direction. The variable is read from the
@@ -21,7 +21,7 @@
 
 (maf-step
   ;; The key is claimed.
-  (cl-assert (eq (key-binding (kbd "l C")) 'mafcmd-collect-terms))
+  (cl-assert (eq (key-binding (kbd "j c")) 'mafcmd-collect-terms))
 
   ;; Point in the left side: the x terms collect there — x from the
   ;; right crosses in, 2 k crosses out — and like terms fold.
@@ -105,7 +105,7 @@
     (cl-assert win)
     (with-selected-window win
       (with-current-buffer buf
-        (execute-kbd-macro (kbd "l C RET"))))
+        (execute-kbd-macro (kbd "j c RET"))))
     nil)
   (cl-assert (string= (math-format-value (calc-top 1 'full))
                       "-x^2 + 2 x = -2 k + 3"))
