@@ -62,7 +62,7 @@
   ;; from o's case pair trade places one step over: commute on the
   ;; doubled o o, the reciprocal on the capital O commute vacates.
   (cl-assert (eq (key-binding (kbd "o c")) 'mafcmd-collect-fractions))
-  (cl-assert (eq (key-binding (kbd "o T")) 'mafcmd-poly-roots))
+  (cl-assert (eq (key-binding (kbd "o a")) 'mafcmd-poly-roots))
   (cl-assert (eq (key-binding (kbd "o F")) 'mafcmd-factor-gcd))
   (cl-assert (eq (key-binding (kbd "o o")) 'mafcmd-commute))
   (cl-assert (eq (key-binding (kbd "O")) 'mafcmd-inv))

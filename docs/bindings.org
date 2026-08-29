@@ -382,11 +382,12 @@
      for the difference of squares, beside its k d; the vim mirror
      carries it as `o D`, the command's home there since vim's k is
      a motion)
-   - [X] `l T` mafcmd-poly-roots (2026-08-25: the l family on a free
-     capital the log-units prefix never claimed, beside the family's
-     other capitals; the vim mirror carries it as `o T`.
+   - [X] `l a` mafcmd-poly-roots (2026-08-29: back on the l a it
+     held 2026-08-23..25 — the family on the letter of its stock
+     `a P` sibling; the vim mirror carries it as `o a`.
      Earlier: `l t` 2026-08-20, off `M-r`, then `l a` 2026-08-23,
-     then `k R` and `l b` for parts of 2026-08-25)
+     then `k R` and `l b` for parts of 2026-08-25, then `l T`
+     until 2026-08-29)
    - [X] `a l` mafcmd-roots-for (2026-08-22: the prompting form — the
      variable read as `i` reads it, the subject's priority variable
      as the default; the stock stack-argument roots stays on `a P`.
@@ -556,7 +557,7 @@
      still dies with the motion, native the escape hatch
    - [X] `l` — resolved 2026-08-21: the family rides `o` (right-hand
      home row, the most l-like key under the fingers), second letters
-     intact — o c collect-fractions, o T poly-roots (minus l l: the
+     intact — o c collect-fractions, o a poly-roots (minus l l: the
      toggle rides M-o there) —
      mirrored in src/bindings.el from native's own l declarations, so
      a default key added to the family lands in both profiles. Module
@@ -639,7 +640,7 @@
        mafcmd-collect-fractions (l c), mafcmd-float-frac (l l, the
        float/frac toggle; float and frac stay commands),
        mafcmd-to-degrees (l d), mafcmd-to-radians (l r),
-       mafcmd-poly-roots (l T), mafcmd-inverse-function (l v),
+       mafcmd-poly-roots (l a), mafcmd-inverse-function (l v),
        mafcmd-swap-vars (l x), mafcmd-unique-groups (l g)
      - calc's log-units family: calc-lu-plus/minus/times/divide/quant,
        calc-db, calc-np, calc-freq, calc-midi, calc-spn
@@ -688,8 +689,8 @@
      — the [ ] lesson)
 ** modified keys
    - free meta: `M-d` `M-g` `M-j` `M-q` `M-t` `M-z`, and `M-r` since
-     poly-roots moved off it (2026-08-20, to l t; l T since
-     2026-08-25; `M-h` went to the history the same day). `M-a` / `M-e` went to the operand motions
+     poly-roots moved off it (2026-08-20, to l t; l a since
+     2026-08-29; `M-h` went to the history the same day). `M-a` / `M-e` went to the operand motions
      2026-08-25 — the global map's sentence keys, which a stack buffer
      has no sentences for
    - cautious meta: `M-v` (scrolling's other half), `M-y` (yank-pop
