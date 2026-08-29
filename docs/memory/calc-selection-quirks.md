@@ -3,9 +3,36 @@
 Drift in calc's own sub-formula resolution, discovered 2026-07-11 by
 sweeping `maf-hl-mode` against calc's selection renderer
 (`debug/maf-hl-sweep.el`); it affects stock calc too (try `j s` at the
-positions below). The largest item — dropped denominator parens — is
-diagnosed and **fixed in maf** as of 2026-08-23; the remaining ones are
-still mirrored.
+positions below). The two largest items — dropped denominator parens
+and the duplicate-entry cache false hit — are diagnosed and **fixed in
+maf** (2026-08-23 and 2026-08-29); the remaining ones are still
+mirrored.
+
+## Selection cache false hit on duplicate entries (fixed)
+
+`calc-prepare-selection` validates `calc-selection-cache-entry` by
+`equal` on the stack entry alone (`calc-sel.el`), so two entries
+holding the identical formula are indistinguishable to it: preparing
+one while the other is cached is a false hit, and
+`calc-selection-cache-num` (with the offset beside it) keeps naming
+the other level. Everything reading the cache then works on the wrong
+entry — maf-hl's whole-entry highlight marks the other line, and stock
+calc's `j s` selects there. Discovered 2026-08-29 from a live session:
+point at the end of the `1:` line, the whole `2:` entry highlighted.
+
+Both entries must have been prepared once before the false hit can
+happen — the cache fill runs `calc-encase-atoms` on the entry's value
+in place, so a freshly pushed duplicate is unequal to a prepared one
+until its own first prepare — which an ordinary cursor pass over the
+lines supplies. That also hides the bug from naive repros that push
+twice and look immediately.
+
+The fix is `maf--comp-prepare-fresh` in `core/maf-comp.el`: `:before`
+advice on `calc-prepare-selection` that empties the cache whenever the
+prepared level differs from the cached one — the only case whose
+behavior changes is the false hit, since differing entries recompute
+anyway. Regression test: `tests/sel-dup-entries.el`. Worth reporting
+upstream with the parens bug.
 
 ## Selection compositions dropped denominator parens (fixed)
 

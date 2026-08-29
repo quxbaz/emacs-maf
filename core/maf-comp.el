@@ -76,6 +76,31 @@ A and PREC pass through unchanged; see the comment above."
 
 (advice-add 'math-compose-expr :around #'maf--comp-compose-keep-div)
 
+;; The second upstream repair: `calc-prepare-selection' validates its
+;; cache by `equal' on the stack entry alone (calc-sel.el), so two
+;; entries holding the identical formula are indistinguishable to it —
+;; preparing one while the other is cached is a false hit, and
+;; `calc-selection-cache-num' (with the offset beside it) keeps naming
+;; the other level. Everything reading the cache then works on the
+;; wrong entry: maf-hl's whole-entry highlight marks the other line,
+;; and stock calc's j s selects there. The entries must both have been
+;; prepared once before — the cache fill encases the entry's atoms in
+;; place, so a fresh duplicate is unequal until its own first prepare —
+;; which a cursor pass over the lines supplies. Requiring the cached
+;; *level* to match closes the hole: when the levels differ the cache
+;; empties and the original recomputes, which it would have done anyway
+;; in every case but the false hit.
+(defun maf--comp-prepare-fresh (&optional num)
+  "Empty calc's selection cache when NUM names a different stack level.
+NUM defaults as `calc-prepare-selection' defaults it, from point."
+  (let ((n (max (or num (calc-locate-cursor-element (point))) 1)))
+    (when (and calc-selection-cache-entry
+               calc-selection-cache-num
+               (/= calc-selection-cache-num n))
+      (setq calc-selection-cache-entry nil))))
+
+(advice-add 'calc-prepare-selection :before #'maf--comp-prepare-fresh)
+
 ;; A composition cached before the advice landed was built without it;
 ;; empty the cache (`calc-prepare-selection' compares against this) so
 ;; the next selection recomposes.
