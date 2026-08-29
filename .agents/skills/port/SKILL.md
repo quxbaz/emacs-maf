@@ -1,22 +1,28 @@
 ---
 name: port
-description: Port a command, function, feature, or object from the user's legacy Calc config (~/.emacs.d/my/calc/) into this package. Use when asked to port, migrate, or bring over a my/calc-* feature into maf.
+description: Port a command, function, feature, or object from the user's legacy Calc config (my/calc, now in ~/.emacs.d git history) into this package. Use when asked to port, migrate, or bring over a my/calc-* feature into maf.
 ---
 
-# Porting from ~/.emacs.d/my/calc
+# Porting from the legacy my/calc config
 
-The user's previous Calc customization lives in `~/.emacs.d/my/calc/`
+The user's previous Calc customization was `~/.emacs.d/my/calc/`
 (`stack.el`, `edit.el`, `rewrite.el`, `bindings.el`, `lib.el`, ...),
-with functions named `my/calc-*`. Given a feature name, find it there
-and port it into maf:
+with functions named `my/calc-*`. The directory was deleted on
+2026-08-29 — the port is complete but for plotting, which is in flight
+on the maf-plot branch — so the source now lives in the emacs.d repo's
+git history, at the deletion commit's parent, `e791a118^`. Given a
+feature name, find it there and port it into maf:
 
 ```sh
-grep -rn "factor-by-gcd" ~/.emacs.d/my/calc/
+git -C ~/.emacs.d grep -n "factor-by-gcd" 'e791a118^' -- my/calc/
+git -C ~/.emacs.d show 'e791a118^:my/calc/stack.el'
 ```
 
 Grep loosely — the requested name may not match the old name exactly.
 Pull in everything the feature needs: helper functions, variables, and
-its keybinding in `~/.emacs.d/my/calc/bindings.el`.
+its keybinding in `my/calc/bindings.el`. (In a dev container this
+works in a full box, whose seeded Emacs config carries the repo; a
+`--bare` box has no emacs.d and cannot port.)
 
 ## Rules
 
@@ -46,7 +52,7 @@ any new binding with real keypresses (see the `drive` skill).
 ### [EXAMPLE 1] /port factor-by-gcd
 
 ```sh
-grep -rn "factor-by-gcd" ~/.emacs.d/my/calc/
+git -C ~/.emacs.d grep -n "factor-by-gcd" 'e791a118^' -- my/calc/
 ```
 
 Finds `my/calc-factor-by-gcd` in `stack.el` plus its binding in

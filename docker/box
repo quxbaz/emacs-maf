@@ -390,12 +390,11 @@ fi
 mount_ro "$HOME/.claude.json" /seed/claude.json
 
 # My whole Emacs config, seeded rather than mounted, since Emacs writes
-# into it — the entrypoint copies it in. That carries my/calc along, so
-# the narrow mount is only for --bare: the legacy Calc config the port
-# skill reads, at the path that skill names.
-if [ -n "$bare" ]; then
-    mount_ro "$HOME/.emacs.d/my/calc" /home/dev/.emacs.d/my/calc
-else
+# into it — the entrypoint copies it in. Left out under --bare, which
+# also costs the port skill its source: the legacy my/calc config
+# lives in this repo's git history now (see that skill), so a bare box
+# cannot port.
+if [ -z "$bare" ]; then
     mount_ro "$HOME/.emacs.d" /seed/emacs.d
 fi
 
