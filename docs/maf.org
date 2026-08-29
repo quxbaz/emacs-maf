@@ -41,8 +41,6 @@
     - add cards for missing bindings
 
 * cleanup
-  - [ ] remove seed entries
-  - [ ] remove project-init.el
 
 # much later below
 
