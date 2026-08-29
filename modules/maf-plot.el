@@ -851,7 +851,7 @@ a fire-and-forget Desmos page in the browser. g o goes to Desmos
 regardless of the row's value. Trig curves auto-range
 one period in the current angle mode; a prefix argument asks for the
 range. Off, calc's own g-prefix graphing is untouched."
-                       "g g / g l / g i / g I / g o" "Plotting"
+                       "g g / g l / g i / g I / g o" "Plots"
                        (lambda ()
                          (list :values
                                '((off "off" (maf-use-plot-mode -1))
