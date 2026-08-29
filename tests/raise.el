@@ -152,9 +152,9 @@
   (cl-assert (eq (char-after) ?i))
   (calc-pop (calc-stack-size))
 
-  ;; The binding: j i runs it on the sub-formula under point, on a key
-  ;; calc leaves unbound within its selection prefix (calc keeps
-  ;; isolation on the capital j I).
+  ;; The binding: j R runs it on the sub-formula under point, within
+  ;; calc's selection prefix (shadowing calc-commute-right, whose
+  ;; operation maf keeps on j r).
   (maf-push "x + sin(2 y)")
   (let* ((buf (get-buffer "*Calculator*"))
          (win (get-buffer-window buf t)))
@@ -163,7 +163,7 @@
       (with-current-buffer buf
         (calc-cursor-stack-index 1)
         (search-forward ":  ") (search-forward "sin")
-        (execute-kbd-macro (kbd "j i"))))
+        (execute-kbd-macro (kbd "j R"))))
     nil)
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "sin(2 y)"))
   (calc-pop (calc-stack-size)))

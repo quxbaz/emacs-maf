@@ -64,6 +64,7 @@
 (declare-function calc-normal-language "calc-lang")
 (declare-function calc-big-language "calc-lang")
 (declare-function math-solve-eqn "calcalg2")
+(declare-function math-is-polynomial "calc-alg")
 (declare-function math-expr-subst "calc-alg")
 (declare-function math-expr-contains "calc-alg")
 (declare-function calc-find-selected-part "calc-sel")
@@ -3111,14 +3112,21 @@ is a \\left( group, where it falls back to \\times — its flatness
 test is structural, so even a factor that renders flat can trip it.
 Juxtaposition is unambiguous there too, so the \\times goes; it stays
 in the remaining cases (a negated right factor), where dropping it
-would turn the product into a difference."
+would turn the product into a difference.
+
+Calc writes if(c, a, b) as c ? a : b, but TeX ignores the source
+spaces and ? is an ordinary character, so it typesets crammed
+(0?x) while the : beside it, a relation to TeX, gets spaced. The ?
+is reclassed \\mathrel to match."
   (maf--with-calc-buffer
     (let ((lang calc-language)
           (opt calc-language-option))
       (unwind-protect
           (progn (calc-set-language 'latex nil t)
-                 (replace-regexp-in-string "\\\\times \\(\\\\left(\\)" "\\1"
-                                           (math-format-value expr)))
+                 (replace-regexp-in-string
+                  " \\? " " \\\\mathrel{?} "
+                  (replace-regexp-in-string "\\\\times \\(\\\\left(\\)" "\\1"
+                                            (math-format-value expr))))
         (calc-set-language lang opt t)))))
 
 (defun maf--copy-squeeze (text)
@@ -3299,7 +3307,15 @@ point.
 Calc's keep-args prefix asks for the same hold: K RET duplicates and
 keeps point, the modifier route to what C-u RET does. The flag reads as
 it always does, as \"consume nothing\" — and a duplicate consumes
-nothing on the stack to begin with, so what it spares here is point."
+nothing on the stack to begin with, so what it spares here is point.
+
+The Hyperbolic flag widens the target to the whole entry: H RET copies
+the entry at point however deep within it point rests — sub-formula
+and selection make no difference — the way the solve commands take
+their subject.
+
+  1:  (a +| b) c   H RET  =>   2:  (a + b) c
+                               1:  (a + b) c    (whole entry, not b)"
   (interactive "P")
   (maf--with-calc-buffer
     (when (zerop (calc-stack-size))
@@ -3312,8 +3328,13 @@ nothing on the stack to begin with, so what it spares here is point."
     (let* ((origin (unless (maf--at-home-p) (point)))
            ;; Unary resolution (no arg, so no below-top restriction) with
            ;; :map -1 so a relation stays whole in :expr rather than mapping
-           ;; per side. We only read :expr and push it.
-           (context (maf--resolve-context '((:arity . unary) (:map . -1))))
+           ;; per side. We only read :expr and push it. The Hyperbolic
+           ;; flag widens to the whole entry (:scope entry); calc-wrapper's
+           ;; epilogue below consumes the flag as it does every prefix.
+           (context (maf--resolve-context
+                     (if calc-hyperbolic-flag
+                         '((:arity . unary) (:map . -1) (:scope . entry))
+                       '((:arity . unary) (:map . -1)))))
            (expr (alist-get :expr context))
            ;; K RET holds point just as C-u RET does. The flag is read
            ;; from resolve's snapshot: calc-wrapper's epilogue clears it
@@ -3462,7 +3483,10 @@ which then keeps point instead of homing — RET's prefix must reach
 `maf-dup' through this dispatcher, since RET is bound here. The clear
 moves point nowhere to begin with, so the prefix does not vary it.
 Calc's keep-args flag (K RET) holds point the same way; `maf-dup' reads
-it, and `maf--fancy-prefix-keep' is what lets it survive the key."
+it, and `maf--fancy-prefix-keep' is what lets it survive the key. The
+Hyperbolic flag (H RET) reaches `maf-dup' the same way and widens the
+copy to the whole entry at point; with a selection active the clear
+still wins, flag or no flag."
   (interactive "P")
   (if (maf--sel-any-p)
       (maf-clear-selections)
@@ -3540,9 +3564,12 @@ sequence has resolved.
 Either way the flag clears where every command's does, in the epilogue of
 the `calc-wrapper' the command itself runs.
 
-Only for keep-args in a maf buffer — plain calc, and I/H/O, keep calc's
-own behavior."
-  (let ((def (and calc-keep-args-flag
+Only for keep-args and hyperbolic in a maf buffer — plain calc, and
+I/O, keep calc's own behavior. Hyperbolic joined keep-args when H RET
+learned to widen the copy to the whole entry: RET is a control
+character, exactly the class ORIG strips the flags from, so without
+this the flag never reached the dispatcher."
+  (let ((def (and (or calc-keep-args-flag calc-hyperbolic-flag)
                   (maf--with-calc-buffer maf-mode)
                   (maf--fancy-prefix-binding last-command-event))))
     (if (or (and (symbolp def) (get def 'maf-command))
@@ -3571,9 +3598,17 @@ own behavior."
 ;; one with a power is not a term move at all (a^2 <= y says nothing
 ;; about a <= sqrt(y)). Adding and subtracting are the moves that hold
 ;; whatever the sign, so the rules built from + and - alone carry over
-;; unchanged, and a term standing anywhere else under a < stays put —
-;; `mafcmd-isolate' handles those, reasoning about the solution rather
-;; than shuffling terms.
+;; unchanged.
+;;
+;; A lone factor under a < does cross, but outside the rules:
+;; `maf--jump-ordered-move' divides it across by hand, where the sign
+;; can be consulted. Known-sign factors move directly, the direction
+;; flipped for a negative; sign-unknown ones move as the three-way
+;; sign split the solve commands write (see `maf--solve-relation').
+;; What remains — exponents, log arguments, factors of only part of a
+;; side — has no sound move, and the command messages toward
+;; `mafcmd-isolate', which reasons about the solution rather than
+;; shuffling terms.
 
 (defconst maf--jump-relations
   '(calcFunc-eq calcFunc-neq calcFunc-lt calcFunc-leq calcFunc-gt calcFunc-geq)
@@ -3666,6 +3701,114 @@ refusing here keeps it a clean no-op."
          (or additive (not (memq (car n) maf--jump-ordered-relations)))
          n)))
 
+(defun maf--jump-ordered-factor (expr node)
+  "Return (REL . SIDE) when NODE is a lone factor under an ordered relation.
+REL is the innermost relation above NODE in EXPR, of
+`maf--jump-ordered-relations'; SIDE is 1 or 2, the side NODE stands
+in; and every node between NODE and REL is a product — the shape
+where moving NODE across is exactly a division by it. Any other
+position, or a non-ordered relation (those go through the rules),
+returns nil."
+  (let ((n node) (inside nil) (pure t) parent)
+    (while (and (consp (setq parent (calc-find-parent-formula expr n)))
+                (not (memq (car parent) maf--jump-relations)))
+      (setq inside t)
+      (unless (eq (car parent) '*) (setq pure nil))
+      (setq n parent))
+    (and inside pure
+         (consp parent)
+         (memq (car parent) maf--jump-ordered-relations)
+         (cons parent (if (eq n (nth 1 parent)) 1 2)))))
+
+(defun maf--jump-ordered-blocked-p (expr node)
+  "Non-nil when NODE stands under an ordered relation it cannot cross."
+  (let ((n node))
+    (while (and (consp (setq n (calc-find-parent-formula expr n)))
+                (not (memq (car n) maf--jump-relations))))
+    (and (consp n) (memq (car n) maf--jump-ordered-relations))))
+
+(defun maf--jump-drop-factor (expr node)
+  "Return EXPR with the exact cons NODE replaced by 1.
+Identity, not equality: in x x only the factor point named goes."
+  (cond ((eq expr node) 1)
+        ((Math-primp expr) expr)
+        (t (cons (car expr)
+                 (mapcar (lambda (sub) (maf--jump-drop-factor sub node))
+                         (cdr expr))))))
+
+(defun maf--jump-node-equal (tree value)
+  "Return the first subtree of TREE `equal' to VALUE, depth-first."
+  (if (equal tree value)
+      tree
+    (and (consp tree)
+         (cl-some (lambda (sub) (maf--jump-node-equal sub value))
+                  (cdr tree)))))
+
+(defun maf--jump-landed-factor (tree node)
+  "Return NODE's moved copy in TREE: the divisor of a quotient by it.
+The ordered move writes the factor as / NODE on the far side, so the
+landing must find that copy — in x y < x + 1 the numerator already
+holds an equal-looking x that a plain first-match would stop on.
+Falls back to the first equal subtree when no such quotient survived
+the normalize (a numeric factor folds away)."
+  (or (letrec ((divisor
+                (lambda (tree)
+                  (and (consp tree)
+                       (if (and (eq (car tree) '/)
+                                (equal (nth 2 tree) node))
+                           (nth 2 tree)
+                         (cl-some divisor (cdr tree)))))))
+        (funcall divisor tree))
+      (maf--jump-node-equal tree node)))
+
+(defun maf--jump-ordered-move (rel side node)
+  "Return REL with factor NODE moved across, the direction handled.
+NODE is a lone factor of REL's SIDE (1 or 2) — see
+`maf--jump-ordered-factor'. A factor whose sign calc knows moves
+directly, the direction flipped when it is negative. A sign-unknown
+factor moves as calc's if, split three ways on its sign, the zero
+case last: the relation with NODE substituted by 0, each side
+normalized so it reads as the residue it is. A zero factor cannot
+move — dividing by it is undefined — and returns nil with a
+message.
+
+Built under default simplifications whatever the session's simplify
+mode: the construction's own normalize must fold the crossed factor
+and its quotient the same way every time — mode none would commit
+1 x k < 2/2."
+  (let* ((calc-simplify-mode nil)
+         (head (car rel))
+         (lhs (nth 1 rel)) (rhs (nth 2 rel))
+         (src (if (= side 1) lhs rhs))
+         (dst (if (= side 1) rhs lhs))
+         (dropped (maf--jump-drop-factor src node))
+         ;; The drop is by identity; a NODE from another tree would
+         ;; leave SRC intact and the factor on both sides. Signal
+         ;; rather than commit that.
+         (rest (if (equal dropped src)
+                   (error "maf--jump-ordered-move: NODE is not a factor of SIDE")
+                 (math-normalize dropped)))
+         (moved (list '/ dst node))
+         (keep (if (= side 1) (list head rest moved) (list head moved rest)))
+         (flip-op (maf--flip-relation-op head))
+         (flip (if (= side 1) (list flip-op rest moved)
+                 (list flip-op moved rest))))
+    (cond
+     ((Math-zerop node)
+      (message "A zero factor cannot cross: dividing by it is undefined")
+      nil)
+     ((math-known-posp node) (math-normalize keep))
+     ((math-known-negp node) (math-normalize flip))
+     (t (math-normalize
+         (list 'calcFunc-if (list 'calcFunc-gt node 0)
+               keep
+               (list 'calcFunc-if (list 'calcFunc-lt node 0)
+                     flip
+                     (list head
+                           (math-normalize (math-expr-subst lhs node 0))
+                           (math-normalize
+                            (math-expr-subst rhs node 0))))))))))
+
 (defun maf-jump-equals ()
   "Move the term under point across the relation it sits in.
 
@@ -3684,24 +3827,33 @@ is left behind for the next keystroke to trip over.
   y = a + b|  =>  y - b| = a
 
 A != is handled alongside =, on rules maf derives from calc's own. The
-ordered relations (<, <=, >, >=) take added and subtracted terms only,
-which cross without disturbing the direction:
+ordered relations (<, <=, >, >=) take added and subtracted terms, which
+cross without disturbing the direction, and lone factors — a factor of
+a whole side, every node above it a product:
 
   x + a| <= y  =>  x <= -a| + y
   y > a - b|   =>  y + b| > a
+  -3 x| < 6    =>  x > -2     (negative factor: the direction flips)
+  2 x k| < 2   =>  k > 0 ? 2 x < 2 / k| : k < 0 ? 2 x > 2 / k : 0 < 2
 
-A term anywhere else under an ordered relation — a factor, an exponent,
-a log argument — stays put, since crossing it can flip the direction on
-a sign no rewrite rule can determine. Use `mafcmd-isolate' on those.
+A factor whose sign calc knows crosses directly, the direction flipped
+when it is negative. A sign-unknown factor crosses as calc's if, split
+three ways on its sign with the zero case last — the same shape the
+solve commands write; the move is then one-way, the ternary having no
+relation at top level to jump back across. A zero factor stays put:
+dividing by it is undefined. Anywhere else under an ordered relation —
+an exponent, a log argument, a factor of only part of a side — no
+sound move exists and the command says so; `mafcmd-isolate' (j j)
+solves for those instead.
 
 A selection standing anywhere is the term to move, whatever entry point
 is on — it is the more deliberate gesture, and this is where the rest
 of maf takes its subject too. With none, the term under point.
 
 With no term to move — at home with nothing selected, on a whole entry,
-on a term outside any relation, on a non-additive term under an ordered
-one, or on one the rules do not reach — the command does nothing rather
-than signaling."
+on a term outside any relation, or on one the rules do not reach — the
+command does nothing rather than signaling; the blocked ordered cases
+above message instead, since there the silence read as breakage."
   (interactive)
   (maf--with-calc-buffer
     (let* ((at-point (calc-locate-cursor-element (point)))
@@ -3726,7 +3878,9 @@ than signaling."
           ;; a selection the rules cannot match would still pop and push
           ;; the entry — an undo step, and a re-normalization — for a
           ;; result identical to what was there.
-          (when (and (consp sel) (maf--jump-relation (car entry) sel))
+          (cond
+           ((not (consp sel)))
+           ((maf--jump-relation (car entry) sel)
             (let ((snapshot (maf--point-snapshot))
                   (var-JumpRules (maf--jump-rules))
                   ;; Calc's `calc-rewrite-selection' runs `calc-normalize'
@@ -3758,7 +3912,162 @@ than signaling."
                 (or (and moved (maf--anchor-on-node m moved))
                     (maf--point-restore snapshot)))
               ;; A single undo reverts point along with the stack.
-              (maf--undo-record-cmd-point snapshot))))))))
+              (maf--undo-record-cmd-point snapshot)))
+           ((maf--jump-ordered-factor (car entry) sel)
+            (let* ((info (maf--jump-ordered-factor (car entry) sel))
+                   (new (maf--jump-ordered-move (car info) (cdr info) sel)))
+              (when new
+                (let ((snapshot (maf--point-snapshot))
+                      ;; Committed unsimplified, as the rules path is.
+                      (calc-simplify-mode 'none))
+                  ;; `calc-wrapper' makes the commit one undoable unit.
+                  (calc-wrapper
+                   (calc-pop-push-record-list 1 "jump" (list new) m (list nil)))
+                  ;; Land point on the moved factor on the far side — in
+                  ;; a split, on its copy in the first branch.
+                  (let* ((committed (car (calc-top m 'entry)))
+                         (region (if (maf--solve-split-p committed)
+                                     (nth 2 committed)
+                                   committed))
+                         (landed (maf--jump-landed-factor region sel)))
+                    (or (and landed (maf--anchor-on-node m landed))
+                        (maf--point-restore snapshot)))
+                  ;; A single undo reverts point along with the stack.
+                  (maf--undo-record-cmd-point snapshot)))))
+           ((maf--jump-ordered-blocked-p (car entry) sel)
+            (message "No sound move across an ordered relation from here; j j (isolate) solves for it instead"))))))))
+
+;;; Collecting terms
+
+(defvar maf--collect-vars nil
+  "Variable (or vector of them) `maf--collect-run' collects.
+Bound per `mafcmd-collect-terms' call, from the prompt it reads.")
+
+(defvar maf--collect-side nil
+  "Side of the relation the collected terms land on: 1 left, 2 right.
+Bound per `mafcmd-collect-terms' call, from where point stood.")
+
+(defun maf--collect-addends (expr)
+  "Return EXPR's top-level additive terms, subtraction folded to negation."
+  (pcase (car-safe expr)
+    ('+ (append (maf--collect-addends (nth 1 expr))
+                (maf--collect-addends (nth 2 expr))))
+    ('- (append (maf--collect-addends (nth 1 expr))
+                (mapcar #'math-neg (maf--collect-addends (nth 2 expr)))))
+    ('neg (mapcar #'math-neg (maf--collect-addends (nth 1 expr))))
+    (_ (list expr))))
+
+(defun maf--collect-contains-p (term vars)
+  "Non-nil when TERM contains VARS: one var node, or any of a vector."
+  (if (eq (car-safe vars) 'vec)
+      (cl-some (lambda (v) (math-expr-contains term v)) (cdr vars))
+    (math-expr-contains term vars)))
+
+(defun maf--collect-sum (terms)
+  "Return the sum of TERMS, 0 when there are none."
+  (if terms (cl-reduce #'math-add terms) 0))
+
+(defun maf--collect-point-side ()
+  "Return the relation side point stands in for the entry at point: 1 or 2.
+The sub-formula under point decides, by which side of the innermost
+relation it sits in. Anywhere that names no side — home, the entry's
+margin, the relation operator — reads as 1, the left."
+  (maf--with-calc-buffer
+    (or (when (and (not (maf--at-home-p)) (maf--at-subexpr-p))
+          (save-excursion
+            (let ((m (calc-locate-cursor-element (point))))
+              (when (> m 0)
+                (calc-prepare-selection m)
+                ;; The part stays unstripped: encasing is what gives an
+                ;; atom a cons the parent walk can identify in the tree.
+                (let* ((formula (car (calc-top m 'entry)))
+                       (sub (ignore-errors (calc-find-selected-part))))
+                  (when (and (consp sub) (not (eq sub formula)))
+                    (let ((n sub) parent)
+                      (while (and (consp (setq parent
+                                               (calc-find-parent-formula
+                                                formula n)))
+                                  (not (maf--relation-p parent)))
+                        (setq n parent))
+                      (and (consp parent)
+                           (if (eq n (nth 2 parent)) 2 1)))))))))
+        1)))
+
+(maf-defcmd maf--collect-run (expr _arg commit)
+  "Collect every term containing `maf--collect-vars' on `maf--collect-side'.
+The worker behind `mafcmd-collect-terms' — see there. Takes the whole
+relation (:scope entry, :map -1) and rearranges it: the terms
+containing a named variable collect on the side point stood on,
+every other term moves to the other side. Both moves are additions
+and subtractions on both sides, so any relation keeps its direction.
+Sums are rebuilt under default simplifications whatever the session's
+simplify mode, so collected like terms fold the same way every time.
+A bare expression, or a relation no term of which contains a named
+variable, commits unchanged."
+  :arity unary
+  :prefix "clct"
+  :map -1
+  :scope entry
+  (if (not (maf--relation-p expr))
+      (commit expr)
+    (let ((head (car expr))
+          with-l without-l with-r without-r)
+      (dolist (term (maf--collect-addends (nth 1 expr)))
+        (if (maf--collect-contains-p term maf--collect-vars)
+            (push term with-l)
+          (push term without-l)))
+      (dolist (term (maf--collect-addends (nth 2 expr)))
+        (if (maf--collect-contains-p term maf--collect-vars)
+            (push term with-r)
+          (push term without-r)))
+      (setq with-l (nreverse with-l) without-l (nreverse without-l)
+            with-r (nreverse with-r) without-r (nreverse without-r))
+      (if (not (or with-l with-r))
+          (commit expr)
+        (let* ((calc-simplify-mode nil)
+               (flip (lambda (terms) (mapcar #'math-neg terms)))
+               (new
+                (if (eql maf--collect-side 2)
+                    (list head
+                          (maf--collect-sum
+                           (append without-l (funcall flip without-r)))
+                          (maf--collect-sum
+                           (append with-r (funcall flip with-l))))
+                  (list head
+                        (maf--collect-sum
+                         (append with-l (funcall flip with-r)))
+                        (maf--collect-sum
+                         (append without-r (funcall flip without-l)))))))
+          (commit (math-normalize new)))))))
+
+(defun mafcmd-collect-terms ()
+  "Collect every term of a variable on the side of the relation at point.
+
+  1:  x| + 2 k = x^2 - x + 3   collect x  =>  -x^2 + 2 x = -2 k + 3
+
+Point names the side: the terms containing the variable collect on
+the side point stands in, and every other term moves to the other —
+here point in the right side would collect them there instead. Home,
+the entry's margin, and the relation operator read as the left. The
+variable is read from the minibuffer as `mafcmd-solve-for' reads it:
+the subject's priority variable as the default, several names
+separated by commas or spaces collecting the terms of them all.
+
+Terms move whole, by containment, wherever the variable appears in
+them; both moves are additions and subtractions on both sides, so
+every relation keeps its direction, inequalities included. A side
+left with no terms becomes 0. A relation no term of which contains
+the variable, or a bare expression, commits unchanged.
+
+  1:  a x| <= b - x   collect x  =>  a x + x <= b
+  1:  x + 2 k| = 3    collect z  =>  x + 2 k = 3   (no z: unchanged)"
+  (interactive)
+  (let ((vars (maf--solve-for-read-vars (maf--solve-for-default-var)
+                                        "Collect variable on one side of equation"))
+        (side (maf--collect-point-side)))
+    (let ((maf--collect-vars vars)
+          (maf--collect-side side))
+      (call-interactively #'maf--collect-run))))
 
 ;;; Collecting terms
 
@@ -4901,6 +5210,80 @@ an equation or an inequality."
       (setq n (1+ n)))
     var))
 
+(defconst maf--solve-order-heads
+  '(calcFunc-lt calcFunc-leq calcFunc-gt calcFunc-geq)
+  "Relation heads with a direction the solver must not lose.")
+
+(defun maf--solve-split-p (expr)
+  "Non-nil when EXPR is the sign-split `maf--solve-relation' writes.
+Calc's if with a relation in the true branch; the false branch is
+the next case — another such if, a relation, or the zero case's
+residue: the truth value (1, 0) the coefficient-free relation
+collapsed to, or that relation itself when its constant term stays
+symbolic."
+  (and (eq (car-safe expr) 'calcFunc-if)
+       (= (length expr) 4)
+       (maf--relation-p (nth 2 expr))
+       (let ((tail (nth 3 expr)))
+         (or (maf--relation-p tail)
+             (memql tail '(0 1))
+             (maf--solve-split-p tail)))))
+
+(defun maf--solve-relation (rel var)
+  "Solve REL for VAR as `math-solve-eqn' does, direction preserved.
+Calc keeps an inequality's direction only while it knows the sign of
+what it divides by: solving 2 x k - 2 < 0 for x degrades to
+x != 1/k, and the <= form fails outright, the direction thrown away
+either way. When REL is linear in VAR the direction is exactly the
+sign of the leading coefficient, so those solves come back as calc's
+if, split three ways on that sign:
+
+  2 k > 0 ? x < 1/k : 2 k < 0 ? x > 1/k : -2 < 0
+
+the zero case last — the relation with its variable term gone, so no
+branch quietly claims x > 1/0. The if collapses to the case that
+holds once k is known — substitute a value and it evaluates away, the
+zero case to plain truth (1 here: -2 < 0 holds for every x). A degradation past
+linear (x^2 < 4 asks for an interval, which calc cannot say) returns
+nil with a message, keeping the misleading != off the stack; all
+else — equations, !=, an inequality whose signs calc can see —
+passes through as calc solved it."
+  (let ((head (car-safe rel))
+        (plain (math-solve-eqn rel var nil)))
+    (if (or (not (memq head maf--solve-order-heads))
+            (and plain (memq (car-safe plain) maf--solve-order-heads)))
+        plain
+      ;; Built under default simplifications whatever the session's
+      ;; simplify mode, so the split's own normalize folds the bound
+      ;; the same way every time (mode none would keep x < 2/(2 k)).
+      (let* ((calc-simplify-mode nil)
+             (coeffs (math-is-polynomial
+                      (math-sub (nth 1 rel) (nth 2 rel)) var 1))
+             (lead (nth 1 coeffs)))
+        (cond
+         ((and (= (length coeffs) 2) (not (Math-zerop lead)))
+          (let ((bound (math-normalize
+                        (math-div (math-neg (car coeffs)) lead)))
+                (keep head)
+                (flip (maf--flip-relation-op head)))
+            ;; A leading coefficient written negative reads better
+            ;; positive: -c > 0 ? A : B becomes c > 0 ? B : A.
+            (when (math-looks-negp lead)
+              (setq lead (math-neg lead))
+              (cl-rotatef keep flip))
+            (math-normalize
+             (list 'calcFunc-if (list 'calcFunc-gt lead 0)
+                   (list keep var bound)
+                   (list 'calcFunc-if (list 'calcFunc-lt lead 0)
+                         (list flip var bound)
+                         ;; The zero case: the variable term gone, the
+                         ;; relation is its constant term against 0 —
+                         ;; a truth value once that term is numeric.
+                         (list head (car coeffs) 0))))))
+         ((math-expr-contains rel var)
+          (message "Sign unknown past linear: the direction cannot be kept; solve the = form instead")
+          nil))))))
+
 (defun maf--solve-for-subexpr (rel target)
   "Solve relation REL for the sub-expression TARGET, or nil.
 A plain variable is solved directly. A compound sub-expression is
@@ -4908,9 +5291,9 @@ isolated by substituting a fresh variable for it — calc cannot solve
 for a compound directly through a nonlinear operator like sqrt — then
 solving for that variable and substituting the sub-expression back."
   (if (eq (car-safe target) 'var)
-      (math-solve-eqn rel target nil)
+      (maf--solve-relation rel target)
     (let* ((u (maf--solve-fresh-var rel))
-           (soln (math-solve-eqn (math-expr-subst rel target u) u nil)))
+           (soln (maf--solve-relation (math-expr-subst rel target u) u)))
       (and soln (math-expr-subst soln u target)))))
 
 (defvar maf--solve-target nil
@@ -4967,7 +5350,9 @@ bare expression is treated as = 0; nothing solvable commits unchanged."
                    (and maf--solve-target
                         (maf--solve-for-subexpr rel maf--solve-target))))
               (setq maf--solve-target-isolated
-                    (and (maf--relation-p target-result) t))
+                    (and (or (maf--relation-p target-result)
+                             (maf--solve-split-p target-result))
+                         t))
               (or
                (and maf--solve-target-isolated target-result)
                ;; If the target cannot be isolated, solve for a variable,
@@ -4985,10 +5370,10 @@ bare expression is treated as = 0; nothing solvable commits unchanged."
                                   (nth (mod (1+ pos) n) vars)
                                 (car vars))))
                         (setq maf--solve-solved-var var)
-                        (math-solve-eqn rel var nil)))))))))
+                        (maf--solve-relation rel var)))))))))
     ;; Nothing solvable: the subject commits unchanged, so no variable
     ;; was isolated after all and point has nothing to land on.
-    (if (maf--relation-p result)
+    (if (or (maf--relation-p result) (maf--solve-split-p result))
         (commit result)
       (setq maf--solve-solved-var nil)
       (commit expr))))
@@ -5020,10 +5405,13 @@ point where it was."
   (let ((m (maf--with-calc-buffer (calc-locate-cursor-element (point)))))
     (when (> m 0)
       (let* ((formula (maf--with-calc-buffer (calc-top m 'full)))
+             ;; A sign-split lands on the variable in its first branch.
+             (rel (cond ((maf--relation-p formula) formula)
+                        ((maf--solve-split-p formula) (nth 2 formula))))
              ;; The matched cons comes from the formula itself, which is
              ;; what the composition machinery can locate on screen.
-             (side (and (maf--relation-p formula)
-                        (cl-find var (list (nth 1 formula) (nth 2 formula))
+             (side (and rel
+                        (cl-find var (list (nth 1 rel) (nth 2 rel))
                                  :test #'equal))))
         (when side
           (maf--point-restore-start `((:node . ,side) (:m . ,m))))))))
@@ -5070,12 +5458,18 @@ on a relation already solved for one moves on to the next.
 
   x + y = 5    =>  x = -y + 5   (again: y = -x + 5)
   2 x - 3 < 7  =>  x < 5
+  k x < 1      =>  k > 0 ? x < 1/k : k < 0 ? x > 1/k : -1 < 0
   x + 3 != 7   =>  x != 4
   3 = 3        =>  3 = 3       (no variable: unchanged)
 
 Equations and inequalities alike, the relation kept — calc flips an
-inequality's sense when it must. A bare expression is treated as = 0.
-The result stays exact: a root gives sqrt(2), a ratio 1:2.
+inequality's sense when it must, and a direction that hinges on a
+sign calc cannot see comes back as calc's if, split on that sign;
+substituting a value for k later collapses the if to the branch that
+holds. A direction that cannot be kept at all (x^2 < 4 asks for an
+interval) leaves the entry unchanged with a message. A bare
+expression is treated as = 0. The result stays exact: a root gives
+sqrt(2), a ratio 1:2.
 
 Point lands on the variable that ended up isolated, whichever side calc
 put it on — solving 5 - x > 2 gives 3 > x, and point goes to the x on
@@ -5181,7 +5575,14 @@ entry unchanged instead — unchanged means as written, so nothing turns."
   :scope entry
   (let ((result (let ((calc-symbolic-mode t) (calc-prefer-frac t))
                   (condition-case nil
-                      (funcall maf--solve-for-func expr maf--solve-for-vars)
+                      ;; An order inequality solved for one variable goes
+                      ;; through the direction-preserving wrapper; the
+                      ;; other solvers and vector subjects go to calc.
+                      (if (and (eq maf--solve-for-func 'calcFunc-solve)
+                               (eq (car-safe maf--solve-for-vars) 'var)
+                               (memq (car-safe expr) maf--solve-order-heads))
+                          (maf--solve-relation expr maf--solve-for-vars)
+                        (funcall maf--solve-for-func expr maf--solve-for-vars))
                     (error nil)))))
     (commit (if (or (null result)
                     (eq (car-safe result) maf--solve-for-func))
@@ -5220,8 +5621,10 @@ meaning, so point within the formula is not used to narrow it. To solve
 for something Calc cannot solve for directly — a compound
 sub-expression, under a nonlinear operator — use `mafcmd-isolate',
 which isolates the sub-expression under point. A bare expression is
-treated as = 0, inequalities keep their relation, and an input Calc
-cannot solve for the named variable commits unchanged.
+treated as = 0, inequalities keep their relation — one whose direction
+hinges on a sign calc cannot see comes back as calc's if, split on
+that sign — and an input Calc cannot solve for the named variable
+commits unchanged.
 
 The solution is written with its variable on the left. Calc leaves an
 inequality whose sign flipped reading the other way round (-2 < x); it
@@ -5231,6 +5634,7 @@ variable that was solved for.
   x + y = 5                     =>  y = 5 - x       (typed: y)
   [x + y = 3, x - y = 1]        =>  [x = 2, y = 1]  (typed: x,y)
   2 x - 3 < 7                   =>  x < 5
+  k x < 1                       =>  k > 0 ? x < 1/k : k < 0 ? x > 1/k : -1 < 0
   -2 x < 4                      =>  x > -2          (turned, sense kept)
   x^2 + y^2 = r^2               =>  y = sqrt(r^2 - x^2)
   x + 3                         =>  x = -3          (bare: solved = 0)

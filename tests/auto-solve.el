@@ -293,17 +293,58 @@
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "x = -y + pi"))
   (calc-pop (calc-stack-size))
 
-  ;; Match Calc's documented unknown-sign inequality behavior: strict <
-  ;; degrades to !=, while <= cannot be partially solved and stays intact.
+  ;; An unknown-sign inequality no longer degrades (calc alone turns
+  ;; strict < into != and fails <= outright): linear in the variable, it
+  ;; splits on the sign of the leading coefficient as calc's if. Note
+  ;; a < b c cycles to b — a already stands alone on one side.
   (maf-push "a < b c")
   (goto-char (point-max)) (call-interactively 'mafcmd-auto-solve)
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "b != a / c"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full))
+                      "c > 0 ? b > a / c : c < 0 ? b < a / c : a < 0"))
   (calc-pop (calc-stack-size))
 
   (maf-push "a <= b c")
   (goto-char (point-max)) (call-interactively 'mafcmd-auto-solve)
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "a <= b c"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full))
+                      "c > 0 ? b >= a / c : c < 0 ? b <= a / c : a <= 0"))
   (calc-pop (calc-stack-size))
+
+  ;; The reported bug: 2 x k - 2 < 0 came back x != 1/k, the direction
+  ;; thrown away.
+  (maf-push "2 x k - 2 < 0")
+  (goto-char (point-max)) (call-interactively 'mafcmd-auto-solve)
+  (cl-assert (string= (math-format-value (calc-top 1 'full))
+                      "2 k > 0 ? x < 1 / k : 2 k < 0 ? x > 1 / k : -2 < 0"))
+  (calc-pop (calc-stack-size))
+
+  ;; Past linear the direction cannot be kept at all: the entry stays
+  ;; unchanged (calc alone would commit x != 2).
+  (maf-push "x^2 < 4")
+  (goto-char (point-max)) (call-interactively 'mafcmd-auto-solve)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "x^2 < 4"))
+  (calc-pop (calc-stack-size))
+
+  ;; Substituting the coefficient collapses the split to the case that
+  ;; holds — positive, negative, and zero, strict and non-strict; the
+  ;; zero case lands plain truth, never a division by zero.
+  (progn (setq maf-solve-test--lt
+               (maf--solve-relation (math-read-expr "2 x k - 2 < 0")
+                                    (math-read-expr "x"))
+               maf-solve-test--geq
+               (maf--solve-relation (math-read-expr "2 x k - 2 >= 0")
+                                    (math-read-expr "x")))
+         nil)
+  (cl-flet ((at (split k)
+              (math-format-value
+               (math-evaluate-expr
+                (math-expr-subst split (math-read-expr "k") k))
+               100)))
+    (cl-assert (string= (at maf-solve-test--lt 2) "x < 0.5"))
+    (cl-assert (string= (at maf-solve-test--lt -2) "x > -0.5"))
+    (cl-assert (string= (at maf-solve-test--lt 0) "1"))
+    (cl-assert (string= (at maf-solve-test--geq 2) "x >= 0.5"))
+    (cl-assert (string= (at maf-solve-test--geq -2) "x <= -0.5"))
+    (cl-assert (string= (at maf-solve-test--geq 0) "0")))
 
   ;; An equation Calc cannot solve symbolically remains unchanged.
   (maf-push "x^6 + x + 1 = 0")
