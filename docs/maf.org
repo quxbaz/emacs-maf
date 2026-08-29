@@ -28,7 +28,7 @@
   - [ ] main docs for users (new features, changes)
   - [ ] technical docs for devs
 
-* maf-plot
+* NEXT maf-plot
 
 * later
 ** thin web client w/ mathjax rendering
