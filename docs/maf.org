@@ -41,7 +41,7 @@
     - add cards for missing bindings
 
 * cleanup
-  - [ ] generate tests full coverage
+  - [-] generate tests full coverage
   - [ ] remove seed entries
   - [ ] remove project-init.el
 
