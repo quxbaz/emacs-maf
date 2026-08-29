@@ -309,6 +309,11 @@
      Big look returns when it goes off, so the shadow is what the
      toggle decides rather than a second key to learn)
    - [X] `j e` maf-jump-equals ← calc-enable-selections
+   - [X] `j c` mafcmd-collect-terms ← calc-clear-selections
+     (2026-08-29: was `l C`, an unbound-in-calc addition. Moved
+     beside the single-term `j e` it repeats for a whole family,
+     on collect's own letter. The clear it shadows is spare —
+     RET clears every selection when one stands)
    - [X] `@` maf-toggle-simplify ← calcDigit-start
    - [X] `&` mafcmd-inv ← calc-inv (2026-08-25: was
      maf-toggle-big-language, now bound by nothing — the preview panel
