@@ -191,7 +191,7 @@
   - base remaps: undo, undo-redo, calc-undo, calc-redo → maf-undo/redo
   - the escape map beneath base: `m c` maf-list-modules — in every
     profile and with the module off, not a native addition
-  - module keys: `SPC` \` `C-o` `(` (edit), `?` (options), `t d` `M-h`
+  - module keys: `SPC` \` (edit; `C-o` `(` calc profile only), `?` (options), `t d` `M-h`
     (history), `l R` `l S` (persist), `M-p` `M-n` (recall), `s o`
     (formulas), `l T` (pretty)
 ** contextual siblings on their own calc key (outside the table)
@@ -337,6 +337,13 @@
      blank-vector key: that gesture keeps the key at home, where there
      is no entry to move within, and keeps it outright in the calc
      profile)
+   - [X] `C-o` maf-goto-other-side ← maf-edit-add-entry-above
+     (2026-08-29: the blind crossing — lands on whichever side of the
+     relation point is not in, so the one key rocks between the sides.
+     Like the parens it hands the key back to the edit module at home,
+     where a fresh entry above the dot is what an entry-less C-o has
+     always meant, and the calc profile keeps C-o = add-entry-above
+     outright)
 ** additions (keys calc leaves unbound)
    - [X] `W` mafcmd-sqr (a second key, `:`, shadows calc-fdiv — see
      the shadowing list above)
@@ -489,8 +496,10 @@
      dispatcher, maf-dup-here-or-clear-selections)
    - maf-dup-go — the traveling duplicate; native's C-RET went to the
      keep-point dup 2026-08-24, and the calc profile's M-RET keeps it
-   - maf-edit-add-entry-below — deliberately unbound; C-o one entry
-     down covers the gesture (see src/bindings.el)
+   - maf-edit-add-entry-below — deliberately unbound; and
+     maf-edit-add-entry-above joined it 2026-08-29 when C-o became the
+     relation crossing, keeping only the at-home fresh-entry gesture
+     (see src/bindings.el)
    - maf-restore-stack, maf-restore-stack-from — l R runs the
      saved-stacks buffer (maf-saved-stacks), which restores from a row
    - maf-history-clear

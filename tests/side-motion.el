@@ -1,9 +1,11 @@
 ;; The paren keys cross a relation: `(' to the whole left side
 ;; (`maf-goto-left-side'), `)' to the whole right
-;; (`maf-goto-right-side'). Every assertion below is about where point
-;; lands, because point is the whole of maf's targeting: a landing is
-;; only right if resolve names the side the motion advertised there,
-;; which is what `maf-test--part-at-point' reads back.
+;; (`maf-goto-right-side'); C-o crosses blind, to whichever side point
+;; is not in (`maf-goto-other-side'). Every assertion below is about
+;; where point lands, because point is the whole of maf's targeting: a
+;; landing is only right if resolve names the side the motion
+;; advertised there, which is what `maf-test--part-at-point' reads
+;; back.
 ;;
 ;; Either key pressed from the side it already names crosses to the
 ;; other one, so a relation can be walked on one key; the cycle turns
@@ -72,6 +74,44 @@ the Big-language entry here runs over several lines."
   (cl-assert (string= (maf-test--part-at-point) "6 * x + 12 = 18 * y + 6"))
   (call-interactively 'maf-goto-left-side)
   (cl-assert (string= (maf-test--part-at-point) "6 * x + 12"))
+  (calc-pop (calc-stack-size))
+
+  ;; The crossing names no side: from wherever point sits it lands on
+  ;; the whole side point is not in, and pressed again it rocks back —
+  ;; the blind way into the same walk.
+  (maf-push "6 x + 12 = 18 y + 6")
+  (progn (calc-cursor-stack-index 1)
+         (search-forward "y" (line-end-position))
+         (backward-char 1))
+  (call-interactively 'maf-goto-other-side)
+  (cl-assert (string= (maf-test--part-at-point) "6 * x + 12"))
+  (cl-assert (eq (char-after) ?+))
+  (call-interactively 'maf-goto-other-side)
+  (cl-assert (string= (maf-test--part-at-point) "18 * y + 6"))
+  (call-interactively 'maf-goto-other-side)
+  (cl-assert (string= (maf-test--part-at-point) "6 * x + 12"))
+  ;; From the relation's own operator, or the margins where point
+  ;; names the whole entry, point is in neither side and the right one
+  ;; is the landing.
+  (progn (calc-cursor-stack-index 1)
+         (search-forward "=" (line-end-position))
+         (backward-char 1))
+  (call-interactively 'maf-goto-other-side)
+  (cl-assert (string= (maf-test--part-at-point) "18 * y + 6"))
+  (progn (calc-cursor-stack-index 1) (beginning-of-line))
+  (call-interactively 'maf-goto-other-side)
+  (cl-assert (string= (maf-test--part-at-point) "18 * y + 6"))
+  ;; No relation: the crossing signals like the named motions.
+  (calc-pop (calc-stack-size))
+  (maf-push "(a + b) (2 c - d)")
+  (progn (calc-cursor-stack-index 1)
+         (search-forward "c" (line-end-position))
+         (backward-char 1))
+  (setq side-test-pos (point))
+  (cl-assert (eq :error (condition-case nil
+                            (progn (call-interactively 'maf-goto-other-side) :ok)
+                          (user-error :error))))
+  (cl-assert (= (point) side-test-pos))
   (calc-pop (calc-stack-size))
 
   ;; All six relations, not just =; and a side that is a bare atom is
@@ -205,6 +245,17 @@ the Big-language entry here runs over several lines."
   (cl-assert maf-edit-mode)
   (cl-assert (eq (char-before) ?\[))
   (cl-assert (looking-at-p "\\]$"))
+  (call-interactively 'maf-edit-discard)
+  (cl-assert (not maf-edit-mode))
+  (cl-assert (= (calc-stack-size) 1))
+
+  ;; The crossing's own home meaning is the one its key has always had
+  ;; there: a fresh entry opened at the bottom
+  ;; (`maf-edit-add-entry-above').
+  (progn (calc-cursor-stack-index 0) (skip-chars-forward " "))
+  (call-interactively 'maf-goto-other-side)
+  (cl-assert maf-edit-mode)
+  (cl-assert (eolp))
   (call-interactively 'maf-edit-discard)
   (cl-assert (not maf-edit-mode))
   (cl-assert (= (calc-stack-size) 1))

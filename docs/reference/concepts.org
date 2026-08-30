@@ -646,10 +646,11 @@ entry, which is a line of its own to move to. =maf-backward-operand=
 (M-a) is the same walk the other way, over the same stops, so the two
 retrace each other.
 
-=maf-goto-left-side= (=(=) and =maf-goto-right-side= (=)=) arrive at
-one particular landing in one press: the whole of a relation's left or
-right side, the largest formula there is on it, where the climb would
-reach it a level at a time. The relation is the innermost one point
+=maf-goto-left-side= (=(=), =maf-goto-right-side= (=)=) and
+=maf-goto-other-side= (C-o, landing on whichever side point is not in)
+arrive at one particular landing in one press: the whole of a
+relation's left or right side, the largest formula there is on it,
+where the climb would reach it a level at a time. The relation is the innermost one point
 sits in, so a term inside one element of =[h = 0, p = -4, k = 0]=
 crosses within its own equation rather than finding the vector around
 it, and the entry's margins — the line-number prefix, the end of the
@@ -662,8 +663,9 @@ standing still — the side is as far out as that end of the relation
 goes — so one key walks the relation, and the cycle turns on where
 point stands rather than on which key put it there. Home is the one
 place the keys mean something else: there is no entry at point to move
-within, and they keep the blank-vector gesture the edit module gives
-them (=maf-edit-add-vector=).
+within, and they keep the gesture the edit module gives them — the
+parens the blank vector (=maf-edit-add-vector=), C-o the fresh bottom
+entry (=maf-edit-add-entry-above=).
 
 ** Widening a rewrite marker
 
@@ -973,7 +975,7 @@ multiples of pi.
 | [[file:../../modules/maf-hl.el][modules/maf-hl.el]]       | Highlight module: =maf-hl-mode= per-buffer, =maf-use-hl-mode= toggle |
 | [[file:../../modules/maf-history.el][modules/maf-history.el]]  | History module: =maf-use-history-mode= records stack snapshots, browse in =*maf-history*= |
 | [[file:../../modules/maf-persist.el][modules/maf-persist.el]]   | Persist module: =maf-persist-mode= saves/restores the stack across sessions |
-| [[file:../../modules/maf-edit.el][modules/maf-edit.el]]      | Edit module: =maf-use-edit-mode= binds SPC/`/C-o/"(" to =maf-edit= in-place stack editing (=maf-edit-mode= session) |
+| [[file:../../modules/maf-edit.el][modules/maf-edit.el]]      | Edit module: =maf-use-edit-mode= binds SPC/` (plus C-o/"(" in the calc profile) to =maf-edit= in-place stack editing (=maf-edit-mode= session) |
 | [[file:../../modules/maf-preview.el][modules/maf-preview.el]]   | Preview module: =maf-use-preview-mode= shows the entry at point in Big display in a floating panel (posframe child frame, else in-window); =maf-preview-show= (=G=) opens one entry in the preview window below the stack, module on or off |
 | [[file:../../modules/maf-pretty.el][modules/maf-pretty.el]]    | Render module: =maf-pretty= sends the entry at point through Calc LaTeX and RaTeX, then displays the SVG on demand |
 | [[file:../../modules/maf-formulas.el][modules/maf-formulas.el]]  | Formulas module: =maf-formulas= menu of saved formulas by category (detail + RET-insert); data in =maf-formulas-builtin= (shipped) plus =maf-formulas-file= (the user's) |
@@ -1067,11 +1069,11 @@ Two module shapes have appeared, matching the feature's state:
   which on the session's own row names the running session, its lock
   moving with the file — and deleting one outright with =D=.
   The edit module too
-  (=modules/maf-edit.el=): =maf-use-edit-mode= installs SPC / ` / C-o /
-  =(= in =maf-mode-map= when enabled and cedes them
-  back when disabled — its body is just those bindings, the on-demand
-  editing session (=maf-edit-mode=, turned on per gesture, not a
-  feature switch) being separate.
+  (=modules/maf-edit.el=): =maf-use-edit-mode= installs SPC and ` in
+  =maf-mode-map= when enabled (plus C-o and =(= in the calc profile)
+  and cedes them back when disabled — its body is just those bindings,
+  the on-demand editing session (=maf-edit-mode=, turned on per
+  gesture, not a feature switch) being separate.
 
   The pretty module (=modules/maf-pretty.el=) is the same global-mode
   shape with no background work of its own: =maf-use-pretty-mode= owns

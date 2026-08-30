@@ -307,12 +307,13 @@
 (dotimes (i 10)
   (maf-bindings-define '(calc native) (format "r %d" i)
                        #'maf-recall-quick))
-;; The in-place editing entry keys (SPC / ` / C-o) are installed by the
+;; The in-place editing entry keys (SPC / `) are installed by the
 ;; edit module when it is enabled (see modules/edit.el), not here. `
 ;; shadows calc-edit, the command the whole module replaces. The
-;; module's fourth key, "(" for a blank vector, is native's relation
-;; motion below and reaches the module through it; the module still
-;; declares its own plain "(" for the calc profile.
+;; module's other keys, C-o for an entry above and "(" for a blank
+;; vector, are native's relation motions below and reach the module
+;; through them at home; the module still declares both plain for the
+;; calc profile.
 (maf-bindings-define '(calc native) "U" #'maf-undo)
 (maf-bindings-define '(calc native) "D" #'maf-redo)
 ;; Catch every key that dispatches to undo/redo, so point handling
@@ -423,9 +424,9 @@
 (maf-bindings-define '(calc) "M-RET" #'maf-dup-go)
 ;; S-<return> is the restack (bound above, beside the bury). It was the
 ;; edit module's add-entry-below, which is unbound now and reachable by
-;; name: C-o opens an entry above point, and above the entry below point
-;; is where add-entry-below opened, so the gesture survives one line
-;; down — with ` still opening at the bottom.
+;; name, as add-entry-above is since C-o became the relation crossing —
+;; with ` still opening at the bottom, and C-o at home still opening a
+;; fresh entry there.
 
 ;; Equate lives on e (shadowing the e-notation digit start) and its
 ;; typographic twin =. The calc profile leaves = to calc-evaluate.
@@ -499,7 +500,7 @@
 ;; whose control-character leaf calc's fancy prefix would rather not
 ;; carry (K C-c C-c is what `maf--fancy-prefix-keep's provisional path
 ;; was written for; see src/stack.el) — then C-RET, which the edit
-;; module's quick-add had given up for it (`, C-o and "(" remain,
+;; module's quick-add had given up for it (` and "(" remain,
 ;; though ` now opens the bottom entry for editing rather than adding
 ;; one below it, still as a trip home). Bind the GUI event
 ;; and the terminal form both.
@@ -669,6 +670,13 @@
 ;; layout these motions are no part of.
 (maf-bindings-define '(native) "(" #'maf-goto-left-side)
 (maf-bindings-define '(native) ")" #'maf-goto-right-side)
+;; And the blind crossing: C-o lands on whichever side point is not
+;; in, so the one key rocks between the sides without naming either.
+;; It was the edit module's add-entry-above, which keeps the key in
+;; the calc profile and, like the vector-add on "(", gets it back at
+;; home — where a fresh entry above the dot is what an entry-less C-o
+;; has always meant.
+(maf-bindings-define '(native) "C-o" #'maf-goto-other-side)
 
 ;; The module toggle buffer. m is calc's mode prefix (m m saves the
 ;; modes, m d is degrees mode), which is where turning maf's own
