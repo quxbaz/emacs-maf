@@ -5182,6 +5182,37 @@ exactly as calc's `calc-recall-quick' reads it."
   (interactive)
   (maf--recall-literal (intern (format "var-q%c" last-command-event))))
 
+;;; Vector access
+
+(maf-defcmd mafcmd-nth-element (expr _arg commit)
+  "Take the element of the resolved vector the digit key names.
+
+  [10, 20, 30]  =>  20   (the 2 key)
+
+The digit is the key that invoked the command, as quick recall reads
+its own digit keys: pressing 2 takes the second element, 1 the first,
+up to 9. The element is lifted out literally — not renormalized, so
+what the vector held is what lands. A resolved expression that is not
+a vector commits unchanged, and equation sides without one pass
+through quietly; a digit past the vector's end signals instead. Point
+picks the target as usual: a sub-formula at point, each side of an
+equation, the top entry at home.
+
+  [a, b] = v            =>  b = v   (the v side: unchanged, the 2 key)
+  [a, b] with the 5 key =>  error: only 2 elements"
+  :arity unary
+  :prefix "nth"
+  (let ((n (- last-command-event ?0)))
+    (unless (<= 1 n 9)
+      (user-error "mafcmd-nth-element reads its element from a digit key"))
+    (commit (if (eq (car-safe expr) 'vec)
+                (if (> n (1- (length expr)))
+                    (user-error "No element %d: only %d element%s" n
+                                (1- (length expr))
+                                (if (= (length expr) 2) "" "s"))
+                  (nth n expr))
+              expr))))
+
 ;;; Solving
 
 (defun maf--solve-solved-for (expr)

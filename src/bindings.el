@@ -299,6 +299,16 @@
 ;; once and then left alone, reachable by name afterwards, giving up
 ;; its key to something pressed while working.
 (maf-bindings-define '(native) "p" #'maf-browse-variables)
+;; The vector-access prefix, on the h calc gives its help commands —
+;; lookups read rarely, reachable by name, the same trade precision
+;; makes above. h h is the head of the vector at point, h l its last
+;; element (rtail), and a digit the element it names
+;; (mafcmd-nth-element); the head family's flag variants stay on the
+;; table's v h.
+(maf-bindings-define '(native) "h h" #'mafcmd-head)
+(maf-bindings-define '(native) "h l" #'mafcmd-rtail)
+(dotimes (i 9)
+  (maf-bindings-define '(native) (format "h %d" (1+ i)) #'mafcmd-nth-element))
 ;; Literal recall: what was stored is what lands, unsimplified. r 0-9
 ;; shadow calc's quick recall, which renormalizes under the current
 ;; modes on the way out; r r is unbound in calc itself (its prompt
