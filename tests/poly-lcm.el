@@ -200,4 +200,18 @@
   (cl-assert (string= (math-format-value (calc-top 1 'full))
                       "(x + 1) (x - 1) x"))
   (cl-assert (= (calc-stack-size) 1))
+  (calc-pop (calc-stack-size))
+
+  ;; The selection machinery encases entry atoms in place — preparing
+  ;; a selection leaves (cplx 6 0) where 6 was, entirely apart from
+  ;; any command — and resolve strips the casing off the top-of-stack
+  ;; argument as it does off :expr, so the factoring sees the 6 and
+  ;; not an opaque cplx (which cost the content its numeric part:
+  ;; 4 (x + 1) 6 where 12 (x + 1) was owed).
+  (maf-push "4*(x + 1)")
+  (maf-push "6*(x + 1)")
+  (progn (calc-prepare-selection 1) nil)
+  (progn (calc-cursor-stack-index 0) nil)
+  (call-interactively 'mafcmd-poly-lcm)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "12 (x + 1)"))
   (calc-pop (calc-stack-size)))
