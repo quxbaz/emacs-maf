@@ -23,11 +23,12 @@
 ;;                 `calc-replace-sub-formula` for eq-based splicing — only the
 ;;                 encased ref matches the cons in the entry. Set only for
 ;;                 selection and subexpr.
-;;   :arg          Second operand for binary commands; nil for unary. Taken
-;;                 raw off the stack — entries are already normal at push
-;;                 time, and renormalizing here would re-evaluate under the
-;;                 current modes, floating an exact sqrt(2) when symbolic
-;;                 mode is off.
+;;   :arg          Second operand for binary commands; nil for unary. Encasing
+;;                 stripped like :expr — the selection machinery encases entry
+;;                 atoms in place, entirely apart from any command — but never
+;;                 renormalized: entries are already normal at push time, and
+;;                 renormalizing here would re-evaluate under the current
+;;                 modes, floating an exact sqrt(2) when symbolic mode is off.
 ;;   :m            Stack position (1 = top) of the target entry. Only set when
 ;;                 the target lives at a specific stack level (e.g. selection).
 ;;   :point-anchor Index of point's glyph among the structural glyphs the
@@ -110,6 +111,15 @@
 (defvar calc-selection-cache-offset)
 
 
+(defun maf--resolve-arg (arity)
+  "The top-of-stack argument a binary command consumes; nil for unary.
+Encasing stripped like every :expr — the selection machinery encases
+entry atoms in place, and a body reading the argument's structure
+must see clean values — but never renormalized (see the :arg entry in
+the commentary)."
+  (when (eq arity 'binary)
+    (maf--strip-encasing (calc-top 1 'full))))
+
 (defun maf--resolve-target-selection (opts)
   "Return the selection target's context alist.
 :expr is the selected sub-expression. The chosen entry is the one under point
@@ -133,7 +143,7 @@ entry containing the selection, which has no coherent commit semantics."
         ;; eq-based splicing.
         (:expr       . ,(maf--strip-encasing encased))
         (:expr-ref   . ,encased)
-        (:arg        . ,(pcase arity ('unary nil) ('binary (calc-top 1 'full))))
+        (:arg        . ,(maf--resolve-arg arity))
         (:m          . ,m)
         (:commit-m   . ,(if keep 1 m))
         (:commit-n   . ,(if keep 0 1))
@@ -235,7 +245,7 @@ whole chain or a single term. The split from
           (:chain-kind . ,kind)
           (:pre-terms  . ,(cl-subseq terms 0 i))
           (:post-terms . ,(cl-subseq terms (1+ j)))
-          (:arg        . ,(pcase arity ('unary nil) ('binary (calc-top 1 'full))))
+          (:arg        . ,(maf--resolve-arg arity))
           (:m          . ,m)
           (:commit-m   . ,(if keep 1 m))
           (:commit-n   . ,(if keep 0 1))
@@ -257,7 +267,7 @@ whole chain or a single term. The split from
                          (pcase arity
                            ('unary (calc-top 1 'full))
                            ('binary (calc-top 2 'full)))))
-        (:arg        . ,(pcase arity ('unary nil) ('binary (calc-top 1 'full))))
+        (:arg        . ,(maf--resolve-arg arity))
         (:commit-m   . 1)
         (:commit-n   . ,(if keep 0 (pcase arity ('unary 1) ('binary 2))))
         (:post-pop   . 0)))))
@@ -286,7 +296,7 @@ which has no coherent commit semantics."
       ;; index, used to re-anchor point on the committed node.
       (:point-anchor . ,(maf--comp-node-anchor-index
                          encased (maf--comp-point-cpos)))
-      (:arg        . ,(pcase arity ('unary nil) ('binary (calc-top 1 'full))))
+      (:arg        . ,(maf--resolve-arg arity))
       (:m          . ,m)
       (:commit-m   . ,(if keep 1 m))
       (:commit-n   . ,(if keep 0 1))
@@ -409,7 +419,7 @@ equation when it is a relation; the guard here is a backstop for direct calls."
         (:rel-op     . ,(car expr))
         (:lhs        . ,(nth 1 expr))
         (:rhs        . ,(nth 2 expr))
-        (:arg        . ,(pcase arity ('unary nil) ('binary (calc-top 1 'full))))
+        (:arg        . ,(maf--resolve-arg arity))
         (:m          . ,m)
         (:commit-m   . ,(if keep 1 m))
         (:commit-n   . ,(if keep 0 1))
@@ -440,7 +450,7 @@ have to be on the operand whose value will be replaced."
         ;; encases entry atoms in place, and the body must see clean
         ;; values — but not re-normalized, which could re-simplify.
         (:expr       . ,(maf--strip-encasing (calc-top m 'full)))
-        (:arg        . ,(pcase arity ('unary nil) ('binary (calc-top 1 'full))))
+        (:arg        . ,(maf--resolve-arg arity))
         (:commit-m   . ,(if keep 1 m))
         (:commit-n   . ,(if keep 0 1))
         (:post-pop   . ,(if keep 0 (pcase arity ('unary 0) ('binary 1))))))))
