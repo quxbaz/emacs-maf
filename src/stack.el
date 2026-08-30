@@ -5382,6 +5382,43 @@ exactly as calc's `calc-recall-quick' reads it."
 
 ;;; Vector access
 
+(defun maf--nth-digit-index (expr)
+  "The element index the invoking digit key names, checked against EXPR.
+Shared by `mafcmd-nth-element' and its inverse: the digit is read off
+`last-command-event', as quick recall reads its own digit keys.
+Signals when the invoking key was no digit, or when EXPR is a vector
+with fewer elements than the digit names; nil when EXPR is not a
+vector at all, where the caller commits it unchanged."
+  (let ((n (- last-command-event ?0)))
+    (unless (<= 1 n 9)
+      (user-error "%s reads its element from a digit key" this-command))
+    (when (eq (car-safe expr) 'vec)
+      (if (> n (1- (length expr)))
+          (user-error "No element %d: only %d element%s" n
+                      (1- (length expr))
+                      (if (= (length expr) 2) "" "s"))
+        n))))
+
+(maf-defcmd mafcmd-remove-nth-element (expr _arg commit)
+  "Remove the element the digit key names from the resolved vector.
+
+  [10, 20, 30]  =>  [10, 30]   (the 2 key)
+
+The complement of `mafcmd-nth-element', reached through its Inverse
+flag: the digit names the same element, and everything else is what
+commits. The remaining elements are kept literally — not
+renormalized. A resolved expression that is not a vector commits
+unchanged, and equation sides without one pass through quietly; a
+digit past the vector's end signals instead. Point picks the target
+as usual: a sub-formula at point, each side of an equation, the top
+entry at home."
+  :arity unary
+  :prefix "rmnth"
+  (let ((n (maf--nth-digit-index expr)))
+    (commit (if n
+                (append (cl-subseq expr 0 n) (nthcdr (1+ n) expr))
+              expr))))
+
 (maf-defcmd mafcmd-nth-element (expr _arg commit)
   "Take the element of the resolved vector the digit key names.
 
@@ -5397,19 +5434,17 @@ picks the target as usual: a sub-formula at point, each side of an
 equation, the top entry at home.
 
   [a, b] = v            =>  b = v   (the v side: unchanged, the 2 key)
-  [a, b] with the 5 key =>  error: only 2 elements"
+  [a, b] with the 5 key =>  error: only 2 elements
+
+Inverse: the complement — the vector with that element removed
+\(`mafcmd-remove-nth-element').
+
+  [10, 20, 30]  =>  [10, 30]   (I then the 2 key)"
   :arity unary
   :prefix "nth"
-  (let ((n (- last-command-event ?0)))
-    (unless (<= 1 n 9)
-      (user-error "mafcmd-nth-element reads its element from a digit key"))
-    (commit (if (eq (car-safe expr) 'vec)
-                (if (> n (1- (length expr)))
-                    (user-error "No element %d: only %d element%s" n
-                                (1- (length expr))
-                                (if (= (length expr) 2) "" "s"))
-                  (nth n expr))
-              expr))))
+  :inverse mafcmd-remove-nth-element
+  (let ((n (maf--nth-digit-index expr)))
+    (commit (if n (nth n expr) expr))))
 
 ;;; Solving
 
