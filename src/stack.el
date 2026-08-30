@@ -6469,7 +6469,7 @@ the caller can validate its definition and arity."
          (or (eq max 'many)
              (and (integerp max) (>= max 1))))))
 
-(defun maf--map-from-expr (expr)
+(defun maf--map-from-expr (expr &optional subject)
   "Return the mapper EXPR describes, as a cons of (PARAM . BODY).
 Applying it substitutes the mapped element for PARAM in BODY. EXPR is a
 parsed formula, from the stack or from the prompt, in one of three
@@ -6482,8 +6482,10 @@ shapes:
 A name calc knows is read as the function, so a variable of the same
 name cannot be mapped bare; write it as a formula ($ sin) to mean the
 variable. A formula with no variable has nothing to map over, and one
-with several does not say which of them is the element — both signal,
-pointing at the $ that names the element outright."
+with several does not say which of them is the element: with SUBJECT —
+the expression being mapped, which the stack form has in hand — the
+choice is asked for (see `maf--map-choose-element'), without it the
+refusal points at the $ that marks the element inline at the prompt."
   (cond
    ((eq (car-safe expr) 'calcFunc-lambda)
     ;; An element is one thing, so only the one-argument form maps.
@@ -6503,7 +6505,47 @@ pointing at the $ that names the element outright."
         (1 (cons (car vars) expr))
         (0 (user-error "Nothing to map: %s has no variable in it"
                        (math-format-value expr)))
-        (_ (user-error "Several variables: mark the element with $")))))))
+        (_ (if subject
+               (cons (maf--map-choose-element vars subject) expr)
+             (user-error "Several variables: mark the element with $"))))))))
+
+(defun maf--map-subject-noun (expr)
+  "The word for EXPR in the element prompt: what is being mapped.
+A vector of vectors reads as the matrix it renders as; an = as an
+equation, its ordered kin as relations; anything else is an
+expression, 7 and a + b alike."
+  (cond ((and (eq (car-safe expr) 'vec)
+              (cl-every (lambda (e) (eq (car-safe e) 'vec)) (cdr expr)))
+         "matrix")
+        ((eq (car-safe expr) 'vec) "vector")
+        ((eq (car-safe expr) 'calcFunc-eq) "equation")
+        ((maf--relation-p expr) "relation")
+        (t "expression")))
+
+(defun maf--map-choose-element (vars subject)
+  "Ask which of VARS the SUBJECT maps over; the rest stay symbolic.
+The stack form's way of naming the element: a formula typed at the
+prompt marks it inline with $, but a stack formula is already built,
+so refusing there would be a dead end — this prompt is the out, the
+one-element reading of calc's argument-list prompt at V M $. VARS is
+the formula's variable nodes; the answer must be one of them. SUBJECT
+is the resolved expression being mapped, worded into the prompt by
+its shape so the question says what is about to spread over the
+chosen variable.
+
+VARS arrive in solve-priority order (x, y, z, t ahead of the rest,
+see `maf--solve-sorted-vars`); a prompt list is for scanning, not
+solving, so it reads alphabetically here."
+  (let* ((vars (sort (copy-sequence vars)
+                     (lambda (a b) (string< (symbol-name (nth 1 a))
+                                            (symbol-name (nth 1 b))))))
+         (names (mapcar (lambda (v) (symbol-name (nth 1 v))) vars))
+         (choice (completing-read
+                  (format "Map %s over variable (%s): "
+                          (maf--map-subject-noun subject)
+                          (mapconcat #'identity names ", "))
+                  names nil t)))
+    (nth (seq-position names choice) vars)))
 
 (defun maf--map-read-elementwise (input)
   "Parse INPUT, the typed formula rewritten with the element's $ supplied.
@@ -6677,7 +6719,7 @@ The M $ form: the entry above the subject is the formula, read by
   :map -1
   :scope explicit
   :targets-var mafcmd-map-stack-targets
-  (commit (maf--map-subject (maf--map-from-expr arg) expr maf--map-reverse)))
+  (commit (maf--map-subject (maf--map-from-expr arg expr) expr maf--map-reverse)))
 
 (defun maf--map-dispatch (mapper)
   "Run the mapping worker MAPPER calls for, consuming calc's I flag.
@@ -6769,7 +6811,9 @@ the top.
 
 The formula names its element as at $'s prompt: one free variable, or a
 bare one-argument function name. A nameless function (<x : x^2>) works
-too, its own parameter being the element.
+too, its own parameter being the element. A formula with several
+variables asks which one is the element — the others stay symbolic —
+where the prompt form refuses toward its inline $ marker instead.
 
 Everything else — how the subject is picked, vectors elementwise,
 equations side by side, inequalities only under I — is `mafcmd-map's."
