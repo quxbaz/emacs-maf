@@ -12,6 +12,7 @@
 ;; These live in lazily-loaded calc modules; calc-ext's autoload registry
 ;; resolves them at runtime, but the byte compiler needs declarations.
 (declare-function calcFunc-mul "calc-arith")
+(declare-function calcFunc-vcompl "calc-vec")
 (declare-function calcFunc-reduce "calc-map")
 (declare-function calcFunc-rreduce "calc-map")
 (declare-function calcFunc-accum "calc-map")
@@ -1107,6 +1108,34 @@ the node above it, which no sub-formula target could reach."
   :map -1
   :scope entry
   (commit (maf--negate-at expr maf--negate-path)))
+
+(maf-defcmd mafcmd-neg (expr _arg commit)
+  "Negate the resolved expression; an interval complements instead.
+
+  2 x - 3    =>  3 - 2 x
+  [-5 .. 5]  =>  [[-inf .. -5), (5 .. inf]]
+
+An interval reads as a set here, and the sign flip that would only
+mirror it gives way to the complement: the rays beyond its ends,
+open where the interval was closed (`calcFunc-vcompl'). A vector
+whose elements are all intervals is the same set in pieces, so it
+complements too, and the key undoes itself; any other vector negates
+elementwise, as every other expression negates arithmetically. Point
+picks the target as usual: a sub-formula at point, each side of an
+equation, the top entry at home.
+
+  [2 .. 3)                    =>  [[-inf .. 2), [3 .. inf]]
+  [[-inf .. -5), (5 .. inf]]  =>  [-5 .. 5]    (the complement back)
+  [1, 2, 3]                   =>  [-1, -2, -3] (not a set: elementwise)"
+  :arity unary
+  :prefix "neg"
+  (commit (if (or (eq (car-safe expr) 'intv)
+                  (and (eq (car-safe expr) 'vec)
+                       (cdr expr)
+                       (cl-every (lambda (el) (eq (car-safe el) 'intv))
+                                 (cdr expr))))
+              (calcFunc-vcompl expr)
+            (math-neg expr))))
 
 (defun mafcmd-negate ()
   "Flip the sign of the target, keeping the entry worth what it was.
@@ -3204,6 +3233,49 @@ Calc's own formatter braces a simple argument — \\sin{x}, typeset as
 sin x — and these six read better as sin(x); see
 `maf--latex-compose-paren-call'.")
 
+(defconst maf--latex-set-signs
+  '((calcFunc-vunion . " \\cup ") (calcFunc-vint . " \\cap "))
+  "Set calls `maf--latex-string' typesets with their sign written out.
+vunion draws as the cup, vint as the cap, between their operands; see
+`maf--latex-compose-set-op'.")
+
+(defun maf--latex-join-composed (exprs sign)
+  "Compose EXPRS and return them joined by the string SIGN."
+  (let (parts)
+    (dolist (x exprs)
+      (when parts (push sign parts))
+      (push (math-compose-expr x 0) parts))
+    (cons 'horiz (nreverse parts))))
+
+(defun maf--latex-set-operand-parens-p (head x)
+  "Whether X, an operand of the set call HEAD, needs parens to read.
+A multi-piece set — a vector of intervals, drawn as cups — and a set
+call of the other sign each read wrong flattened into a different
+sign around them; a piece of the same sign chains flat."
+  (or (and (eq (car-safe x) 'vec)
+           (> (length x) 2)
+           (cl-every (lambda (el) (eq (car-safe el) 'intv)) (cdr x))
+           (not (eq head 'calcFunc-vunion)))
+      (and (assq (car-safe x) maf--latex-set-signs)
+           (not (eq (car-safe x) head)))))
+
+(defun maf--latex-compose-set-op (a)
+  "Compose the set call A with its sign between the operands.
+The signs of `maf--latex-set-signs' — A cup B for a union, A cap B
+for an intersection — rather than the named calls calc writes, an
+operand of mixed sign parenthesized
+\(`maf--latex-set-operand-parens-p'). On the latex
+`math-special-function-table' during `maf--latex-string' alone."
+  (let ((sign (cdr (assq (car a) maf--latex-set-signs)))
+        parts)
+    (dolist (x (cdr a))
+      (when parts (push sign parts))
+      (push (if (maf--latex-set-operand-parens-p (car a) x)
+                (list 'horiz "(" (math-compose-expr x 0) ")")
+              (math-compose-expr x 0))
+            parts))
+    (cons 'horiz (nreverse parts))))
+
 (defun maf--latex-compose-paren-call (a)
   "Compose the call A as NAME(arg), the argument always in parens.
 The brace spelling calc gives a simple argument (\\sin{x}, typeset
@@ -3282,8 +3354,11 @@ parens flat notation needed around it: x^{-n}, not x^{(-n)} — see
 `maf--latex-strip-script-parens'; and a juxtaposed factor opening on
 a digit gets its sign written out — 4 \\cdot 2^x, where TeX would
 have run the 4 and 2 together (`maf--latex-separate-digit-product');
-and the degree unit deg typesets as the raised circle, 180 deg
-drawing as 180 with the \\circ on its shoulder.
+the degree unit deg typesets as the raised circle, 180 deg drawing
+as 180 with the \\circ on its shoulder; and the sets read with their
+signs — a vector of intervals joins its pieces with the cup instead
+of bracketing them, and vunion and vint calls draw as A cup B and
+A cap B (`maf--latex-compose-set-op').
 
 Calc writes a product as juxtaposition except when the right factor
 is a \\left( group, where it falls back to \\times — its flatness
@@ -3309,18 +3384,31 @@ is reclassed \\mathrel to match."
                                        (cons (car entry)
                                              #'maf--latex-compose-paren-call))
                                      maf--latex-paren-calls)
+                             (mapcar (lambda (entry)
+                                       (cons (car entry)
+                                             #'maf--latex-compose-set-op))
+                                     maf--latex-set-signs)
                              (get 'latex 'math-special-function-table)))
                     ((symbol-function 'math-compose-expr)
                      (lambda (a prec &optional div)
                        ;; The degree unit is notation, not a name: the
                        ;; raised circle rides the factor before it —
-                       ;; {}^{\circ} juxtaposes into 180^\circ — and
-                       ;; every other expression composes as calc
-                       ;; would, digit products separated.
-                       (if (equal a '(var deg var-deg))
-                           "{}^{\\circ}"
-                         (maf--latex-separate-digit-product
-                          a (funcall compose a prec div))))))
+                       ;; {}^{\circ} juxtaposes into 180^\circ. A
+                       ;; vector of intervals is a set in pieces and
+                       ;; reads with its sign, the pieces joined by
+                       ;; the cup, the carrying brackets dropped. All
+                       ;; else composes as calc would, digit products
+                       ;; separated.
+                       (cond
+                        ((equal a '(var deg var-deg)) "{}^{\\circ}")
+                        ((and (eq (car-safe a) 'vec)
+                              (cdr a)
+                              (cl-every (lambda (el)
+                                          (eq (car-safe el) 'intv))
+                                        (cdr a)))
+                         (maf--latex-join-composed (cdr a) " \\cup "))
+                        (t (maf--latex-separate-digit-product
+                            a (funcall compose a prec div)))))))
             (calc-set-language 'latex nil t)
             (maf--latex-strip-script-parens
              (replace-regexp-in-string
