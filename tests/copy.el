@@ -68,6 +68,16 @@
                          (get 'latex 'math-special-function-table))))
   (calc-pop (calc-stack-size))
 
+  ;; A script sheds the parens flat notation needed around it — the
+  ;; raised position already groups — while a base's real parens stay
+  ;; (`maf--latex-strip-script-parens').
+  (maf-push "(x^(-n))^(m+1) + a_(i+1)")
+  (progn (goto-char (point-max)) (call-interactively 'maf-copy))
+  (let ((last-command 'maf-copy)) (call-interactively 'maf-copy))
+  (cl-assert (string= (current-kill 0)
+                      "(x^{-n})^{m + 1} + a_{i + 1}"))
+  (calc-pop (calc-stack-size))
+
   ;; A region is copied verbatim — not rounded out to whole entry lines
   ;; the way calc's own M-w does it.
   (maf-push "a + b + c")
