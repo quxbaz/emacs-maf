@@ -295,7 +295,8 @@
      - `j f` added (2026-08-20) as a second key on factor's letter,
        mirroring `j x` for the distribute
    - [X] `v L` mafcmd-flatten ← calc-mlud
-   - [X] `M` mafcmd-map-flag ← calc-more-recursion-depth
+   - [X] `M` mafcmd-map-flag ← calc-more-recursion-depth (2026-08-30:
+     `M M` doubles as `M :`, the formula prompt without the shift)
    - [X] `,` maf-quick-variable ← calc-comma
    - [X] `p` maf-browse-variables ← calc-precision
    - [X] `l d` mafcmd-to-degrees ← calc-db

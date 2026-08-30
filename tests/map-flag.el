@@ -177,6 +177,18 @@
                              "[1, 4, 9]")))
   (calc-pop (calc-stack-size))
 
+  ;; The doubled key is the same prompt: M M runs `mafcmd-map' as M :
+  ;; does — without the entry in `maf--map-flag-keys' a second M would
+  ;; only re-run the flag setter.
+  (maf-push "[1, 2, 3]")
+  (goto-char (point-max))
+  (progn (execute-kbd-macro (kbd "M M x ^ 2 RET"))
+         (cl-assert (null maf-map-flag))
+         (cl-assert (string= (math-format-value
+                              (maf--strip-encasing (calc-top 1 'full)))
+                             "[1, 4, 9]")))
+  (calc-pop (calc-stack-size))
+
   ;; It chains with calc's own prefixes: after M I both are pending,
   ;; and a command that reads neither clears both.
   (progn (execute-kbd-macro (kbd "M I"))
