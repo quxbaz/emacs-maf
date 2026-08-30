@@ -99,6 +99,16 @@
                       "(y - k)^2 = 4 p (x - h)"))
   (calc-pop (calc-stack-size))
 
+  ;; The degree unit is notation, not a name: the raised circle rides
+  ;; the factor before it, 180 deg drawing as 180 with the circle on
+  ;; its shoulder.
+  (maf-push "180 deg*(n-2)")
+  (progn (goto-char (point-max)) (call-interactively 'maf-copy))
+  (let ((last-command 'maf-copy)) (call-interactively 'maf-copy))
+  (cl-assert (string= (current-kill 0)
+                      "180 {}^{\\circ} (n - 2)"))
+  (calc-pop (calc-stack-size))
+
   ;; A region is copied verbatim — not rounded out to whole entry lines
   ;; the way calc's own M-w does it.
   (maf-push "a + b + c")
