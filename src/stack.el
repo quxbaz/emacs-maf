@@ -3219,6 +3219,36 @@ untouched."
           (math-compose-vector (cdr a) ", " 0)
           (if flat ")" " \\right)"))))
 
+(defun maf--latex-strip-script-parens (latex)
+  "LATEX with parens dropped from scripts they span whole.
+Calc writes x^(-n) into TeX as x^{(-n)}: the parens that made the
+exponent one expression in flat notation ride along into the
+superscript, where the raised position already groups it — nobody
+writes the parens by hand. Dropped from a super- or subscript only
+when the pair spans the whole braced group, so a script holding a
+product of groups keeps its inner pairs."
+  (let ((i 0))
+    (while (setq i (string-match "[_^]{(" latex i))
+      (let* ((open (+ i 2))
+             (depth 1)
+             (j (1+ open)))
+        (while (and (> depth 0) (< j (length latex)))
+          (pcase (aref latex j)
+            (?\( (setq depth (1+ depth)))
+            (?\) (setq depth (1- depth))))
+          (setq j (1+ j)))
+        ;; J is one past the matching close paren. A } right there
+        ;; means the pair spans the script — nothing stands between it
+        ;; and either brace — and the parens go.
+        (if (and (zerop depth)
+                 (< j (length latex))
+                 (eq (aref latex j) ?\}))
+            (setq latex (concat (substring latex 0 open)
+                                (substring latex (1+ open) (1- j))
+                                (substring latex j)))
+          (setq i (+ i 2)))))
+    latex))
+
 (defun maf--latex-string (expr)
   "Format EXPR as a single line of LaTeX.
 Calc's latex language does the formatting, but only for the call: the
@@ -3226,7 +3256,9 @@ language variables it sets are restored afterwards, so the stack
 display never changes language. `math-format-value' inhibits line
 breaking, so the result is one line however wide. The trig calls of
 `maf--latex-paren-calls' typeset with their argument in parens —
-sin(x), not calc's sin x.
+sin(x), not calc's sin x — and an exponent or subscript sheds the
+parens flat notation needed around it: x^{-n}, not x^{(-n)} — see
+`maf--latex-strip-script-parens'.
 
 Calc writes a product as juxtaposition except when the right factor
 is a \\left( group, where it falls back to \\times — its flatness
@@ -3250,10 +3282,11 @@ is reclassed \\mathrel to match."
                                      maf--latex-paren-calls)
                              (get 'latex 'math-special-function-table))))
             (calc-set-language 'latex nil t)
-            (replace-regexp-in-string
-             " \\? " " \\\\mathrel{?} "
-             (replace-regexp-in-string "\\\\times \\(\\\\left(\\)" "\\1"
-                                       (math-format-value expr))))
+            (maf--latex-strip-script-parens
+             (replace-regexp-in-string
+              " \\? " " \\\\mathrel{?} "
+              (replace-regexp-in-string "\\\\times \\(\\\\left(\\)" "\\1"
+                                        (math-format-value expr)))))
         (calc-set-language lang opt t)))))
 
 (defun maf--copy-squeeze (text)
