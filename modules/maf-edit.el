@@ -131,9 +131,9 @@ value of every entry whose text has changed — and on nothing else: an
 untouched entry keeps its value object, as it keeps its text. nil,
 the default, commits the parse exactly as written.
 
-The extension point for a module that owes calc a spelling: a key
-that writes log(x, 10) so the base stays visible in the text commits
-it as the log10(x) calc itself writes (see maf-editplus). A transform
+The extension point for a module that owes calc a spelling: the
+bare log(x) the log key writes — ln to calc's own reading — commits
+as the log10(x) calc itself writes (see maf-editplus). A transform
 must return a value stable under calc's own rendering — what it
 returns is re-rendered, and an edit session started on it hands the
 rendering back to this hook — or an entry could change under a commit

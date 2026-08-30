@@ -1,12 +1,12 @@
 ;; B inside a maf-edit session makes a sub-expression the argument of a
-;; log call with its base written out (`maf-editplus-wrap-log', the
-;; family's one binary member). A step passes when it raises no error.
+;; log call, an inherited base written out (`maf-editplus-wrap-log',
+;; the family's one binary member). A step passes when it raises no error.
 ;;
 ;; The wrap itself is `maf-editplus-wrap-ln's — the same target, the
-;; same point placement — so this file is about the base: the fallback
-;; 10, inheritance from the entry's nearest log at or before the
-;; target, the numeric prefix, and the commit-time trade of log(x, 10)
-;; for calc's log10(x).
+;; same point placement — so this file is about the base: the bare
+;; log(x) a first press writes, inheritance from the entry's nearest
+;; log at or before the target, the numeric prefix, and the
+;; commit-time trade of log(x) and log(x, 10) for calc's log10(x).
 
 (maf-step
   ;; The module owns the key, and it lives in maf-edit's own map.
@@ -16,13 +16,13 @@
                    maf-edit-transform-value-functions))
 
   ;; The gesture as it is actually used: type a term, apply log. The
-  ;; first log of an entry has nothing to inherit and falls back to
-  ;; base 10; point lands after the closer, as it does for ln.
+  ;; first log of an entry has nothing to inherit and writes no base;
+  ;; point lands after the closer, as it does for ln.
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "x+2") nil)
   (progn (execute-kbd-macro "B") nil)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
-                    "x+log(2, 10)"))
+                    "x+log(2)"))
   (cl-assert (eolp))
   (call-interactively 'maf-edit-discard)
 
@@ -55,7 +55,7 @@
   (progn (execute-kbd-macro "+x") nil)
   (call-interactively 'maf-editplus-wrap-log)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
-                    "log(a)+log(x, 10)"))
+                    "log(a)+log(x)"))
   (call-interactively 'maf-edit-discard)
 
   ;; At-or-before rather than strictly before: a log being wrapped in
@@ -91,23 +91,23 @@
                     "log(x, 2)"))
   (call-interactively 'maf-edit-discard)
 
-  ;; With nothing behind point the empty call opens with its base
-  ;; already in place, point on the argument slot.
+  ;; With nothing behind point the empty call opens, point on the
+  ;; argument slot.
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "x = ") nil)
   (call-interactively 'maf-editplus-wrap-log)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
-                    "x = log(, 10)"))
-  (cl-assert (eq (char-after) ?,))
+                    "x = log()"))
+  (cl-assert (eq (char-after) ?\)))
   ;; And typing carries straight on into it.
   (progn (execute-kbd-macro "3") nil)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
-                    "x = log(3, 10)"))
+                    "x = log(3)"))
   (call-interactively 'maf-edit-discard)
 
-  ;; Commit trades the visible base 10 for calc's own spelling: every
-  ;; log(x, 10) in a changed entry lands as log10(x), while a base the
-  ;; text means — the 2 here — stays a two-argument log.
+  ;; Commit trades the module's spelling for calc's: the bare log(x)
+  ;; — and a log(x, 10) typed by hand — lands as log10(x), while a
+  ;; base the text means — the 2 here — stays a two-argument log.
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "x") nil)
   (call-interactively 'maf-editplus-wrap-log)
