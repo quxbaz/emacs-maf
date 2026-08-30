@@ -3237,7 +3237,7 @@ touched; every other product, 4 x included, keeps its juxtaposition."
              (equal (nth 4 comp) " ")
              (let ((c (math-comp-first-char (nth 5 comp))))
                (and c (<= ?0 c) (<= c ?9))))
-    (setf (nth 4 comp) "\\times "))
+    (setf (nth 4 comp) "\\cdot "))
   comp)
 
 (defun maf--latex-strip-script-parens (latex)
@@ -3280,15 +3280,16 @@ breaking, so the result is one line however wide. The trig calls of
 sin(x), not calc's sin x; an exponent or subscript sheds the
 parens flat notation needed around it: x^{-n}, not x^{(-n)} — see
 `maf--latex-strip-script-parens'; and a juxtaposed factor opening on
-a digit gets its \\times written out — 4 \\times 2^x, where TeX would
+a digit gets its sign written out — 4 \\cdot 2^x, where TeX would
 have run the 4 and 2 together (`maf--latex-separate-digit-product').
 
 Calc writes a product as juxtaposition except when the right factor
 is a \\left( group, where it falls back to \\times — its flatness
 test is structural, so even a factor that renders flat can trip it.
-Juxtaposition is unambiguous there too, so the \\times goes; it stays
-in the remaining cases (a negated right factor), where dropping it
-would turn the product into a difference.
+Juxtaposition is unambiguous there too, so the \\times goes; the
+sign stays in the remaining cases — a negated right factor, a
+variable against a paren group — spelled \\cdot rather than the
+\\times calc writes, the dot reading lighter than the cross.
 
 Calc writes if(c, a, b) as c ? a : b, but TeX ignores the source
 spaces and ? is an ordinary character, so it typesets crammed
@@ -3313,8 +3314,10 @@ is reclassed \\mathrel to match."
             (maf--latex-strip-script-parens
              (replace-regexp-in-string
               " \\? " " \\\\mathrel{?} "
-              (replace-regexp-in-string "\\\\times \\(\\\\left(\\)" "\\1"
-                                        (math-format-value expr)))))
+              (replace-regexp-in-string
+               "\\\\times" "\\\\cdot"
+               (replace-regexp-in-string "\\\\times \\(\\\\left(\\)" "\\1"
+                                         (math-format-value expr))))))
         (calc-set-language lang opt t)))))
 
 (defun maf--copy-squeeze (text)
