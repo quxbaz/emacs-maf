@@ -677,6 +677,11 @@
 ;; home — where a fresh entry above the dot is what an entry-less C-o
 ;; has always meant.
 (maf-bindings-define '(native) "C-o" #'maf-goto-other-side)
+;; And the character-motion reading of leaving home upward: C-b is
+;; backward-char everywhere but home, where one press puts point at
+;; the end of the entry on level 1 instead of walking the dot line a
+;; column at a time.
+(maf-bindings-define '(native) "C-b" #'maf-backward-char)
 
 ;; The module toggle buffer. m is calc's mode prefix (m m saves the
 ;; modes, m d is degrees mode), which is where turning maf's own

@@ -1783,6 +1783,24 @@ two ends of the line."
       (maf-beginning-of-entry)
     (end-of-line)))
 
+(defun maf-backward-char (&optional n)
+  "Move point back N characters; from home, back into the stack.
+
+  1:  x = y        1:  x = y|
+      .|       =>      .
+
+At home there is no entry text behind point, and the press puts
+point at the end of the entry on level 1 — one key back into the
+newest entry, where plain `backward-char' would crawl there a column
+at a time. Everywhere else, and on an empty stack, it is
+`backward-char' exactly, prefix argument included."
+  (interactive "^p")
+  (if (and (<= (calc-locate-cursor-element (point)) 0)
+           (> (calc-stack-size) 0))
+      (goto-char (1- (save-excursion (calc-cursor-stack-index 0)
+                                     (point))))
+    (backward-char n)))
+
 (defconst maf--noun-regexp
   (concat
    ;; A radix number, whose # would otherwise split it in two: 16#ff.
