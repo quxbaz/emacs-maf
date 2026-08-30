@@ -78,15 +78,15 @@
                       "(x^{-n})^{m + 1} + a_{i + 1}"))
   (calc-pop (calc-stack-size))
 
-  ;; A juxtaposed factor opening on a digit gets its times sign
-  ;; written out — TeX throws the space away and 4 2^x would typeset
-  ;; as 42^x — while 4 x keeps the juxtaposition
-  ;; (`maf--latex-separate-digit-product').
+  ;; A juxtaposed factor opening on a digit gets its sign written
+  ;; out — TeX throws the space away and 4 2^x would typeset as 42^x
+  ;; — while 4 x keeps the juxtaposition; every surviving sign is the
+  ;; dot (`maf--latex-separate-digit-product').
   (maf-push "3 x^2 + 4 2^x")
   (progn (goto-char (point-max)) (call-interactively 'maf-copy))
   (let ((last-command 'maf-copy)) (call-interactively 'maf-copy))
   (cl-assert (string= (current-kill 0)
-                      "3 x^2 + 4\\times 2^x"))
+                      "3 x^2 + 4\\cdot 2^x"))
   (calc-pop (calc-stack-size))
 
   ;; A region is copied verbatim — not rounded out to whole entry lines
