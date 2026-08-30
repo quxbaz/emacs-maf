@@ -13,9 +13,10 @@
 ;;
 ;; The relation is the innermost one point sits in, so the checks run
 ;; over a bare equation, an ordered relation, and an equation nested in
-;; a vector of them. Home is the one place the keys mean something
-;; else: there is no entry to move within, and they keep the edit
-;; module's blank-vector gesture there.
+;; a vector of them. Home is the one place the paren keys mean
+;; something else: there is no entry to move within, and they keep the
+;; edit module's blank-vector gesture there; the crossing instead
+;; reaches the right side of the entry on level 1.
 
 (defun maf-test--flat (expr)
   "EXPR in flat notation, with the selection machinery's encasing gone.
@@ -90,9 +91,10 @@ the Big-language entry here runs over several lines."
   (cl-assert (string= (maf-test--part-at-point) "18 * y + 6"))
   (call-interactively 'maf-goto-other-side)
   (cl-assert (string= (maf-test--part-at-point) "6 * x + 12"))
-  ;; From the relation's own operator, or the margins where point
-  ;; names the whole entry, point is in neither side and the right one
-  ;; is the landing.
+  ;; In neither side — the operator, the margins naming the whole
+  ;; entry — position decides: the operator and the line-number prefix
+  ;; cross right, and the end of the line, standing past the right
+  ;; side, crosses left.
   (progn (calc-cursor-stack-index 1)
          (search-forward "=" (line-end-position))
          (backward-char 1))
@@ -101,6 +103,9 @@ the Big-language entry here runs over several lines."
   (progn (calc-cursor-stack-index 1) (beginning-of-line))
   (call-interactively 'maf-goto-other-side)
   (cl-assert (string= (maf-test--part-at-point) "18 * y + 6"))
+  (progn (calc-cursor-stack-index 1) (end-of-line))
+  (call-interactively 'maf-goto-other-side)
+  (cl-assert (string= (maf-test--part-at-point) "6 * x + 12"))
   ;; No relation: the crossing signals like the named motions.
   (calc-pop (calc-stack-size))
   (maf-push "(a + b) (2 c - d)")
@@ -249,16 +254,21 @@ the Big-language entry here runs over several lines."
   (cl-assert (not maf-edit-mode))
   (cl-assert (= (calc-stack-size) 1))
 
-  ;; The crossing's own home meaning is the one its key has always had
-  ;; there: a fresh entry opened at the bottom
-  ;; (`maf-edit-add-entry-above').
+  ;; The crossing reaches into the stack from home: the landing is
+  ;; the whole right side of the entry on level 1.
   (progn (calc-cursor-stack-index 0) (skip-chars-forward " "))
+  (call-interactively 'maf-goto-other-side)
+  (cl-assert (string= (maf-test--part-at-point) "2 * x"))
+  ;; And on an empty stack it keeps the meaning its key has always
+  ;; had at home: a fresh entry opened at the bottom
+  ;; (`maf-edit-add-entry-above').
+  (calc-pop (calc-stack-size))
   (call-interactively 'maf-goto-other-side)
   (cl-assert maf-edit-mode)
   (cl-assert (eolp))
   (call-interactively 'maf-edit-discard)
   (cl-assert (not maf-edit-mode))
-  (cl-assert (= (calc-stack-size) 1))
+  (cl-assert (= (calc-stack-size) 0))
 
   ;; With that module off there is nothing to fall back to, and home
   ;; signals like any other place with no relation to cross.
