@@ -330,10 +330,6 @@
      factorization, the shifted neighbour of the k f it ceded to
      mafcmd-factor; legacy my/calc had it there. calc-utpf, the one
      utp lookup without a maf row, stays reachable by name)
-   - [X] `k F` mafcmd-prfac ← calc-utpf (2026-08-29: prime
-     factorization, the shifted neighbour of the k f it ceded to
-     mafcmd-factor; legacy my/calc had it there. calc-utpf, the one
-     utp lookup without a maf row, stays reachable by name)
    - [X] `h` vector-access prefix ← calc's help prefix (2026-08-29:
      h h the head of the vector at point, h l its last element
      (rtail), h 1-9 the element the digit names (mafcmd-nth-element). Legacy my/calc had
