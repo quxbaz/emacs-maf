@@ -58,4 +58,20 @@
                   (progn (execute-kbd-macro (kbd "h 5")) "")
                 (error (error-message-string e)))))
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "[a, b]"))
+  (calc-pop (calc-stack-size))
+
+  ;; Under the Inverse flag the digit names the same element and the
+  ;; complement commits: the vector with it removed
+  ;; (`mafcmd-remove-nth-element'). The same degenerate rules hold.
+  (maf-push "[10, 20, 30]")
+  (progn (calc-cursor-stack-index 1)
+         (execute-kbd-macro (kbd "I h 2"))
+         nil)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "[10, 30]"))
+  (calc-pop (calc-stack-size))
+  (maf-push "[a, b] = v")
+  (progn (calc-cursor-stack-index 1)
+         (execute-kbd-macro (kbd "I h 2"))
+         nil)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "[a] = v"))
   (calc-pop (calc-stack-size)))
