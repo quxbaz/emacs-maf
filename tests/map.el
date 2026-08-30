@@ -333,6 +333,20 @@
   (cl-assert (= (calc-stack-size) 1))
   (calc-pop (calc-stack-size))
 
+  ;; A stack formula with several variables asks which is the element
+  ;; (the prompt form refuses toward its inline $ instead — see the
+  ;; a x + b step above): choosing y maps over it, x staying symbolic.
+  (maf-push "[5, 2]")
+  (maf-push "x = 2 y - 4")
+  (goto-char (point-max))
+  (progn (setq unread-command-events (listify-key-sequence "y\r"))
+         (call-interactively 'mafcmd-map-stack))
+  (cl-assert (string= (math-format-value
+                       (maf--strip-encasing (calc-top 1 'full)))
+                      "[x = 6, x = 0]"))
+  (cl-assert (= (calc-stack-size) 1))
+  (calc-pop (calc-stack-size))
+
   ;; A lone $ at $'s prompt is the same gesture, reached from the
   ;; prompt instead of the key.
   (maf-push "[1, 2, 3]")
