@@ -192,7 +192,7 @@ variant's own variable governs only its direct invocation."
   (sqrt unary calcFunc-sqrt "Q" :inv sqr)
   (min binary calcFunc-min "f n")
   (max binary calcFunc-max "f x")
-  ;; floor cedes F in native to a second key for mafcmd-reduce
+  ;; floor cedes F in native to a second key for mafcmd-fold
   ;; (bindings.el); the calc profile keeps F = floor.
   (floor unary calcFunc-floor "F" :inv ceil :hyp ffloor :invhyp fceil)
   (round unary calcFunc-round "R" :inv trunc :hyp fround :invhyp ftrunc)
@@ -439,7 +439,7 @@ variant's own variable governs only its direct invocation."
   ;; operation, not an operand, so applying the calcFunc to the
   ;; resolved expression builds a call of the wrong arity that
   ;; `calc-normalize' can only hand back inert. They read the
-  ;; operation from the next key instead (`mafcmd-reduce' and
+  ;; operation from the next key instead (`mafcmd-fold' and
   ;; friends, src/stack.el).
   ;; sort/rsort use maf's own ordering rather than calcFunc-sort:
   ;; calc sorts by expression shape, which strands every negated

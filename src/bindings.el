@@ -72,17 +72,17 @@
 ;; table (see `maf--read-operation'). They left the mafcmd table
 ;; because a row cannot express an argument that is an operation —
 ;; see the note in maf-cmds.el.
-(maf-bindings-define '(calc native) "v R" #'mafcmd-reduce)
+(maf-bindings-define '(calc native) "v R" #'mafcmd-fold)
 (maf-bindings-define '(calc native) "v U" #'mafcmd-accum)
 (maf-bindings-define '(calc native) "v A" #'mafcmd-apply)
 (maf-bindings-define '(calc native) "v O" #'mafcmd-outer)
 (maf-bindings-define '(calc native) "v I" #'mafcmd-inner)
-;; A second key for the reduce, beside its v R: the fold is the
+;; A second key for the fold, beside its v R: it is the
 ;; combinator reached for most, and it already spends a key on the
 ;; operation it reads, so the prefix is the one worth dropping.
 ;; Displaces floor's table key in native — floor keeps no key — while
 ;; the calc profile keeps F = floor, calc's own layout.
-(maf-bindings-define '(native) "F" #'mafcmd-reduce)
+(maf-bindings-define '(native) "F" #'mafcmd-fold)
 ;; A second key for multiplication, beside the table's *: the
 ;; most-struck binary operator gains a home-row shift where * is a
 ;; reach to shift-8. Displaces conj's table key J in native — conj

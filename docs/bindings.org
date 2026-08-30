@@ -208,7 +208,8 @@
      `TAB` / `C-t` maf-swap-up ← calc-roll-down,
      `M-RET` mafcmd-let ← calc-last-args
    - the combinators, on calc's own keys (2026-08-24): `v R`
-     mafcmd-reduce ← calc-reduce, `v U` mafcmd-accum ←
+     mafcmd-fold (née mafcmd-reduce, renamed 2026-08-29 for F's
+     mnemonic) ← calc-reduce, `v U` mafcmd-accum ←
      calc-accumulate, `v A` mafcmd-apply ← calc-apply, `v O`
      mafcmd-outer ← calc-outer-product, `v I` mafcmd-inner ←
      calc-inner-product. They were mafcmd table rows and could not
@@ -265,8 +266,9 @@
      and beside the rest of the factoring family under k and l.
      Displaces prfac's table key in native; prfac keeps no key, and the
      calc profile keeps k f = prime factors)
-   - [X] `F` mafcmd-reduce ← calc-floor (2026-08-24: a second key for
-     the fold beside its `v R` — the combinator reached for most, and
+   - [X] `F` mafcmd-fold ← calc-floor (2026-08-24: a second key for
+     the fold beside its `v R`, and since 2026-08-29 its mnemonic —
+     the command was mafcmd-reduce — the combinator reached for most,
      one that spends a key on the operation it reads, so the prefix is
      the one worth dropping. Displaces floor's table key in native;
      floor keeps no key, and the calc profile keeps F = floor)
