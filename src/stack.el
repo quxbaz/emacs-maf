@@ -2334,12 +2334,18 @@ promises.
 Point already standing where SIDE would land crosses to the other side
 instead, so either paren key walks the relation on repeat.
 
-At home the keys keep the meaning the edit module gives them there —
-a blank vector entry opened at the bottom of the stack for the paren
-keys, a fresh entry there for the crossing — since there is no entry
-at point for the motion to work within. With that module off there is
-nothing to fall back to and the motion signals."
+At home the paren keys keep the meaning the edit module gives them
+there — a blank vector entry opened at the bottom of the stack —
+since there is no entry at point for the motion to work within; the
+crossing reaches into the stack instead, to the right side of the
+entry on level 1, falling back to the module's fresh bottom entry
+only on an empty stack. With that module off there is nothing to
+fall back to and the motions signal."
   (let ((m (calc-locate-cursor-element (point))))
+    ;; The crossing works from home: the newest relation is the one
+    ;; crossed into, its right side the landing.
+    (when (and (<= m 0) (eq side 'other) (> (calc-stack-size) 0))
+      (setq m 1 side 'right))
     (if (<= m 0)
         (if (bound-and-true-p maf-use-edit-mode)
             (if (eq side 'other)
@@ -2353,12 +2359,22 @@ nothing to fall back to and the motion signals."
         (unless rel
           (user-error "No relation at point"))
         ;; The crossing names its side here: out of the right arm is
-        ;; left, and out of anywhere else — the left arm, the
-        ;; relation's own operator, the margin naming the whole entry
-        ;; — is right.
+        ;; left, out of the left arm is right, and in neither — the
+        ;; relation's own operator, the margins naming the whole entry
+        ;; — position decides: the end of the line stands at or past
+        ;; the right side's own glyph and crosses left, and anywhere
+        ;; earlier crosses right.
         (when (eq side 'other)
-          (setq side (if (eq (maf--relation-arm expr rel part) 2)
-                         'left 'right)))
+          (setq side
+                (pcase (maf--relation-arm expr rel part)
+                  (2 'left)
+                  (1 'right)
+                  (_ (let ((right-pos (maf--up-node-position
+                                       (nth 2 rel)
+                                       (maf--up-entry-region m))))
+                       (if (and right-pos (>= (point) right-pos))
+                           'left
+                         'right))))))
         (let* ((region (maf--up-entry-region m))
                (node (nth (if (eq side 'left) 1 2) rel))
                (pos (maf--up-node-position node region)))
@@ -2480,19 +2496,23 @@ the one key rocks between the sides:
 
   6 x |+ 12 = 18 y + 6  =>  6 x + 12 = 18 y |+ 6
 
-From the entry's margin, or on the relation's own operator, point is
-in neither side, and the right one is the landing:
+In neither side — the margins naming the whole entry, the relation's
+own operator — position decides: the end of the line stands past the
+right side and crosses left, and anywhere earlier crosses right:
 
   |1:  y = (x + 3)^2  =>  1:  y = (x + 3)|^2
+  1:  x = y|          =>  1:  |x = y
 
 A selection up on the entry travels to the side along with point, as
 it does for the named motions.
 
-At home the key keeps the meaning the edit module gives it there — a
-fresh entry opened at the bottom of the stack
-\(`maf-edit-add-entry-above') — since there is no entry at point to
-move within. With that module off it signals instead, as it does on
-an entry that holds no relation."
+At home the crossing reaches into the stack: the landing is the
+whole right side of the entry on level 1, so one press from the dot
+puts point on the newest relation's answer side. On an empty stack
+the key keeps the meaning the edit module gives it there — a fresh
+entry opened at the bottom (`maf-edit-add-entry-above') — and with
+that module off it signals, as it does on an entry that holds no
+relation."
   (interactive)
   (maf--goto-side 'other))
 

@@ -340,10 +340,9 @@
    - [X] `C-o` maf-goto-other-side ← maf-edit-add-entry-above
      (2026-08-29: the blind crossing — lands on whichever side of the
      relation point is not in, so the one key rocks between the sides.
-     Like the parens it hands the key back to the edit module at home,
-     where a fresh entry above the dot is what an entry-less C-o has
-     always meant, and the calc profile keeps C-o = add-entry-above
-     outright)
+     At home it reaches the right side of the entry on level 1,
+     keeping the edit module's fresh-entry gesture only on an empty
+     stack; the calc profile keeps C-o = add-entry-above outright)
 ** additions (keys calc leaves unbound)
    - [X] `W` mafcmd-sqr (a second key, `:`, shadows calc-fdiv — see
      the shadowing list above)

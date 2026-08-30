@@ -662,10 +662,11 @@ side it already names, either key crosses to the other one instead of
 standing still — the side is as far out as that end of the relation
 goes — so one key walks the relation, and the cycle turns on where
 point stands rather than on which key put it there. Home is the one
-place the keys mean something else: there is no entry at point to move
-within, and they keep the gesture the edit module gives them — the
-parens the blank vector (=maf-edit-add-vector=), C-o the fresh bottom
-entry (=maf-edit-add-entry-above=).
+place the paren keys mean something else: there is no entry at point
+to move within, and they keep the blank-vector gesture the edit module
+gives them (=maf-edit-add-vector=); the crossing instead reaches the
+right side of the entry on level 1, keeping the module's fresh-entry
+gesture (=maf-edit-add-entry-above=) only on an empty stack.
 
 ** Widening a rewrite marker
 
