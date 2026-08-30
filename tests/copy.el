@@ -54,6 +54,20 @@
   (cl-assert (null calc-language))
   (calc-pop (calc-stack-size))
 
+  ;; The trig calls typeset with their argument in parens — sin(x),
+  ;; not the sin x calc's brace spelling draws — and a tall argument
+  ;; keeps its \left( sizing (`maf--latex-compose-paren-call').
+  (maf-push "sin(2 x) + csc(a/b)")
+  (progn (goto-char (point-max)) (call-interactively 'maf-copy))
+  (let ((last-command 'maf-copy)) (call-interactively 'maf-copy))
+  (cl-assert (string= (current-kill 0)
+                      "\\sin(2 x) + \\csc\\left( \\frac{a}{b} \\right)"))
+  ;; The override lived only for the call: the table is calc's own
+  ;; again.
+  (cl-assert (null (assq 'calcFunc-sin
+                         (get 'latex 'math-special-function-table))))
+  (calc-pop (calc-stack-size))
+
   ;; A region is copied verbatim — not rounded out to whole entry lines
   ;; the way calc's own M-w does it.
   (maf-push "a + b + c")

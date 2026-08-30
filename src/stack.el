@@ -90,6 +90,8 @@
 (declare-function math-evaluate-expr "calc-ext")
 (declare-function calc-is-assignments "calc-store")
 (declare-function math-compose-expr "calccomp")
+(declare-function math-compose-vector "calccomp")
+(declare-function math-tex-expr-is-flat "calc-lang")
 (declare-function math-build-call "calc-map")
 (declare-function math-vectorp "calc-ext")
 (declare-function math-flatten-vector "calc-vec")
@@ -3192,12 +3194,39 @@ A plist:
 Read only when `maf-copy' is the immediately preceding command, so a
 stale entry is never picked up by a later copy.")
 
+(defconst maf--latex-paren-calls
+  '((calcFunc-sin . "\\sin") (calcFunc-cos . "\\cos")
+    (calcFunc-tan . "\\tan") (calcFunc-cot . "\\cot")
+    (calcFunc-sec . "\\sec") (calcFunc-csc . "\\csc"))
+  "Calls `maf--latex-string' typesets with their argument in parens.
+Calc's own formatter braces a simple argument — \\sin{x}, typeset as
+sin x — and these six read better as sin(x); see
+`maf--latex-compose-paren-call'.")
+
+(defun maf--latex-compose-paren-call (a)
+  "Compose the call A as NAME(arg), the argument always in parens.
+The brace spelling calc gives a simple argument (\\sin{x}, typeset
+sin x) is traded for the parenthesized call; an argument calc would
+not render flat keeps the \\left( sizing calc gives it. On the latex
+`math-special-function-table' during `maf--latex-string' alone, for
+the calls in `maf--latex-paren-calls' — the stack's own languages are
+untouched."
+  (let ((name (cdr (assq (car a) maf--latex-paren-calls)))
+        (flat (and (= (length a) 2)
+                   (math-tex-expr-is-flat (nth 1 a)))))
+    (list 'horiz name
+          (if flat "(" "\\left( ")
+          (math-compose-vector (cdr a) ", " 0)
+          (if flat ")" " \\right)"))))
+
 (defun maf--latex-string (expr)
   "Format EXPR as a single line of LaTeX.
 Calc's latex language does the formatting, but only for the call: the
 language variables it sets are restored afterwards, so the stack
 display never changes language. `math-format-value' inhibits line
-breaking, so the result is one line however wide.
+breaking, so the result is one line however wide. The trig calls of
+`maf--latex-paren-calls' typeset with their argument in parens —
+sin(x), not calc's sin x.
 
 Calc writes a product as juxtaposition except when the right factor
 is a \\left( group, where it falls back to \\times — its flatness
@@ -3214,11 +3243,17 @@ is reclassed \\mathrel to match."
     (let ((lang calc-language)
           (opt calc-language-option))
       (unwind-protect
-          (progn (calc-set-language 'latex nil t)
-                 (replace-regexp-in-string
-                  " \\? " " \\\\mathrel{?} "
-                  (replace-regexp-in-string "\\\\times \\(\\\\left(\\)" "\\1"
-                                            (math-format-value expr))))
+          (cl-letf (((get 'latex 'math-special-function-table)
+                     (append (mapcar (lambda (entry)
+                                       (cons (car entry)
+                                             #'maf--latex-compose-paren-call))
+                                     maf--latex-paren-calls)
+                             (get 'latex 'math-special-function-table))))
+            (calc-set-language 'latex nil t)
+            (replace-regexp-in-string
+             " \\? " " \\\\mathrel{?} "
+             (replace-regexp-in-string "\\\\times \\(\\\\left(\\)" "\\1"
+                                       (math-format-value expr))))
         (calc-set-language lang opt t)))))
 
 (defun maf--copy-squeeze (text)
