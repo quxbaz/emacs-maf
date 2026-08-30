@@ -326,6 +326,21 @@
      Displaces conj's table key in native; conj's home is its family
      key `l j`, and the calc profile keeps J = conj. Vim's relocated
      selection family already owns J, so there mul keeps only *)
+   - [X] `k F` mafcmd-prfac ← calc-utpf (2026-08-29: prime
+     factorization, the shifted neighbour of the k f it ceded to
+     mafcmd-factor; legacy my/calc had it there. calc-utpf, the one
+     utp lookup without a maf row, stays reachable by name)
+   - [X] `k F` mafcmd-prfac ← calc-utpf (2026-08-29: prime
+     factorization, the shifted neighbour of the k f it ceded to
+     mafcmd-factor; legacy my/calc had it there. calc-utpf, the one
+     utp lookup without a maf row, stays reachable by name)
+   - [X] `h` vector-access prefix ← calc's help prefix (2026-08-29:
+     h h the head of the vector at point, h l its last element
+     (rtail), h 1-9 the element the digit names (mafcmd-nth-element). Legacy my/calc had
+     head on M-h, which history holds; the help commands are lookups
+     read rarely, reachable by name, the same trade precision made
+     for `p`. The head family's flag variants stay on the table's
+     `v h`)
    - [X] `(` maf-goto-left-side ← calc-begin-complex
    - [X] `)` maf-goto-right-side ← calc-end-complex (2026-08-25: the
      parens cross a relation — one key to the whole left side, one to

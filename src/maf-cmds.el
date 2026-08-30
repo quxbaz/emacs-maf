@@ -345,8 +345,10 @@ variant's own variable governs only its direct invocation."
   (dfact unary calcFunc-dfact)
   (euler unary calcFunc-euler "k e")
   ;; prfac cedes calc's k f to a second key for mafcmd-factor
-  ;; (bindings.el), beside its table key a f.
-  (prfac unary calcFunc-prfac)
+  ;; (bindings.el), beside its table key a f, and lives on the shifted
+  ;; key instead — displacing calc-utpf, the one utp lookup left
+  ;; keyless here, reachable by name.
+  (prfac unary calcFunc-prfac "k F")
   (gcd binary calcFunc-gcd "k g")
   (shuffle binary calcFunc-shuffle "k h")
   (lcm binary calcFunc-lcm "k l")
