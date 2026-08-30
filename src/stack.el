@@ -2312,29 +2312,53 @@ starts the walk at EXPR itself."
       (setq n (calc-find-parent-formula expr n)))
     (and (consp n) n)))
 
+(defun maf--relation-arm (expr rel node)
+  "Which arm of REL the NODE sits in: 1 for left, 2 for right, nil.
+The climb through EXPR's parents stops one step short of REL, and the
+arm arrived at is the answer. A nil NODE — or NODE naming REL itself,
+point on the relation's own operator — is in neither arm."
+  (when (and (consp node) (not (eq node rel)))
+    (let ((n node))
+      (while (let ((up (calc-find-parent-formula expr n)))
+               (and (consp up) (not (eq up rel)) (setq n up))))
+      (cond ((eq n (nth 1 rel)) 1)
+            ((eq n (nth 2 rel)) 2)))))
+
 (defun maf--goto-side (side)
   "Move point to the whole SIDE of the relation it sits in.
-SIDE is `left' or `right'. The shared body of `maf-goto-left-side' and
-`maf-goto-right-side'; those docstrings describe what the motion
+SIDE is `left', `right' or `other' — the side point is not in now.
+The shared body of `maf-goto-left-side', `maf-goto-right-side' and
+`maf-goto-other-side'; those docstrings describe what the motion
 promises.
 
 Point already standing where SIDE would land crosses to the other side
-instead, so either key walks the relation on repeat.
+instead, so either paren key walks the relation on repeat.
 
-At home the paren keys keep the meaning the edit module gives them
-there — a blank vector entry opened at the bottom of the stack — since
-there is no entry at point for the motion to work within. With that
-module off there is nothing to fall back to and the motion signals."
+At home the keys keep the meaning the edit module gives them there —
+a blank vector entry opened at the bottom of the stack for the paren
+keys, a fresh entry there for the crossing — since there is no entry
+at point for the motion to work within. With that module off there is
+nothing to fall back to and the motion signals."
   (let ((m (calc-locate-cursor-element (point))))
     (if (<= m 0)
         (if (bound-and-true-p maf-use-edit-mode)
-            (maf-edit-add-vector)
+            (if (eq side 'other)
+                (maf-edit-add-entry-above)
+              (maf-edit-add-vector))
           (user-error "No expression at point"))
       (calc-prepare-selection m)
       (let* ((expr (calc-top m 'full))
-             (rel (maf--side-relation expr (calc-find-selected-part))))
+             (part (calc-find-selected-part))
+             (rel (maf--side-relation expr part)))
         (unless rel
           (user-error "No relation at point"))
+        ;; The crossing names its side here: out of the right arm is
+        ;; left, and out of anywhere else — the left arm, the
+        ;; relation's own operator, the margin naming the whole entry
+        ;; — is right.
+        (when (eq side 'other)
+          (setq side (if (eq (maf--relation-arm expr rel part) 2)
+                         'left 'right)))
         (let* ((region (maf--up-entry-region m))
                (node (nth (if (eq side 'left) 1 2) rel))
                (pos (maf--up-node-position node region)))
@@ -2441,6 +2465,36 @@ one back, whatever term point started on — and the two differ only in
 which side they set out for."
   (interactive)
   (maf--goto-side 'right))
+
+(defun maf-goto-other-side ()
+  "Move point to the whole side of the relation it is not in.
+
+  6 x + 12 = 18 y| + 6  =>  6 x |+ 12 = 18 y + 6
+
+The crossing half of `maf-goto-left-side' and `maf-goto-right-side',
+without naming a side: wherever point sits in the relation — the
+innermost one it sits in, as for those two — the press lands on the
+whole of the opposite side, on the glyph that names it, so the next
+command acts on that side entire. Pressed again it crosses back, and
+the one key rocks between the sides:
+
+  6 x |+ 12 = 18 y + 6  =>  6 x + 12 = 18 y |+ 6
+
+From the entry's margin, or on the relation's own operator, point is
+in neither side, and the right one is the landing:
+
+  |1:  y = (x + 3)^2  =>  1:  y = (x + 3)|^2
+
+A selection up on the entry travels to the side along with point, as
+it does for the named motions.
+
+At home the key keeps the meaning the edit module gives it there — a
+fresh entry opened at the bottom of the stack
+\(`maf-edit-add-entry-above') — since there is no entry at point to
+move within. With that module off it signals instead, as it does on
+an entry that holds no relation."
+  (interactive)
+  (maf--goto-side 'other))
 
 (defun maf--swap-target-with-top ()
   "Swap the resolved sub-formula at point with the level-1 entry.

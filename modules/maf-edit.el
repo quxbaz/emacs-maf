@@ -1636,7 +1636,9 @@ With this mode on:
 
   SPC  Edit the entry at point.
   `    Go to the bottom of the stack and add an entry there.
-  C-o  Add an entry above the one at point.
+  C-o  Add an entry above the one at point. Pressed at home in the
+       native layout, where the key is otherwise the relation
+       crossing; anywhere on the stack in the calc layout.
   (    Add an empty vector at the bottom of the stack. Pressed at home
        in the native layout, where the parens are otherwise the
        relation motions; anywhere on the stack in the calc layout.
@@ -1656,17 +1658,18 @@ does not change the stack."
   ;; or out (see core/maf-bindings.el).
   (maf-bindings--refresh))
 
-;; The vector-add's "(" is a calc-profile key alone: in native (and in
-;; vim, by derivation) the parens are the relation motions
-;; `maf-goto-left-side' and `maf-goto-right-side' (src/bindings.el),
-;; which hand the key back to this command at home — the one place
-;; there is no entry to move within. Declaring it here for those
-;; profiles too would be a second owner on the key, which the compiler
-;; refuses outright rather than resolving by precedence.
+;; The vector-add's "(" and the entry-add's C-o are calc-profile keys
+;; alone: in native (and in vim, by derivation) the parens are the
+;; relation motions `maf-goto-left-side' and `maf-goto-right-side' and
+;; C-o is the crossing `maf-goto-other-side' (src/bindings.el), which
+;; hand the keys back to these commands at home — the one place there
+;; is no entry to move within. Declaring them here for those profiles
+;; too would be a second owner on the keys, which the compiler refuses
+;; outright rather than resolving by precedence.
 (maf-bindings-module-keys 'maf-edit 'maf-use-edit-mode
   '(((calc native vim) "SPC" maf-edit)
     ((calc native vim) "`" maf-edit-entry-at-home)
-    ((calc native vim) "C-o" maf-edit-add-entry-above)
+    ((calc) "C-o" maf-edit-add-entry-above)
     ((calc) "(" maf-edit-add-vector)))
 
 ;; Register with the module system when it is present; the mode above
@@ -1678,6 +1681,6 @@ does not change the stack."
 Press SPC to edit the entry at point, then RET to save it. For
 example, change x+1 to x+2 directly on the stack. S-RET splits an
 entry; deleting the newline between two entries joins them."
-                       "SPC, `, C-o, \"(\" (at home)" "Editing"))
+                       "SPC, `, C-o and \"(\" (at home)" "Editing"))
 
 (provide 'maf-edit)
