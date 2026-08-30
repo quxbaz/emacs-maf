@@ -6456,6 +6456,13 @@ applying the mapper substitutes the element for it. The name is
 unforgeable: $ is a token in calc's syntax, never an identifier, so no
 formula the user types can name this variable by accident.")
 
+(defconst maf--map-param2 '(var $$ var-$$)
+  "The variable standing for the subject's element in a $$ formula.
+A $$ turns the mapping binary (see `maf--map-read'): this variable
+takes the subject's elements while `maf--map-param' takes the consumed
+top entry's — the levels calc's own $$ and $ name. Unforgeable as the
+first parameter is.")
+
 (defun maf--map-function-symbol (var)
   "Return the calc function symbol the variable node VAR names.
 sin gives `calcFunc-sin' — a symbol whether or not calc defines it, so
@@ -6569,6 +6576,11 @@ the one thing calc's own operator prompt uses it for — so 2 $ + 1 and
 means the stack is the whole answer, a $ that means the element is part
 of a larger formula.
 
+A $$ turns the mapping binary (see `mafcmd-map'): the answer is then
+a (pair P1 P2 BODY) list for `maf--map-pair-run', where the one-$
+forms answer a (PARAM . BODY) cons. Top-level commas wrap the input
+in the vector they imply, so $$, $ and [$$, $] read alike.
+
 Input that names no element at all reads as an operation on it. An
 operator on either end takes the element on that side: +2 adds 2,
 -2 subtracts it, /2 halves, ^2 squares — and 2+ adds the same 2,
@@ -6585,11 +6597,16 @@ it meant."
     (if (string= input "$")
         'stack
       ;; Calc's reader refuses $ unless `calc-dollar-values' offers it
-      ;; something to stand for; the placeholder is that something, and
-      ;; `calc-dollar-used' comes back non-zero when the formula spent it.
-      (let* ((calc-dollar-values (list maf--map-param))
+      ;; something to stand for; the placeholders are that something,
+      ;; and `calc-dollar-used' comes back with the deepest one the
+      ;; formula spent. Top-level commas read as the vector they imply
+      ;; — $$, $ and [$$, $] say the same thing.
+      (let* ((calc-dollar-values (list maf--map-param maf--map-param2))
              (calc-dollar-used 0)
-             (expr (math-read-expr input)))
+             (exprs (math-read-exprs input))
+             (expr (cond ((eq (car-safe exprs) 'error) exprs)
+                         ((cdr exprs) (cons 'vec exprs))
+                         (t (car exprs)))))
         (cond
          ;; A parse failure comes back as (error POSITION MESSAGE).
          ;; An operator on either end is not a formula at all until
@@ -6606,6 +6623,10 @@ it meant."
            ((string-match-p "[-+*/^%|<>=!]\\'" input)
             (maf--map-read-elementwise (concat input " $")))
            (t (user-error "Bad format in formula: %s" (nth 2 expr)))))
+         ;; A $$ pairs a second operand and the mapping turns binary:
+         ;; the subject's element rides $$, the consumed top entry's $.
+         ((> calc-dollar-used 1)
+          (list 'pair maf--map-param2 maf--map-param expr))
          ((> calc-dollar-used 0)
           (cons maf--map-param expr))
          ;; Parsed, but nothing names the element — no $, no variable.
@@ -6641,6 +6662,37 @@ mode."
     (math-normalize
      (math-build-call (list 'calcFunc-lambda (car mapper) (cdr mapper))
                       (list expr)))))
+
+(defun maf--map-pair-apply (mapper expr arg)
+  "Return EXPR and ARG mapped in lockstep through the pair MAPPER.
+MAPPER is (pair P1 P2 BODY): P1 is $$'s slot and takes EXPR's side,
+P2 is $'s and takes ARG's. Two vectors pair element by element and
+must run the same length; nested vectors recurse, so matrices pair
+cell by cell. A lone value beside a vector repeats for every element,
+and two lone values apply the formula once, whole.
+
+A relation on either side refuses: side by side is the one-$ form's
+reading (`maf--map-relation'), and a pair of sides against a vector's
+elements has no one pairing to mean."
+  (pcase-let ((`(pair ,p1 ,p2 ,body) mapper))
+    (cl-labels
+        ((walk (a b)
+           (cond
+            ((or (maf--relation-p a) (maf--relation-p b))
+             (user-error "A relation maps with the one-$ form, not $$"))
+            ((and (eq (car-safe a) 'vec) (eq (car-safe b) 'vec))
+             (unless (= (length a) (length b))
+               (user-error "Lengths differ: %d and %d elements"
+                           (1- (length a)) (1- (length b))))
+             (cons 'vec (cl-mapcar #'walk (cdr a) (cdr b))))
+            ((eq (car-safe a) 'vec)
+             (cons 'vec (mapcar (lambda (e) (walk e b)) (cdr a))))
+            ((eq (car-safe b) 'vec)
+             (cons 'vec (mapcar (lambda (e) (walk a e)) (cdr b))))
+            (t (math-normalize
+                (math-build-call (list 'calcFunc-lambda p1 p2 body)
+                                 (list a b)))))))
+      (walk expr arg))))
 
 (defun maf--map-relation (mapper rel reverse)
   "Return relation REL with MAPPER applied to both of its sides.
@@ -6688,8 +6740,9 @@ and takes a plain expression whole."
 
 (defvar maf--map-mapper nil
   "The mapper `maf--map-run' applies; bound per `mafcmd-map' call.
-Nil for the M $ form, whose formula is the stack arg `maf--map-arg-run'
-receives.")
+A (PARAM . BODY) cons, or (pair P1 P2 BODY) for the $$ form, whose
+worker is `maf--map-pair-run'. Nil for the M $ form, whose formula is
+the stack arg `maf--map-arg-run' receives.")
 
 (defvar maf--map-reverse nil
   "Non-nil while a mapping command should reverse the relation it maps.
@@ -6721,6 +6774,18 @@ The M $ form: the entry above the subject is the formula, read by
   :targets-var mafcmd-map-stack-targets
   (commit (maf--map-subject (maf--map-from-expr arg expr) expr maf--map-reverse)))
 
+(maf-defcmd maf--map-pair-run (expr arg commit)
+  "Apply the pair mapper `maf--map-mapper' to the subject and the top.
+The $$ form of `mafcmd-map' — see there. The subject supplies $$'s
+elements and the consumed top entry $'s, the operand order every
+binary command uses; `maf--map-pair-apply' walks the two in lockstep."
+  :arity binary
+  :prefix "map"
+  :map -1
+  :scope explicit
+  :targets-var mafcmd-map-targets
+  (commit (maf--map-pair-apply maf--map-mapper expr arg)))
+
 (defun maf--map-dispatch (mapper)
   "Run the mapping worker MAPPER calls for, consuming calc's I flag.
 MAPPER is what `maf--map-read' returns — a mapper, or `stack' for the
@@ -6735,7 +6800,9 @@ form that takes its formula from the stack. Shared by `mafcmd-map' and
     (if (eq mapper 'stack)
         (call-interactively #'maf--map-arg-run)
       (let ((maf--map-mapper mapper))
-        (call-interactively #'maf--map-run)))))
+        (call-interactively (if (eq (car-safe mapper) 'pair)
+                                #'maf--map-pair-run
+                              #'maf--map-run))))))
 
 (defun maf--map-refuse-hyperbolic ()
   "Signal if calc's Hyperbolic flag is set, consuming it first.
@@ -6763,6 +6830,15 @@ either end takes the element on that side (+2 and 2+ add, -2 subtracts
 a bare constant multiplies (2 doubles). A lone
 $ is the exception — it means the formula is on the stack, and is the same
 gesture as `mafcmd-map-stack' (M $).
+
+A $$ pairs a second operand and the mapping turns binary: $$ is the
+subject's element and $ the top entry's — the entry above the
+subject, consumed as any binary argument. [$$, $] over [a, b] with
+[x, y] on top gives [[a, x], [b, y]], and bare top-level commas read
+as that vector, so $$, $ says the same. The vectors pair index by
+index and must run the same length, a lone value beside a vector
+repeats for every element, and a relation refuses — side-by-side
+mapping belongs to the one-$ form.
 
 The subject is the whole entry at point, wherever point sits on its
 line, or the top entry at home: mapping speaks of the entry's
