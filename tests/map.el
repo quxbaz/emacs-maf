@@ -360,6 +360,62 @@
   (cl-assert (= (calc-stack-size) 1))
   (calc-pop (calc-stack-size))
 
+  ;; A $$ pairs a second operand and the mapping turns binary: the
+  ;; subject's element rides $$, the consumed top entry's rides $ —
+  ;; calc's own levels for the two signs.
+  (maf-push "[a, b]")
+  (maf-push "[x, y]")
+  (goto-char (point-max))
+  (progn (setq unread-command-events (listify-key-sequence "[$$, $]\r"))
+         (call-interactively 'mafcmd-map))
+  ;; Compared structurally: a matrix's own rendering is multi-line.
+  (cl-assert (equal (maf--strip-encasing (calc-top 1 'full))
+                    '(vec (vec (var a var-a) (var x var-x))
+                          (vec (var b var-b) (var y var-y)))))
+  (cl-assert (= (calc-stack-size) 1))
+  (calc-pop (calc-stack-size))
+
+  ;; Bare top-level commas read as the vector they imply: $$, $ says
+  ;; the same as [$$, $].
+  (maf-push "[a, b]")
+  (maf-push "[x, y]")
+  (goto-char (point-max))
+  (progn (setq unread-command-events (listify-key-sequence "$$, $\r"))
+         (call-interactively 'mafcmd-map))
+  (cl-assert (equal (maf--strip-encasing (calc-top 1 'full))
+                    '(vec (vec (var a var-a) (var x var-x))
+                          (vec (var b var-b) (var y var-y)))))
+  (cl-assert (= (calc-stack-size) 1))
+  (calc-pop (calc-stack-size))
+
+  ;; A lone value beside a vector repeats for every element.
+  (maf-push "[a, b]")
+  (maf-push "5")
+  (goto-char (point-max))
+  (progn (setq unread-command-events (listify-key-sequence "$$ + $\r"))
+         (call-interactively 'mafcmd-map))
+  (cl-assert (string= (math-format-value
+                       (maf--strip-encasing (calc-top 1 'full)))
+                      "[a + 5, b + 5]"))
+  (cl-assert (= (calc-stack-size) 1))
+  (calc-pop (calc-stack-size))
+
+  ;; Vectors of different lengths have no pairing; the refusal leaves
+  ;; the stack standing.
+  (maf-push "[a, b]")
+  (maf-push "[x, y, z]")
+  (goto-char (point-max))
+  (let ((message
+         (condition-case err
+             (progn (setq unread-command-events
+                          (listify-key-sequence "$$, $\r"))
+                    (call-interactively 'mafcmd-map)
+                    nil)
+           (user-error (error-message-string err)))))
+    (cl-assert (string-match-p "Lengths differ" message)))
+  (cl-assert (= (calc-stack-size) 2))
+  (calc-pop (calc-stack-size))
+
   ;; A nameless function on the stack carries its own parameter.
   (maf-push "[1, 2, 3]")
   (maf-push "<x : x + 10>")
