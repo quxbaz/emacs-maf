@@ -6649,7 +6649,7 @@ M i on a vector of relations solves each one for the variable typed."
 
 ;;; Combinators
 
-;; apply, reduce, accumulate and the outer product take an operation
+;; apply, fold, accumulate and the outer product take an operation
 ;; where the other vector commands take an operand, so none of them can
 ;; be a table row: a row applies its function to the resolved
 ;; expression, which for these builds a call one argument short that
@@ -6742,15 +6742,15 @@ See `maf--combinator-op'.")
 
 (defvar maf--combinator-func nil
   "The Calc function a combinator worker calls, bound per call.
-`calcFunc-reduce' or `calcFunc-rreduce' for the reduce pair, and the
+`calcFunc-reduce' or `calcFunc-rreduce' for the fold pair, and the
 matching split for accumulate: the Inverse flag picks the direction
 before the worker runs.")
 
-(maf-defcmd maf--reduce-run (expr _arg commit)
-  "Reduce the resolved vector by `maf--combinator-op'.
-The worker behind `mafcmd-reduce' — see there."
+(maf-defcmd maf--fold-run (expr _arg commit)
+  "Fold the resolved vector by `maf--combinator-op'.
+The worker behind `mafcmd-fold' — see there."
   :arity unary
-  :prefix "redc"
+  :prefix "fold"
   (commit (funcall maf--combinator-func maf--combinator-op expr)))
 
 (maf-defcmd maf--accum-run (expr _arg commit)
@@ -6783,8 +6783,8 @@ The worker behind `mafcmd-inner' — see there."
   :map -1
   (commit (calcFunc-inner maf--combinator-op maf--combinator-op2 expr arg)))
 
-(defun mafcmd-reduce ()
-  "Reduce the vector at point by an operation you press.
+(defun mafcmd-fold ()
+  "Fold the vector at point by an operation you press.
 
   [1, 2, 3, 4]  =>  10        (pressing +)
 
@@ -6801,24 +6801,24 @@ Inverse: fold from the right instead.
 Point picks the target as usual: a sub-formula at point, each side of
 an equation, the top entry at home.
 
-  [[1, 2], [3, 4]]  =>  10          (pressing +: a matrix reduces whole)
+  [[1, 2], [3, 4]]  =>  10          (pressing +: a matrix folds whole)
   [a, b, c]         =>  a + b + c   (pressing +: symbolic, unevaluated)"
   (interactive)
-  (let ((op (maf--read-operation "Reduce" 2))
+  (let ((op (maf--read-operation "Fold" 2))
         (func (if calc-inverse-flag 'calcFunc-rreduce 'calcFunc-reduce)))
     (setq calc-inverse-flag nil
           calc-hyperbolic-flag nil)
     (let ((maf--combinator-op op)
           (maf--combinator-func func))
-      (call-interactively #'maf--reduce-run))))
-(put 'mafcmd-reduce 'maf-command t)
+      (call-interactively #'maf--fold-run))))
+(put 'mafcmd-fold 'maf-command t)
 
 (defun mafcmd-accum ()
   "Accumulate over the vector at point by an operation you press.
 
   [1, 2, 3, 4]  =>  [1, 3, 6, 10]        (pressing +)
 
-The running results of the fold `mafcmd-reduce' performs, kept as a
+The running results of the fold `mafcmd-fold' performs, kept as a
 vector rather than reduced to the last one. The operation is read the
 same way: the next key, or : for a typed formula.
 
