@@ -109,6 +109,17 @@
                       "180 {}^{\\circ} (n - 2)"))
   (calc-pop (calc-stack-size))
 
+  ;; The sets read with their signs: a vector of intervals joins its
+  ;; pieces with the cup, brackets dropped, and vint draws the cap —
+  ;; while a numeric vector keeps its brackets
+  ;; (`maf--latex-compose-set-op', the vec branch beside it).
+  (maf-push "vint([[-inf .. -5), (5 .. inf]], [0 .. 9])")
+  (progn (goto-char (point-max)) (call-interactively 'maf-copy))
+  (let ((last-command 'maf-copy)) (call-interactively 'maf-copy))
+  (cl-assert (string= (current-kill 0)
+                      "([-\\infty \\ldots -5) \\cup (5 \\ldots \\infty]) \\cap [0 \\ldots 9]"))
+  (calc-pop (calc-stack-size))
+
   ;; A region is copied verbatim — not rounded out to whole entry lines
   ;; the way calc's own M-w does it.
   (maf-push "a + b + c")

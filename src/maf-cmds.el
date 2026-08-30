@@ -173,7 +173,8 @@ variant's own variable governs only its direct invocation."
   ;; borrowed it while it had one and has since gone unbound
   ;; (bindings.el). o is a second key for it, also there.
   (inv unary calcFunc-inv "&")
-  (neg unary calcFunc-neg "n")
+  ;; neg grew an interval reading — the complement — and lives as a
+  ;; maf-defcmd (src/stack.el); its n rides bindings.el with it.
   ;; abs has left the table for `mafcmd-abs' (stack.el, A), which reads
   ;; a vector as its norm through `maf--abs' rather than `calcFunc-abs',
   ;; whose two-element case hands back an inert hypot(2, sqrt(3)). It

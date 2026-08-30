@@ -51,6 +51,11 @@
 (pcase-dolist (`(,key . ,command) maf-cmds--table-keys)
   (maf-bindings-define '(calc native) key command))
 
+;; The negation, on the key its old table row carried: it grew the
+;; interval-complement reading and lives as a maf-defcmd now
+;; (src/stack.el).
+(maf-bindings-define '(calc native) "n" #'mafcmd-neg)
+
 ;; A second key for the square root, beside Q (mafcmd-sqrt in the
 ;; table): the root is reached for far more often than integer
 ;; division, whose key this was — calc's \ is shadowed, and the idiv
