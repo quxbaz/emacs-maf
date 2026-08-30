@@ -91,6 +91,7 @@
 (declare-function calc-is-assignments "calc-store")
 (declare-function math-compose-expr "calccomp")
 (declare-function math-compose-vector "calccomp")
+(declare-function math-comp-first-char "calccomp")
 (declare-function math-tex-expr-is-flat "calc-lang")
 (declare-function math-build-call "calc-map")
 (declare-function math-vectorp "calc-ext")
@@ -3219,6 +3220,26 @@ untouched."
           (math-compose-vector (cdr a) ", " 0)
           (if flat ")" " \\right)"))))
 
+(defun maf--latex-separate-digit-product (a comp)
+  "Write the sign into COMP where A's juxtaposition would run digits together.
+A is the expression COMP was composed from. Calc writes a product as
+lhs SPACE rhs and TeX throws the space away, so 4 2^x typesets as
+42^x; a right factor whose rendering opens on a digit gets \\times
+written out instead, the sign calc itself falls back to where
+juxtaposition will not do. The juxtaposed product composes in exactly
+one shape — lhs, a break, a lone space, rhs — and only that shape is
+touched; every other product, 4 x included, keeps its juxtaposition."
+  (when (and (eq (car-safe a) '*)
+             (eq (car-safe comp) 'horiz)
+             (= (length comp) 6)
+             (eq (car-safe (nth 1 comp)) 'set)
+             (eq (car-safe (nth 3 comp)) 'break)
+             (equal (nth 4 comp) " ")
+             (let ((c (math-comp-first-char (nth 5 comp))))
+               (and c (<= ?0 c) (<= c ?9))))
+    (setf (nth 4 comp) "\\times "))
+  comp)
+
 (defun maf--latex-strip-script-parens (latex)
   "LATEX with parens dropped from scripts they span whole.
 Calc writes x^(-n) into TeX as x^{(-n)}: the parens that made the
@@ -3256,9 +3277,11 @@ language variables it sets are restored afterwards, so the stack
 display never changes language. `math-format-value' inhibits line
 breaking, so the result is one line however wide. The trig calls of
 `maf--latex-paren-calls' typeset with their argument in parens —
-sin(x), not calc's sin x — and an exponent or subscript sheds the
+sin(x), not calc's sin x; an exponent or subscript sheds the
 parens flat notation needed around it: x^{-n}, not x^{(-n)} — see
-`maf--latex-strip-script-parens'.
+`maf--latex-strip-script-parens'; and a juxtaposed factor opening on
+a digit gets its \\times written out — 4 \\times 2^x, where TeX would
+have run the 4 and 2 together (`maf--latex-separate-digit-product').
 
 Calc writes a product as juxtaposition except when the right factor
 is a \\left( group, where it falls back to \\times — its flatness
@@ -3273,14 +3296,19 @@ spaces and ? is an ordinary character, so it typesets crammed
 is reclassed \\mathrel to match."
   (maf--with-calc-buffer
     (let ((lang calc-language)
-          (opt calc-language-option))
+          (opt calc-language-option)
+          (compose (symbol-function 'math-compose-expr)))
       (unwind-protect
           (cl-letf (((get 'latex 'math-special-function-table)
                      (append (mapcar (lambda (entry)
                                        (cons (car entry)
                                              #'maf--latex-compose-paren-call))
                                      maf--latex-paren-calls)
-                             (get 'latex 'math-special-function-table))))
+                             (get 'latex 'math-special-function-table)))
+                    ((symbol-function 'math-compose-expr)
+                     (lambda (a prec &optional div)
+                       (maf--latex-separate-digit-product
+                        a (funcall compose a prec div)))))
             (calc-set-language 'latex nil t)
             (maf--latex-strip-script-parens
              (replace-regexp-in-string
