@@ -6790,7 +6790,7 @@ the other fancy prefixes chain (M I N maps the inverse), and the
 argument readers carry a prefix argument to the command they precede.")
 
 (defun maf--map-flag-entry ()
-  "Run `mafcmd-map' as \\`M :', spending the pending map flag.
+  "Run `mafcmd-map' as \\`M :' or \\`M M', spending the pending map flag.
 The flag and the prefix keymap are cleared first: the flag asks the
 next command to map, and this command is its own mapping — left set it
 would ask `mafcmd-map' to map the mapper."
@@ -6811,6 +6811,10 @@ See `maf--map-flag-entry'."
   (let ((map (make-sparse-keymap)))
     (define-key map "$" #'maf--map-flag-stack)
     (define-key map ":" #'maf--map-flag-entry)
+    ;; The doubled key: the prompt is the flag's commonest exit, and
+    ;; M M reaches it without the shift : costs. Without this entry
+    ;; the second M would only re-run the flag setter, a no-op.
+    (define-key map "M" #'maf--map-flag-entry)
     ;; The parent collects digits as a prefix argument, but maf's
     ;; digits start a numeric entry: give them the fall-through every
     ;; other key gets, so M 1 + types the 1 and adds it plainly (the
@@ -6822,8 +6826,9 @@ See `maf--map-flag-entry'."
     map)
   "Keymap live for the keypress after \\`M', over calc's fancy-prefix map.
 Its parent is `calc-fancy-prefix-map', attached in `mafcmd-map-flag'
-once calc-ext has defined it, so its changes are few: $ and : run the
-formula-mapping commands, a digit starts a numeric entry as it does
+once calc-ext has defined it, so its changes are few: $ runs the
+stack-formula mapping, : and a doubled M the prompting one, a digit
+starts a numeric entry as it does
 outside the flag (C-u still reads a prefix argument), and any other
 key falls to `calc-fancy-prefix-other-key', which re-dispatches it
 normally with the flag still set. Chaining a fancy prefix drops this
