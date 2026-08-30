@@ -6,8 +6,8 @@
 ;; The contract: a U with whitespace on both sides and an operand on
 ;; each side is the union operator, and every other U is the name or
 ;; the factor the text spells. The trade is confined to commit — the
-;; session goes on showing the U that was typed, as B's log(x, 10)
-;; goes on showing its base — and it happens before the editvars
+;; session goes on showing the U that was typed, as B's log(x)
+;; goes on reading as the common logarithm — and it happens before the editvars
 ;; dialect reads the text, so the bar reaches calc under either input
 ;; syntax.
 

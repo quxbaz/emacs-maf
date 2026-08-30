@@ -1717,14 +1717,17 @@ session."
 ;; and a base spelled in the text is one the next press can read back.
 ;; That reading is the default: a log already in the entry says what
 ;; base the work is in, so the nearest one at or before the target
-;; lends its base, and only the first log of an entry falls back to 10.
-;; Corrected once, the correction propagates by itself.
+;; lends its base, and the first log of an entry, with nothing to
+;; inherit, writes no base at all. Spelled once, a base propagates by
+;; itself.
 ;;
-;; On commit the visible spelling is traded for calc's: log(x, 10) is
-;; calc's log10(x), and `maf-editplus--commit-log10' rewrites every
-;; instance through `maf-edit-transform-value-functions'. The text kept
-;; the base in sight while it could still be edited; the stack gets the
-;; name calc gives the common logarithm.
+;; On commit the visible spelling is traded for calc's: the bare
+;; log(x) — which calc itself would read as ln — and a log(x, 10)
+;; typed by hand both mean the common logarithm here, and
+;; `maf-editplus--commit-log10' rewrites each as log10(x) through
+;; `maf-edit-transform-value-functions'. The text kept the notation
+;; short while it could still be edited; the stack gets the name calc
+;; gives the common logarithm.
 
 (defun maf-editplus--call-name (node)
   "The name heading NODE, when NODE is a call; nil otherwise.
@@ -1746,7 +1749,7 @@ carrying forward. At-or-before rather than strictly before, so a log
 being wrapped in another log lends its own base to the wrap.
 
 Nil with no such call: the first log of an entry has nothing to
-inherit, and the caller falls back to 10. A one-argument log(x) has
+inherit, and the caller writes no base. A one-argument log(x) has
 no base written and lends nothing."
   (let ((entry (maf-editplus--entry-at-point)))
     (when entry
@@ -1786,50 +1789,54 @@ no base written and lends nothing."
 `maf-editplus-wrap-ln' with a second argument: point names the log's
 argument the same way, and the same rules apply to the end of the
 entry, to a region, and to a press with nothing behind point — where
-the empty call opens with its base already in place, point on the
-argument slot:
+the empty call opens with point on the argument slot, an inherited
+base already in place after it:
 
-  a+b|*c     =>  a+log(b*c, 10)
-  x+2|       =>  x+log(2, 10)
-  x = |      =>  x = log(|, 10)
+  a+b|*c     =>  a+log(b*c)
+  x+2|       =>  x+log(2)
+  x = |      =>  x = log(|)
 
 The base is defaulted, never prompted for. A numeric prefix names it
 outright — \\[universal-argument] 2 then the key writes log(x, 2) —
 and otherwise the entry itself is read: the two-argument log call
 starting nearest at or before the target lends its base, whatever
-expression the text spells there, and 10 is the fallback with no log
-to inherit from. So the base is only ever wrong on the first log of
-an entry, and correcting that one corrects the rest:
+expression the text spells there. With no log to inherit from none
+is written — the bare log(x) means the common logarithm — so a base
+is only ever missing on the first log of an entry, and spelling it
+there carries it to the rest:
 
   log(a,2)+x|  =>  log(a,2)+log(x, 2)
 
-On commit the 10 the fallback wrote goes away again: every log(x, 10)
-in a changed entry commits as log10(x), the spelling calc itself uses
-for the common logarithm (`maf-editplus--commit-log10'). A base the
-text inherited or was given stays as written.
+On commit the bare call gets calc's name for what it means: every
+log(x) — and every log(x, 10) typed by hand — in a changed entry
+commits as log10(x), the spelling calc itself uses for the common
+logarithm (`maf-editplus--commit-log10'); to calc an unrewritten
+log(x) would mean ln. A base the text inherited or was given stays
+as written.
 
 Bound to `B' in `maf-edit-mode-map', the key calc gives the logarithm
 on the stack (and maf keeps for `mafcmd-log'), so a capital B is no
 longer self-inserting during a session."
   (interactive "P")
   (let* ((target (maf-editplus--resolve-target))
-         (tail (concat ", " (cond ((integerp base) (number-to-string base))
-                                  ((maf-editplus--log-inherited-base target))
-                                  (t "10")))))
-    (maf-editplus--apply-call target "log" tail)))
+         (base (cond ((integerp base) (number-to-string base))
+                     ((maf-editplus--log-inherited-base target)))))
+    (maf-editplus--apply-call target "log" (and base (concat ", " base)))))
 
 (defun maf-editplus--commit-log10 (expr)
-  "EXPR with every log(x, 10) rewritten as the log10(x) calc spells it.
+  "EXPR with every log(x) and log(x, 10) rewritten as calc's log10(x).
 On `maf-edit-transform-value-functions' while the module is on, so
-the base-10 default `maf-editplus-wrap-log' writes — and a log(x, 10)
-typed by hand — commits in calc's own spelling. Only the exact
+the bare call `maf-editplus-wrap-log' writes — and a log(x, 10)
+typed by hand — commits in calc's own spelling; to calc itself a
+one-argument log(x) would mean ln. Only a missing base or the exact
 integer 10: log(x, 10.) and log(x, b) mean what they say and pass
 through untouched, as does everything else in EXPR."
   (cond
    ((not (consp expr)) expr)
    ((and (eq (car expr) 'calcFunc-log)
-         (= (length expr) 3)
-         (eql (nth 2 expr) 10))
+         (or (= (length expr) 2)
+             (and (= (length expr) 3)
+                  (eql (nth 2 expr) 10))))
     (list 'calcFunc-log10 (maf-editplus--commit-log10 (nth 1 expr))))
    (t (cons (car expr) (mapcar #'maf-editplus--commit-log10 (cdr expr))))))
 
@@ -1841,7 +1848,7 @@ through untouched, as does everything else in EXPR."
 ;; it twice only wraps twice. So the union is spelled U, the letter
 ;; drawn like the sign, and commit trades it for calc's own || .
 ;;
-;; The trade is the log key's, one layer further down. log(x, 10)
+;; The trade is the log key's, one layer further down. log(x)
 ;; parses as itself and wants only renaming, so it rides
 ;; `maf-edit-transform-value-functions'; a U does not parse as an
 ;; operator at all — calc reads a lone U as a variable, and
