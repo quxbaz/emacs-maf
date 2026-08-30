@@ -3428,7 +3428,14 @@ is reclassed \\mathrel to match."
           (opt calc-language-option)
           (compose (symbol-function 'math-compose-expr)))
       (unwind-protect
-          (cl-letf (((get 'latex 'math-special-function-table)
+          ;; The language is set before the table is read: calc-lang
+          ;; loads lazily on the first `calc-set-language', and a
+          ;; binding taken from the not-yet-populated property would
+          ;; be "restored" to nil on exit, wiping \\frac and its
+          ;; siblings for the rest of the session.
+          (progn
+            (calc-set-language 'latex nil t)
+            (cl-letf (((get 'latex 'math-special-function-table)
                      (append (mapcar (lambda (entry)
                                        (cons (car entry)
                                              #'maf--latex-compose-paren-call))
@@ -3458,14 +3465,13 @@ is reclassed \\mathrel to match."
                          (maf--latex-join-composed (cdr a) " \\cup "))
                         (t (maf--latex-separate-digit-product
                             a (funcall compose a prec div)))))))
-            (calc-set-language 'latex nil t)
-            (maf--latex-strip-script-parens
-             (replace-regexp-in-string
-              " \\? " " \\\\mathrel{?} "
-              (replace-regexp-in-string
-               "\\\\times" "\\\\cdot"
-               (replace-regexp-in-string "\\\\times \\((\\|\\\\left(\\)" "\\1"
-                                         (math-format-value expr))))))
+              (maf--latex-strip-script-parens
+               (replace-regexp-in-string
+                " \\? " " \\\\mathrel{?} "
+                (replace-regexp-in-string
+                 "\\\\times" "\\\\cdot"
+                 (replace-regexp-in-string "\\\\times \\((\\|\\\\left(\\)" "\\1"
+                                           (math-format-value expr)))))))
         (calc-set-language lang opt t)))))
 
 (defun maf--copy-squeeze (text)
