@@ -89,6 +89,16 @@
                       "3 x^2 + 4\\cdot 2^x"))
   (calc-pop (calc-stack-size))
 
+  ;; Between a variable and a plain paren group the sign goes the way
+  ;; of the \left( one: 4 p (x - h) is what anyone writes, and the
+  ;; typeset spacing carries it.
+  (maf-push "(y - k)^2 = 4 p*(x - h)")
+  (progn (goto-char (point-max)) (call-interactively 'maf-copy))
+  (let ((last-command 'maf-copy)) (call-interactively 'maf-copy))
+  (cl-assert (string= (current-kill 0)
+                      "(y - k)^2 = 4 p (x - h)"))
+  (calc-pop (calc-stack-size))
+
   ;; A region is copied verbatim — not rounded out to whole entry lines
   ;; the way calc's own M-w does it.
   (maf-push "a + b + c")

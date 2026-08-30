@@ -3286,10 +3286,12 @@ have run the 4 and 2 together (`maf--latex-separate-digit-product').
 Calc writes a product as juxtaposition except when the right factor
 is a \\left( group, where it falls back to \\times — its flatness
 test is structural, so even a factor that renders flat can trip it.
-Juxtaposition is unambiguous there too, so the \\times goes; the
-sign stays in the remaining cases — a negated right factor, a
-variable against a paren group — spelled \\cdot rather than the
-\\times calc writes, the dot reading lighter than the cross.
+Juxtaposition is unambiguous there too, so the \\times goes — and so
+does the one calc writes between a variable and a plain paren group,
+where 4 p (x - h) is what anyone writes by hand. The sign stays only
+where dropping it would change the reading — a negated right factor,
+a factor opening on a digit — spelled \\cdot rather than the \\times
+calc writes, the dot reading lighter than the cross.
 
 Calc writes if(c, a, b) as c ? a : b, but TeX ignores the source
 spaces and ? is an ordinary character, so it typesets crammed
@@ -3316,7 +3318,7 @@ is reclassed \\mathrel to match."
               " \\? " " \\\\mathrel{?} "
               (replace-regexp-in-string
                "\\\\times" "\\\\cdot"
-               (replace-regexp-in-string "\\\\times \\(\\\\left(\\)" "\\1"
+               (replace-regexp-in-string "\\\\times \\((\\|\\\\left(\\)" "\\1"
                                          (math-format-value expr))))))
         (calc-set-language lang opt t)))))
 
