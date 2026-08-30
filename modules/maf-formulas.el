@@ -27,6 +27,7 @@
 ;;    :title "Area of triangle"         ; menu label (derived if absent)
 ;;    :category "Geometry — 2D"         ; grouping (a default if absent)
 ;;    :expr (calcFunc-eq ...)           ; REQUIRED — the equation/expr
+;;    :display-expr (calcFunc-eq ...)   ; optional render-only variant
 ;;    :doc "..."                        ; optional one-line description
 ;;    :examples ("..." ...)             ; optional worked examples
 ;;    :vars ((A . "area") ...))         ; optional variable meanings
@@ -1368,8 +1369,11 @@ WIDTH is the pane's width in columns; the description fills to it.
 The formula is typeset while the pretty module is on — the same ask
 the preview panel makes, through `maf-preview-render-function' — and
 drawn in Big otherwise, or whenever the renderer answers nil (no
-graphics, or a formula LaTeX cannot write)."
-  (let* ((expr (plist-get f :expr))
+graphics, or a formula LaTeX cannot write). A formula carrying
+:display-expr renders that form instead, both typeset and Big — a
+place for notation the working :expr should not carry, the degree
+unit on an angle sum the common case — while RET still pushes :expr."
+  (let* ((expr (or (plist-get f :display-expr) (plist-get f :expr)))
          (doc (plist-get f :doc))
          (examples (plist-get f :examples))
          (vars (plist-get f :vars))

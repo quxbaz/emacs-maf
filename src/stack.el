@@ -3281,7 +3281,9 @@ sin(x), not calc's sin x; an exponent or subscript sheds the
 parens flat notation needed around it: x^{-n}, not x^{(-n)} — see
 `maf--latex-strip-script-parens'; and a juxtaposed factor opening on
 a digit gets its sign written out — 4 \\cdot 2^x, where TeX would
-have run the 4 and 2 together (`maf--latex-separate-digit-product').
+have run the 4 and 2 together (`maf--latex-separate-digit-product');
+and the degree unit deg typesets as the raised circle, 180 deg
+drawing as 180 with the \\circ on its shoulder.
 
 Calc writes a product as juxtaposition except when the right factor
 is a \\left( group, where it falls back to \\times — its flatness
@@ -3310,8 +3312,15 @@ is reclassed \\mathrel to match."
                              (get 'latex 'math-special-function-table)))
                     ((symbol-function 'math-compose-expr)
                      (lambda (a prec &optional div)
-                       (maf--latex-separate-digit-product
-                        a (funcall compose a prec div)))))
+                       ;; The degree unit is notation, not a name: the
+                       ;; raised circle rides the factor before it —
+                       ;; {}^{\circ} juxtaposes into 180^\circ — and
+                       ;; every other expression composes as calc
+                       ;; would, digit products separated.
+                       (if (equal a '(var deg var-deg))
+                           "{}^{\\circ}"
+                         (maf--latex-separate-digit-product
+                          a (funcall compose a prec div))))))
             (calc-set-language 'latex nil t)
             (maf--latex-strip-script-parens
              (replace-regexp-in-string
