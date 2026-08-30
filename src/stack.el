@@ -1109,6 +1109,47 @@ the node above it, which no sub-formula target could reach."
   :scope entry
   (commit (maf--negate-at expr maf--negate-path)))
 
+(defconst maf--pinf '(var inf var-inf)
+  "Calc's positive infinity, as intervals spell their open ends.")
+
+(defconst maf--minf '(neg (var inf var-inf))
+  "Calc's negative infinity, as intervals spell their open ends.")
+
+(defun maf--interval-complement (intv)
+  "The complement of INTV as calc's set: the rays beyond its ends.
+What `calcFunc-vcompl' answers for constant endpoints — two rays as a
+vector, a single ray bare when an end already sits at its infinity,
+the empty set for the whole line — but built from the mask alone, so
+a symbolic endpoint complements too: [-x .. x] has nothing constp
+about it and still owns the rays beyond x and -x."
+  (let ((mask (nth 1 intv))
+        (lo (nth 2 intv))
+        (hi (nth 3 intv))
+        (rays nil))
+    (unless (equal hi maf--pinf)
+      (push (list 'intv (if (zerop (logand mask 1)) 3 1) hi maf--pinf)
+            rays))
+    (unless (equal lo maf--minf)
+      (push (list 'intv (if (zerop (logand mask 2)) 3 2) maf--minf lo)
+            rays))
+    (cond ((null rays) (list 'vec))
+          ((null (cdr rays)) (car rays))
+          (t (cons 'vec rays)))))
+
+(defun maf--rays-complement (set)
+  "The interval SET's two rays bound, or nil when SET is another shape.
+The inverse of `maf--interval-complement's two-ray answer, read off
+the masks the same way, so a symbolic set complements back and the
+key undoes itself; nil hands any other set to `calcFunc-vcompl'."
+  (pcase set
+    (`(vec (intv ,m1 ,lo1 ,hi1) (intv ,m2 ,lo2 ,hi2))
+     (and (equal lo1 maf--minf)
+          (equal hi2 maf--pinf)
+          (list 'intv
+                (+ (if (zerop (logand m1 1)) 2 0)
+                   (if (zerop (logand m2 2)) 1 0))
+                hi1 lo2)))))
+
 (maf-defcmd mafcmd-neg (expr _arg commit)
   "Negate the resolved expression; an interval complements instead.
 
@@ -1117,25 +1158,33 @@ the node above it, which no sub-formula target could reach."
 
 An interval reads as a set here, and the sign flip that would only
 mirror it gives way to the complement: the rays beyond its ends,
-open where the interval was closed (`calcFunc-vcompl'). A vector
-whose elements are all intervals is the same set in pieces, so it
+open where the interval was closed. The rays are built from the
+interval's own shape (`maf--interval-complement'), so a symbolic
+endpoint complements as readily as a constant one. A vector whose
+elements are all intervals is the same set in pieces, so it
 complements too, and the key undoes itself; any other vector negates
 elementwise, as every other expression negates arithmetically. Point
 picks the target as usual: a sub-formula at point, each side of an
 equation, the top entry at home.
 
   [2 .. 3)                    =>  [[-inf .. 2), [3 .. inf]]
+  [-x .. x]                   =>  [[-inf .. -x), (x .. inf]]
   [[-inf .. -5), (5 .. inf]]  =>  [-5 .. 5]    (the complement back)
   [1, 2, 3]                   =>  [-1, -2, -3] (not a set: elementwise)"
   :arity unary
   :prefix "neg"
-  (commit (if (or (eq (car-safe expr) 'intv)
-                  (and (eq (car-safe expr) 'vec)
-                       (cdr expr)
-                       (cl-every (lambda (el) (eq (car-safe el) 'intv))
-                                 (cdr expr))))
-              (calcFunc-vcompl expr)
-            (math-neg expr))))
+  (commit (cond
+           ((eq (car-safe expr) 'intv)
+            (maf--interval-complement expr))
+           ((and (eq (car-safe expr) 'vec)
+                 (cdr expr)
+                 (cl-every (lambda (el) (eq (car-safe el) 'intv))
+                           (cdr expr)))
+            (or (maf--rays-complement expr)
+                (condition-case nil (calcFunc-vcompl expr)
+                  (wrong-type-argument
+                   (user-error "A symbolic set beyond two rays has no complement here")))))
+           (t (math-neg expr)))))
 
 (defun mafcmd-negate ()
   "Flip the sign of the target, keeping the entry worth what it was.
