@@ -7,7 +7,7 @@
 ;; Each item is a command beside its keys, with the first line of its
 ;; docstring under it:
 ;;
-;;   mafcmd-esimplify  (a s, k k, C-c C-c)
+;;   mafcmd-esimplify (a s, k k, C-c C-c)
 ;;     Contextually apply the extended simplification.
 ;;
 ;; The groups are this file's data (`maf-keys-groups'); the keys never
@@ -361,7 +361,7 @@ ITEM is (COMMAND . KEYS), KEYS nil throughout the Unbound group."
   (let ((cmd (car item)) (keys (cdr item)))
     (concat "  " (propertize (symbol-name cmd) 'face 'maf-keys-command)
             (when keys
-              (concat "  ("
+              (concat " ("
                       (mapconcat (lambda (k)
                                    (propertize k 'face 'maf-keys-binding))
                                  keys ", ")
@@ -386,7 +386,7 @@ whole docstring, where the row shows only its first line."
     (concat
      "\n  " (propertize (symbol-name cmd) 'face 'maf-keys-command)
      (when keys
-       (concat "  ("
+       (concat " ("
                (mapconcat (lambda (k)
                             (propertize k 'face 'maf-keys-binding))
                           keys ", ")
