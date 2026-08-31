@@ -183,7 +183,8 @@ variant's own variable governs only its direct invocation."
    :title "modulo" :example "7, 3 => 1")
   ;; idiv cedes \ to a second square-root key (bindings.el); calc's
   ;; own \ is shadowed with it. Reachable by name, and I / is not it.
-  (idiv binary calcFunc-idiv)
+  (idiv binary calcFunc-idiv
+   :title "integer division" :example "7, 2 => 3")
   (fact unary calcFunc-fact "!"
    :title "factorial" :example "5 => 120")
   ;; & is calc's own key for the reciprocal; the big-language toggle
@@ -203,19 +204,25 @@ variant's own variable governs only its direct invocation."
   ;; conj's J is shadowed in native by a second multiply key
   ;; (bindings.el); the calc profile keeps it, and native's conj
   ;; home is l j.
-  (conj unary calcFunc-conj "J")
+  (conj unary calcFunc-conj "J"
+   :title "complex conjugate" :example "(3, 4) => (3, -4)")
   ;; arg cedes calc's G to the preview module, whose maf-preview-show
   ;; declares it (modules/maf-preview.el); the key stays the module's
   ;; whether it is on or off, so the row keeps none.
-  (arg unary calcFunc-arg)
+  (arg unary calcFunc-arg
+   :title "complex argument" :example "1 => 0")
   (sqrt unary calcFunc-sqrt "Q" :inv sqr
    :title "square root" :example "9 => 3")
-  (min binary calcFunc-min "f n")
-  (max binary calcFunc-max "f x")
+  (min binary calcFunc-min "f n"
+   :title "minimum" :example "3, 5 => 3")
+  (max binary calcFunc-max "f x"
+   :title "maximum" :example "3, 5 => 5")
   ;; floor cedes F in native to a second key for mafcmd-fold
   ;; (bindings.el); the calc profile keeps F = floor.
-  (floor unary calcFunc-floor "F" :inv ceil :hyp ffloor :invhyp fceil)
-  (round unary calcFunc-round "R" :inv trunc :hyp fround :invhyp ftrunc)
+  (floor unary calcFunc-floor "F" :inv ceil :hyp ffloor :invhyp fceil
+   :title "floor" :example "2.7 => 2")
+  (round unary calcFunc-round "R" :inv trunc :hyp fround :invhyp ftrunc
+   :title "round" :example "2.6 => 3")
   (sin unary calcFunc-sin "S" :inv arcsin :hyp sinh :invhyp arcsinh
    :title "sine" :example "0 => 0")
   (cos unary calcFunc-cos "C" :inv arccos :hyp cosh :invhyp arccosh
@@ -228,7 +235,8 @@ variant's own variable governs only its direct invocation."
    :title "exponential" :example "0 => 1")
   (log binary calcFunc-log "B" :inv alog
    :title "logarithm" :example "8, 2 => 3")
-  (ceil unary calcFunc-ceil)
+  (ceil unary calcFunc-ceil
+   :title "ceiling" :example "2.3 => 3")
   (trunc unary calcFunc-trunc)
   (sqr unary calcFunc-sqr
    :title "square" :example "x => x^2")
@@ -238,7 +246,8 @@ variant's own variable governs only its direct invocation."
   (alog binary calcFunc-alog)
   (nroot binary calcFunc-nroot)
   (vconcatrev binary maf-vconcatrev :map -1)   ; see vconcat above
-  (ffloor unary calcFunc-ffloor)
+  (ffloor unary calcFunc-ffloor
+   :title "float floor" :example "2.7 => 2.")
   (fround unary calcFunc-fround)
   (sinh unary calcFunc-sinh)
   (cosh unary calcFunc-cosh)
@@ -246,57 +255,82 @@ variant's own variable governs only its direct invocation."
   (log10 unary calcFunc-log10)
   (exp10 unary calcFunc-exp10)
   (append binary calcFunc-append :map -1)      ; see vconcat above
-  (fceil unary calcFunc-fceil)
+  (fceil unary calcFunc-fceil
+   :title "float ceiling" :example "2.3 => 3.")
   (ftrunc unary calcFunc-ftrunc)
   (arcsinh unary calcFunc-arcsinh)
   (arccosh unary calcFunc-arccosh)
   (arctanh unary calcFunc-arctanh)
   (appendrev binary calcFunc-appendrev :map -1)  ; see vconcat above
   ;; algebra (calc-a-oper-keys)
-  (apart unary calcFunc-apart "a a")
-  (collect binary calcFunc-collect "a c")
+  (apart unary calcFunc-apart "a a"
+   :title "partial fractions" :example "1 / (x^2 - 1) => 1:2 / (x - 1) - 1:2 / (x + 1)")
+  (collect binary calcFunc-collect "a c"
+   :title "collect a variable" :example "x a + x b, x => x*(a + b)")
   (deriv binary calcFunc-deriv "a d" :hyp tderiv
    :title "derivative" :example "x^2, x => 2 x")
   ;; Simplifying a relation is a whole-relation job: calc divides both
   ;; sides through and moves terms across the operator. Mapped per side
   ;; each side is already as simple as it gets alone, so the command
   ;; would do nothing at all on an equation.
-  (esimplify unary calcFunc-esimplify "a s" :map -1)
+  (esimplify unary calcFunc-esimplify "a s" :map -1
+   :title "extended simplify" :example "sqrt(x^2) => x")
   ;; The seed table lists factor/factors with two arguments, but the
   ;; second is calcFunc-factor's optional variable, not an operand:
   ;; calc's own a f factors the one expression.
   (factor unary calcFunc-factor "a f" :hyp factors
    :title "factor" :example "x^2 - 1 => (x + 1) (x - 1)")
-  (pgcd binary calcFunc-pgcd "a g")
+  (pgcd binary calcFunc-pgcd "a g"
+   :title "polynomial gcd" :example "x^2 - 1, x - 1 => x - 1")
   (integ binary calcFunc-integ "a i"
    :title "integral" :example "2 x, x => x^2")
-  (match binary calcFunc-match "a m" :inv matchnot :map -1)
-  (nrat unary calcFunc-nrat "a n")
-  (rewrite binary calcFunc-rewrite "a r" :map -1)
-  (simplify unary calcFunc-simplify "a e" :map -1)   ; see esimplify above
+  (match binary calcFunc-match "a m" :inv matchnot :map -1
+   :title "match a pattern")
+  (nrat unary calcFunc-nrat "a n"
+   :title "normalize to a ratio" :example "1/x + 1/y => (y + x) / (x y)")
+  (rewrite binary calcFunc-rewrite "a r" :map -1
+   :title "rewrite by a rule" :example "x + x, x + x := 2 x => 2 * x")
+  (simplify unary calcFunc-simplify "a e" :map -1   ; see esimplify above
+   :title "simplify" :example "x + x => 2 x")
   (expand unary calcFunc-expand "a x"
    :title "expand" :example "(x + 1)^2 => x^2 + 2 x + 1")
-  (mapeq binary calcFunc-mapeq "a M" :inv mapeqr :hyp mapeqp :map -1)
-  (roots binary calcFunc-roots "a P" :map -1)
+  (mapeq binary calcFunc-mapeq "a M" :inv mapeqr :hyp mapeqp :map -1
+   :title "map over an equation" :example "sqrt, x = 4 => sqrt(x) = 2")
+  (roots binary calcFunc-roots "a P" :map -1
+   :title "roots" :example "x^2 - 4, x => [2, -2]")
   (solve binary calcFunc-solve "a S" :inv finv :hyp fsolve :invhyp ffinv :map -1
    :title "solve" :example "x^2 = 4, x => x = 2")
-  (eq binary calcFunc-eq "a =" :map -1)
-  (neq binary calcFunc-neq "a #" :map -1)
-  (lt binary calcFunc-lt "a <" :map -1)
-  (gt binary calcFunc-gt "a >" :map -1)
-  (leq binary calcFunc-leq "a [" :map -1)
-  (geq binary calcFunc-geq "a ]" :map -1)
-  (in binary calcFunc-in "a {" :map -1)
-  (lnot unary calcFunc-lnot "a !" :map -1)
-  (land binary calcFunc-land "a &" :map -1)
-  (lor binary calcFunc-lor "a |" :map -1)
+  (eq binary calcFunc-eq "a =" :map -1
+   :title "equation" :example "x, 2 => x = 2")
+  (neq binary calcFunc-neq "a #" :map -1
+   :title "not equal" :example "x, 2 => x != 2")
+  (lt binary calcFunc-lt "a <" :map -1
+   :title "less than" :example "x, 2 => x < 2")
+  (gt binary calcFunc-gt "a >" :map -1
+   :title "greater than" :example "x, 2 => x > 2")
+  (leq binary calcFunc-leq "a [" :map -1
+   :title "less or equal" :example "x, 2 => x <= 2")
+  (geq binary calcFunc-geq "a ]" :map -1
+   :title "greater or equal" :example "x, 2 => x >= 2")
+  (in binary calcFunc-in "a {" :map -1
+   :title "membership" :example "2, [1 .. 3] => 1")
+  (lnot unary calcFunc-lnot "a !" :map -1
+   :title "logical not" :example "0 => 1")
+  (land binary calcFunc-land "a &" :map -1
+   :title "logical and" :example "1, 0 => 0")
+  (lor binary calcFunc-lor "a |" :map -1
+   :title "logical or" :example "1, 0 => 1")
   ;; rmeq cedes calc's a . to mafcmd-remove-equal (bindings.el): the
   ;; seed table lists it with two arguments, but calcFunc-rmeq takes
   ;; one, and the whole-entry scope it needs has no table spelling.
-  (subscr binary calcFunc-subscr "a _")
-  (pdiv binary calcFunc-pdiv "a \\")
-  (prem binary calcFunc-prem "a %")
-  (pdivrem binary calcFunc-pdivrem "a /" :hyp pdivide)
+  (subscr binary calcFunc-subscr "a _"
+   :title "subscript" :example "v, 2 => v_2")
+  (pdiv binary calcFunc-pdiv "a \\"
+   :title "polynomial quotient" :example "x^2 - 1, x - 1 => x + 1")
+  (prem binary calcFunc-prem "a %"
+   :title "polynomial remainder" :example "x^2, x - 1 => 1")
+  (pdivrem binary calcFunc-pdivrem "a /" :hyp pdivide
+   :title "polynomial division" :example "x^2 - 1, x - 1 => [x + 1, 0]")
   (matchnot binary calcFunc-matchnot :map -1)
   (mapeqr binary calcFunc-mapeqr :map -1)
   (finv binary calcFunc-finv :map -1)
@@ -307,22 +341,38 @@ variant's own variable governs only its direct invocation."
   (pdivide binary calcFunc-pdivide)
   (ffinv binary calcFunc-ffinv :map -1)
   ;; binary/bitwise (calc-b-oper-keys)
-  (and binary calcFunc-and "b a")
-  (or binary calcFunc-or "b o")
-  (xor binary calcFunc-xor "b x")
-  (diff binary calcFunc-diff "b d")
-  (not unary calcFunc-not "b n")
-  (clip unary calcFunc-clip "b c")
-  (lsh binary calcFunc-lsh "b l")
-  (rsh binary calcFunc-rsh "b r")
-  (ash binary calcFunc-ash "b L")
-  (rash binary calcFunc-rash "b R")
-  (rot binary calcFunc-rot "b t")
-  (vpack unary calcFunc-vpack "b p")
-  (vunpack unary calcFunc-vunpack "b u")
-  (irr unary calcFunc-irr "b I" :inv irrb)
-  (npv binary calcFunc-npv "b N" :inv npvb)
-  (relch binary calcFunc-relch "b %")
+  (and binary calcFunc-and "b a"
+   :title "bitwise and" :example "12, 10 => 8")
+  (or binary calcFunc-or "b o"
+   :title "bitwise or" :example "12, 10 => 14")
+  (xor binary calcFunc-xor "b x"
+   :title "bitwise exclusive or" :example "12, 10 => 6")
+  (diff binary calcFunc-diff "b d"
+   :title "bitwise difference" :example "12, 10 => 4")
+  (not unary calcFunc-not "b n"
+   :title "bitwise not" :example "-1 => 0")
+  (clip unary calcFunc-clip "b c"
+   :title "clip to word size" :example "4294967301 => 5")
+  (lsh binary calcFunc-lsh "b l"
+   :title "shift left" :example "1, 4 => 16")
+  (rsh binary calcFunc-rsh "b r"
+   :title "shift right" :example "16, 4 => 1")
+  (ash binary calcFunc-ash "b L"
+   :title "arithmetic shift left" :example "1, 4 => 16")
+  (rash binary calcFunc-rash "b R"
+   :title "arithmetic shift right" :example "16, 2 => 4")
+  (rot binary calcFunc-rot "b t"
+   :title "rotate bits" :example "1, 1 => 2")
+  (vpack unary calcFunc-vpack "b p"
+   :title "pack a bit set" :example "[0, 2] => 5")
+  (vunpack unary calcFunc-vunpack "b u"
+   :title "unpack a bit set" :example "5 => [0, 2]")
+  (irr unary calcFunc-irr "b I" :inv irrb
+   :title "internal rate of return" :example "[-100, 60, 60] => 0.130662386292")
+  (npv binary calcFunc-npv "b N" :inv npvb
+   :title "net present value" :example "0.1, [100, 100] => 173.553719008")
+  (relch binary calcFunc-relch "b %"
+   :title "percentage change" :example "50, 60 => 0.2")
   (irrb unary calcFunc-irrb)
   (npvb binary calcFunc-npvb)
   ;; conversions (calc-c-oper-keys). Float/fraction conversion lives in
@@ -331,13 +381,19 @@ variant's own variable governs only its direct invocation."
   ;; otherwise — with mafcmd-float, mafcmd-frac, and the pervasive
   ;; mafcmd-float-all behind it on the I and H flags and by name.
   ;; Frac keeps its tolerance prefix arg; float and frac are I-linked.
-  (deg unary calcFunc-deg "c d")
-  (rad unary calcFunc-rad "c r")
-  (hms unary calcFunc-hms "c h")
+  (deg unary calcFunc-deg "c d"
+   :title "to degrees" :example "3.14159265359 => 180.")
+  (rad unary calcFunc-rad "c r"
+   :title "to radians" :example "90 => 1.57079632679")
+  (hms unary calcFunc-hms "c h"
+   :title "to hours-minutes-seconds" :example "1.5 => 1@ 30' 0.\"")
   ;; scientific functions (calc-f-oper-keys)
-  (beta binary calcFunc-beta "f b")
-  (erf unary calcFunc-erf "f e" :inv erfc)
-  (gamma unary calcFunc-gamma "f g")
+  (beta binary calcFunc-beta "f b"
+   :title "beta function" :example "2, 3 => 0.0833333333333")
+  (erf unary calcFunc-erf "f e" :inv erfc
+   :title "error function" :example "0 => 0")
+  (gamma unary calcFunc-gamma "f g"
+   :title "gamma function" :example "5 => 24")
   ;; hypot has left the table for `mafcmd-hypot' (stack.el, f h), beside
   ;; mafcmd-cath, which is its Inverse variant and vice versa. It cannot
   ;; be a row: rows apply their function under `calc-normalize', which
@@ -345,87 +401,133 @@ variant's own variable governs only its direct invocation."
   ;; the command can see it was exact. Calc's own `calcFunc-hypot' is
   ;; also not what it applies — see `maf--hypot'. Both directions now
   ;; live in stack.el, with the exactness rule they share.
-  (im unary calcFunc-im "f i")
-  (besJ binary calcFunc-besJ "f j")
-  (re unary calcFunc-re "f r")
-  (sign unary calcFunc-sign "f s")
-  (besY binary calcFunc-besY "f y")
-  (abssqr unary calcFunc-abssqr "f A")
-  (expm1 unary calcFunc-expm1 "f E" :inv lnp1)
-  (gammaP binary calcFunc-gammaP "f G" :inv gammaQ :hyp gammag :invhyp gammaG)
-  (ilog binary calcFunc-ilog "f I")
+  (im unary calcFunc-im "f i"
+   :title "imaginary part" :example "(3, 4) => 4")
+  (besJ binary calcFunc-besJ "f j"
+   :title "Bessel function J" :example "0, 0 => 1.")
+  (re unary calcFunc-re "f r"
+   :title "real part" :example "(3, 4) => 3")
+  (sign unary calcFunc-sign "f s"
+   :title "sign" :example "-5 => -1")
+  (besY binary calcFunc-besY "f y"
+   :title "Bessel function Y" :example "1, 1 => -0.78121282")
+  (abssqr unary calcFunc-abssqr "f A"
+   :title "squared magnitude" :example "(3, 4) => 25")
+  (expm1 unary calcFunc-expm1 "f E" :inv lnp1
+   :title "exponential minus one" :example "0 => 0")
+  (gammaP binary calcFunc-gammaP "f G" :inv gammaQ :hyp gammag :invhyp gammaG
+   :title "incomplete gamma" :example "1, 1 => 0.632120558829")
+  (ilog binary calcFunc-ilog "f I"
+   :title "integer logarithm" :example "100, 10 => 2")
   ;; lnp1 cedes calc's f L to mafcmd-unit-cath (bindings.el); it stays
   ;; reachable as expm1's Inverse variant (I f E) and by name.
   (lnp1 unary calcFunc-lnp1 :inv expm1)
-  (mant unary calcFunc-mant "f M")
-  (isqrt unary calcFunc-isqrt "f Q")
+  (mant unary calcFunc-mant "f M"
+   :title "mantissa" :example "1234.5 => 1.2345")
+  (isqrt unary calcFunc-isqrt "f Q"
+   :title "integer square root" :example "17 => 4")
   ;; scf scales by a power of ten: scf(x, n) takes the exponent as a
   ;; second operand, so the row is binary.
-  (scf binary calcFunc-scf "f S")
-  (arctan2 binary calcFunc-arctan2 "f T")
-  (xpon unary calcFunc-xpon "f X")
-  (decr binary calcFunc-decr "f [")
-  (incr binary calcFunc-incr "f ]")
+  (scf binary calcFunc-scf "f S"
+   :title "scale by a power of ten" :example "1.5, 3 => 1500.")
+  (arctan2 binary calcFunc-arctan2 "f T"
+   :title "two-argument arctangent" :example "1.0, 1.0 => 45.")
+  (xpon unary calcFunc-xpon "f X"
+   :title "exponent" :example "1234.5 => 3")
+  (decr binary calcFunc-decr "f ["
+   :title "decrement" :example "5, 1 => 4")
+  (incr binary calcFunc-incr "f ]"
+   :title "increment" :example "5, 1 => 6")
   (erfc unary calcFunc-erfc)
   (gammaQ binary calcFunc-gammaQ)
   (gammag binary calcFunc-gammag)
   (gammaG binary calcFunc-gammaG)
   ;; combinatorics (calc-k-oper-keys)
-  (bern unary calcFunc-bern "k b")
+  (bern unary calcFunc-bern "k b"
+   :title "Bernoulli number" :example "4 => -1:30")
   (choose binary calcFunc-choose "k c" :hyp perm
    :title "binomial coefficient" :example "5, 2 => 10")
   ;; dfact cedes calc's k d to mafcmd-factor-powers (bindings.el).
-  (dfact unary calcFunc-dfact)
-  (euler unary calcFunc-euler "k e")
+  (dfact unary calcFunc-dfact
+   :title "double factorial" :example "6 => 48")
+  (euler unary calcFunc-euler "k e"
+   :title "Euler number" :example "4 => 5.")
   ;; prfac cedes calc's k f to a second key for mafcmd-factor
   ;; (bindings.el), beside its table key a f, and lives on the shifted
   ;; key instead — displacing calc-utpf, the one utp lookup left
   ;; keyless here, reachable by name.
-  (prfac unary calcFunc-prfac "k F")
+  (prfac unary calcFunc-prfac "k F"
+   :title "prime factors" :example "60 => [2, 2, 3, 5]")
   (gcd binary calcFunc-gcd "k g"
    :title "greatest common divisor" :example "12, 18 => 6")
-  (shuffle binary calcFunc-shuffle "k h")
+  (shuffle binary calcFunc-shuffle "k h"
+   :title "random sample")
   (lcm binary calcFunc-lcm "k l"
    :title "least common multiple" :example "4, 6 => 12")
-  (moebius unary calcFunc-moebius "k m")
-  (nextprime unary calcFunc-nextprime "k n" :inv prevprime)
-  (random unary calcFunc-random "k r")
+  (moebius unary calcFunc-moebius "k m"
+   :title "Moebius function" :example "6 => 1")
+  (nextprime unary calcFunc-nextprime "k n" :inv prevprime
+   :title "next prime" :example "10 => 11")
+  (random unary calcFunc-random "k r"
+   :title "random number")
   ;; stir1 cedes calc's k s to mafcmd-complete-square (bindings.el).
-  (stir1 binary calcFunc-stir1 :hyp stir2)
+  (stir1 binary calcFunc-stir1 :hyp stir2
+   :title "Stirling number, first kind" :example "4, 2 => 11")
   ;; totient cedes calc's k t to a second key for mafcmd-perm
   ;; (bindings.el), beside its k p.
-  (totient unary calcFunc-totient)
-  (utpc binary calcFunc-utpc "k C" :inv ltpc)
-  (utpp binary calcFunc-utpp "k P" :inv ltpp)
-  (utpt binary calcFunc-utpt "k T" :inv ltpt)
+  (totient unary calcFunc-totient
+   :title "Euler totient" :example "12 => 4")
+  (utpc binary calcFunc-utpc "k C" :inv ltpc
+   :title "chi-square tail" :example "0, 1 => 1.")
+  (utpp binary calcFunc-utpp "k P" :inv ltpp
+   :title "Poisson tail" :example "0, 1 => 0.")
+  (utpt binary calcFunc-utpt "k T" :inv ltpt
+   :title "Student t tail" :example "0, 1 => 1.")
   (prevprime unary calcFunc-prevprime)
   (ltpc binary calcFunc-ltpc)
   (ltpp binary calcFunc-ltpp)
   (ltpt binary calcFunc-ltpt)
   ;; perm takes calc's k p from calc-prime-test (bindings.el); calc
   ;; leaves it on choose's hyperbolic flag alone.
-  (perm binary calcFunc-perm)
-  (stir2 binary calcFunc-stir2)
+  (perm binary calcFunc-perm
+   :title "permutations" :example "5, 2 => 20")
+  (stir2 binary calcFunc-stir2
+   :title "Stirling number, second kind" :example "4, 2 => 7")
   ;; store (calc-s-oper-keys)
-  (assign binary calcFunc-assign "s :" :map -1)
-  (evalto unary calcFunc-evalto "s =" :map -1)
+  (assign binary calcFunc-assign "s :" :map -1
+   :title "assignment" :example "x, 2 => x := 2")
+  (evalto unary calcFunc-evalto "s =" :map -1
+   :title "evaluates to" :example "2 + 3 => 5, kept as a formula")
   ;; time (calc-t-oper-keys)
-  (date unary calcFunc-date "t D")
-  (incmonth binary calcFunc-incmonth "t I")
-  (julian unary calcFunc-julian "t J")
-  (newmonth unary calcFunc-newmonth "t M")
-  (newweek unary calcFunc-newweek "t W")
-  (unixtime unary calcFunc-unixtime "t U")
-  (newyear unary calcFunc-newyear "t Y")
+  (date unary calcFunc-date "t D"
+   :title "date" :example "<2026-08-31> => 739859")
+  (incmonth binary calcFunc-incmonth "t I"
+   :title "next month" :example "<2026-08-31> => <Wed Sep 30, 2026>")
+  (julian unary calcFunc-julian "t J"
+   :title "Julian day number" :example "<2026-08-31> => 2461284")
+  (newmonth unary calcFunc-newmonth "t M"
+   :title "start of month" :example "<2026-08-31> => <Sat Aug 1, 2026>")
+  (newweek unary calcFunc-newweek "t W"
+   :title "start of week" :example "<2026-08-31> => <Sun Aug 30, 2026>")
+  (unixtime unary calcFunc-unixtime "t U"
+   :title "Unix time" :example "<2026-08-31> => 1788156000")
+  (newyear unary calcFunc-newyear "t Y"
+   :title "start of year" :example "<2026-08-31> => <Thu Jan 1, 2026>")
   ;; units/statistics (calc-u-oper-keys)
-  (vcov binary calcFunc-vcov "u C" :inv vpcov :hyp vcorr)
-  (vgmean unary calcFunc-vgmean "u G" :hyp agmean)
+  (vcov binary calcFunc-vcov "u C" :inv vpcov :hyp vcorr
+   :title "covariance" :example "[1, 2, 3], [2, 4, 6] => 2")
+  (vgmean unary calcFunc-vgmean "u G" :hyp agmean
+   :title "geometric mean" :example "[1, 4] => 2")
   (vmean unary calcFunc-vmean "u M" :inv vmeane :hyp vmedian :invhyp vhmean
    :title "mean" :example "[1, 2, 3] => 2")
-  (vmin unary calcFunc-vmin "u N")
-  (rms unary calcFunc-rms "u R")
-  (vsdev unary calcFunc-vsdev "u S" :inv vpsdev :hyp vvar :invhyp vpvar)
-  (vmax unary calcFunc-vmax "u X")
+  (vmin unary calcFunc-vmin "u N"
+   :title "vector minimum" :example "[3, 1, 2] => 1")
+  (rms unary calcFunc-rms "u R"
+   :title "root mean square" :example "[3, 4] => 3.53553390593")
+  (vsdev unary calcFunc-vsdev "u S" :inv vpsdev :hyp vvar :invhyp vpvar
+   :title "standard deviation" :example "[1, 2, 3] => 1")
+  (vmax unary calcFunc-vmax "u X"
+   :title "vector maximum" :example "[3, 1, 2] => 3")
   (vpcov binary calcFunc-vpcov)
   (vmeane unary calcFunc-vmeane)
   (vpsdev unary calcFunc-vpsdev)
@@ -436,21 +538,34 @@ variant's own variable governs only its direct invocation."
   (vhmean unary calcFunc-vhmean)
   (vpvar unary calcFunc-vpvar)
   ;; vector/matrix (calc-v-oper-keys)
-  (arrange binary calcFunc-arrange "v a")
-  (cvec binary calcFunc-cvec "v b")
-  (mcol binary calcFunc-mcol "v c")
-  (diag binary calcFunc-diag "v d")
-  (vexp binary calcFunc-vexp "v e")
-  (find binary calcFunc-find "v f")
-  (head unary calcFunc-head "v h" :inv tail :hyp rhead :invhyp rtail)
-  (cons binary calcFunc-cons "v k" :hyp rcons)
+  (arrange binary calcFunc-arrange "v a"
+   :title "arrange into rows" :example "[1, 2, 3, 4], 2 => [[1, 2], [3, 4]]")
+  (cvec binary calcFunc-cvec "v b"
+   :title "constant vector" :example "7, 3 => [7, 7, 7]")
+  (mcol binary calcFunc-mcol "v c"
+   :title "matrix column" :example "[[1, 2], [3, 4]], 1 => [1, 3]")
+  (diag binary calcFunc-diag "v d"
+   :title "diagonal matrix" :example "1, 2 => [[1, 0], [0, 1]]")
+  (vexp binary calcFunc-vexp "v e"
+   :title "expand by a mask" :example "[1, 0, 1], [7, 8] => [7, 0, 8]")
+  (find binary calcFunc-find "v f"
+   :title "find an element" :example "[a, b, c], b => 2")
+  (head unary calcFunc-head "v h" :inv tail :hyp rhead :invhyp rtail
+   :title "first element" :example "[1, 2, 3] => 1")
+  (cons binary calcFunc-cons "v k" :hyp rcons
+   :title "prepend" :example "1, [2, 3] => [1, 2, 3]")
   (vlen unary calcFunc-vlen "v l"
    :title "length" :example "[1, 2, 3] => 3")
-  (vmask binary calcFunc-vmask "v m")
-  (rnorm unary calcFunc-rnorm "v n")
-  (pack binary calcFunc-pack "v p")
-  (mrow binary calcFunc-mrow "v r")
-  (trn unary calcFunc-trn "v t")
+  (vmask binary calcFunc-vmask "v m"
+   :title "select by a mask" :example "[1, 0, 1], [7, 8, 9] => [7, 9]")
+  (rnorm unary calcFunc-rnorm "v n"
+   :title "row norm" :example "[3, -4] => 4")
+  (pack binary calcFunc-pack "v p"
+   :title "pack into a vector")
+  (mrow binary calcFunc-mrow "v r"
+   :title "matrix row" :example "[[1, 2], [3, 4]], 1 => [1, 2]")
+  (trn unary calcFunc-trn "v t"
+   :title "transpose" :example "[[1, 2], [3, 4]] => [[1, 3], [2, 4]]")
   ;; Unpacking lives in stack.el: mafcmd-unpack (M-u, and calc's own
   ;; v u) unwraps the entry at point into its parts, and mafcmd-unwrap
   ;; (j U) is its narrowing sibling, peeling the wrapper around point.
@@ -461,17 +576,26 @@ variant's own variable governs only its direct invocation."
   ;; stack, not a single applied call.
   (rev unary calcFunc-rev "v v"
    :title "reverse" :example "[1, 2, 3] => [3, 2, 1]")
-  (index unary calcFunc-index "v x")
+  (index unary calcFunc-index "v x"
+   :title "index vector" :example "5 => [1, 2, 3, 4, 5]")
   ;; The cross product takes both vectors as operands.
-  (cross binary calcFunc-cross "v C")
-  (det unary calcFunc-det "v D")
-  (venum unary calcFunc-venum "v E")
-  (vfloor unary calcFunc-vfloor "v F")
-  (grade unary calcFunc-grade "v G" :inv rgrade)
-  (histogram binary calcFunc-histogram "v H")
+  (cross binary calcFunc-cross "v C"
+   :title "cross product" :example "[1, 0, 0], [0, 1, 0] => [0, 0, 1]")
+  (det unary calcFunc-det "v D"
+   :title "determinant" :example "[[1, 2], [3, 4]] => -2")
+  (venum unary calcFunc-venum "v E"
+   :title "enumerate a set" :example "[1 .. 4] => [1, 2, 3, 4]")
+  (vfloor unary calcFunc-vfloor "v F"
+   :title "set of integers" :example "[1.5 .. 4.5] => [2 .. 4]")
+  (grade unary calcFunc-grade "v G" :inv rgrade
+   :title "sorting order" :example "[3, 1, 2] => [2, 3, 1]")
+  (histogram binary calcFunc-histogram "v H"
+   :title "histogram" :example "[1, 2, 2, 3], 3 => [0, 1, 2]")
   ;; lud cedes calc's v L to mafcmd-flatten (bindings.el).
-  (lud unary calcFunc-lud)
-  (cnorm unary calcFunc-cnorm "v N")
+  (lud unary calcFunc-lud
+   :title "LU decomposition" :example "[[1, 2], [3, 4]] => [[[0, 1], [1, 0]], [[1, 0], [0.333333333333, 1]], [[3, 4], [0, 0.666666666667]]]")
+  (cnorm unary calcFunc-cnorm "v N"
+   :title "column norm" :example "[3, -4] => 7")
   ;; The combinators — apply, reduce, accum, outer, inner and the
   ;; nest/fixp variants — are not rows: their leading argument is an
   ;; operation, not an operand, so applying the calcFunc to the
@@ -486,20 +610,30 @@ variant's own variable governs only its direct invocation."
   ;; has one, and defers to calc otherwise (see `maf--sort-vector').
   (sort unary maf-sort "v S" :inv rsort
    :title "sort" :example "[3, 1, 2] => [1, 2, 3]")
-  (tr unary calcFunc-tr "v T")
-  (vunion binary calcFunc-vunion "v V")
-  (vxor binary calcFunc-vxor "v X")
-  (vdiff binary calcFunc-vdiff "v -")
-  (vint binary calcFunc-vint "v ^")
-  (vcompl unary calcFunc-vcompl "v ~")
-  (vcard unary calcFunc-vcard "v #")
-  (vspan unary calcFunc-vspan "v :")
-  (rdup unary calcFunc-rdup "v +")
+  (tr unary calcFunc-tr "v T"
+   :title "trace" :example "[[1, 2], [3, 4]] => 5")
+  (vunion binary calcFunc-vunion "v V"
+   :title "set union" :example "[1, 2], [2, 3] => [1, 2, 3]")
+  (vxor binary calcFunc-vxor "v X"
+   :title "set exclusive or" :example "[1, 2], [2, 3] => [1, 3]")
+  (vdiff binary calcFunc-vdiff "v -"
+   :title "set difference" :example "[1, 2], [2, 3] => [1]")
+  (vint binary calcFunc-vint "v ^"
+   :title "set intersection" :example "[1, 2], [2, 3] => [2]")
+  (vcompl unary calcFunc-vcompl "v ~"
+   :title "set complement" :example "[1] => [[-inf .. 1), (1 .. inf]]")
+  (vcard unary calcFunc-vcard "v #"
+   :title "set size" :example "[1, 2, 3] => 3")
+  (vspan unary calcFunc-vspan "v :"
+   :title "set span" :example "[1, 3] => [1 .. 3]")
+  (rdup unary calcFunc-rdup "v +"
+   :title "remove duplicates" :example "[1, 2, 2, 3] => [1, 2, 3]")
   (tail unary calcFunc-tail)
   (rgrade unary calcFunc-rgrade)
   (rsort unary maf-rsort)   ; see sort above
   (rhead unary calcFunc-rhead)
   (rcons binary calcFunc-rcons)
-  (rtail unary calcFunc-rtail))
+  (rtail unary calcFunc-rtail
+   :title "last element" :example "[1, 2, 3] => 3"))
 
 (provide 'maf-cmds)
