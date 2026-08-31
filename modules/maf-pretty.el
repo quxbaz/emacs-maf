@@ -192,7 +192,14 @@ it, - flipping to \\mp. Everything else is `maf--latex-string'."
                          (concat "\\pm_{" (match-string 1 m) "}")))
                      latex t t)))
       (setq latex (replace-regexp-in-string "\\+ \\\\pm" "\\pm" latex t t))
-      (setq latex (replace-regexp-in-string "- ?\\\\pm" "\\mp" latex t t)))
+      (setq latex (replace-regexp-in-string "- ?\\\\pm" "\\mp" latex t t))
+      ;; The digit-product separator wrote its \cdot before the sign
+      ;; became one: s1 next to a factor opening on a digit earned the
+      ;; dot (s_1 4 would glue), but a hoisted +- before 4 i is only
+      ;; the sign of the number, and no one writes +- . 4.
+      (setq latex (replace-regexp-in-string
+                   "\\(\\\\\\(?:pm\\|mp\\)\\(?:_{[0-9]+}\\)?\\)\\\\cdot "
+                   "\\1 " latex t)))
     latex))
 
 (defun maf-pretty--ratex (latex)
