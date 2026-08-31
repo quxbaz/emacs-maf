@@ -357,7 +357,9 @@ nil throughout the Unbound group."
 
 (defun maf-keys--row (item _ctx)
   "ITEM's two menu lines: the command beside its keys, its doc under it.
-ITEM is (COMMAND . KEYS), KEYS nil throughout the Unbound group."
+ITEM is (COMMAND . KEYS), KEYS nil throughout the Unbound group.
+A blank line closes the row: an entry is two lines here, and run
+together the list reads as one block rather than as its commands."
   (let ((cmd (car item)) (keys (cdr item)))
     (concat "  " (propertize (symbol-name cmd) 'face 'maf-keys-command)
             (when keys
@@ -367,7 +369,11 @@ ITEM is (COMMAND . KEYS), KEYS nil throughout the Unbound group."
                                  keys ", ")
                       ")"))
             "\n    "
-            (propertize (maf-keys--doc (car item)) 'face 'maf-keys-doc))))
+            (propertize (maf-keys--doc (car item)) 'face 'maf-keys-doc)
+            ;; Two: the first ends the doc line — the shell only
+            ;; terminates a row that left one open — and the second is
+            ;; the blank.
+            "\n\n")))
 
 (defun maf-keys--fields (item group)
   "What the filter matches for ITEM: name, description, GROUP, keys."
@@ -410,6 +416,10 @@ commentary for what each key means."
         :select-verb "describes"
         :groups #'maf-keys--groups
         :render #'maf-keys--row
+        ;; The entries are two lines apiece with a blank between, so
+        ;; a header run straight into the first of them would read as
+        ;; one more command.
+        :group-blank t
         :key #'car
         :title (lambda (item) (symbol-name (car item)))
         :fields #'maf-keys--fields
