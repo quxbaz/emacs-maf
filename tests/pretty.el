@@ -42,7 +42,9 @@
       (maf-pretty-quit)
       (cl-assert (null (get-buffer-window maf-pretty--buffer)))
       (cl-assert (eq (selected-window) maf--pretty-source-window))))
-  (cl-assert (string= maf--pretty-latex "\\frac{\\sqrt{x}}{3}"))
+  ;; The radicand carries its strut, so every radical draws one height
+  ;; (the \mathstrut pass in `maf-pretty--latex').
+  (cl-assert (string= maf--pretty-latex "\\frac{\\sqrt{\\mathstrut x}}{3}"))
   (cl-assert (= (calc-stack-size) 2))
   (cl-assert (null calc-language))
   (with-current-buffer maf-pretty--buffer
