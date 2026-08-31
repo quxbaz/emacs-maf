@@ -67,8 +67,14 @@
   :group 'maf)
 
 (defface maf-keys-doc
-  '((t :inherit shadow))
-  "Face for a command's one-line description in the bindings help buffer."
+  '((((background dark))  :foreground "grey68")
+    (((background light)) :foreground "grey35")
+    (t :inherit shadow))
+  "Face for a command's one-line description in the bindings help buffer.
+A step lighter than `shadow', which the example wears too (see
+`maf-keys-example'): between them those two lines are most of the
+entry, and read at length rather than glanced at the way a shadowed
+label is. Grey still — the head above is what the eye scans by."
   :group 'maf)
 
 (defface maf-keys-title
