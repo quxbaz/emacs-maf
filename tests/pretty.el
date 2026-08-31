@@ -71,6 +71,17 @@
                  (progn (maf-pretty--entry) nil)
                (user-error t)))
 
+  ;; Grouping delimiters grow to \left/\right pairs, so superscripts
+  ;; sit inside their parens; a function call's parens keep their
+  ;; tight spacing, and a shed script paren stays shed
+  ;; (`maf-pretty--grow-parens', the pipeline's last pass).
+  (cl-assert (equal (maf-pretty--latex (math-read-expr "(a + b^2) c"))
+                    "\\left(a + b^2\\right) c"))
+  (cl-assert (equal (maf-pretty--latex (math-read-expr "sin(x) + x^(-n)"))
+                    "\\sin(x) + x^{-n}"))
+  (cl-assert (equal (maf-pretty--latex (math-read-expr "[1 .. inf)"))
+                    "\\left[1 \\ldots \\infty\\right)"))
+
   ;; Restore the shared dev session and remove the preview window/buffer.
   (progn
     (when-let ((win (get-buffer-window maf-pretty--buffer)))
