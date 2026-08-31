@@ -7,7 +7,7 @@
 ;; Each item is a command headed by its proper name and its keys, over
 ;; an example and the first line of its docstring:
 ;;
-;;   Power ... (mafcmd-pow) (^)
+;;   Power (^) ... (mafcmd-pow)
 ;;     x, 2 => x^2
 ;;     Contextually apply `calcFunc-pow' (binary).
 ;;
@@ -518,9 +518,10 @@ line it heads makes it a heading."
 ITEM is (COMMAND . KEYS), KEYS nil throughout the Unbound group. The
 head reads
 
-  Power ... (mafcmd-pow) (^)
+  Power (^) ... (mafcmd-pow)
 
-— the proper name, the symbol it spells out, the keys — over the
+— the proper name and the keys it answers, then the symbol
+they run — over the
 command's example and the first line of its docstring. The name and
 the example are what the command carries (`maf-command-title',
 `maf-command-example'); a command carrying neither shows neither, and
@@ -532,16 +533,15 @@ run together the list reads as one block rather than as its commands."
          (title (maf-keys--title cmd))
          (example (maf-command-example cmd)))
     (concat "  "
-            (when title
-              (concat (propertize title 'face 'maf-keys-title)
-                      (propertize " ... " 'face 'shadow)))
-            "(" (propertize (symbol-name cmd) 'face 'maf-keys-command) ")"
+            (when title (propertize title 'face 'maf-keys-title))
             (when keys
               (concat " ("
                       (mapconcat (lambda (k)
                                    (propertize k 'face 'maf-keys-binding))
                                  keys ", ")
                       ")"))
+            (when (or title keys) (propertize " ... " 'face 'shadow))
+            "(" (propertize (symbol-name cmd) 'face 'maf-keys-command) ")"
             (when example
               (concat "\n    "
                       (propertize example 'face 'maf-keys-example)))
@@ -576,16 +576,15 @@ the pane adds no margin of its own."
          (doc (or (ignore-errors (documentation cmd))
                   "Not documented.")))
     (concat
-     (when title
-       (concat (propertize title 'face 'maf-keys-title)
-               (propertize " ... " 'face 'shadow)))
-     "(" (propertize (symbol-name cmd) 'face 'maf-keys-command) ")"
+     (when title (propertize title 'face 'maf-keys-title))
      (when keys
        (concat " ("
                (mapconcat (lambda (k)
                             (propertize k 'face 'maf-keys-binding))
                           keys ", ")
                ")"))
+     (when (or title keys) (propertize " ... " 'face 'shadow))
+     "(" (propertize (symbol-name cmd) 'face 'maf-keys-command) ")"
      (when example
        (concat "\n" (propertize example 'face 'maf-keys-example)))
      "\n\n" doc "\n")))
