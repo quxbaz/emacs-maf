@@ -450,7 +450,12 @@ The x half-width is the sampling span's larger side, widened by any
 data curve whose indices run past it; the y half-width is the data's
 largest magnitude, padded a twentieth so an extremum clears the
 frame, with a floor for data hugging zero. Both ranges symmetric
-about zero: the four quadrants show, equally sized."
+about zero: the four quadrants show, equally sized.
+
+The tics move onto the zero axes with the ranges, the textbook
+drawing of an origin-centered graph. On the border they anchor the
+eye there instead — the left edge reads as the y axis, and the whole
+left half-plane reads as spare curve rather than negative x."
   (let ((a (max (abs (car range)) (abs (cdr range))))
         (b 0.0))
     (dolist (curve curves)
@@ -463,7 +468,8 @@ about zero: the four quadrants show, equally sized."
                   b (max b (abs (string-to-number (match-string 2))))))
           (forward-line 1))))
     (setq b (* 1.05 (max b 1.0)))
-    (format "set xrange [%g:%g]\nset yrange [%g:%g]\n" (- a) a (- b) b)))
+    (format "set xrange [%g:%g]\nset yrange [%g:%g]\nset xtics axis nomirror\nset ytics axis nomirror\n"
+            (- a) a (- b) b)))
 
 (defun maf-plot--theme-lines ()
   "Return the script lines theming a plot from the live faces.

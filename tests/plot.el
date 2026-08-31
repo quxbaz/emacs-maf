@@ -135,12 +135,12 @@
                (with-temp-file file (insert "-10 2\n4 -1.5\n"))
                (equal (maf-plot--quadrant-view
                        (list (list file "t" nil)) '(-10.0 . 10.0))
-                      "set xrange [-10:10]\nset yrange [-2.1:2.1]\n")))
+                      "set xrange [-10:10]\nset yrange [-2.1:2.1]\nset xtics axis nomirror\nset ytics axis nomirror\n")))
   (cl-assert (let ((file (maf-plot--work-file "quad-test.dat")))
                (with-temp-file file (insert "1 0.2\n"))
                (equal (maf-plot--quadrant-view
                        (list (list file "t" nil)) '(-10.0 . 10.0))
-                      "set xrange [-10:10]\nset yrange [-1.05:1.05]\n")))
+                      "set xrange [-10:10]\nset yrange [-1.05:1.05]\nset xtics axis nomirror\nset ytics axis nomirror\n")))
 
   ;; Two variables have no axis to share; the sampler refuses.
   (cl-assert (let ((err (condition-case e
