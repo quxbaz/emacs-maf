@@ -148,24 +148,30 @@
                (error t)))
 
   ;; Desmos reads a stricter LaTeX than calc writes: brace arguments
-  ;; become parens, bare-pipe abs becomes \left|...\right| (lifted at
-  ;; the tree, since nested pipes cannot be re-paired in the string),
-  ;; and exp goes to e^x. Desmos-native forms pass through untouched.
+  ;; become parens (arcsin and its kin — the six trig calls of
+  ;; `maf--latex-paren-calls' already arrive parenthesized from maf's
+  ;; own composer, which Desmos reads as written), bare-pipe abs
+  ;; becomes \left|...\right| (lifted at the tree, since nested pipes
+  ;; cannot be re-paired in the string), and exp goes to e^x.
+  ;; Desmos-native forms pass through untouched.
   (cl-assert (equal (maf-plot--desmos-latex (math-read-expr "cos(x)"))
-                    "\\cos\\left(x\\right)"))
+                    "\\cos(x)"))
   (cl-assert (equal (maf-plot--desmos-latex (math-read-expr "sin(2 x)"))
-                    "\\sin\\left(2 x\\right)"))
+                    "\\sin(2 x)"))
+  (cl-assert (equal (maf-plot--desmos-latex (math-read-expr "arcsin(x)"))
+                    "\\arcsin\\left(x\\right)"))
   (cl-assert (equal (maf-plot--desmos-latex
                      (math-read-expr "abs(abs(x) + 1)"))
                     "\\left|\\left|x\\right| + 1\\right|"))
   (cl-assert (equal (maf-plot--desmos-latex (math-read-expr "abs(sin(x))"))
-                    "\\left|\\sin\\left(x\\right)\\right|"))
+                    "\\left|\\sin(x)\\right|"))
   (cl-assert (equal (maf-plot--desmos-latex (math-read-expr "exp(x)"))
                     "e^x"))
   (cl-assert (equal (maf-plot--desmos-latex (math-read-expr "sqrt(x)"))
                     "\\sqrt{x}"))
+  ;; The 10 the bare \log assumes stays unwritten, as in pretty.
   (cl-assert (equal (maf-plot--desmos-latex (math-read-expr "log10(x)"))
-                    "\\log_{10}\\left( x \\right)"))
+                    "\\log\\left( x \\right)"))
 
   ;; Desmos graphs in x and y: a lone foreign variable is renamed to x
   ;; (sin(t) as sent would offer a slider, not a curve). Constants
