@@ -210,11 +210,12 @@
                       "(a + b) \\left( \\frac{c}{d} + e \\right)"))
   (calc-pop (calc-stack-size))
 
-  ;; Logarithms: calc renders log(x, b) unTeXed and log10 without its
-  ;; base; maf's compose forms give both a subscripted \log.
+  ;; Logarithms: calc renders log(x, b) unTeXed and log10 as \log{x};
+  ;; maf's compose forms subscript the base — except 10, which the
+  ;; bare \log assumes.
   (maf-push "log(x, 3) + log10(y)")
   (progn (goto-char (point-max)) (call-interactively 'maf-copy))
   (let ((last-command 'maf-copy)) (call-interactively 'maf-copy))
   (cl-assert (string= (current-kill 0)
-                      "\\log_{3}\\left( x \\right) + \\log_{10}\\left( y \\right)"))
+                      "\\log_{3}\\left( x \\right) + \\log\\left( y \\right)"))
   (calc-pop (calc-stack-size)))

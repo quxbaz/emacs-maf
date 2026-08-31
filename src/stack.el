@@ -3229,9 +3229,10 @@ anywhere. Signals an error on an empty stack."
 ;; `math-compose-expr' whenever calc formats in the latex language —
 ;; calc's own latex display mode (d L), and maf's latex output.
 ;;
-;; Calc renders log(x, b) as the literal "log\left( x, 3 \right)" and,
-;; worse, log10(x) as "\log{x}", which silently drops the base. Both
-;; become \log with the base as a subscript.
+;; Calc renders log(x, b) as the literal "log\left( x, 3 \right)" and
+;; log10(x) as "\log{x}". A base becomes \log's subscript — except 10,
+;; the base the bare \log already assumes, which stays unwritten:
+;; 3 log10(5) typesets as 3 log(5).
 ;;
 ;; The composition is keyed on nil (the whole expression) rather than an
 ;; argument count, since the handler returns a composition, not a
@@ -3239,19 +3240,27 @@ anywhere. Signals an error on an empty stack."
 ;; name is not free-form.
 (defun maf--latex-compose-log (expr)
   "Compose EXPR, a `calcFunc-log' call, as LaTeX.
-Two arguments give \\log_{base}, one gives \\ln — calc normalizes
-log(x) to ln(x), so the one-argument form only shows up unevaluated."
-  (if (= (length expr) 3)
-      (list 'horiz
-            "\\log_{" (math-compose-expr (nth 2 expr) 0) "}"
-            "\\left( " (math-compose-expr (nth 1 expr) 0) " \\right)")
-    (list 'horiz
-          "\\ln\\left( " (math-compose-expr (nth 1 expr) 0) " \\right)")))
+Two arguments give \\log_{base} — except a literal base 10, which
+renders as the bare \\log like `calcFunc-log10' — and one gives \\ln;
+calc normalizes log(x) to ln(x), so the one-argument form only shows
+up unevaluated."
+  (cond ((and (= (length expr) 3) (eq (nth 2 expr) 10))
+         (maf--latex-compose-log10 expr))
+        ((= (length expr) 3)
+         (list 'horiz
+               "\\log_{" (math-compose-expr (nth 2 expr) 0) "}"
+               "\\left( " (math-compose-expr (nth 1 expr) 0) " \\right)"))
+        (t
+         (list 'horiz
+               "\\ln\\left( " (math-compose-expr (nth 1 expr) 0)
+               " \\right)"))))
 
 (defun maf--latex-compose-log10 (expr)
-  "Compose EXPR, a `calcFunc-log10' call, as LaTeX \\log_{10}."
+  "Compose EXPR, a `calcFunc-log10' call, as the bare LaTeX \\log.
+The 10 is the base \\log assumes, so a subscript would only say it
+twice; the notation reads 3 log(5), not 3 log_10(5)."
   (list 'horiz
-        "\\log_{10}\\left( " (math-compose-expr (nth 1 expr) 0) " \\right)"))
+        "\\log\\left( " (math-compose-expr (nth 1 expr) 0) " \\right)"))
 
 (with-eval-after-load 'calccomp
   (put 'calcFunc-log 'math-compose-forms
