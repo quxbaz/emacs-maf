@@ -125,6 +125,8 @@ home; the top entry is always the argument, popped on commit.
 
   6 x + 12 by 5             =>  5 (6:5 x + 12:5)
   6 x + 12 = 18 y + 6 by 6  =>  6 (x + 2) = 6 (3 y + 1)"
+  :title "factor by a term"
+  :example "x^2 + x, x => x (x + 1)"
   :arity binary
   :prefix "fctr"
   (let ((quotient (math-simplify
@@ -149,6 +151,8 @@ equation, the top entry at home.
   10 x y + 15 x z  =>  (5 x)*(3 z + 2 y)
   3 x + 7          =>  3 x + 7    (coprime terms: unchanged)
   2.5 x + 5.       =>  2.5 x + 5.  (float coefficients: unchanged)"
+  :title "factor by the gcd"
+  :example "2 x + 4 => 2 (x + 2)"
   :arity unary
   :prefix "fctr"
   (let* ((terms (let ((calc-simplify-mode nil)
@@ -205,6 +209,8 @@ point, each side of an equation, the top entry at home.
   9 - x^2        =>  (3 + x) (3 - x)
   (x + 1)^2 - 9  =>  (x + 4) (x - 2)
   x^2 - x        =>  x^2 - x   (no identity: unchanged)"
+  :title "factor a power identity"
+  :example "x^3 - 1 => (x^2 + x + 1) (x - 1)"
   :arity unary
   :prefix "fpow"
   (let ((terms (let ((calc-simplify-mode nil)
@@ -242,6 +248,8 @@ stack level 2 at home. The polynomial GCD is calc's own, on a g
   x^2 - 1 with x^2 - 1          =>  (x + 1) (x - 1)
   12 z^6 (w - 7)^3 with 20 z^5 (w - 7)^4
                                 =>  60 z^6 (w - 7)^4"
+  :title "polynomial lcm"
+  :example "x^2 - 1, x - 1 => x^2 - 1"
   :arity binary
   :prefix "plcm"
   (commit (maf--poly-lcm expr arg)))
@@ -270,6 +278,8 @@ equation, the top entry at home.
   sin(y)^2 + 2 sin(y)    =>  (sin(y) + 1)^2 - 1
   x^2 + 6 x = 10         =>  (x + 3)^2 - 9 = 10
   x^3 + x^2              =>  x^3 + x^2   (not a quadratic: unchanged)"
+  :title "complete the square"
+  :example "x^2 + 2 x => (x + 1)^2 - 1"
   :arity unary
   :prefix "csqr"
   (let* ((base (maf--quadratic-base expr))
@@ -332,6 +342,8 @@ point, each side of an equation, the top entry at home.
   log(x^p, b)     =>  p log(x, b)
   ln(e)           =>  1
   2^ln(x)         =>  2^ln(x)   (base mismatch: unchanged)"
+  :title "log and exp identities"
+  :example "ln(x y) => ln(x) + ln(y)"
   :arity unary
   :prefix "lexp"
   (let ((rules (cons 'vec (math-read-exprs
@@ -370,6 +382,8 @@ point on the y of 2^(y/3 - 1:3) collects the exponent.
   x / 2 + 3 / a^3      =>  (x a^3 + 6) / (2 a^3)
   1/(x+1) + 1/(x^2-1)  =>  x / ((x + 1) (x - 1))
   x + 1                =>  x + 1    (no denominator: unchanged)"
+  :title "combine into one fraction"
+  :example "1/x + 1/y => (y + x) / (x y)"
   :arity unary
   :prefix "cfrc"
   :widen maf--collectible-fractions-p
@@ -393,6 +407,8 @@ equation, the top entry at home.
   2 pi     =>  360
   1.5708   =>  90.0002104591
   r        =>  180 r / pi"
+  :title "to degrees"
+  :example "pi => 180"
   :arity unary
   :prefix "deg"
   :inverse mafcmd-to-radians
@@ -418,6 +434,8 @@ home.
   90    =>  pi / 2
   45.0  =>  0.25 pi
   d     =>  d pi / 180"
+  :title "to radians"
+  :example "180 => pi"
   :arity unary
   :prefix "rad"
   :inverse mafcmd-to-degrees
@@ -439,6 +457,8 @@ home.
   -30    =>  330
   400.5  =>  40.5
   x      =>  x % 360"
+  :title "wrap to one turn"
+  :example "370 => 10"
   :arity unary
   :prefix "mod"
   :hyperbolic mafcmd-mod-180
@@ -479,6 +499,8 @@ an equation, the top entry at home.
   200@ 30\\=' 0\"  =>  20@ 30\\=' 0\"   (hms stays hms, and stays degrees)
   y + 210|     =>  y + 30       (sub-formula at point)
   x            =>  x            (no quadrant: unchanged)"
+  :title "reference angle"
+  :example "150 => 30"
   :arity unary
   :prefix "refa"
   (commit (or (maf--ref-angle expr) expr)))
@@ -506,6 +528,8 @@ sub-formula at point, each side of an equation, the top entry at home.
   0.5      =>  2.64159265359  (radians mode)
   30@ 30'  =>  149@ 30'       (HMS mode)
   x        =>  -x + 180"
+  :title "supplement"
+  :example "50 => 130"
   :arity unary
   :prefix "supp"
   (commit (maf--turn-complement expr '(frac 1 2))))
@@ -532,6 +556,8 @@ home.
   0.5      =>  1.0707963268  (radians mode)
   30@ 30'  =>  59@ 30'       (HMS mode)
   x        =>  -x + 90"
+  :title "complement"
+  :example "30 => 60"
   :arity unary
   :prefix "comp"
   (commit (maf--turn-complement expr '(frac 1 4))))
@@ -561,6 +587,8 @@ the argument, popped on commit.
   1.5 with 2      =>  2.5
   a with b        =>  sqrt(a^2 + b^2)
   5 with 0        =>  5            (degenerate: the leg itself)"
+  :title "hypotenuse"
+  :example "3, 4 => 5"
   :arity binary
   :prefix "hypot"
   :inverse mafcmd-cath
@@ -590,6 +618,8 @@ entry is always the argument, popped on commit.
   2.5 with 1.5    =>  2.
   h with a        =>  sqrt(h^2 - a^2)
   1 with 2        =>  sqrt(3) i    (leg past the hypotenuse)"
+  :title "the other leg"
+  :example "5, 3 => 4"
   :arity binary
   :prefix "cath"
   :inverse mafcmd-hypot
@@ -613,6 +643,8 @@ the top entry at home.
   0.6   =>  0.8
   x     =>  sqrt(-x^2 + 1)
   2     =>  sqrt(3) i    (leg past the hypotenuse)"
+  :title "leg of a unit triangle"
+  :example "0.6 => 0.8"
   :arity unary
   :prefix "ucth"
   (commit (maf--cath 1 expr)))
@@ -643,6 +675,8 @@ entry at home.
   [0.6, 0.8]    =>  1.
   (3, 4)        =>  5    (complex modulus)
   x             =>  abs(x)"
+  :title "absolute value"
+  :example "-3 => 3"
   :arity unary
   :prefix "abs"
   (commit (maf--abs expr)))
@@ -673,6 +707,8 @@ entry at home.
   2 (3 + x)    =>  (3 + x) 2     (no distribution)
   log(x, b)    =>  log(b, x)
   x < y        =>  y > x         (direction reverses: never y < x)"
+  :title "commute the operands"
+  :example "a - b => b - a"
   :arity unary
   :prefix "comm"
   :map -1
@@ -1173,6 +1209,8 @@ equation, the top entry at home.
   [-x .. x]                   =>  [[-inf .. -x), (x .. inf]]
   [[-inf .. -5), (5 .. inf]]  =>  [-5 .. 5]    (the complement back)
   [1, 2, 3]                   =>  [-1, -2, -3] (not a set: elementwise)"
+  :title "negate"
+  :example "x => -x"
   :arity unary
   :prefix "neg"
   (commit (cond
@@ -1325,6 +1363,8 @@ cannot flip opposite ways.
   0.5 = 1:2          =>  1:2 = 1:2       (one direction for both sides)
   C-u 3 3.14159      =>  22:7            (3 significant figures)
   0.75| x + 1:2      =>  3:4 x + 1:2     (sub-formula at point)"
+  :title "toggle float and fraction"
+  :example "0.5 => 1:2"
   :arity unary
   :prefix "ff"
   :map -1
@@ -1378,6 +1418,8 @@ an equation, the top entry at home.
 
   x = 2 sqrt(2)  =>  x = 2.82842712475
   2 + sin(30)|   =>  2 + 0.5"
+  :title "evaluate numerically"
+  :example "pi => 3.14159265359"
   :arity unary
   :prefix "eval"
   :inverse mafcmd-identify
@@ -1606,6 +1648,8 @@ usual: a sub-formula at point, the whole relation on a relation entry
   x = y      =>  x != y
   x < y      =>  x > y    (sides stay put: never y > x)
   x          =>  x        (no pair: unchanged)"
+  :title "toggle the operator"
+  :example "a + b => a - b"
   :arity unary
   :prefix "togl"
   :map -1
@@ -1691,6 +1735,8 @@ elementwise. A numeric prefix gives the step, so C-u 5 adds 5 and a
 negative prefix walks the other way.
 
 `mafcmd-decrement' (<) is the same step downward."
+  :title "increment"
+  :example "5 => 6"
   :arity unary
   :prefix "incr"
   (commit (math-add expr (maf--nudge-amount))))
@@ -1698,6 +1744,8 @@ negative prefix walks the other way.
 (maf-defcmd mafcmd-decrement (expr _arg commit)
   "Subtract one from the target, contextually.
 The downward twin of `mafcmd-increment' (>) — see there."
+  :title "decrement"
+  :example "5 => 4"
   :arity unary
   :prefix "decr"
   (commit (math-sub expr (maf--nudge-amount))))
@@ -3093,6 +3141,8 @@ keep-args the operands stay and the equation is pushed on top. Both
 sides commit structurally intact — nothing simplifies or evaluates, so
 equating 3 with 3 gives the equation 3 = 3, not 1. Signals an error
 with fewer than two entries."
+  :title "equate with"
+  :example "x, 2 => x = 2"
   :arity binary
   :prefix "eq"
   :scope entry
@@ -3156,6 +3206,8 @@ it.
   x := 5          =>  5
   [x = 1, y = 2]  =>  [1, 2]
   2 x + 1         =>  2 x + 1     (no relation: unchanged)"
+  :title "drop the relation"
+  :example "x = 2 => 2"
   :arity unary
   :prefix "rmeq"
   :map -1
@@ -5259,6 +5311,7 @@ at point, the top entry at home.
   [a = 1, b = 2]     =>  [x = 1, y = 2]
   f(2) = 0           =>  [2, 0]
   v = [1, 2]         =>  v = [x = 1, y = 2]"
+  :title "name the coordinates"
   :arity unary
   :prefix "crd"
   ;; The graph-point case consumes the whole equation, and the relation
@@ -5663,6 +5716,8 @@ Inverse: the complement — the vector with that element removed
 \(`mafcmd-remove-nth-element').
 
   [10, 20, 30]  =>  [10, 30]   (I then the 2 key)"
+  :title "nth element"
+  :example "[a, b, c], 2 => b"
   :arity unary
   :prefix "nth"
   :inverse mafcmd-remove-nth-element
@@ -6387,6 +6442,8 @@ Inverse prefix (I i), which gives the bare inverse expression.
 
   2 x - 3 < 7        =>  2 x - 3 < 7          (not a function)
   y = x^6 + x + 1    =>  y = x^6 + x + 1      (calc cannot solve it)"
+  :title "invert the function"
+  :example "y = 2 x => y = x / 2"
   :arity unary
   :prefix "finv"
   :map -1
@@ -6547,6 +6604,8 @@ to be divided out first.
   abs(x) = 5            =>  abs(x) = 5           (not an ordering)
   2 abs(x) < 5          =>  2 abs(x) < 5         (coefficient in the way)
   x < 5                 =>  x < 5                (no abs)"
+  :title "split an absolute inequality"
+  :example "abs(x) < 5 => -5 < x && x < 5"
   :arity unary
   :prefix "aineq"
   ;; The subject is the relation whole — its two sides are the bound and
@@ -6808,6 +6867,8 @@ arithmetic — so the subject's operator does not have to be = either.
   3 x < 15 with x = 2       =>  6 < 15
   x^2 + x| with x := 3      =>  12         (point within: the entry whole)
   x^2 + x  with x := 3|     =>  12         (point on the argument: likewise)"
+  :title "evaluate under assignments"
+  :example "x + 1, x := 2 => 3"
   :arity binary
   :prefix "let"
   :hyperbolic mafcmd-let-each
@@ -6847,6 +6908,8 @@ whole relation — its sides evaluated in turn by
 re-paired across branches. A lone assignment is one branch: the
 result is still a vector, of one. Everything else — what counts as an
 assignment, how the subject resolves, keep-args — is `mafcmd-let's."
+  :title "evaluate per assignment"
+  :example "x + 1, [x := 1, x := 2] => [2, 3]"
   :arity binary
   :prefix "let"
   :map -1
@@ -7777,6 +7840,8 @@ formula is not used to narrow it.
   (x - 1)^2 (x + 2)      =>  [-2, 1, 1]   (multiplicity kept)
   x^2 - 4 = 0            =>  [-2, 2]
   f(x) = x - 3           =>  [3]"
+  :title "polynomial roots"
+  :example "x^2 - 4 => [2, -2]"
   :arity unary
   :prefix "root"
   :map -1
@@ -7859,6 +7924,7 @@ selection is taken as it stands and never widened.
   [a, a, b] with 2     =>  [[a, a], [a, b]]
   v = [a, b, c] with 2 =>  v = [[a, b], [a, c], [b, c]]
   x with 2             =>  x    (not a vector: unchanged)"
+  :title "group repeated elements"
   :arity binary
   :prefix "ugrp"
   ;; Only a vector has groups, so resolve hands the body the innermost
@@ -7913,6 +7979,8 @@ vector around it — commits unchanged rather than signaling.
   [[1|, 2], [3, 4]]        =>  [1, 2, 3, 4]      (widens to the matrix)
   [1, 2]                   =>  [1, 2]            (already flat)
   5                        =>  5                 (nothing to flatten)"
+  :title "flatten"
+  :example "[[1, 2], [3]] => [1, 2, 3]"
   :arity unary
   :prefix "flat"
   ;; In a formula slot the node under point is often a row or an element,
@@ -7954,6 +8022,8 @@ vector to its element.
   [a, b]   =>  [[ a, b ]]   (nests rather than splicing)
   x = 1    =>  [x = 1]    (a relation is one element)
   a| + b   =>  [a] + b"
+  :title "bracket"
+  :example "x => [x]"
   :arity unary
   :prefix "brkt"
   ;; A relation is an element, not a thing to run once per side: the
@@ -8021,6 +8091,8 @@ signaling.
   C-u 2 [(1,2),(3,4)]    =>  4:  1 / 3:  2 / 2:  3 / 1:  4
   x = sin(y)             =>  2:  x / 1:  sin(y)
   y + sin(a| + b)        =>  2:  y / 1:  sin(a + b)   (the whole entry)"
+  :title "unpack onto the stack"
+  :example "[1, 2] => 1, 2"
   :arity unary
   :prefix "unpk"
   ;; A relation is a function call like any other: unwrapping consumes
@@ -8085,6 +8157,8 @@ An explicit calc selection is taken as it stands and never widened.
   (a| + b) (2 c - d)     =>  unchanged         (no wrapper to peel)
   [x, y]                 =>  2:  x / 1:  y     (a whole entry spreads)
   x                      =>  x                 (nothing to give)"
+  :title "unwrap"
+  :example "sin(x) => x"
   :arity unary
   :prefix "unwr"
   ;; A relation is a function call like any other: unwrapping consumes
@@ -8134,6 +8208,8 @@ arrives as a new entry on top of it.
   [1, |2, 3]          =>  2
   a| + b + c          =>  a + b   (a sum groups leftward: (a + b) + c)
   x + y|              =>  x + y   (the margin names the whole entry)"
+  :title "raise the part"
+  :example "sin(x) + 1 => sin(x)"
   :arity unary
   :prefix "rais"
   ;; The value replaces the entry that held it — that is the whole
