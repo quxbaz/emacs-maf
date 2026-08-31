@@ -465,6 +465,18 @@ with M-x maf-keys."
 (maf-bindings-module-keys 'maf-keys 'maf-use-keys-mode
   '(((calc native vim) "C-h C-b" maf-keys)))
 
+(defun maf-keys--module-values ()
+  "The module row's dial overrides: a single [show] action, no toggle.
+The minor mode is real — it owns the C-h C-b claim — but on and off
+is not what the row is for: what anyone wants from the module menu is
+the buffer itself. So the row is :inert, carrying one action, show:
+stepping the row (TAB/SPC) and RET (the menu's :ret) both run it, and
+the chip stays in the shadowed face — an action has no live state to
+wear the purple, or to move off a default into the gold."
+  (list :values '((show "show" (maf-keys)))
+        :inert t
+        :ret '(maf-keys)))
+
 (when (require 'maf-module nil t)
   (maf-register-module 'maf-keys #'maf-use-keys-mode
                        "Browse maf's key bindings, organized by group.
@@ -473,6 +485,7 @@ Press C-h C-b to open the list: every key in the active profile
 beside its command and a one-line description, the unbound commands
 at the end. RET describes the command at point; / filters, TAB
 folds."
-                       "C-h C-b" "Prefs"))
+                       "C-h C-b" "Help"
+                       #'maf-keys--module-values))
 
 (provide 'maf-keys)

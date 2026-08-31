@@ -121,7 +121,9 @@ echoed help. GROUP is the menu section the module files under (see
 `maf-module-registry'), or nil for the fallback section. VALUES-FN,
 for the rare module that is more than a toggle, returns a plist of
 dial row overrides — :values and :current — built fresh at each menu
-build; absent, the row is the plain on/off.
+build; absent, the row is the plain on/off. The plist may also carry
+:ret, a form the menu's RET runs on that row instead of quitting —
+how an action row (maf-keys' [show]) answers the key.
 
 Records the entry in `maf-module-registry' and adds
 `maf-module--reconcile' to MODE's hook, so toggling MODE keeps
@@ -297,7 +299,7 @@ live."
                 "\n\n"))))
 
 (defvar maf-module--group-order
-  '("Prefs" "Display" "Rewrite" "Editing" "Memory")
+  '("Prefs" "Help" "Display" "Rewrite" "Editing" "Memory")
   "The menu's groups in reading order.
 A group not listed here files after all of these, alphabetically —
 so a new group still shows up without an edit here, just not in a
@@ -409,16 +411,30 @@ the registry."
              :raw #'maf-module--state
              :init #'maf-module--menu-keys))
 
+(defun maf-module--menu-ret ()
+  "Run the row's :ret action, or quit the menu.
+On a toggle row RET is done-here — drop in, flip a switch, leave —
+but a row that registered a :ret form is an action, not a switch, and
+RET runs it: the maf-keys row's [show] opens the bindings help
+buffer."
+  (interactive)
+  (let* ((id (tabulated-list-get-id))
+         (form (and (symbolp id)
+                    (plist-get (alist-get id dial-items) :ret))))
+    (if form (dial--apply form) (quit-window))))
+
 (defun maf-module--menu-keys ()
   "Give the menu's buffer its own keys over `dial-mode's.
 RET quits: dial's RET is `dial-set', the run-the-pending step for a
 value whose setter prompts — and no module row prompts, so here the
 key could only ever complain. Reading it as done-here instead suits
-the menu's use: drop in, flip a switch, leave."
+the menu's use: drop in, flip a switch, leave. The exception is a row
+carrying a :ret action, which the key runs — see
+`maf-module--menu-ret'."
   (use-local-map
    (let ((map (make-sparse-keymap)))
      (set-keymap-parent map dial-mode-map)
-     (define-key map (kbd "RET") #'quit-window)
+     (define-key map (kbd "RET") #'maf-module--menu-ret)
      map)))
 
 (provide 'maf-module)
