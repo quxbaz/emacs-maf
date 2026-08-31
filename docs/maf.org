@@ -1,4 +1,4 @@
-#+title: maf
+M_AM:vvMA#+title: maf
 
 * docs
   [[https://www.gnu.org/software/emacs/manual/html_mono/calc.html#Lisp-Definitions][lisp definitions]]
@@ -51,3 +51,7 @@
   - pane 2: current plot
   - pane 3: modules
   - pane 4: options
+
+* later
+  - [ ] map across rows
+  - [ ] map across cols
