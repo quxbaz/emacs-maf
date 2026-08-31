@@ -342,7 +342,9 @@ file render as gaps in the curve, which is right."
   "Return the gnuplot plot command for CURVES.
 Each curve is (DATA-FILE LABEL STYLE), STYLE nil for plain lines.
 One curve plots untitled — its label is the plot title; several get
-legend entries."
+legend entries. Every title is noenhanced, here and at the set-title
+sites: a label is calc notation, and gnuplot's enhanced text would
+read its ^ as superscript markup and overstrike what follows."
   (let ((single (null (cdr curves)))
         (index -1))
     (concat "plot "
@@ -354,7 +356,7 @@ legend entries."
                        (or (nth 2 curve) "lines")
                        (maf-plot--curve-color index)
                        (if single "notitle"
-                         (format "title \"%s\"" (nth 1 curve)))))
+                         (format "title \"%s\" noenhanced" (nth 1 curve)))))
              curves ", "))))
 
 (defun maf-plot--theme-lines ()
@@ -397,7 +399,7 @@ nothing and say nothing."
       (user-error "gnuplot not found (customize `maf-plot-gnuplot-program')"))
     (let ((file (maf-plot--work-file "plot-window.gp")))
       (with-temp-file file
-        (insert (format "set grid\nset title \"%s\"\n%s%s\npause mouse close\n"
+        (insert (format "set grid\nset title \"%s\" noenhanced\n%s%s\npause mouse close\n"
                         title
                         (if (cdr curves) "set key top center\n" "set key off\n")
                         (maf-plot--plot-clauses curves))))
@@ -505,7 +507,7 @@ plot as text into the same panel instead."
       (maf-plot--run-gnuplot
        (format "set terminal svg size %d,%d dynamic background rgb \"%s\" font \"monospace,11\"
 set output \"%s\"
-%sset title \"%s\"
+%sset title \"%s\" noenhanced
 %s%s\n"
                width height bg svg
                (maf-plot--theme-lines) title
@@ -532,7 +534,7 @@ set output \"%s\"
         (width (max 40 (- (window-width) 2)))
         (height (max 12 (/ (window-height) 2))))
     (maf-plot--run-gnuplot
-     (format "set terminal dumb size %d,%d\nset output \"%s\"\nset title \"%s\"\n%s%s\n"
+     (format "set terminal dumb size %d,%d\nset output \"%s\"\nset title \"%s\" noenhanced\n%s%s\n"
              width height out title
              (if (cdr curves) "set key top center\n" "set key off\n")
              (maf-plot--plot-clauses curves)))
