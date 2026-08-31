@@ -88,6 +88,11 @@ are set, making the I and H prefixes route to the variant contextually.
 :map -1 opts the command out of per-side equation mapping (see
 `maf-defcmd'), for commands that consume or produce relations.
 
+:title and :example are the row's presentation strings, passed through
+to `maf-defcmd' — the command's proper name spelled out, and one line
+showing what it does. Both optional; the surfaces that read them fall
+back (see `maf-command-title').
+
 Every row generates a mafcmd-SUFFIX-targets policy variable of its own
 (see `maf-defcmd'). Under a flag dispatch the pressed key's policy
 rides along and outranks the variable of whichever variant answers
@@ -107,7 +112,9 @@ variant's own variable governs only its direct invocation."
                  (inv (funcall vcmd :inv))
                  (hyp (funcall vcmd :hyp))
                  (invhyp (funcall vcmd :invhyp))
-                 (mapv (plist-get variants :map)))
+                 (mapv (plist-get variants :map))
+                 (title (plist-get variants :title))
+                 (example (plist-get variants :example)))
             (append
              (list
               `(maf-defcmd ,name
@@ -127,6 +134,8 @@ variant's own variable governs only its direct invocation."
                  ,@(when hyp `(:hyperbolic ,hyp))
                  ,@(when invhyp `(:inverse-hyperbolic ,invhyp))
                  ,@(when mapv `(:map ,mapv))
+                 ,@(when title `(:title ,title))
+                 ,@(when example `(:example ,example))
                  (commit (calc-normalize
                           (list ',func expr
                                 ,@(when (eq arity 'binary) '(arg)))))))
@@ -148,11 +157,16 @@ variant's own variable governs only its direct invocation."
 
 (maf-defcmds
   ;; arithmetic and scientific (calc-oper-keys)
-  (add binary calcFunc-add "+")
-  (sub binary calcFunc-sub "-")
-  (mul binary calcFunc-mul "*")
-  (div binary calcFunc-div "/")
-  (pow binary calcFunc-pow "^" :inv nroot)
+  (add binary calcFunc-add "+"
+   :title "add" :example "x, 2 => x + 2")
+  (sub binary calcFunc-sub "-"
+   :title "subtract" :example "x, 2 => x - 2")
+  (mul binary calcFunc-mul "*"
+   :title "multiply" :example "x, y => x y")
+  (div binary calcFunc-div "/"
+   :title "divide" :example "x, 2 => x / 2")
+  (pow binary calcFunc-pow "^" :inv nroot
+   :title "power" :example "x, 2 => x^2")
   ;; vconcat/vconcatrev use maf's own concatenation rather than
   ;; calcFunc-vconcat: | here always builds a vector, where calc leaves
   ;; it symbolic whenever an operand is not provably scalar (see
@@ -163,16 +177,20 @@ variant's own variable governs only its direct invocation."
   ;; pair up into [x, y] = [1, 2] — one equation of vectors — where
   ;; concatenation means [x = 1, y = 2], the vector of equations that is
   ;; calc's own spelling of a system (what a S returns and takes).
-  (vconcat binary maf-vconcat "|" :inv vconcatrev :hyp append :invhyp appendrev :map -1)
-  (mod binary calcFunc-mod "%")
+  (vconcat binary maf-vconcat "|" :inv vconcatrev :hyp append :invhyp appendrev :map -1
+   :title "concatenate" :example "[1, 2], [3] => [1, 2, 3]")
+  (mod binary calcFunc-mod "%"
+   :title "modulo" :example "7, 3 => 1")
   ;; idiv cedes \ to a second square-root key (bindings.el); calc's
   ;; own \ is shadowed with it. Reachable by name, and I / is not it.
   (idiv binary calcFunc-idiv)
-  (fact unary calcFunc-fact "!")
+  (fact unary calcFunc-fact "!"
+   :title "factorial" :example "5 => 120")
   ;; & is calc's own key for the reciprocal; the big-language toggle
   ;; borrowed it while it had one and has since gone unbound
   ;; (bindings.el). o is a second key for it, also there.
-  (inv unary calcFunc-inv "&")
+  (inv unary calcFunc-inv "&"
+   :title "reciprocal" :example "x => 1 / x")
   ;; neg grew an interval reading — the complement — and lives as a
   ;; maf-defcmd (src/stack.el); its n rides bindings.el with it.
   ;; abs has left the table for `mafcmd-abs' (stack.el, A), which reads
@@ -190,22 +208,30 @@ variant's own variable governs only its direct invocation."
   ;; declares it (modules/maf-preview.el); the key stays the module's
   ;; whether it is on or off, so the row keeps none.
   (arg unary calcFunc-arg)
-  (sqrt unary calcFunc-sqrt "Q" :inv sqr)
+  (sqrt unary calcFunc-sqrt "Q" :inv sqr
+   :title "square root" :example "9 => 3")
   (min binary calcFunc-min "f n")
   (max binary calcFunc-max "f x")
   ;; floor cedes F in native to a second key for mafcmd-fold
   ;; (bindings.el); the calc profile keeps F = floor.
   (floor unary calcFunc-floor "F" :inv ceil :hyp ffloor :invhyp fceil)
   (round unary calcFunc-round "R" :inv trunc :hyp fround :invhyp ftrunc)
-  (sin unary calcFunc-sin "S" :inv arcsin :hyp sinh :invhyp arcsinh)
-  (cos unary calcFunc-cos "C" :inv arccos :hyp cosh :invhyp arccosh)
-  (tan unary calcFunc-tan "T" :inv arctan :hyp tanh :invhyp arctanh)
-  (ln unary calcFunc-ln "L" :inv exp :hyp log10 :invhyp exp10)
-  (exp unary calcFunc-exp "E" :inv ln :hyp exp10 :invhyp log10)
-  (log binary calcFunc-log "B" :inv alog)
+  (sin unary calcFunc-sin "S" :inv arcsin :hyp sinh :invhyp arcsinh
+   :title "sine" :example "0 => 0")
+  (cos unary calcFunc-cos "C" :inv arccos :hyp cosh :invhyp arccosh
+   :title "cosine" :example "0 => 1")
+  (tan unary calcFunc-tan "T" :inv arctan :hyp tanh :invhyp arctanh
+   :title "tangent" :example "0 => 0")
+  (ln unary calcFunc-ln "L" :inv exp :hyp log10 :invhyp exp10
+   :title "natural logarithm" :example "e => 1")
+  (exp unary calcFunc-exp "E" :inv ln :hyp exp10 :invhyp log10
+   :title "exponential" :example "0 => 1")
+  (log binary calcFunc-log "B" :inv alog
+   :title "logarithm" :example "8, 2 => 3")
   (ceil unary calcFunc-ceil)
   (trunc unary calcFunc-trunc)
-  (sqr unary calcFunc-sqr)
+  (sqr unary calcFunc-sqr
+   :title "square" :example "x => x^2")
   (arcsin unary calcFunc-arcsin)
   (arccos unary calcFunc-arccos)
   (arctan unary calcFunc-arctan)
@@ -229,7 +255,8 @@ variant's own variable governs only its direct invocation."
   ;; algebra (calc-a-oper-keys)
   (apart unary calcFunc-apart "a a")
   (collect binary calcFunc-collect "a c")
-  (deriv binary calcFunc-deriv "a d" :hyp tderiv)
+  (deriv binary calcFunc-deriv "a d" :hyp tderiv
+   :title "derivative" :example "x^2, x => 2 x")
   ;; Simplifying a relation is a whole-relation job: calc divides both
   ;; sides through and moves terms across the operator. Mapped per side
   ;; each side is already as simple as it gets alone, so the command
@@ -238,17 +265,21 @@ variant's own variable governs only its direct invocation."
   ;; The seed table lists factor/factors with two arguments, but the
   ;; second is calcFunc-factor's optional variable, not an operand:
   ;; calc's own a f factors the one expression.
-  (factor unary calcFunc-factor "a f" :hyp factors)
+  (factor unary calcFunc-factor "a f" :hyp factors
+   :title "factor" :example "x^2 - 1 => (x + 1) (x - 1)")
   (pgcd binary calcFunc-pgcd "a g")
-  (integ binary calcFunc-integ "a i")
+  (integ binary calcFunc-integ "a i"
+   :title "integral" :example "2 x, x => x^2")
   (match binary calcFunc-match "a m" :inv matchnot :map -1)
   (nrat unary calcFunc-nrat "a n")
   (rewrite binary calcFunc-rewrite "a r" :map -1)
   (simplify unary calcFunc-simplify "a e" :map -1)   ; see esimplify above
-  (expand unary calcFunc-expand "a x")
+  (expand unary calcFunc-expand "a x"
+   :title "expand" :example "(x + 1)^2 => x^2 + 2 x + 1")
   (mapeq binary calcFunc-mapeq "a M" :inv mapeqr :hyp mapeqp :map -1)
   (roots binary calcFunc-roots "a P" :map -1)
-  (solve binary calcFunc-solve "a S" :inv finv :hyp fsolve :invhyp ffinv :map -1)
+  (solve binary calcFunc-solve "a S" :inv finv :hyp fsolve :invhyp ffinv :map -1
+   :title "solve" :example "x^2 = 4, x => x = 2")
   (eq binary calcFunc-eq "a =" :map -1)
   (neq binary calcFunc-neq "a #" :map -1)
   (lt binary calcFunc-lt "a <" :map -1)
@@ -341,7 +372,8 @@ variant's own variable governs only its direct invocation."
   (gammaG binary calcFunc-gammaG)
   ;; combinatorics (calc-k-oper-keys)
   (bern unary calcFunc-bern "k b")
-  (choose binary calcFunc-choose "k c" :hyp perm)
+  (choose binary calcFunc-choose "k c" :hyp perm
+   :title "binomial coefficient" :example "5, 2 => 10")
   ;; dfact cedes calc's k d to mafcmd-factor-powers (bindings.el).
   (dfact unary calcFunc-dfact)
   (euler unary calcFunc-euler "k e")
@@ -350,9 +382,11 @@ variant's own variable governs only its direct invocation."
   ;; key instead — displacing calc-utpf, the one utp lookup left
   ;; keyless here, reachable by name.
   (prfac unary calcFunc-prfac "k F")
-  (gcd binary calcFunc-gcd "k g")
+  (gcd binary calcFunc-gcd "k g"
+   :title "greatest common divisor" :example "12, 18 => 6")
   (shuffle binary calcFunc-shuffle "k h")
-  (lcm binary calcFunc-lcm "k l")
+  (lcm binary calcFunc-lcm "k l"
+   :title "least common multiple" :example "4, 6 => 12")
   (moebius unary calcFunc-moebius "k m")
   (nextprime unary calcFunc-nextprime "k n" :inv prevprime)
   (random unary calcFunc-random "k r")
@@ -386,7 +420,8 @@ variant's own variable governs only its direct invocation."
   ;; units/statistics (calc-u-oper-keys)
   (vcov binary calcFunc-vcov "u C" :inv vpcov :hyp vcorr)
   (vgmean unary calcFunc-vgmean "u G" :hyp agmean)
-  (vmean unary calcFunc-vmean "u M" :inv vmeane :hyp vmedian :invhyp vhmean)
+  (vmean unary calcFunc-vmean "u M" :inv vmeane :hyp vmedian :invhyp vhmean
+   :title "mean" :example "[1, 2, 3] => 2")
   (vmin unary calcFunc-vmin "u N")
   (rms unary calcFunc-rms "u R")
   (vsdev unary calcFunc-vsdev "u S" :inv vpsdev :hyp vvar :invhyp vpvar)
@@ -409,7 +444,8 @@ variant's own variable governs only its direct invocation."
   (find binary calcFunc-find "v f")
   (head unary calcFunc-head "v h" :inv tail :hyp rhead :invhyp rtail)
   (cons binary calcFunc-cons "v k" :hyp rcons)
-  (vlen unary calcFunc-vlen "v l")
+  (vlen unary calcFunc-vlen "v l"
+   :title "length" :example "[1, 2, 3] => 3")
   (vmask binary calcFunc-vmask "v m")
   (rnorm unary calcFunc-rnorm "v n")
   (pack binary calcFunc-pack "v p")
@@ -423,7 +459,8 @@ variant's own variable governs only its direct invocation."
   ;; mode from a prefix argument rather than the stack. A row would also
   ;; be the wrong shape: the result is a list of values spread over the
   ;; stack, not a single applied call.
-  (rev unary calcFunc-rev "v v")
+  (rev unary calcFunc-rev "v v"
+   :title "reverse" :example "[1, 2, 3] => [3, 2, 1]")
   (index unary calcFunc-index "v x")
   ;; The cross product takes both vectors as operands.
   (cross binary calcFunc-cross "v C")
@@ -447,7 +484,8 @@ variant's own variable governs only its direct invocation."
   ;; symbolic term after its positive twin ([sqrt(10), -sqrt(10)] comes
   ;; back untouched). maf orders by numeric value when every element
   ;; has one, and defers to calc otherwise (see `maf--sort-vector').
-  (sort unary maf-sort "v S" :inv rsort)
+  (sort unary maf-sort "v S" :inv rsort
+   :title "sort" :example "[3, 1, 2] => [1, 2, 3]")
   (tr unary calcFunc-tr "v T")
   (vunion binary calcFunc-vunion "v V")
   (vxor binary calcFunc-vxor "v X")
