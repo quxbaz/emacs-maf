@@ -36,11 +36,12 @@
 ;; add one by hand, `D' drops one). RET describes the command at
 ;; point, selecting its help buffer; `g' re-reads the registry.
 ;;
-;; The module's key is `C-h C-b' — the help prefix's `b' is
-;; `describe-bindings', and this is maf's own describe-bindings. The
-;; sequence is unbound in stock Emacs and in calc, so the claim
-;; shadows nothing; every other `C-h' key falls through to help as
-;; before.
+;; The module's key is `l b' — `b' for bindings, under the `l' prefix
+;; maf's own additions gather under. Calc keeps `l' for logarithmic
+;; units and binds nothing on `l b', so the claim shadows neither
+;; calc's keys nor maf's. The vim profile is the exception: `l' is
+;; `forward-char' there, so no `l' prefix exists to hang this on and
+;; the buffer is reached by name.
 
 (require 'cl-lib)
 (require 'seq)
@@ -243,7 +244,7 @@ which the buffer owns rather than the command.")
         (maf-kill "kill" nil)
         (maf-copy "copy" nil)
         (maf-yank "yank" nil)
-        (maf-dup "duplicate" nil)
+        (maf-dup "duplicate" "3 => 3, 3")
         (maf-swap-up "swap up" nil)
         (maf-edit "edit" nil)
         (maf-roll-to-top "roll to top" nil)
@@ -256,16 +257,16 @@ which the buffer owns rather than the command.")
         (maf-forward-operand "forward operand" nil)
         (maf-backward-operand "backward operand" nil)
         (maf-up-expression "up expression" nil)
-        (maf-goto-left-side "go to left side" nil)
-        (maf-goto-right-side "go to right side" nil)
-        (maf-goto-other-side "go to other side" nil)
-        (maf-jump-equals "jump to equals" nil)
+        (maf-goto-left-side "go to the left side" nil)
+        (maf-goto-right-side "go to the right side" nil)
+        (maf-goto-other-side "go to the other side" nil)
+        (maf-jump-equals "jump to the relation" nil)
         (maf-quick-variable "quick variable" nil)
         (maf-browse-variables "browse variables" nil)
-        (maf-recall-variable "recall variable" nil)
-        (maf-save-stack "save stack" nil)
+        (maf-recall-variable "recall a variable" nil)
+        (maf-save-stack "save the stack" nil)
         (maf-saved-stacks "saved stacks" nil)
-        (maf-restore-stack "restore stack" nil)
+        (maf-restore-stack "restore the stack" nil)
         (maf-list-modules "modules" nil)
         (maf-options "options" nil)
         (maf-formulas "formulas" nil)
@@ -275,7 +276,59 @@ which the buffer owns rather than the command.")
         (maf-pretty "typeset display" nil)
         (maf-toggle-simplify "toggle simplification" nil)
         (maf-reset "reset" nil)
-        (maf-pi "pi" nil)))
+        (maf-pi "pi" "=> 3.14159265359")
+        (mafcmd-negate "flip the sign" "x = 2 => -x = -2")
+        (mafcmd-collect-terms "collect a variable's terms" "2 x = x + 3 => x = 3")
+        (mafcmd-substitute "substitute" "x + 1, x, y => y + 1")
+        (maf-commute-left "move a term left" "a + b + c => b + a + c")
+        (maf-commute-right "move a term right" "a + b + c => a + c + b")
+        (maf-distribute "distribute inward" "2 (x + 1) => 2 x + 2")
+        (maf-merge "merge outward" "2 x + 2 => 2 (x + 1)")
+        (mafcmd-swap-vars "swap two variables" "a x + b y => b x + a y")
+        (mafcmd-solve-for "solve for a variable" "2 x = 6, x => x = 3")
+        (mafcmd-isolate "isolate" "2 x = 6 => x = 3")
+        (mafcmd-auto-solve "solve, cycling variables" "x + y = 1 => x = 1 - y")
+        (mafcmd-roots-for "roots for a variable" "x^2 = 4, x => [2, -2]")
+        (maf-index "index vector" "5 => [1, 2, 3, 4, 5]")
+        (mafcmd-fold "fold" "[1, 2, 3] by + => 6")
+        (mafcmd-accum "accumulate" "[1, 2, 3] by + => [1, 3, 6]")
+        (mafcmd-apply "apply elementwise" "[1, 4] by sqrt => [1, 2]")
+        (mafcmd-outer "outer product" "[1, 2], [3, 4] by * => [[3, 4], [6, 8]]")
+        (mafcmd-inner "inner product" "[1, 2], [3, 4] by + and * => 11")
+        (mafcmd-map "map a formula" "[1, 2] by 2 x => [2, 4]")
+        (mafcmd-map-stack "map the stack's formula" "[1, 2], 2 x => [2, 4]")
+        (mafcmd-map-flag "map the next command" nil)
+        (maf-dup-or-clear-selections "duplicate or clear selections" "3 => 3, 3")
+        (maf-dup-here-or-clear-selections "duplicate, keeping point" "3 => 3, 3")
+        (maf-recall-quick "recall a quick variable" nil)
+        (maf-recall-previous "recall the previous entry" nil)
+        (maf-recall-next "recall the next entry" nil)
+        (maf-edit-entry-at-home "edit the top entry" nil)
+        (maf-digit-start "start a number" nil)
+        (maf-digit-commit-here "commit the number, keeping point" nil)
+        (maf-digit-commit-contextual "commit the number into the formula" nil)
+        (maf-digit-jump "jump to the entry typed" nil)
+        (maf-digit-sqr "square the number typed" "3 : => 9")
+        (maf-digit-mod-360 "wrap the number typed" "370 o => 10")
+        (maf-digit-equal-to "equate with the number typed" "x, 2 e => x = 2")
+        (maf-digit-pi "multiply the number typed by pi" "2 n => 2 pi")
+        (maf-digit-colon "type a fraction colon" "1 ; 2 => 1:2")
+        (maf-digit-quit "abort the number" nil)
+        (maf-backward-char "backward character" nil)
+        (maf-reset-settings "reset the settings" nil)
+        (maf-plot-all "plot the stack" nil)
+        (maf-plot-entry "plot the entry" nil)
+        (maf-plot-all-with-range "plot the stack over a range" nil)
+        (maf-plot-entry-with-range "plot the entry over a range" nil)
+        (maf-plot-entry-desmos "plot the entry in Desmos" nil)
+        (maf-clear-selections "clear the selections" nil)
+        (maf-dup-go "duplicate onto the top" nil)
+        (maf-dup-here "duplicate, keeping point" nil)
+        (maf-edit-add-entry-above "edit a new entry above" nil)
+        (maf-edit-add-entry-below "edit a new entry below" nil)
+        (maf-edit-add-vector "edit a new vector" nil)
+        (maf-history-clear "clear the history" nil)
+        (maf-restore-stack-from "restore a saved stack" nil)))
 
 (dolist (row maf-keys-descriptions)
   (apply #'maf-set-command-doc row))
@@ -595,7 +648,7 @@ the detail pane instead, \\[filter-view-filter] filters as you type,
 (define-minor-mode maf-use-keys-mode
   "Add the bindings help buffer to Calc.
 
-Press C-h C-b to open *maf-keys*. Every key maf binds in the active
+Press l b to open *maf-keys*. Every key maf binds in the active
 profile is listed there, organized by subject, each command with a
 one-line description; the commands with no key close the list. RET
 shows a command's full documentation, and / filters the list as you
@@ -609,11 +662,14 @@ with M-x maf-keys."
   (maf-bindings--refresh))
 
 (maf-bindings-module-keys 'maf-keys 'maf-use-keys-mode
-  '(((calc native vim) "C-h C-b" maf-keys)))
+  ;; Not vim: `l' is `forward-char' there, so it cannot take a
+  ;; prefix — the registry refuses the claim rather than shadowing
+  ;; the motion. That profile reaches the buffer by name for now.
+  '(((calc native) "l b" maf-keys)))
 
 (defun maf-keys--module-values ()
   "The module row's dial overrides: a single [show] action, no toggle.
-The minor mode is real — it owns the C-h C-b claim — but on and off
+The minor mode is real — it owns the l b claim — but on and off
 is not what the row is for: what anyone wants from the module menu is
 the buffer itself. So the row is :inert, carrying one action, show:
 stepping the row (TAB/SPC) and RET (the menu's :ret) both run it, and
@@ -627,11 +683,11 @@ wear the purple, or to move off a default into the gold."
   (maf-register-module 'maf-keys #'maf-use-keys-mode
                        "Browse maf's key bindings, organized by group.
 
-Press C-h C-b to open the list: every key in the active profile
+Press l b to open the list: every key in the active profile
 beside its command and a one-line description, the unbound commands
 at the end. RET describes the command at point; / filters, TAB
 folds."
-                       "C-h C-b" "Help"
+                       "l b" "Help"
                        #'maf-keys--module-values))
 
 (provide 'maf-keys)
