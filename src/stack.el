@@ -3619,6 +3619,25 @@ if the string passes through unchanged."
                                 text 'fixedcase 'literal)
     text))
 
+(defconst maf--yank-level-prefix-re
+  "^[[:space:]]*[0-9]+:[[:space:]]+"
+  "A stack level prefix opening a yanked line — \"2:  \", indented or not.
+The whitespace after the colon tells it from a fraction, which calc
+writes 1:2 with none; the whitespace before it covers text quoted
+with indentation, as notes and transcripts carry it.")
+
+(defun maf--yank-strip-levels (text)
+  "Return TEXT with stack level prefixes stripped from its lines.
+A yank swept off a stack display carries each entry's \"2:  \" — the
+same prefix `maf--copy-read' drops from a single copied line. The
+number is discarded, never read: lines push in the order they appear,
+whatever levels they name. When no line carries one, TEXT itself is
+returned, not a copy, for the same identity reason as
+`maf--yank-degroup'."
+  (if (string-match maf--yank-level-prefix-re text)
+      (replace-regexp-in-string maf--yank-level-prefix-re "" text)
+    text))
+
 (defun maf-yank (radix)
   "Yank from the kill ring, reading digit-grouped numbers whole.
 
@@ -3631,11 +3650,18 @@ entries. A line that is entirely one such number is read as the
 number; the commas must bracket exact groups of three, so \"1, 234\"
 and \"12,34\" still yank as the separate values they are. Each line
 of a multi-line yank is judged on its own, so a copied spreadsheet
-column comes in one entry per line. Everything else behaves as
-`calc-yank', RADIX prefix included."
+column comes in one entry per line.
+
+Stack level prefixes are dropped: text swept off a stack display —
+\"2:  [x = 6, x = 0]\" over \"1:  [y = 5, y = 2]\" — yanks as the
+entries themselves, one per line (`maf--yank-strip-levels'; the
+fraction 1:2, written without whitespace, is left alone). Everything
+else behaves as `calc-yank', RADIX prefix included."
   (interactive "P")
   (maf--with-calc-buffer
-    (calc-yank-internal radix (maf--yank-degroup (current-kill 0 t)))))
+    (calc-yank-internal radix (maf--yank-degroup
+                               (maf--yank-strip-levels
+                                (current-kill 0 t))))))
 
 (defun maf-dup (&optional keep-point)
   "Duplicate the item at point, pushing a copy onto the stack.

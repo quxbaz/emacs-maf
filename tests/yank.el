@@ -49,6 +49,33 @@
   (cl-assert (string= (math-format-value (calc-top 1)) "5678"))
   (calc-pop (calc-stack-size))
 
+  ;; Stack level prefixes are dropped: text swept off a stack display
+  ;; yanks as the entries themselves. The number is discarded, never
+  ;; read — lines push in the order they appear.
+  (progn (kill-new "2:  [x = 6, x = 0]\n1:  [y = 5, y = 2]\n")
+         (call-interactively 'maf-yank))
+  (cl-assert (= (calc-stack-size) 2))
+  (cl-assert (string= (math-format-value (calc-top 2)) "[x = 6, x = 0]"))
+  (cl-assert (string= (math-format-value (calc-top 1)) "[y = 5, y = 2]"))
+  (calc-pop (calc-stack-size))
+
+  ;; Indented prefixes strip too — the shape a stack quoted in notes
+  ;; arrives in.
+  (progn (kill-new "    2:  [x = 6, x = 0]\n    1:  [y = 5, y = 2]\n")
+         (call-interactively 'maf-yank))
+  (cl-assert (= (calc-stack-size) 2))
+  (cl-assert (string= (math-format-value (calc-top 2)) "[x = 6, x = 0]"))
+  (cl-assert (string= (math-format-value (calc-top 1)) "[y = 5, y = 2]"))
+  (calc-pop (calc-stack-size))
+
+  ;; The prefix needs the whitespace calc writes after the colon: a
+  ;; fraction line is 1:2 with none, and yanks as the fraction.
+  (progn (kill-new "1:2")
+         (call-interactively 'maf-yank))
+  (cl-assert (= (calc-stack-size) 1))
+  (cl-assert (string= (math-format-value (calc-top 1)) "1:2"))
+  (calc-pop (calc-stack-size))
+
   ;; Ordinary yanks are untouched: a vector's commas are calc syntax.
   (progn (kill-new "[1, 2]")
          (call-interactively 'maf-yank))
