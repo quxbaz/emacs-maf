@@ -82,6 +82,17 @@ angle mode. A prefix argument on either plot command overrides both."
   :type '(cons number number)
   :group 'maf)
 
+(defcustom maf-plot-quadrants t
+  "Non-nil frames an unprompted plot on the origin.
+Both ranges come out symmetric about zero — x over the sampling span
+and the data's own x, y over the data with a little headroom — so all
+four quadrants show, and show equally sized. A prompted range
+\=(`maf-plot-entry-with-range' and kin) is a deliberate window and is
+left alone, as is everything when this is nil: gnuplot autoscales to
+hug the data."
+  :type 'boolean
+  :group 'maf)
+
 (defcustom maf-plot-samples 240
   "Sample points per curve on the gnuplot backends."
   :type 'natnum
@@ -359,6 +370,27 @@ read its ^ as superscript markup and overstrike what follows."
                          (format "title \"%s\" noenhanced" (nth 1 curve)))))
              curves ", "))))
 
+(defun maf-plot--quadrant-view (curves range)
+  "Range clauses centering CURVES' view on the origin, over x RANGE.
+The x half-width is the sampling span's larger side, widened by any
+data curve whose indices run past it; the y half-width is the data's
+largest magnitude, padded a twentieth so an extremum clears the
+frame, with a floor for data hugging zero. Both ranges symmetric
+about zero: the four quadrants show, equally sized."
+  (let ((a (max (abs (car range)) (abs (cdr range))))
+        (b 0.0))
+    (dolist (curve curves)
+      (with-temp-buffer
+        (insert-file-contents (car curve))
+        (goto-char (point-min))
+        (while (not (eobp))
+          (when (looking-at "\\([^ ]+\\) \\([^ \n]+\\)")
+            (setq a (max a (abs (string-to-number (match-string 1))))
+                  b (max b (abs (string-to-number (match-string 2))))))
+          (forward-line 1))))
+    (setq b (* 1.05 (max b 1.0)))
+    (format "set xrange [%g:%g]\nset yrange [%g:%g]\n" (- a) a (- b) b)))
+
 (defun maf-plot--theme-lines ()
   "Return the script lines theming a plot from the live faces."
   (let ((fg (maf-plot--face-color 'default :foreground "black"))
@@ -387,8 +419,9 @@ set title textcolor rgb \"%s\"
 
 ;;; gnuplot-external
 
-(defun maf-plot--show-external (curves title)
+(defun maf-plot--show-external (curves title &optional view)
   "Plot CURVES in gnuplot's own interactive window.
+VIEW is the origin-centered range clauses, or nil for autoscale.
 No terminal line — gnuplot picks its interactive default (qt, x11).
 The script pauses until the window closes, so the process holds the
 window; the launch is fire and forget, but a sentinel reports a
@@ -399,8 +432,8 @@ nothing and say nothing."
       (user-error "gnuplot not found (customize `maf-plot-gnuplot-program')"))
     (let ((file (maf-plot--work-file "plot-window.gp")))
       (with-temp-file file
-        (insert (format "set grid\nset title \"%s\" noenhanced\n%s%s\npause mouse close\n"
-                        title
+        (insert (format "set grid\nset title \"%s\" noenhanced\n%s%s%s\npause mouse close\n"
+                        title (or view "")
                         (if (cdr curves) "set key top center\n" "set key off\n")
                         (maf-plot--plot-clauses curves))))
       (set-process-sentinel
@@ -490,15 +523,16 @@ sizes only windows it creates, so a reused window is evened by hand."
         (setq maf-plot--return-window (selected-window)))
       (select-window window))))
 
-(defun maf-plot--show-embedded (curves title)
+(defun maf-plot--show-embedded (curves title &optional view)
   "Render CURVES to SVG and show them in the plot panel.
 Sized to the window the plot will occupy: the body width of the calc
 window (the below split inherits it; fringes and scroll bars are not
 drawable room), and half its height less the panel's header and mode
 lines. On a non-graphic display gnuplot's dumb terminal draws the
-plot as text into the same panel instead."
+plot as text into the same panel instead. VIEW is the
+origin-centered range clauses, or nil for autoscale."
   (if (not (display-graphic-p))
-      (maf-plot--show-dumb curves title)
+      (maf-plot--show-dumb curves title view)
     (let* ((width (max 320 (window-body-width nil t)))
            (height (max 200 (- (/ (window-pixel-height) 2)
                                (* 2 (frame-char-height)))))
@@ -508,9 +542,9 @@ plot as text into the same panel instead."
        (format "set terminal svg size %d,%d dynamic background rgb \"%s\" font \"monospace,11\"
 set output \"%s\"
 %sset title \"%s\" noenhanced
-%s%s\n"
+%s%s%s\n"
                width height bg svg
-               (maf-plot--theme-lines) title
+               (maf-plot--theme-lines) title (or view "")
                (if (cdr curves) "set key top center\n" "set key off\n")
                (maf-plot--plot-clauses curves)))
       ;; :scale 1 pins the image to the svg's own pixels: the default
@@ -528,14 +562,15 @@ set output \"%s\"
            (insert-image image title)
            (insert "\n")))))))
 
-(defun maf-plot--show-dumb (curves title)
-  "Draw CURVES as text with gnuplot's dumb terminal, for tty frames."
+(defun maf-plot--show-dumb (curves title &optional view)
+  "Draw CURVES as text with gnuplot's dumb terminal, for tty frames.
+VIEW is the origin-centered range clauses, or nil for autoscale."
   (let ((out (maf-plot--work-file "plot.txt"))
         (width (max 40 (- (window-width) 2)))
         (height (max 12 (/ (window-height) 2))))
     (maf-plot--run-gnuplot
-     (format "set terminal dumb size %d,%d\nset output \"%s\"\nset title \"%s\" noenhanced\n%s%s\n"
-             width height out title
+     (format "set terminal dumb size %d,%d\nset output \"%s\"\nset title \"%s\" noenhanced\n%s%s%s\n"
+             width height out title (or view "")
              (if (cdr curves) "set key top center\n" "set key off\n")
              (maf-plot--plot-clauses curves)))
     (maf-plot--display
@@ -738,12 +773,16 @@ bounds; unprompted, Desmos keeps its own."
      (let* ((specs (mapcan #'maf-plot--curve-exprs entries))
             (range (maf-plot--range (mapcar #'car specs) arg))
             (curves (maf-plot--gnuplot-curves specs range))
+            ;; A prompted range is a deliberate window; only the
+            ;; unprompted view centers on the origin.
+            (view (and maf-plot-quadrants (not arg)
+                       (maf-plot--quadrant-view curves range)))
             (title (cond ((null (cdr curves)) (nth 1 (car curves)))
                          ((cdr entries) (format "%d curves" (length curves)))
                          (t (maf-plot--label (car entries))))))
        (if (eq backend 'gnuplot-external)
-           (maf-plot--show-external curves title)
-         (maf-plot--show-embedded curves title))))))
+           (maf-plot--show-external curves title view)
+         (maf-plot--show-embedded curves title view))))))
 
 ;;;###autoload
 (defun maf-plot-entry (arg)

@@ -96,6 +96,21 @@
                           (error t))))
                 err))
 
+  ;; The quadrant view centers on the origin: x the sampling span's
+  ;; larger side, y the data's largest magnitude padded a twentieth —
+  ;; both symmetric. Data hugging zero takes the floor instead of a
+  ;; sliver of a frame.
+  (cl-assert (let ((file (maf-plot--work-file "quad-test.dat")))
+               (with-temp-file file (insert "-10 2\n4 -1.5\n"))
+               (equal (maf-plot--quadrant-view
+                       (list (list file "t" nil)) '(-10.0 . 10.0))
+                      "set xrange [-10:10]\nset yrange [-2.1:2.1]\n")))
+  (cl-assert (let ((file (maf-plot--work-file "quad-test.dat")))
+               (with-temp-file file (insert "1 0.2\n"))
+               (equal (maf-plot--quadrant-view
+                       (list (list file "t" nil)) '(-10.0 . 10.0))
+                      "set xrange [-10:10]\nset yrange [-1.05:1.05]\n")))
+
   ;; Two variables have no axis to share; the sampler refuses.
   (cl-assert (let ((err (condition-case e
                             (progn (maf-plot--variable
