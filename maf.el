@@ -64,6 +64,7 @@
 (require 'maf-formulas)
 (require 'maf-selplus)
 (require 'maf-poly-order)
+(require 'maf-plot)
 (require 'maf-e-power)
 (require 'maf-log-power)
 (require 'maf-options)

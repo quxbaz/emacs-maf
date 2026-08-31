@@ -114,8 +114,8 @@ any variable by name, whatever is excluded here."
 
 (defcustom maf-modules '(maf-bindings maf-history maf-hl maf-edit
                          maf-editplus maf-editvars maf-recall maf-preview
-                         maf-formulas maf-selplus maf-poly-order maf-e-power
-                         maf-log-power maf-options maf-keys)
+                         maf-formulas maf-selplus maf-poly-order maf-plot
+                         maf-e-power maf-log-power maf-options maf-keys)
   "Names of the maf feature modules to enable.
 Each major feature that stands apart from the contextual-command core
 is an optional module (see maf-module.el); this list names the ones
