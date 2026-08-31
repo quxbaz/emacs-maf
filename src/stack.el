@@ -5669,6 +5669,51 @@ leaving the caller's unchanged-commit intact."
           (setq target (maf--solve-peel-target target var))))
       result)))
 
+(defun maf--roots-peel (rel var)
+  "All roots of equation REL for VAR, peeling layers as `maf--solve-peel'.
+The roots reading of the peel: the layer around VAR stands in as a
+fresh unknown, calc takes every root of its equation, and each root
+carries on as the layer's own right side — the inner roots of them
+all concatenated, so (x - 8)^8 = 256 gives the eight values 10, 6,
+and their complex kin. The same guards as the solve: a plain = with
+VAR on exactly one side, and nil when some layer or branch gives calc
+no hold — a partial vector would claim a completeness it cannot
+carry."
+  (when (and (eq (car-safe rel) 'calcFunc-eq)
+             (= (length rel) 3)
+             (xor (math-expr-contains (nth 1 rel) var)
+                  (math-expr-contains (nth 2 rel) var)))
+    (let* ((side (if (math-expr-contains (nth 1 rel) var)
+                     (nth 1 rel)
+                   (nth 2 rel)))
+           (target (maf--solve-peel-target side var))
+           (result nil))
+      (while (and target (not result))
+        (let* ((u (maf--solve-fresh-var rel))
+               (outer (condition-case nil
+                          (calcFunc-roots (math-expr-subst rel target u) u)
+                        (error nil))))
+          (when (eq (car-safe outer) 'vec)
+            (let ((parts nil)
+                  (ok t))
+              (dolist (r (cdr outer))
+                (when ok
+                  (let* ((sub (list 'calcFunc-eq target r))
+                         (inner (condition-case nil
+                                    (calcFunc-roots sub var)
+                                  (error nil))))
+                    (when (or (null inner)
+                              (eq (car-safe inner) 'calcFunc-roots))
+                      (setq inner (maf--roots-peel sub var)))
+                    (if (eq (car-safe inner) 'vec)
+                        (setq parts (append parts (cdr inner)))
+                      (setq ok nil)))))
+              (when ok
+                (setq result (cons 'vec parts))))))
+        (unless result
+          (setq target (maf--solve-peel-target target var))))
+      result)))
+
 (defvar maf--solve-target nil
   "Sub-expression `mafcmd-auto-solve' should isolate, bound per call.
 Nil means solve for a variable instead; read by `maf--auto-solve-run'.")
@@ -6074,8 +6119,10 @@ first, then alphabetical — so RET takes the variable the entry
 suggests. The roots come back as a vector, complete with multiplicity,
 exact whatever the mode, a family\='s leftover freedom named by a dummy
 variable (n1 over the integer multiples of a periodic root). A bare
-expression is treated as = 0, and an input calc cannot take roots of
-for the named variable commits unchanged, saying so in the echo area.
+expression is treated as = 0. An equation calc cannot take whole
+peels, every branch followed (`maf--roots-peel'), so
+\=(x - 8)^8 = 256 gives all eight roots; what still cannot be taken
+commits unchanged, saying so in the echo area.
 
 It acts on the whole entry — wherever point sits on its line, or the
 top entry at home; root-finding has no sub-formula meaning, so point
@@ -6117,17 +6164,29 @@ unchanged."
   :prefix "prts"
   :map -1
   :scope entry
-  (let ((result (let ((calc-symbolic-mode t) (calc-prefer-frac t))
-                  (condition-case nil
-                      (calcFunc-roots expr maf--solve-for-vars)
-                    (error nil)))))
-    (if (or (null result)
-            (eq (car-safe result) 'calcFunc-roots))
-        (progn
-          (message "maf: calc cannot take roots of this for %s"
-                   (math-format-flat-expr maf--solve-for-vars 0))
-          (commit expr))
-      (commit result))))
+  (let* ((result (let ((calc-symbolic-mode t) (calc-prefer-frac t))
+                   (condition-case nil
+                       (calcFunc-roots expr maf--solve-for-vars)
+                     (error nil))))
+         (punted (or (null result)
+                     (eq (car-safe result) 'calcFunc-roots)))
+         ;; The peel's roots reading (see `maf--roots-peel'); a vector
+         ;; of variables keeps calc's own reach.
+         (peeled (and punted
+                      (eq (car-safe maf--solve-for-vars) 'var)
+                      (let ((calc-symbolic-mode t) (calc-prefer-frac t))
+                        (maf--roots-peel
+                         (if (maf--relation-p expr)
+                             expr
+                           (list 'calcFunc-eq expr 0))
+                         maf--solve-for-vars)))))
+    (cond
+     (peeled (commit peeled))
+     (punted
+      (message "maf: calc cannot take roots of this for %s"
+               (math-format-flat-expr maf--solve-for-vars 0))
+      (commit expr))
+     (t (commit result)))))
 
 (maf-defcmd mafcmd-inverse-function (expr _arg commit)
   "Invert the function at point: y = f(x) becomes y = f-inverse(x).

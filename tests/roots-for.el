@@ -52,6 +52,19 @@
   (cl-assert (= (calc-stack-size) 1))
   (calc-pop (calc-stack-size))
 
+  ;; A power of a compound base peels with every branch followed
+  ;; (`maf--roots-peel'): the base's equation yields all eight roots,
+  ;; and each carries the layer home — the reals first as calc orders
+  ;; them.
+  (maf-push "(x - 8)^8 = 256")
+  (goto-char (point-max))
+  (progn (execute-kbd-macro (kbd "a l x RET")) nil)
+  (let ((roots (maf--strip-encasing (calc-top 1 'full))))
+    (cl-assert (eq (car-safe roots) 'vec))
+    (cl-assert (= (length (cdr roots)) 8))
+    (cl-assert (equal (seq-take (cdr roots) 2) '(10 6))))
+  (calc-pop (calc-stack-size))
+
   ;; The flags refuse rather than dropping silently: roots already
   ;; finds every root.
   (maf-push "x^2 - 4")
