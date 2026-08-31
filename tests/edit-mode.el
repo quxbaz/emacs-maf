@@ -93,8 +93,27 @@
          (execute-kbd-macro (kbd "4 2 RET")))
   (cl-assert (= (calc-stack-size) 1))
   (cl-assert (equal (calc-top 1 'full) 42))
-  ;; Three full enter/exit cycles ran: commit, discard, commit.
-  (cl-assert (equal maf-edit-test--hooks '(off on off on off on)))
+  ;; A yank strips stack level prefixes at insertion, indentation and
+  ;; all — the pasted numbers never reach the buffer, so the session
+  ;; shows only its own live prefixes (`maf-edit--yank-transform').
+  (calc-pop (calc-stack-size))
+  (execute-kbd-macro (kbd "SPC"))
+  (progn (kill-new "    2:  [x = 6, x = 0]\n    1:  [y = 5, y = 2]\n")
+         (goto-char (point-min))
+         (execute-kbd-macro (kbd "C-y"))
+         (cl-assert (not (string-match-p
+                          "[0-9]:" (buffer-substring-no-properties
+                                    (point-min) (point-max))))))
+  (execute-kbd-macro (kbd "RET"))
+  (cl-assert (= (calc-stack-size) 2))
+  ;; Flat formatting: the file's break-vectors setting is still live.
+  (cl-assert (string= (math-format-flat-expr (calc-top 2 'full) 0)
+                      "[x = 6, x = 0]"))
+  (cl-assert (string= (math-format-flat-expr (calc-top 1 'full) 0)
+                      "[y = 5, y = 2]"))
+
+  ;; Four full enter/exit cycles ran: commit, discard, commit, commit.
+  (cl-assert (equal maf-edit-test--hooks '(off on off on off on off on)))
   (progn (setq maf-edit-mode-on-hook nil
                maf-edit-mode-off-hook nil
                calc-break-vectors nil)))
