@@ -4,11 +4,18 @@
 ;;
 ;; The bindings help buffer. `maf-keys' opens *maf-keys*: every key maf
 ;; claims in the active profile, organized by what the commands do.
-;; Each item is a command beside its keys, with the first line of its
-;; docstring under it:
+;; Each item is a command headed by its proper name and its keys, over
+;; an example and the first line of its docstring:
 ;;
-;;   mafcmd-esimplify (a s, k k, C-c C-c)
-;;     Contextually apply the extended simplification.
+;;   mafcmd-pow · power (^)
+;;     EXAMPLE: x, 2 => x^2
+;;     Contextually apply `calcFunc-pow' (binary).
+;;
+;; The name and the example are the command's own — a mafcmd table row
+;; declares them with :title and :example, a hand-written `maf-defcmd'
+;; with the same two options, and the plain `defun's are given theirs
+;; by `maf-keys-descriptions' — and a command carrying neither shows
+;; its symbol over its description, as every command did before.
 ;;
 ;; The groups are this file's data (`maf-keys-groups'); the keys never
 ;; are — every render reads the bindings registry live, so a profile
@@ -62,6 +69,22 @@
 (defface maf-keys-doc
   '((t :inherit shadow))
   "Face for a command's one-line description in the bindings help buffer."
+  :group 'maf)
+
+(defface maf-keys-title
+  '((t :inherit font-lock-doc-face))
+  "Face for a command's proper name, beside its symbol.
+Quieter than the symbol it glosses: the name is there to spell out an
+abbreviation, not to compete with what the eye scans the list by."
+  :group 'maf)
+
+(defface maf-keys-example
+  '((t :inherit maf-keys-doc))
+  "Face for a command's one-line example.
+The description's own grey: the example and the line under it are the
+one block of explanation below the head, and a color of its own made
+the example read as another kind of thing. It keeps a face so it can
+be retuned apart from the prose."
   :group 'maf)
 
 (defcustom maf-keys-recent-max 10
@@ -183,6 +206,68 @@ anyone edits it in.")
          maf-history-clear maf-preview-show maf-pretty maf-plot-all
          maf-plot-entry maf-plot-all-with-range
          maf-plot-entry-with-range maf-plot-entry-desmos)))
+
+;;; Presentation strings for the commands that carry none of their own
+
+(defvar maf-keys-descriptions nil
+  "Proper names and examples for commands defined outside `maf-defcmd'.
+Rows of (COMMAND TITLE EXAMPLE), either string nil to leave it unsaid.
+Applied with `maf-set-command-doc' when this file loads, so the
+strings end up where every other command's do — on the symbol, read
+back through `maf-command-title' and `maf-command-example'.
+
+The contextual commands declare their own: a mafcmd table row carries
+:title and :example, and so does a hand-written `maf-defcmd'. What is
+left is the plain `defun's — the stack editing, digit entry,
+navigation and menu commands — which have no such option to declare
+in, and this is their place. It sits beside `maf-keys-groups' for the
+same reason that list does: it is data about how a command reads,
+which the buffer owns rather than the command.")
+
+;; Set outside the defvar so a reload applies edits to the data.
+(setq maf-keys-descriptions
+      '((maf-undo "undo" nil)
+        (maf-redo "redo" nil)
+        (maf-del "delete" nil)
+        (maf-kill "kill" nil)
+        (maf-copy "copy" nil)
+        (maf-yank "yank" nil)
+        (maf-dup "duplicate" nil)
+        (maf-swap-up "swap up" nil)
+        (maf-edit "edit" nil)
+        (maf-roll-to-top "roll to top" nil)
+        (maf-roll-to-bottom "roll to bottom" nil)
+        (maf-carry-up "carry up" nil)
+        (maf-carry-down "carry down" nil)
+        (maf-beginning-of-entry "beginning of entry" nil)
+        (maf-forward-noun "forward noun" nil)
+        (maf-backward-noun "backward noun" nil)
+        (maf-forward-operand "forward operand" nil)
+        (maf-backward-operand "backward operand" nil)
+        (maf-up-expression "up expression" nil)
+        (maf-goto-left-side "go to left side" nil)
+        (maf-goto-right-side "go to right side" nil)
+        (maf-goto-other-side "go to other side" nil)
+        (maf-jump-equals "jump to equals" nil)
+        (maf-quick-variable "quick variable" nil)
+        (maf-browse-variables "browse variables" nil)
+        (maf-recall-variable "recall variable" nil)
+        (maf-save-stack "save stack" nil)
+        (maf-saved-stacks "saved stacks" nil)
+        (maf-restore-stack "restore stack" nil)
+        (maf-list-modules "modules" nil)
+        (maf-options "options" nil)
+        (maf-formulas "formulas" nil)
+        (maf-keys "key bindings" nil)
+        (maf-history "history" nil)
+        (maf-preview-show "preview" nil)
+        (maf-pretty "typeset display" nil)
+        (maf-toggle-simplify "toggle simplification" nil)
+        (maf-reset "reset" nil)
+        (maf-pi "pi" nil)))
+
+(dolist (row maf-keys-descriptions)
+  (apply #'maf-set-command-doc row))
 
 (defvar maf-keys--flag-routed
   '(mafcmd-mod-180 mafcmd-float-all mafcmd-frac mafcmd-float
@@ -356,18 +441,37 @@ nil throughout the Unbound group."
 ;;; The menu
 
 (defun maf-keys--row (item _ctx)
-  "ITEM's two menu lines: the command beside its keys, its doc under it.
-ITEM is (COMMAND . KEYS), KEYS nil throughout the Unbound group.
-A blank line closes the row: an entry is two lines here, and run
-together the list reads as one block rather than as its commands."
-  (let ((cmd (car item)) (keys (cdr item)))
+  "ITEM's entry: the command headed by its name and keys, then its text.
+ITEM is (COMMAND . KEYS), KEYS nil throughout the Unbound group. The
+head reads
+
+  mafcmd-pow · power (^)
+
+— the symbol, the proper name spelling it out, the keys — over the
+command's example and the first line of its docstring. The name and
+the example are what the command carries (`maf-command-title',
+`maf-command-example'); a command carrying neither shows neither, and
+its entry is the head over the description alone.
+
+A blank line closes the row: an entry runs to several lines here, and
+run together the list reads as one block rather than as its commands."
+  (let* ((cmd (car item)) (keys (cdr item))
+         (title (maf-command-title cmd))
+         (example (maf-command-example cmd)))
     (concat "  " (propertize (symbol-name cmd) 'face 'maf-keys-command)
+            (when title
+              (concat (propertize " · " 'face 'shadow)
+                      (propertize title 'face 'maf-keys-title)))
             (when keys
               (concat " ("
                       (mapconcat (lambda (k)
                                    (propertize k 'face 'maf-keys-binding))
                                  keys ", ")
                       ")"))
+            (when example
+              (concat "\n    "
+                      (propertize "EXAMPLE: " 'face 'maf-keys-doc)
+                      (propertize example 'face 'maf-keys-example)))
             "\n    "
             (propertize (maf-keys--doc (car item)) 'face 'maf-keys-doc)
             ;; Two: the first ends the doc line — the shell only
@@ -376,8 +480,13 @@ together the list reads as one block rather than as its commands."
             "\n\n")))
 
 (defun maf-keys--fields (item group)
-  "What the filter matches for ITEM: name, description, GROUP, keys."
+  "What the filter matches for ITEM: its names, text, GROUP and keys.
+The proper name is searched beside the symbol, so the word a command
+is known by finds it — \"power\" reaches mafcmd-pow, which spells it
+nowhere else."
   (append (list (symbol-name (car item))
+                (or (maf-command-title (car item)) "")
+                (or (maf-command-example (car item)) "")
                 (maf-keys--doc (car item))
                 group)
           (cdr item)))
@@ -389,16 +498,25 @@ whole docstring, where the row shows only its first line. Flush left
 from the first line: a docstring already carries its own layout, and
 the pane adds no margin of its own."
   (let* ((cmd (car item)) (keys (cdr item))
+         (title (maf-command-title cmd))
+         (example (maf-command-example cmd))
          (doc (or (ignore-errors (documentation cmd))
                   "Not documented.")))
     (concat
      (propertize (symbol-name cmd) 'face 'maf-keys-command)
+     (when title
+       (concat (propertize " · " 'face 'shadow)
+               (propertize title 'face 'maf-keys-title)))
      (when keys
        (concat " ("
                (mapconcat (lambda (k)
                             (propertize k 'face 'maf-keys-binding))
                           keys ", ")
                ")"))
+     (when example
+       (concat "\n"
+               (propertize "EXAMPLE: " 'face 'maf-keys-doc)
+               (propertize example 'face 'maf-keys-example)))
      "\n\n" doc "\n")))
 
 (defun maf-keys--describe (item)
