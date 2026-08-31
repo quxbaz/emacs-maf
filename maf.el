@@ -67,6 +67,7 @@
 (require 'maf-e-power)
 (require 'maf-log-power)
 (require 'maf-options)
+(require 'maf-keys)
 
 ;;;###autoload
 (defun maf-calc ()
