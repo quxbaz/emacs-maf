@@ -191,13 +191,50 @@
   (cl-assert (not (boundp 'var-x)))
   (calc-pop (calc-stack-size))
 
-  ;; A vector naming the same variable twice: the later assignment is
-  ;; the one that stands.
+  ;; A vector that repeats one variable is branches, not a joint set:
+  ;; the subject evaluates once per assignment, results in a vector.
+  ;; (It used to read jointly, the later assignment standing — a
+  ;; silent discard nobody built on purpose.)
   (maf-push "x")
   (maf-push "[x := 1, x := 2]")
   (goto-char (point-max))
   (call-interactively 'mafcmd-let)
-  (cl-assert (equal (calc-top 1 'full) 2))
+  (cl-assert (equal (calc-top 1 'full) '(vec 1 2)))
+  (calc-pop (calc-stack-size))
+
+  ;; The motivating shape: a solution vector feeds back whole, one
+  ;; result per solution. The relations land as substitution leaves
+  ;; them, like any let over a relation.
+  (maf-push "x = 2 y - 1")
+  (maf-push "[x = 6, x = 0]")
+  (goto-char (point-max))
+  (call-interactively 'mafcmd-let)
+  (cl-assert (string= (math-format-value
+                       (maf--strip-encasing (calc-top 1 'full)))
+                      "[6 = 2 y - 1, 0 = 2 y - 1]"))
+  (cl-assert (= (calc-stack-size) 1))
+
+  ;; A mapped auto-solve carries the branches on to the solved form —
+  ;; the pipeline the branch reading exists for.
+  (progn (setq maf-map-flag t)
+         (call-interactively 'mafcmd-auto-solve))
+  (cl-assert (string= (math-format-value
+                       (maf--strip-encasing (calc-top 1 'full)))
+                      "[y = 7:2, y = 1:2]"))
+  (calc-pop (calc-stack-size))
+
+  ;; Repeating a variable while binding others besides refuses — joint
+  ;; for some and branches for one reads as neither — and the stack
+  ;; stands.
+  (maf-push "x")
+  (maf-push "[x := 1, x := 2, a := 3]")
+  (goto-char (point-max))
+  (cl-assert (eq 'user-error
+                 (condition-case err
+                     (progn (call-interactively 'mafcmd-let) nil)
+                   (user-error (car err)))))
+  (cl-assert (= (calc-stack-size) 2))
+  (cl-assert (not (boundp 'var-x)))
   (calc-pop (calc-stack-size))
 
   ;; An assignment whose value is itself symbolic: the expression goes
