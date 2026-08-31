@@ -5756,6 +5756,51 @@ solving for that variable and substituting the sub-expression back."
            (soln (maf--solve-relation (math-expr-subst rel target u) u)))
       (and soln (math-expr-subst soln u target)))))
 
+(defun maf--solve-peel-target (form var)
+  "FORM's outermost compound proper sub-expression containing VAR, or nil.
+The next layer in for the peel: an operand of FORM's head that holds
+VAR and is not the bare variable itself — the bare variable is the
+direct solve, which already failed when the peel is asked."
+  (and (consp form)
+       (not (eq (car form) 'var))
+       (seq-find (lambda (a)
+                   (and (consp a)
+                        (not (eq (car-safe a) 'var))
+                        (math-expr-contains a var)))
+                 (cdr form))))
+
+(defun maf--solve-peel (rel var)
+  "Solve equation REL for VAR by peeling layers calc cannot take whole.
+The u-substitution a hand solve does, as a fallback when the direct
+solve fails: the layer around VAR (`maf--solve-peel-target') is stood
+in for by a fresh variable and REL solved for that
+\=(`maf--solve-for-subexpr'), which turns (x - 8)^8 = 256 into the
+y^8 = 256 calc can take; the layer's own equation then solves onward
+for VAR, peeling again as needed, so nested layers unwind one by one.
+
+Only a plain = with VAR on exactly one side is peeled — an
+inequality's direction through an even power is nothing to guess at —
+and the answer carries calc's plain-solve contract: the principal
+branch, as x^2 = 4 gives x = 2. Nil when no layer gives calc a hold,
+leaving the caller's unchanged-commit intact."
+  (when (and (eq (car-safe rel) 'calcFunc-eq)
+             (= (length rel) 3)
+             (xor (math-expr-contains (nth 1 rel) var)
+                  (math-expr-contains (nth 2 rel) var)))
+    (let* ((side (if (math-expr-contains (nth 1 rel) var)
+                     (nth 1 rel)
+                   (nth 2 rel)))
+           (target (maf--solve-peel-target side var))
+           (result nil))
+      (while (and target (not result))
+        (let ((soln (maf--solve-for-subexpr rel target)))
+          (when (eq (car-safe soln) 'calcFunc-eq)
+            (setq result (or (maf--solve-relation soln var)
+                             (maf--solve-peel soln var)))))
+        (unless result
+          (setq target (maf--solve-peel-target target var))))
+      result)))
+
 (defvar maf--solve-target nil
   "Sub-expression `mafcmd-auto-solve' should isolate, bound per call.
 Nil means solve for a variable instead; read by `maf--auto-solve-run'.")
@@ -5798,7 +5843,9 @@ sub-expression under point) when that is set and solvable, otherwise for
 a variable — the first of x, y, z, t then alphabetical, cycling to the
 next when already solved for one. Symbolic and prefer-frac so a
 non-integer solution stays exact (1:2 and sqrt(2), not 0.5 and 1.414); a
-bare expression is treated as = 0; nothing solvable commits unchanged."
+bare expression is treated as = 0. An equation the whole-relation
+solve cannot take peels layer by layer (`maf--solve-peel') before
+giving up; nothing solvable commits unchanged."
   :arity unary
   :prefix "slv"
   :map -1
@@ -5830,7 +5877,8 @@ bare expression is treated as = 0; nothing solvable commits unchanged."
                                   (nth (mod (1+ pos) n) vars)
                                 (car vars))))
                         (setq maf--solve-solved-var var)
-                        (maf--solve-relation rel var)))))))))
+                        (or (maf--solve-relation rel var)
+                            (maf--solve-peel rel var))))))))))
     ;; Nothing solvable: the subject commits unchanged, so no variable
     ;; was isolated after all and point has nothing to land on.
     (if (or (maf--relation-p result) (maf--solve-split-p result))
@@ -6033,21 +6081,43 @@ entry unchanged instead — unchanged means as written, so nothing turns."
   :prefix "solv"
   :map -1
   :scope entry
-  (let ((result (let ((calc-symbolic-mode t) (calc-prefer-frac t))
-                  (condition-case nil
-                      ;; An order inequality solved for one variable goes
-                      ;; through the direction-preserving wrapper; the
-                      ;; other solvers and vector subjects go to calc.
-                      (if (and (eq maf--solve-for-func 'calcFunc-solve)
-                               (eq (car-safe maf--solve-for-vars) 'var)
-                               (memq (car-safe expr) maf--solve-order-heads))
-                          (maf--solve-relation expr maf--solve-for-vars)
-                        (funcall maf--solve-for-func expr maf--solve-for-vars))
-                    (error nil)))))
-    (commit (if (or (null result)
-                    (eq (car-safe result) maf--solve-for-func))
-                expr
-              (maf--relation-var-left result)))))
+  (let* ((result (let ((calc-symbolic-mode t) (calc-prefer-frac t))
+                   (condition-case nil
+                       ;; An order inequality solved for one variable goes
+                       ;; through the direction-preserving wrapper; the
+                       ;; other solvers and vector subjects go to calc.
+                       (if (and (eq maf--solve-for-func 'calcFunc-solve)
+                                (eq (car-safe maf--solve-for-vars) 'var)
+                                (memq (car-safe expr) maf--solve-order-heads))
+                           (maf--solve-relation expr maf--solve-for-vars)
+                         (funcall maf--solve-for-func expr
+                                  maf--solve-for-vars))
+                     (error nil))))
+         (punted (or (null result)
+                     (eq (car-safe result) maf--solve-for-func)))
+         ;; The plain solve peels layers as a fallback (see
+         ;; `maf--solve-peel'); the flag solvers and vector subjects
+         ;; keep calc's own reach, punting as before.
+         (peeled (and punted
+                      (eq maf--solve-for-func 'calcFunc-solve)
+                      (eq (car-safe maf--solve-for-vars) 'var)
+                      (let ((calc-symbolic-mode t) (calc-prefer-frac t))
+                        (maf--solve-peel
+                         (if (maf--relation-p expr)
+                             expr
+                           (list 'calcFunc-eq expr 0))
+                         maf--solve-for-vars)))))
+    (cond
+     (peeled (commit (maf--relation-var-left peeled)))
+     (punted
+      ;; The silent unchanged-commit read as a no-op bug; say why. An
+      ;; order relation stays quiet here — the direction wrapper has
+      ;; already messaged its more specific reason when it had one.
+      (unless (memq (car-safe expr) maf--solve-order-heads)
+        (message "maf: calc cannot solve this for %s"
+                 (math-format-flat-expr maf--solve-for-vars 0)))
+      (commit expr))
+     (t (commit (maf--relation-var-left result))))))
 
 (defun mafcmd-solve-for ()
   "Solve the relation at point for a variable read from the minibuffer.
@@ -6081,10 +6151,16 @@ meaning, so point within the formula is not used to narrow it. To solve
 for something Calc cannot solve for directly — a compound
 sub-expression, under a nonlinear operator — use `mafcmd-isolate',
 which isolates the sub-expression under point. A bare expression is
-treated as = 0, inequalities keep their relation — one whose direction
-hinges on a sign calc cannot see comes back as calc's if, split on
-that sign — and an input Calc cannot solve for the named variable
-commits unchanged.
+treated as = 0, and inequalities keep their relation — one whose
+direction hinges on a sign calc cannot see comes back as calc's if,
+split on that sign.
+
+An equation calc cannot take whole peels (`maf--solve-peel'): the
+layer around the variable stands in as a fresh unknown and its own
+equation solves onward, so (x - 8)^8 = 256 — degree 8 once expanded,
+past calc's reach — still gives x = 10. What still cannot solve
+commits unchanged, saying so in the echo area; the flag variants keep
+calc's own reach and punt as before.
 
 The solution is written with its variable on the left. Calc leaves an
 inequality whose sign flipped reading the other way round (-2 < x); it
@@ -6099,6 +6175,7 @@ variable that was solved for.
   x^2 + y^2 = r^2               =>  y = sqrt(r^2 - x^2)
   x + 3                         =>  x = -3          (bare: solved = 0)
   2 x = 1                       =>  x = 1:2         (exact, not 0.5)
+  (x - 8)^8 = 256               =>  x = 10          (peeled)
   x + 3 = 7                     =>  x + 3 = 7       (no y in it: unchanged)"
   (interactive)
   (let ((func (cond ((and calc-inverse-flag calc-hyperbolic-flag)
@@ -6130,7 +6207,7 @@ suggests. The roots come back as a vector, complete with multiplicity,
 exact whatever the mode, a family\='s leftover freedom named by a dummy
 variable (n1 over the integer multiples of a periodic root). A bare
 expression is treated as = 0, and an input calc cannot take roots of
-for the named variable commits unchanged.
+for the named variable commits unchanged, saying so in the echo area.
 
 It acts on the whole entry — wherever point sits on its line, or the
 top entry at home; root-finding has no sub-formula meaning, so point
@@ -6176,10 +6253,13 @@ unchanged."
                   (condition-case nil
                       (calcFunc-roots expr maf--solve-for-vars)
                     (error nil)))))
-    (commit (if (or (null result)
-                    (eq (car-safe result) 'calcFunc-roots))
-                expr
-              result))))
+    (if (or (null result)
+            (eq (car-safe result) 'calcFunc-roots))
+        (progn
+          (message "maf: calc cannot take roots of this for %s"
+                   (math-format-flat-expr maf--solve-for-vars 0))
+          (commit expr))
+      (commit result))))
 
 (maf-defcmd mafcmd-inverse-function (expr _arg commit)
   "Invert the function at point: y = f(x) becomes y = f-inverse(x).

@@ -303,6 +303,37 @@
                            "x + 3 = 7")))
   (calc-pop (calc-stack-size))
 
+  ;; A power of a compound base is past calc's whole-equation reach —
+  ;; degree 8 once expanded, and the linear-in-x^8 trick needs a bare
+  ;; variable — so the solve peels instead: the base stands in as a
+  ;; fresh unknown, its own equation solving onward (`maf--solve-peel').
+  (maf-push "(x - 8)^8 = 256")
+  (goto-char (point-max))
+  (maf-with-input "x" (call-interactively 'mafcmd-solve-for))
+  (cl-assert (string= (math-format-flat-expr
+                       (maf--strip-encasing (calc-top 1 'full)) 0)
+                      "x = 10"))
+  (calc-pop (calc-stack-size))
+
+  ;; Layers unwind recursively, the inner quadratic finishing exact.
+  (maf-push "((x + 1)^2 - 3)^8 = 256")
+  (goto-char (point-max))
+  (maf-with-input "x" (call-interactively 'mafcmd-solve-for))
+  (cl-assert (string= (math-format-flat-expr
+                       (maf--strip-encasing (calc-top 1 'full)) 0)
+                      "x = sqrt(5) - 1"))
+  (calc-pop (calc-stack-size))
+
+  ;; An inequality does not peel — its direction through an even power
+  ;; is nothing to guess at — and commits unchanged as before.
+  (maf-push "(x - 8)^8 < 256")
+  (goto-char (point-max))
+  (maf-with-input "x" (call-interactively 'mafcmd-solve-for))
+  (cl-assert (string= (math-format-flat-expr
+                       (maf--strip-encasing (calc-top 1 'full)) 0)
+                      "(x - 8)^8 < 256"))
+  (calc-pop (calc-stack-size))
+
   ;; An empty stack has nothing to resolve, and nothing is created.
   (cl-assert (equal (maf-with-input "x"
                       (condition-case e
