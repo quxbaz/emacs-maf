@@ -96,6 +96,37 @@
                           (error t))))
                 err))
 
+  ;; A circle is the one implicit relation the gnuplot backends draw,
+  ;; recognized whatever the spelling and sampled parametrically
+  ;; (`maf-plot--circle-of'); anything else implicit still points at
+  ;; Desmos.
+  (cl-assert (equal (maf-plot--circle-of
+                     (math-read-expr "(x - 3)^2 + (y - 1)^2 = 4"))
+                    '(3.0 1.0 2.0)))
+  (cl-assert (equal (maf-plot--circle-of
+                     (math-read-expr "x^2 + y^2 - 6 x - 2 y + 6 = 0"))
+                    '(3.0 1.0 2.0)))
+  (cl-assert (equal (cl-caddr (maf-plot--circle-of
+                               (math-read-expr "2 x^2 + 2 y^2 = 8")))
+                    2.0))
+  (cl-assert (null (maf-plot--circle-of (math-read-expr "x + y = 1"))))
+  (cl-assert (null (maf-plot--circle-of (math-read-expr "x^2 + 4 y^2 = 4"))))
+  (cl-assert (null (maf-plot--circle-of
+                    (math-read-expr "x^2 + y^2 + x y = 4"))))
+  (cl-assert (null (maf-plot--circle-of
+                    (math-read-expr "x^2 + y^2 + 10 = 0"))))
+
+  ;; The parametric sample closes its path, first point repeated last.
+  (cl-assert (let* ((file (maf-plot--work-file "circle-test.dat"))
+                    (lines (progn (maf-plot--sample-circle
+                                   '(3.0 1.0 2.0) file)
+                                  (with-temp-buffer
+                                    (insert-file-contents file)
+                                    (split-string (buffer-string)
+                                                  "\n" t)))))
+               (and (= (length lines) (1+ maf-plot-samples))
+                    (equal (car lines) (car (last lines))))))
+
   ;; The quadrant view centers on the origin: x the sampling span's
   ;; larger side, y the data's largest magnitude padded a twentieth —
   ;; both symmetric. Data hugging zero takes the floor instead of a

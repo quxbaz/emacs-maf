@@ -51,6 +51,9 @@
 (declare-function math-evaluate-expr "calc-ext" (x))
 (declare-function math-expr-subst "calc-alg" (expr old new))
 (declare-function math-read-number "calc-aent" (s &optional decimal))
+(declare-function math-simplify "calc-alg")
+(declare-function math-is-polynomial "calc-alg")
+(declare-function math-expr-contains "calc-alg")
 (declare-function calc-stack-size "calc" ())
 
 (defconst maf-plot--load-directory
@@ -187,6 +190,68 @@ refusal points at g o, since Desmos graphs relations whole."
     (nth 2 entry))
    (t (user-error "Cannot sample %s; g o plots it in Desmos"
                   (maf-plot--label entry)))))
+
+(defun maf-plot--number (v)
+  "Calc value V as an Emacs float, or nil when it is not a real number."
+  (let ((f (ignore-errors (math-float (math-evaluate-expr v)))))
+    (cond ((integerp f) (float f))
+          ((eq (car-safe f) 'float)
+           (* (nth 1 f) (expt 10.0 (nth 2 f)))))))
+
+(defun maf-plot--circle-of (entry)
+  "ENTRY's circle as the list (CX CY R) of floats, or nil.
+An equation in exactly x and y whose sides collapse to
+A (x^2 + y^2) + D x + E y + F = 0 with the one A on both squares — a
+circle however it was spelled, (x - 3)^2 + (y - 1)^2 = 4 or expanded
+— and a real positive radius. Nil for everything else: lines, other
+conics, a cross term, a negative or symbolic square. The gnuplot
+backends sample what this recognizes parametrically
+\=(`maf-plot--sample-circle'), the one implicit relation they draw;
+the rest still point at Desmos."
+  (when (eq (car-safe entry) 'calcFunc-eq)
+    (let* ((x '(var x var-x))
+           (y '(var y var-y))
+           (diff (math-simplify (math-sub (nth 1 entry) (nth 2 entry))))
+           (px (math-is-polynomial diff x 2)))
+      (when (and (equal (maf--solve-sorted-vars diff) (list x y))
+                 px (= (length px) 3)
+                 (not (math-expr-contains (nth 1 px) y))
+                 (not (math-expr-contains (nth 2 px) y)))
+        (let ((a (maf-plot--number (nth 2 px)))
+              (d (maf-plot--number (nth 1 px)))
+              (py (math-is-polynomial (car px) y 2)))
+          (when (and a d py (= (length py) 3)
+                     (not (zerop a))
+                     (equal (maf-plot--number (nth 2 py)) a))
+            (let ((e (maf-plot--number (nth 1 py)))
+                  (f (maf-plot--number (car py))))
+              (when (and e f)
+                (let* ((cx (/ (- d) (* 2 a)))
+                       (cy (/ (- e) (* 2 a)))
+                       (r2 (- (+ (* cx cx) (* cy cy)) (/ f a))))
+                  (when (> r2 0)
+                    (list cx cy (sqrt r2))))))))))))
+
+(defun maf-plot--sample-circle (circle file)
+  "Sample CIRCLE — the list (CX CY R) — into FILE, closed; return FILE.
+Parametric, `maf-plot-samples' points around the full turn, the first
+repeated at the end so the path closes: even sampling however the
+circle sits, where solving for y would flatten the poles."
+  (let ((lines nil))
+    (pcase-let ((`(,cx ,cy ,r) circle))
+      (dotimes (i maf-plot-samples)
+        (let ((angle (/ (* 2 float-pi i) (float maf-plot-samples))))
+          (push (format "%s %s"
+                        (+ cx (* r (cos angle)))
+                        (+ cy (* r (sin angle))))
+                lines))))
+    (setq lines (nreverse lines))
+    ;; The first point again, verbatim: recomputed at the full turn it
+    ;; would carry sin's last drop of float off zero, the path a hair
+    ;; open.
+    (with-temp-file file
+      (insert (mapconcat #'identity lines "\n") "\n" (car lines) "\n"))
+    file))
 
 (defun maf-plot--data-vector-p (entry)
   "Non-nil when ENTRY is a nonempty vector of real numbers — data.
@@ -761,12 +826,18 @@ error surfaces."
       (condition-case err
           (let ((entry (car spec))
                 (file (maf-plot--work-file (format "curve-%d.dat" index))))
-            (push (if (maf-plot--data-vector-p entry)
-                      (list (maf-plot--write-data entry file)
-                            (cdr spec) "linespoints pointtype 7")
+            (push (cond
+                   ((maf-plot--data-vector-p entry)
+                    (list (maf-plot--write-data entry file)
+                          (cdr spec) "linespoints pointtype 7"))
+                   ((maf-plot--circle-of entry)
+                    (list (maf-plot--sample-circle
+                           (maf-plot--circle-of entry) file)
+                          (cdr spec) nil))
+                   (t
                     (list (maf-plot--sample
                            (maf-plot--function-of entry) range file)
-                          (cdr spec) nil))
+                          (cdr spec) nil)))
                   curves))
         (error
          (if (cdr specs)
@@ -790,9 +861,31 @@ bounds; unprompted, Desmos keeps its own."
             (range (maf-plot--range (mapcar #'car specs) arg))
             (curves (maf-plot--gnuplot-curves specs range))
             ;; A prompted range is a deliberate window; only the
-            ;; unprompted view centers on the origin.
-            (view (and maf-plot-quadrants (not arg)
-                       (maf-plot--quadrant-view curves range)))
+            ;; unprompted view centers on the origin. A circle among
+            ;; the curves squares the axes' units — drawn on gnuplot's
+            ;; default aspect it would render as an ellipse.
+            ;; With nothing sampled over the x range — circles and
+            ;; data draw from their own points — the sampling span has
+            ;; no say in the frame either.
+            (sampled (cl-some (lambda (spec)
+                                (and (not (maf-plot--data-vector-p
+                                           (car spec)))
+                                     (not (maf-plot--circle-of
+                                           (car spec)))))
+                              specs))
+            (view (let ((clauses
+                         (concat
+                          (or (and maf-plot-quadrants (not arg)
+                                   (maf-plot--quadrant-view
+                                    curves
+                                    (if sampled range '(0.0 . 0.0))))
+                              "")
+                          (if (cl-some (lambda (spec)
+                                         (maf-plot--circle-of (car spec)))
+                                       specs)
+                              "set size ratio -1\n"
+                            ""))))
+                    (and (not (string-empty-p clauses)) clauses)))
             (title (cond ((null (cdr curves)) (nth 1 (car curves)))
                          ((cdr entries) (format "%d curves" (length curves)))
                          (t (maf-plot--label (car entries))))))
