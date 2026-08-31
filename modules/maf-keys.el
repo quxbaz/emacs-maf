@@ -379,21 +379,21 @@ ITEM is (COMMAND . KEYS), KEYS nil throughout the Unbound group."
 (defun maf-keys--detail (item _width)
   "The detail pane's text for ITEM: the command's full documentation.
 The same head the row wears — the command beside its keys — over the
-whole docstring, where the row shows only its first line."
+whole docstring, where the row shows only its first line. Flush left
+from the first line: a docstring already carries its own layout, and
+the pane adds no margin of its own."
   (let* ((cmd (car item)) (keys (cdr item))
          (doc (or (ignore-errors (documentation cmd))
                   "Not documented.")))
     (concat
-     "\n  " (propertize (symbol-name cmd) 'face 'maf-keys-command)
+     (propertize (symbol-name cmd) 'face 'maf-keys-command)
      (when keys
        (concat " ("
                (mapconcat (lambda (k)
                             (propertize k 'face 'maf-keys-binding))
                           keys ", ")
                ")"))
-     "\n\n"
-     (mapconcat (lambda (l) (concat "  " l)) (split-string doc "\n") "\n")
-     "\n")))
+     "\n\n" doc "\n")))
 
 (defun maf-keys--describe (item)
   "Describe ITEM's command, selecting its help buffer.
