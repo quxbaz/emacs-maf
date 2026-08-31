@@ -353,6 +353,16 @@
                       "x^6 + x + 1 = 0"))
   (calc-pop (calc-stack-size))
 
+  ;; A power of a compound base peels (`maf--solve-peel'): degree 8 is
+  ;; past the whole-equation solver, but the base's own equation is
+  ;; not, and the layer's solution carries the solve home.
+  (maf-push "(x - 8)^8 = 256")
+  (goto-char (point-max)) (call-interactively 'mafcmd-auto-solve)
+  (cl-assert (string= (math-format-flat-expr
+                       (maf--strip-encasing (calc-top 1 'full)) 0)
+                      "x = 10"))
+  (calc-pop (calc-stack-size))
+
   ;; Keep-args leaves the original relation below the solved result.
   (maf-push "2 x = 1")
   (call-interactively 'calc-keep-args)
