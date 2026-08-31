@@ -6922,15 +6922,17 @@ must run the same length; nested vectors recurse, so matrices pair
 cell by cell. A lone value beside a vector repeats for every element,
 and two lone values apply the formula once, whole.
 
-A relation on either side refuses: side by side is the one-$ form's
-reading (`maf--map-relation'), and a pair of sides against a vector's
-elements has no one pairing to mean."
+A relation as a whole operand refuses: side by side is the one-$
+form's reading (`maf--map-relation'), and a pair of sides against a
+vector's elements has no one pairing to mean. A relation met inside a
+vector is different — an element is a value whatever its shape, so
+solver output like [x = 6, x = 0] pairs entry by entry."
+  (when (or (maf--relation-p expr) (maf--relation-p arg))
+    (user-error "A relation maps with the one-$ form, not $$"))
   (pcase-let ((`(pair ,p1 ,p2 ,body) mapper))
     (cl-labels
         ((walk (a b)
            (cond
-            ((or (maf--relation-p a) (maf--relation-p b))
-             (user-error "A relation maps with the one-$ form, not $$"))
             ((and (eq (car-safe a) 'vec) (eq (car-safe b) 'vec))
              (unless (= (length a) (length b))
                (user-error "Lengths differ: %d and %d elements"
@@ -7088,8 +7090,10 @@ subject, consumed as any binary argument. [$$, $] over [a, b] with
 [x, y] on top gives [[a, x], [b, y]], and bare top-level commas read
 as that vector, so $$, $ says the same. The vectors pair index by
 index and must run the same length, a lone value beside a vector
-repeats for every element, and a relation refuses — side-by-side
-mapping belongs to the one-$ form.
+repeats for every element, and a relation as a whole operand refuses
+— side-by-side mapping belongs to the one-$ form; an equation inside
+a vector is an element like any other, so [$$, $] over solver output
+pairs the solutions.
 
 The subject is the whole entry at point, wherever point sits on its
 line, or the top entry at home: mapping speaks of the entry's

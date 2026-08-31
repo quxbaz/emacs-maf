@@ -400,6 +400,37 @@
   (cl-assert (= (calc-stack-size) 1))
   (calc-pop (calc-stack-size))
 
+  ;; An equation inside a vector is an element like any other: solver
+  ;; output pairs entry by entry.
+  (maf-push "[x = 6, x = 0]")
+  (maf-push "[y = 5, y = 2]")
+  (goto-char (point-max))
+  (progn (setq unread-command-events (listify-key-sequence "$$, $\r"))
+         (call-interactively 'mafcmd-map))
+  (cl-assert (equal (maf--strip-encasing (calc-top 1 'full))
+                    '(vec (vec (calcFunc-eq (var x var-x) 6)
+                               (calcFunc-eq (var y var-y) 5))
+                          (vec (calcFunc-eq (var x var-x) 0)
+                               (calcFunc-eq (var y var-y) 2)))))
+  (cl-assert (= (calc-stack-size) 1))
+  (calc-pop (calc-stack-size))
+
+  ;; A relation as a whole operand still refuses toward the one-$
+  ;; form, and the stack stands.
+  (maf-push "a = b")
+  (maf-push "[x, y]")
+  (goto-char (point-max))
+  (let ((message
+         (condition-case err
+             (progn (setq unread-command-events
+                          (listify-key-sequence "[$$, $]\r"))
+                    (call-interactively 'mafcmd-map)
+                    nil)
+           (user-error (error-message-string err)))))
+    (cl-assert (string-match-p "one-\\$ form" message)))
+  (cl-assert (= (calc-stack-size) 2))
+  (calc-pop (calc-stack-size))
+
   ;; Vectors of different lengths have no pairing; the refusal leaves
   ;; the stack standing.
   (maf-push "[a, b]")
