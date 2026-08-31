@@ -420,4 +420,41 @@ the saved-stacks preview."
                (not (window-dedicated-p win)))
       (window--display-buffer buf win 'reuse alist))))
 
+;;; Command presentation metadata
+
+;; Two strings a command may carry for the surfaces that describe it —
+;; the bindings help buffer today, a completion annotation or a module
+;; menu tomorrow. Symbol properties, as `maf-command' and
+;; `maf-operation' already are, so any command can carry them however
+;; it was defined: `maf-defcmd' writes them from its :title/:example
+;; options, the mafcmd table passes the same two keywords through per
+;; row, and a plain `defun' is stamped by whoever knows about it (see
+;; `maf-keys-descriptions'). Neither is ever required — every reader
+;; falls back, so the metadata can be filled in a command at a time
+;; without any surface going wrong in the meantime.
+
+(defun maf-command-title (command)
+  "COMMAND's proper name — \"power\" for `mafcmd-pow' — or nil.
+Nil rather than a guess: a name derived from the symbol would read as
+one the author chose, and \"pow\" is exactly the abbreviation a proper
+name is there to spell out. A caller with room for a fallback should
+use the symbol itself, which at least is true."
+  (get command 'maf-title))
+
+(defun maf-command-example (command)
+  "A short line showing what COMMAND does, or nil when none is written.
+One line, in whatever notation reads clearest for the command — the
+convention is a subject, an arrow, and the result: \"x, 2 => x^2\"."
+  (get command 'maf-example))
+
+(defun maf-set-command-doc (command &optional title example)
+  "Give COMMAND its proper name TITLE and illustrative EXAMPLE.
+Either may be nil, which leaves that property alone rather than
+clearing it — a caller filling in one of the two does not have to
+know the other. Both are plain strings; see `maf-command-title' and
+`maf-command-example'."
+  (when title (put command 'maf-title title))
+  (when example (put command 'maf-example example))
+  command)
+
 (provide 'maf-lib)

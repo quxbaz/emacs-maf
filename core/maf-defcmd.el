@@ -199,6 +199,16 @@ OPTS configure context resolution and commit:
           from the stack and drives how each target resolves EXPR/ARG.
   :prefix String label recorded in the calc trail for the operation.
 
+  :title  The command's proper name, spelled out — \"power\" for
+          mafcmd-pow. For the surfaces that list commands to read by,
+          where the symbol is an abbreviation.
+  :example
+          One line showing what the command does, by convention a
+          subject, an arrow and the result: \"x, 2 => x^2\". Both are
+          plain strings, stamped on the symbol and read back through
+          `maf-command-title' and `maf-command-example'; both are
+          optional, and every reader of them falls back.
+
   :inverse             Command (symbol) to run instead when calc's
   :hyperbolic          Inverse flag is set (the I prefix), the
   :inverse-hyperbolic  Hyperbolic flag (H), or both. The flags are
@@ -470,6 +480,10 @@ subset above signals when the command runs."
        ;; `defun' that wants the same treatment sets it by hand (see
        ;; `maf-dup-or-clear-selections').
        (put ',name 'maf-command t)
+       ,@(let ((title (alist-get :title opts))
+               (example (alist-get :example opts)))
+           (when (or title example)
+             `((maf-set-command-doc ',name ,title ,example))))
        (defun ,name ()
          ,@(when docstring (list docstring))
          (interactive)
