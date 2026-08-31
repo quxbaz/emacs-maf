@@ -27,6 +27,7 @@
 (declare-function calcFunc-nrat "calc-poly")
 (declare-function calcFunc-expand "calc-poly")
 (declare-function math-simplify "calc-alg")
+(declare-function math-matrixp "calc-ext")
 (declare-function calc-undo "calc-undo")
 (declare-function calc-redo "calc-undo")
 (declare-function math-looks-negp "calc-misc")
@@ -3416,7 +3417,9 @@ the degree unit deg typesets as the raised circle, 180 deg drawing
 as 180 with the \\circ on its shoulder; and the sets read with their
 signs — a vector of intervals joins its pieces with the cup instead
 of bracketing them, and vunion and vint calls draw as A cup B and
-A cap B (`maf--latex-compose-set-op').
+A cap B (`maf--latex-compose-set-op'). A plain vector brackets with
+\\left[ and \\right], so a tall element gets full-height delimiters;
+a matrix keeps calc's pmatrix.
 
 Calc writes a product as juxtaposition except when the right factor
 is a \\left( group, where it falls back to \\times — its flatness
@@ -3472,6 +3475,17 @@ is reclassed \\mathrel to match."
                                           (eq (car-safe el) 'intv))
                                         (cdr a)))
                          (maf--latex-join-composed (cdr a) " \\cup "))
+                        ;; A plain vector brackets with \left/\right,
+                        ;; so a tall element — a \frac — gets
+                        ;; full-height delimiters; calc writes the
+                        ;; literal [ ] whatever is inside. A matrix
+                        ;; keeps calc's pmatrix.
+                        ((and (eq (car-safe a) 'vec)
+                              (cdr a)
+                              (not (math-matrixp a)))
+                         (list 'horiz "\\left[ "
+                               (maf--latex-join-composed (cdr a) ", ")
+                               " \\right]"))
                         (t (maf--latex-separate-digit-product
                             a (funcall compose a prec div)))))))
               (maf--latex-strip-script-parens
