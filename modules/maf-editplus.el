@@ -1863,6 +1863,60 @@ through untouched, as does everything else in EXPR."
 ;; cost is a spaced-out U used as a factor — a U b — a product nobody
 ;; writes that way while * has a key of its own.
 
+(defun maf-editplus--top-level-dotdots (text)
+  "Indexes of TEXT's .. tokens at bracket depth zero, outside strings.
+The token calc reads only inside interval delimiters — so one at the
+top level means the delimiters were left off."
+  (let ((strings (maf-edit--string-regions text))
+        (depth 0) (hits nil) (i 0) (n (length text)))
+    (while (< i n)
+      (let ((c (aref text i)))
+        (cond
+         ((seq-find (lambda (r) (and (>= i (car r)) (< i (cdr r)))) strings)
+          nil)
+         ((memq c '(?\( ?\[ ?\{)) (setq depth (1+ depth)))
+         ((memq c '(?\) ?\] ?\})) (setq depth (1- depth)))
+         ((and (zerop depth) (eq c ?.) (< (1+ i) n)
+               (eq (aref text (1+ i)) ?.))
+          (push i hits) (setq i (1+ i)))))
+      (setq i (1+ i)))
+    (nreverse hits)))
+
+(defun maf-editplus--interval-open-p (endpoint)
+  "Whether ENDPOINT of a bare interval takes the open delimiter.
+An infinity does — no set closes at inf — anything else the closed
+one, the tighter reading of a bare range."
+  (member (string-trim endpoint) '("inf" "-inf" "+inf" "uinf" "-uinf")))
+
+(defun maf-editplus--commit-interval (text)
+  "TEXT with a bare interval's delimiters filled in as it commits.
+A range typed without its brackets — the .. token at the top level,
+where calc reads it only inside interval delimiters — is wrapped
+with the pair it means: open at an infinite end, closed at a finite
+one (`maf-editplus--interval-open-p'), so -inf..-1 commits as
+\=(-inf .. -1] and 1..5 as [1 .. 5]. On
+`maf-edit-transform-text-functions' while the module is on.
+
+Only the entry that is one bare interval whole: exactly one top-level
+.. and no top-level comma. A delimited interval has its .. at depth
+one and passes through untouched, spelling and all; anything more
+composite is left to say what it says."
+  (let ((trimmed (string-trim text)))
+    (if (or (string-empty-p trimmed)
+            (maf-edit--top-level-comma-p trimmed))
+        text
+      (let ((dots (maf-editplus--top-level-dotdots trimmed)))
+        (if (/= (length dots) 1)
+            text
+          (let* ((i (car dots))
+                 (lhs (substring trimmed 0 i))
+                 (rhs (substring trimmed (+ i 2))))
+            (if (or (string-blank-p lhs) (string-blank-p rhs))
+                text
+              (concat (if (maf-editplus--interval-open-p lhs) "(" "[")
+                      trimmed
+                      (if (maf-editplus--interval-open-p rhs) ")" "]")))))))))
+
 (defconst maf-editplus--union-space '(?\s ?\t ?\n)
   "Whitespace separating the union U from its operands.")
 
@@ -2357,11 +2411,15 @@ Turning this mode off restores the ordinary editing keys."
           (add-hook 'maf-edit-transform-value-functions
                     #'maf-editplus--commit-log10)
           (add-hook 'maf-edit-transform-text-functions
-                    #'maf-editplus--commit-union))
+                    #'maf-editplus--commit-union)
+          (add-hook 'maf-edit-transform-text-functions
+                    #'maf-editplus--commit-interval))
       (remove-hook 'maf-edit-transform-value-functions
                    #'maf-editplus--commit-log10)
       (remove-hook 'maf-edit-transform-text-functions
-                   #'maf-editplus--commit-union))))
+                   #'maf-editplus--commit-union)
+      (remove-hook 'maf-edit-transform-text-functions
+                   #'maf-editplus--commit-interval))))
 
 ;; Register with the module system when it is present; the mode above
 ;; works on its own without it.
