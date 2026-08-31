@@ -53,6 +53,10 @@
 (require 'maf-lib)
 (require 'maf-sel)
 
+;; src/stack.el, loaded with the package core well before any edit
+;; session; declared for the byte compiler.
+(declare-function maf--yank-strip-levels "stack")
+
 ;; Defined in lazily-loaded calc modules; calc-ext's autoload registry
 ;; resolves them at runtime, but the byte compiler needs declarations.
 (declare-function math-read-expr "calc-aent")
@@ -702,6 +706,14 @@ is entirely gone is just re-stamped."
       (delete-region (car j) (+ (car j) (cdr j)))
       (delete-region (1- (car j)) (car j)))))
 
+(defun maf-edit--yank-transform (text)
+  "Strip stack level prefixes from TEXT as it yanks into the session.
+The strip `maf-yank' gives the stack itself (`maf--yank-strip-levels')
+runs here at insertion time, on `yank-transform-functions', so the
+prefixes never appear in the buffer: a stack quoted in notes pastes as
+its entries alone, one per line, ready to commit."
+  (maf--yank-strip-levels text))
+
 (defun maf-edit--strip-stray-props ()
   "Delete machine-owned characters that are not a line's leading run.
 Line joins and yanks can strand prefix or pad characters mid-line;
@@ -1068,6 +1080,7 @@ goes through `maf-edit--newline-key' for the same reason."
             maf-edit--pending-repair nil)
       (add-hook 'after-change-functions #'maf-edit--after-change nil t)
       (add-hook 'post-command-hook #'maf-edit--post-command nil t)
+      (add-hook 'yank-transform-functions #'maf-edit--yank-transform nil t)
       (maf--point-restore snapshot)
       (message (substitute-command-keys
                 "maf-edit: editing stack — \\<maf-edit-mode-map>\\[maf-edit-commit] commits, \\[maf-edit-discard] discards"))))
@@ -1170,6 +1183,7 @@ left."
           maf-edit--return-home nil)
     (remove-hook 'after-change-functions #'maf-edit--after-change t)
     (remove-hook 'post-command-hook #'maf-edit--post-command t)
+    (remove-hook 'yank-transform-functions #'maf-edit--yank-transform t)
     (setq maf-edit--pending-repair nil)
     (maf-edit--clear-errors)
     (mapc #'delete-overlay (maf-edit--overlays))
