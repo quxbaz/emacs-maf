@@ -236,6 +236,38 @@
   (cl-assert (equal (calc-top 1 'full) '(cplx 2 3)))
   (calc-pop 1)
 
+  ;; Under the map flag each element is unpacked in place: a vector of
+  ;; calls comes back as a vector of their arguments, where unpacking
+  ;; the vector itself would have spread the calls over the stack. The
+  ;; parts are a value list — what commit spreads over entries — and an
+  ;; element's slot holds one expression, so the single part stands in
+  ;; (`maf--defcmd-map-slot').
+  (maf-push "[cos(1), cos(2), cos(3)]")
+  (goto-char (point-max))
+  (execute-kbd-macro (kbd "M M-u"))
+  (cl-assert (= (calc-stack-size) 1))
+  (cl-assert (equal (maf--strip-encasing (calc-top 1 'full)) '(vec 1 2 3)))
+  (calc-pop 1)
+
+  ;; An element with several parts has nowhere to put them, so it is
+  ;; left as it stands rather than losing all but one — the reading the
+  ;; equation target already gave such a list.
+  (maf-push "[x + y, sin(a)]")
+  (goto-char (point-max))
+  (execute-kbd-macro (kbd "M M-u"))
+  (cl-assert (string= (math-format-value
+                       (maf--strip-encasing (calc-top 1 'full)))
+                      "[x + y, a]"))
+  (calc-pop 1)
+
+  ;; A matrix unpacks element by element, the shape kept.
+  (maf-push "[[cos(1), cos(2)]]")
+  (goto-char (point-max))
+  (execute-kbd-macro (kbd "M M-u"))
+  (cl-assert (equal (maf--strip-encasing (calc-top 1 'full))
+                    '(vec (vec 1 2))))
+  (calc-pop 1)
+
   ;; Keep-args leaves the original beneath the parts.
   (maf-push "a + b")
   (goto-char (point-max))

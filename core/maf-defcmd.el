@@ -108,17 +108,40 @@ Skips a leading docstring and keyword-value pairs."
         (body (maf--defcmd-parse-body forms)))
     `(,docstring ,opts ,body)))
 
+(defun maf--defcmd-value-list-p (val)
+  "Non-nil when VAL is a list of values rather than one expression.
+The shape a body commits when it means several stack entries — the
+parts `mafcmd-unpack' spreads. Every calc expression is either a
+number or a list headed by a symbol (`vec', `var', a `calcFunc-'
+name, an operator), so a list whose head is not a symbol is a list of
+them."
+  (and (consp val) (not (symbolp (car val)))))
+
+(defun maf--defcmd-map-slot (val el)
+  "The replacement for mapped element EL, given what the body committed as VAL.
+A body that commits nothing leaves its element alone. One that commits
+a list of values is answering with more than an element can hold — a
+slot inside a vector takes exactly one expression — so a single value
+stands in and several leave the element as it was. The equation target
+reads such a list the same way and for the same reason; see
+`mafcmd-unpack', the command that produces one."
+  (cond ((null val) el)
+        ((maf--defcmd-value-list-p val) (if (cdr val) el (car val)))
+        (t val)))
+
 (defun maf--defcmd-map-vec (runner expr arg)
   "Run RUNNER over each element of vector EXPR; return the mapped vector.
 RUNNER is a defcmd body as a function of (ELEMENT ARG COMMIT-FN): each
 element runs the body once, ARG shared across the runs, and what the
-body commits becomes the element's replacement. A body that commits
-nothing leaves its element unchanged. Nested vectors recurse, so a
-matrix maps over its individual elements — the same reading
-`mafcmd-map' gives one. A non-vector subject is the degenerate map:
-the body runs once on the whole expression, so M Q on a scalar is
-plain Q (a relation never reaches here — it resolves to the equation
-target first)."
+body commits becomes the element's replacement (see
+`maf--defcmd-map-slot'). A body that commits nothing leaves its
+element unchanged. Nested vectors recurse, so a matrix maps over its
+individual elements — the same reading `mafcmd-map' gives one. A
+non-vector subject is the degenerate map: the body runs once on the
+whole expression, so M Q on a scalar is plain Q (a relation never
+reaches here — it resolves to the equation target first). Only there
+may a body's value list stand: the subject is the whole entry, which
+has room for the parts."
   (if (eq (car-safe expr) 'vec)
       (cons 'vec
             (mapcar (lambda (el)
@@ -126,7 +149,7 @@ target first)."
                           (maf--defcmd-map-vec runner el arg)
                         (let (out)
                           (funcall runner el arg (lambda (val) (setq out val)))
-                          (or out el))))
+                          (maf--defcmd-map-slot out el))))
                     (cdr expr)))
     (let (out)
       (funcall runner expr arg (lambda (val) (setq out val)))
