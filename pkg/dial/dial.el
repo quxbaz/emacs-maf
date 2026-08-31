@@ -38,6 +38,14 @@
 ;;            Metadata rather than inspection, because the setter is
 ;;            opaque: dial reading its code for tell-tale symbols
 ;;            would misjudge any form it did not anticipate.
+;;   :inert   Non-nil marks the row's values as actions rather than
+;;            states: no value is ever highlighted as the live one —
+;;            every chip stays shadowed — the row never counts as
+;;            moved off a default, and stepping runs the row's action
+;;            (its first value's setter) outright, with none of the
+;;            redraw a state change would need, so the action is free
+;;            to take point to another buffer. For a row that is a
+;;            button, [show] or [run], not a setting.
 ;;   :read    Setter form that prompts for a value, for options whose
 ;;            domain is open. May appear alongside :values, where the
 ;;            values are the common choices and :read reaches the rest.
@@ -285,12 +293,14 @@ take its place."
 Through the consumer's raw values where it supplies defaults — the same
 answer the changed-only filter gives, see `dial--changed-p' — and
 otherwise by the value key against a :default the row states for
-itself. Nil, not \"changed\", when no default is known at all."
-  (if dial--default-fn
-      (dial--changed-p id spec)
-    (let ((default (dial--default-value id spec)))
-      (and (not (eq default dial--no-default))
-           (not (equal (dial--current id spec) default))))))
+itself. Nil, not \"changed\", when no default is known at all — and
+always nil on an :inert row, whose values are actions with no state
+to have moved."
+  (cond ((plist-get spec :inert) nil)
+        (dial--default-fn (dial--changed-p id spec))
+        (t (let ((default (dial--default-value id spec)))
+             (and (not (eq default dial--no-default))
+                  (not (equal (dial--current id spec) default)))))))
 
 (defun dial--value-column (id spec)
   "Return the Value column for ID under SPEC: every value it can take.
@@ -302,9 +312,14 @@ setting has moved off its default — see `dial--value-face'. A setting
 with no fixed set of values, and one sitting on a value outside its
 set, shows that value alone.
 
+An :inert row's chips are actions, not states, so none is ever the
+live one: all stay shadowed, and no extra chip reports a current
+value the actions do not have.
+
 A value stepped onto but not set is marked too — see `dial--pending'."
   (let* ((values (dial--values spec))
-         (current (dial--current id spec))
+         (inert (plist-get spec :inert))
+         (current (and (not inert) (dial--current id spec)))
          (moved (dial--moved-p id spec))
          (live-face (if moved 'dial-changed 'dial-value))
          (show (plist-get spec :show))
@@ -322,7 +337,7 @@ A value stepped onto but not set is marked too — see `dial--pending'."
          ;; domain, and the detail behind a chip that only names a
          ;; state.
          (extra (or (and show (funcall show (dial--raw id)))
-                    (unless (assoc current values)
+                    (unless (or inert (assoc current values))
                       (dial--value-string id spec)))))
     ;; The values carry no padding of their own: a face spanning the
     ;; space beside a value reads as highlighting something that is not
@@ -909,23 +924,29 @@ runs that one."
       (user-error "%s takes no fixed set of values — %s prompts for one"
                   (plist-get spec :label)
                   (dial--key #'dial-set "RET")))
-    (let* ((from (or (dial--pending-index id)
-                     (seq-position values (dial--current id spec)
-                                   (lambda (v c) (equal (car v) c)))
-                     0))
-           (index (mod (+ from (or n 1)) count))
-           (value (nth index values)))
-      (if (dial--prompts-p value)
-          (progn
-            (setq dial--pending (cons id index))
-            (dial--refresh)
-            (dial--print t)
-            (message "%s needs a value — %s to enter it" (nth 1 value)
-                     (dial--key #'dial-set "RET")))
-        (setq dial--pending nil)
-        (dial--apply (nth 2 value))
-        (dial--redraw id spec (or (dial--describe spec value)
-                                  (dial--example spec value)))))))
+    ;; An :inert row's step is the press: run the action and stop
+    ;; there. No pending mark and no redraw — the chips carry no state
+    ;; to repaint, and the action may well have taken point to another
+    ;; buffer, where the redraw's buffer-locals are nobody's.
+    (if (plist-get spec :inert)
+        (dial--apply (nth 2 (car values)))
+      (let* ((from (or (dial--pending-index id)
+                       (seq-position values (dial--current id spec)
+                                     (lambda (v c) (equal (car v) c)))
+                       0))
+             (index (mod (+ from (or n 1)) count))
+             (value (nth index values)))
+        (if (dial--prompts-p value)
+            (progn
+              (setq dial--pending (cons id index))
+              (dial--refresh)
+              (dial--print t)
+              (message "%s needs a value — %s to enter it" (nth 1 value)
+                       (dial--key #'dial-set "RET")))
+          (setq dial--pending nil)
+          (dial--apply (nth 2 value))
+          (dial--redraw id spec (or (dial--describe spec value)
+                                    (dial--example spec value))))))))
 
 (defun dial-previous-value (&optional n)
   "Set this row's setting to its previous value, or the one N values back."

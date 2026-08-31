@@ -354,6 +354,40 @@ From `point-min', not from point, which the open leaves on a row."
         (run-hooks 'post-command-hook)
         (cl-assert (equal said '("The first setting."))))))
 
+  ;; --- An :inert row: actions, not states ---
+
+  ;; The chip's key matches the raw value and the row states a
+  ;; :default it is off — both marks a normal row would wear — yet an
+  ;; inert row shows neither: no live purple, no changed gold, and no
+  ;; extra chip reporting a current value the actions do not have.
+  (dialtest--open
+   `((dialtest-item :group "G" :label "Item" :doc "A button."
+                    :inert t
+                    :default z
+                    :values ((a "run" (setq dialtest--value 'ran))))))
+  (with-current-buffer "*dial-test*"
+    (goto-char (point-min))
+    (search-forward "run")
+    (let ((faces (ensure-list (get-text-property (match-beginning 0) 'face))))
+      (cl-assert (memq 'shadow faces))
+      (cl-assert (not (memq 'dial-value faces)))
+      (cl-assert (not (memq 'dial-changed faces))))
+    ;; Nothing after the one action chip: no raw-value report.
+    (cl-assert (string-match-p "run *$"
+                               (buffer-substring-no-properties
+                                (line-beginning-position)
+                                (line-end-position))))
+    ;; Stepping the row runs the action, and the chip stays shadowed.
+    (goto-char (point-min))
+    (dial--move-line 1)
+    (dial-next-value)
+    (cl-assert (eq dialtest--value 'ran))
+    (goto-char (point-min))
+    (search-forward "run")
+    (cl-assert (memq 'shadow (ensure-list
+                              (get-text-property (match-beginning 0)
+                                                 'face)))))
+
   ;; Leave nothing behind.
   (progn (kill-buffer "*dial-test*")
          (setq dialtest--value nil)
