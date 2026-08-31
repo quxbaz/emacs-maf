@@ -6358,8 +6358,9 @@ the variable (var-x) and VALUE the expression assigned to it.
 
 Calc's own `calc-is-assignments' does the reading, so the shapes
 accepted are exactly the ones `calc-let' takes. It builds its list back
-to front; reversing puts the bindings in written order, so a vector
-naming the same variable twice ends with the later assignment standing."
+to front; reversing puts the bindings in written order — the order
+`mafcmd-let' evaluates branches in when a repeated variable makes the
+vector one (see there)."
   ;; calc-ext's autoload registry covers most of calc-store but not this
   ;; function, so the module has to be pulled in by hand.
   (require 'calc-store)
@@ -6394,12 +6395,58 @@ underneath the commit that is about to run."
             (set (car s) (nth 2 s))
           (makunbound (car s)))))))
 
-(maf-defcmd mafcmd-let (expr arg commit)
+(defun maf--let-evaluate-subject (expr bindings)
+  "Return EXPR evaluated under BINDINGS, a two-sided relation per side.
+The sides evaluate separately, as the equation target used to run the
+body: the values go in and each side folds, but evaluation never
+rearranges the relation whole — 6 x + 12 = 18 y + 6 with x = 2 stays
+24 = 18 y + 6, where whole evaluation would carry it further. A
+chained relation, or anything else, evaluates in one piece."
+  (if (and (maf--relation-p expr) (= (length expr) 3))
+      (list (car expr)
+            (maf--let-evaluate (nth 1 expr) bindings)
+            (maf--let-evaluate (nth 2 expr) bindings))
+    (maf--let-evaluate expr bindings)))
+
+(maf-defcmd maf--let-joint-run (expr arg commit)
+  "Evaluate the resolved expression under the top's joint assignments.
+The worker behind `mafcmd-let' for a joint binding set — see there.
+The equation target runs this once per side, so a relation folds side
+by side and is never rearranged whole (6 x + 12 = 18 y + 6 with x = 2
+stays 24 = 18 y + 6)."
+  :arity binary
+  :prefix "let"
+  :pair -1
+  :scope explicit
+  :targets-var mafcmd-let-targets
+  (let ((bindings (maf--let-bindings arg)))
+    (unless bindings
+      (user-error "Top of stack is not an assignment, or a vector of them"))
+    (commit (maf--let-evaluate expr bindings))))
+
+(maf-defcmd maf--let-branch-run (expr arg commit)
+  "Evaluate the resolved expression once per branch assignment.
+The worker behind `mafcmd-let' when the top vector repeats one
+variable — see there. The subject stays whole (`:map -1'): each
+branch's result is a whole relation, its sides evaluated in turn by
+`maf--let-evaluate-subject', never sides re-paired across branches;
+the vector collects the results in written order."
+  :arity binary
+  :prefix "let"
+  :map -1
+  :pair -1
+  :scope explicit
+  :targets-var mafcmd-let-targets
+  (commit (cons 'vec (mapcar (lambda (b)
+                               (maf--let-evaluate-subject expr (list b)))
+                             (maf--let-bindings arg)))))
+
+(defun mafcmd-let ()
   "Evaluate the resolved expression under the top-of-stack assignments.
 
   2 x + 1 with x := 3  =>  7
 
-The argument is an assignment — `mafcmd-assign's x := 3, or the plain
+The argument is an assignment — `mafcmd-assign\='s x := 3, or the plain
 equation x = 3 — or a vector of nothing but assignments, and it binds
 its variables for this one evaluation: nothing is stored, and a
 variable that already had a value has it back by the time the command
@@ -6407,20 +6454,36 @@ returns.
 
 The value is evaluated in rather than pasted in, so the formula folds
 around it as if the number had been there all along — that is the
-difference from `mafcmd-substitute', which rewrites structurally. With
+difference from `mafcmd-substitute\=', which rewrites structurally. With
 simplification off (@) nothing folds and the value simply lands in
 place. Being an evaluation, it also brings in whatever other variables
-are stored, exactly as calc's own `s l' does; a variable with no value
+are stored, exactly as calc\='s own `s l\=' does; a variable with no value
 anywhere stands.
 
   a x with [x := 3, a := 2]  =>  6
   2 x + 1 with x := 3        =>  2 3 + 1    (the same, simplification off)
   x + y with x := 3          =>  y + 3      (y unbound: stands)
 
+A vector that repeats one variable is not a joint set but branches:
+the subject is evaluated once per assignment, the results collecting
+in a vector —
+
+  x = 2 y - 1 with [x = 6, x = 0]  =>  [6 = 2 y - 1, 0 = 2 y - 1]
+
+the shape solver output arrives in, so a solution vector feeds back
+whole. (The relations land as substitution leaves them, like any let
+over a relation; a mapped auto-solve, M M-i, carries them on to
+[y = 7:2, y = 1:2].) A vector
+that repeats a variable and binds others besides refuses: joint for
+some and branches for one reads as neither. The two shapes run as two
+workers — `maf--let-joint-run' and `maf--let-branch-run', dispatched
+here off the top entry\='s shape — sharing the `mafcmd-let-targets'
+policy.
+
 Like any binary command, the entry at point is the subject and the top
 of the stack is the argument, consumed on commit; at home the subject
 is stack level 2. Point inside a formula does not narrow the subject
-\(`:scope explicit'): the entry is evaluated whole, each side of a
+\(`:scope explicit\='): the entry is evaluated whole, each side of a
 relation in turn, wherever point rests on it — including on the
 argument, which resolves to the entry below, so an assignment can be
 typed and used without moving back to the formula it binds. A region or
@@ -6431,21 +6494,33 @@ With keep-args both operands stay and the result is pushed on top. A
 top entry that is not an assignment signals, with the stack untouched.
 An assignment written as a plain equation stays one argument even when
 the subject is a relation: each side is evaluated under it, rather than
-its two sides pairing with the subject's as they would in equation
-arithmetic — so the subject's operator does not have to be = either.
+its two sides pairing with the subject\='s as they would in equation
+arithmetic — so the subject\='s operator does not have to be = either.
 
   y = x^2 + 1 with x := 3   =>  y = 10
   3 x < 15 with x = 2       =>  6 < 15
   x^2 + x| with x := 3      =>  12         (point within: the entry whole)
   x^2 + x  with x := 3|     =>  12         (point on the argument: likewise)"
-  :arity binary
-  :prefix "let"
-  :pair -1
-  :scope explicit
-  (let ((bindings (maf--let-bindings arg)))
-    (unless bindings
-      (user-error "Top of stack is not an assignment, or a vector of them"))
-    (commit (maf--let-evaluate expr bindings))))
+  (interactive)
+  (let* ((top (maf--with-calc-buffer
+                (and (> (calc-stack-size) 0)
+                     (maf--strip-encasing (calc-top 1 'full)))))
+         (bindings (and top (ignore-errors (maf--let-bindings top))))
+         (vars (cl-remove-duplicates (mapcar #'car bindings))))
+    (cond
+     ;; Branches: several assignments, one variable.
+     ((and (cdr bindings) (= (length vars) 1))
+      (call-interactively #'maf--let-branch-run))
+     ;; A repeated variable among others has no coherent reading.
+     ((and bindings (< (length vars) (length bindings)))
+      (user-error
+       "Bind each variable once (joint), or one variable repeatedly (branches) — not both"))
+     ;; Everything else — joint sets, single assignments, and the
+     ;; not-an-assignment error, raised where it always was.
+     (t (call-interactively #'maf--let-joint-run)))))
+;; The fancy-prefix property a maf-defcmd would have stamped: K
+;; (keep-args) may carry past calc's prefix into this command.
+(put 'mafcmd-let 'maf-command t)
 
 ;;; Mapping
 
