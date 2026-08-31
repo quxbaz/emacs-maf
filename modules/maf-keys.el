@@ -7,8 +7,8 @@
 ;; Each item is a command headed by its proper name and its keys, over
 ;; an example and the first line of its docstring:
 ;;
-;;   mafcmd-pow · power (^)
-;;     EXAMPLE: x, 2 => x^2
+;;   Power ... (mafcmd-pow) (^)
+;;     x, 2 => x^2
 ;;     Contextually apply `calcFunc-pow' (binary).
 ;;
 ;; The name and the example are the command's own — a mafcmd table row
@@ -57,8 +57,12 @@
 ;;; Faces
 
 (defface maf-keys-command
-  '((t :inherit font-lock-function-name-face))
-  "Face for command names in the bindings help buffer."
+  '((t :inherit help-key-binding))
+  "Face for a command's symbol in the bindings help buffer.
+The keys' own face: the symbol in parens is what you would type at
+\\[execute-extended-command] where the keys are what you would press,
+so the head names its two ways in in the one style — the parens left
+unfaced around each, the text inside them coloured."
   :group 'maf)
 
 (defface maf-keys-binding
@@ -78,19 +82,20 @@ label is. Grey still — the head above is what the eye scans by."
   :group 'maf)
 
 (defface maf-keys-title
-  '((t :inherit font-lock-doc-face))
-  "Face for a command's proper name, beside its symbol.
-Quieter than the symbol it glosses: the name is there to spell out an
-abbreviation, not to compete with what the eye scans the list by."
+  '((t :inherit font-lock-function-name-face))
+  "Face for a command's proper name, leading its head.
+The color the symbol itself used to wear, and now the one thing in
+the entry wearing it: the name is what the head is read by, where the
+symbol and the keys after it are the two ways in, and the lines below
+are grey."
   :group 'maf)
 
 (defface maf-keys-example
-  '((t :inherit maf-keys-doc))
+  '((t :inherit font-lock-doc-face))
   "Face for a command's one-line example.
-The description's own grey: the example and the line under it are the
-one block of explanation below the head, and a color of its own made
-the example read as another kind of thing. It keeps a face so it can
-be retuned apart from the prose."
+Its own color under the head and above the grey description: the
+example is the line that says what the command does without prose,
+and it is worth telling from the sentence below it at a glance."
   :group 'maf)
 
 (defcustom maf-keys-recent-max 10
@@ -446,14 +451,23 @@ nil throughout the Unbound group."
 
 ;;; The menu
 
+(defun maf-keys--title (cmd)
+  "CMD's proper name, capitalized for the head, or nil when it has none.
+The first letter only, as the formula menu capitalizes its own
+derived titles: a name is written lowercase where it is declared —
+\"greatest common divisor\" — because it is a phrase, and only the
+line it heads makes it a heading."
+  (when-let ((title (maf-command-title cmd)))
+    (concat (upcase (substring title 0 1)) (substring title 1))))
+
 (defun maf-keys--row (item _ctx)
   "ITEM's entry: the command headed by its name and keys, then its text.
 ITEM is (COMMAND . KEYS), KEYS nil throughout the Unbound group. The
 head reads
 
-  mafcmd-pow · power (^)
+  Power ... (mafcmd-pow) (^)
 
-— the symbol, the proper name spelling it out, the keys — over the
+— the proper name, the symbol it spells out, the keys — over the
 command's example and the first line of its docstring. The name and
 the example are what the command carries (`maf-command-title',
 `maf-command-example'); a command carrying neither shows neither, and
@@ -462,12 +476,13 @@ its entry is the head over the description alone.
 A blank line closes the row: an entry runs to several lines here, and
 run together the list reads as one block rather than as its commands."
   (let* ((cmd (car item)) (keys (cdr item))
-         (title (maf-command-title cmd))
+         (title (maf-keys--title cmd))
          (example (maf-command-example cmd)))
-    (concat "  " (propertize (symbol-name cmd) 'face 'maf-keys-command)
+    (concat "  "
             (when title
-              (concat (propertize " · " 'face 'shadow)
-                      (propertize title 'face 'maf-keys-title)))
+              (concat (propertize title 'face 'maf-keys-title)
+                      (propertize " ... " 'face 'shadow)))
+            "(" (propertize (symbol-name cmd) 'face 'maf-keys-command) ")"
             (when keys
               (concat " ("
                       (mapconcat (lambda (k)
@@ -476,7 +491,6 @@ run together the list reads as one block rather than as its commands."
                       ")"))
             (when example
               (concat "\n    "
-                      (propertize "EXAMPLE: " 'face 'maf-keys-doc)
                       (propertize example 'face 'maf-keys-example)))
             "\n    "
             (propertize (maf-keys--doc (car item)) 'face 'maf-keys-doc)
@@ -504,15 +518,15 @@ whole docstring, where the row shows only its first line. Flush left
 from the first line: a docstring already carries its own layout, and
 the pane adds no margin of its own."
   (let* ((cmd (car item)) (keys (cdr item))
-         (title (maf-command-title cmd))
+         (title (maf-keys--title cmd))
          (example (maf-command-example cmd))
          (doc (or (ignore-errors (documentation cmd))
                   "Not documented.")))
     (concat
-     (propertize (symbol-name cmd) 'face 'maf-keys-command)
      (when title
-       (concat (propertize " · " 'face 'shadow)
-               (propertize title 'face 'maf-keys-title)))
+       (concat (propertize title 'face 'maf-keys-title)
+               (propertize " ... " 'face 'shadow)))
+     "(" (propertize (symbol-name cmd) 'face 'maf-keys-command) ")"
      (when keys
        (concat " ("
                (mapconcat (lambda (k)
@@ -520,9 +534,7 @@ the pane adds no margin of its own."
                           keys ", ")
                ")"))
      (when example
-       (concat "\n"
-               (propertize "EXAMPLE: " 'face 'maf-keys-doc)
-               (propertize example 'face 'maf-keys-example)))
+       (concat "\n" (propertize example 'face 'maf-keys-example)))
      "\n\n" doc "\n")))
 
 (defun maf-keys--describe (item)
