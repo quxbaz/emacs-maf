@@ -60,6 +60,31 @@
   (cl-assert (string= (math-format-value (calc-top 2 'full)) "x + 1"))
   (progn (calc-pop (calc-stack-size)) nil)
 
+  ;; A text-only item that no longer reads — an edit-dialect spelling
+  ;; whose modes have moved on — is skipped on the stack rather than
+  ;; bricking the cycle, and stays in the ring, where an edit session
+  ;; can still use it as text (`maf-recall--readable-index').
+  (progn (calc-pop (calc-stack-size))
+         (setq maf-recall--ring
+               (list (list "0,1_1") (list "0,1,_1") (list "y - 2")))
+         nil)
+  (goto-char (point-max))
+  (execute-kbd-macro (kbd "M-p"))
+  (cl-assert (= (calc-stack-size) 1))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "y - 2"))
+  (cl-assert (= (length maf-recall--ring) 3))
+  ;; With nothing readable at all, the refusal says so.
+  (progn (calc-pop (calc-stack-size))
+         (setq maf-recall--ring (list (list "0,1_1")))
+         nil)
+  (goto-char (point-max))
+  (cl-assert (string-match-p
+              "reads on the stack"
+              (condition-case err
+                  (progn (execute-kbd-macro (kbd "M-p")) "")
+                (user-error (error-message-string err)))))
+  (progn (setq maf-recall--ring (list (list "x + 1"))) nil)
+
   ;; The entry always lands at home, whatever level point was on, and
   ;; the vacated spot is marked so a single pop returns there.
   (maf-push "p")

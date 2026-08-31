@@ -79,6 +79,9 @@
 (defvar maf-mode-map)
 (defvar savehist-additional-variables)
 (declare-function maf-digit-start "maf-minibuffer")
+;; The edit session's whole input side, text to text; called inside
+;; the `maf-edit-commit' advice, where maf-edit is loaded per se.
+(declare-function maf-edit--parse-text "maf-edit")
 
 (defcustom maf-recall-size 100
   "Maximum number of typed entries kept in the recall ring.
@@ -131,12 +134,27 @@ all. A commit that cannot parse signals and leaves the session
 standing, and a discard never comes through here, so both stay out of
 the ring without a test of their own.
 
+Each text's value is read here too, before the commit, while the
+session's readers still stand — the transform functions and the
+dialect are session state, and a spelling like an editvars subscript
+reads under them alone. The value rides the ring item, so a stack
+recall never has to re-read the text under whatever input modes rule
+later (the mismatch that used to brick \\[maf-recall-previous]).
+
 Buffer order is deepest-first, so the bottom-most new entry is
 recorded last and ends up the ring's newest — the order the entries
 were added in."
-  (let ((texts (and maf-edit-mode (maf-recall--new-entry-texts))))
+  (let ((items (and maf-edit-mode
+                    (mapcar (lambda (text)
+                              (let ((v (math-read-expr
+                                        (maf-edit--parse-text text))))
+                                (cons text
+                                      (and (not (eq (car-safe v) 'error))
+                                           v))))
+                            (maf-recall--new-entry-texts)))))
     (prog1 (apply fn args)
-      (dolist (text texts) (maf-recall--record text)))))
+      (dolist (item items)
+        (maf-recall--record (car item) (cdr item))))))
 
 (defun maf-recall--stack-values ()
   "The stack's formula values, top first."
@@ -372,10 +390,29 @@ trick `maf--undo-amalgamate-digit-entry' plays on an arg push."
           (cons (append (car calc-undo-list) (cadr calc-undo-list))
                 (cddr calc-undo-list)))))
 
+(defun maf-recall--readable-index (i dir)
+  "First index at or past I, walking DIR, whose item reads as a value.
+A text-only item from an edit session can be spelled in that
+session's dialect, which plain `math-read-expr' cannot read; the
+stack walk skips such an item rather than letting one dead text brick
+the whole cycle. It stays in the ring — an edit session fills with
+the text itself and reads it under its own dialect. Returns the
+index, or nil when nothing that way reads."
+  (let ((len (length maf-recall--ring)))
+    (while (and (>= i 0) (< i len)
+                (let ((item (nth i maf-recall--ring)))
+                  (and (null (cdr item))
+                       (eq (car-safe (math-read-expr (car item)))
+                           'error))))
+      (setq i (+ i dir)))
+    (and (>= i 0) (< i len) i)))
+
 (defun maf-recall--stack-move (n)
   "Move N steps back through the ring out on the stack.
 The first step pushes a new entry at home; further steps replace it,
-so a cycle leaves exactly one entry behind however long it ran."
+so a cycle leaves exactly one entry behind however long it ran.
+An item whose text no longer reads is skipped, not fatal — see
+`maf-recall--readable-index'."
   (let* ((cycling (and (memq last-command
                              '(maf-recall-previous maf-recall-next))
                        maf-recall--stack-index
@@ -388,6 +425,9 @@ so a cycle leaves exactly one entry behind however long it ran."
      ((>= i (length maf-recall--ring))
       (user-error "maf-recall: no earlier entry"))
      (t
+      (setq i (or (maf-recall--readable-index i (if (> n 0) 1 -1))
+                  (user-error "maf-recall: no %s entry reads on the stack"
+                              (if (> n 0) "earlier" "later"))))
       (let ((val (maf-recall--value (nth i maf-recall--ring))))
         (if cycling
             (progn
