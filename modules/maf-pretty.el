@@ -240,6 +240,14 @@ it, - flipping to \\mp. Everything else is `maf--latex-string'."
       (setq latex (replace-regexp-in-string
                    "\\(\\\\\\(?:pm\\|mp\\)\\(?:_{[0-9]+}\\)?\\)\\\\cdot "
                    "\\1 " latex t)))
+    ;; A strut in every radicand: radicals size to their content, so
+    ;; sqrt(2) sqrt(y) drew bars at two heights with y's surd dipping
+    ;; under the baseline. \mathstrut — an invisible paren-sized box,
+    ;; the typographer's fix — gives every radical one height and
+    ;; depth; content taller than the strut is unaffected.
+    (setq latex (replace-regexp-in-string
+                 "\\\\sqrt\\(?:\\[[^]]*]\\)?{"
+                 "\\&\\\\mathstrut " latex t))
     (maf-pretty--grow-parens latex)))
 
 (defun maf-pretty--ratex (latex)
