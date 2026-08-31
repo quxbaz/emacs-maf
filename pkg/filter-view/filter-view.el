@@ -47,6 +47,9 @@
 ;;            a function () -> number, consulted live so a defcustom
 ;;            can back it. Zero keeps the keys but turns the group
 ;;            off; absent, the view has no recents at all.
+;;   :group-blank  Non-nil sets a blank line under each group header,
+;;            for items tall enough that the header would otherwise
+;;            read as one of them. Folded headers never take it.
 ;;   :recent-label  The recent group's header. Default "Recent".
 ;;   :pane-default  How the pane starts the first time the view opens:
 ;;            `follow' (the default) or nil for closed. Thereafter the
@@ -388,8 +391,13 @@ made the line and the name two different strings."
     (dolist (g groups)
       (let ((folded (filter-view--collapsed-p (car g)))
             hstart)
-        (unless (or first (and folded prev-folded))
-          (insert "\n"))               ; blank line above each group
+        ;; A blank line above each group — unless the row just drawn
+        ;; ended in one of its own, a consumer whose items are worth
+        ;; spacing apart having already opened the gap. The group
+        ;; break is a blank line, not one more than everything else.
+        (unless (or first (and folded prev-folded)
+                    (looking-back "\n\n" (max (point-min) (- (point) 2))))
+          (insert "\n"))
         (setq first nil prev-folded folded hstart (point))
         (insert (propertize (car g) 'face
                             (if (equal (car g) (filter-view--recent-label))
@@ -400,6 +408,13 @@ made the line and the name two different strings."
                                   'face 'filter-view-count)))
         (insert "\n")
         (put-text-property hstart (point) 'filter-view-group (car g))
+        ;; The blank sits under the header, outside its property, so
+        ;; it is no part of the group's own line — the motions and
+        ;; `filter-view--group-at-point' read a bare line as nothing.
+        ;; Never under a folded header: the fold view is worth reading
+        ;; in one glance, which is what dropping the blanks buys.
+        (when (and (not folded) (filter-view--conf :group-blank))
+          (insert "\n"))
         (unless folded
           (dolist (item (cdr g))
             (let ((start (point)))
