@@ -12,12 +12,16 @@
 
 (maf-step
   (setq blt--stash (list maf-formulas-user maf-formulas--loaded
-                         maf-formulas--recent maf-use-formulas-mode
-                         maf-formulas--pane-state maf-formulas-builtin)
+                         maf-use-formulas-mode maf-formulas-builtin
+                         (gethash "*maf-formulas*" filter-view--sessions))
         maf-formulas--loaded t          ; skip loading maf-formulas-file
-        maf-formulas--recent nil        ; a clean session's recents
-        maf-formulas--pane-state nil    ; no detail pane in the way
         maf-formulas-user nil)          ; the shipped set, alone
+
+  ;; A clean session, its detail pane out of the way.
+  (progn
+    (remhash "*maf-formulas*" filter-view--sessions)
+    (filter-view--session-put "*maf-formulas*" :pane-state nil)
+    nil)
 
   ;; Something ships, and each entry carries the whole plist. Only
   ;; :expr is required by the shape, but a shipped formula reaching the
@@ -98,9 +102,8 @@
                     '(calcFunc-eq (+ (var a var-a) 0) (var a var-a))))
 
   ;; The menu shows the shipped group with no library of one's own.
-  (with-current-buffer (get-buffer-create "*maf-formulas*")
-    (maf-formulas-mode)
-    (maf-formulas--render)
+  (with-current-buffer (apply #'filter-view-setup "*maf-formulas*"
+                              (maf-formulas--config))
     (cl-assert (string-match-p "Algebra — Properties of real numbers"
                                (buffer-string)))
     (cl-assert (string-match-p "Additive identity" (buffer-string))))
@@ -113,8 +116,8 @@
     (goto-char (point-min))
     (search-forward "Additive identity")
     (beginning-of-line)
-    (cl-letf (((symbol-function 'maf-formulas-quit) (lambda (&rest _) nil)))
-      (maf-formulas-insert)))
+    (cl-letf (((symbol-function 'filter-view-quit) (lambda (&rest _) nil)))
+      (filter-view-select)))
   (cl-assert (equal (calc-top 1)
                     '(calcFunc-eq (+ (var a var-a) 0) (var a var-a))))
   (cl-assert (equal (math-format-flat-expr (calc-top 1) 0) "a + 0 = a"))
@@ -135,9 +138,11 @@
     (maf-use-formulas-mode -1)
     (setq maf-formulas-user (nth 0 blt--stash)
           maf-formulas--loaded (nth 1 blt--stash)
-          maf-formulas--recent (nth 2 blt--stash)
-          maf-formulas--pane-state (nth 4 blt--stash)
-          maf-formulas-builtin (nth 5 blt--stash))
-    (when (nth 3 blt--stash)
+          maf-formulas-builtin (nth 3 blt--stash))
+    (if (nth 4 blt--stash)
+        (puthash "*maf-formulas*" (nth 4 blt--stash) filter-view--sessions)
+      (remhash "*maf-formulas*" filter-view--sessions))
+    (when (get-buffer "*maf-formulas*") (kill-buffer "*maf-formulas*"))
+    (when (nth 2 blt--stash)
       (maf-use-formulas-mode 1))
     :restored))

@@ -1,17 +1,18 @@
 ;; Self-contained: the real formulas now live in `maf-formulas-file'
 ;; (the user's Emacs config), so this test supplies its own fixture in
 ;; `maf-formulas-user', sets `maf-formulas-builtin' aside, and marks
-;; the file already-consulted so nothing on disk is read. The last
-;; form restores the session state.
+;; the file already-consulted so nothing on disk is read. The menu is
+;; a filter-view; its session state (recents, folds, the pane flag)
+;; lives in `filter-view--sessions' under the buffer's name, and is
+;; stashed and restored around the run. The last form restores the
+;; session state.
 
 (maf-step
   (setq maf--formulas-stash (list maf-formulas-user maf-formulas--loaded
-                                  maf-formulas--recent maf-use-formulas-mode
-                                  maf-formulas--pane-state
-                                  maf-formulas-builtin)
+                                  maf-use-formulas-mode
+                                  maf-formulas-builtin
+                                  (gethash "*maf-formulas*" filter-view--sessions))
         maf-formulas--loaded t          ; skip loading maf-formulas-file
-        maf-formulas--recent nil        ; a clean session's recents
-        maf-formulas--pane-state 'follow  ; a fresh session's default
         maf-formulas-builtin nil        ; the fixture stands alone
         maf-formulas-user
         '((:name "volume-of-sphere" :title "Volume of sphere"
@@ -29,54 +30,57 @@
            :expr (calcFunc-eq (var A var-A) (* (frac 1 2) (* (var b var-b) (var h var-h))))
            :doc "Area of a triangle." :vars ((A . "area") (b . "base") (h . "height")))))
 
-  (maf-use-formulas-mode 1)
-  (get-buffer-create maf-formulas--detail-buffer)
+  ;; A clean session: no recents, no folds, the pane on its default.
+  (progn
+    (remhash "*maf-formulas*" filter-view--sessions)
+    (maf-use-formulas-mode 1)
+    (get-buffer-create " *maf-formulas-detail*"))
 
   ;; Ten formulas are kept by default. Recording an eleventh drops the
-  ;; oldest, leaving the ten most recently reached-for formulas.
+  ;; oldest, leaving the ten most recently reached-for formulas — held
+  ;; by :name, the formula's identity for the group.
   (cl-assert (= (eval (car (get 'maf-formulas-recent-max 'standard-value)) t)
                 10))
-  (let ((maf-formulas-recent-max 10)
-        (maf-formulas--recent nil))
-    (dotimes (n 11)
-      (maf-formulas--record-recent (list :name (format "recent-%d" n))))
-    (cl-assert (= (length maf-formulas--recent) 10))
-    (cl-assert (equal (mapcar (lambda (f) (plist-get f :name))
-                              maf-formulas--recent)
-                      '("recent-10" "recent-9" "recent-8" "recent-7" "recent-6"
-                        "recent-5" "recent-4" "recent-3" "recent-2" "recent-1"))))
+  (with-current-buffer (apply #'filter-view-setup "*maf-formulas*"
+                              (maf-formulas--config))
+    (let ((maf-formulas-recent-max 10))
+      (dotimes (n 11)
+        (filter-view--record-recent (list :name (format "recent-%d" n))))
+      (cl-assert (equal (filter-view--state :recents)
+                        '("recent-10" "recent-9" "recent-8" "recent-7" "recent-6"
+                          "recent-5" "recent-4" "recent-3" "recent-2" "recent-1")))
+      (filter-view--set-state :recents nil)))
 
-  (with-current-buffer (get-buffer-create "*maf-formulas*")
-    (maf-formulas-mode)
-    (maf-formulas--render)
+  (with-current-buffer "*maf-formulas*"
+    (filter-view--render)
     ;; The menu lands on a formula line, grouped by category, with the
     ;; formula shown beside the title.
-    (cl-assert (get-text-property (point) 'maf-formula))
+    (cl-assert (get-text-property (point) 'filter-view-item))
     (cl-assert (string-match-p "=" (buffer-substring (line-beginning-position)
                                                      (line-end-position))))
 
     ;; The pane follows by default, and the legend's "O follows" shows
     ;; gold — `warning' — while it does.
-    (cl-assert (eq maf-formulas--pane-state 'follow))
+    (cl-assert (eq (filter-view--pane-state) 'follow))
     (let ((h header-line-format))
       (cl-assert (eq (get-text-property (string-match "O follows" h) 'face h)
                      'warning)))
 
     ;; The detail renderer (behind `o' / `?', i.e.
-    ;; `maf-formulas-show-detail') fills the detail buffer for the
+    ;; `filter-view-show-detail') fills the detail buffer for the
     ;; formula at point.
-    (cl-assert (eq (key-binding (kbd "o")) #'maf-formulas-show-detail))
-    (cl-assert (eq (key-binding (kbd "?")) #'maf-formulas-show-detail))
-    ;; `d', once an alias for `o', is unbound; `O' toggles the following
-    ;; pane and `D' prunes the Recent group.
-    (cl-assert (null (lookup-key maf-formulas-mode-map (kbd "d"))))
-    (cl-assert (eq (key-binding (kbd "O")) #'maf-formulas-toggle-detail))
-    (cl-assert (eq (key-binding (kbd "D")) #'maf-formulas-delete-recent))
+    (cl-assert (eq (key-binding (kbd "o")) #'filter-view-show-detail))
+    (cl-assert (eq (key-binding (kbd "?")) #'filter-view-show-detail))
+    ;; `d' is unbound; `O' toggles the following pane and `D' prunes
+    ;; the Recent group.
+    (cl-assert (null (lookup-key filter-view-mode-map (kbd "d"))))
+    (cl-assert (eq (key-binding (kbd "O")) #'filter-view-toggle-detail))
+    (cl-assert (eq (key-binding (kbd "D")) #'filter-view-delete-recent))
     ;; The Big rendering is asserted with the pretty module's renderer
     ;; pinned off: installed, it would answer with an image instead.
     (let ((maf-preview-render-function nil))
-      (maf-formulas--update-detail))
-    (with-current-buffer maf-formulas--detail-buffer
+      (filter-view--update-detail))
+    (with-current-buffer " *maf-formulas-detail*"
       (cl-assert (> (buffer-size) 0))
       ;; A variable in the Big rendering wears the same face as its
       ;; meaning in the list below, so the eye can carry a symbol in the
@@ -99,13 +103,13 @@
     (when (display-graphic-p)
       (let ((maf-preview-render-function
              (lambda (_value) (propertize " " 'display '(image :type svg)))))
-        (maf-formulas--update-detail))
-      (with-current-buffer maf-formulas--detail-buffer
+        (filter-view--update-detail))
+      (with-current-buffer " *maf-formulas-detail*"
         (cl-assert (text-property-not-all (point-min) (point-max)
                                           'display nil))))
     (let ((maf-preview-render-function (lambda (_value) nil)))
-      (maf-formulas--update-detail))
-    (with-current-buffer maf-formulas--detail-buffer
+      (filter-view--update-detail))
+    (with-current-buffer " *maf-formulas-detail*"
       (cl-assert (null (text-property-not-all (point-min) (point-max)
                                               'display nil)))
       (goto-char (point-min))
@@ -122,21 +126,21 @@
                                       (get-buffer-create "*Calculator*"))
                                   '((display-buffer-in-direction)
                                     (direction . below)))))
-        (maf-formulas-show-detail)
-        (cl-assert (eq cwin (get-buffer-window maf-formulas--detail-buffer)))
+        (filter-view-show-detail)
+        (cl-assert (eq cwin (get-buffer-window " *maf-formulas-detail*")))
         ;; Borrowed, not created — so its height is left alone.
-        (cl-assert (not (maf-formulas--split-p cwin)))
+        (cl-assert (not (filter-view--split-p cwin)))
         (cl-assert (= 2 (length (window-list))))
-        (maf-formulas--close-detail)
+        (filter-view--close-detail)
         (cl-assert (eq (window-buffer cwin) (get-buffer "*Calculator*")))
         (cl-assert (= 2 (length (window-list)))))
       ;; Alone in the frame there is nothing to borrow, so the pane is
       ;; split off and closing deletes it again.
       (delete-other-windows)
-      (maf-formulas-show-detail)
-      (let ((win (get-buffer-window maf-formulas--detail-buffer)))
-        (cl-assert (maf-formulas--split-p win))
-        (maf-formulas--close-detail)
+      (filter-view-show-detail)
+      (let ((win (get-buffer-window " *maf-formulas-detail*")))
+        (cl-assert (filter-view--split-p win))
+        (filter-view--close-detail)
         (cl-assert (= 1 (length (window-list)))))
 
       ;; With follow off, `o' shows the formula at point on request:
@@ -144,48 +148,48 @@
       ;; hand, and moving off the line dismisses it — the window going
       ;; back to what it held, in respect of `O' being off.
       (delete-other-windows)
-      (setq maf-formulas--pane-state nil)
+      (filter-view--set-pane-state nil)
       (goto-char (point-min))
-      (maf-formulas-next-item)
-      (maf-formulas-show-detail)
-      (cl-assert (eq maf-formulas--pane-state 'frozen))
-      (cl-assert (get-buffer-window maf-formulas--detail-buffer))
-      (maf-formulas--detail-on-move)    ; point unmoved: the pane stays
-      (cl-assert (get-buffer-window maf-formulas--detail-buffer))
-      (maf-formulas-show-detail)
-      (cl-assert (not (get-buffer-window maf-formulas--detail-buffer)))
-      (maf-formulas-show-detail)
-      (cl-assert (get-buffer-window maf-formulas--detail-buffer))
-      (maf-formulas-next-item)
-      (maf-formulas--detail-on-move)
-      (cl-assert (null maf-formulas--pane-state))
-      (cl-assert (not (get-buffer-window maf-formulas--detail-buffer)))
+      (filter-view-next-item)
+      (filter-view-show-detail)
+      (cl-assert (eq (filter-view--pane-state) 'frozen))
+      (cl-assert (get-buffer-window " *maf-formulas-detail*"))
+      (filter-view--detail-on-move)     ; point unmoved: the pane stays
+      (cl-assert (get-buffer-window " *maf-formulas-detail*"))
+      (filter-view-show-detail)
+      (cl-assert (not (get-buffer-window " *maf-formulas-detail*")))
+      (filter-view-show-detail)
+      (cl-assert (get-buffer-window " *maf-formulas-detail*"))
+      (filter-view-next-item)
+      (filter-view--detail-on-move)
+      (cl-assert (null (filter-view--pane-state)))
+      (cl-assert (not (get-buffer-window " *maf-formulas-detail*")))
 
       ;; `O' opens the pane that follows point; pressed again it
       ;; closes.
-      (maf-formulas-toggle-detail)
-      (cl-assert (eq maf-formulas--pane-state 'follow))
-      (let ((shown (with-current-buffer maf-formulas--detail-buffer (buffer-string))))
-        (maf-formulas-prev-item)
-        (maf-formulas--detail-on-move)
-        (cl-assert (not (equal shown (with-current-buffer maf-formulas--detail-buffer
+      (filter-view-toggle-detail)
+      (cl-assert (eq (filter-view--pane-state) 'follow))
+      (let ((shown (with-current-buffer " *maf-formulas-detail*" (buffer-string))))
+        (filter-view-prev-item)
+        (filter-view--detail-on-move)
+        (cl-assert (not (equal shown (with-current-buffer " *maf-formulas-detail*"
                                        (buffer-string))))))
       ;; `o' on a following pane is a peek at calc: follow stays on —
       ;; the legend keeps its gold — and the pane returns on its own
       ;; the moment point reaches another formula.
-      (maf-formulas-show-detail)
-      (cl-assert (eq maf-formulas--pane-state 'follow))
-      (cl-assert (not (get-buffer-window maf-formulas--detail-buffer)))
+      (filter-view-show-detail)
+      (cl-assert (eq (filter-view--pane-state) 'follow))
+      (cl-assert (not (get-buffer-window " *maf-formulas-detail*")))
       (let ((h header-line-format))
         (cl-assert (eq (get-text-property (string-match "O follows" h) 'face h)
                        'warning)))
-      (maf-formulas-next-item)
-      (maf-formulas--detail-on-move)
-      (cl-assert (eq maf-formulas--pane-state 'follow))
-      (cl-assert (get-buffer-window maf-formulas--detail-buffer))
-      (maf-formulas-toggle-detail)
-      (cl-assert (null maf-formulas--pane-state))
-      (cl-assert (not (get-buffer-window maf-formulas--detail-buffer)))
+      (filter-view-next-item)
+      (filter-view--detail-on-move)
+      (cl-assert (eq (filter-view--pane-state) 'follow))
+      (cl-assert (get-buffer-window " *maf-formulas-detail*"))
+      (filter-view-toggle-detail)
+      (cl-assert (null (filter-view--pane-state)))
+      (cl-assert (not (get-buffer-window " *maf-formulas-detail*")))
       ;; Off, the legend's "O follows" loses its gold, the key wearing
       ;; the legend's usual `help-key-binding' like its neighbours.
       (let ((h header-line-format))
@@ -196,40 +200,41 @@
     ;; again brings the following pane back with it.
     (save-window-excursion
       (delete-other-windows)
-      (setq maf-formulas--pane-state 'follow)
+      (filter-view--set-pane-state 'follow)
       (maf-formulas)
-      (cl-assert (get-buffer-window maf-formulas--detail-buffer))
-      (maf-formulas-quit)
-      (cl-assert (not (get-buffer-window maf-formulas--detail-buffer)))
+      (cl-assert (get-buffer-window " *maf-formulas-detail*"))
+      (filter-view-quit)
+      (cl-assert (not (get-buffer-window " *maf-formulas-detail*")))
       (maf-formulas)
-      (cl-assert (eq maf-formulas--pane-state 'follow))
-      (cl-assert (get-buffer-window maf-formulas--detail-buffer))
+      (cl-assert (eq (filter-view--pane-state) 'follow))
+      (cl-assert (get-buffer-window " *maf-formulas-detail*"))
       ;; Toggled off, quit, reopened: it stays off.
-      (with-current-buffer "*maf-formulas*" (maf-formulas-toggle-detail))
-      (maf-formulas-quit)
+      (with-current-buffer "*maf-formulas*" (filter-view-toggle-detail))
+      (filter-view-quit)
       (maf-formulas)
-      (cl-assert (null maf-formulas--pane-state))
-      (cl-assert (not (get-buffer-window maf-formulas--detail-buffer)))
-      (maf-formulas-quit))
+      (cl-assert (null (filter-view--pane-state)))
+      (cl-assert (not (get-buffer-window " *maf-formulas-detail*")))
+      (filter-view-quit))
 
     ;; That split goes where the shape is better: beside the list when
     ;; halving the menu's window still leaves both halves at least
     ;; `maf-formulas-detail-min-width', under it when it would not.
     ;; Bound around the live window's own width, so the check does not
-    ;; depend on the frame the suite happens to run in.
+    ;; depend on the frame the suite happens to run in. The config
+    ;; hands the width over as a closure, so the let is seen live.
     (cl-assert (eq 'right (let ((maf-formulas-detail-min-width 1))
-                            (maf-formulas--detail-direction))))
+                            (filter-view--detail-direction))))
     (cl-assert (eq 'below (let ((maf-formulas-detail-min-width 1000))
-                            (maf-formulas--detail-direction))))
+                            (filter-view--detail-direction))))
     ;; Only a pane split below is fitted to its text — beside the list
     ;; its height is the menu's, and borrowed it is not the pane's.
-    (let ((maf-formulas--detail-dir 'right))
-      (cl-assert (null (maf-formulas--fit-detail (selected-window)))))
+    (let ((filter-view--detail-dir 'right))
+      (cl-assert (null (filter-view--fit-detail (selected-window)))))
 
     ;; Groups are separated by a blank line (the two volume formulas sit
     ;; in different categories).
-    (setq maf-formulas--query "volume")
-    (maf-formulas--render)
+    (setq filter-view--query "volume")
+    (filter-view--render)
     (cl-assert (string-match-p "\n\n" (buffer-string)))
 
     ;; The filter narrows the list.
@@ -239,114 +244,116 @@
     ;; Several words are several searches, not one string: each word
     ;; has to turn up somewhere in the formula, in any order — the
     ;; literal "sphere volume" is nowhere in the list at all.
-    (setq maf-formulas--query "sphere volume")
-    (maf-formulas--render)
+    (setq filter-view--query "sphere volume")
+    (filter-view--render)
     (cl-assert (string-match-p "Volume of sphere" (buffer-string)))
     (cl-assert (not (string-match-p "cylinder" (buffer-string))))
     ;; And the words may land in different fields: "volume" is a title
     ;; word, "height" a variable only the cylinder carries among the
     ;; two the first word leaves.
-    (setq maf-formulas--query "volume height")
-    (maf-formulas--render)
+    (setq filter-view--query "volume height")
+    (filter-view--render)
     (cl-assert (string-match-p "Volume of cylinder" (buffer-string)))
     (cl-assert (not (string-match-p "Volume of sphere" (buffer-string))))
     ;; Whitespace is what separates words, never something to match.
-    (cl-assert (maf-formulas--matches-p (car maf-formulas-user)
-                                        "  sphere   volume "))
-    (setq maf-formulas--query "")
-    (maf-formulas--render)
+    (cl-assert (filter-view--matches-p (car maf-formulas-user)
+                                       "Geometry — 3D: Sphere"
+                                       "  sphere   volume "))
+    (setq filter-view--query "")
+    (filter-view--render)
 
     ;; n steps formula to formula; M-n walks the groups and stops dead
-    ;; at the last one rather than cycling. TAB was a second key for
-    ;; the item motion until it became the fold — n/p/j/k covered that
-    ;; twice over, and the fold had no other key it would be looked
-    ;; for on (tests/formulas-fold.el).
-    (cl-assert (eq (key-binding (kbd "n")) #'maf-formulas-next-item))
-    (cl-assert (eq (key-binding (kbd "TAB")) #'maf-formulas-toggle-all-groups))
-    (cl-assert (eq (key-binding (kbd "M-n")) #'maf-formulas-next-group))
+    ;; at the last one rather than cycling. TAB is the fold
+    ;; (tests/formulas-fold.el), n/p/j/k the item motion.
+    (cl-assert (eq (key-binding (kbd "n")) #'filter-view-next-item))
+    (cl-assert (eq (key-binding (kbd "TAB")) #'filter-view-toggle-all-groups))
+    (cl-assert (eq (key-binding (kbd "M-n")) #'filter-view-next-group))
     (goto-char (point-min))
-    (maf-formulas-next-item)
-    (maf-formulas-next-group)
-    (cl-assert (not (get-text-property (point) 'maf-formula)))   ; a header
+    (filter-view-next-item)
+    (filter-view-next-group)
+    (cl-assert (not (get-text-property (point) 'filter-view-item)))  ; a header
     (cl-assert (equal (buffer-substring-no-properties
                        (line-beginning-position) (line-end-position))
                       "Geometry — 3D: Cylinder"))
-    (maf-formulas-next-group)
+    (filter-view-next-group)
     (cl-assert (equal (buffer-substring-no-properties
                        (line-beginning-position) (line-end-position))
                       "Geometry — 3D: Sphere"))
     (let ((p (point)))                  ; the last header: M-n stops here
-      (cl-assert (condition-case nil (progn (maf-formulas-next-group) nil)
+      (cl-assert (condition-case nil (progn (filter-view-next-group) nil)
                    (user-error t)))
       (cl-assert (= (point) p)))
     (goto-char (point-min))             ; the first header: M-p stops here
-    (cl-assert (condition-case nil (progn (maf-formulas-prev-group) nil)
+    (cl-assert (condition-case nil (progn (filter-view-prev-group) nil)
                  (user-error t)))
     (cl-assert (= (point) (point-min)))
 
     ;; Typing into the filter narrows live: the hook the reader installs
     ;; on the minibuffer pushes whatever has been typed so far.
-    (let ((maf-formulas--filter-buffer (current-buffer)))
+    (let ((filter-view--filter-buffer (current-buffer))
+          (filter-view--filter-touched nil))
       (cl-letf (((symbol-function 'minibuffer-contents-no-properties)
                  (lambda () "triangle")))
-        (maf-formulas--filter-update))
-      (cl-assert (equal maf-formulas--query "triangle"))
+        (filter-view--filter-update))
+      (cl-assert (equal filter-view--query "triangle"))
       (cl-assert (string-match-p "Area of triangle" (buffer-string)))
       (cl-assert (not (string-match-p "sphere" (buffer-string))))
       (cl-letf (((symbol-function 'minibuffer-contents-no-properties)
                  (lambda () "")))
-        (maf-formulas--filter-update))
+        (filter-view--filter-update))
       (cl-assert (string-match-p "sphere" (buffer-string)))))
 
   ;; Every formula is registered as a calc var-eq-<name>.
   (cl-assert (boundp 'var-eq-volume-of-sphere))
 
-  ;; RET pushes the formula's equation onto the stack.
+  ;; RET (`filter-view-select') pushes the formula's equation onto the
+  ;; stack, through this module's :select action.
   (calc-pop (calc-stack-size))
   (with-current-buffer "*maf-formulas*"
     (goto-char (point-min))
     (search-forward "Volume of sphere")
     (beginning-of-line)
-    (cl-letf (((symbol-function 'maf-formulas-quit) (lambda (&rest _) nil)))
-      (maf-formulas-insert)))
+    (cl-letf (((symbol-function 'filter-view-quit) (lambda (&rest _) nil)))
+      (filter-view-select)))
   (cl-assert (string-match-p "V = " (math-format-value (calc-top-n 1))))
   (calc-pop (calc-stack-size))
 
-  ;; That insert seeded the Recent group: it heads the list, point lands
+  ;; That select seeded the Recent group: it heads the list, point lands
   ;; on it, and the formula still appears under its own category too.
   (with-current-buffer "*maf-formulas*"
-    (maf-formulas--render)
+    (filter-view--render)
     (cl-assert (equal (buffer-substring-no-properties (point-min)
                                                       (save-excursion
                                                         (goto-char (point-min))
                                                         (line-end-position)))
                       "Recent"))
     ;; It is set apart in its own face — the group is not a category, so
-    ;; it does not take the category color the headers below it keep.
-    (cl-assert (eq (get-text-property (point-min) 'face) 'maf-formulas-recent))
+    ;; it does not take the group color the headers below it keep.
+    (cl-assert (eq (get-text-property (point-min) 'face) 'filter-view-recent))
     (cl-assert (eq (save-excursion
                      (goto-char (point-min))
                      (search-forward "Geometry — 3D: Sphere")
                      (get-text-property (line-beginning-position) 'face))
-                   'maf-formulas-category))
-    (cl-assert (equal (maf-formulas--title (get-text-property (point) 'maf-formula))
+                   'filter-view-group))
+    (cl-assert (equal (maf-formulas--title (get-text-property (point) 'filter-view-item))
                       "Volume of sphere"))
     (cl-assert (= 2 (let ((n 0) (i 0) (s (buffer-string)))
                       (while (setq i (string-search "Volume of sphere" s i))
                         (setq n (1+ n) i (1+ i)))
                       n))))
 
-  ;; A second insert takes the head of the group, most recent first.
+  ;; A second select takes the head of the group, most recent first.
+  ;; The group holds the formulas by :name, their filter-view key.
   (with-current-buffer "*maf-formulas*"
     (goto-char (point-min))
     (search-forward "Area of triangle")
     (beginning-of-line)
-    (cl-letf (((symbol-function 'maf-formulas-quit) (lambda (&rest _) nil)))
-      (maf-formulas-insert))
-    (maf-formulas--render)
-    (cl-assert (equal (mapcar #'maf-formulas--title maf-formulas--recent)
-                      '("Area of triangle" "Volume of sphere")))
-    (cl-assert (equal (maf-formulas--title (get-text-property (point) 'maf-formula))
+    (cl-letf (((symbol-function 'filter-view-quit) (lambda (&rest _) nil)))
+      (filter-view-select))
+    (filter-view--render)
+    (cl-assert (equal (filter-view--state :recents)
+                      '("area-of-triangle" "volume-of-sphere")))
+    (cl-assert (equal (maf-formulas--title (get-text-property (point) 'filter-view-item))
                       "Area of triangle")))
   (calc-pop (calc-stack-size))
 
@@ -354,26 +361,27 @@
   ;; stays in it, and the formula keeps its place under its own
   ;; category.
   (with-current-buffer "*maf-formulas*"
-    (maf-formulas-delete-recent)
-    (cl-assert (equal (mapcar #'maf-formulas--title maf-formulas--recent)
-                      '("Volume of sphere")))
-    (cl-assert (equal (maf-formulas--title (get-text-property (point) 'maf-formula))
+    (goto-char (point-min))
+    (filter-view-next-item)
+    (filter-view-delete-recent)
+    (cl-assert (equal (filter-view--state :recents) '("volume-of-sphere")))
+    (cl-assert (equal (maf-formulas--title (get-text-property (point) 'filter-view-item))
                       "Volume of sphere"))
-    (cl-assert (maf-formulas--recent-line-p))
+    (cl-assert (filter-view--recent-line-p))
     (cl-assert (string-match-p "Area of triangle" (buffer-string)))
     ;; On a formula's category copy — or any non-Recent line — it refuses.
     (goto-char (point-max))
-    (maf-formulas-prev-item)
-    (cl-assert (not (maf-formulas--recent-line-p)))
-    (cl-assert (condition-case nil (progn (maf-formulas-delete-recent) nil)
+    (filter-view-prev-item)
+    (cl-assert (not (filter-view--recent-line-p)))
+    (cl-assert (condition-case nil (progn (filter-view-delete-recent) nil)
                  (user-error t)))
     ;; Deleting the last entry drops the group; point settles on a formula.
     (goto-char (point-min))
-    (maf-formulas-next-item)
-    (maf-formulas-delete-recent)
-    (cl-assert (null maf-formulas--recent))
+    (filter-view-next-item)
+    (filter-view-delete-recent)
+    (cl-assert (null (filter-view--state :recents)))
     (cl-assert (not (string-match-p "Recent" (buffer-string))))
-    (cl-assert (get-text-property (point) 'maf-formula)))
+    (cl-assert (get-text-property (point) 'filter-view-item)))
 
   ;; Restore the session state the fixture displaced. Turning the mode
   ;; off first unregisters the fixture's var-eq-* variables; the real
@@ -384,8 +392,11 @@
     (maf-use-formulas-mode -1)
     (setq maf-formulas-user (nth 0 maf--formulas-stash)
           maf-formulas--loaded (nth 1 maf--formulas-stash)
-          maf-formulas--recent (nth 2 maf--formulas-stash)
-          maf-formulas--pane-state (nth 4 maf--formulas-stash)
-          maf-formulas-builtin (nth 5 maf--formulas-stash))
-    (when (nth 3 maf--formulas-stash)
+          maf-formulas-builtin (nth 3 maf--formulas-stash))
+    (if (nth 4 maf--formulas-stash)
+        (puthash "*maf-formulas*" (nth 4 maf--formulas-stash)
+                 filter-view--sessions)
+      (remhash "*maf-formulas*" filter-view--sessions))
+    (when (get-buffer "*maf-formulas*") (kill-buffer "*maf-formulas*"))
+    (when (nth 2 maf--formulas-stash)
       (maf-use-formulas-mode 1))))

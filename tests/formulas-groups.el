@@ -3,7 +3,9 @@
 ;; pressed there a second time), n/p/j/k stop on the headers as well as
 ;; the rows, and land on the entry itself rather than the blank column
 ;; before it. The key legend stays in the header line while the list is
-;; narrowed, with the narrowing shown at its head.
+;; narrowed, with the narrowing shown at its head. The menu is a
+;; filter-view; the narrowing state is its buffer-locals, the session
+;; state its `filter-view--sessions' entry.
 ;;
 ;; Self-contained the way formulas.el is: its own fixture in
 ;; `maf-formulas-user' with `maf-formulas-builtin' set aside, the file
@@ -12,11 +14,9 @@
 
 (maf-step
   (setq grp--stash (list maf-formulas-user maf-formulas--loaded
-                         maf-formulas--recent maf-use-formulas-mode
-                         maf-formulas--pane-state maf-formulas-builtin)
+                         maf-use-formulas-mode maf-formulas-builtin
+                         (gethash "*maf-formulas*" filter-view--sessions))
         maf-formulas--loaded t
-        maf-formulas--recent nil
-        maf-formulas--pane-state nil    ; no detail pane in the way
         maf-formulas-builtin nil        ; the fixture stands alone
         maf-formulas-user
         '((:name "vol-sphere" :title "Volume of sphere"
@@ -31,20 +31,25 @@
            :category "Geometry — 2D"
            :expr (calcFunc-eq (var A var-A) (var b var-b))
            :doc "Area of a triangle." :vars ((A . "area") (b . "base")))))
-  (progn (maf-use-formulas-mode 1) nil)
+  (progn
+    (remhash "*maf-formulas*" filter-view--sessions)
+    ;; No detail pane in the way of the window assertions.
+    (filter-view--session-put "*maf-formulas*" :pane-state nil)
+    (maf-use-formulas-mode 1)
+    nil)
 
   ;; The legend survives a narrowing. It used to be traded for a line
   ;; naming the filter, which took the keys away exactly when they were
   ;; in use — the narrowed list is still read with `o', marked with `a'
   ;; and pruned with `D'. Now the narrowing leads the same band, in
   ;; gold, and adds the key that lifts it.
-  (with-current-buffer (get-buffer-create "*maf-formulas*")
-    (maf-formulas-mode)
-    (let ((plain (maf-formulas--header-line)))
+  (with-current-buffer (apply #'filter-view-setup "*maf-formulas*"
+                              (maf-formulas--config))
+    (let ((plain (filter-view--header-line)))
       (cl-assert (string-prefix-p "maf-formulas" (substring-no-properties plain)))
       (cl-assert (not (string-match-p "c clears" (substring-no-properties plain)))))
-    (setq maf-formulas--query "sphere")
-    (let* ((h (maf-formulas--header-line))
+    (setq filter-view--query "sphere")
+    (let* ((h (filter-view--header-line))
            (s (substring-no-properties h)))
       (cl-assert (string-match-p "\\`filter: sphere" s))
       (cl-assert (string-match-p "c clears" s))
@@ -57,11 +62,11 @@
                      'warning)))
     ;; A group narrowing shows the same way, and the two sit together —
     ;; as they do when a filter is typed inside a narrowed group.
-    (setq maf-formulas--group "Geometry — 2D")
-    (let ((s (substring-no-properties (maf-formulas--header-line))))
+    (setq filter-view--group "Geometry — 2D")
+    (let ((s (substring-no-properties (filter-view--header-line))))
       (cl-assert (string-match-p "\\`group: Geometry — 2D  filter: sphere" s))
       (cl-assert (string-match-p "q quits" s)))
-    (setq maf-formulas--query "" maf-formulas--group nil))
+    (setq filter-view--query "" filter-view--group nil))
 
   ;; n/p/j/k walk the rows and the headers alike, and stop on the first
   ;; character of what they reach: the rows are indented, and a cursor
@@ -71,34 +76,34 @@
     (maf-formulas)
     (with-selected-window (get-buffer-window "*maf-formulas*")
       (dolist (k '("n" "j"))
-        (cl-assert (eq (lookup-key maf-formulas-mode-map (kbd k))
-                       'maf-formulas-next-item)))
+        (cl-assert (eq (lookup-key filter-view-mode-map (kbd k))
+                       'filter-view-next-item)))
       (dolist (k '("p" "k"))
-        (cl-assert (eq (lookup-key maf-formulas-mode-map (kbd k))
-                       'maf-formulas-prev-item)))
+        (cl-assert (eq (lookup-key filter-view-mode-map (kbd k))
+                       'filter-view-prev-item)))
       (goto-char (point-min))
-      (cl-assert (equal (maf-formulas--group-at-point) "Geometry — 2D"))
+      (cl-assert (equal (filter-view--group-at-point) "Geometry — 2D"))
       (execute-kbd-macro (kbd "n"))
-      (cl-assert (equal (maf-formulas--title (get-text-property (point) 'maf-formula))
+      (cl-assert (equal (maf-formulas--title (get-text-property (point) 'filter-view-item))
                         "Area of triangle"))
       (cl-assert (= (current-column) 2))
       (cl-assert (eq (char-after) ?A))
       ;; The next stop is the header below, not the row past it.
       (execute-kbd-macro (kbd "j"))
-      (cl-assert (equal (maf-formulas--group-at-point) "Geometry — 3D: Sphere"))
+      (cl-assert (equal (filter-view--group-at-point) "Geometry — 3D: Sphere"))
       (cl-assert (= (current-column) 0))
       (execute-kbd-macro (kbd "n"))
-      (cl-assert (equal (maf-formulas--title (get-text-property (point) 'maf-formula))
+      (cl-assert (equal (maf-formulas--title (get-text-property (point) 'filter-view-item))
                         "Volume of sphere"))
       (cl-assert (= (current-column) 2))
       ;; And back the same way.
       (execute-kbd-macro (kbd "k"))
-      (cl-assert (equal (maf-formulas--group-at-point) "Geometry — 3D: Sphere"))
+      (cl-assert (equal (filter-view--group-at-point) "Geometry — 3D: Sphere"))
       (execute-kbd-macro (kbd "p"))
-      (cl-assert (equal (maf-formulas--title (get-text-property (point) 'maf-formula))
+      (cl-assert (equal (maf-formulas--title (get-text-property (point) 'filter-view-item))
                         "Area of triangle"))
       (cl-assert (= (current-column) 2))
-      (maf-formulas-quit)))
+      (filter-view-quit)))
 
   ;; RET on a group header narrows to that group; RET on the header
   ;; again — still there, at the top — widens back. Point stays on the
@@ -108,22 +113,22 @@
     (delete-other-windows)
     (maf-formulas)
     (with-selected-window (get-buffer-window "*maf-formulas*")
-      (cl-assert (eq (lookup-key maf-formulas-mode-map (kbd "RET"))
-                     'maf-formulas-select))
+      (cl-assert (eq (lookup-key filter-view-mode-map (kbd "RET"))
+                     'filter-view-select))
       (goto-char (point-min))
       (search-forward "Geometry — 3D: Sphere")
       (beginning-of-line)
       (execute-kbd-macro (kbd "RET"))
-      (cl-assert (equal maf-formulas--group "Geometry — 3D: Sphere"))
-      (cl-assert (equal (maf-formulas--group-at-point) "Geometry — 3D: Sphere"))
+      (cl-assert (equal filter-view--group "Geometry — 3D: Sphere"))
+      (cl-assert (equal (filter-view--group-at-point) "Geometry — 3D: Sphere"))
       (cl-assert (= (point) (point-min)))
       (cl-assert (string-match-p "Volume of sphere" (buffer-string)))
       (cl-assert (not (string-match-p "Area of triangle" (buffer-string))))
       ;; Nothing was pushed: RET on a header is not an insert.
       (cl-assert (get-buffer-window "*maf-formulas*"))
       (execute-kbd-macro (kbd "RET"))
-      (cl-assert (null maf-formulas--group))
-      (cl-assert (equal (maf-formulas--group-at-point) "Geometry — 3D: Sphere"))
+      (cl-assert (null filter-view--group))
+      (cl-assert (equal (filter-view--group-at-point) "Geometry — 3D: Sphere"))
       (cl-assert (string-match-p "Area of triangle" (buffer-string)))
 
       ;; From a filtered list the group still comes up whole: the header
@@ -131,23 +136,23 @@
       ;; the part of it the filter had left standing. "area" leaves one
       ;; formula in each group — and hides "Volume of sphere", which the
       ;; sphere group brings back.
-      (maf-formulas-filter "area")
+      (filter-view-filter "area")
       (cl-assert (string-match-p "Area of triangle" (buffer-string)))
       (cl-assert (not (string-match-p "Volume of sphere" (buffer-string))))
       (goto-char (point-min))
       (search-forward "Geometry — 3D: Sphere")
       (beginning-of-line)
       (execute-kbd-macro (kbd "RET"))
-      (cl-assert (equal maf-formulas--group "Geometry — 3D: Sphere"))
-      (cl-assert (equal maf-formulas--query ""))
+      (cl-assert (equal filter-view--group "Geometry — 3D: Sphere"))
+      (cl-assert (equal filter-view--query ""))
       (cl-assert (string-match-p "Volume of sphere" (buffer-string)))
       (cl-assert (string-match-p "Surface area of sphere" (buffer-string)))
       (cl-assert (not (string-match-p "Area of triangle" (buffer-string))))
       ;; The filter was set aside, not lost: widening puts back the list
       ;; the header was pressed from.
       (execute-kbd-macro (kbd "RET"))
-      (cl-assert (null maf-formulas--group))
-      (cl-assert (equal maf-formulas--query "area"))
+      (cl-assert (null filter-view--group))
+      (cl-assert (equal filter-view--query "area"))
       (cl-assert (string-match-p "Area of triangle" (buffer-string)))
       (cl-assert (not (string-match-p "Volume of sphere" (buffer-string))))
 
@@ -160,11 +165,11 @@
       (search-forward "Geometry — 3D: Sphere")
       (beginning-of-line)
       (execute-kbd-macro (kbd "RET"))
-      (cl-assert (equal maf-formulas--group "Geometry — 3D: Sphere"))
-      (maf-formulas-filter "area")
-      (cl-assert (null maf-formulas--group))
-      (cl-assert (null maf-formulas--group-query))
-      (cl-assert (equal maf-formulas--query "area"))
+      (cl-assert (equal filter-view--group "Geometry — 3D: Sphere"))
+      (filter-view-filter "area")
+      (cl-assert (null filter-view--group))
+      (cl-assert (null filter-view--group-query))
+      (cl-assert (equal filter-view--query "area"))
       (cl-assert (string-match-p "Area of triangle" (buffer-string)))
       (cl-assert (string-match-p "Surface area of sphere" (buffer-string)))
       (cl-assert (not (string-match-p "Volume of sphere" (buffer-string))))
@@ -176,16 +181,16 @@
       (search-forward "Geometry — 3D: Sphere")
       (beginning-of-line)
       (execute-kbd-macro (kbd "RET"))
-      (cl-assert (equal maf-formulas--query ""))
-      (maf-formulas-filter "")
-      (cl-assert (null maf-formulas--group))
+      (cl-assert (equal filter-view--query ""))
+      (filter-view-filter "")
+      (cl-assert (null filter-view--group))
       (cl-assert (string-match-p "Area of triangle" (buffer-string)))
       (cl-assert (string-match-p "Volume of sphere" (buffer-string)))
 
       ;; `/' on its own widens nothing: the prompt opens on the group,
       ;; and it is the first character typed — the search actually
       ;; beginning — that lifts it.
-      (maf-formulas-filter "area")
+      (filter-view-filter "area")
       (goto-char (point-min))
       (search-forward "Geometry — 3D: Sphere")
       (beginning-of-line)
@@ -193,34 +198,34 @@
       (let (seen)
         (cl-letf (((symbol-function 'read-string)
                    (lambda (&rest _)
-                     (setq seen (list maf-formulas--group (buffer-string)))
+                     (setq seen (list filter-view--group (buffer-string)))
                      ;; A character typed: the hook the reader installs
                      ;; pushes what stands so far, and the group goes.
                      (cl-letf (((symbol-function 'minibuffer-contents-no-properties)
                                 (lambda () "triangle")))
-                       (maf-formulas--filter-update))
+                       (filter-view--filter-update))
                      "triangle")))
-          (maf-formulas-filter))
+          (filter-view-filter))
         ;; The list the prompt opened on was still the group's.
         (cl-assert (equal (car seen) "Geometry — 3D: Sphere"))
         (cl-assert (not (string-match-p "Area of triangle" (cadr seen)))))
-      (cl-assert (null maf-formulas--group))
-      (cl-assert (null maf-formulas--group-query))
-      (cl-assert (equal maf-formulas--query "triangle"))
+      (cl-assert (null filter-view--group))
+      (cl-assert (null filter-view--group-query))
+      (cl-assert (equal filter-view--query "triangle"))
       (cl-assert (string-match-p "Area of triangle" (buffer-string)))
 
       ;; RET on an untouched prompt leaves the group standing: a search
       ;; never made takes nothing away.
-      (maf-formulas-filter "area")
+      (filter-view-filter "area")
       (goto-char (point-min))
       (search-forward "Geometry — 3D: Sphere")
       (beginning-of-line)
       (execute-kbd-macro (kbd "RET"))
       (cl-letf (((symbol-function 'read-string) (lambda (&rest _) "")))
-        (maf-formulas-filter))
-      (cl-assert (equal maf-formulas--group "Geometry — 3D: Sphere"))
-      (cl-assert (equal maf-formulas--group-query "area"))
-      (cl-assert (equal maf-formulas--query ""))
+        (filter-view-filter))
+      (cl-assert (equal filter-view--group "Geometry — 3D: Sphere"))
+      (cl-assert (equal filter-view--group-query "area"))
+      (cl-assert (equal filter-view--query ""))
       (cl-assert (not (string-match-p "Area of triangle" (buffer-string))))
 
       ;; And quitting after typing puts the group back, the filter it
@@ -229,39 +234,39 @@
                  (lambda (&rest _)
                    (cl-letf (((symbol-function 'minibuffer-contents-no-properties)
                               (lambda () "triangle")))
-                     (maf-formulas--filter-update))
-                   (cl-assert (null maf-formulas--group)) ; widened as it was typed
+                     (filter-view--filter-update))
+                   (cl-assert (null filter-view--group)) ; widened as it was typed
                    (signal 'quit nil))))
-        (cl-assert (condition-case nil (progn (maf-formulas-filter) nil)
+        (cl-assert (condition-case nil (progn (filter-view-filter) nil)
                      (quit t))))
-      (cl-assert (equal maf-formulas--group "Geometry — 3D: Sphere"))
-      (cl-assert (equal maf-formulas--group-query "area"))
-      (cl-assert (equal maf-formulas--query ""))
+      (cl-assert (equal filter-view--group "Geometry — 3D: Sphere"))
+      (cl-assert (equal filter-view--group-query "area"))
+      (cl-assert (equal filter-view--query ""))
       (cl-assert (not (string-match-p "Area of triangle" (buffer-string))))
 
       ;; And `c' drops the lot, rather than leaving the other narrowing
       ;; to be found and undone.
-      (maf-formulas-filter "area")
+      (filter-view-filter "area")
       (goto-char (point-min))
       (search-forward "Geometry — 3D: Sphere")
       (beginning-of-line)
       (execute-kbd-macro (kbd "RET"))
       (execute-kbd-macro (kbd "c"))
-      (cl-assert (null maf-formulas--group))
-      (cl-assert (equal maf-formulas--query ""))
-      (cl-assert (null maf-formulas--group-query))
+      (cl-assert (null filter-view--group))
+      (cl-assert (equal filter-view--query ""))
+      (cl-assert (null filter-view--group-query))
       (cl-assert (string-match-p "Area of triangle" (buffer-string)))
       (cl-assert (string-match-p "Volume of sphere" (buffer-string)))
 
       ;; On a formula row there is no group to narrow to, and the
       ;; command called directly says so.
       (goto-char (point-min))
-      (maf-formulas-next-item)
+      (filter-view-next-item)
       (cl-assert (equal (condition-case err
-                            (progn (maf-formulas-filter-group) nil)
+                            (progn (filter-view-filter-group) nil)
                           (user-error (cadr err)))
                         "Not on a group header"))
-      (maf-formulas-quit)))
+      (filter-view-quit)))
 
   ;; "Recent" narrows like any other group — and it is the one group a
   ;; filter string cannot reach, being a shortcut rather than a
@@ -275,9 +280,9 @@
       (beginning-of-line)
       (execute-kbd-macro (kbd "a"))
       (goto-char (point-min))
-      (cl-assert (equal (maf-formulas--group-at-point) "Recent"))
+      (cl-assert (equal (filter-view--group-at-point) "Recent"))
       (execute-kbd-macro (kbd "RET"))
-      (cl-assert (equal maf-formulas--group "Recent"))
+      (cl-assert (equal filter-view--group "Recent"))
       (cl-assert (string-match-p "Volume of sphere" (buffer-string)))
       (cl-assert (not (string-match-p "Geometry" (buffer-string))))
       ;; The formula is listed once now, its category's copy narrowed
@@ -287,7 +292,7 @@
                           (setq n (1+ n) i (1+ i)))
                         n)))
       (execute-kbd-macro (kbd "RET"))
-      (cl-assert (null maf-formulas--group))
+      (cl-assert (null filter-view--group))
       (cl-assert (string-match-p "Geometry" (buffer-string)))
 
       ;; Forgetting the last entry while narrowed to the group takes the
@@ -295,22 +300,24 @@
       ;; group that is not there is an empty buffer with the legend for
       ;; its only way out.
       (execute-kbd-macro (kbd "RET"))
-      (cl-assert (equal maf-formulas--group "Recent"))
-      (maf-formulas-next-item)
+      (cl-assert (equal filter-view--group "Recent"))
+      (filter-view-next-item)
       (execute-kbd-macro (kbd "D"))
-      (cl-assert (null maf-formulas--recent))
-      (cl-assert (null maf-formulas--group))
+      (cl-assert (null (filter-view--state :recents)))
+      (cl-assert (null filter-view--group))
       (cl-assert (string-match-p "Geometry" (buffer-string)))
-      (maf-formulas-quit)))
+      (filter-view-quit)))
 
   ;; Put the session's formulas state back, as formulas.el does.
   (progn
     (maf-use-formulas-mode -1)
     (setq maf-formulas-user (nth 0 grp--stash)
           maf-formulas--loaded (nth 1 grp--stash)
-          maf-formulas--recent (nth 2 grp--stash)
-          maf-formulas--pane-state (nth 4 grp--stash)
-          maf-formulas-builtin (nth 5 grp--stash))
-    (when (nth 3 grp--stash)
+          maf-formulas-builtin (nth 3 grp--stash))
+    (if (nth 4 grp--stash)
+        (puthash "*maf-formulas*" (nth 4 grp--stash) filter-view--sessions)
+      (remhash "*maf-formulas*" filter-view--sessions))
+    (when (get-buffer "*maf-formulas*") (kill-buffer "*maf-formulas*"))
+    (when (nth 2 grp--stash)
       (maf-use-formulas-mode 1))
     :restored))

@@ -15,6 +15,11 @@
 ;; a list that re-folded itself as the filter lifted would take the
 ;; results back from a user still reading them.
 ;;
+;; The menu is a filter-view, and folds are session state there
+;; (`filter-view--sessions'): quitting the menu and opening it again
+;; brings the fold view back. Steps that leave folds behind put them
+;; back themselves, so each starts from an open list.
+;;
 ;; Self-contained the way formulas-groups.el is: its own fixture in
 ;; `maf-formulas-user' with `maf-formulas-builtin' set aside, the file
 ;; marked already-consulted so nothing on disk is read, and the
@@ -22,11 +27,9 @@
 
 (maf-step
   (setq fold--stash (list maf-formulas-user maf-formulas--loaded
-                          maf-formulas--recent maf-use-formulas-mode
-                          maf-formulas--pane-state maf-formulas-builtin)
+                          maf-use-formulas-mode maf-formulas-builtin
+                          (gethash "*maf-formulas*" filter-view--sessions))
         maf-formulas--loaded t
-        maf-formulas--recent nil
-        maf-formulas--pane-state nil    ; no detail pane in the way
         maf-formulas-builtin nil        ; the fixture stands alone
         maf-formulas-user
         '((:name "vol-sphere" :title "Volume of sphere"
@@ -41,7 +44,12 @@
            :category "Geometry — 2D"
            :expr (calcFunc-eq (var A var-A) (var b var-b))
            :doc "Area of a triangle." :vars ((A . "area") (b . "base")))))
-  (progn (maf-use-formulas-mode 1) nil)
+  (progn
+    (remhash "*maf-formulas*" filter-view--sessions)
+    ;; No detail pane in the way of the window assertions.
+    (filter-view--session-put "*maf-formulas*" :pane-state nil)
+    (maf-use-formulas-mode 1)
+    nil)
 
   ;; A counting helper, so each step can say what is on show rather
   ;; than matching the whole buffer.
@@ -52,7 +60,8 @@
         (save-excursion
           (goto-char (point-min))
           (while (not (eobp))
-            (when-let ((f (get-text-property (line-beginning-position) 'maf-formula)))
+            (when-let ((f (get-text-property (line-beginning-position)
+                                             'filter-view-item)))
               (push (maf-formulas--title f) titles))
             (forward-line 1)))
         (nreverse titles)))
@@ -62,7 +71,7 @@
         (save-excursion
           (goto-char (point-min))
           (while (not (eobp))
-            (when-let ((g (maf-formulas--group-at-point))) (push g names))
+            (when-let ((g (filter-view--group-at-point))) (push g names))
             (forward-line 1)))
         (nreverse names)))
     :helpers)
@@ -70,12 +79,12 @@
   ;; TAB is the fold, not a third key for the item motion — n/p/j/k
   ;; already cover that twice over.
   (progn
-    (cl-assert (eq (lookup-key maf-formulas-mode-map (kbd "TAB"))
-                   'maf-formulas-toggle-all-groups))
-    (cl-assert (eq (lookup-key maf-formulas-mode-map (kbd "<backtab>"))
-                   'maf-formulas-toggle-group))
-    (cl-assert (eq (lookup-key maf-formulas-mode-map (kbd "n"))
-                   'maf-formulas-next-item))
+    (cl-assert (eq (lookup-key filter-view-mode-map (kbd "TAB"))
+                   'filter-view-toggle-all-groups))
+    (cl-assert (eq (lookup-key filter-view-mode-map (kbd "<backtab>"))
+                   'filter-view-toggle-group))
+    (cl-assert (eq (lookup-key filter-view-mode-map (kbd "n"))
+                   'filter-view-next-item))
     :bound)
 
   ;; S-TAB on a header folds that group away: its rows leave the buffer,
@@ -91,9 +100,9 @@
       (cl-assert (equal (fold--rows)
                         '("Area of triangle" "Volume of sphere"
                           "Surface area of sphere")))
-      (cl-assert (equal (maf-formulas--group-at-point) "Geometry — 2D"))
+      (cl-assert (equal (filter-view--group-at-point) "Geometry — 2D"))
       (execute-kbd-macro (kbd "<backtab>"))
-      (cl-assert (equal maf-formulas--collapsed '("Geometry — 2D")))
+      (cl-assert (equal (filter-view--state :collapsed) '("Geometry — 2D")))
       ;; The row is gone; the sphere group's two are not.
       (cl-assert (equal (fold--rows)
                         '("Volume of sphere" "Surface area of sphere")))
@@ -105,13 +114,13 @@
       ;; The count is on the line but is no part of the group's name:
       ;; the header carries that in a text property, so RET and the
       ;; motions still have the string the groups are keyed by.
-      (cl-assert (equal (maf-formulas--group-at-point) "Geometry — 2D"))
+      (cl-assert (equal (filter-view--group-at-point) "Geometry — 2D"))
       ;; S-TAB on the header again unfolds it, point staying put.
       (execute-kbd-macro (kbd "<backtab>"))
-      (cl-assert (null maf-formulas--collapsed))
-      (cl-assert (equal (maf-formulas--group-at-point) "Geometry — 2D"))
+      (cl-assert (null (filter-view--state :collapsed)))
+      (cl-assert (equal (filter-view--group-at-point) "Geometry — 2D"))
       (cl-assert (= (length (fold--rows)) 3))
-      (maf-formulas-quit)))
+      (filter-view-quit)))
 
   ;; S-TAB pressed on a formula row folds the group that row is in, and
   ;; point comes to rest on its header — the row it was on having gone.
@@ -122,12 +131,15 @@
       (goto-char (point-min))
       (search-forward "Volume of sphere")
       (beginning-of-line)
-      (cl-assert (get-text-property (point) 'maf-formula))
+      (cl-assert (get-text-property (point) 'filter-view-item))
       (execute-kbd-macro (kbd "<backtab>"))
-      (cl-assert (equal maf-formulas--collapsed '("Geometry — 3D: Sphere")))
-      (cl-assert (equal (maf-formulas--group-at-point) "Geometry — 3D: Sphere"))
+      (cl-assert (equal (filter-view--state :collapsed) '("Geometry — 3D: Sphere")))
+      (cl-assert (equal (filter-view--group-at-point) "Geometry — 3D: Sphere"))
       (cl-assert (equal (fold--rows) '("Area of triangle")))
-      (maf-formulas-quit)))
+      ;; A fold is session state now, so put it back before quitting:
+      ;; the next step wants the list open.
+      (filter-view--set-state :collapsed nil)
+      (filter-view-quit)))
 
   ;; The motions walk what is on screen: a folded group is one stop,
   ;; its rows being no longer in the buffer to stop on.
@@ -137,14 +149,15 @@
     (with-selected-window (get-buffer-window "*maf-formulas*")
       (goto-char (point-min))
       (execute-kbd-macro (kbd "<backtab>"))    ; fold Geometry — 2D
-      (cl-assert (equal (maf-formulas--group-at-point) "Geometry — 2D"))
+      (cl-assert (equal (filter-view--group-at-point) "Geometry — 2D"))
       (execute-kbd-macro (kbd "n"))
       ;; Straight to the next header, not into the folded group.
-      (cl-assert (equal (maf-formulas--group-at-point) "Geometry — 3D: Sphere"))
+      (cl-assert (equal (filter-view--group-at-point) "Geometry — 3D: Sphere"))
       (execute-kbd-macro (kbd "n"))
-      (cl-assert (equal (maf-formulas--title (get-text-property (point) 'maf-formula))
+      (cl-assert (equal (maf-formulas--title (get-text-property (point) 'filter-view-item))
                         "Volume of sphere"))
-      (maf-formulas-quit)))
+      (filter-view--set-state :collapsed nil)
+      (filter-view-quit)))
 
   ;; TAB folds every group at once — the fold view the whole feature
   ;; is for: nothing but group names, one line each, no blank lines
@@ -155,16 +168,16 @@
     (with-selected-window (get-buffer-window "*maf-formulas*")
       (goto-char (point-min))
       (execute-kbd-macro (kbd "TAB"))
-      (cl-assert (= (length maf-formulas--collapsed) 2))
+      (cl-assert (= (length (filter-view--state :collapsed)) 2))
       (cl-assert (null (fold--rows)))
       (cl-assert (equal (fold--headers) '("Geometry — 2D" "Geometry — 3D: Sphere")))
       (cl-assert (= (count-lines (point-min) (point-max)) 2))
       ;; With something folded, TAB unfolds the lot rather than
       ;; folding what is already folded.
       (execute-kbd-macro (kbd "TAB"))
-      (cl-assert (null maf-formulas--collapsed))
+      (cl-assert (null (filter-view--state :collapsed)))
       (cl-assert (= (length (fold--rows)) 3))
-      (maf-formulas-quit)))
+      (filter-view-quit)))
 
   ;; And it is not contextual: pressed on a formula row, deep in a
   ;; group, TAB still folds the whole list rather than the group that
@@ -177,20 +190,21 @@
       (goto-char (point-min))
       (search-forward "Surface area of sphere")
       (beginning-of-line)
-      (cl-assert (get-text-property (point) 'maf-formula))
+      (cl-assert (get-text-property (point) 'filter-view-item))
       (execute-kbd-macro (kbd "TAB"))
-      (cl-assert (= (length maf-formulas--collapsed) 2))
+      (cl-assert (= (length (filter-view--state :collapsed)) 2))
       (cl-assert (null (fold--rows)))
       ;; Point keeps its group, landing on that header — the row it was
       ;; on having gone with the rest.
-      (cl-assert (equal (maf-formulas--group-at-point) "Geometry — 3D: Sphere"))
+      (cl-assert (equal (filter-view--group-at-point) "Geometry — 3D: Sphere"))
       ;; S-TAB from the same place is the contextual one: it unfolds
       ;; that group alone, the other staying folded.
       (execute-kbd-macro (kbd "<backtab>"))
-      (cl-assert (equal maf-formulas--collapsed '("Geometry — 2D")))
+      (cl-assert (equal (filter-view--state :collapsed) '("Geometry — 2D")))
       (cl-assert (equal (fold--rows)
                         '("Volume of sphere" "Surface area of sphere")))
-      (maf-formulas-quit)))
+      (filter-view--set-state :collapsed nil)
+      (filter-view-quit)))
 
   ;; A search unfolds everything, so that what it turns up can be seen:
   ;; results hidden behind a fold made earlier would be a search that
@@ -202,21 +216,21 @@
     (with-selected-window (get-buffer-window "*maf-formulas*")
       (goto-char (point-min))
       (execute-kbd-macro (kbd "TAB"))
-      (cl-assert (= (length maf-formulas--collapsed) 2))
+      (cl-assert (= (length (filter-view--state :collapsed)) 2))
       (cl-assert (null (fold--rows)))
       ;; RET rides in the same macro: the filter's read blocks until it.
       (execute-kbd-macro (kbd "/ s p h e r e RET"))
-      (cl-assert (equal maf-formulas--query "sphere"))
-      (cl-assert (null maf-formulas--collapsed))
+      (cl-assert (equal filter-view--query "sphere"))
+      (cl-assert (null (filter-view--state :collapsed)))
       ;; The matches are on screen, folded a moment ago or not.
       (cl-assert (equal (fold--rows)
                         '("Volume of sphere" "Surface area of sphere")))
       ;; And they stay on screen: lifting the filter leaves the list
       ;; unfolded rather than folding the results away again.
-      (maf-formulas-clear-filter)
-      (cl-assert (null maf-formulas--collapsed))
+      (filter-view-clear-filter)
+      (cl-assert (null (filter-view--state :collapsed)))
       (cl-assert (= (length (fold--rows)) 3))
-      (maf-formulas-quit)))
+      (filter-view-quit)))
 
   ;; The unfold happens on entering a search, not on every render one
   ;; causes — so the fold keys go on working inside a filtered list.
@@ -228,33 +242,33 @@
       (goto-char (point-min))
       ;; "of" reaches all three, across both groups.
       (execute-kbd-macro (kbd "/ o f RET"))
-      (cl-assert (equal maf-formulas--query "of"))
+      (cl-assert (equal filter-view--query "of"))
       (cl-assert (= (length (fold--rows)) 3))
       ;; TAB inside the filter folds the matching groups, and the fold
       ;; sticks — the filter is still in force and does not overrule it.
       (execute-kbd-macro (kbd "TAB"))
-      (cl-assert (= (length maf-formulas--collapsed) 2))
+      (cl-assert (= (length (filter-view--state :collapsed)) 2))
       (cl-assert (null (fold--rows)))
       (cl-assert (equal (fold--headers) '("Geometry — 2D" "Geometry — 3D: Sphere")))
       ;; S-TAB likewise picks one group back out of the filtered view.
-      (maf-formulas--goto-group "Geometry — 3D: Sphere")
+      (filter-view--goto-group "Geometry — 3D: Sphere")
       (execute-kbd-macro (kbd "<backtab>"))
-      (cl-assert (equal maf-formulas--collapsed '("Geometry — 2D")))
+      (cl-assert (equal (filter-view--state :collapsed) '("Geometry — 2D")))
       (cl-assert (equal (fold--rows)
                         '("Volume of sphere" "Surface area of sphere")))
       ;; A folded header inside a filter counts what the filter left it,
       ;; not what the group holds altogether.
-      (maf-formulas-clear-filter)
-      (maf-formulas-filter "sphere")
-      (cl-assert (null maf-formulas--collapsed))   ; the new search unfolds
+      (filter-view-clear-filter)
+      (filter-view-filter "sphere")
+      (cl-assert (null (filter-view--state :collapsed)))  ; the new search unfolds
       (execute-kbd-macro (kbd "TAB"))
-      (maf-formulas--goto-group "Geometry — 3D: Sphere")
+      (filter-view--goto-group "Geometry — 3D: Sphere")
       (cl-assert (equal (buffer-substring-no-properties
                          (line-beginning-position) (line-end-position))
                         "Geometry — 3D: Sphere (2)"))
-      (maf-formulas-clear-filter)
-      (maf-formulas-toggle-all-groups)
-      (maf-formulas-quit)))
+      (filter-view-clear-filter)
+      (filter-view-toggle-all-groups)
+      (filter-view-quit)))
 
   ;; RET on a folded header unfolds it on the way in: asking for a
   ;; group is asking to see it, not to narrow to a header with nothing
@@ -267,20 +281,20 @@
       (search-forward "Geometry — 3D: Sphere")
       (beginning-of-line)
       (execute-kbd-macro (kbd "<backtab>"))
-      (cl-assert (maf-formulas--collapsed-p "Geometry — 3D: Sphere"))
+      (cl-assert (filter-view--collapsed-p "Geometry — 3D: Sphere"))
       (execute-kbd-macro (kbd "RET"))
-      (cl-assert (equal maf-formulas--group "Geometry — 3D: Sphere"))
-      (cl-assert (not (maf-formulas--collapsed-p "Geometry — 3D: Sphere")))
+      (cl-assert (equal filter-view--group "Geometry — 3D: Sphere"))
+      (cl-assert (not (filter-view--collapsed-p "Geometry — 3D: Sphere")))
       (cl-assert (equal (fold--rows)
                         '("Volume of sphere" "Surface area of sphere")))
       (execute-kbd-macro (kbd "RET"))
-      (cl-assert (null maf-formulas--group))
-      (maf-formulas-quit)))
+      (cl-assert (null filter-view--group))
+      (filter-view-quit)))
 
   ;; The legend names the key, beside the filter it sits next to.
-  (with-current-buffer (get-buffer-create "*maf-formulas*")
-    (maf-formulas-mode)
-    (let ((s (substring-no-properties (maf-formulas--header-line))))
+  (with-current-buffer (apply #'filter-view-setup "*maf-formulas*"
+                              (maf-formulas--config))
+    (let ((s (substring-no-properties (filter-view--header-line))))
       (cl-assert (string-match-p "TAB folds" s))
       (cl-assert (string-match-p "/ filters" s)))
     :legend)
@@ -290,14 +304,13 @@
     (maf-use-formulas-mode -1)
     (fmakunbound 'fold--rows)
     (fmakunbound 'fold--headers)
-    (when-let ((buf (get-buffer "*maf-formulas*")))
-      (with-current-buffer buf
-        (setq maf-formulas--collapsed nil)))
     (setq maf-formulas-user (nth 0 fold--stash)
           maf-formulas--loaded (nth 1 fold--stash)
-          maf-formulas--recent (nth 2 fold--stash)
-          maf-formulas--pane-state (nth 4 fold--stash)
-          maf-formulas-builtin (nth 5 fold--stash))
-    (when (nth 3 fold--stash)
+          maf-formulas-builtin (nth 3 fold--stash))
+    (if (nth 4 fold--stash)
+        (puthash "*maf-formulas*" (nth 4 fold--stash) filter-view--sessions)
+      (remhash "*maf-formulas*" filter-view--sessions))
+    (when (get-buffer "*maf-formulas*") (kill-buffer "*maf-formulas*"))
+    (when (nth 2 fold--stash)
       (maf-use-formulas-mode 1))
     :restored))
