@@ -162,6 +162,46 @@ never committed."
     (cons (car expr) (mapcar #'maf-pretty--hoist-signs (cdr expr))))
    (t expr)))
 
+(defun maf-pretty--grow-parens (latex)
+  "LATEX with grouping delimiters grown to \\left and \\right pairs.
+A paren or bracket opening a group — not one a function name touches:
+\\sin(x) keeps its tight call spacing, and the letter test that says
+so also passes over delimiters already grown — sizes with what it
+holds, so a factor's superscripts sit inside the parens rather than
+poking above them. Pairs match by delimiter depth, an interval's
+mixed mates included, a ( closed by ] growing both ends. Runs last,
+after the script strip, so an exponent's shed parens stay shed."
+  (with-temp-buffer
+    (insert latex)
+    (let ((pairs nil))
+      (goto-char (point-min))
+      (while (re-search-forward "[([]" nil t)
+        (let ((open (1- (point))))
+          (unless (and (> open (point-min))
+                       (let ((c (char-before open)))
+                         (and c (or (and (<= ?a c) (<= c ?z))
+                                    (and (<= ?A c) (<= c ?Z))))))
+            (let ((depth 1)
+                  (close nil))
+              (save-excursion
+                (while (and (> depth 0) (not (eobp)))
+                  (pcase (char-after)
+                    ((or ?\( ?\[) (setq depth (1+ depth)))
+                    ((or ?\) ?\]) (setq depth (1- depth))))
+                  (unless (> depth 0) (setq close (point)))
+                  (forward-char 1)))
+              (when close (push (cons open close) pairs))))))
+      (let ((inserts nil))
+        (dolist (pair pairs)
+          (push (cons (car pair) "\\left") inserts)
+          (push (cons (cdr pair) "\\right") inserts))
+        ;; Descending, so each insertion leaves the earlier ones'
+        ;; positions standing.
+        (dolist (ins (sort inserts (lambda (a b) (> (car a) (car b)))))
+          (goto-char (car ins))
+          (insert (cdr ins)))))
+    (buffer-string)))
+
 (defun maf-pretty--latex (expr)
   "Format EXPR as LaTeX with calc's arbitrary signs typeset as +-.
 
@@ -200,7 +240,7 @@ it, - flipping to \\mp. Everything else is `maf--latex-string'."
       (setq latex (replace-regexp-in-string
                    "\\(\\\\\\(?:pm\\|mp\\)\\(?:_{[0-9]+}\\)?\\)\\\\cdot "
                    "\\1 " latex t)))
-    latex))
+    (maf-pretty--grow-parens latex)))
 
 (defun maf-pretty--ratex (latex)
   "Render one-line LATEX with RaTeX and return its SVG output."
