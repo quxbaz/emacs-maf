@@ -98,6 +98,15 @@ hug the data."
   :type 'natnum
   :group 'maf)
 
+(defface maf-plot-axis
+  '((t nil))
+  "Face whose foreground colors the x and y zero-axis lines.
+Unstyled by default: the axes draw solid in the frame's own
+foreground, a step above the dotted grid. Give this face a foreground
+to recolor the crosshair; it is read at render time, like the curve
+faces."
+  :group 'maf)
+
 (defcustom maf-plot-curve-faces
   '(font-lock-function-name-face font-lock-keyword-face
     font-lock-string-face font-lock-constant-face
@@ -392,17 +401,24 @@ about zero: the four quadrants show, equally sized."
     (format "set xrange [%g:%g]\nset yrange [%g:%g]\n" (- a) a (- b) b)))
 
 (defun maf-plot--theme-lines ()
-  "Return the script lines theming a plot from the live faces."
+  "Return the script lines theming a plot from the live faces.
+Both zero axes draw in `maf-plot-axis's color, in gnuplot's own
+dotted zeroaxis style: the crosshair the origin-framed view hangs
+on, quiet enough to sit under the curves."
   (let ((fg (maf-plot--face-color 'default :foreground "black"))
-        (grid (maf-plot--face-color 'shadow :foreground "gray")))
+        (grid (maf-plot--face-color 'shadow :foreground "gray"))
+        (axis (maf-plot--face-color 'maf-plot-axis :foreground
+                                    (maf-plot--face-color
+                                     'default :foreground "black"))))
     (format "set border linecolor rgb \"%s\"
 set grid linecolor rgb \"%s\"
 set xtics textcolor rgb \"%s\"
 set ytics textcolor rgb \"%s\"
 set key textcolor rgb \"%s\"
 set xzeroaxis linecolor rgb \"%s\"
+set yzeroaxis linecolor rgb \"%s\"
 set title textcolor rgb \"%s\"
-" fg grid fg fg fg grid fg)))
+" fg grid fg fg fg axis axis fg)))
 
 (defun maf-plot--run-gnuplot (script)
   "Run SCRIPT through gnuplot synchronously; signal on failure."
