@@ -28,6 +28,7 @@
 (declare-function calcFunc-expand "calc-poly")
 (declare-function math-simplify "calc-alg")
 (declare-function math-matrixp "calc-ext")
+(declare-function math-const-var "calc-ext")
 (declare-function calc-undo "calc-undo")
 (declare-function calc-redo "calc-undo")
 (declare-function math-looks-negp "calc-misc")
@@ -3075,11 +3076,16 @@ entry at point equates with the top regardless of the entries between.
   2:  b     =>   1:  b
   1:  c
 
-The sides stand as the stack had them — a bare variable on the right
-stays on the right, like the operands of any other binary command;
-nothing reorders the pair.
+The sides stand as the stack had them, like the operands of any other
+binary command — with one narrow exception: a subject with no
+variable in it, equated with an entry that is one bare variable, is
+that variable's definition, and the definition leads with its name
+\=(`maf--equal-to-sides').
 
-  2:  5          1:  5 = x|
+  2:  5          1:  x = 5|   (the one reorder)
+  1:  x|
+
+  2:  y          1:  y = x|   (both sides vary: as the stack had them)
   1:  x|
 
 With the Inverse flag, `mafcmd-not-equal-to' builds != instead. With
@@ -3092,19 +3098,35 @@ with fewer than two entries."
   :scope entry
   :map -1
   :inverse mafcmd-not-equal-to
-  (commit (list 'calcFunc-eq expr arg)))
+  (commit (cons 'calcFunc-eq (maf--equal-to-sides expr arg))))
 
 (maf-defcmd mafcmd-not-equal-to (expr arg commit)
   "Build != between the entry at point and the top-of-stack argument.
 
-The Inverse route of `mafcmd-equal-to' — identical in every way but the
-relation it forms: subject != argument, structural, no simplification,
-the sides standing as the stack had them."
+The Inverse route of `mafcmd-equal-to' — identical in every way but
+the relation it forms and the definition reorder, which is ='s alone:
+subject != argument, structural, no simplification, the sides always
+standing as the stack had them — x != 42 defines nothing, so there is
+no definition to lead."
   :arity binary
   :prefix "neq"
   :scope entry
   :map -1
   (commit (list 'calcFunc-neq expr arg)))
+
+(defun maf--equal-to-sides (expr arg)
+  "The relation sides for `mafcmd-equal-to', as the list (LHS RHS).
+The stack's own order — subject left, argument right — with one
+narrow reorder: when the subject EXPR has no variable in it and the
+argument ARG is one bare variable (a real unknown, not a constant
+like pi), the relation is that variable's definition and the variable
+leads. 42 with y gives y = 42; anything less clear-cut stands as the
+stack had it."
+  (if (and (eq (car-safe arg) 'var)
+           (not (math-const-var arg))
+           (null (maf--solve-sorted-vars expr)))
+      (list arg expr)
+    (list expr arg)))
 
 (maf-defcmd mafcmd-remove-equal (expr _arg commit)
   "Drop the relation from the entry at point, keeping the side that matters.

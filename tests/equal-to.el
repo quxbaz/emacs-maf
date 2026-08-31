@@ -63,15 +63,42 @@
                     '(calcFunc-eq (+ (+ (var x var-x) 1) 1) (var y var-y))))
   (calc-pop (calc-stack-size))
 
-  ;; --- No reordering: the sides stand as the stack had them ---
+  ;; --- Side order: the stack's, with the one definition reorder ---
 
-  ;; Subject is an object, argument a bare variable: the pair stands as
-  ;; it sat — nothing turns the variable to the left.
+  ;; A subject with no variable equated with a bare variable is that
+  ;; variable's definition, and the definition leads with its name
+  ;; (`maf--equal-to-sides').
   (maf-push "5")
   (maf-push "x")
   (goto-char (point-max))
   (call-interactively 'mafcmd-equal-to)
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "5 = x"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "x = 5"))
+  (calc-pop (calc-stack-size))
+
+  ;; A variable-free expression counts the same as a number, and pi is
+  ;; no variable.
+  (maf-push "sqrt(2) + pi")
+  (maf-push "x")
+  (goto-char (point-max))
+  (call-interactively 'mafcmd-equal-to)
+  (cl-assert (string= (math-format-value (calc-top 1 'full))
+                      "x = sqrt(2) + pi"))
+  (calc-pop (calc-stack-size))
+
+  ;; A constant is not an unknown: pi on top earns no reorder.
+  (maf-push "42")
+  (maf-push "pi")
+  (goto-char (point-max))
+  (call-interactively 'mafcmd-equal-to)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "42 = pi"))
+  (calc-pop (calc-stack-size))
+
+  ;; A compound argument is not a bare variable: no reorder.
+  (maf-push "5")
+  (maf-push "x + 1")
+  (goto-char (point-max))
+  (call-interactively 'mafcmd-equal-to)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "5 = x + 1"))
   (calc-pop (calc-stack-size))
 
   ;; The variable as subject keeps the left, like any subject.
