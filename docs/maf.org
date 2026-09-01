@@ -40,6 +40,12 @@
     - update outdated bindings
     - add cards for missing bindings
 
+* delivery
+  - [ ] test w/ light theme and other themes
+    - default themes
+    - doom themes
+    - other themes
+
 * cleanup
 
 # much later below
