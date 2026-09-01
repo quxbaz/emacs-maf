@@ -84,6 +84,17 @@
   (cl-assert (equal (maf-pretty--latex (math-read-expr "[1 .. inf)"))
                     "\\left[1 \\ldots \\infty\\right)"))
 
+  ;; An or joins two whole relations, and TeX would space \lor as the
+  ;; binary operator it is — tighter than the < and > beside it, so the
+  ;; V reads as bound to the nearer operand rather than to the facts. A
+  ;; thick space each side puts it outside them. The pretty path only:
+  ;; `maf--latex-string' is what Desmos is built from, and a \; there
+  ;; would go out in the URL.
+  (cl-assert (equal (maf-pretty--latex (math-read-expr "x > b || x < -b"))
+                    "x > b \\;\\lor\\; x < -b"))
+  (cl-assert (equal (maf--latex-string (math-read-expr "x > b || x < -b"))
+                    "x > b \\lor x < -b"))
+
   ;; Restore the shared dev session and remove the preview window/buffer.
   (progn
     (when-let ((win (get-buffer-window maf-pretty--buffer)))

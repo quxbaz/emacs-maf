@@ -248,6 +248,14 @@ it, - flipping to \\mp. Everything else is `maf--latex-string'."
     (setq latex (replace-regexp-in-string
                  "\\\\sqrt\\(?:\\[[^]]*]\\)?{"
                  "\\&\\\\mathstrut " latex t))
+    ;; What an or joins here is two whole relations — x > b V x < -b —
+    ;; but TeX spaces \\lor as the binary operator it is, tighter than
+    ;; the < and > on either side of it. The V then reads as bound to
+    ;; the b beside it rather than to the facts, the wrong grouping to
+    ;; show for the one symbol saying they are alternatives. A thick
+    ;; space each side puts it back outside them.
+    (setq latex (replace-regexp-in-string "\\\\lor\\b" "\\;\\lor\\;"
+                                          latex t t))
     (maf-pretty--grow-parens latex)))
 
 (defun maf-pretty--ratex (latex)
