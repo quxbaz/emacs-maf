@@ -837,8 +837,10 @@ variant's own variable governs only its direct invocation."
   (vint binary calcFunc-vint "v ^"
    :title "set intersection" :example "[1, 2], [2, 3] => [2]"
    :doc "Take the intersection of the resolved set and the top-of-stack one.")
-  (vcompl unary calcFunc-vcompl "v ~"
-   :title "set complement" :example "[1] => [[-inf .. 1), (1 .. inf]]"
+  ;; maf-vcompl rather than calc's own: the complement's infinite ends
+  ;; come back open, as maf spells them everywhere (src/math.el).
+  (vcompl unary maf-vcompl "v ~"
+   :title "set complement" :example "[1] => [(-inf .. 1), (1 .. inf)]"
    :doc "Take the complement of the resolved set over the real line.")
   (vcard unary calcFunc-vcard "v #"
    :title "set size" :example "[1, 2, 3] => 3"

@@ -10,6 +10,8 @@
 (require 'maf-conf "conf")
 (require 'maf-lib)    ; maf--literal
 
+(declare-function calcFunc-vcompl "calc-vec")
+
 ;; Defined in lazily-loaded calc modules; calc-ext's autoload registry
 ;; resolves them at runtime, but the byte compiler needs declarations.
 (declare-function calcFunc-pgcd "calc-poly")
@@ -1258,6 +1260,44 @@ shape; see `maf--sort-vector'."
 (defun maf-rsort (vec)
   "Return calc vector VEC in decreasing order, the reverse of `maf-sort'."
   (maf--sort-vector vec t))
+
+(defun maf--infinite-end-p (x)
+  "Non-nil when X is an infinity an interval end can sit at.
+The four spellings a bound can carry: inf and uinf, negated or not.
+By shape rather than `math-infinitep', which would also answer for a
+nan and wants calc-ext loaded."
+  (pcase x
+    (`(var ,(or 'inf 'uinf) ,_) t)
+    (`(neg (var ,(or 'inf 'uinf) ,_)) t)))
+
+(defun maf--open-infinite-ends (expr)
+  "EXPR with every infinite interval end spelled open.
+No set closes at an infinity — [1 .. inf] holds no point [1 .. inf)
+does not — so maf spells such an end open wherever it builds or hands
+on an interval, as bare-interval entry already commits one
+\(`maf-editplus--commit-interval'). Clears the mask bit of each
+infinite end, descending a vector so a union of rays cleans whole;
+anything else returns untouched. Calc itself spells these ends closed
+\(its `calcFunc-vcompl' answers [1] with (1 .. inf]), which is what
+results routed through calc get cleaned of."
+  (pcase expr
+    (`(intv ,mask ,lo ,hi)
+     ;; Bit 2 closes the lower end, bit 1 the upper; an end may stay
+     ;; closed only while it is finite.
+     (list 'intv
+           (logand mask (logior (if (maf--infinite-end-p lo) 0 2)
+                                (if (maf--infinite-end-p hi) 0 1)))
+           lo hi))
+    (`(vec . ,elts)
+     (cons 'vec (mapcar #'maf--open-infinite-ends elts)))
+    (_ expr)))
+
+(defun maf-vcompl (set)
+  "Complement SET over the real line, infinite ends spelled open.
+Calc's own `calcFunc-vcompl', with the closed infinities it answers
+in — [1] comes back as [[-inf .. 1), (1 .. inf]] — reopened
+\(`maf--open-infinite-ends')."
+  (maf--open-infinite-ends (calcFunc-vcompl set)))
 
 (defun maf--combinations (items k)
   "Return every K-element combination of list ITEMS, as a list of lists.

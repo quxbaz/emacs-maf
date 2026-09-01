@@ -1155,20 +1155,22 @@ the node above it, which no sub-formula target could reach."
 
 (defun maf--interval-complement (intv)
   "The complement of INTV as calc's set: the rays beyond its ends.
-What `calcFunc-vcompl' answers for constant endpoints — two rays as a
-vector, a single ray bare when an end already sits at its infinity,
-the empty set for the whole line — but built from the mask alone, so
-a symbolic endpoint complements too: [-x .. x] has nothing constp
-about it and still owns the rays beyond x and -x."
+The shape `calcFunc-vcompl' answers for constant endpoints — two rays
+as a vector, a single ray bare when an end already sits at its
+infinity, the empty set for the whole line — but built from the mask
+alone, so a symbolic endpoint complements too: [-x .. x] has nothing
+constp about it and still owns the rays beyond x and -x. Each ray's
+infinite end is spelled open, where calc's own answer closes it
+\(`maf--open-infinite-ends')."
   (let ((mask (nth 1 intv))
         (lo (nth 2 intv))
         (hi (nth 3 intv))
         (rays nil))
     (unless (equal hi maf--pinf)
-      (push (list 'intv (if (zerop (logand mask 1)) 3 1) hi maf--pinf)
+      (push (list 'intv (if (zerop (logand mask 1)) 2 0) hi maf--pinf)
             rays))
     (unless (equal lo maf--minf)
-      (push (list 'intv (if (zerop (logand mask 2)) 3 2) maf--minf lo)
+      (push (list 'intv (if (zerop (logand mask 2)) 1 0) maf--minf lo)
             rays))
     (cond ((null rays) (list 'vec))
           ((null (cdr rays)) (car rays))
@@ -1178,7 +1180,9 @@ about it and still owns the rays beyond x and -x."
   "The interval SET's two rays bound, or nil when SET is another shape.
 The inverse of `maf--interval-complement's two-ray answer, read off
 the masks the same way, so a symbolic set complements back and the
-key undoes itself; nil hands any other set to `calcFunc-vcompl'."
+key undoes itself; nil hands any other set to calc's own complement.
+Only the finite ends' bits are read, so rays with their infinities
+spelled closed — calc's own notation — complement the same."
   (pcase set
     (`(vec (intv ,m1 ,lo1 ,hi1) (intv ,m2 ,lo2 ,hi2))
      (and (equal lo1 maf--minf)
@@ -1192,7 +1196,7 @@ key undoes itself; nil hands any other set to `calcFunc-vcompl'."
   "Negate the resolved expression; an interval complements instead.
 
   2 x - 3    =>  3 - 2 x
-  [-5 .. 5]  =>  [[-inf .. -5), (5 .. inf]]
+  [-5 .. 5]  =>  [(-inf .. -5), (5 .. inf)]
 
 An interval reads as a set here, and the sign flip that would only
 mirror it gives way to the complement: the rays beyond its ends,
@@ -1205,9 +1209,9 @@ elementwise, as every other expression negates arithmetically. Point
 picks the target as usual: a sub-formula at point, each side of an
 equation, the top entry at home.
 
-  [2 .. 3)                    =>  [[-inf .. 2), [3 .. inf]]
-  [-x .. x]                   =>  [[-inf .. -x), (x .. inf]]
-  [[-inf .. -5), (5 .. inf]]  =>  [-5 .. 5]    (the complement back)
+  [2 .. 3)                    =>  [(-inf .. 2), [3 .. inf)]
+  [-x .. x]                   =>  [(-inf .. -x), (x .. inf)]
+  [(-inf .. -5), (5 .. inf)]  =>  [-5 .. 5]    (the complement back)
   [1, 2, 3]                   =>  [-1, -2, -3] (not a set: elementwise)"
   :title "negate"
   :example "x => -x"
@@ -1221,7 +1225,7 @@ equation, the top entry at home.
                  (cl-every (lambda (el) (eq (car-safe el) 'intv))
                            (cdr expr)))
             (or (maf--rays-complement expr)
-                (condition-case nil (calcFunc-vcompl expr)
+                (condition-case nil (maf-vcompl expr)
                   (wrong-type-argument
                    (user-error "A symbolic set beyond two rays has no complement here")))))
            (t (math-neg expr)))))
@@ -6790,20 +6794,21 @@ standing on its own is taken to mean."
 
 (defun maf--ray-of-reading (reading)
   "The interval a (OP SUBJECT BOUND) READING places its subject in.
-A single bound leaves the other end open at an infinity, which calc
-spells closed — the same shape `maf--interval-complement' builds, so a
-bound and a complement answer in one notation.
+A single bound leaves the other end at an infinity, spelled open the
+way maf spells every infinite end (`maf--open-infinite-ends') — the
+same shape `maf--interval-complement' builds, so a bound and a
+complement answer in one notation.
 
-  x >= -1  =>  [-1 .. inf]
-  x > -1   =>  (-1 .. inf]
-  x <= 3   =>  [-inf .. 3]
-  x < 3    =>  [-inf .. 3)"
+  x >= -1  =>  [-1 .. inf)
+  x > -1   =>  (-1 .. inf)
+  x <= 3   =>  (-inf .. 3]
+  x < 3    =>  (-inf .. 3)"
   (pcase-let ((`(,op ,_subject ,bound) reading))
     (pcase op
-      ('calcFunc-geq (list 'intv 3 bound maf--pinf))
-      ('calcFunc-gt  (list 'intv 1 bound maf--pinf))
-      ('calcFunc-leq (list 'intv 3 maf--minf bound))
-      ('calcFunc-lt  (list 'intv 2 maf--minf bound)))))
+      ('calcFunc-geq (list 'intv 2 bound maf--pinf))
+      ('calcFunc-gt  (list 'intv 0 bound maf--pinf))
+      ('calcFunc-leq (list 'intv 1 maf--minf bound))
+      ('calcFunc-lt  (list 'intv 0 maf--minf bound)))))
 
 (defun maf--ineq-ray (expr)
   "The interval ordering relation EXPR places its subject in, or nil."
@@ -6870,12 +6875,13 @@ things, with no one interval to be the answer."
 A set spans to the smallest interval covering every element, calc's own
 reading of the key. An ordering relation is the other way a range is
 written, and it spans to the interval it puts its subject in: the bound
-is one end and the infinity it leaves open the other, spelled closed
-the way maf spells an interval's infinite end everywhere else.
+is one end and the infinity it leaves open the other, spelled open the
+way maf spells an interval's infinite end everywhere else — no set
+closes at an infinity.
 
-  x >= -1  =>  [-1 .. inf]
-  x > -1   =>  (-1 .. inf]
-  x <= 3   =>  [-inf .. 3]
+  x >= -1  =>  [-1 .. inf)
+  x > -1   =>  (-1 .. inf)
+  x <= 3   =>  (-inf .. 3]
 
 The bound may lead — -1 <= x is the same range as x >= -1 — and it may
 be a name or an expression rather than a number, since the shape says
@@ -6892,9 +6898,9 @@ different subjects, or the same side twice, name no interval and the
 entry stands. Point picks the target as usual: a sub-formula at point,
 the whole relation on a relation entry, the top entry at home.
 
-  -1 <= x            =>  [-1 .. inf]
-  -pi <= x           =>  [-pi .. inf]
-  x >= a             =>  [a .. inf]
+  -1 <= x            =>  [-1 .. inf)
+  -pi <= x           =>  [-pi .. inf)
+  x >= a             =>  [a .. inf)
   -5 < x && x < 5    =>  (-5 .. 5)
   x >= -1 && x <= 3  =>  [-1 .. 3]
   a <= x && x <= b   =>  [a .. b]

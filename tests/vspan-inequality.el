@@ -3,7 +3,7 @@
 ;; (`mafcmd-vspan'). A step passes when it raises no error.
 ;;
 ;; The contract: one relation spans to the ray beyond its bound, the
-;; infinite end spelled closed the way maf spells one everywhere else;
+;; infinite end spelled open the way maf spells one everywhere else;
 ;; the bound may lead, and may be a name rather than a number, the
 ;; subject being the side that carries a variable; two relations joined
 ;; by && span to the interval between them, on the subject they share.
@@ -23,31 +23,32 @@
   (calc-pop (calc-stack-size))
 
   ;; The motivating case, and its three siblings: a closed bound stays
-  ;; closed, an open one open, and the infinity is spelled closed.
+  ;; closed, an open one open, and the infinity is spelled open — no
+  ;; set closes at an infinity.
   (maf-push "x >= -1")
   (call-interactively 'mafcmd-vspan)
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "[-1 .. inf]"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "[-1 .. inf)"))
   (calc-pop (calc-stack-size))
 
   (maf-push "x > -1")
   (call-interactively 'mafcmd-vspan)
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "(-1 .. inf]"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "(-1 .. inf)"))
   (calc-pop (calc-stack-size))
 
   (maf-push "x <= 3")
   (call-interactively 'mafcmd-vspan)
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "[-inf .. 3]"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "(-inf .. 3]"))
   (calc-pop (calc-stack-size))
 
   (maf-push "x < 3")
   (call-interactively 'mafcmd-vspan)
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "[-inf .. 3)"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "(-inf .. 3)"))
   (calc-pop (calc-stack-size))
 
   ;; The bound may lead: the same range, written the other way round.
   (maf-push "-1 <= x")
   (call-interactively 'mafcmd-vspan)
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "[-1 .. inf]"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "[-1 .. inf)"))
   (calc-pop (calc-stack-size))
 
   ;; A bound need not be a number. Calc's own constants are not
@@ -55,20 +56,20 @@
   ;; being taken for the subject.
   (maf-push "-pi <= x")
   (call-interactively 'mafcmd-vspan)
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "[-pi .. inf]"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "[-pi .. inf)"))
   (calc-pop (calc-stack-size))
 
   (maf-push "sqrt(2) < x")
   (call-interactively 'mafcmd-vspan)
   (cl-assert (string= (math-format-value (calc-top 1 'full))
-                      "(sqrt(2) .. inf]"))
+                      "(sqrt(2) .. inf)"))
   (calc-pop (calc-stack-size))
 
   ;; A variable on both sides: the relation is taken as written, x
   ;; bounded above by y.
   (maf-push "x <= y")
   (call-interactively 'mafcmd-vspan)
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "[-inf .. y]"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "(-inf .. y]"))
   (calc-pop (calc-stack-size))
 
   ;; Two relations joined by && span the interval between them.
@@ -139,7 +140,7 @@
   (maf-push "x >= -1")
   (progn (goto-char (point-min)) (search-forward ">=") (backward-char 2))
   (call-interactively 'mafcmd-vspan)
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "[-1 .. inf]"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "[-1 .. inf)"))
   (calc-pop (calc-stack-size))
 
   ;; And it reads a relation standing inside an entry, not only one
@@ -148,7 +149,7 @@
   (progn (goto-char (point-min)) (search-forward ">=") (backward-char 2))
   (call-interactively 'mafcmd-vspan)
   (cl-assert (string= (math-format-value (calc-top 1 'full))
-                      "[[-1 .. inf], 2]"))
+                      "[[-1 .. inf), 2]"))
   (calc-pop (calc-stack-size))
 
   (cl-assert (= (calc-stack-size) 0)))

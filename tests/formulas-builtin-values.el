@@ -62,7 +62,21 @@
           ("absolute-value-equation"       (x . "5") (a . "5"))
           ("absolute-value-less-than"      (x . "3") (a . "5"))
           ("absolute-value-greater-than"   (x . "7") (a . "5"))
-          ("absolute-value-is-nonnegative" (x . "-3"))))
+          ("absolute-value-is-nonnegative" (x . "-3"))
+          ;; The solids relate measurements to each other, so each
+          ;; names a consistent box: the 3-4-12 one, whose diagonal is
+          ;; the integer 13, and the edge-2 cube.
+          ("volume-of-rectangular-solid"
+           (V . "144") (l . "3") (w . "4") (h . "12"))
+          ("surface-area-of-rectangular-solid"
+           (S . "192") (l . "3") (w . "4") (h . "12"))
+          ("lateral-surface-area-of-rectangular-solid"
+           (SL . "168") (l . "3") (w . "4") (h . "12"))
+          ("diagonal-of-rectangular-solid"
+           (d . "13") (l . "3") (w . "4") (h . "12"))
+          ("volume-of-cube"       (V . "8") (s . "2"))
+          ("surface-area-of-cube" (S . "24") (s . "2"))
+          ("diagonal-of-cube"     (d . "2 sqrt(3)") (s . "2"))))
 
   (defun blv--subst (expr vals)
     "EXPR with each variable in VALS replaced by its number.

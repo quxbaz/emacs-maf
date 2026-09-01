@@ -1,7 +1,8 @@
 ;; n (mafcmd-neg) negates the resolved expression, and an interval
 ;; complements instead: the rays beyond its ends, open where the
-;; interval was closed (`calcFunc-vcompl'). A step passes when it
-;; raises no error.
+;; interval was closed, and open at every infinity — no set closes at
+;; one (`maf--interval-complement', `maf--open-infinite-ends'). A step
+;; passes when it raises no error.
 
 (maf-step
   (cl-assert (eq (key-binding "n") 'mafcmd-neg))
@@ -14,7 +15,7 @@
          (execute-kbd-macro "n")
          nil)
   (cl-assert (string= (math-format-value (calc-top 1 'full))
-                      "[[-inf .. -5), (5 .. inf]]"))
+                      "[(-inf .. -5), (5 .. inf)]"))
   (progn (calc-cursor-stack-index 1)
          (execute-kbd-macro "n")
          nil)
@@ -27,7 +28,7 @@
          (execute-kbd-macro "n")
          nil)
   (cl-assert (string= (math-format-value (calc-top 1 'full))
-                      "[[-inf .. 2), [3 .. inf]]"))
+                      "[(-inf .. 2), [3 .. inf)]"))
   (calc-pop (calc-stack-size))
 
   ;; A symbolic endpoint complements as readily as a constant one —
@@ -38,7 +39,7 @@
          (execute-kbd-macro "n")
          nil)
   (cl-assert (string= (math-format-value (calc-top 1 'full))
-                      "[[-inf .. -x), (x .. inf]]"))
+                      "[(-inf .. -x), (x .. inf)]"))
   (progn (calc-cursor-stack-index 1)
          (execute-kbd-macro "n")
          nil)
@@ -51,7 +52,7 @@
   (progn (calc-cursor-stack-index 1)
          (execute-kbd-macro "n")
          nil)
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "(5 .. inf]"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "(5 .. inf)"))
   (calc-pop (calc-stack-size))
 
   ;; A constant set of many pieces still goes through calc's own
@@ -61,7 +62,7 @@
          (execute-kbd-macro "n")
          nil)
   (cl-assert (string= (math-format-value (calc-top 1 'full))
-                      "[[-inf .. 1), (2 .. 4), (5 .. inf]]"))
+                      "[(-inf .. 1), (2 .. 4), (5 .. inf)]"))
   (calc-pop (calc-stack-size))
 
   ;; A numeric vector is not a set: elementwise, as it always was.
