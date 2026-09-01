@@ -248,14 +248,23 @@ it, - flipping to \\mp. Everything else is `maf--latex-string'."
     (setq latex (replace-regexp-in-string
                  "\\\\sqrt\\(?:\\[[^]]*]\\)?{"
                  "\\&\\\\mathstrut " latex t))
-    ;; What an or joins here is two whole relations — x > b V x < -b —
-    ;; but TeX spaces \\lor as the binary operator it is, tighter than
-    ;; the < and > on either side of it. The V then reads as bound to
-    ;; the b beside it rather than to the facts, the wrong grouping to
-    ;; show for the one symbol saying they are alternatives. A thick
+    ;; What an and or an or joins here is two whole relations —
+    ;; x > b V x < -b, -b <= x ^ x <= b — but TeX spaces both signs as
+    ;; the binary operators they are, tighter than the relations on
+    ;; either side of them. The sign then reads as bound to the operand
+    ;; beside it rather than to the facts, the wrong grouping to show
+    ;; for the one symbol saying how the two stand together. A thick
     ;; space each side puts it back outside them.
-    (setq latex (replace-regexp-in-string "\\\\lor\\b" "\\;\\lor\\;"
-                                          latex t t))
+    ;;
+    ;; Both signs or neither: spacing one alone would say the spaced one
+    ;; binds looser, and in a mixed a V b ^ c that is backwards — ^
+    ;; binds tighter than V, so the wider gaps would draw the grouping
+    ;; the wrong way round.
+    (dolist (sign '("lor" "land"))
+      (setq latex (replace-regexp-in-string
+                   (concat "\\\\" sign "\\b")
+                   (concat "\\;\\" sign "\\;")
+                   latex t t)))
     (maf-pretty--grow-parens latex)))
 
 (defun maf-pretty--ratex (latex)

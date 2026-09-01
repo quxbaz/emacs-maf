@@ -84,16 +84,28 @@
   (cl-assert (equal (maf-pretty--latex (math-read-expr "[1 .. inf)"))
                     "\\left[1 \\ldots \\infty\\right)"))
 
-  ;; An or joins two whole relations, and TeX would space \lor as the
-  ;; binary operator it is — tighter than the < and > beside it, so the
-  ;; V reads as bound to the nearer operand rather than to the facts. A
-  ;; thick space each side puts it outside them. The pretty path only:
-  ;; `maf--latex-string' is what Desmos is built from, and a \; there
-  ;; would go out in the URL.
+  ;; An and or an or joins two whole relations, and TeX would space
+  ;; both signs as the binary operators they are — tighter than the
+  ;; relations beside them, so the sign reads as bound to the nearer
+  ;; operand rather than to the facts. A thick space each side puts it
+  ;; outside them.
   (cl-assert (equal (maf-pretty--latex (math-read-expr "x > b || x < -b"))
                     "x > b \\;\\lor\\; x < -b"))
+  (cl-assert (equal (maf-pretty--latex (math-read-expr "-b <= x && x <= b"))
+                    "-b \\leq x \\;\\land\\; x \\leq b"))
+  ;; Both or neither: spacing the or alone would say it binds looser
+  ;; than the and, and && binds tighter, so a mixed expression would
+  ;; draw its grouping backwards.
+  (cl-assert (equal (maf-pretty--latex (math-read-expr "a || b && c"))
+                    "a \\;\\lor\\; b \\;\\land\\; c"))
+  ;; The negation is a prefix, not a join, and keeps its own spacing.
+  (cl-assert (equal (maf-pretty--latex (math-read-expr "!a")) "\\lnot a"))
+  ;; The pretty path only: `maf--latex-string' is what Desmos is built
+  ;; from, and a \; there would go out in the URL.
   (cl-assert (equal (maf--latex-string (math-read-expr "x > b || x < -b"))
                     "x > b \\lor x < -b"))
+  (cl-assert (equal (maf--latex-string (math-read-expr "-b <= x && x <= b"))
+                    "-b \\leq x \\land x \\leq b"))
 
   ;; Restore the shared dev session and remove the preview window/buffer.
   (progn
