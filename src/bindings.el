@@ -56,6 +56,10 @@
 ;; (src/stack.el).
 (maf-bindings-define '(calc native) "n" #'mafcmd-neg)
 
+;; The span, likewise on its old table row's key: it grew the
+;; inequality reading and lives as a maf-defcmd now (src/stack.el).
+(maf-bindings-define '(calc native) "v :" #'mafcmd-vspan)
+
 ;; A second key for the square root, beside Q (mafcmd-sqrt in the
 ;; table): the root is reached for far more often than integer
 ;; division, whose key this was — calc's \ is shadowed, and the idiv

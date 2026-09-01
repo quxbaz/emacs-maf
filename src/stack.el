@@ -6664,6 +6664,158 @@ to be divided out first.
   :widen maf--abs-ineq-p
   (commit (or (maf--abs-ineq-split expr) expr)))
 
+;;; Intervals
+
+(defun maf--ineq-readings (expr)
+  "Ordering relation EXPR as (OP SUBJECT BOUND), both ways round.
+A relation states one bound, but which side is the subject and which
+the bound is not always fixed by the shape, so both readings are
+returned and the likelier one leads: -1 <= x is flipped to x >= -1
+before it is read, since a side with no variable of its own can only be
+a bound. Calc's own constants do not count as variables
+\(`maf--solve-sorted-vars'), so -pi <= x bounds x below by -pi rather
+than reading pi as the subject. With a variable on both sides, or on
+neither, the relation as written leads and the flip stands behind it
+for a caller that can tell them apart."
+  (pcase expr
+    (`(,(and op (or 'calcFunc-lt 'calcFunc-leq 'calcFunc-gt 'calcFunc-geq))
+       ,lhs ,rhs)
+     (let ((written (list op lhs rhs))
+           (flipped (list (maf--flip-relation-op op) rhs lhs)))
+       (if (and (null (maf--solve-sorted-vars lhs))
+                (maf--solve-sorted-vars rhs))
+           (list flipped written)
+         (list written flipped))))))
+
+(defun maf--ineq-parts (expr)
+  "Ordering relation EXPR read as (OP SUBJECT BOUND), or nil.
+The leading reading of `maf--ineq-readings' — the one a relation
+standing on its own is taken to mean."
+  (car (maf--ineq-readings expr)))
+
+(defun maf--ray-of-reading (reading)
+  "The interval a (OP SUBJECT BOUND) READING places its subject in.
+A single bound leaves the other end open at an infinity, which calc
+spells closed — the same shape `maf--interval-complement' builds, so a
+bound and a complement answer in one notation.
+
+  x >= -1  =>  [-1 .. inf]
+  x > -1   =>  (-1 .. inf]
+  x <= 3   =>  [-inf .. 3]
+  x < 3    =>  [-inf .. 3)"
+  (pcase-let ((`(,op ,_subject ,bound) reading))
+    (pcase op
+      ('calcFunc-geq (list 'intv 3 bound maf--pinf))
+      ('calcFunc-gt  (list 'intv 1 bound maf--pinf))
+      ('calcFunc-leq (list 'intv 3 maf--minf bound))
+      ('calcFunc-lt  (list 'intv 2 maf--minf bound)))))
+
+(defun maf--ineq-ray (expr)
+  "The interval ordering relation EXPR places its subject in, or nil."
+  (let ((reading (maf--ineq-parts expr)))
+    (and reading (maf--ray-of-reading reading))))
+
+(defun maf--ineq-shared-readings (a b)
+  "Readings of relations A and B that bound one subject, as a cons.
+Nil when no pair of readings agrees on a subject. The subject has to
+carry a variable of its own: two facts about unrelated names always
+share their constants — x > 0 && y < 0 both bound 0 — and answering
+about the constant is not what the pair was written to say.
+
+Matching this way, rather than reading each half alone, is what lets a
+band whose bounds are names come out whole: in a <= x && x <= b every
+side carries a variable, so neither half can tell subject from bound by
+itself, and only the x they share can."
+  (cl-loop for ra in (maf--ineq-readings a)
+           thereis (and (maf--solve-sorted-vars (nth 1 ra))
+                        (cl-loop for rb in (maf--ineq-readings b)
+                                 when (equal (nth 1 ra) (nth 1 rb))
+                                 return (cons ra rb)))))
+
+(defun maf--rays-meet (a b)
+  "The interval rays A and B overlap in, or nil when they do not pair.
+One has to bound from below and the other from above — two bounds on
+the same side name a ray, not a span, and the narrower of them is not
+something the shape can settle. Each end keeps the openness the ray it
+came from gave it, so a closed bound meeting an open one keeps both
+readings.
+
+Built from the masks rather than through `calcFunc-vint', which needs
+constant endpoints and hands back an inert call for symbolic ones: the
+bounds an inequality carries are as often a name as a number."
+  (let ((lower (cond ((equal (nth 3 a) maf--pinf) a)
+                     ((equal (nth 3 b) maf--pinf) b)))
+        (upper (cond ((equal (nth 2 a) maf--minf) a)
+                     ((equal (nth 2 b) maf--minf) b))))
+    (when (and lower upper (not (eq lower upper)))
+      (list 'intv
+            (+ (logand (nth 1 lower) 2) (logand (nth 1 upper) 1))
+            (nth 2 lower)
+            (nth 3 upper)))))
+
+(defun maf--span-of-relation (expr)
+  "The interval EXPR bounds its subject to, or nil when it bounds none.
+One ordering relation gives the ray beyond its bound; two of them
+joined by && give the span between, which is what the pair says and
+what `mafcmd-abs-ineq' produces going the other way. The two halves
+have to bound one subject — x > 1 && y < 5 is two facts about two
+things, with no one interval to be the answer."
+  (or (maf--ineq-ray expr)
+      (pcase expr
+        (`(calcFunc-land ,a ,b)
+         (pcase (maf--ineq-shared-readings a b)
+           (`(,ra . ,rb) (maf--rays-meet (maf--ray-of-reading ra)
+                                         (maf--ray-of-reading rb))))))))
+
+(maf-defcmd mafcmd-vspan (expr _arg commit)
+  "Span the resolved set as one interval; an inequality gives its range.
+
+  [1, 5, 3]  =>  [1 .. 5]
+
+A set spans to the smallest interval covering every element, calc's own
+reading of the key. An ordering relation is the other way a range is
+written, and it spans to the interval it puts its subject in: the bound
+is one end and the infinity it leaves open the other, spelled closed
+the way maf spells an interval's infinite end everywhere else.
+
+  x >= -1  =>  [-1 .. inf]
+  x > -1   =>  (-1 .. inf]
+  x <= 3   =>  [-inf .. 3]
+
+The bound may lead — -1 <= x is the same range as x >= -1 — and it may
+be a name or an expression rather than a number, since the shape says
+which side is the subject: the side carrying a variable. Calc's own
+constants are not variables here, so -pi <= x reads as the bound it
+looks like.
+
+Two relations joined by && bound one subject from both sides, and span
+to the interval between them — the inverse of what `mafcmd-abs-ineq'
+splits an absolute value into. The subject is the one the two halves
+share, so a band whose bounds are names comes out whole even though
+neither half could tell subject from bound alone. Halves bounding
+different subjects, or the same side twice, name no interval and the
+entry stands. Point picks the target as usual: a sub-formula at point,
+the whole relation on a relation entry, the top entry at home.
+
+  -1 <= x            =>  [-1 .. inf]
+  -pi <= x           =>  [-pi .. inf]
+  x >= a             =>  [a .. inf]
+  -5 < x && x < 5    =>  (-5 .. 5)
+  x >= -1 && x <= 3  =>  [-1 .. 3]
+  a <= x && x <= b   =>  [a .. b]
+  x > 1 && x > 5     =>  x > 1 && x > 5   (one side twice: unchanged)
+  x > 1 && y < 5     =>  x > 1 && y < 5   (two subjects: unchanged)
+  x = 3              =>  vspan(x = 3)     (an = bounds nothing)"
+  :title "set span"
+  :example "[1, 3] => [1 .. 3]"
+  :arity unary
+  :prefix "span"
+  ;; A relation is the subject here, not a pair of sides to run over:
+  ;; mapped, x >= -1 would span each side alone and lose the bound.
+  :map -1
+  (commit (or (maf--span-of-relation expr)
+              (calc-normalize (list 'calcFunc-vspan expr)))))
+
 ;;; Substitution
 
 (defvar maf--subst-old nil

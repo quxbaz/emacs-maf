@@ -843,9 +843,11 @@ variant's own variable governs only its direct invocation."
   (vcard unary calcFunc-vcard "v #"
    :title "set size" :example "[1, 2, 3] => 3"
    :doc "Count the integers in the resolved set.")
-  (vspan unary calcFunc-vspan "v :"
-   :title "set span" :example "[1, 3] => [1 .. 3]"
-   :doc "Take the smallest interval covering the resolved set.")
+  ;; vspan has left the table for `mafcmd-vspan' (src/stack.el, v :): it
+  ;; grew a second reading — an ordering relation spans to the interval
+  ;; it bounds its subject to — which needs a body to choose between
+  ;; them, and :map -1, since a relation is its subject rather than a
+  ;; pair of sides to run over.
   (rdup unary calcFunc-rdup "v +"
    :title "remove duplicates" :example "[1, 2, 2, 3] => [1, 2, 3]"
    :doc "Sort the resolved vector and drop its duplicates.")
