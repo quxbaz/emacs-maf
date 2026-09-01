@@ -1825,8 +1825,21 @@ coherent to carry on in, and the stack rides it out — `calc-reset'
 shields that behind a let, so the abort never reached it. A bad
 settings file costs the settings, not the session. On the ordinary
 path `calc-reset' has already run `calc-mode', so the guard is a
-no-op."
+no-op.
+
+A nil `calc-settings-file' is survivable in the same spirit. There is
+then no file to take the saved settings from, and `calc-reset' would
+hand the nil to `substitute-in-file-name' and signal before it restored
+anything. Restoring the saved settings has no referent without a file,
+and `calc-reset' has no branch that leaves the modes alone — it empties
+every variable in `calc-local-var-list' first either way — so the
+defaults are the only coherent fallback. ARG moves to its defaults
+counterpart, keeping the stack axis: nil to 0, a positive number to its
+negative. A file that is merely missing needs no help; calc checks for
+that itself and falls back to the defaults on its own."
   (let ((was (and (bound-and-true-p maf-mode) t)))
+    (unless calc-settings-file
+      (setq arg (if arg (- (abs arg)) 0)))
     (unwind-protect
         (calc-reset arg)
       (unless calc-stack-top
