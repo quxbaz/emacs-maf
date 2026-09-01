@@ -3420,11 +3420,30 @@ stale entry is never picked up by a later copy.")
 (defconst maf--latex-paren-calls
   '((calcFunc-sin . "\\sin") (calcFunc-cos . "\\cos")
     (calcFunc-tan . "\\tan") (calcFunc-cot . "\\cot")
-    (calcFunc-sec . "\\sec") (calcFunc-csc . "\\csc"))
+    (calcFunc-sec . "\\sec") (calcFunc-csc . "\\csc")
+    (calcFunc-ln . "\\ln") (calcFunc-exp . "\\exp")
+    (calcFunc-arcsin . "\\arcsin") (calcFunc-arccos . "\\arccos")
+    (calcFunc-arctan . "\\arctan") (calcFunc-arg . "\\arg")
+    (calcFunc-sinh . "\\sinh") (calcFunc-cosh . "\\cosh")
+    (calcFunc-tanh . "\\tanh") (calcFunc-coth . "\\coth")
+    (calcFunc-det . "\\det") (calcFunc-gcd . "\\gcd")
+    (calcFunc-max . "\\max") (calcFunc-min . "\\min")
+    (calcFunc-moebius . "\\mu") (calcFunc-totient . "\\phi"))
   "Calls `maf--latex-string' typesets with their argument in parens.
-Calc's own formatter braces a simple argument — \\sin{x}, typeset as
-sin x — and these six read better as sin(x); see
-`maf--latex-compose-paren-call'.")
+Calc's own formatter braces a one-argument call to a name TeX knows as
+an operator — \\sin{x}, typeset as sin x, and \\ln{3} as ln 3 — and they
+read better parenthesized; see `maf--latex-compose-paren-call'.
+
+Every name calc braces this way is here bar one. `calcFunc-sqrt' also
+composes as \\sqrt{x}, but there the braces are the radical's own
+argument rather than a call's, and parens would cost the radical
+sign. Two or more arguments calc already parenthesizes, so the entries
+change nothing there: it is the lone argument that loses its parens.
+
+The Greek pair is the same case wearing a different name. moebius
+composes as \\mu and totient as \\phi, where the brace spelling runs the
+letter into its argument — mu n rather than the mu(n) the notation is
+read as everywhere it is written.")
 
 (defconst maf--latex-set-signs
   '((calcFunc-vunion . " \\cup ") (calcFunc-vint . " \\cap "))

@@ -204,8 +204,13 @@
                     "\\cos(x)"))
   (cl-assert (equal (maf-plot--desmos-latex (math-read-expr "sin(2 x)"))
                     "\\sin(2 x)"))
+  ;; arcsin parenthesizes at the composer now, like sin and cos above,
+  ;; so it arrives with the tight parens they do rather than the
+  ;; \left( pair `maf-plot--desmos-parenthesize' gave a braced
+  ;; argument. Desmos reads both — the two assertions above are that
+  ;; same tight form, and they are what it is sent today.
   (cl-assert (equal (maf-plot--desmos-latex (math-read-expr "arcsin(x)"))
-                    "\\arcsin\\left(x\\right)"))
+                    "\\arcsin(x)"))
   (cl-assert (equal (maf-plot--desmos-latex
                      (math-read-expr "abs(abs(x) + 1)"))
                     "\\left|\\left|x\\right| + 1\\right|"))
