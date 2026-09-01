@@ -9,7 +9,7 @@
 ;;
 ;;   Power (^) ... (mafcmd-pow)
 ;;     x, 2 => x^2
-;;     Contextually apply `calcFunc-pow' (binary).
+;;     Raise the resolved expression to the top-of-stack power.
 ;;
 ;; The name and the example are the command's own — a mafcmd table row
 ;; declares them with :title and :example, a hand-written `maf-defcmd'
