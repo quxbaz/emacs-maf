@@ -1,4 +1,4 @@
-M_AM:vvMA#+title: maf
+#+title: maf
 
 * docs
   [[https://www.gnu.org/software/emacs/manual/html_mono/calc.html#Lisp-Definitions][lisp definitions]]
