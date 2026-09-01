@@ -424,10 +424,13 @@
    - [X] `a k` mafcmd-abs-ineq
    - [X] `M-.` mafcmd-remove-equal
    - [X] `l x` swap-vars
-   - [X] `j i` mafcmd-raise (2026-08-24: swapped keys with the
-     isolate, onto i for the plainest reading of the word — this is
-     the one that lifts a sub-formula out of what surrounded it,
-     where mafcmd-isolate isolates a variable by solving for it)
+   - [X] `j k` mafcmd-raise (2026-09-01: onto k, for what the command
+     does to the part point picks out — keep that one, drop the rest —
+     and a key calc leaves unbound. It sat on `j R` from 2026-08-24,
+     which shadowed calc-commute-right and now gives that key back,
+     and on `j i` before that, when it swapped keys with the isolate.
+     This is the one that lifts a sub-formula out of what surrounded
+     it, where mafcmd-isolate isolates a variable by solving for it)
    - [X] `C-c C-c` mafcmd-esimplify (2026-08-20: second key beside its
      table key `a s`, earned by frequency — since 2026-08-22 also on
      `k k`; the mode's slice of the C-c convention, with its
@@ -645,7 +648,7 @@
    these families by derivation.
    - `h` — calc-help-prefix (the whole h help family)
    - `j` — the selection prefix, close to maf's core:
-     - maf's own: mafcmd-raise (j i), mafcmd-isolate (j j),
+     - maf's own: mafcmd-raise (j k), mafcmd-isolate (j j),
        mafcmd-unwrap (j U), maf-merge (j M), maf-distribute (j D),
        maf-jump-equals (j e), maf-commute-left/right (j l / j r)
      - calc's selection machinery: calc-select-here/once/more/less/

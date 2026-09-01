@@ -82,7 +82,7 @@
   ;; displaces native's J whole (the second multiply key — mul keeps
   ;; *); the conjugate rides the custom-letter family on its
   ;; initial: o j. The u prefix is untouched.
-  (cl-assert (eq (key-binding (kbd "J R")) 'mafcmd-raise))
+  (cl-assert (eq (key-binding (kbd "J k")) 'mafcmd-raise))
   (cl-assert (null (key-binding (kbd "J x"))))
   (cl-assert (null (key-binding (kbd "J f"))))
   (cl-assert (eq (key-binding (kbd "J D")) 'maf-distribute))

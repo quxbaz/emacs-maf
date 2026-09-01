@@ -488,7 +488,7 @@
 ;; leaves j j unbound — its j prefix is the selection commands, which
 ;; have no j of their own — and keeps the operation on the capital
 ;; j I (calc-sel-isolate), unshadowed and reachable either way. The
-;; literal sense of the word is on j R (mafcmd-raise).
+;; literal sense of the word is on j k (mafcmd-raise).
 (maf-bindings-define '(native) "j j" #'mafcmd-isolate)
 ;; The same solve again, with the variable named rather than picked.
 ;; It held i before, yielded the key to the reciprocal, and takes it
@@ -572,16 +572,18 @@
 (maf-bindings-define '(native) "v RET" #'maf-index)
 
 ;; Keep only the part point names: it becomes the whole entry, the
-;; formula around it discarded. On R for the name — this is the one
-;; that isolates a sub-formula literally, lifting it out of what
-;; surrounded it, where `mafcmd-isolate' on j j isolates a variable by
-;; solving for it. "Raise" is the
-;; name because it is `raise-sexp's operation, the form at point
-;; replacing the form around it. j R shadows calc-commute-right,
-;; whose operation maf already keeps on j r (maf-commute-right)
-;; above; the command belongs with the selection commands, working as
-;; it does on the part point picks out.
-(maf-bindings-define '(native) "j R" #'mafcmd-raise)
+;; formula around it discarded. This is the one that isolates a
+;; sub-formula literally, lifting it out of what surrounded it, where
+;; `mafcmd-isolate' on j j isolates a variable by solving for it.
+;; "Raise" is the name because it is `raise-sexp's operation, the form
+;; at point replacing the form around it; the key is k, for what it
+;; does to the part point picks out — keep that one, drop the rest.
+;; Calc leaves j k unbound, so nothing is shadowed for it; it sat on
+;; j R until 2026-09-01, which gives calc-commute-right its key back
+;; (maf keeps that operation on j r, maf-commute-left/right above),
+;; and on j i before 2026-08-24. The command belongs with the
+;; selection commands, working as it does on the part point picks out.
+(maf-bindings-define '(native) "j k" #'mafcmd-raise)
 
 ;; Group a vector's elements N at a time, N from the stack. l g is
 ;; unbound in calc itself — its l prefix is the logarithmic units,
