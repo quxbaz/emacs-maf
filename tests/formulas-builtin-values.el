@@ -40,6 +40,14 @@
   ;; whatever they leave.
   (setq blv--special
         '(("zero-product-property" (a . "0"))
+          ;; The equality properties hold only where a = b already, so
+          ;; the two are pinned equal; c stays free, and varies with the
+          ;; run, since they hold for every c (a nonzero one to divide
+          ;; by, which both sets give).
+          ("addition-property-of-equality"       (a . "3.4") (b . "3.4"))
+          ("subtraction-property-of-equality"    (a . "3.4") (b . "3.4"))
+          ("multiplication-property-of-equality" (a . "3.4") (b . "3.4"))
+          ("division-property-of-equality"       (a . "3.4") (b . "3.4"))
           ("quadratic-formula-first-root"  (a . "1") (b . "-5") (c . "6")
                                            (x . "3"))
           ("quadratic-formula-second-root" (a . "1") (b . "-5") (c . "6")

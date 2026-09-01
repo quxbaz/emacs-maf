@@ -208,6 +208,42 @@ so the side split is only taken when both halves clear this width."
      :doc "When a b = 0, at least one factor is zero."
      :vars ((a . "first factor") (b . "second factor"))
      :examples ("(x - 2) (x - 3) = 0 gives x = 2 or x = 3."))
+    (:name "addition-property-of-equality"
+     :title "Addition property of equality"
+     :category "Algebra — Properties of real numbers"
+     :expr (calcFunc-eq (+ (var a var-a) (var c var-c))
+                        (+ (var b var-b) (var c var-c)))
+     :doc "Adding the same number to both sides of a = b keeps the equality."
+     :vars ((a . "left side of a = b") (b . "right side of a = b")
+            (c . "number added to both sides"))
+     :examples ("x - 3 = 5 gives x = 8, adding 3 to both sides."))
+    (:name "subtraction-property-of-equality"
+     :title "Subtraction property of equality"
+     :category "Algebra — Properties of real numbers"
+     :expr (calcFunc-eq (- (var a var-a) (var c var-c))
+                        (- (var b var-b) (var c var-c)))
+     :doc "Subtracting the same number from both sides of a = b keeps the equality."
+     :vars ((a . "left side of a = b") (b . "right side of a = b")
+            (c . "number subtracted from both sides"))
+     :examples ("x + 4 = 9 gives x = 5, subtracting 4 from both sides."))
+    (:name "multiplication-property-of-equality"
+     :title "Multiplication property of equality"
+     :category "Algebra — Properties of real numbers"
+     :expr (calcFunc-eq (* (var a var-a) (var c var-c))
+                        (* (var b var-b) (var c var-c)))
+     :doc "Multiplying both sides of a = b by the same number keeps the equality."
+     :vars ((a . "left side of a = b") (b . "right side of a = b")
+            (c . "number both sides are multiplied by"))
+     :examples ("x / 2 = 6 gives x = 12, multiplying both sides by 2."))
+    (:name "division-property-of-equality"
+     :title "Division property of equality"
+     :category "Algebra — Properties of real numbers"
+     :expr (calcFunc-eq (/ (var a var-a) (var c var-c))
+                        (/ (var b var-b) (var c var-c)))
+     :doc "Dividing both sides of a = b by the same nonzero number keeps the equality."
+     :vars ((a . "left side of a = b") (b . "right side of a = b")
+            (c . "nonzero number both sides are divided by"))
+     :examples ("3 x = 12 gives x = 4, dividing both sides by 3."))
     (:name "double-negation"
      :title "Double negation"
      :category "Algebra — Properties of real numbers"
