@@ -52,6 +52,8 @@
                       "Algebra — Properties of real numbers"
                       "Algebra — Quadratic equations"
                       "Algebra — Radicals"
+                      "Geometry — 3D: Cube"
+                      "Geometry — 3D: Rectangular Solid"
                       "Trigonometry — Angle sum and difference"
                       "Trigonometry — Double angle"
                       "Trigonometry — Even and odd"
@@ -72,7 +74,7 @@
                 "product-of-radicals" "sine-of-a-sum"
                 "sine-of-a-double-angle" "cosine-is-even"
                 "tangent-of-a-half-angle" "pythagorean-identity"
-                "cosecant-as-a-reciprocal")))
+                "cosecant-as-a-reciprocal" "volume-of-rectangular-solid")))
 
   ;; `maf-formulas--all' is the shipped set and then the user's, so a
   ;; library of one's own extends the menu rather than replacing it.

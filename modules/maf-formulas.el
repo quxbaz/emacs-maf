@@ -31,7 +31,8 @@
 ;; the session's recents.
 ;;
 ;; The menu draws on two sources. `maf-formulas-builtin' is the set maf
-;; ships with — the identities of school algebra and trigonometry — and
+;; ships with — the identities of school algebra and trigonometry, and
+;; the formulas school geometry measures a solid with — and
 ;; yours follow it: they live in `maf-formulas-file' (a file in your
 ;; Emacs config by default), which is loaded on first use and sets
 ;; `maf-formulas-user'.
@@ -990,17 +991,72 @@ so the side split is only taken when both halves clear this width."
      :expr (calcFunc-eq (calcFunc-tan (neg (var x var-x)))
                         (neg (calcFunc-tan (var x var-x))))
      :doc "Negating the angle negates the tangent."
-     :vars ((x . "any angle with cos(x) not 0"))))
+     :vars ((x . "any angle with cos(x) not 0")))
+    (:name "volume-of-rectangular-solid"
+     :title "Volume of rectangular solid"
+     :category "Geometry — 3D: Rectangular Solid"
+     :expr (calcFunc-eq (var V var-V)
+                        (* (var l var-l) (* (var w var-w) (var h var-h))))
+     :doc "Volume of a rectangular solid: length times width times height."
+     :vars ((V . "volume") (l . "length") (w . "width") (h . "height")))
+    (:name "surface-area-of-rectangular-solid"
+     :title "Surface area of rectangular solid"
+     :category "Geometry — 3D: Rectangular Solid"
+     :expr (calcFunc-eq (var S var-S)
+                        (* 2 (+ (+ (* (var l var-l) (var w var-w))
+                                   (* (var w var-w) (var h var-h)))
+                                (* (var h var-h) (var l var-l)))))
+     :doc "Surface area of a rectangular solid: three pairs of equal faces."
+     :vars ((S . "surface area") (l . "length") (w . "width") (h . "height")))
+    (:name "lateral-surface-area-of-rectangular-solid"
+     :title "Lateral surface area of rectangular solid"
+     :category "Geometry — 3D: Rectangular Solid"
+     :expr (calcFunc-eq (var SL var-SL)
+                        (* 2 (* (var h var-h)
+                                (+ (var l var-l) (var w var-w)))))
+     :doc "Lateral (side) surface area: the base perimeter times the height."
+     :vars ((SL . "lateral surface area") (l . "length") (w . "width")
+            (h . "height")))
+    (:name "diagonal-of-rectangular-solid"
+     :title "Diagonal of rectangular solid"
+     :category "Geometry — 3D: Rectangular Solid"
+     :expr (calcFunc-eq (var d var-d)
+                        (calcFunc-sqrt (+ (+ (^ (var l var-l) 2)
+                                             (^ (var w var-w) 2))
+                                          (^ (var h var-h) 2))))
+     :doc "Corner to opposite corner: the Pythagorean theorem twice over."
+     :vars ((d . "space diagonal") (l . "length") (w . "width") (h . "height"))
+     :examples ("A 3 by 4 by 12 box has diagonal 13."))
+    (:name "volume-of-cube"
+     :title "Volume of cube"
+     :category "Geometry — 3D: Cube"
+     :expr (calcFunc-eq (var V var-V) (^ (var s var-s) 3))
+     :doc "Volume of a cube, the solid whose three edges are equal."
+     :vars ((V . "volume") (s . "edge length")))
+    (:name "surface-area-of-cube"
+     :title "Surface area of cube"
+     :category "Geometry — 3D: Cube"
+     :expr (calcFunc-eq (var S var-S) (* 6 (^ (var s var-s) 2)))
+     :doc "Surface area of a cube: six square faces of equal area."
+     :vars ((S . "surface area") (s . "edge length")))
+    (:name "diagonal-of-cube"
+     :title "Diagonal of cube"
+     :category "Geometry — 3D: Cube"
+     :expr (calcFunc-eq (var d var-d) (* (var s var-s) (calcFunc-sqrt 3)))
+     :doc "Space diagonal of a cube: its edge times the root of three."
+     :vars ((d . "space diagonal") (s . "edge length"))))
   "The formulas maf ships with, in the plist shape of `maf-formulas-user'.
-The identities school algebra and trigonometry rest on, and the ones a
-rewrite is most often reaching for. They come in categories the menu
-sorts by name and narrows to one at a time: the properties of real
-numbers, absolute value, exponents, fractions, logarithms, quadratic
-equations and radicals, then the trig identities in six groups of their
-own. The properties of real numbers calc applies in its own default
-simplifications, so those earn their place by being readable and by
-naming what a rewrite is doing rather than by teaching calc anything;
-the rest calc will not supply on its own.
+The identities school algebra and trigonometry rest on, the formulas
+school geometry measures a solid with, and the ones a rewrite is most
+often reaching for. They come in categories the menu sorts by name and
+narrows to one at a time: the properties of real numbers, absolute
+value, exponents, fractions, logarithms, quadratic equations and
+radicals, then the trig identities in six groups of their own, then the
+rectangular solid and the cube — a group per solid, as a library of
+one's own names its geometry. The properties of real numbers calc applies in its
+own default simplifications, so those earn their place by being
+readable and by naming what a rewrite is doing rather than by teaching
+calc anything; the rest calc will not supply on its own.
 
 An equation cannot carry its own conditions — that x is positive, that
 a base is not 1, that a denominator is nonzero — so each is named in
