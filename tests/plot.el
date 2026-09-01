@@ -284,6 +284,81 @@
   (cl-assert (file-exists-p
               (expand-file-name "maf-plot.html" maf-plot--load-directory)))
 
+  ;; --- finding a browser to open it with ---
+
+  ;; An XDG entry names the browser by .desktop file, so the program
+  ;; is read out of its Exec line: the field codes the spec appends
+  ;; are not part of it, a quoted path survives whole, and an entry
+  ;; that runs nothing answers nothing. The program word is taken by
+  ;; parsing rather than by trimming blanks, so a program whose name
+  ;; opens on a blank's own letter arrives intact.
+  (progn
+    (setq maf-plot-test--xdg (make-temp-file "maf-plot-xdg" t))
+    (let ((apps (expand-file-name "applications" maf-plot-test--xdg)))
+      (make-directory apps)
+      (dolist (entry '(("plain.desktop"  . "Exec=/usr/bin/browse %U")
+                       ("blankish.desktop" . "Exec=thunderbird %U")
+                       ("quoted.desktop" . "Exec=\"/opt/my browser/run\" %U")
+                       ("none.desktop"   . "NoExec=nothing")))
+        (with-temp-file (expand-file-name (car entry) apps)
+          (insert "[Desktop Entry]\nName=T\n" (cdr entry) "\n"))))
+    (setq maf-plot-test--xdg-orig (getenv "XDG_DATA_HOME"))
+    (setenv "XDG_DATA_HOME" maf-plot-test--xdg))
+  (cl-assert (equal (maf-plot--browser-desktop-exec "plain.desktop")
+                    "/usr/bin/browse"))
+  (cl-assert (equal (maf-plot--browser-desktop-exec "blankish.desktop")
+                    "thunderbird"))
+  (cl-assert (equal (maf-plot--browser-desktop-exec "quoted.desktop")
+                    "/opt/my browser/run"))
+  (cl-assert (null (maf-plot--browser-desktop-exec "none.desktop")))
+  (cl-assert (null (maf-plot--browser-desktop-exec "absent.desktop")))
+
+  ;; `maf-plot-browser' settles it, whatever else is around and
+  ;; without the opener test an unset one applies.
+  (cl-assert (equal (let ((maf-plot-browser "/opt/chosen"))
+                      (maf-plot--browser))
+                    "/opt/chosen"))
+  (cl-assert (equal (let ((maf-plot-browser "xdg-open"))
+                      (maf-plot--browser))
+                    "xdg-open"))
+
+  ;; Unset, a generic opener is passed over rather than returned: it
+  ;; would open the page and drop the graph. The search goes on to the
+  ;; next source instead — here the PATH probe, stubbed to one name.
+  (cl-assert (equal (let ((maf-plot-browser nil)
+                          (browse-url-generic-program "xdg-open")
+                          (maf-plot--browser-candidates '("stub-browser"))
+                          (process-environment (cons "BROWSER=gio"
+                                                     process-environment)))
+                      (cl-letf (((symbol-function 'executable-find)
+                                 (lambda (p &rest _)
+                                   (and (equal p "stub-browser") "/bin/stub")))
+                                ((symbol-function
+                                  'maf-plot--browser-desktop-default)
+                                 (lambda () nil)))
+                        (maf-plot--browser)))
+                    "stub-browser"))
+
+  ;; Nothing anywhere is nil — the caller reports that rather than
+  ;; launching something that would lose the fragment.
+  (cl-assert (null (let ((maf-plot-browser nil)
+                         (browse-url-generic-program nil)
+                         (maf-plot--browser-candidates '("stub-browser"))
+                         (process-environment (cons "BROWSER="
+                                                    process-environment)))
+                     (cl-letf (((symbol-function 'executable-find)
+                                (lambda (&rest _) nil))
+                               ((symbol-function
+                                 'maf-plot--browser-desktop-default)
+                                (lambda () nil)))
+                       (maf-plot--browser)))))
+
+  (progn (if maf-plot-test--xdg-orig
+             (setenv "XDG_DATA_HOME" maf-plot-test--xdg-orig)
+           (setenv "XDG_DATA_HOME" nil))
+         (delete-directory maf-plot-test--xdg t)
+         nil)
+
   ;; Restore what the test flipped.
   (progn (delete-file maf-plot-test--file)
          (setq maf-plot-backend maf-plot-test--backend)

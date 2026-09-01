@@ -120,11 +120,13 @@ Read at render time, so the plot follows the live theme."
   :group 'maf)
 
 (defcustom maf-plot-browser nil
-  "Browser program the desmos backend launches, or nil.
-Nil falls back to `browse-url-generic-program'. The URL must reach
-the browser binary intact: the xdg-open route silently drops the
-fragment of a file:// URL, and the fragment is the whole graph."
-  :type '(choice (const :tag "browse-url-generic-program" nil) string)
+  "Browser program the desmos backend launches, or nil to detect one.
+Nil looks for a browser rather than giving up: see `maf-plot--browser'
+for the order. Setting this overrides the search outright, including
+its refusal to hand the URL to a generic opener — the URL must reach
+the browser binary intact, since the xdg-open route silently drops the
+fragment of a file:// URL and the fragment is the whole graph."
+  :type '(choice (const :tag "Detect automatically" nil) string)
   :group 'maf)
 
 (defcustom maf-plot-desmos-api-key "dcb31709b452b1cf9dc26972add0fda6"
@@ -786,18 +788,102 @@ graph."
                (and range (list :b (vector (float (car range))
                                            (float (cdr range)))))))))))
 
+(defconst maf-plot--browser-openers
+  '("xdg-open" "gio" "gvfs-open" "gnome-open" "kde-open" "kde-open5"
+    "exo-open" "open")
+  "Generic openers `maf-plot--browser' will not return.
+None of these is a browser: each hands the URL to the desktop's
+handler, and that hop resolves a file:// URL to a bare path. The
+fragment does not survive it, and the fragment is the whole graph, so
+one of these would open an empty calculator rather than fail.")
+
+(defconst maf-plot--browser-candidates
+  '("firefox" "librewolf" "waterfox" "firefox-esr"
+    "google-chrome-stable" "google-chrome" "chromium" "chromium-browser"
+    "brave-browser" "brave" "vivaldi-stable" "vivaldi"
+    "microsoft-edge" "opera" "epiphany" "qutebrowser")
+  "Browser binaries probed on PATH as a last resort.
+Only reached when nothing — setting, environment, or desktop — names
+a browser. Any of these takes a file:// URL with its fragment intact.")
+
+(defun maf-plot--browser-desktop-exec (desktop)
+  "Return the program the XDG DESKTOP entry runs, or nil.
+DESKTOP is a .desktop file name, as `xdg-settings' reports it. The
+file is looked for under the XDG application directories, and its
+first Exec= line read for the program word — the %U-style field codes
+the spec puts after it are not part of the program."
+  (let* ((dirs (cons (expand-file-name
+                      "applications"
+                      (or (getenv "XDG_DATA_HOME") "~/.local/share"))
+                     (mapcar (lambda (d) (expand-file-name "applications" d))
+                             (split-string
+                              (or (getenv "XDG_DATA_DIRS")
+                                  "/usr/local/share:/usr/share")
+                              ":" t))))
+         (file (seq-find #'file-readable-p
+                         (mapcar (lambda (d) (expand-file-name desktop d))
+                                 dirs))))
+    (when file
+      (with-temp-buffer
+        (insert-file-contents file)
+        (goto-char (point-min))
+        (when (re-search-forward "^Exec=[[:blank:]]*\\(.+\\)$" nil t)
+          (let ((word (car (ignore-errors
+                             (split-string-and-unquote (match-string 1))))))
+            (and word (not (string-prefix-p "%" word)) word)))))))
+
+(defun maf-plot--browser-desktop-default ()
+  "Return the program the desktop calls its default web browser, or nil.
+`xdg-settings' names the browser by .desktop file rather than by
+program, so the answer is read out of that entry."
+  (when (executable-find "xdg-settings")
+    (with-temp-buffer
+      (when (eq 0 (ignore-errors
+                    (call-process "xdg-settings" nil t nil
+                                  "get" "default-web-browser")))
+        (let ((desktop (string-trim (buffer-string))))
+          (unless (string-empty-p desktop)
+            (maf-plot--browser-desktop-exec desktop)))))))
+
+(defun maf-plot--browser ()
+  "Return the program to launch the Desmos URL with, or nil.
+`maf-plot-browser' when set, which settles it. Otherwise the first
+that names a program actually present: `browse-url-generic-program',
+the BROWSER environment variable, the desktop's own default browser
+\(`maf-plot--browser-desktop-default'), and failing all three a probe
+down `maf-plot--browser-candidates'.
+
+A generic opener found this way is passed over rather than returned
+\(`maf-plot--browser-openers'): it would open the page and drop the
+graph, which is worse than reporting that no browser was found. An
+explicit `maf-plot-browser' is not second-guessed."
+  (or maf-plot-browser
+      (seq-find
+       (lambda (program)
+         (and (stringp program)
+              (not (string-empty-p program))
+              (not (member (file-name-nondirectory program)
+                           maf-plot--browser-openers))
+              (or (and (file-name-absolute-p program)
+                       (file-executable-p program))
+                  (executable-find program))))
+       (append (list browse-url-generic-program
+                     (car (split-string (or (getenv "BROWSER") "") ":" t))
+                     (maf-plot--browser-desktop-default))
+               maf-plot--browser-candidates))))
+
 (defun maf-plot--show-desmos (expressions &optional range)
-  "Open the Desmos page on EXPRESSIONS in the configured browser.
+  "Open the Desmos page on EXPRESSIONS in the browser.
 RANGE, when given, is the (LO . HI) x bounds the viewport opens on.
-The browser binary gets the URL directly: `browse-url' via xdg-open
-resolves a file:// URL to a bare path and silently drops the
-fragment, opening an empty calculator."
+The browser is `maf-plot--browser''s, and the binary gets the URL
+directly: `browse-url' via xdg-open resolves a file:// URL to a bare
+path and silently drops the fragment, opening an empty calculator."
   (unless expressions
     (user-error "Nothing to send to Desmos"))
-  (let ((program (or maf-plot-browser browse-url-generic-program)))
+  (let ((program (maf-plot--browser)))
     (unless program
       (user-error
-       "No browser configured: set `maf-plot-browser' (xdg-open would drop the graph)"))
+       "No browser found: set `maf-plot-browser' (xdg-open would drop the graph)"))
     (start-process "maf-plot-browser" nil program
                    (maf-plot--desmos-url expressions range))
     (message "Sent %d %s to Desmos" (length expressions)
