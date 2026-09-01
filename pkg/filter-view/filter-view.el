@@ -598,13 +598,45 @@ header, a second to the header before it."
 
 ;;; Folding
 
+(defvar-local filter-view--fold-return nil
+  "The row point was on when the fold just made was made.
+A list of (COMMAND ITEM RECENT): the fold command that recorded it, the
+item point stood on, and which copy of it — see `filter-view--goto-item'.
+
+Folding takes that row out of the buffer, so point falls back to the
+group's header. Unfolding again with the very same key, and nothing
+pressed in between, puts point back on the row: the pair reads as one
+look down the headers rather than a move. Anything else meanwhile ends
+the pair, the record only being consumed while `last-command' is still
+the command that wrote it.")
+
+(defun filter-view--fold-remember ()
+  "Record the row point is on, for the unfold that may follow the fold."
+  (setq filter-view--fold-return
+        (when-let ((item (filter-view--item-at-point)))
+          (list this-command item (filter-view--recent-line-p)))))
+
+(defun filter-view--fold-restore ()
+  "Put point back on the row the fold before this one took it off.
+Non-nil when point moved; nil when there is no such row, when
+something was pressed since the fold, or when the row is no longer in
+the list."
+  (let ((rec filter-view--fold-return))
+    (setq filter-view--fold-return nil)
+    (and rec
+         (eq (nth 0 rec) this-command)
+         (eq last-command this-command)
+         (filter-view--goto-item (nth 1 rec) (nth 2 rec)))))
+
 (defun filter-view-toggle-group ()
   "Fold the group at point away to its header, or unfold it again.
 A folded group keeps its header and wears the count of what it holds,
 so a list too long to read is read as its group names instead — fold
 what is not wanted, glance down the headers, unfold the one that is.
 Pressed on an item row it folds the group that row is in, point coming
-to rest on the header; pressed on that header it unfolds.
+to rest on the header; pressed on that header it unfolds, point going
+back to the row it was on when the group folded
+\(`filter-view--fold-return').
 
 Folds are not a narrowing: the folded items are still in the list,
 still counted, and clearing the filter leaves them folded — a fold is
@@ -612,31 +644,39 @@ undone where it was made. Starting a search is the exception, and
 unfolds everything so that what it turns up can be seen
 \(`filter-view--sync-collapse')."
   (interactive)
-  (let ((group (filter-view--group-of-point)))
+  (let* ((group (filter-view--group-of-point))
+         (folded (and group (filter-view--collapsed-p group))))
     (unless group (user-error "No group here"))
+    (unless folded (filter-view--fold-remember))
     (filter-view--set-state :collapsed
-                            (if (filter-view--collapsed-p group)
+                            (if folded
                                 (remove group (filter-view--state :collapsed))
                               (cons group (filter-view--state :collapsed))))
     (filter-view--render)
-    (filter-view--goto-group group)
-    (filter-view--item-start)))
+    (unless (and folded (filter-view--fold-restore))
+      (filter-view--goto-group group)
+      (filter-view--item-start))))
 
 (defun filter-view-toggle-all-groups ()
   "Fold every group away to its headers, or unfold them all.
 The fold view for the whole list in one key: with anything folded this
 unfolds the lot, otherwise it folds the lot. Point keeps its group,
-landing on that header when the rows it was among have gone. What it
-folds does not depend on where it is pressed; folding one group at a
-time is \\<filter-view-mode-map>\\[filter-view-toggle-group]."
+landing on that header when the rows it was among have gone, and the
+unfold that follows straight after puts it back on its row
+\(`filter-view--fold-return'). What it folds does not depend on where
+it is pressed; folding one group at a time is
+\\<filter-view-mode-map>\\[filter-view-toggle-group]."
   (interactive)
-  (let ((group (filter-view--group-of-point)))
+  (let* ((group (filter-view--group-of-point))
+         (folded (filter-view--state :collapsed)))
+    (unless folded (filter-view--fold-remember))
     (filter-view--set-state :collapsed
-                            (unless (filter-view--state :collapsed)
+                            (unless folded
                               (mapcar #'car (filter-view--groups))))
     (filter-view--render)
-    (when group (filter-view--goto-group group))
-    (filter-view--item-start)))
+    (unless (and folded (filter-view--fold-restore))
+      (when group (filter-view--goto-group group))
+      (filter-view--item-start))))
 
 ;;; Recents
 

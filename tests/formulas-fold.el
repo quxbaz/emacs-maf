@@ -206,6 +206,50 @@
       (filter-view--set-state :collapsed nil)
       (filter-view-quit)))
 
+  ;; Folding takes the row point is on out of the buffer, so point falls
+  ;; back to the header; unfolding with the very same key straight after
+  ;; puts it back on the row. The pair is one look down the group names,
+  ;; not a move — TAB twice leaves the list exactly as it was found.
+  (save-window-excursion
+    (delete-other-windows)
+    (maf-formulas)
+    (with-selected-window (get-buffer-window "*maf-formulas*")
+      (goto-char (point-min))
+      (search-forward "Surface area of sphere")
+      (beginning-of-line)
+      (execute-kbd-macro (kbd "TAB TAB"))
+      (cl-assert (null (filter-view--state :collapsed)))
+      (cl-assert (equal (maf-formulas--title
+                         (get-text-property (point) 'filter-view-item))
+                        "Surface area of sphere"))
+      ;; S-TAB, one group at a time, keeps the same promise.
+      (execute-kbd-macro (kbd "<backtab> <backtab>"))
+      (cl-assert (null (filter-view--state :collapsed)))
+      (cl-assert (equal (maf-formulas--title
+                         (get-text-property (point) 'filter-view-item))
+                        "Surface area of sphere"))
+      (filter-view-quit)))
+
+  ;; Only straight after, though: anything pressed in between ends the
+  ;; pair, and the unfold leaves point where that key put it — the row
+  ;; it would go back to is no longer where the user was.
+  (save-window-excursion
+    (delete-other-windows)
+    (maf-formulas)
+    (with-selected-window (get-buffer-window "*maf-formulas*")
+      (goto-char (point-min))
+      (search-forward "Surface area of sphere")
+      (beginning-of-line)
+      (execute-kbd-macro (kbd "TAB"))
+      (cl-assert (equal (filter-view--group-at-point) "Geometry — 3D: Sphere"))
+      (execute-kbd-macro (kbd "p"))     ; a move between the two folds
+      (cl-assert (equal (filter-view--group-at-point) "Geometry — 2D"))
+      (execute-kbd-macro (kbd "TAB"))
+      (cl-assert (null (filter-view--state :collapsed)))
+      (cl-assert (null (get-text-property (point) 'filter-view-item)))
+      (cl-assert (equal (filter-view--group-at-point) "Geometry — 2D"))
+      (filter-view-quit)))
+
   ;; A search unfolds everything, so that what it turns up can be seen:
   ;; results hidden behind a fold made earlier would be a search that
   ;; answered nothing. Driven through `/' and real keystrokes, the way
