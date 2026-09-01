@@ -59,6 +59,71 @@
   (cl-assert (equal (calc-top 1 'full) (math-read-expr "x + sin(x) = 1")))
   (calc-pop (calc-stack-size))
 
+  ;; --- Reciprocal trig: solved over the base call ---
+
+  ;; cot, sec and csc carry no `math-inverse' for calc to strip, so the
+  ;; direct solve punts and the entry used to come back unchanged.
+  ;; Written as 1 over tan, cos and sin, the same equation solves.
+  ;; Asserted against the base call's own answer rather than a written
+  ;; form: what the arc function evaluates to is the session's business
+  ;; — symbolic mode and the angle mode both move it — and the claim
+  ;; here is only that the rewrite hands calc the same equation.
+  (progn
+    (maf-push "tan(x) = 2")
+    (goto-char (point-max))
+    (maf-with-input "x" (call-interactively 'mafcmd-solve-for))
+    (setq sf--base-answer (calc-top 1 'full))
+    (calc-pop (calc-stack-size))
+    nil)
+  (maf-push "cot(x) = 1:2")
+  (goto-char (point-max))
+  (maf-with-input "x" (call-interactively 'mafcmd-solve-for))
+  (cl-assert (equal (calc-top 1 'full) sf--base-answer))
+  (cl-assert (maf--relation-p (calc-top 1 'full)))
+  (calc-pop (calc-stack-size))
+
+  (maf-push "csc(x) = 2")
+  (goto-char (point-max))
+  (maf-with-input "x" (call-interactively 'mafcmd-solve-for))
+  (cl-assert (string= (math-format-flat-expr (calc-top 1 'full) 0)
+                      "x = arcsin(1:2)"))
+  (calc-pop (calc-stack-size))
+
+  ;; The argument need not be the bare variable, and a layer over the
+  ;; call still peels once the rewrite has given calc its hold.
+  (progn
+    (maf-push "tan(2 x + 1) = 2")
+    (goto-char (point-max))
+    (maf-with-input "x" (call-interactively 'mafcmd-solve-for))
+    (setq sf--base-answer (calc-top 1 'full))
+    (calc-pop (calc-stack-size))
+    nil)
+  (maf-push "cot(2 x + 1) = 1:2")
+  (goto-char (point-max))
+  (maf-with-input "x" (call-interactively 'mafcmd-solve-for))
+  (cl-assert (equal (calc-top 1 'full) sf--base-answer))
+  (calc-pop (calc-stack-size))
+
+  ;; The rewrite is a fallback, not a pass: coth solves directly,
+  ;; through the exponential form it simplifies to, and keeps the
+  ;; answer calc gives rather than being turned into an arctanh.
+  (maf-push "coth(x) = 1:2")
+  (goto-char (point-max))
+  (maf-with-input "x" (call-interactively 'mafcmd-solve-for))
+  (cl-assert (not (string-match-p
+                   "arctanh" (math-format-flat-expr (calc-top 1 'full) 0))))
+  (cl-assert (maf--relation-p (calc-top 1 'full)))
+  (calc-pop (calc-stack-size))
+
+  ;; Only calls holding the variable are rewritten: a sec elsewhere in
+  ;; the relation comes back spelled the way it was typed.
+  (maf-push "sec(a) + x = 1")
+  (goto-char (point-max))
+  (maf-with-input "x" (call-interactively 'mafcmd-solve-for))
+  (cl-assert (string= (math-format-flat-expr (calc-top 1 'full) 0)
+                      "x = 1 - sec(a)"))
+  (calc-pop (calc-stack-size))
+
   ;; --- Several variables: a system solved for all of them ---
 
   ;; Commas separate the names.

@@ -5957,6 +5957,65 @@ leaving the caller's unchanged-commit intact."
           (setq target (maf--solve-peel-target target var))))
       result)))
 
+(defconst maf--solve-reciprocal-functions
+  '((calcFunc-cot . calcFunc-tan) (calcFunc-sec . calcFunc-cos)
+    (calcFunc-csc . calcFunc-sin) (calcFunc-coth . calcFunc-tanh)
+    (calcFunc-sech . calcFunc-cosh) (calcFunc-csch . calcFunc-sinh))
+  "Reciprocal trig calls and the base call each is one over.
+Calc solves by stripping a function off the unknown through the
+`math-inverse' property, and registers one for sin, cos and tan and
+their hyperbolics but not for these six — so cot(x) = 1:2 has no rule
+to strip and calc returns the solve unevaluated. Written as 1 over the
+base call, the same equation is one calc can take; see
+`maf--solve-reciprocal'.")
+
+(defun maf--solve-reciprocal-rewrite (expr var)
+  "EXPR with each reciprocal trig call holding VAR written over its base.
+Nil when EXPR holds none, so a caller can tell the rewrite off the
+unchanged expression rather than comparing.
+
+Only calls containing VAR are touched. A sec(a) elsewhere in the
+relation is left as it is, so it comes back in the solution spelled
+the way it was typed; the rewritten calls are the ones being inverted
+away, and do not survive into the answer."
+  (let ((found nil))
+    (cl-labels
+        ((walk (e)
+           (cond
+            ((not (consp e)) e)
+            ((eq (car e) 'var) e)
+            (t (let ((base (cdr (assq (car e) maf--solve-reciprocal-functions))))
+                 (if (and base (= (length e) 2) (math-expr-contains e var))
+                     (progn (setq found t)
+                            (math-div 1 (list base (walk (nth 1 e)))))
+                   (cons (car e) (mapcar #'walk (cdr e)))))))))
+      (let ((rewritten (walk expr)))
+        (and found rewritten)))))
+
+(defun maf--solve-reciprocal (rel var)
+  "Solve REL for VAR by writing its reciprocal trig calls over their base.
+The last fallback, after the direct solve and the peel: cot, sec, csc
+and their hyperbolics carry no inverse for calc to strip
+\(`maf--solve-reciprocal-functions'), so cot(x) = 1:2 punts where
+tan(x) = 2 solves at once. Rewritten, calc has its hold, and the
+answer is in the arc function of the base — arctan(2) here.
+
+Reached only when the direct solve has already failed, so an equation
+calc can take keeps the form calc gives it: coth(x) = 1:2 solves
+without help, through the exponential form coth simplifies to, and is
+not rewritten into arctanh behind that.
+
+The rewritten relation is not normalized on the way in. Calc folds
+1 / tan(x) back to cot(x), which would undo the rewrite before the
+solver ever saw it.
+
+Nil when nothing was rewritten or the rewrite still does not solve,
+leaving the caller's unchanged-commit intact."
+  (let ((rewritten (maf--solve-reciprocal-rewrite rel var)))
+    (and rewritten
+         (or (maf--solve-relation rewritten var)
+             (maf--solve-peel rewritten var)))))
+
 (defun maf--roots-peel (rel var)
   "All roots of equation REL for VAR, peeling layers as `maf--solve-peel'.
 The roots reading of the peel: the layer around VAR stands in as a
@@ -6079,7 +6138,8 @@ giving up; nothing solvable commits unchanged."
                                 (car vars))))
                         (setq maf--solve-solved-var var)
                         (or (maf--solve-relation rel var)
-                            (maf--solve-peel rel var))))))))))
+                            (maf--solve-peel rel var)
+                            (maf--solve-reciprocal rel var))))))))))
     ;; Nothing solvable: the subject commits unchanged, so no variable
     ;; was isolated after all and point has nothing to land on.
     (if (or (maf--relation-p result) (maf--solve-split-p result))
@@ -6302,12 +6362,15 @@ entry unchanged instead — unchanged means as written, so nothing turns."
          (peeled (and punted
                       (eq maf--solve-for-func 'calcFunc-solve)
                       (eq (car-safe maf--solve-for-vars) 'var)
-                      (let ((calc-symbolic-mode t) (calc-prefer-frac t))
-                        (maf--solve-peel
-                         (if (maf--relation-p expr)
-                             expr
-                           (list 'calcFunc-eq expr 0))
-                         maf--solve-for-vars)))))
+                      (let ((calc-symbolic-mode t) (calc-prefer-frac t)
+                            (rel (if (maf--relation-p expr)
+                                     expr
+                                   (list 'calcFunc-eq expr 0))))
+                        (or (maf--solve-peel rel maf--solve-for-vars)
+                            ;; cot, sec, csc: no inverse for calc to
+                            ;; strip, solvable over their base call.
+                            (maf--solve-reciprocal
+                             rel maf--solve-for-vars))))))
     (cond
      (peeled (commit (maf--relation-var-left peeled)))
      (punted
