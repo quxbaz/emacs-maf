@@ -15,7 +15,11 @@
 ;; the end.
 
 (defvar maf-test--settings-file nil)
-(defvar maf-test--settings-orig nil)
+(defvar maf-test--settings-orig 'unset
+  "The real `calc-settings-file', saved while the throwaway is in use.
+The `unset' sentinel rather than nil, since nil is a value
+`calc-settings-file' can legitimately hold and so cannot also mean
+nothing captured yet. See the restoring step below.")
 
 (maf-step
   ;; A settings file in calc's own shape: the marker block `calc-reset'
@@ -147,11 +151,22 @@
     :missing-file-ok)
 
   ;; Restore the real settings file and put calc back on its saved modes.
+  ;; `calc-settings-file' is global: a wrong value written here outlives
+  ;; the test and every later reset in the instance inherits it. An
+  ;; `unset' slot means the capturing step never ran in this Emacs, and
+  ;; restoring from it is how the instance loses its settings file
+  ;; entirely — fail before the write instead.
   (progn
+    (cl-assert (not (eq maf-test--settings-orig 'unset)))
     (setq calc-settings-file maf-test--settings-orig)
     (delete-file maf-test--settings-file)
     (makunbound 'var-maf-test-canary)
     (call-interactively 'maf-reset)
+    ;; `equal' against the slot cannot carry this alone: with an empty
+    ;; slot it compares nil to nil and passes, certifying the damage.
+    ;; The assertion above, that the slot was captured at all, is what
+    ;; makes this one mean something. Existence is deliberately not
+    ;; checked: the file may legitimately not be written yet.
     (cl-assert (equal calc-settings-file maf-test--settings-orig))
     :restored)
 

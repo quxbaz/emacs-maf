@@ -15,8 +15,12 @@
 (defvar maf-test--settings-file nil
   "Throwaway `calc-settings-file' for this run, or nil before it is made.")
 
-(defvar maf-test--settings-real nil
-  "The real `calc-settings-file', saved while the throwaway is in use.")
+(defvar maf-test--settings-real 'unset
+  "The real `calc-settings-file', saved while the throwaway is in use.
+The initial value is the `unset' sentinel, not nil: nil is a value
+`calc-settings-file' can legitimately hold, so it cannot also stand
+for nothing captured yet. The final step refuses to restore from an
+`unset' slot — see there for what writing one costs.")
 
 (defun maf-test--forget-settings-file ()
   "Delete the throwaway settings file and any buffer visiting it."
@@ -133,8 +137,22 @@
 
   ;; Put the real settings file back and restore the session from it,
   ;; so the test leaves calc as it found it.
+  ;;
+  ;; `calc-settings-file' is global, so a wrong value written here does
+  ;; not end with the test: it stays in the Emacs instance and every
+  ;; later `maf-reset' and `maf-reset-settings' inherits it. A run that
+  ;; never reached the first step — stepping into the middle of the
+  ;; file, or a fresh load of it — has an `unset' slot, and restoring
+  ;; from that is how the instance ends up with no settings file at
+  ;; all. Fail loudly instead, before the write.
   (progn (maf-test--forget-settings-file)
+         (cl-assert (not (eq maf-test--settings-real 'unset)))
          (setq calc-settings-file maf-test--settings-real)
          (call-interactively 'maf-reset-settings)
          nil)
+  ;; `equal' against the slot cannot carry this alone: with an empty
+  ;; slot it compares nil to nil and passes, certifying the damage. The
+  ;; assertion above, that the slot was actually captured, is what makes
+  ;; this one mean something. Existence is deliberately not checked:
+  ;; `calc-settings-file' may legitimately name a file not written yet.
   (cl-assert (equal calc-settings-file maf-test--settings-real)))
