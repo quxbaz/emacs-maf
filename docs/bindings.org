@@ -432,7 +432,10 @@
      table key `a s`, earned by frequency — since 2026-08-22 also on
      `k k`; the mode's slice of the C-c convention, with its
      do-the-obvious-thing reflex)
-   - [X] `S-<up>` / `S-<down>` mafcmd-toggle-op
+   - [X] `S-<up>` / `S-<down>` mafcmd-toggle-op (2026-08-31: reads an
+     interval too — the delimiter point is at retypes, `[` for a bound
+     included and `(` for one left out, the other end standing; the
+     stack-side answer to the editplus gesture on the same keys)
    - [X] `S-<left>` / `S-<right>` maf-commute-left / -right (2026-08-25:
      second keys beside their `j l` / `j r`, the arrow saying the
      direction the term travels and repeating without leaving the key;

@@ -1627,8 +1627,26 @@ variable is multiplied like anything else, never replaced.
       (call-interactively #'calc-pi)
     (call-interactively #'mafcmd--pi-mul)))
 
+(defun maf--interval-bound-at-point ()
+  "Which bound of the interval at point its rendering puts point at.
+`lo' or `hi'. Only an interval's own glyphs resolve to the interval —
+its two delimiters and the `..' between them, its operands resolving
+to themselves — so point is on one of those whenever this is asked.
+The split is the one the eye makes: the opening delimiter and the dots
+up to their first character read as the lower bound, everything from
+there through the closing delimiter as the upper.
+
+  |(-inf .. 3)  =>  lo
+  (-inf |.. 3)  =>  lo
+  (-inf .|. 3)  =>  hi
+  (-inf .. 3|)  =>  hi"
+  (cond ((memq (char-after) '(?\( ?\[)) 'lo)
+        ((memq (char-after) '(?\) ?\])) 'hi)
+        ((looking-at " *\\.\\.") 'lo)
+        (t 'hi)))
+
 (maf-defcmd mafcmd-toggle-op (expr _arg commit)
-  "Toggle the top operator of the resolved expression to its counterpart.
+  "Toggle the resolved expression's operator; an interval flips a bound.
 
   a + b  =>  a - b
 
@@ -1647,7 +1665,23 @@ usual: a sub-formula at point, the whole relation on a relation entry
   sin(x)     =>  arcsin(x)
   x = y      =>  x != y
   x < y      =>  x > y    (sides stay put: never y > x)
-  x          =>  x        (no pair: unchanged)"
+  x          =>  x        (no pair: unchanged)
+
+On an interval the delimiters are the operator: `[' says the bound is
+included and `(' that it is not. They are independent, so the one point
+is at flips and the other stands — a mixed pair is the notation
+working, not a pair left broken. The bound that moves is the one point
+is on, either delimiter or the side of the `..' point is at, and point
+keeps its delimiter as it changes, so pressing again undoes it.
+Anywhere else names no bound — an operand, the entry taken whole at
+its margin or at home, a selection maf takes as given — and there the
+interval commits unchanged, as any expression with nothing to toggle
+does.
+
+  (-inf .. 3|)  =>  (-inf .. 3]
+  |[2 .. 3)     =>  (2 .. 3)
+  [2 ..| 3)     =>  [2 .. 3]
+  [2 .. |3)     =>  [2 .. 3)    (an operand: unchanged)"
   :title "toggle the operator"
   :example "a + b => a - b"
   :arity unary
@@ -1656,11 +1690,24 @@ usual: a sub-formula at point, the whole relation on a relation entry
   (let* ((op (car-safe expr))
          (to (or (cdr (assq op maf-toggle-op-pairs))
                  (car (rassq op maf-toggle-op-pairs)))))
-    ;; A 1-arg log has no ^ counterpart (nothing to use as the base);
-    ;; leave it alone rather than build a malformed (^ x).
-    (commit (if (and to (not (and (eq op 'calcFunc-log) (= (length expr) 2))))
-                (cons to (cdr expr))
-              expr))))
+    (commit
+     (cond
+      ;; An interval's delimiters are its operator, and the two are
+      ;; independent: the mask bit for the bound point is at flips and
+      ;; the other stands. Only the subexpr target can say which bound
+      ;; that is — at home or in a margin point is outside the
+      ;; rendering, naming neither, and the interval stands whole.
+      ((and (eq op 'intv) (eq maf-target 'subexpr))
+       (list 'intv
+             (logxor (nth 1 expr)
+                     (if (eq (maf--interval-bound-at-point) 'lo) 2 1))
+             (nth 2 expr)
+             (nth 3 expr)))
+      ;; A 1-arg log has no ^ counterpart (nothing to use as the base);
+      ;; leave it alone rather than build a malformed (^ x).
+      ((and to (not (and (eq op 'calcFunc-log) (= (length expr) 2))))
+       (cons to (cdr expr)))
+      (t expr)))))
 
 (defvar maf--simplify-restore 'alg
   "Simplify mode `maf-toggle-simplify' restores when toggling back on.
