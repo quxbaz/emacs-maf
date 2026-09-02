@@ -3752,6 +3752,249 @@ Signals an error on an empty stack when there is no region."
              (if (eq (plist-get maf--copy-state :format) 'latex) " as LaTeX" "")
              (string-trim (car kill-ring)))))
 
+;;; LaTeX reading
+
+(defconst maf--latex-marker-re
+  "\\\\.\\|\\$\\|[_^]{"
+  "Text that is LaTeX, not calc.
+Any one of a backslash (\\frac, \\cdot, \\alpha, the \\, of a digit
+group, a \\( or \\[ delimiter), a dollar sign, or a braced script
+\(x^{2}, x_{1}). None of these reads in calc's normal language, so a
+match is never a formula that would have yanked as it stands.")
+
+(defun maf--latex-p (text)
+  "Return non-nil when TEXT is LaTeX by `maf--latex-marker-re'."
+  (string-match-p maf--latex-marker-re text))
+
+(defconst maf--latex-matrix-envs
+  '("pmatrix" "bmatrix" "vmatrix" "Vmatrix" "Bmatrix" "matrix"
+    "smallmatrix")
+  "Environments whose body is a matrix calc reads whole.
+The rest (align, equation, gather, ...) are wrappers to unwrap.")
+
+(defun maf--latex-unwrap-envs (text)
+  "Return TEXT with its LaTeX environments reduced to what calc reads.
+A matrix environment (`maf--latex-matrix-envs') stays as a pmatrix,
+the one calc reads, its line breaks joined. Any other environment
+is unwrapped: the \\begin and \\end go, alignment ampersands go, and
+each \\\\ row break becomes a line of its own, so an align block
+yanks one entry per row."
+  (let ((pos 0))
+    (while (string-match "\\\\begin{\\([a-zA-Z]+\\*?\\)}" text pos)
+      (let* ((name (match-string 1 text))
+             (open-beg (match-beginning 0))
+             (open-end (match-end 0))
+             (close-re (concat "\\\\end{" (regexp-quote name) "}"))
+             (close-beg (and (string-match close-re text open-end)
+                             (match-beginning 0)))
+             (close-end (and close-beg (match-end 0))))
+        (if (not close-beg)
+            (setq pos open-end)
+          (let* ((body (substring text open-end close-beg))
+                 (matrixp (member name maf--latex-matrix-envs))
+                 (new (if matrixp
+                          (concat "\\begin{pmatrix}"
+                                  (replace-regexp-in-string "[\n\r]+" " " body)
+                                  "\\end{pmatrix}")
+                        (concat "\n"
+                                (replace-regexp-in-string
+                                 "\\\\\\\\\\(?:\\[[^]]*\\]\\)?" "\n"
+                                 (replace-regexp-in-string
+                                  "&\\|\\\\nonumber\\|\\\\\\(?:tag\\|label\\){[^}]*}"
+                                  "" body))
+                                "\n"))))
+            (setq text (concat (substring text 0 open-beg) new
+                               (substring text close-end))
+                  pos (+ open-beg (length new)))))))
+    text))
+
+(defun maf--latex-strip-delimiters (text)
+  "Return TEXT with math delimiters replaced by line breaks.
+A display block (\\[ \\] or $$ $$) becomes one line, its own line
+breaks joined; an inline \\( \\) or $ $ pair just loses its marks.
+Either way what was inside stands alone on a line, one entry."
+  (let ((joiner (lambda (m)
+                  (concat "\n"
+                          (replace-regexp-in-string
+                           "[\n\r]+" " "
+                           (substring m 2 (- (length m) 2)))
+                          "\n"))))
+    (setq text (replace-regexp-in-string
+                "\\\\\\[\\(?:.\\|\n\\)*?\\\\\\]" joiner text 'fixedcase 'literal))
+    (setq text (replace-regexp-in-string
+                "\\$\\$\\(?:.\\|\n\\)*?\\$\\$" joiner text 'fixedcase 'literal))
+    (replace-regexp-in-string "\\$\\|\\\\[()]" "\n" text 'fixedcase 'literal)))
+
+(defun maf--latex-group-end (text pos)
+  "Return the index just past the brace group opening at POS in TEXT.
+An unclosed group runs to the end."
+  (let ((depth 0) (i pos) (len (length text)) end)
+    (while (and (< i len) (not end))
+      (pcase (aref text i)
+        (?{ (setq depth (1+ depth)))
+        (?} (setq depth (1- depth))
+            (when (zerop depth) (setq end (1+ i)))))
+      (setq i (1+ i)))
+    (or end len)))
+
+(defun maf--latex-arg-bounds (text pos)
+  "Return (START . END) of the TeX argument at or after POS in TEXT.
+Leading whitespace is skipped. A brace group is one argument, as is a
+control word; anything else is a single character, which is how TeX
+reads \\frac32 as \\frac{3}{2}. Nil at the end of TEXT."
+  (let ((len (length text)))
+    (while (and (< pos len) (memq (aref text pos) '(?\s ?\t ?\n ?\r)))
+      (setq pos (1+ pos)))
+    (cond ((>= pos len) nil)
+          ((eq (aref text pos) ?{) (cons pos (maf--latex-group-end text pos)))
+          ((eq (aref text pos) ?\\)
+           (string-match "\\\\\\(?:[a-zA-Z]+\\|.\\)" text pos)
+           (cons pos (match-end 0)))
+          (t (cons pos (1+ pos))))))
+
+(defun maf--latex-brace-arg (text pos)
+  "Return (TEXT . END): TEXT with the argument at POS in braces.
+END is the index just past the (now braced) argument, or nil when
+there is none."
+  (let ((arg (maf--latex-arg-bounds text pos)))
+    (cond ((null arg) (cons text nil))
+          ((eq (aref text (car arg)) ?{) (cons text (cdr arg)))
+          (t (cons (concat (substring text 0 (car arg)) "{"
+                           (substring text (car arg) (cdr arg)) "}"
+                           (substring text (cdr arg)))
+                   (+ (cdr arg) 2))))))
+
+(defun maf--latex-brace-fracs (text)
+  "Return TEXT with both arguments of every \\frac in braces.
+Calc's reader wants \\frac{3}{2}; TeX also accepts \\frac32, and
+that is what a MathJax copy can carry."
+  (let ((pos 0))
+    (while (string-match "\\\\[dt]?frac\\(?:[^a-zA-Z]\\|\\'\\)" text pos)
+      (setq pos (1- (match-end 0)))
+      (when (= (match-end 0) (length text)) (setq pos (match-end 0)))
+      (let ((n 2))
+        (while (and pos (> n 0))
+          (let ((braced (maf--latex-brace-arg text pos)))
+            (setq text (car braced)
+                  pos (cdr braced)
+                  n (1- n)))))
+      (unless pos (setq pos (length text))))
+    text))
+
+(defun maf--latex-rewrite-roots (text)
+  "Return TEXT with each \\sqrt[N]{X} written as the nroot call.
+Calc's LaTeX reader knows the plain \\sqrt only."
+  (let ((pos 0))
+    (while (string-match "\\\\sqrt\\[\\([^]]*\\)\\]" text pos)
+      (let* ((beg (match-beginning 0))
+             (n (match-string 1 text))
+             (braced (maf--latex-brace-arg text (match-end 0)))
+             (end (cdr braced)))
+        (setq text (car braced))
+        (if (null end)
+            (setq pos (length text))
+          ;; The argument is braced now: its group runs to END.
+          (let* ((arg-beg (string-match "{" text beg))
+                 (new (concat "\\text{nroot}(" (substring text (1+ arg-beg) (1- end))
+                              ", " n ")")))
+            (setq text (concat (substring text 0 beg) new (substring text end))
+                  pos (+ beg (length new)))))))
+    text))
+
+(defconst maf--latex-rewrites
+  '(("\\\\cdot" . "\\\\times")
+    ("\\\\\\(?:mathrm\\|mathit\\|mathbf\\|textrm\\|operatorname\\){" . "\\\\text{")
+    ("\\\\\\(?:displaystyle\\|textstyle\\|scriptstyle\\|left\\.\\|right\\.\\|!\\)" . "")
+    ("\\\\\\(?:[,;:]\\|quad\\|qquad\\| \\)" . " ")
+    ("\\(?:{}\\)?\\^\\(?:\\\\circ\\|{\\\\circ}\\)" . " deg"))
+  "Regexp rewrites that turn LaTeX calc's reader stumbles on into LaTeX it reads.
+Applied in order. The product dot becomes the \\times calc knows; the
+font and operator wrappers become \\text, which calc strips; style
+switches, empty \\left. \\right. delimiters and negative space go; the
+spacing commands become a space; and the degree circle, as
+`maf--latex-string' writes it, becomes the unit.")
+
+(defun maf--latex-normalize (text)
+  "Return TEXT rewritten into the LaTeX calc's reader accepts.
+Environments unwrap (`maf--latex-unwrap-envs'), math delimiters go
+\(`maf--latex-strip-delimiters'), the rewrites of `maf--latex-rewrites'
+apply, digit groups written 1\\,234 close up, \\frac arguments get
+their braces (`maf--latex-brace-fracs') and \\sqrt[n] becomes nroot
+\(`maf--latex-rewrite-roots'). A matrix row break \\\\ is hidden from
+the rewrites, whose backslash would otherwise match its second half."
+  (setq text (maf--latex-strip-delimiters (maf--latex-unwrap-envs text)))
+  (setq text (replace-regexp-in-string "\\\\\\\\" "\0" text 'fixedcase 'literal))
+  (while (string-match "\\([0-9]\\)\\\\,\\([0-9]\\)" text)
+    (setq text (replace-match "\\1\\2" t nil text)))
+  (dolist (rw maf--latex-rewrites)
+    (setq text (replace-regexp-in-string (car rw) (cdr rw) text 'fixedcase)))
+  (setq text (replace-regexp-in-string "\0" "\\\\" text 'fixedcase 'literal))
+  (maf--latex-rewrite-roots (maf--latex-brace-fracs text)))
+
+(defun maf--latex-read-lines (lines)
+  "Read LINES, LaTeX strings, into calc values under the latex language.
+Returns the list of values, or nil when any line fails to read. A line
+holding a comma-separated list reads as several values."
+  (maf--with-calc-buffer
+    (let ((lang calc-language)
+          (opt calc-language-option)
+          (ok t)
+          vals)
+      (unwind-protect
+          (progn
+            (calc-set-language 'latex nil t)
+            (dolist (line lines)
+              (let ((read (math-read-exprs line)))
+                (if (eq (car-safe read) 'error)
+                    (setq ok nil)
+                  (setq vals (append vals read))))))
+        (calc-set-language lang opt t))
+      (and ok vals))))
+
+(defun maf--calc-format-lines (vals)
+  "Format VALS, calc values, one per line in the normal language.
+Calc's flat language: the normal notation, a matrix kept on its one
+line rather than stacked row under row."
+  (maf--with-calc-buffer
+    (let ((lang calc-language)
+          (opt calc-language-option))
+      (unwind-protect
+          (progn
+            (calc-set-language 'flat nil t)
+            (mapconcat (lambda (v) (math-format-value v 1000)) vals "\n"))
+        (calc-set-language lang opt t)))))
+
+(defun maf-latex-to-calc (text)
+  "Return TEXT, LaTeX, rewritten in calc's normal language.
+
+  \\frac32 \\cdot x       =>  3:2 x
+  \\sqrt{x^2 + 1}         =>  sqrt(x^2 + 1)
+  \\frac{1}{2}, \\alpha    =>  1:2
+                             alpha
+
+TEXT is LaTeX when it carries a control word, a dollar sign, a \\( or
+\\[ delimiter, or a braced script (`maf--latex-marker-re'); anything
+else is returned as it is, the same string object, so a yank of calc's
+own last kill still matches by identity. Delimiters and environments
+are unwrapped, an align block or a comma list giving one line per
+entry, and the LaTeX calc's reader does not accept is rewritten
+first (`maf--latex-normalize'). Calc's LaTeX language then reads
+each line, and what it read is formatted back in the normal language
+under the current display modes, so it reads in exactly as typed
+entry would. When a line does not read, TEXT is returned unchanged
+and the yank fails as it would have.
+
+Known gaps, calc's reader's own: a function applied without parens,
+\\sin x, and the set signs \\cup and \\cap stay as juxtaposed names."
+  (if (not (maf--latex-p text))
+      text
+    (let* ((lines (seq-remove #'string-empty-p
+                              (mapcar #'string-trim
+                                      (split-string (maf--latex-normalize text)
+                                                    "[\n\r]"))))
+           (vals (and lines (maf--latex-read-lines lines))))
+      (if vals (maf--calc-format-lines vals) text))))
+
 ;;; Yank
 
 (defconst maf--yank-grouped-number-re
@@ -3812,13 +4055,20 @@ column comes in one entry per line.
 Stack level prefixes are dropped: text swept off a stack display —
 \"2:  [x = 6, x = 0]\" over \"1:  [y = 5, y = 2]\" — yanks as the
 entries themselves, one per line (`maf--yank-strip-levels'; the
-fraction 1:2, written without whitespace, is left alone). Everything
-else behaves as `calc-yank', RADIX prefix included."
+fraction 1:2, written without whitespace, is left alone).
+
+LaTeX yanks as the formula it typesets: \\frac32 \\cdot x, as a
+MathJax page or this package's own LaTeX copy puts it on the kill
+ring, comes in as 3:2 x (`maf-latex-to-calc'; a control word, a
+dollar sign or a braced script is what marks the text as LaTeX). An
+align block or a comma list gives one entry per row. Everything else
+behaves as `calc-yank', RADIX prefix included."
   (interactive "P")
   (maf--with-calc-buffer
-    (calc-yank-internal radix (maf--yank-degroup
-                               (maf--yank-strip-levels
-                                (current-kill 0 t))))))
+    (calc-yank-internal radix (maf-latex-to-calc
+                               (maf--yank-degroup
+                                (maf--yank-strip-levels
+                                 (current-kill 0 t)))))))
 
 (defun maf-dup (&optional keep-point)
   "Duplicate the item at point, pushing a copy onto the stack.

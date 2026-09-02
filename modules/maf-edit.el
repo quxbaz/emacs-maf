@@ -56,6 +56,7 @@
 ;; src/stack.el, loaded with the package core well before any edit
 ;; session; declared for the byte compiler.
 (declare-function maf--yank-strip-levels "stack")
+(declare-function maf-latex-to-calc "stack")
 
 ;; Defined in lazily-loaded calc modules; calc-ext's autoload registry
 ;; resolves them at runtime, but the byte compiler needs declarations.
@@ -711,8 +712,10 @@ is entirely gone is just re-stamped."
 The strip `maf-yank' gives the stack itself (`maf--yank-strip-levels')
 runs here at insertion time, on `yank-transform-functions', so the
 prefixes never appear in the buffer: a stack quoted in notes pastes as
-its entries alone, one per line, ready to commit."
-  (maf--yank-strip-levels text))
+its entries alone, one per line, ready to commit. LaTeX pastes as the
+formula it typesets, the same reading `maf-yank' gives the stack
+\(`maf-latex-to-calc')."
+  (maf-latex-to-calc (maf--yank-strip-levels text)))
 
 (defun maf-edit--strip-stray-props ()
   "Delete machine-owned characters that are not a line's leading run.
