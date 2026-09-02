@@ -628,13 +628,15 @@ mean something else beside a stack — line motion and RET.")
 
 ;; The log: every line is a state, so plain motion and stepping are the
 ;; same thing, and the keys follow the display rather than the clock.
-;; The log runs newest-at-top, so down (j/n) walks back in time and up
-;; (k/p) walks forward — the way n/p move through the items of any
-;; Emacs list buffer, whatever order the list is in.
+;; The log runs newest-at-top, so down (j/n, <down>) walks back in
+;; time and up (k/p, <up>) walks forward — the way n/p move through the
+;; items of any Emacs list buffer, whatever order the list is in.
 (define-key maf-history-mode-map (kbd "j") #'maf-history-previous)
 (define-key maf-history-mode-map (kbd "n") #'maf-history-previous)
+(define-key maf-history-mode-map (kbd "<down>") #'maf-history-previous)
 (define-key maf-history-mode-map (kbd "k") #'maf-history-next)
 (define-key maf-history-mode-map (kbd "p") #'maf-history-next)
+(define-key maf-history-mode-map (kbd "<up>") #'maf-history-next)
 ;; M-n and M-p are the step keys under a modifier, and step the same
 ;; way — older down, newer up — but by sitting rather than by state,
 ;; landing on the states the rules sit under. The stack window
@@ -686,8 +688,10 @@ mean something else beside a stack — line motion and RET.")
 (set-keymap-parent maf-history-stack-mode-map maf-history-mode-map)
 (define-key maf-history-stack-mode-map (kbd "n") #'next-line)
 (define-key maf-history-stack-mode-map (kbd "j") #'next-line)
+(define-key maf-history-stack-mode-map (kbd "<down>") #'next-line)
 (define-key maf-history-stack-mode-map (kbd "p") #'previous-line)
 (define-key maf-history-stack-mode-map (kbd "k") #'previous-line)
+(define-key maf-history-stack-mode-map (kbd "<up>") #'previous-line)
 (define-key maf-history-stack-mode-map (kbd "<") #'maf-history-stack-first)
 (define-key maf-history-stack-mode-map (kbd ">") #'maf-history-stack-last)
 (define-key maf-history-stack-mode-map (kbd "M-<") #'maf-history-stack-first)
