@@ -1054,7 +1054,21 @@ so the side split is only taken when both halves clear this width."
      :doc "Distance between two points of the plane: the Pythagorean theorem on the run and the rise between them."
      :vars ((d . "distance") (x1 . "first point's x") (y1 . "first point's y")
             (x2 . "second point's x") (y2 . "second point's y"))
-     :examples ("From (1, 2) to (4, 6) is 5.")))
+     :examples ("From (1, 2) to (4, 6) is 5."))
+    (:name "circumference-of-circle"
+     :title "Circumference of circle"
+     :category "Geometry — 2D: Circle"
+     :expr (calcFunc-eq (var C var-C) (* 2 (* (var pi var-pi) (var r var-r))))
+     :doc "Circumference of a circle from its radius: two pi times the radius."
+     :vars ((C . "circumference") (r . "radius"))
+     :examples ("A circle of radius 3 has circumference 6 pi."))
+    (:name "circumference-of-circle-from-diameter"
+     :title "Circumference of circle from diameter"
+     :category "Geometry — 2D: Circle"
+     :expr (calcFunc-eq (var C var-C) (* (var pi var-pi) (var d var-d)))
+     :doc "Circumference of a circle from its diameter: pi times the diameter, which is what pi is the ratio of."
+     :vars ((C . "circumference") (d . "diameter"))
+     :examples ("A circle of diameter 6 has circumference 6 pi.")))
   "The formulas maf ships with, in the plist shape of `maf-formulas-user'.
 The identities school algebra and trigonometry rest on, the formulas
 school geometry measures a solid with, and the ones a rewrite is most
@@ -1062,9 +1076,9 @@ often reaching for. They come in categories the menu sorts by name and
 narrows to one at a time: the properties of real numbers, absolute
 value, exponents, fractions, logarithms, quadratic equations and
 radicals, then the trig identities in six groups of their own, then the
-coordinate plane's distance formula, the rectangular solid and the
-cube — a group per figure, as a library of one's own names its
-geometry. The properties of real numbers calc applies in its
+circle's circumference, the coordinate plane's distance formula, the
+rectangular solid and the cube — a group per figure, as a library of
+one's own names its geometry. The properties of real numbers calc applies in its
 own default simplifications, so those earn their place by being
 readable and by naming what a rewrite is doing rather than by teaching
 calc anything; the rest calc will not supply on its own.

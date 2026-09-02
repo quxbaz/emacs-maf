@@ -21,18 +21,20 @@
 
 (maf-step
   ;; Values for the free variables. Positive where a formula wants a
-  ;; positive (logs, roots), nonzero everywhere, and no base of 1.
+  ;; positive (logs, roots), nonzero everywhere, and no base of 1. pi
+  ;; is a variable to calc as much as x is, so it takes a value too —
+  ;; the one value both sides of a circle formula then share exactly.
   (setq blv--values
         '((x . "2.3") (y . "1.7") (a . "1.3") (b . "0.7") (c . "2.9")
           (d . "1.9") (m . "1.4") (n . "2.6") (p . "0.8")
-          (r1 . "1.1") (r2 . "0.5")))
+          (r1 . "1.1") (r2 . "0.5") (pi . "3.14159265358979323846")))
 
   ;; A second set, chosen to share nothing with the first: negatives
   ;; and a fractional exponent where the domains allow them.
   (setq blv--values-2
         '((x . "0.37") (y . "3.1") (a . "2.2") (b . "1.05") (c . "-0.6")
           (d . "4.3") (m . "-1.7") (n . "1.9") (p . "2.4")
-          (r1 . "-0.8") (r2 . "1.6")))
+          (r1 . "-0.8") (r2 . "1.6") (pi . "3.14159265358979323846")))
 
   ;; The formulas that are relations rather than identities: they hold
   ;; only for values that already stand in the relation, so each names
@@ -79,7 +81,11 @@
           ("diagonal-of-cube"     (d . "2 sqrt(3)") (s . "2"))
           ;; The 3-4-5 triangle laid on the plane.
           ("distance-formula"
-           (d . "5") (x1 . "1") (y1 . "2") (x2 . "4") (y2 . "6"))))
+           (d . "5") (x1 . "1") (y1 . "2") (x2 . "4") (y2 . "6"))
+          ;; One circle, measured both ways: radius 3, diameter 6. The
+          ;; pi in the circumference is substituted with the rest.
+          ("circumference-of-circle"               (C . "6 pi") (r . "3"))
+          ("circumference-of-circle-from-diameter" (C . "6 pi") (d . "6"))))
 
   (defun blv--subst (expr vals)
     "EXPR with each variable in VALS replaced by its number.
