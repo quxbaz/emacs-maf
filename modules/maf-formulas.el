@@ -1044,7 +1044,17 @@ so the side split is only taken when both halves clear this width."
      :category "Geometry — 3D: Cube"
      :expr (calcFunc-eq (var d var-d) (* (var s var-s) (calcFunc-sqrt 3)))
      :doc "Space diagonal of a cube: its edge times the root of three."
-     :vars ((d . "space diagonal") (s . "edge length"))))
+     :vars ((d . "space diagonal") (s . "edge length")))
+    (:name "distance-formula"
+     :title "Distance formula"
+     :category "Geometry — 2D: Coordinate plane"
+     :expr (calcFunc-eq (var d var-d)
+                        (calcFunc-sqrt (+ (^ (- (var x2 var-x2) (var x1 var-x1)) 2)
+                                          (^ (- (var y2 var-y2) (var y1 var-y1)) 2))))
+     :doc "Distance between two points of the plane: the Pythagorean theorem on the run and the rise between them."
+     :vars ((d . "distance") (x1 . "first point's x") (y1 . "first point's y")
+            (x2 . "second point's x") (y2 . "second point's y"))
+     :examples ("From (1, 2) to (4, 6) is 5.")))
   "The formulas maf ships with, in the plist shape of `maf-formulas-user'.
 The identities school algebra and trigonometry rest on, the formulas
 school geometry measures a solid with, and the ones a rewrite is most
@@ -1052,8 +1062,9 @@ often reaching for. They come in categories the menu sorts by name and
 narrows to one at a time: the properties of real numbers, absolute
 value, exponents, fractions, logarithms, quadratic equations and
 radicals, then the trig identities in six groups of their own, then the
-rectangular solid and the cube — a group per solid, as a library of
-one's own names its geometry. The properties of real numbers calc applies in its
+coordinate plane's distance formula, the rectangular solid and the
+cube — a group per figure, as a library of one's own names its
+geometry. The properties of real numbers calc applies in its
 own default simplifications, so those earn their place by being
 readable and by naming what a rewrite is doing rather than by teaching
 calc anything; the rest calc will not supply on its own.

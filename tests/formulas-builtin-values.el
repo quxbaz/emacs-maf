@@ -76,7 +76,10 @@
            (d . "13") (l . "3") (w . "4") (h . "12"))
           ("volume-of-cube"       (V . "8") (s . "2"))
           ("surface-area-of-cube" (S . "24") (s . "2"))
-          ("diagonal-of-cube"     (d . "2 sqrt(3)") (s . "2"))))
+          ("diagonal-of-cube"     (d . "2 sqrt(3)") (s . "2"))
+          ;; The 3-4-5 triangle laid on the plane.
+          ("distance-formula"
+           (d . "5") (x1 . "1") (y1 . "2") (x2 . "4") (y2 . "6"))))
 
   (defun blv--subst (expr vals)
     "EXPR with each variable in VALS replaced by its number.
