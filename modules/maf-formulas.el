@@ -1061,14 +1061,7 @@ so the side split is only taken when both halves clear this width."
      :expr (calcFunc-eq (var C var-C) (* 2 (* (var pi var-pi) (var r var-r))))
      :doc "Circumference of a circle from its radius: two pi times the radius."
      :vars ((C . "circumference") (r . "radius"))
-     :examples ("A circle of radius 3 has circumference 6 pi."))
-    (:name "circumference-of-circle-from-diameter"
-     :title "Circumference of circle from diameter"
-     :category "Geometry — 2D: Circle"
-     :expr (calcFunc-eq (var C var-C) (* (var pi var-pi) (var d var-d)))
-     :doc "Circumference of a circle from its diameter: pi times the diameter, which is what pi is the ratio of."
-     :vars ((C . "circumference") (d . "diameter"))
-     :examples ("A circle of diameter 6 has circumference 6 pi.")))
+     :examples ("A circle of radius 3 has circumference 6 pi.")))
   "The formulas maf ships with, in the plist shape of `maf-formulas-user'.
 The identities school algebra and trigonometry rest on, the formulas
 school geometry measures a solid with, and the ones a rewrite is most

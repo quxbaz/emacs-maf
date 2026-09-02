@@ -82,10 +82,9 @@
           ;; The 3-4-5 triangle laid on the plane.
           ("distance-formula"
            (d . "5") (x1 . "1") (y1 . "2") (x2 . "4") (y2 . "6"))
-          ;; One circle, measured both ways: radius 3, diameter 6. The
-          ;; pi in the circumference is substituted with the rest.
-          ("circumference-of-circle"               (C . "6 pi") (r . "3"))
-          ("circumference-of-circle-from-diameter" (C . "6 pi") (d . "6"))))
+          ;; The circle of radius 3. The pi in its circumference is
+          ;; substituted with the rest.
+          ("circumference-of-circle" (C . "6 pi") (r . "3"))))
 
   (defun blv--subst (expr vals)
     "EXPR with each variable in VALS replaced by its number.
