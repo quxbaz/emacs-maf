@@ -78,23 +78,43 @@
   (cl-assert (equal (calc-top 1 'full) '(vec (var y var-y) (var x var-x))))
   (calc-pop 1)
 
-  ;; H | is append, unchanged: it joins two vectors.
+  ;; H | nests instead of splicing: each operand is one element, so
+  ;; the brackets survive.
   (maf-push "[1, 2]")
   (maf-push "[3, 4]")
   (goto-char (point-max))
   (call-interactively 'calc-hyperbolic)
   (call-interactively 'mafcmd-vconcat)
-  (cl-assert (equal (calc-top 1 'full) '(vec 1 2 3 4)))
+  (cl-assert (equal (calc-top 1 'full) '(vec (vec 1 2) (vec 3 4))))
   (calc-pop 1)
 
-  ;; I H | is appendrev.
+  ;; Same through the real keypress.
+  (maf-push "[x, y]")
+  (maf-push "[a, b]")
+  (goto-char (point-max))
+  (execute-kbd-macro (kbd "H |"))
+  (cl-assert (equal (calc-top 1 'full)
+                    '(vec (vec (var x var-x) (var y var-y))
+                          (vec (var a var-a) (var b var-b)))))
+  (calc-pop 1)
+
+  ;; A scalar nests alongside a vector the same way.
+  (maf-push "[1, 2]")
+  (maf-push "x")
+  (goto-char (point-max))
+  (call-interactively 'calc-hyperbolic)
+  (call-interactively 'mafcmd-vconcat)
+  (cl-assert (equal (calc-top 1 'full) '(vec (vec 1 2) (var x var-x))))
+  (calc-pop 1)
+
+  ;; I H | nests in the reverse order.
   (maf-push "[1, 2]")
   (maf-push "[3, 4]")
   (goto-char (point-max))
   (call-interactively 'calc-inverse)
   (call-interactively 'calc-hyperbolic)
   (call-interactively 'mafcmd-vconcat)
-  (cl-assert (equal (calc-top 1 'full) '(vec 3 4 1 2)))
+  (cl-assert (equal (calc-top 1 'full) '(vec (vec 3 4) (vec 1 2))))
   (calc-pop 1)
 
   ;; A relation is an element, not a subject to run once per side: the
@@ -153,8 +173,8 @@
                           (calcFunc-eq (var y var-y) 2))))
   (calc-pop 1)
 
-  ;; The variants opt out too: I | reverses, H | appends vectors of
-  ;; equations.
+  ;; The variants opt out too: I | reverses, H | nests two equations
+  ;; as two elements.
   (maf-push "x = 1")
   (maf-push "y = 2")
   (goto-char (point-max))
@@ -165,8 +185,8 @@
                           (calcFunc-eq (var x var-x) 1))))
   (calc-pop 1)
 
-  (maf-push "[x = 1]")
-  (maf-push "[y = 2]")
+  (maf-push "x = 1")
+  (maf-push "y = 2")
   (goto-char (point-max))
   (call-interactively 'calc-hyperbolic)
   (call-interactively 'mafcmd-vconcat)

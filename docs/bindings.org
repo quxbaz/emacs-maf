@@ -504,7 +504,7 @@
 ** defined but unbound (M-x only)
    Stack commands with no key in native and no flag route from a bound
    key. Not listed: the ~67 flag-route variants (arcsin under I S,
-   vmedian under H u M, identify under I k v, append under H |, ...) —
+   vmedian under H u M, identify under I k v, vnest under H |, ...) —
    those are reachable; entry points (maf-calc, maf-calc-direct),
    module toggles (the m c menu's job), and lib helpers. Generated
    against the sources 2026-08-19.

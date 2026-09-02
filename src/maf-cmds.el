@@ -186,14 +186,17 @@ variant's own variable governs only its direct invocation."
   ;; vconcat/vconcatrev use maf's own concatenation rather than
   ;; calcFunc-vconcat: | here always builds a vector, where calc leaves
   ;; it symbolic whenever an operand is not provably scalar (see
-  ;; `maf-vconcat').
+  ;; `maf-vconcat'). H | is not calc's append, which maf's | already
+  ;; covers (vector operands splice), but the nesting join: each
+  ;; operand is one element, so [x, y] and [a, b] give [[x, y], [a, b]]
+  ;; (see `maf-vnest').
   ;;
   ;; The whole | family takes :map -1: a relation is an element, not a
   ;; thing to run once per side. Mapped, two stacked equations would
   ;; pair up into [x, y] = [1, 2] — one equation of vectors — where
   ;; concatenation means [x = 1, y = 2], the vector of equations that is
   ;; calc's own spelling of a system (what a S returns and takes).
-  (vconcat binary maf-vconcat "|" :inv vconcatrev :hyp append :invhyp appendrev :map -1
+  (vconcat binary maf-vconcat "|" :inv vconcatrev :hyp vnest :invhyp vnestrev :map -1
    :title "concatenate" :example "[1, 2], [3] => [1, 2, 3]"
    :doc "Join the target and the top-of-stack argument into one vector.")
   (mod binary calcFunc-mod "%"
@@ -304,8 +307,9 @@ variant's own variable governs only its direct invocation."
    :doc "Take the base-10 logarithm of the resolved expression.")
   (exp10 unary calcFunc-exp10
    :doc "Raise ten to the resolved expression.")
-  (append binary calcFunc-append :map -1      ; see vconcat above
-   :doc "Append the top-of-stack vector to the resolved vector.")
+  (vnest binary maf-vnest :map -1             ; see vconcat above
+   :title "nest" :example "[x, y], [a, b] => [[x, y], [a, b]]"
+   :doc "Make the two-element vector of the target and the top-of-stack argument.")
   (fceil unary calcFunc-fceil
    :title "float ceiling" :example "2.3 => 3."
    :doc "Round the resolved expression up, keeping it a float.")
@@ -317,8 +321,8 @@ variant's own variable governs only its direct invocation."
    :doc "Take the hyperbolic arccosine of the resolved expression.")
   (arctanh unary calcFunc-arctanh
    :doc "Take the hyperbolic arctangent of the resolved expression.")
-  (appendrev binary calcFunc-appendrev :map -1  ; see vconcat above
-   :doc "Append the resolved vector to the top-of-stack vector.")
+  (vnestrev binary maf-vnestrev :map -1       ; see vconcat above
+   :doc "Make the two-element vector of the top-of-stack argument and the target.")
   ;; algebra (calc-a-oper-keys)
   (apart unary calcFunc-apart "a a"
    :title "partial fractions" :example "1 / (x^2 - 1) => 1:2 / (x - 1) - 1:2 / (x + 1)"

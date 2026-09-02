@@ -1181,6 +1181,18 @@ reproduced here without its scalar test."
   "Concatenate B and A into a vector, the reverse of `maf-vconcat'."
   (maf-vconcat b a))
 
+(defun maf-vnest (a b)
+  "Build the two-element vector [A, B].
+The nesting counterpart of `maf-vconcat': each operand is one element
+whatever it is, so brackets survive — [x, y] and [a, b] give
+[[x, y], [a, b]] where concatenation splices them into [x, y, a, b].
+Nothing is computed; the operands go in as they stand."
+  (list 'vec a b))
+
+(defun maf-vnestrev (a b)
+  "Build the two-element vector [B, A], the reverse of `maf-vnest'."
+  (list 'vec b a))
+
 (defun maf--sort-value (expr)
   "Return EXPR's value as a real number, or nil when it has none.
 The evaluation runs with `calc-symbolic-mode' off, so a root that has no
