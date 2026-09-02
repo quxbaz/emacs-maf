@@ -4,23 +4,45 @@
 ;; backends consume is asserted. Run in a live Emacs (tests/README.md).
 (maf-step
   ;; Global state the test flips; restored at the end.
-  (progn (setq maf-plot-test--mode maf-use-plot-mode
-               maf-plot-test--backend maf-plot-backend)
-         nil)
+  (progn (setq maf-plot-test--mode maf-use-plot-mode) nil)
 
-  ;; On, the module claims its g keys; the rest of the prefix still
-  ;; reaches stock calc-graph. Off restores stock wholly.
+  ;; On, the module claims a g key per surface; the rest of the prefix
+  ;; still reaches stock calc-graph. Off restores stock wholly.
   (maf-use-plot-mode 1)
-  (cl-assert (eq (key-binding (kbd "g g")) 'maf-plot-all))
-  (cl-assert (eq (key-binding (kbd "g l")) 'maf-plot-entry))
-  (cl-assert (eq (key-binding (kbd "g i")) 'maf-plot-entry-with-range))
-  (cl-assert (eq (key-binding (kbd "g I")) 'maf-plot-all-with-range))
-  (cl-assert (eq (key-binding (kbd "g o")) 'maf-plot-entry-desmos))
+  (cl-assert (eq (key-binding (kbd "g l")) 'maf-plot-embed))
+  (cl-assert (eq (key-binding (kbd "g o")) 'maf-plot-desmos))
+  (cl-assert (eq (key-binding (kbd "g g")) 'maf-plot-gnuplot))
   (cl-assert (eq (key-binding (kbd "g f")) 'calc-graph-fast))
   (maf-use-plot-mode -1)
   (cl-assert (eq (key-binding (kbd "g g")) 'calc-graph-grid))
   (cl-assert (eq (key-binding (kbd "g l")) 'calc-graph-log-x))
+  ;; g o is a key calc leaves free; off, nothing is there.
+  (cl-assert (null (key-binding (kbd "g o"))))
   (maf-use-plot-mode 1)
+
+  ;; The Hyperbolic flag widens a plot from the entry at point to the
+  ;; whole stack, and is consumed by the reading, as calc-wrapper
+  ;; would consume it after a stock command.
+  (maf-push "x^2")
+  (maf-push "cos(x)")
+  (cl-assert (equal (maf-plot--targets) (list (math-read-expr "cos(x)"))))
+  (cl-assert (equal (let ((calc-hyperbolic-flag t)) (maf-plot--targets))
+                    (list (math-read-expr "x^2") (math-read-expr "cos(x)"))))
+  (progn (setq calc-hyperbolic-flag t) nil)
+  (cl-assert (= (length (maf-plot--targets)) 2))
+  (cl-assert (null calc-hyperbolic-flag))
+  (calc-pop (calc-stack-size))
+  ;; The flag only survives the g prefix because each command carries
+  ;; the maf-command mark `maf--fancy-prefix-decide' reads once the
+  ;; sequence has resolved; unmarked, calc's fancy prefix would clear
+  ;; it before the command ran and H g l would plot the entry alone.
+  (cl-assert (get 'maf-plot-embed 'maf-command))
+  (cl-assert (get 'maf-plot-desmos 'maf-command))
+  (cl-assert (get 'maf-plot-gnuplot 'maf-command))
+  (cl-assert (let ((this-command 'maf-plot-embed)
+                   (calc-hyperbolic-flag t))
+               (maf--fancy-prefix-decide)
+               calc-hyperbolic-flag))
 
   ;; Auto-range: trig widens to one period in the current angle mode —
   ;; a fresh calc is in degrees — and anything else gets the default.
@@ -361,6 +383,5 @@
 
   ;; Restore what the test flipped.
   (progn (delete-file maf-plot-test--file)
-         (setq maf-plot-backend maf-plot-test--backend)
          (maf-use-plot-mode (if maf-plot-test--mode 1 -1))
          nil))

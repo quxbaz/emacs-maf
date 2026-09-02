@@ -215,9 +215,8 @@ anyone edits it in.")
          maf-toggle-simplify maf-reset maf-reset-settings)
         ("Modules & menus"
          maf-keys maf-list-modules maf-options maf-formulas maf-history
-         maf-history-clear maf-preview-show maf-pretty maf-plot-all
-         maf-plot-entry maf-plot-all-with-range
-         maf-plot-entry-with-range maf-plot-entry-desmos)))
+         maf-history-clear maf-preview-show maf-pretty maf-plot-embed
+         maf-plot-desmos maf-plot-gnuplot)))
 
 ;;; Presentation strings for the commands that carry none of their own
 
@@ -316,11 +315,9 @@ which the buffer owns rather than the command.")
         (maf-digit-quit "abort the number" nil)
         (maf-backward-char "backward character" nil)
         (maf-reset-settings "reset the settings" nil)
-        (maf-plot-all "plot the stack" nil)
-        (maf-plot-entry "plot the entry" nil)
-        (maf-plot-all-with-range "plot the stack over a range" nil)
-        (maf-plot-entry-with-range "plot the entry over a range" nil)
-        (maf-plot-entry-desmos "plot the entry in Desmos" nil)
+        (maf-plot-embed "plot the entry below Calc (H: the stack)" nil)
+        (maf-plot-desmos "plot the entry in Desmos (H: the stack)" nil)
+        (maf-plot-gnuplot "plot the entry in a gnuplot window (H: the stack)" nil)
         (maf-clear-selections "clear the selections" nil)
         (maf-dup-go "duplicate onto the top" nil)
         (maf-dup-here "duplicate, keeping point" nil)

@@ -2,15 +2,17 @@
 ;;
 ;; modules/maf-plot.el
 ;;
-;; Plotting. Four gestures — g g plots every stack entry in one
-;; picture, g l the whole entry at point, g i and g I the same with
-;; the x range asked for — behind a three-way backend choice:
+;; Plotting. Three surfaces, a key each; the plain key plots the
+;; whole entry at point, the Hyperbolic flag widens it to every stack
+;; entry in one picture:
 ;;
-;;   gnuplot-external  interactive gnuplot window (mouse zoom, readout)
-;;   gnuplot-embed     gnuplot-rendered SVG in a split buffer below
-;;                     Calc, themed from the live faces
-;;   desmos            fire-and-forget browser launch of a local page
-;;                     embedding the Desmos calculator (needs network)
+;;   g l  gnuplot-embed     gnuplot-rendered SVG in a split buffer
+;;                          below Calc, themed from the live faces
+;;   g o  desmos            fire-and-forget browser launch of a local
+;;                          page embedding the Desmos calculator
+;;                          (needs network)
+;;   g g  gnuplot-external  interactive gnuplot window (mouse zoom,
+;;                          readout)
 ;;
 ;; The gnuplot backends never translate calc syntax: calc samples the
 ;; expression numerically and gnuplot receives plain data files, so
@@ -22,19 +24,19 @@
 ;; equation whole and graphs it natively. A vector of numbers is data
 ;; — index→value points — on every backend.
 ;;
-;; The x range is never prompted for (y always autoscales): trig
-;; expressions get one period around 0, angle-mode-aware, everything
-;; else `maf-plot-default-range'. A prefix argument prompts, and the
-;; last prompted range is the next prompt's default; on desmos the
-;; prompted range is the viewport's opening x bounds. See
+;; The x range is not prompted for by default (y always autoscales):
+;; trig expressions get one period around 0, angle-mode-aware,
+;; everything else `maf-plot-default-range'. A prefix argument
+;; prompts, and the last prompted range is the next prompt's default;
+;; on desmos the prompted range is the viewport's opening x bounds. See
 ;; docs/plans/maf-plot.md for the decisions and the prototype findings
 ;; this file encodes.
 ;;
 ;; With the module off, calc's own g-prefix graphing is untouched. On,
 ;; the g prefix is this module's to use — g g and g l shadow
-;; calc-graph-grid and calc-graph-log-x, and future gestures may take
-;; more of it; the stock keys underneath are not a compatibility
-;; obligation (decided).
+;; calc-graph-grid and calc-graph-log-x, g o takes a key calc leaves
+;; free, and future gestures may take more of it; the stock keys
+;; underneath are not a compatibility obligation (decided).
 
 (require 'cl-lib)
 (require 'calc)
@@ -62,17 +64,6 @@
 
 ;;; Options
 
-(defcustom maf-plot-backend 'gnuplot-embed
-  "Where a plot appears while the module is on.
-`gnuplot-external' opens gnuplot's own interactive window,
-`gnuplot-embed' renders SVG into a split buffer below Calc, `desmos'
-opens the local Desmos page in a browser. The module menu steps
-through these as the maf-plot row's values."
-  :type '(choice (const gnuplot-external)
-                 (const gnuplot-embed)
-                 (const desmos))
-  :group 'maf)
-
 (defcustom maf-plot-gnuplot-program "gnuplot"
   "The gnuplot executable both gnuplot backends run."
   :type 'string
@@ -81,7 +72,7 @@ through these as the maf-plot row's values."
 (defcustom maf-plot-default-range '(-10.0 . 10.0)
   "The x range a non-trig expression is plotted over.
 Trig expressions ignore this for one period around 0 in the current
-angle mode. A prefix argument on either plot command overrides both."
+angle mode. A prefix argument on any plot command overrides both."
   :type '(cons number number)
   :group 'maf)
 
@@ -89,10 +80,9 @@ angle mode. A prefix argument on either plot command overrides both."
   "Non-nil frames an unprompted plot on the origin.
 Both ranges come out symmetric about zero — x over the sampling span
 and the data's own x, y over the data with a little headroom — so all
-four quadrants show, and show equally sized. A prompted range
-\=(`maf-plot-entry-with-range' and kin) is a deliberate window and is
-left alone, as is everything when this is nil: gnuplot autoscales to
-hug the data."
+four quadrants show, and show equally sized. A prompted range (the
+prefix argument's) is a deliberate window and is left alone, as is
+everything when this is nil: gnuplot autoscales to hug the data."
   :type 'boolean
   :group 'maf)
 
@@ -941,11 +931,12 @@ error surfaces."
       (message "Skipped %d: %s" (length skipped) (string-join skipped "; ")))
     (nreverse curves)))
 
-(defun maf-plot--dispatch (entries arg)
-  "Plot ENTRIES on the configured backend; prefix ARG prompts a range.
-On desmos the prompted range becomes the viewport's opening x
-bounds; unprompted, Desmos keeps its own."
-  (pcase maf-plot-backend
+(defun maf-plot--dispatch (entries arg backend)
+  "Plot ENTRIES on BACKEND; prefix ARG prompts a range.
+BACKEND is `gnuplot-embed', `gnuplot-external' or `desmos'. On desmos
+the prompted range becomes the viewport's opening x bounds;
+unprompted, Desmos keeps its own."
+  (pcase backend
     ('desmos (maf-plot--show-desmos (maf-plot--desmos-expressions entries)
                                     (and arg (maf-plot--read-range))))
     (backend
@@ -985,83 +976,92 @@ bounds; unprompted, Desmos keeps its own."
            (maf-plot--show-external curves title view)
          (maf-plot--show-embedded curves title view))))))
 
+(defun maf-plot--targets ()
+  "Return the entries to plot, consuming calc's Hyperbolic flag.
+Plain, the whole entry at point (`maf-plot--entry-at-point'); with
+the flag, every stack entry. The flag is cleared here, as
+`calc-wrapper' would clear it after a stock command. It only arrives
+because each plot command carries the `maf-command' mark: calc's
+fancy prefix strips its flags before any command it does not know,
+and `maf--fancy-prefix-keep' reads the mark to let the g prefix and
+the command under it through with the flag intact."
+  (let ((all calc-hyperbolic-flag))
+    (when all
+      (setq calc-hyperbolic-flag nil)
+      (calc-set-mode-line))
+    (if all (maf-plot--entries) (list (maf-plot--entry-at-point)))))
+
 ;;;###autoload
-(defun maf-plot-entry (arg)
-  "Plot the whole stack entry at point.
+(defun maf-plot-embed (arg)
+  "Plot the entry at point as an SVG panel split below Calc.
 
   2:  y = (x - 2)^2 + 5      g l  =>  the parabola, wherever
   1:  42                               point sits in entry 2
 
 Point anywhere in an entry plots that entry — sub-formula and
 selection make no difference — and at home the top entry plots. A
-relation plots its right side as the curve on the gnuplot backends
-and goes to Desmos whole. A vector entry is a curve set: one curve
-per element, so [2 sin(x), cos(x)] overlays both — the way to keep a
-replottable subset of the stack. With prefix ARG, prompt for the x
-range \(lo:hi, :hi, or n for -n:n) instead of auto-ranging."
+relation plots its right side as the curve. A vector entry is a curve
+set: one curve per element, so [2 sin(x), cos(x)] overlays both — the
+way to keep a replottable subset of the stack. With prefix ARG,
+prompt for the x range (lo:hi, :hi, or n for -n:n) instead of
+auto-ranging.
+
+With the Hyperbolic flag, every stack entry in one picture:
+
+  2:  2 sin(x)     H g l  =>  both curves overlaid, shared x
+  1:  cos(x)                   range, a legend naming each
+
+The curves share one x range and one y axis — a mismatched-scale
+curve is honestly squashed rather than silently moved to its own axis
+— and entries that cannot be sampled are skipped with a message."
   (interactive "P")
-  (maf-plot--dispatch (list (maf-plot--entry-at-point)) arg))
+  (maf-plot--dispatch (maf-plot--targets) arg 'gnuplot-embed))
+(put 'maf-plot-embed 'maf-command t)
 
 ;;;###autoload
-(defun maf-plot-entry-with-range ()
-  "Plot the whole stack entry at point, asking for the x range first.
-`maf-plot-entry' with the prompt unconditional rather than behind a
-prefix argument — the g i gesture of the legacy config."
-  (interactive)
-  (maf-plot-entry '(4)))
+(defun maf-plot-desmos (arg)
+  "Plot the entry at point in the Desmos calculator, in a browser.
 
-;;;###autoload
-(defun maf-plot-all-with-range ()
-  "Plot every stack entry in one picture, asking for the x range first.
-`maf-plot-all' with the prompt unconditional — g i's whole-stack
-sibling."
-  (interactive)
-  (maf-plot-all '(4)))
+  1:  x^2 + y^2 = 4      g o  =>  the circle, in Desmos
 
-;;;###autoload
-(defun maf-plot-all (arg)
-  "Plot every stack entry in one picture.
+Desmos receives the formula itself, relations whole, and scales
+interactively — the surface for what gnuplot cannot sample. Point
+picks the entry as `maf-plot-embed' does; a vector entry sends one
+expression per element. With prefix ARG, prompt for the x bounds the
+viewport opens on.
 
-  2:  2 sin(x)     g g  =>  both curves overlaid, shared x
-  1:  cos(x)                 range, a legend naming each
-
-On the gnuplot backends the curves share one x range and one y axis —
-a mismatched-scale curve is honestly squashed rather than silently
-moved to its own axis — and entries that cannot be sampled are
-skipped with a message. Desmos receives every entry and scales
-interactively. With prefix ARG, prompt for the x range — on desmos
-it becomes the viewport's opening bounds."
+With the Hyperbolic flag, every stack entry goes over, one
+expression each: H g o."
   (interactive "P")
-  (maf-plot--dispatch (maf-plot--entries) arg))
+  (maf-plot--dispatch (maf-plot--targets) arg 'desmos))
+(put 'maf-plot-desmos 'maf-command t)
 
 ;;;###autoload
-(defun maf-plot-entry-desmos (arg)
-  "Plot the whole stack entry at point in Desmos, whatever the backend.
-The dial keeps its setting; this gesture is the one-off escape to the
-interactive grapher when the configured surface is a gnuplot one.
-With prefix ARG, prompt for the x bounds the viewport opens on."
+(defun maf-plot-gnuplot (arg)
+  "Plot the entry at point in gnuplot's own interactive window.
+
+  1:  sin(x) / x      g g  =>  the curve in a gnuplot window,
+                                mouse zoom and coordinate readout
+
+The same sampling and ranging as `maf-plot-embed', shown on the
+window gnuplot manages itself. With prefix ARG, prompt for the x
+range.
+
+With the Hyperbolic flag, every stack entry in one window: H g g."
   (interactive "P")
-  (maf-plot--show-desmos
-   (maf-plot--desmos-expressions (list (maf-plot--entry-at-point)))
-   (and arg (maf-plot--read-range))))
+  (maf-plot--dispatch (maf-plot--targets) arg 'gnuplot-external))
+(put 'maf-plot-gnuplot 'maf-command t)
 
 ;;; Module
-
-(defun maf-plot--engage (backend)
-  "Set BACKEND and turn the module on; the dial's setter."
-  (setq maf-plot-backend backend)
-  (maf-use-plot-mode 1))
 
 (define-minor-mode maf-use-plot-mode
   "Make maf's plotting available on the g prefix in Calc.
 
-g g plots every stack entry in one picture; g l plots the whole
-entry at point; g i and g I are the same with the x range asked
-for. Where the plot appears is `maf-plot-backend': gnuplot's own
-interactive window, an SVG panel split below Calc, or the Desmos
-calculator in a browser. g o plots the entry at point in Desmos
-regardless of the backend. Off, calc's stock g-prefix graphing is
-untouched."
+A key per surface: g l plots the whole entry at point as an SVG panel
+split below Calc, g o in the Desmos calculator in a browser, g g in
+gnuplot's own interactive window. The Hyperbolic flag widens any of
+them to every stack entry in one picture. Off, calc's stock g-prefix
+graphing is untouched."
   :global t
   :group 'maf
   ;; Module key claims compile in only while the mode is on; the
@@ -1070,46 +1070,21 @@ untouched."
 
 (when (require 'maf-bindings nil t)
   (maf-bindings-module-keys 'maf-plot 'maf-use-plot-mode
-    '(((native) "g g" maf-plot-all)
-      ((native) "g l" maf-plot-entry)
-      ((native) "g i" maf-plot-entry-with-range)
-      ((native) "g I" maf-plot-all-with-range)
-      ((native) "g o" maf-plot-entry-desmos)
-      ((vim) "g g" maf-plot-all)
-      ((vim) "g l" maf-plot-entry)
-      ((vim) "g i" maf-plot-entry-with-range)
-      ((vim) "g I" maf-plot-all-with-range)
-      ((vim) "g o" maf-plot-entry-desmos))))
+    '(((native vim) "g l" maf-plot-embed)
+      ((native vim) "g o" maf-plot-desmos)
+      ((native vim) "g g" maf-plot-gnuplot))))
 
 (when (require 'maf-module nil t)
   (maf-register-module 'maf-plot #'maf-use-plot-mode
-                       "Plot stack entries: gnuplot window, embedded SVG, or Desmos.
+                       "Plot stack entries: embedded SVG, Desmos, or a gnuplot window.
 
-g g plots the whole stack in one picture, g l the whole entry at
-point; g i and g I ask for the x range first. The row's value picks the
-surface: an interactive gnuplot
-window, an SVG panel split below Calc themed from the live faces, or
-a fire-and-forget Desmos page in the browser. g o goes to Desmos
-regardless of the row's value. Trig curves auto-range
-one period in the current angle mode; a prefix argument asks for the
-range. Off, calc's own g-prefix graphing is untouched."
-                       "g g / g l / g i / g I / g o" "Plots"
-                       (lambda ()
-                         (list :values
-                               '((off "off" (maf-use-plot-mode -1))
-                                 (gnuplot-external "ext"
-                                  (maf-plot--engage 'gnuplot-external))
-                                 (gnuplot-embed "embed"
-                                  (maf-plot--engage 'gnuplot-embed))
-                                 (desmos "desmos"
-                                  (maf-plot--engage 'desmos)))
-                               ;; Reads live state, so the default is
-                               ;; stated rather than derived (see
-                               ;; `dial--default-value').
-                               :current (lambda (_raw)
-                                          (if maf-use-plot-mode
-                                              maf-plot-backend
-                                            'off))
-                               :default 'gnuplot-embed))))
+g l plots the whole entry at point as an SVG panel split below Calc,
+themed from the live faces; g o sends it to the Desmos calculator in
+the browser, relations and all; g g opens it in gnuplot's own
+interactive window. H before any of them plots every stack entry in
+one picture. Trig curves auto-range one period in the current angle
+mode; a prefix argument asks for the range. Off, calc's own g-prefix
+graphing is untouched."
+                       "g l / g o / g g (H for the whole stack)" "Plots"))
 
 (provide 'maf-plot)
