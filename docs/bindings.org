@@ -444,7 +444,9 @@
      direction the term travels and repeating without leaving the key;
      joins the S-arrow family above, the plain arrows staying the
      buffer's motion keys)
-   - [X] `C-|` mafcmd-bracket
+   - [X] `M-|` mafcmd-bracket (2026-09-02: moved from `C-|`, which no
+     terminal delivers without decode-map help; the meta twin of `|`
+     keeps the pairing — `|` joins two entries, `M-|` wraps one)
    - [X] `v RET` maf-index
    - [X] `v o` mafcmd-sort (2026-08-24: a second key beside its table
      key `v S` — the legacy config's key, unshifted; the flag prefixes
