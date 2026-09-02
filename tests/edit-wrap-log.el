@@ -105,6 +105,19 @@
                     "x = log(3)"))
   (call-interactively 'maf-edit-discard)
 
+  ;; The same inside a pair, in front of its closer: after the
+  ;; operator the press is in an empty slot, and the empty call opens
+  ;; there with the base the entry's log lends — not a log wrapped
+  ;; around the whole pair.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (insert "(log(x, 3) + )") nil)
+  (progn (backward-char 1) nil)
+  (progn (execute-kbd-macro "B") nil)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "(log(x, 3) + log(, 3))"))
+  (cl-assert (looking-at-p ", 3))"))
+  (call-interactively 'maf-edit-discard)
+
   ;; Commit trades the module's spelling for calc's: the bare log(x)
   ;; — and a log(x, 10) typed by hand — lands as log10(x), while a
   ;; base the text means — the 2 here — stays a two-argument log.

@@ -143,15 +143,28 @@
                     "[p,ln(q);r,s]"))
   (call-interactively 'maf-edit-discard)
 
-  ;; A separator with nothing complete behind it has no argument to
-  ;; mean, so the enclosure stands as the node — the same fallback the
-  ;; closer branch makes for an empty call.
+  ;; A separator with nothing complete behind it is an empty slot,
+  ;; not a way of naming the call from inside its own argument list:
+  ;; the empty call opens in the slot, point on its argument.
   (call-interactively 'maf-edit-add-entry-below)
   (progn (insert "f(,b)") nil)
   (progn (maf-edit-move-beginning-of-line 1) (forward-char 2) nil)
   (call-interactively 'maf-editplus-wrap-ln)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
-                    "ln(f(,b))"))
+                    "f(ln(),b)"))
+  (cl-assert (eq (char-after) ?\)))
+  (call-interactively 'maf-edit-discard)
+
+  ;; A bare pair's closer with only an operator behind point is the
+  ;; same empty slot: (a + |) opens the call after the operator,
+  ;; never wrapping the pair from inside its own closer.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (insert "(a + )") nil)
+  (progn (maf-edit-move-beginning-of-line 1) (forward-char 5) nil)
+  (call-interactively 'maf-editplus-wrap-ln)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "(a + ln())"))
+  (cl-assert (eq (char-after) ?\)))
   (call-interactively 'maf-edit-discard)
 
   ;; The whole call is still reachable, from its name or its opener —

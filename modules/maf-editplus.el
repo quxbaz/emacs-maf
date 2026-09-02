@@ -1247,17 +1247,17 @@ Nil when there is nothing under point — the end of the entry, where a
 command's own scan for the term behind point takes over — and nil
 outside an entry, where there is no text to parse.
 
-Nil also on a closer with a complete unit ending at point: electric
-parens leave point in front of the closer for the whole time the
-argument is being typed, so a press there means the term just typed —
-ln(x y|) raising y, (1 + r|) raising r — and the same term-behind
-scan takes over, as at the end of the entry. A call's own closer
-names nothing even with no unit behind it (an empty call is the
-command's own answer); a bare pair's or a vector's closer with
-nothing complete behind point — an operator, the opener — still
-names the enclosure, there being no smaller expression to mean —
-unless the pair is empty, when there is no enclosed expression
-either and a press inside it names nothing at all.
+Nil also on a closer: electric parens leave point in front of the
+closer for the whole time the argument is being typed, so a press
+there means the term just typed — ln(x y|) raising y, (1 + r|)
+raising r — and the same term-behind scan takes over, as at the end
+of the entry. With nothing complete behind point — an operator, a
+separator, the opener — the press is in an empty slot, and names
+nothing at all: the command's own answer for no target is an empty
+call opened at point, (a + ln(|)), which is what a writer who has
+just typed the operator is reaching for. Wrapping the enclosure
+from inside its own closer is never what the press means; the
+enclosure is reachable from its opener.
 
 Nil likewise on padding whitespace with a complete unit ending at
 point: the space beside a spelled operator, or a wrapped line's
@@ -1298,21 +1298,20 @@ so x |mod y is the mod's padding and names the x)."
               nil)
              ((and node
                    (= at (1- (maf-editplus--node-end node)))
-                   (memq (char-after at) maf-editplus--closers)
-                   (or (eq (maf-editplus--node-kind node) 'call)
-                       (maf-editplus--unit-before at limit)))
+                   (memq (char-after at) maf-editplus--closers))
               nil)
              ;; A separator is punctuation the same way a closer is:
              ;; the argument list it divides is not a sub-expression a
              ;; command could act on, so a press on one means the
              ;; argument just typed — log(x|, 5) naming the x, exactly
-             ;; as the closer after the last argument does. Without
-             ;; this the innermost node covering the comma is the call
-             ;; itself, and the key would wrap the whole call from
-             ;; inside its own argument list.
+             ;; as the closer after the last argument does — or, with
+             ;; nothing complete behind point, an empty slot: f(|, b)
+             ;; names nothing, and the empty call opens in the slot.
+             ;; Without this the innermost node covering the comma is
+             ;; the call itself, and the key would wrap the whole call
+             ;; from inside its own argument list.
              ((and node
-                   (memq (char-after at) '(?, ?\;))
-                   (maf-editplus--unit-before at limit))
+                   (memq (char-after at) '(?, ?\;)))
               nil)
              ;; Padding whitespace with a complete unit ending at
              ;; point reads as the end of the entry does: the press
