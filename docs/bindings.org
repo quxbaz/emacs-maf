@@ -444,10 +444,10 @@
      direction the term travels and repeating without leaving the key;
      joins the S-arrow family above, the plain arrows staying the
      buffer's motion keys)
-   - [X] `C-M-o` mafcmd-bracket (2026-09-02: from `C-|`, which no
-     terminal delivers without decode-map help, by way of `M-|` for a
-     few hours until the nest took that key; calc leaves `C-M-o`
-     unbound, and split-line has nothing to split on a stack)
+   - [X] `C-|` mafcmd-bracket (the control twin of `|`: `|` joins two
+     entries into a vector, `C-|` wraps one; decode-map entries carry
+     it through a tty. Spent 2026-09-02 on `M-|` and then `C-M-o`
+     before coming back)
    - [X] `M-|` mafcmd-vnest (2026-09-02: a second key beside its flag
      route `H |`; the meta twin of `|` — `|` splices vector operands
      into one flat vector, `M-|` keeps each whole, brackets and all)

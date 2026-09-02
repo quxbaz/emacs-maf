@@ -590,13 +590,13 @@
 ;; which has no g — and it joins maf's other l bindings above.
 (maf-bindings-define '(native) "l g" #'mafcmd-unique-groups)
 ;; Surround the target with vector brackets: the one-operand vector
-;; builder. Calc leaves C-M-o unbound, and the global split-line it
-;; shadows has no work in a stack buffer. It sat on C-| until
-;; 2026-09-02 — the control twin of the | key that concatenates two
-;; entries into one — which no terminal delivers without decode-map
-;; help, and on M-| for a few hours after, until the nest took that
-;; key (below).
-(maf-bindings-define '(native) "C-M-o" #'mafcmd-bracket)
+;; builder, on the control twin of the | key that concatenates two
+;; entries into one. Calc binds neither C-| nor anything else on the
+;; control side of |, and the pairing is the whole point — | joins two
+;; things into a vector, C-| wraps one. No terminal delivers C-| on
+;; its own; `maf--tty-setup-keys' below decodes it. It spent
+;; 2026-09-02 on M-| and then C-M-o before coming back.
+(maf-bindings-define '(native) "C-|" #'mafcmd-bracket)
 ;; Nest the target and the top entry as the two elements of a vector:
 ;; a second key beside the flag route H |. | splices vector operands
 ;; into one flat vector; M-| keeps each operand whole, brackets and
@@ -744,12 +744,22 @@
 ;; the missing entries in both of the formats xterm.el generates. The
 ;; modifier number is 1 plus the bitmask (shift 1, alt 2, ctrl 4): 7
 ;; for the bury's Ctrl+Alt. The restack's Shift-backspace was decoded
-;; here too until the restack moved to S-<return>, and the bracket's
-;; C-| until the bracket moved to C-M-o.
+;; here too until the restack moved to S-<return>.
+;;
+;; The bracket's C-| has the same gap for a different reason: control
+;; plus a printable character has no ASCII form either, and xterm.el's
+;; table stops at keycode 63 for the shifted punctuation (it lists
+;; C-! through C-?, and | is 124). Which modifier the terminal reports
+;; depends on whether it counts the shift that produced the | — take
+;; both 6 (ctrl+shift) and 5 (ctrl alone).
 (defun maf--tty-setup-keys ()
   "Decode terminal sequences for keys maf binds and `term/xterm.el' omits."
   (define-key input-decode-map "\e[27;7;127~" [C-M-backspace])
-  (define-key input-decode-map "\e[127;7u" [C-M-backspace]))
+  (define-key input-decode-map "\e[127;7u" [C-M-backspace])
+  (define-key input-decode-map "\e[27;6;124~" [?\C-\|])
+  (define-key input-decode-map "\e[124;6u" [?\C-\|])
+  (define-key input-decode-map "\e[27;5;124~" [?\C-\|])
+  (define-key input-decode-map "\e[124;5u" [?\C-\|]))
 
 ;; `input-decode-map' is terminal-local, so this runs once per tty
 ;; rather than once at load.
