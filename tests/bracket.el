@@ -107,10 +107,10 @@
   (cl-assert (string= (math-format-value (calc-top 2 'full)) "x"))
   (calc-pop (calc-stack-size))
 
-  ;; The binding: M-| on the top entry at home.
+  ;; The binding: C-M-o on the top entry at home.
   (maf-push "x + 1")
   (progn (calc-cursor-stack-index 0)
-         (execute-kbd-macro (kbd "M-|")) nil)
+         (execute-kbd-macro (kbd "C-M-o")) nil)
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "[x + 1]"))
   (calc-pop (calc-stack-size))
 
@@ -118,7 +118,7 @@
   (maf-push "x + 1")
   (progn (calc-cursor-stack-index 1)
          (search-forward ":  ") (search-forward "1") (backward-char 1)
-         (execute-kbd-macro (kbd "M-|")) nil)
+         (execute-kbd-macro (kbd "C-M-o")) nil)
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "x + [1]"))
   (calc-pop (calc-stack-size))
 

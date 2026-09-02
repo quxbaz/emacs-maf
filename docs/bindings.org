@@ -444,9 +444,13 @@
      direction the term travels and repeating without leaving the key;
      joins the S-arrow family above, the plain arrows staying the
      buffer's motion keys)
-   - [X] `M-|` mafcmd-bracket (2026-09-02: moved from `C-|`, which no
-     terminal delivers without decode-map help; the meta twin of `|`
-     keeps the pairing — `|` joins two entries, `M-|` wraps one)
+   - [X] `C-M-o` mafcmd-bracket (2026-09-02: from `C-|`, which no
+     terminal delivers without decode-map help, by way of `M-|` for a
+     few hours until the nest took that key; calc leaves `C-M-o`
+     unbound, and split-line has nothing to split on a stack)
+   - [X] `M-|` mafcmd-vnest (2026-09-02: a second key beside its flag
+     route `H |`; the meta twin of `|` — `|` splices vector operands
+     into one flat vector, `M-|` keeps each whole, brackets and all)
    - [X] `v RET` maf-index
    - [X] `v o` mafcmd-sort (2026-08-24: a second key beside its table
      key `v S` — the legacy config's key, unshifted; the flag prefixes
@@ -506,7 +510,7 @@
 ** defined but unbound (M-x only)
    Stack commands with no key in native and no flag route from a bound
    key. Not listed: the ~67 flag-route variants (arcsin under I S,
-   vmedian under H u M, identify under I k v, vnest under H |, ...) —
+   vmedian under H u M, identify under I k v, vconcatrev under I |, ...) —
    those are reachable; entry points (maf-calc, maf-calc-direct),
    module toggles (the m c menu's job), and lib helpers. Generated
    against the sources 2026-08-19.

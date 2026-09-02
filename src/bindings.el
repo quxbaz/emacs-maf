@@ -590,12 +590,21 @@
 ;; which has no g — and it joins maf's other l bindings above.
 (maf-bindings-define '(native) "l g" #'mafcmd-unique-groups)
 ;; Surround the target with vector brackets: the one-operand vector
-;; builder, on the meta twin of the | key that concatenates two
-;; entries into one. Calc binds nothing on M-|, and the pairing is the
-;; whole point — | joins two things into a vector, M-| wraps one. It
-;; sat on C-| until 2026-09-02; the meta form has an ASCII spelling
-;; (ESC |), which every terminal delivers without decode-map help.
-(maf-bindings-define '(native) "M-|" #'mafcmd-bracket)
+;; builder. Calc leaves C-M-o unbound, and the global split-line it
+;; shadows has no work in a stack buffer. It sat on C-| until
+;; 2026-09-02 — the control twin of the | key that concatenates two
+;; entries into one — which no terminal delivers without decode-map
+;; help, and on M-| for a few hours after, until the nest took that
+;; key (below).
+(maf-bindings-define '(native) "C-M-o" #'mafcmd-bracket)
+;; Nest the target and the top entry as the two elements of a vector:
+;; a second key beside the flag route H |. | splices vector operands
+;; into one flat vector; M-| keeps each operand whole, brackets and
+;; all, so [x, y] and [a, b] give [[x, y], [a, b]]. The meta twin of
+;; | for the join that preserves what | would merge. Calc binds
+;; nothing on M-|, and the meta form has an ASCII spelling (ESC |),
+;; which every terminal delivers.
+(maf-bindings-define '(native) "M-|" #'mafcmd-vnest)
 ;; Flatten the target vector. Takes calc's v L from calc-lud (LU
 ;; decomposition), which the table in maf-cmds.el gives up its key for;
 ;; mafcmd-lud is still reachable by name. Flattening earns the vector
@@ -736,7 +745,7 @@
 ;; modifier number is 1 plus the bitmask (shift 1, alt 2, ctrl 4): 7
 ;; for the bury's Ctrl+Alt. The restack's Shift-backspace was decoded
 ;; here too until the restack moved to S-<return>, and the bracket's
-;; C-| until the bracket moved to M-|.
+;; C-| until the bracket moved to C-M-o.
 (defun maf--tty-setup-keys ()
   "Decode terminal sequences for keys maf binds and `term/xterm.el' omits."
   (define-key input-decode-map "\e[27;7;127~" [C-M-backspace])
