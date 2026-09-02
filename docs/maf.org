@@ -9,13 +9,18 @@
   - [-] hardening
 
 * Todo
-  - [ ] rework plotting keys and module options
-  - [ ] `g l`: plot entry in embedded mode
-  - [ ] `H g l`: plot all entries in embedded mode
-  - [ ] `g o`: plot entry in desmos
-  - [ ] `H g o`: plot all entries in demos
-  - [ ] `g g`: plot entry in external gnuplot
-  - [ ] `H g g`: plot all entries in external gnuplot
+  maf-plot
+  - [ ] rework plotting keys
+    - [ ] `g l`: plot entry in embedded mode
+    - [ ] `H g l`: plot all entries in embedded mode
+    - [ ] `g o`: plot entry in desmos
+    - [ ] `H g o`: plot all entries in demos
+    - [ ] `g g`: plot entry in external gnuplot
+    - [ ] `H g g`: plot all entries in external gnuplot
+  - [ ] with everything bound to separate keys, it doesn't make sense to have
+    the module options toggle various modes.
+    - [ ] the only config values in that case should be [on] and [off] with the
+      default being [on]
 
 * maf-pretty
 
