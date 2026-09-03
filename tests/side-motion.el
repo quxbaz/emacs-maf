@@ -102,9 +102,7 @@ the Big-language entry here runs over several lines."
   (call-interactively 'maf-goto-other-side)
   (cl-assert (string= (maf-test--part-at-point) "18 * y + 6"))
   ;; In neither side — the operator, the margins naming the whole
-  ;; entry — position decides: the operator and the line-number prefix
-  ;; cross right, and the end of the line, standing past the right
-  ;; side, crosses left.
+  ;; entry — the landing is the right side, as from home.
   (progn (calc-cursor-stack-index 1)
          (search-forward "=" (line-end-position))
          (backward-char 1))
@@ -115,7 +113,7 @@ the Big-language entry here runs over several lines."
   (cl-assert (string= (maf-test--part-at-point) "18 * y + 6"))
   (progn (calc-cursor-stack-index 1) (end-of-line))
   (call-interactively 'maf-goto-other-side)
-  (cl-assert (string= (maf-test--part-at-point) "6 * x + 12"))
+  (cl-assert (string= (maf-test--part-at-point) "18 * y + 6"))
   ;; No relation: the crossing signals like the named motions.
   (calc-pop (calc-stack-size))
   (maf-push "(a + b) (2 c - d)")

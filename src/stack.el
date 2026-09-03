@@ -2577,21 +2577,16 @@ fall back to and the motions signal."
         ;; point already standing on its side goes over. An arm with
         ;; nothing to name it by has no landing of its own and crosses
         ;; at once. In neither arm — the relation's own operator, the
-        ;; margins naming the whole entry — position decides: the end
-        ;; of the line stands at or past the right side's own glyph
-        ;; and crosses left, and anywhere earlier crosses right.
+        ;; margins naming the whole entry — the landing is the right
+        ;; side, as it is from home: the answer side of the relation.
         (when (eq side 'other)
-          (let* ((arm (maf--relation-arm expr rel part))
-                 (region (maf--up-entry-region m)))
+          (let ((arm (maf--relation-arm expr rel part)))
             (setq side
-                  (cond ((and arm (maf--up-node-position (nth arm rel) region))
+                  (cond ((and arm (maf--up-node-position
+                                   (nth arm rel) (maf--up-entry-region m)))
                          (if (= arm 1) 'left 'right))
                         (arm (if (= arm 1) 'right 'left))
-                        (t (let ((right-pos (maf--up-node-position
-                                             (nth 2 rel) region)))
-                             (if (and right-pos (>= (point) right-pos))
-                                 'left
-                               'right)))))))
+                        (t 'right)))))
         (let* ((region (maf--up-entry-region m))
                (node (nth (if (eq side 'left) 1 2) rel))
                (pos (maf--up-node-position node region)))
@@ -2716,11 +2711,10 @@ side under point and then walks the relation:
   6 x |+ 12 = 18 y + 6  =>  6 x + 12 = 18 y |+ 6
 
 In neither side — the margins naming the whole entry, the relation's
-own operator — position decides: the end of the line stands past the
-right side and crosses left, and anywhere earlier crosses right:
+own operator — the landing is the right side, as it is from home:
 
   |1:  y = (x + 3)^2  =>  1:  y = (x + 3)|^2
-  1:  x = y|          =>  1:  |x = y
+  1:  x = y|          =>  1:  x = |y
 
 A selection up on the entry travels to the side along with point, as
 it does for the named motions.
