@@ -7589,8 +7589,11 @@ The second read behind `maf--map-read's operator and constant sugar."
       (user-error "Bad format in formula: %s" (nth 2 expr)))
     (cons maf--map-param expr)))
 
-(defun maf--map-read ()
+(defun maf--map-read (&optional prompt)
   "Read the mapping formula from the minibuffer; return a mapper.
+PROMPT is the minibuffer prompt, \"Map: \" by default; `mafcmd-filter'
+reads its predicate through the same reader under its own.
+
 A lone $ returns the symbol `stack' instead: the formula then comes
 from the stack, exactly as answering $ at `mafcmd-substitute's
 replacement prompt takes the replacement from there.
@@ -7616,7 +7619,7 @@ other constant multiplies: 2 doubles, sqrt(2) scales by it. Only input
 that would otherwise refuse reads this way — -x still negates, x + 2
 still adds — so every formula that named its element before means what
 it meant."
-  (let ((input (string-trim (read-string "Map: "))))
+  (let ((input (string-trim (read-string (or prompt "Map: ")))))
     (when (string-empty-p input)
       (user-error "No formula given"))
     (if (string= input "$")
@@ -7670,23 +7673,26 @@ it meant."
          (t
           (maf--map-from-expr expr)))))))
 
+(defun maf--map-apply-one (mapper expr)
+  "Return EXPR, taken as one element, with MAPPER applied to it whole.
+The formula goes through Calc's lambda path rather than a direct
+substitution: `math-build-call' protects parameters bound by a nested
+lambda from replacement when they shadow this mapper's parameter. The
+result is normalized, as a substituted formula is: putting a value in
+collapses what it makes constant, under the current simplification
+mode."
+  (math-normalize
+   (math-build-call (list 'calcFunc-lambda (car mapper) (cdr mapper))
+                    (list expr))))
+
 (defun maf--map-apply (mapper expr)
   "Return EXPR with MAPPER applied to it.
 A vector is mapped elementwise, and nested vectors recurse, so a matrix
 maps over its individual elements rather than its rows. Anything else
-is one element and takes the formula whole.
-
-The result is normalized, as a substituted formula is: putting a value
-in collapses what it makes constant, under the current simplification
-mode."
+is one element and takes the formula whole (`maf--map-apply-one')."
   (if (eq (car-safe expr) 'vec)
       (cons 'vec (mapcar (lambda (e) (maf--map-apply mapper e)) (cdr expr)))
-    ;; Apply through Calc's lambda path rather than substituting directly:
-    ;; `math-build-call' protects parameters bound by a nested lambda from
-    ;; replacement when they shadow this mapper's parameter.
-    (math-normalize
-     (math-build-call (list 'calcFunc-lambda (car mapper) (cdr mapper))
-                      (list expr)))))
+    (maf--map-apply-one mapper expr)))
 
 (defun maf--map-pair-apply (mapper expr arg)
   "Return EXPR and ARG mapped in lockstep through the pair MAPPER.
@@ -7926,6 +7932,156 @@ equations side by side, inequalities only under I — is `mafcmd-map's."
   (maf--map-refuse-hyperbolic)
   (maf--map-dispatch 'stack))
 (put 'mafcmd-map-stack 'maf-command t)
+
+;;; Filter
+
+;; The map pair's sibling: the same reader and the same two ways in
+;; (a prompt, or the entry above the subject), with the formula read
+;; as a predicate over each element instead of a replacement for it.
+
+(defvar maf--filter-mapper nil
+  "The predicate `maf--filter-run' tests with; bound per `mafcmd-filter' call.
+A (PARAM . BODY) cons, as `maf--map-mapper' holds one. Nil for the
+stack form, whose predicate is the arg `maf--filter-arg-run' receives.")
+
+(defvar maf--filter-complement nil
+  "Non-nil while a filter should keep the elements its predicate rejects.
+Bound per call from calc's Inverse flag — see `mafcmd-filter'.")
+
+(defun maf--filter-holds-p (mapper elem)
+  "Return non-nil when MAPPER's predicate holds for the element ELEM.
+The predicate is applied as a mapping formula would be
+(`maf--map-apply-one'), and its value read as calc reads a condition:
+a number is true unless it is zero, so a comparison that reduced to
+1 or 0 decides, and so does a bare element. A value that stayed
+symbolic — x > 2 with nothing known of x — decides nothing, and the
+filter refuses rather than guess a side for it."
+  (let ((value (maf--map-apply-one mapper elem)))
+    (unless (Math-numberp value)
+      (user-error "Cannot decide %s for element %s"
+                  (math-format-value value) (math-format-value elem)))
+    (not (Math-zerop value))))
+
+(defun maf--filter-subject (mapper expr complement)
+  "Return the elements of vector EXPR that MAPPER's predicate keeps.
+COMPLEMENT keeps the rejected elements instead. A matrix filters its
+rows: the elements of a vector are what a filter chooses among,
+whatever their shape. Anything but a vector has no elements to choose
+among and refuses."
+  (unless (eq (car-safe expr) 'vec)
+    (user-error "Nothing to filter: %s is not a vector"
+                (math-format-value expr)))
+  (cons 'vec
+        (cl-remove-if-not
+         (lambda (e)
+           (let ((holds (maf--filter-holds-p mapper e)))
+             (if complement (not holds) holds)))
+         (cdr expr))))
+
+(maf-defcmd maf--filter-run (expr _arg commit)
+  "Filter the resolved expression by `maf--filter-mapper'.
+The worker behind `mafcmd-filter' — see there. The subject is the
+whole entry wherever point sits on it (`:scope explicit'): a filter
+speaks of the entry's elements, so point within the vector does not
+narrow it — a region or a calc selection still does. An equation
+filters side by side, as any command does."
+  :arity unary
+  :prefix "filter"
+  :scope explicit
+  :targets-var mafcmd-filter-targets
+  (commit (maf--filter-subject maf--filter-mapper expr maf--filter-complement)))
+
+(maf-defcmd maf--filter-arg-run (expr arg commit)
+  "Like `maf--filter-run', with the stack supplying the predicate.
+The stack form: the entry above the subject is the predicate, read by
+`maf--map-from-expr' and consumed as the binary arg it is."
+  :arity binary
+  :prefix "filter"
+  :scope explicit
+  :targets-var mafcmd-filter-stack-targets
+  (commit (maf--filter-subject (maf--map-from-expr arg expr) expr
+                               maf--filter-complement)))
+
+(defun maf--filter-dispatch (mapper)
+  "Run the filter worker MAPPER calls for, consuming calc's I flag.
+MAPPER is what `maf--map-read' returns — a mapper, or `stack' for the
+form that takes its predicate from the stack. The pair form ($$) has
+no reading as a predicate over one element and refuses. Shared by
+`mafcmd-filter' and `mafcmd-filter-stack'."
+  (when (eq (car-safe mapper) 'pair)
+    (user-error "A predicate tests one element: $$ has no place in it"))
+  (let ((maf--filter-complement calc-inverse-flag))
+    ;; Consumed here rather than left for the worker, as
+    ;; `maf--map-dispatch' does: a flag still set when the plain
+    ;; defcmd returns would carry into the next command.
+    (setq calc-inverse-flag nil
+          calc-hyperbolic-flag nil)
+    (if (eq mapper 'stack)
+        (call-interactively #'maf--filter-arg-run)
+      (let ((maf--filter-mapper mapper))
+        (call-interactively #'maf--filter-run)))))
+
+(defun mafcmd-filter ()
+  "Keep the elements of the vector at point that a predicate you type accepts.
+
+  [0, 1, 2, 3, 4]  =>  [3, 4]       (typed: $ > 2)
+
+Inverse: keep the elements the predicate rejects.
+
+  [0, 1, 2, 3, 4]  =>  [0, 1, 2]    (I, typed: $ > 2)
+
+Reads the predicate as `mafcmd-map' reads its formula: a formula with
+one free variable (x > 2), a $ in place of the element ($ > 2), or a
+bare one-argument function name (prime). Input that names no element
+reads as a comparison with it on the open side, so > 2 and $ > 2 say
+the same thing. A lone $ means the predicate is on the stack — the
+same gesture as `mafcmd-filter-stack'.
+
+  [1, 2, 3, 4, 5, 6]  =>  [2, 3, 5]      (typed: prime)
+  [1, 2, 3, 4, 5, 6]  =>  [2, 4, 6]      (typed: x % 2 == 0)
+
+The predicate's value decides as a condition does in calc: nonzero
+keeps the element, zero drops it. A predicate that stays symbolic for
+an element — x > 2 with nothing known of x — decides nothing, and the
+command refuses rather than guess.
+
+  [a, 3]  =>  refused   (typed: > 2; cannot decide a > 2)
+
+The subject is the whole entry at point, wherever point sits on its
+line, or the top entry at home; a region or a calc selection still
+narrows, so a selected vector filters in place. A matrix filters its
+rows. Anything that is not a vector has no elements to choose among
+and refuses. An equation filters side by side."
+  (interactive)
+  (maf--map-refuse-hyperbolic)
+  ;; Read the prompt before any calc state is touched, so C-g aborts
+  ;; with nothing done.
+  (maf--filter-dispatch (maf--map-read "Filter: ")))
+(put 'mafcmd-filter 'maf-command t)
+
+(defun mafcmd-filter-stack ()
+  "Keep the elements of the vector at point that the stack's predicate accepts.
+
+  x > 2                                   (the predicate, on top)
+  [0, 1, 2, 3, 4]  =>  [3, 4]
+
+Inverse: keep the elements the predicate rejects.
+
+The same command as `mafcmd-filter' with the predicate taken from the
+stack instead of a prompt, and the same thing a lone $ at its prompt
+does. As for any binary command, the predicate is the entry above the
+subject (the top entry at home) and is consumed on commit, so the
+subject must lie below the top.
+
+The predicate names its element as a stack formula does for
+`mafcmd-map-stack': one free variable, a bare one-argument function
+name, or a nameless function. A predicate with several variables asks
+which one is the element — the others stay symbolic, and must not be
+what decides it, or the filter refuses as the prompt form does."
+  (interactive)
+  (maf--map-refuse-hyperbolic)
+  (maf--filter-dispatch 'stack))
+(put 'mafcmd-filter-stack 'maf-command t)
 
 (defconst maf--map-flag-carriers
   '(mafcmd-map-flag calc-fancy-prefix-other-key

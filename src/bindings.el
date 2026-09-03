@@ -206,6 +206,14 @@
 ;; like any other command. Calc's a M keeps the operator prompt
 ;; (mafcmd-mapeq in the table), which stays the escape hatch.
 (maf-bindings-define '(native) "M" #'mafcmd-map-flag)
+;; The filter pair, the map pair's sibling: f f prompts for the
+;; predicate (mafcmd-filter), f $ takes it from the top of the stack
+;; (mafcmd-filter-stack) — $ the key the map pair already reads as
+;; "the formula is on the stack". A doubled chord on the command's
+;; initial, as k k and j j are; both keys are unbound in calc's f
+;; prefix.
+(maf-bindings-define '(native) "f f" #'mafcmd-filter)
+(maf-bindings-define '(native) "f $" #'mafcmd-filter-stack)
 ;; Shift the term under point through its associative chain. Lowercase
 ;; j l / j r (calc binds the shifts to capital j L / j R, left reachable).
 (maf-bindings-define '(native) "j l" #'maf-commute-left)

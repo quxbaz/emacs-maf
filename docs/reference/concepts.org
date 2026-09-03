@@ -403,6 +403,18 @@ stack (=maf--map-flag-keys=, live for the keypress after =M=), =M=
 maps a command, with no operator table behind it the way
 calc's =V M= has.
 
+=mafcmd-filter= (=f f=) and =mafcmd-filter-stack= (=f $=) are the map
+pair's sibling: the same reader (=maf--map-read=, under its own
+prompt) and the same two ways in, with the formula read as a predicate
+over each element rather than a replacement for it. Each element goes
+through the formula as a mapping would send it
+(=maf--map-apply-one=), and the value decides as a calc condition
+does: a number keeps the element unless it is zero, a value that
+stayed symbolic refuses rather than guess a side
+(=maf--filter-holds-p=). The vector's elements are kept or, under
+=I=, dropped by it (=maf--filter-subject=); a matrix filters its rows,
+and anything that is not a vector has no elements to choose among.
+
 * Encasing
 
 Calc's mechanism for distinguishing duplicate atoms by =eq=.

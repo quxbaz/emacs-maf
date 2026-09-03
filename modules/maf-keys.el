@@ -212,6 +212,7 @@ anyone edits it in.")
          maf-jump-equals maf-backward-char)
         ("Mapping & modes"
          mafcmd-map-flag mafcmd-map mafcmd-map-stack
+         mafcmd-filter mafcmd-filter-stack
          maf-toggle-simplify maf-reset maf-reset-settings)
         ("Modules & menus"
          maf-keys maf-list-modules maf-options maf-formulas maf-history
@@ -297,6 +298,8 @@ which the buffer owns rather than the command.")
         (mafcmd-map "map a formula" "[1, 2] by 2 x => [2, 4]")
         (mafcmd-map-stack "map the stack's formula" "[1, 2], 2 x => [2, 4]")
         (mafcmd-map-flag "map the next command" nil)
+        (mafcmd-filter "filter by a predicate" "[1, 2, 3] by x > 1 => [2, 3]")
+        (mafcmd-filter-stack "filter by the stack's predicate" "[1, 2, 3], x > 1 => [2, 3]")
         (maf-dup-or-clear-selections "duplicate or clear selections" "3 => 3, 3")
         (maf-dup-here-or-clear-selections "duplicate, keeping point" "3 => 3, 3")
         (maf-recall-quick "recall a quick variable" nil)

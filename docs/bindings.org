@@ -362,6 +362,15 @@
      keeping the edit module's fresh-entry gesture only on an empty
      stack; the calc profile keeps C-o = add-entry-above outright)
 ** additions (keys calc leaves unbound)
+   - [X] `f f` mafcmd-filter, `f $` mafcmd-filter-stack (2026-09-02:
+     the map pair's sibling — keep the elements of a vector a
+     predicate accepts, typed at a prompt that reads as the map prompt
+     does (`> 2`, `$ > 2`, `x > 2`, `prime`) or taken from the entry
+     above; I keeps the rejected ones. A doubled chord on the
+     command's initial, as `k k` and `j j` are, and `$` the key the
+     map pair already reads as "the formula is on the stack"; both
+     unbound in calc's f prefix, and every single and shifted key in
+     the buffer is taken)
    - [X] `W` mafcmd-sqr (a second key, `:`, shadows calc-fdiv — see
      the shadowing list above)
    - [X] `C-b` maf-backward-char (2026-08-29: backward-char everywhere
@@ -523,7 +532,8 @@
    - mafcmd-arg — complex argument; its stock G went to
      maf-preview-show (to maf-go-home before that)
    - mafcmd-map, mafcmd-map-stack — explicit mapping commands; the M
-     flag is the bound workflow
+     flag is the bound workflow (the filter pair, their sibling, is
+     bound: `f f` / `f $`)
    - maf-dup, maf-dup-here, maf-clear-selections — split-out halves of
      RET's maf-dup-or-clear-selections (C-RET runs the keep-point
      dispatcher, maf-dup-here-or-clear-selections)
