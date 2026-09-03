@@ -144,6 +144,22 @@ operation name instead of the meaningless continuation."
 Global rather than per-buffer: the log and the stack beside it are two
 views on one selection, so both read the same index.")
 
+(defvar maf-history--hold nil
+  "Non-nil while the next recorded state must leave the selection be.
+Set by an insert from the browser: the push records a state of its
+own, and a view on the newest state would follow to it, off the state
+the entry was taken from. Held, the view stays on that state — its
+index shifted under it, as for any older state — so the next insert,
+or the next browse, finds it where it was. Consumed by
+`maf-history--refresh'.")
+
+(defvar maf-history--focus nil
+  "Which of the browser's windows was selected when it last quit.
+`stack' when the stack window was, nil for the log. `maf-history'
+selects that side on reopening, so a browse that quit from the stack
+— an insert does, having taken an entry there — resumes with the hand
+where it was.")
+
 (defconst maf-history--log-buffer "*maf-history*"
   "Name of the buffer holding the action log, the browser's left window.")
 
@@ -602,14 +618,18 @@ The index is clamped here, so both views render the same selection."
 (defun maf-history--refresh (&optional new)
   "Re-render the browser, if it is open.
 With NEW non-nil a state was just recorded: a view on the newest state
-follows to the new one; a view on an older state stays on that state,
-its index shifted under it. The new line lands at the top of the log
-and the rest move down a row, but the log puts point back on the
-selected state either way."
+follows to the new one — unless `maf-history--hold' asks it to stay —
+and a view on an older state stays on that state, its index shifted
+under it. The new line lands at the top of the log and the rest move
+down a row, but the log puts point back on the selected state either
+way. Open means the buffers exist: a buried browser keeps tracking its
+state, so it reopens on it."
   (when (get-buffer maf-history--log-buffer)
-    (let ((follow (and new (zerop maf-history--index))))
-      (when (and new (> maf-history--index 0))
+    (let ((follow (and new (zerop maf-history--index)
+                       (not maf-history--hold))))
+      (when (and new (or (> maf-history--index 0) maf-history--hold))
         (setq maf-history--index (1+ maf-history--index)))
+      (setq maf-history--hold nil)
       (maf-history--render follow))))
 
 ;;; The buffer
@@ -762,17 +782,20 @@ renders them; the windows are `maf-history\='s business."
 
 ;;;###autoload
 (defun maf-history ()
-  "Browse the stack history in two windows below calc, and select the log.
+  "Browse the stack history in two windows below calc.
 The action log opens on the left, `maf-history-log-width' columns
 wide, and the stack of the selected state on the right. The view
-always starts on the newest state, wherever a previous browse left it.
-Windows already showing either buffer are reused as they stand;
-without a calc window the pair opens below the selected window."
+reopens where the last browse left off — on the state it quit from,
+or inserted from, that state's row having moved down the log as later
+work was recorded, and with the window it quit from selected — and on
+the newest state, in the log, the first time. Windows already showing
+either buffer are reused as they stand; without a calc window the
+pair opens below the selected window."
   (interactive)
   (let ((log (maf-history--buffer))
         (stack (maf-history--stack-buffer)))
-    (setq maf-history--index 0)
-    (maf-history--render t)
+    (setq maf-history--hold nil)
+    (maf-history--render)
     (let ((logwin (or (get-buffer-window log)
                       (let* ((calc-buf (maf--find-calc-buffer))
                              (calc-win (and calc-buf (get-buffer-window calc-buf))))
@@ -801,7 +824,9 @@ without a calc window the pair opens below the selected window."
       (dolist (buf (list log stack))
         (dolist (win (get-buffer-window-list buf nil t))
           (set-window-point win (with-current-buffer buf (point)))))
-      (select-window logwin))))
+      (select-window (or (and (eq maf-history--focus 'stack)
+                              (get-buffer-window stack))
+                         logwin)))))
 
 (defun maf-history-focus-log ()
   "Select the window showing the action log."
@@ -887,8 +912,33 @@ them leads out of the window it is pressed in."
 (defun maf-history-quit ()
   "Bury the browser, quitting both its windows.
 The log and the stack are one UI, so quitting from either takes both
-down; the recorded history itself is untouched."
+down; the recorded history itself is untouched. The browse is kept
+for next time: the state under point in the log becomes the
+selection, each buffer keeps the point its window had, and the side
+the quit came from is noted, so `maf-history' reopens where this one
+left off."
   (interactive)
+  ;; Called from the window being quit — by the key, or by an insert
+  ;; in the stack window — so the current buffer says which side.
+  (setq maf-history--focus
+        (and (derived-mode-p 'maf-history-stack-mode) 'stack))
+  (when-let* ((log (get-buffer maf-history--log-buffer))
+              (win (get-buffer-window log t)))
+    ;; The row under point rather than the marked selection: point can
+    ;; drift off the mark, and where the eye was is where to come back
+    ;; to. A drift is made the selection now, so the stack beside the
+    ;; log shows it on reopening. The window's point, not the
+    ;; buffer's, which only the selected window keeps current.
+    (with-current-buffer log
+      (goto-char (window-point win))
+      (when-let ((index (get-text-property (point) 'maf-history-index)))
+        (unless (= index maf-history--index)
+          (setq maf-history--index index)
+          (maf-history--render t)))))
+  (when-let* ((stack (get-buffer maf-history--stack-buffer))
+              (win (get-buffer-window stack t)))
+    (with-current-buffer stack
+      (goto-char (window-point win))))
   (dolist (name (list maf-history--stack-buffer maf-history--log-buffer))
     (when-let ((buf (get-buffer name)))
       (dolist (win (get-buffer-window-list buf nil t))
@@ -986,8 +1036,10 @@ and point onto it, the stack shows what it left."
 Point is in the stack window, on the entry to take. The value is
 pushed on top as a new entry — a copy, so later edits to the live
 entry never reach back into the history — and recorded in the history
-as its own step. The browser quits, as after choosing from a list;
-`maf-history-insert-stay' keeps it open."
+as its own step. The browser quits, as after choosing from a list, and
+the next browse reopens on the state this one inserted from, in the
+stack window with point on the entry it took; `maf-history-insert-stay'
+keeps it open."
   (interactive)
   (maf-history-insert-stay)
   (maf-history-quit))
@@ -995,11 +1047,14 @@ as its own step. The browser quits, as after choosing from a list;
 (defun maf-history-insert-stay ()
   "Push the history entry at point onto the live calc stack.
 As `maf-history-insert', but the browser stays open with point in
-place, ready to insert more."
+place, ready to insert more. The push records a state of its own; the
+view holds on the state it inserted from (see `maf-history--hold')
+rather than following to the new one."
   (interactive)
   (let ((val (get-text-property (point) 'maf-history-value)))
     (unless val (user-error "No stack entry at point"))
     (setq val (copy-tree val))
+    (setq maf-history--hold t)
     (maf--with-calc-buffer
       (calc-wrapper
        (calc-pop-push-record-list 0 "hist" (list val) 1 (list nil))))

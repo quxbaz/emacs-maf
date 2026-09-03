@@ -151,20 +151,18 @@
     (call-interactively (lookup-key maf-history-mode-map (kbd "<")))
     (cl-assert (zerop maf-history--index)))
 
-  ;; Invoking maf-history always lands on the newest state, wherever a
-  ;; previous browse left the view.
+  ;; Invoking maf-history reopens the view where a previous browse
+  ;; left it (see history-reopen.el for the quit and insert cases).
   (with-current-buffer (maf-history--buffer)
     (call-interactively 'maf-history-previous))
   (save-window-excursion (call-interactively 'maf-history))
   (with-current-buffer (maf-history--buffer)
-    (cl-assert (zerop maf-history--index)))
+    (cl-assert (= maf-history--index 1)))
 
   ;; C-RET on an entry in the stack window pushes it onto the live
   ;; stack — a copy — and the browser stays on that state as the log
   ;; grows under it. (RET is the same push followed by a quit, which
   ;; would take down the cockpit's window here.)
-  (with-current-buffer (maf-history--buffer)
-    (call-interactively 'maf-history-previous))
   (with-current-buffer (maf-history--stack-buffer)
     ;; Point onto the entry itself so C-RET has a history value to push.
     (progn (goto-char (point-min)) (search-forward "6 x + 12") (backward-char 1))
