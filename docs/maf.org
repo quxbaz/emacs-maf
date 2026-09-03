@@ -35,15 +35,7 @@
     - [ ] bindings cheat sheet. on hover, show the example and description.
       also show `H` and `I` flag behavior. group the bindings by category.
 
-* major features [8/12]
-  - [X] bindings module
-  - [X] persistent sub-formula highlighting
-  - [X] history module (né timeline)
-  - [X] omni-options menu buffer
-  - [X] formulas module
-  - [X] modules manager
-  - [X] use module architecture (maf-history, maf-edit)
-  - [X] recall ring for typed entries (maf-recall)
+* major features
   - [ ] discovery document for useful features, behaviors, modules, etc
   - [ ] readme (overview)
   - [ ] technical docs for devs
