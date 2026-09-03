@@ -9,6 +9,14 @@
   - [-] hardening
 
 * Todo
+** TODO module suboptions
+** TODO map across rows
+** TODO map across cols
+** TODO test w/ other themes
+   - [ ] test w/ light theme and other themes
+   - [ ] default themes
+   - [ ] doom themes
+   - [ ] other themes
 
 * delivery
   - [ ] version as 1.0.0
@@ -41,36 +49,18 @@
   - [ ] main docs for users (new features, changes)
   - [ ] technical docs for devs
 
-* IN-PROGRESS maf-plot
-
-* later
-** thin web client w/ mathjax rendering
-** modules suboptions
-
 * when done
   - [ ] revise and update all anki cards in `calc-mode` deck
     - base on `native` profile
     - update outdated bindings
     - add cards for missing bindings
 
-* delivery
-  - [ ] test w/ light theme and other themes
-    - default themes
-    - doom themes
-    - other themes
-
-* cleanup
-
 # much later below
 
-* later: standalone web app
+* later :: standalone web app
   - multi-pane design
   - pane 1 (main): calc stack
     - entries show text and mathjax rendering
   - pane 2: current plot
   - pane 3: modules
   - pane 4: options
-
-* later
-  - [ ] map across rows
-  - [ ] map across cols
