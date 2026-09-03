@@ -269,14 +269,77 @@ pointer is there to chase."
         (setq sections (nconc sections (list (cons local ldoc))))))
     sections))
 
+(defun maf-module--options (name)
+  "The customizable variables module NAME owns, sorted by name.
+Every defcustom whose name starts with the module's name and a dash
+is taken to be its own — maf-plot-samples is maf-plot's — so a new
+option shows up in the details with no registration edit; a mode's
+own hook, customizable as it is, is left out. A module
+whose options do not share its prefix names them instead, as a list
+on the `maf-module-options' property of its name: maf-persist's are
+the maf-stack-* variables."
+  (or (get name 'maf-module-options)
+      (let ((prefix (concat (symbol-name name) "-"))
+            found)
+        (mapatoms (lambda (sym)
+                    (when (and (custom-variable-p sym)
+                               (string-prefix-p prefix (symbol-name sym))
+                               ;; A mode's hook is customizable too,
+                               ;; and is not what the section is for.
+                               (not (eq (get sym 'custom-type) 'hook))
+                               (not (string-suffix-p "-hook"
+                                                     (symbol-name sym))))
+                      (push sym found))))
+        (sort found (lambda (a b)
+                      (string< (symbol-name a) (symbol-name b)))))))
+
+(defun maf-module--option-value (value)
+  "VALUE printed for an option line: one line, cut short past 60 columns.
+A list of faces or of formulas is a paragraph on its own; the line
+is for recognizing the value, and the option's own help has the
+whole of it."
+  (let ((text (replace-regexp-in-string "\\s-*\n\\s-*" " "
+                                        (prin1-to-string value))))
+    (if (> (length text) 60)
+        (concat (substring text 0 57) "...")
+      text)))
+
+(defun maf-module--option-line (option)
+  "The Configuration entry for OPTION: name, live value, and what it is for.
+The value wears `dial-value' on its standard value and `dial-changed'
+once set away from it — the row's own colours, so the legend the
+menu prints holds here too. Under it, the first line of the option's
+docstring."
+  (let* ((value (symbol-value option))
+         (standard (ignore-errors
+                     (eval (car (get option 'standard-value)) t)))
+         (doc (documentation-property option 'variable-documentation)))
+    (concat (symbol-name option) "  "
+            (propertize (maf-module--option-value value)
+                        'face (if (equal value standard)
+                                  'dial-value
+                                'dial-changed))
+            "\n  " (if doc (car (split-string doc "\n")) "Not documented."))))
+
+(defun maf-module--options-section (name)
+  "The Configuration section of module NAME's details, or nil.
+One entry per option the module owns (see `maf-module--options'), or
+nothing for a module with none — the section is not there to say so."
+  (when-let ((options (seq-filter #'boundp (maf-module--options name))))
+    (concat (propertize "Configuration" 'face 'bold) "\n\n"
+            "Set one with M-x customize-option, or setq it in your init.\n\n"
+            (mapconcat #'maf-module--option-line options "\n"))))
+
 (defun maf-module--details (name)
   "Build the verbose text \\<dial-mode-map>\\[dial-describe] shows for module NAME.
 Everything the registry and the mode itself can say, at full length:
 the heading line the echoed help uses — name and entry keys, plus the
 live on/off state the echo leaves to the row — then the description
 as the module wrote it, then the mode docstrings, the part that
-outgrows any echo (see `maf-module--mode-sections'). Built fresh at
-each show, so the state, the keys, and the docstrings are all read
+outgrows any echo (see `maf-module--mode-sections'), and last the
+module's options with their live values
+(see `maf-module--options-section'). Built fresh at each show, so
+the state, the keys, the docstrings, and the values are all read
 live."
   (pcase-let* ((`(,mode ,description ,keys)
                 (alist-get name maf-module-registry))
@@ -296,7 +359,11 @@ live."
                   (concat (propertize (symbol-name symbol) 'face 'bold)
                           "\n\n" text))
                 (maf-module--mode-sections mode)
-                "\n\n"))))
+                "\n\n")
+     ;; Last: what the module does comes before how it is tuned.
+     (if-let ((options (maf-module--options-section name)))
+         (concat "\n\n" options)
+       ""))))
 
 (defvar maf-module--group-order
   '("Prefs" "Help" "Display" "Rewrite" "Editing" "Memory")
@@ -399,8 +466,9 @@ current line, and what that module is for echoes as point rests on it
 — its name and a line saying what it does (see `dial-mode' and
 `maf-module-registry').
 \\<dial-mode-map>\\[dial-describe] goes further: the module's full
-details — state, description, and its minor mode's own docstring —
-shown in another window (see `maf-module--details'). The
+details — state, description, its options with their current values,
+and its minor mode's own docstring — shown in another window (see
+`maf-module--details'). The
 buffer is dial's, keys and all — flipping is dial's value stepping,
 which on a two-value row is a toggle — and this command only supplies
 the registry."

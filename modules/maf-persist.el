@@ -770,6 +770,10 @@ stops automatic saving but does not delete existing save files."
     ((vim) "o S" maf-save-stack)))
 
 (when (require 'maf-module nil t)
+  ;; The options are the maf-stack-* variables, which the module
+  ;; details cannot find by the module's name (see `maf-module--options').
+  (put 'maf-persist 'maf-module-options
+       '(maf-stack-directory maf-stack-save-interval maf-stack-session-name))
   (maf-register-module 'maf-persist #'maf-persist-mode
                        "Save and restore the stack across Emacs sessions.
 
