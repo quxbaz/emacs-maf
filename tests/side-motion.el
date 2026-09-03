@@ -1,7 +1,8 @@
 ;; The paren keys cross a relation: `(' to the whole left side
 ;; (`maf-goto-left-side'), `)' to the whole right
-;; (`maf-goto-right-side'); C-o crosses blind, to whichever side point
-;; is not in (`maf-goto-other-side'). Every assertion below is about
+;; (`maf-goto-right-side'); C-o names no side: it lands on the side
+;; point is in, and crosses from there (`maf-goto-other-side'). Every
+;; assertion below is about
 ;; where point lands, because point is the whole of maf's targeting: a
 ;; landing is only right if resolve names the side the motion
 ;; advertised there, which is what `maf-test--part-at-point' reads
@@ -77,20 +78,29 @@ the Big-language entry here runs over several lines."
   (cl-assert (string= (maf-test--part-at-point) "6 * x + 12"))
   (calc-pop (calc-stack-size))
 
-  ;; The crossing names no side: from wherever point sits it lands on
-  ;; the whole side point is not in, and pressed again it rocks back —
-  ;; the blind way into the same walk.
+  ;; The crossing names no side: from inside an arm it first lands on
+  ;; the whole side point is in, then crosses, and pressed again it
+  ;; rocks back — the blind way into the same walk.
   (maf-push "6 x + 12 = 18 y + 6")
   (progn (calc-cursor-stack-index 1)
          (search-forward "y" (line-end-position))
          (backward-char 1))
   (call-interactively 'maf-goto-other-side)
+  (cl-assert (string= (maf-test--part-at-point) "18 * y + 6"))
+  (cl-assert (eq (char-after) ?+))
+  (call-interactively 'maf-goto-other-side)
   (cl-assert (string= (maf-test--part-at-point) "6 * x + 12"))
   (cl-assert (eq (char-after) ?+))
   (call-interactively 'maf-goto-other-side)
   (cl-assert (string= (maf-test--part-at-point) "18 * y + 6"))
+  ;; And from a term in the left arm the first landing is the left.
+  (progn (calc-cursor-stack-index 1)
+         (search-forward "12" (line-end-position))
+         (backward-char 1))
   (call-interactively 'maf-goto-other-side)
   (cl-assert (string= (maf-test--part-at-point) "6 * x + 12"))
+  (call-interactively 'maf-goto-other-side)
+  (cl-assert (string= (maf-test--part-at-point) "18 * y + 6"))
   ;; In neither side — the operator, the margins naming the whole
   ;; entry — position decides: the operator and the line-number prefix
   ;; cross right, and the end of the line, standing past the right

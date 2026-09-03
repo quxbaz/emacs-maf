@@ -2571,23 +2571,27 @@ fall back to and the motions signal."
              (rel (maf--side-relation expr part)))
         (unless rel
           (user-error "No relation at point"))
-        ;; The crossing names its side here: out of the right arm is
-        ;; left, out of the left arm is right, and in neither — the
-        ;; relation's own operator, the margins naming the whole entry
-        ;; — position decides: the end of the line stands at or past
-        ;; the right side's own glyph and crosses left, and anywhere
-        ;; earlier crosses right.
+        ;; The crossing names its side here. From inside an arm the
+        ;; first landing is that arm's own whole side; the cycle below
+        ;; then crosses from it, as it does for the named keys, so
+        ;; point already standing on its side goes over. An arm with
+        ;; nothing to name it by has no landing of its own and crosses
+        ;; at once. In neither arm — the relation's own operator, the
+        ;; margins naming the whole entry — position decides: the end
+        ;; of the line stands at or past the right side's own glyph
+        ;; and crosses left, and anywhere earlier crosses right.
         (when (eq side 'other)
-          (setq side
-                (pcase (maf--relation-arm expr rel part)
-                  (2 'left)
-                  (1 'right)
-                  (_ (let ((right-pos (maf--up-node-position
-                                       (nth 2 rel)
-                                       (maf--up-entry-region m))))
-                       (if (and right-pos (>= (point) right-pos))
-                           'left
-                         'right))))))
+          (let* ((arm (maf--relation-arm expr rel part))
+                 (region (maf--up-entry-region m)))
+            (setq side
+                  (cond ((and arm (maf--up-node-position (nth arm rel) region))
+                         (if (= arm 1) 'left 'right))
+                        (arm (if (= arm 1) 'right 'left))
+                        (t (let ((right-pos (maf--up-node-position
+                                             (nth 2 rel) region)))
+                             (if (and right-pos (>= (point) right-pos))
+                                 'left
+                               'right)))))))
         (let* ((region (maf--up-entry-region m))
                (node (nth (if (eq side 'left) 1 2) rel))
                (pos (maf--up-node-position node region)))
@@ -2696,17 +2700,19 @@ which side they set out for."
   (maf--goto-side 'right))
 
 (defun maf-goto-other-side ()
-  "Move point to the whole side of the relation it is not in.
+  "Move point to the whole side of the relation it is in, then across.
 
-  6 x + 12 = 18 y| + 6  =>  6 x |+ 12 = 18 y + 6
+  6 x + 12 = 18 y| + 6  =>  6 x + 12 = 18 y |+ 6
 
-The crossing half of `maf-goto-left-side' and `maf-goto-right-side',
-without naming a side: wherever point sits in the relation — the
-innermost one it sits in, as for those two — the press lands on the
-whole of the opposite side, on the glyph that names it, so the next
-command acts on that side entire. Pressed again it crosses back, and
-the one key rocks between the sides:
+`maf-goto-left-side' and `maf-goto-right-side' without naming a side:
+wherever point sits in the relation — the innermost one it sits in, as
+for those two — the first press lands on the whole of the side point
+is in, on the glyph that names it, so the next command acts on that
+side entire. Pressed from a side it already names, the key crosses to
+the other side, and from there rocks back, so one key visits the
+side under point and then walks the relation:
 
+  6 x + 12 = 18 y |+ 6  =>  6 x |+ 12 = 18 y + 6
   6 x |+ 12 = 18 y + 6  =>  6 x + 12 = 18 y |+ 6
 
 In neither side — the margins naming the whole entry, the relation's

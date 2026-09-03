@@ -354,8 +354,10 @@
      is no entry to move within, and keeps it outright in the calc
      profile)
    - [X] `C-o` maf-goto-other-side ← maf-edit-add-entry-above
-     (2026-08-29: the blind crossing — lands on whichever side of the
-     relation point is not in, so the one key rocks between the sides.
+     (2026-08-29: the blind crossing — lands on the whole side of the
+     relation point is in, then on the other, so the one key names
+     the side under point and rocks between the sides; until
+     2026-09-02 the first press crossed straight over.
      At home it reaches the right side of the entry on level 1,
      keeping the edit module's fresh-entry gesture only on an empty
      stack; the calc profile keeps C-o = add-entry-above outright)

@@ -647,7 +647,8 @@ entry, which is a line of its own to move to. =maf-backward-operand=
 retrace each other.
 
 =maf-goto-left-side= (=(=), =maf-goto-right-side= (=)=) and
-=maf-goto-other-side= (C-o, landing on whichever side point is not in)
+=maf-goto-other-side= (C-o, landing on the side point is in, and on
+the other side once there)
 arrive at one particular landing in one press: the whole of a
 relation's left or right side, the largest formula there is on it,
 where the climb would reach it a level at a time. The relation is the innermost one point

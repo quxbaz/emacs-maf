@@ -702,8 +702,9 @@
 ;; layout these motions are no part of.
 (maf-bindings-define '(native) "(" #'maf-goto-left-side)
 (maf-bindings-define '(native) ")" #'maf-goto-right-side)
-;; And the blind crossing: C-o lands on whichever side point is not
-;; in, so the one key rocks between the sides without naming either.
+;; And the blind crossing: C-o lands on the whole side point is in,
+;; then on the other, so the one key names the side under point and
+;; rocks between the sides without naming either by hand.
 ;; It was the edit module's add-entry-above, which keeps the key in
 ;; the calc profile and, like the vector-add on "(", gets it back at
 ;; home — where a fresh entry above the dot is what an entry-less C-o
