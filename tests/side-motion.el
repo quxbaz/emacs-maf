@@ -8,9 +8,10 @@
 ;; advertised there, which is what `maf-test--part-at-point' reads
 ;; back.
 ;;
-;; Either key pressed from the side it already names crosses to the
-;; other one, so a relation can be walked on one key; the cycle turns
-;; on where point stands, not on which key put it there.
+;; Either key pressed from the side it already names stands there:
+;; ( is the left side and ) the right, however often pressed. Only
+;; C-o crosses from a side it has landed on, so a relation can be
+;; walked on that one key; its cycle turns on where point stands.
 ;;
 ;; The relation is the innermost one point sits in, so the checks run
 ;; over a bare equation, an ordered relation, and an equation nested in
@@ -55,19 +56,20 @@ the Big-language entry here runs over several lines."
   (call-interactively 'maf-goto-right-side)
   (cl-assert (string= (maf-test--part-at-point) "18 * y + 6"))
   (cl-assert (eq (char-after) ?+))
-  ;; Pressed again from the side it already names, the motion crosses
-  ;; to the other side rather than standing still: the side is as far
-  ;; out as that end goes, so one key walks the whole relation.
+  ;; Pressed again from the side it already names, the motion stands:
+  ;; the key is one landing, not a walk.
+  (setq side-test-pos (point))
   (call-interactively 'maf-goto-right-side)
-  (cl-assert (string= (maf-test--part-at-point) "6 * x + 12"))
-  (call-interactively 'maf-goto-right-side)
+  (cl-assert (= (point) side-test-pos))
   (cl-assert (string= (maf-test--part-at-point) "18 * y + 6"))
-  ;; `(' cycles the same way, and off a landing `)' made: the test is
-  ;; where point stands, not the key that put it there.
+  ;; `(' is its mirror, one landing too, off a landing `)' made or its
+  ;; own.
   (call-interactively 'maf-goto-left-side)
   (cl-assert (string= (maf-test--part-at-point) "6 * x + 12"))
+  (setq side-test-pos (point))
   (call-interactively 'maf-goto-left-side)
-  (cl-assert (string= (maf-test--part-at-point) "18 * y + 6"))
+  (cl-assert (= (point) side-test-pos))
+  (cl-assert (string= (maf-test--part-at-point) "6 * x + 12"))
   ;; And point on the relation's own operator — where it names the
   ;; whole entry from inside the formula — still has two sides to go to.
   (progn (calc-cursor-stack-index 1)
@@ -167,9 +169,10 @@ the Big-language entry here runs over several lines."
   (cl-assert (string= (maf-test--part-at-point) "p"))
   (call-interactively 'maf-goto-right-side)
   (cl-assert (string= (maf-test--part-at-point) "-4"))
-  ;; And the cycle crosses that same inner relation, not the vector
-  ;; around it: the element's own two sides are what it alternates.
-  (call-interactively 'maf-goto-right-side)
+  ;; And the blind crossing walks that same inner relation, not the
+  ;; vector around it: the element's own two sides are what it
+  ;; alternates.
+  (call-interactively 'maf-goto-other-side)
   (cl-assert (string= (maf-test--part-at-point) "p"))
   ;; On the vector's own bracket there is no relation above point at
   ;; all — the vector is not one — so the motion signals and point

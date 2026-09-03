@@ -2544,8 +2544,9 @@ The shared body of `maf-goto-left-side', `maf-goto-right-side' and
 `maf-goto-other-side'; those docstrings describe what the motion
 promises.
 
-Point already standing where SIDE would land crosses to the other side
-instead, so either paren key walks the relation on repeat.
+A named side is one landing: point already standing there stands.
+Only the blind crossing goes over from a side it has landed on, so
+one key walks the relation while `(' and `)' each mean their side.
 
 At home the paren keys keep the meaning the edit module gives them
 there — a blank vector entry opened at the bottom of the stack —
@@ -2554,7 +2555,8 @@ crossing reaches into the stack instead, to the right side of the
 entry on level 1, falling back to the module's fresh bottom entry
 only on an empty stack. With that module off there is nothing to
 fall back to and the motions signal."
-  (let ((m (calc-locate-cursor-element (point))))
+  (let ((m (calc-locate-cursor-element (point)))
+        (blind (eq side 'other)))
     ;; The crossing works from home: the newest relation is the one
     ;; crossed into, its right side the landing.
     (when (and (<= m 0) (eq side 'other) (> (calc-stack-size) 0))
@@ -2573,8 +2575,8 @@ fall back to and the motions signal."
           (user-error "No relation at point"))
         ;; The crossing names its side here. From inside an arm the
         ;; first landing is that arm's own whole side; the cycle below
-        ;; then crosses from it, as it does for the named keys, so
-        ;; point already standing on its side goes over. An arm with
+        ;; then crosses from it, so point already standing on its side
+        ;; goes over. An arm with
         ;; nothing to name it by has no landing of its own and crosses
         ;; at once. In neither arm — the relation's own operator, the
         ;; margins naming the whole entry — the landing is the right
@@ -2590,14 +2592,16 @@ fall back to and the motions signal."
         (let* ((region (maf--up-entry-region m))
                (node (nth (if (eq side 'left) 1 2) rel))
                (pos (maf--up-node-position node region)))
-          ;; Cycle rather than stand still. Point already on the side
-          ;; the key names has arrived: there is nowhere further out on
-          ;; that end of the relation, so the press crosses to the
-          ;; other side instead and one key walks the whole relation.
-          ;; The test is the landing itself — point sitting where this
-          ;; motion would put it — so it holds however point got there,
-          ;; the mirror key included.
-          (when (and pos (= pos (point)))
+          ;; The blind crossing cycles rather than standing still:
+          ;; point already on the side it named has arrived, and there
+          ;; is nowhere further out on that end of the relation, so
+          ;; the press goes over to the other side and one key walks
+          ;; the whole relation. The test is the landing itself — point
+          ;; sitting where this motion would put it — so it holds
+          ;; however point got there. A named side never cycles: ( is
+          ;; the left side and ) the right, each the same landing
+          ;; however often it is pressed.
+          (when (and blind pos (= pos (point)))
             (let* ((other (if (eq side 'left) 'right 'left))
                    (other-node (nth (if (eq other 'left) 1 2) rel))
                    (other-pos (maf--up-node-position other-node region)))
@@ -2649,17 +2653,11 @@ used.
 
   |1:  y = (x + 3)^2  =>  1:  |y = (x + 3)^2
 
-Pressed from the side it already names, the key crosses to the other
-one rather than standing still: the side is as far out as that end of
-the relation goes, so the press that would repeat it is a crossing
-instead.
-
-  6 x |+ 12 = 18 y + 6  =>  6 x + 12 = 18 y |+ 6
-
-One key therefore walks the whole relation, and the pair are two ways
-into the same walk — `(' starting it leftward, `)' rightward. The test
-is the landing, not the key that made it, so a `)' arrival cycles under
-`(' just the same.
+The key means the left side and nothing else: pressed from there it
+stands, so however often it is pressed the landing is the same, and
+`)' is its mirror. Walking the relation on one key is
+`maf-goto-other-side' (C-o), which crosses from a side it has landed
+on.
 
 With a selection up on the entry it travels to the side along with
 point, since a selection is what the next command would resolve — the
@@ -2683,14 +2681,10 @@ that names the whole side, so the next command acts on it entire.
 
   2 x - 3| < 7  =>  2 x - 3 < |7
 
-Pressed from the side it already names, it crosses back the same way
-`maf-goto-left-side' does:
-
-  6 x + 12 = 18 y |+ 6  =>  6 x |+ 12 = 18 y + 6
-
-So either key alone is the whole crossing — one press to the far side,
-one back, whatever term point started on — and the two differ only in
-which side they set out for."
+Pressed from the right side it stands, as `maf-goto-left-side' does
+on the left: each key is one landing, and the pair differ only in
+which side they name. Crossing between them on one key is
+`maf-goto-other-side'."
   (interactive)
   (maf--goto-side 'right))
 
@@ -2705,7 +2699,8 @@ for those two — the first press lands on the whole of the side point
 is in, on the glyph that names it, so the next command acts on that
 side entire. Pressed from a side it already names, the key crosses to
 the other side, and from there rocks back, so one key visits the
-side under point and then walks the relation:
+side under point and then walks the relation — the one motion that
+does; `(' and `)' each stand on their side:
 
   6 x + 12 = 18 y |+ 6  =>  6 x |+ 12 = 18 y + 6
   6 x |+ 12 = 18 y + 6  =>  6 x + 12 = 18 y |+ 6
