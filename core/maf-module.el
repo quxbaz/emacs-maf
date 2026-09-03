@@ -269,29 +269,31 @@ pointer is there to chase."
         (setq sections (nconc sections (list (cons local ldoc))))))
     sections))
 
+(defun maf-module-options-with-prefix (prefix)
+  "The customizable variables whose names start with PREFIX, sorted.
+A mode's hook is customizable too and is left out: it is not what a
+Configuration section is for. The one rule behind every such section
+— a module's options share its name (maf-plot-samples is maf-plot's),
+a command's its short name (maf-abs-assume-real is mafcmd-abs's) —
+so a new option shows up with no registration edit."
+  (let (found)
+    (mapatoms (lambda (sym)
+                (when (and (custom-variable-p sym)
+                           (string-prefix-p prefix (symbol-name sym))
+                           (not (eq (get sym 'custom-type) 'hook))
+                           (not (string-suffix-p "-hook" (symbol-name sym))))
+                  (push sym found))))
+    (sort found (lambda (a b) (string< (symbol-name a) (symbol-name b))))))
+
 (defun maf-module--options (name)
   "The customizable variables module NAME owns, sorted by name.
 Every defcustom whose name starts with the module's name and a dash
-is taken to be its own — maf-plot-samples is maf-plot's — so a new
-option shows up in the details with no registration edit; a mode's
-own hook, customizable as it is, is left out. A module
-whose options do not share its prefix names them instead, as a list
-on the `maf-module-options' property of its name: maf-persist's are
-the maf-stack-* variables."
+is taken to be its own (see `maf-module-options-with-prefix'). A
+module whose options do not share its prefix names them instead, as
+a list on the `maf-module-options' property of its name:
+maf-persist's are the maf-stack-* variables."
   (or (get name 'maf-module-options)
-      (let ((prefix (concat (symbol-name name) "-"))
-            found)
-        (mapatoms (lambda (sym)
-                    (when (and (custom-variable-p sym)
-                               (string-prefix-p prefix (symbol-name sym))
-                               ;; A mode's hook is customizable too,
-                               ;; and is not what the section is for.
-                               (not (eq (get sym 'custom-type) 'hook))
-                               (not (string-suffix-p "-hook"
-                                                     (symbol-name sym))))
-                      (push sym found))))
-        (sort found (lambda (a b)
-                      (string< (symbol-name a) (symbol-name b)))))))
+      (maf-module-options-with-prefix (concat (symbol-name name) "-"))))
 
 (defun maf-module--option-value (value)
   "VALUE printed for an option line: one line, cut short past 60 columns.
@@ -306,29 +308,46 @@ whole of it."
 
 (defun maf-module--option-line (option)
   "The Configuration entry for OPTION: name, live value, and what it is for.
-The value wears `dial-value' on its standard value and `dial-changed'
-once set away from it — the row's own colours, so the legend the
-menu prints holds here too. Under it, the first line of the option's
-docstring."
+The name in `font-lock-variable-name-face', the colour a variable
+name wears in code, so the entries stand out from the prose without
+competing with the bold section headings. The value wears `dial-value' on
+its standard value and `dial-changed' once set away from it — the
+row's own colours, so the legend the menu prints holds here too.
+Under it, the first line of the option's docstring."
   (let* ((value (symbol-value option))
-         (standard (ignore-errors
-                     (eval (car (get option 'standard-value)) t)))
-         (doc (documentation-property option 'variable-documentation)))
-    (concat (symbol-name option) "  "
-            (propertize (maf-module--option-value value)
-                        'face (if (equal value standard)
-                                  'dial-value
-                                'dial-changed))
+         (standard (get option 'standard-value))
+         (doc (documentation-property option 'variable-documentation))
+         (text (maf-module--option-value value)))
+    (concat (propertize (symbol-name option)
+                        'face 'font-lock-variable-name-face)
+            "  "
+            ;; A plain variable has no standard value to be at or away
+            ;; from — a command's targets list — and wears no colour.
+            (if standard
+                (propertize text 'face
+                            (if (equal value
+                                       (ignore-errors (eval (car standard) t)))
+                                'dial-value
+                              'dial-changed))
+              text)
             "\n  " (if doc (car (split-string doc "\n")) "Not documented."))))
+
+(defun maf-module-options-text (options)
+  "The Configuration section listing OPTIONS, or nil for none.
+A heading, a line saying how one is set, then one entry per option
+\(`maf-module--option-line') with a blank line between. Shared by the
+module details and the command details in *maf-keys*, so the two
+read alike."
+  (when-let ((options (seq-filter #'boundp options)))
+    (concat (propertize "Configuration" 'face 'bold) "\n\n"
+            "Set one with M-x customize-option, or setq it in your init.\n\n"
+            (mapconcat #'maf-module--option-line options "\n\n"))))
 
 (defun maf-module--options-section (name)
   "The Configuration section of module NAME's details, or nil.
 One entry per option the module owns (see `maf-module--options'), or
 nothing for a module with none — the section is not there to say so."
-  (when-let ((options (seq-filter #'boundp (maf-module--options name))))
-    (concat (propertize "Configuration" 'face 'bold) "\n\n"
-            "Set one with M-x customize-option, or setq it in your init.\n\n"
-            (mapconcat #'maf-module--option-line options "\n"))))
+  (maf-module-options-text (maf-module--options name)))
 
 (defun maf-module--details (name)
   "Build the verbose text \\<dial-mode-map>\\[dial-describe] shows for module NAME.

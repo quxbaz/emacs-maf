@@ -30,7 +30,7 @@
 ;; The buffer is a filter-view (pkg/filter-view), the same shell the
 ;; formula menu runs on: `/' filters as you type, RET on a group
 ;; header narrows to that group, TAB folds, n/p/j/k and M-n/M-p walk
-;; items and groups, `o' shows a command's full documentation in the
+;; items and groups, `?' shows a command's full documentation in the
 ;; detail pane, `O' makes the pane follow point, and the commands
 ;; described lately gather in a "Recent" group at the top (`a'/`i'
 ;; add one by hand, `D' drops one). RET describes the command at
@@ -48,6 +48,7 @@
 (require 'maf-conf "conf")  ; the `maf' customize group
 (require 'maf-lib)          ; `maf--display-borrowing-window', the pane's lender
 (require 'maf-bindings)     ; the registry every render reads
+(require 'maf-module)       ; `maf-module-options-text', the detail's Configuration
 (require 'dial)             ; first, so filter-view's chrome inherits its
 (require 'filter-view)      ; the menu shell: filtering, groups, the pane
 
@@ -564,12 +565,30 @@ nowhere else."
                 group)
           (cdr item)))
 
+(defun maf-keys--options (cmd)
+  "The variables that configure command CMD, or nil.
+Its defcustoms by the naming rule — the command's short name under
+the maf- prefix, so mafcmd-abs owns maf-abs-assume-real and
+maf-browse-variables owns maf-browse-variables-exclude (see
+`maf-module-options-with-prefix') — and, first, the targeting policy
+list a contextual command generates, mafcmd-abs-targets, which says
+which gestures narrow it."
+  (let* ((name (symbol-name cmd))
+         (short (cond ((string-prefix-p "mafcmd-" name) (substring name 7))
+                      ((string-prefix-p "maf-" name) (substring name 4))))
+         (targets (intern-soft (concat name "-targets"))))
+    (append (and targets (boundp targets) (list targets))
+            (and short
+                 (maf-module-options-with-prefix (concat "maf-" short "-"))))))
+
 (defun maf-keys--detail (item _width)
   "The detail pane's text for ITEM: the command's full documentation.
 The same head the row wears — the command beside its keys — over the
-whole docstring, where the row shows only its first line. Flush left
-from the first line: a docstring already carries its own layout, and
-the pane adds no margin of its own."
+whole docstring, where the row shows only its first line, and last
+the Configuration section, the variables that tune the command with
+their live values (see `maf-keys--options'), as a module's details
+end. Flush left from the first line: a docstring already carries its
+own layout, and the pane adds no margin of its own."
   (let* ((cmd (car item)) (keys (cdr item))
          (title (maf-keys--title cmd))
          (example (maf-command-example cmd))
@@ -587,7 +606,9 @@ the pane adds no margin of its own."
      "(" (propertize (symbol-name cmd) 'face 'maf-keys-command) ")"
      (when example
        (concat "\n" (propertize example 'face 'maf-keys-example)))
-     "\n\n" doc "\n")))
+     "\n\n" doc "\n"
+     (when-let ((options (maf-module-options-text (maf-keys--options cmd))))
+       (concat "\n" options "\n")))))
 
 (defun maf-keys--describe (item)
   "Describe ITEM's command, selecting its help buffer.

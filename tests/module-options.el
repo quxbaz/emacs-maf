@@ -33,10 +33,16 @@
                        (string-match "Configuration" text))
                     (not (string-match-p "\n\n[^ ]" (substring text (string-match "^maf-plot-samples" text))))
                     (string-match-p
-                     (concat "^maf-plot-samples  "
+                     (concat "\n\nmaf-plot-samples  "
                              (regexp-quote (prin1-to-string maf-plot-samples))
                              "\n  Sample points")
                      text))))
+  ;; The name wears the variable-name colour, and a blank line
+  ;; separates the entries.
+  (cl-assert (eq (get-text-property 0 'face (maf-module--option-line 'maf-plot-samples))
+                 'font-lock-variable-name-face))
+  (cl-assert (string-match-p "\n  [^\n]*\n\nmaf-plot-"
+                             (substring-no-properties (maf-module--options-section 'maf-plot))))
 
   ;; The value wears the row colours: `dial-value' on its standard
   ;; value, `dial-changed' once set away from it.
@@ -49,6 +55,25 @@
                     (at (string-match (prin1-to-string maf-plot-samples) line)))
                (eq (get-text-property at 'face line) 'dial-changed)))
   (progn (setq maf-plot-samples maf-module-test--samples) nil)
+
+  ;; A command's details in *maf-keys* end with the same section: its
+  ;; targeting policy first, then its defcustoms by the naming rule.
+  ;; A plain variable wears no colour, having no standard value.
+  (cl-assert (equal (maf-keys--options 'mafcmd-abs)
+                    '(mafcmd-abs-targets maf-abs-assume-real)))
+  (cl-assert (equal (maf-keys--options 'maf-browse-variables)
+                    '(maf-browse-variables-exclude)))
+  (cl-assert (null (maf-keys--options 'maf-undo)))
+  (cl-assert (let ((text (substring-no-properties
+                          (maf-keys--detail '(mafcmd-abs "A") 80))))
+               (and (string-match-p "Configuration" text)
+                    (string-match-p "\n\nmafcmd-abs-targets  " text)
+                    (string-match-p "\n\nmaf-abs-assume-real  " text))))
+  (cl-assert (null (get-text-property
+                    (1+ (length "mafcmd-abs-targets  "))
+                    'face (maf-module--option-line 'mafcmd-abs-targets))))
+  (cl-assert (not (string-match-p "Configuration"
+                                  (maf-keys--detail '(maf-undo "U") 80))))
 
   ;; A long value is cut to one line; a string keeps its quotes.
   (cl-assert (<= (length (maf-module--option-value (number-sequence 1 100))) 60))
