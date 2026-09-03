@@ -57,3 +57,20 @@
          candidates)))
   (when populated
     (setenv "SSH_AUTH_SOCK" populated)))
+
+;; Copies the agent makes through the server must not claim the X
+;; clipboard. Emacs stamps a selection claim with the time of its last
+;; user event, and an eval arrives with none: the stamp is whenever
+;; the user last typed here, older than whatever app last copied, and
+;; the X server refuses a claim older than the current owner's — while
+;; Emacs records itself as owner anyway. Believing it owns the
+;; clipboard, it never asks the server again (`gui-last-cut-in-clipboard'
+;; short-circuits the yank), so C-y stops yanking from other apps until
+;; something disowns the selection. Test sweeps copy through
+;; `kill-new' constantly, so the phantom claim was routine. The user's
+;; own keys are not evals and keep their clipboard integration.
+(define-advice server-eval-and-print (:around (fn &rest args)
+                                              maf-dev-no-clipboard)
+  (let ((select-enable-clipboard nil)
+        (select-enable-primary nil))
+    (apply fn args)))

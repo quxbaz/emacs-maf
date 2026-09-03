@@ -77,6 +77,17 @@ Reset calc state between tests with `calc-pop` — note the stack survives
 `kill-buffer` of `*Calculator*` (calc keeps it in global state), so
 popping is the reliable reset.
 
+Copies made through `--eval` must not touch the X clipboard, and
+`agent/emacs-init.el` binds `select-enable-clipboard` off around every
+server eval to keep them from it. Emacs stamps a clipboard claim with
+its last user-event time; an eval has none, so the stamp is stale, the X
+server refuses the claim, and Emacs records itself as owner regardless.
+From then on `C-y` never asks the server (`gui-last-cut-in-clipboard`
+short-circuits it) and the user's yanks in this instance stop seeing
+other apps' copies. If it happens anyway — an instance started before
+the guard — clear it with
+`emacsclient -s '#emacs' --eval '(x-disown-selection-internal (quote CLIPBOARD))'`.
+
 ## Cleanup / restart
 
 Kill by exact PID only (`pkill -f` self-matches the assistant's shell);
