@@ -1408,7 +1408,7 @@ If the menu is already on screen, go to its window instead, leaving the
 filter and the pane as they stand. The menu is a filter-view; see
 `filter-view-mode' for the keys. \\<filter-view-mode-map>\\[filter-view-select] pushes the formula at point onto
 the stack — or, on a group header, narrows the list to that group —
-\\[filter-view-toggle-detail] toggles the pane following point, \\[filter-view-show-detail] freezes it on the formula at point."
+\\[filter-view-toggle-detail] toggles the pane following point, \\[filter-view-visit-detail] shows the formula at point and goes there."
   (interactive)
   (apply #'filter-view-open "*maf-formulas*" (maf-formulas--config)))
 

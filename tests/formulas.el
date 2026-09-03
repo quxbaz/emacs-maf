@@ -66,11 +66,10 @@
       (cl-assert (eq (get-text-property (string-match "O follows" h) 'face h)
                      'warning)))
 
-    ;; The detail renderer (behind `?', i.e. `filter-view-show-detail')
-    ;; fills the detail buffer for the formula at point; `w' shows it
-    ;; and goes there, the pair every maf details view answers to. `o'
+    ;; `w' and `?' both show the detail buffer for the formula at point
+    ;; and go there — the pair every maf details view answers to. `o'
     ;; is no longer a key here.
-    (cl-assert (eq (key-binding (kbd "?")) #'filter-view-show-detail))
+    (cl-assert (eq (key-binding (kbd "?")) #'filter-view-visit-detail))
     (cl-assert (eq (key-binding (kbd "w")) #'filter-view-visit-detail))
     (cl-assert (null (lookup-key filter-view-mode-map (kbd "o"))))
     ;; `d' is unbound; `O' toggles the following pane and `D' prunes
@@ -128,7 +127,7 @@
                                       (get-buffer-create "*Calculator*"))
                                   '((display-buffer-in-direction)
                                     (direction . below)))))
-        (filter-view-show-detail)
+        (filter-view--open-detail)
         (cl-assert (eq cwin (get-buffer-window " *maf-formulas-detail*")))
         ;; Borrowed, not created — so its height is left alone.
         (cl-assert (not (filter-view--split-p cwin)))
@@ -139,28 +138,28 @@
       ;; Alone in the frame there is nothing to borrow, so the pane is
       ;; split off and closing deletes it again.
       (delete-other-windows)
-      (filter-view-show-detail)
+      (filter-view--open-detail)
       (let ((win (get-buffer-window " *maf-formulas-detail*")))
         (cl-assert (filter-view--split-p win))
         (filter-view--close-detail)
         (cl-assert (= 1 (length (window-list)))))
 
-      ;; With follow off, `o' shows the formula at point on request:
-      ;; staying on the line the pane stays, `o' again closes it by
-      ;; hand, and moving off the line dismisses it — the window going
-      ;; back to what it held, in respect of `O' being off.
+      ;; `w'/`?' (filter-view-visit-detail) with follow off shows the
+      ;; formula at point and selects the pane; the pane holds that one
+      ;; item, so moving point off its line in the list dismisses it —
+      ;; the window handed back, in respect of `O' being off.
       (delete-other-windows)
       (filter-view--set-pane-state nil)
       (goto-char (point-min))
       (filter-view-next-item)
-      (filter-view-show-detail)
+      (save-selected-window (filter-view-visit-detail))
       (cl-assert (eq (filter-view--pane-state) 'frozen))
       (cl-assert (get-buffer-window " *maf-formulas-detail*"))
       (filter-view--detail-on-move)     ; point unmoved: the pane stays
       (cl-assert (get-buffer-window " *maf-formulas-detail*"))
-      (filter-view-show-detail)
-      (cl-assert (not (get-buffer-window " *maf-formulas-detail*")))
-      (filter-view-show-detail)
+      ;; Visiting again while it is up keeps it, follow untouched.
+      (save-selected-window (filter-view-visit-detail))
+      (cl-assert (eq (filter-view--pane-state) 'frozen))
       (cl-assert (get-buffer-window " *maf-formulas-detail*"))
       (filter-view-next-item)
       (filter-view--detail-on-move)
@@ -176,10 +175,11 @@
         (filter-view--detail-on-move)
         (cl-assert (not (equal shown (with-current-buffer " *maf-formulas-detail*"
                                        (buffer-string))))))
-      ;; `o' on a following pane is a peek at calc: follow stays on —
-      ;; the legend keeps its gold — and the pane returns on its own
-      ;; the moment point reaches another formula.
-      (filter-view-show-detail)
+      ;; `q' in a following pane buries its window without ending
+      ;; follow: the legend keeps its gold, and the pane returns on its
+      ;; own the moment point reaches another formula.
+      (with-selected-window (get-buffer-window " *maf-formulas-detail*")
+        (quit-window))
       (cl-assert (eq (filter-view--pane-state) 'follow))
       (cl-assert (not (get-buffer-window " *maf-formulas-detail*")))
       (let ((h header-line-format))

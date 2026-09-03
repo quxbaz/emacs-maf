@@ -654,7 +654,7 @@ registry there, so the keys shown are the keys in force. The buffer
 is a filter-view; see `filter-view-mode' for the keys.
 \\<filter-view-mode-map>\\[filter-view-select] describes the command
 at point in the help buffer — on a group header it narrows to that
-group. \\[filter-view-show-detail] shows the full documentation in
+group. \\[filter-view-visit-detail] shows the full documentation in
 the detail pane instead, \\[filter-view-filter] filters as you type,
 \\[filter-view-refresh] re-reads the bindings registry."
   (interactive)

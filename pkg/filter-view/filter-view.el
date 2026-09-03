@@ -1031,8 +1031,8 @@ comes back if it did not."
 The pane reacts only to a line other than the one rendered, so the
 commands that leave point where it was cost nothing. What it does
 there is the follow flag's call. Following, it re-renders — or comes
-back, when \\<filter-view-mode-map>\\[filter-view-show-detail] hid it for a peek at what its window held. Frozen
-\(follow off), the pane is dismissed instead, the window handed back:
+back, when the pane's own \\`q' buried it. Frozen (follow off), the
+pane is dismissed instead, the window handed back:
 the details were for the item it was opened on, and point has moved
 on."
   (unless (eq (line-beginning-position) filter-view--detail-line)
@@ -1047,32 +1047,18 @@ on."
        (setq filter-view--detail-line nil)
        (filter-view--close-detail)))))
 
-(defun filter-view-show-detail ()
-  "Show the detail pane, or close a pane that is up — a visibility toggle.
-Either way the follow flag (\\<filter-view-mode-map>\\[filter-view-toggle-detail]) keeps the say over what happens next.
-With follow on, closing is a peek at what the window held, the
-legend's gold untouched, and the pane returns on its own the moment
-point reaches another item. With follow off, the pane shows the item
-at point and moving off that line dismisses it again: details on
-request, where follow makes them a running commentary. On a group
-header it shows the group's first item."
-  (interactive)
-  (unless (filter-view--conf :detail)
-    (user-error "This view has no detail pane"))
-  (if (get-buffer-window (filter-view--detail-buffer-name))
-      (filter-view--close-detail)
-    (unless (filter-view--pane-state)
-      (filter-view--set-pane-state 'frozen))
-    (filter-view--open-detail))
-  (filter-view--refresh-header))
-
 (defun filter-view-visit-detail ()
-  "Show the detail pane and go there.
-\\<filter-view-mode-map>\\[filter-view-show-detail] with the pane's window
-selected: for reading at length — scrolling, searching, copying —
-where that key leaves point on the list. A pane already up is kept
-rather than toggled away, and the follow flag is left as it stands.
-\\`q' in the pane comes back."
+  "Show the detail pane for the item at point and select its window.
+On \\`w' and \\`?', the pair every maf details view answers to. The
+pane opens if it is not already up and point goes into it, for
+reading at length — scrolling, searching, copying — with \\`q' the
+way back to the list. A pane already up is kept, its follow flag
+\\(\\<filter-view-mode-map>\\[filter-view-toggle-detail]) left as it stands. On a group header it shows the
+group's first item.
+
+Opened here rather than followed, the pane holds the item it opened
+on: moving point off that line in the list dismisses it, where
+follow would re-render it for each item reached."
   (interactive)
   (unless (filter-view--conf :detail)
     (user-error "This view has no detail pane"))
@@ -1085,11 +1071,12 @@ rather than toggled away, and the follow flag is left as it stands.
 
 (defun filter-view-toggle-detail ()
   "Open a detail pane that follows point, or close a following one.
-Where \\<filter-view-mode-map>\\[filter-view-show-detail] holds one item, this re-renders for each item point
-reaches — for reading down a group. Pressed while such a pane is up it
-closes it; pressed while \\[filter-view-show-detail] holds one, it takes the pane over and
-starts following. The choice holds for the session: the menu reopens
-with the pane the way this left it."
+Where \\<filter-view-mode-map>\\[filter-view-visit-detail] holds the one item it opened on, this
+re-renders for each item point reaches — for reading down a group.
+Pressed while such a pane is up it closes it; pressed while
+\\[filter-view-visit-detail] holds one, it takes the pane over and starts following. The
+choice holds for the session: the menu reopens with the pane the way
+this left it."
   (interactive)
   (unless (filter-view--conf :detail)
     (user-error "This view has no detail pane"))
@@ -1171,9 +1158,10 @@ frame is untouched either way."
 (define-key filter-view-mode-map (kbd "c")   #'filter-view-clear-filter)
 (define-key filter-view-mode-map (kbd "g")   #'filter-view-refresh)
 (define-key filter-view-mode-map (kbd "q")   #'filter-view-quit)
-;; ? shows the details and w goes to them — the pair dial's buffers
-;; and the history browser answer to, so one habit serves them all.
-(define-key filter-view-mode-map (kbd "?")   #'filter-view-show-detail)
+;; ? and w both open the details and go there — the pair dial's
+;; buffers and the history browser answer to, so one habit serves
+;; them all.
+(define-key filter-view-mode-map (kbd "?")   #'filter-view-visit-detail)
 (define-key filter-view-mode-map (kbd "w")   #'filter-view-visit-detail)
 (define-key filter-view-mode-map (kbd "O")   #'filter-view-toggle-detail)
 (define-key filter-view-mode-map (kbd "a")   #'filter-view-add-recent)
@@ -1206,9 +1194,8 @@ the rows and the headers alike; \\[filter-view-next-group] and
 \\[filter-view-prev-group] step group to group.
 \\[filter-view-toggle-all-groups] folds every group away to its
 header and unfolds them all again; \\[filter-view-toggle-group] folds
-or unfolds the one group at point. \\[filter-view-show-detail] shows
-the item at point in the detail pane (again to close it),
-\\[filter-view-visit-detail] shows it and goes there,
+or unfolds the one group at point. \\[filter-view-visit-detail] shows
+the item at point in the detail pane and goes there,
 \\[filter-view-toggle-detail] toggles the pane following point,
 \\[filter-view-add-recent] adds the item at point to the Recent group
 without selecting it, \\[filter-view-delete-recent] drops the recent
