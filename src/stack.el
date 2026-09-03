@@ -7586,7 +7586,7 @@ assignment, and keep-args leaves the entry and pushes the result.
   (interactive)
   ;; Read the prompt before any calc state is touched, so C-g aborts
   ;; with nothing done.
-  (let ((input (string-trim (read-string "Let (e.g. x = 5; empty for the stack's): "))))
+  (let ((input (string-trim (read-string "Let (e.g. x = 5; empty to use stack): "))))
     (if (string-empty-p input)
         (call-interactively #'maf--let-entry-arg-run)
       (let ((parsed (math-read-expr input)))
