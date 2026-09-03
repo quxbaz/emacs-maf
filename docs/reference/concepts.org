@@ -401,7 +401,15 @@ arg of a binary command shared across the runs). Any other subject
 refuses. Where =M M= maps a formula you type and =M $= one from the
 stack (=maf--map-flag-keys=, live for the keypress after =M=), =M=
 maps a command, with no operator table behind it the way
-calc's =V M= has.
+calc's =V M= has. An axis key after =M= restates the flag as =rows=
+or =cols= (=maf--map-flag-rows=, =maf--map-flag-cols=, reading one
+more key in =maf--map-axis-keys=): the next command then maps a
+matrix once per row or column, each going to the body as a vector
+(=maf--defcmd-map-axis=; columns are the transpose's rows, turned
+back when the results still make a matrix), and behind the axis =:=
+is the formula prompt and =$= the stack formula, walking the matrix
+the same way through =maf--map-axis= — calc's =V M _= and =V M :=,
+=mapr= and =mapc=.
 
 =mafcmd-filter= (=f f=) and =mafcmd-filter-stack= (=f $=) are the map
 pair's sibling: the same reader (=maf--map-read=, under its own

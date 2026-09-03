@@ -11,11 +11,17 @@
 (require 'maf-resolve)
 (require 'maf-commit)
 
+(declare-function math-matrixp "calc-ext")
+(declare-function math-transpose "calc-vec")
+
 (defvar maf-map-flag nil
   "Non-nil while the next contextual command should map over its subject.
 Set by `mafcmd-map-flag' (M) through calc's fancy-prefix machinery, and
 consumed by the next `maf-defcmd' command: a vector subject runs the
-body once per element (`maf--defcmd-map-vec'), a relation subject runs
+body once per element (`maf--defcmd-map-vec') — or, when the value is
+`rows' or `cols' (M r, M c), a matrix subject once per row or column,
+the body seeing each as a vector (`maf--defcmd-map-axis') — a
+relation subject runs
 it once per side — even for commands that opt out with :map -1, though
 those split only an =; ordered relations and != refuse
 (`maf--resolve-mapflag-relation-check') — and anything else refuses:
@@ -130,31 +136,61 @@ reads such a list the same way and for the same reason; see
         ((maf--value-list-p val) (if (cdr val) el (car val)))
         (t val)))
 
-(defun maf--defcmd-map-vec (runner expr arg)
+(defun maf--defcmd-map-axis (runner expr arg axis)
+  "Run RUNNER over each row of matrix EXPR, or each column for AXIS `cols'.
+The M r / M c reading of the map flag. Each row goes to the body as
+the vector it is, ARG shared across the runs, and what the body
+commits stands for the row (see `maf--defcmd-map-slot'). Columns are
+the rows of the transpose: the matrix is turned, mapped by row, and
+turned back when the results still make a matrix — a body that
+answers a vector per column gives the columns back in place, one
+that answers a scalar per column gives the vector of those answers,
+one per column, as calc's own mapc does."
+  (let* ((rows (if (eq axis 'cols) (math-transpose expr) expr))
+         (out (cons 'vec
+                    (mapcar (lambda (row)
+                              (let (val)
+                                (funcall runner row arg
+                                         (lambda (v) (setq val v)))
+                                (maf--defcmd-map-slot val row)))
+                            (cdr rows)))))
+    (if (and (eq axis 'cols) (math-matrixp out))
+        (math-transpose out)
+      out)))
+
+(defun maf--defcmd-map-vec (runner expr arg &optional axis)
   "Run RUNNER over each element of vector EXPR; return the mapped vector.
 RUNNER is a defcmd body as a function of (ELEMENT ARG COMMIT-FN): each
 element runs the body once, ARG shared across the runs, and what the
 body commits becomes the element's replacement (see
 `maf--defcmd-map-slot'). A body that commits nothing leaves its
 element unchanged. Nested vectors recurse, so a matrix maps over its
-individual elements — the same reading `mafcmd-map' gives one. A
-non-vector subject is the degenerate map: the body runs once on the
-whole expression, so M Q on a scalar is plain Q (a relation never
-reaches here — it resolves to the equation target first). Only there
-may a body's value list stand: the subject is the whole entry, which
-has room for the parts."
-  (if (eq (car-safe expr) 'vec)
-      (cons 'vec
-            (mapcar (lambda (el)
-                      (if (eq (car-safe el) 'vec)
-                          (maf--defcmd-map-vec runner el arg)
-                        (let (out)
-                          (funcall runner el arg (lambda (val) (setq out val)))
-                          (maf--defcmd-map-slot out el))))
-                    (cdr expr)))
+individual elements — the same reading `mafcmd-map' gives one — unless
+AXIS is `rows' or `cols', which runs the body once per row or column
+of a matrix instead (`maf--defcmd-map-axis'); a plain vector under
+an axis maps elementwise, its elements being its rows and its
+columns alike, as calc's mapr and mapc read one. A non-vector subject
+is the degenerate map: the body runs once on the whole expression, so
+M Q on a scalar is plain Q (a relation never reaches here — it
+resolves to the equation target first). Only there may a body's value
+list stand: the subject is the whole entry, which has room for the
+parts."
+  (cond
+   ((and axis (math-matrixp expr))
+    (maf--defcmd-map-axis runner expr arg axis))
+   ((eq (car-safe expr) 'vec)
+    (cons 'vec
+          (mapcar (lambda (el)
+                    (if (eq (car-safe el) 'vec)
+                        (maf--defcmd-map-vec runner el arg axis)
+                      (let (out)
+                        (funcall runner el arg (lambda (val) (setq out val)))
+                        (maf--defcmd-map-slot out el))))
+                  (cdr expr))))
+   (t
     (let (out)
       (funcall runner expr arg (lambda (val) (setq out val)))
-      (or out expr))))
+      (or out expr)))))
 
 (defvar maf--dispatch-narrowing nil
   "Narrowing policy riding a flag dispatch to a variant command.
@@ -390,7 +426,8 @@ ARG, runs the body, and commits its result to the right stack location."
                             (setq ,context
                                   (maf--resolve-context
                                    (if ,mapflag
-                                       (cons '(:mapflag . t) ,baseopts)
+                                       (cons (cons :mapflag ,mapflag)
+                                             ,baseopts)
                                      ,baseopts)))
                             ;; A gensym, not the caller's ARG symbol: the
                             ;; runner binds that one per run, and a `_'-named
@@ -445,7 +482,9 @@ ARG, runs the body, and commits its result to the right stack location."
                                       (maf--commit
                                        (maf--defcmd-map-vec
                                         ,runner (alist-get :expr ,context)
-                                        ,oarg)
+                                        ,oarg
+                                        (and (memq ,mapflag '(rows cols))
+                                             ,mapflag))
                                        ,context)))
                                (t
                                 ;; All other targets: body runs once on :expr.

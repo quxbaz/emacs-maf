@@ -28,6 +28,7 @@
 (declare-function calcFunc-expand "calc-poly")
 (declare-function math-simplify "calc-alg")
 (declare-function math-matrixp "calc-ext")
+(declare-function math-transpose "calc-vec")
 (declare-function math-const-var "calc-ext")
 (declare-function calc-undo "calc-undo")
 (declare-function calc-redo "calc-undo")
@@ -7712,14 +7713,34 @@ mode."
    (math-build-call (list 'calcFunc-lambda (car mapper) (cdr mapper))
                     (list expr))))
 
+(defvar maf--map-axis nil
+  "The axis a formula mapping walks a matrix along: `rows', `cols', or nil.
+Bound per call by the M r / M c forms (`maf--map-axis-entry',
+`maf--map-axis-stack'); nil maps over the individual elements.")
+
 (defun maf--map-apply (mapper expr)
   "Return EXPR with MAPPER applied to it.
 A vector is mapped elementwise, and nested vectors recurse, so a matrix
-maps over its individual elements rather than its rows. Anything else
-is one element and takes the formula whole (`maf--map-apply-one')."
-  (if (eq (car-safe expr) 'vec)
-      (cons 'vec (mapcar (lambda (e) (maf--map-apply mapper e)) (cdr expr)))
-    (maf--map-apply-one mapper expr)))
+maps over its individual elements rather than its rows — unless
+`maf--map-axis' names an axis, when a matrix takes the formula once
+per row or column, each going in as the vector it is: the transpose's
+rows for columns, turned back when the results still make a matrix,
+so a formula answering a vector per column gives the columns back in
+place and one answering a scalar gives the vector of answers. A plain
+vector under an axis maps elementwise, as calc's mapr and mapc read
+one. Anything else is one element and takes the formula whole
+(`maf--map-apply-one')."
+  (cond
+   ((and maf--map-axis (math-matrixp expr))
+    (let* ((rows (if (eq maf--map-axis 'cols) (math-transpose expr) expr))
+           (out (cons 'vec (mapcar (lambda (row) (maf--map-apply-one mapper row))
+                                   (cdr rows)))))
+      (if (and (eq maf--map-axis 'cols) (math-matrixp out))
+          (math-transpose out)
+        out)))
+   ((eq (car-safe expr) 'vec)
+    (cons 'vec (mapcar (lambda (e) (maf--map-apply mapper e)) (cdr expr))))
+   (t (maf--map-apply-one mapper expr))))
 
 (defun maf--map-pair-apply (mapper expr arg)
   "Return EXPR and ARG mapped in lockstep through the pair MAPPER.
@@ -7851,6 +7872,10 @@ binary command uses; `maf--map-pair-apply' walks the two in lockstep."
 MAPPER is what `maf--map-read' returns — a mapper, or `stack' for the
 form that takes its formula from the stack. Shared by `mafcmd-map' and
 `mafcmd-map-stack', which differ only in where the formula comes from."
+  (when (and maf--map-axis (eq (car-safe mapper) 'pair))
+    (setq calc-inverse-flag nil
+          calc-hyperbolic-flag nil)
+    (user-error "$$ pairs elements: it has no reading by rows or columns"))
   (let ((maf--map-reverse calc-inverse-flag))
     ;; Consumed here rather than left for the worker: the worker is a
     ;; plain defcmd with no variants of its own, and a flag still set
@@ -7924,9 +7949,20 @@ to say the formula decreases.
 
   a < b               =>  -2 a > -2 b     (I, typed: -2 x)
 
-The result is normalized under the current simplification mode. A
-prefix argument is reserved for choosing rows over elements on a
-matrix, which is not implemented yet."
+A matrix maps over its rows or its columns instead when the gesture
+says so: M r : and M c : are this prompt with the axis chosen, and
+each row (or column) goes to the formula as the vector it is.
+
+  [[1, 2], [3, 4]]  =>  [3, 7]                (M r :, typed: vsum($))
+  [[1, 2], [3, 4]]  =>  [4, 6]                (M c :, typed: vsum($))
+  [[2, 1], [4, 3]]  =>  [[1, 2], [3, 4]]      (M r :, typed: sort($))
+
+A formula answering a vector per column gives the columns back in
+place; one answering a scalar gives the vector of answers, one per
+column. A plain vector maps elementwise under either axis, and $$ has
+no reading by rows or columns and refuses there.
+
+The result is normalized under the current simplification mode."
   (interactive)
   (maf--map-refuse-hyperbolic)
   ;; Read the prompt before any calc state is touched, so C-g aborts
@@ -7954,7 +7990,8 @@ variables asks which one is the element — the others stay symbolic —
 where the prompt form refuses toward its inline $ marker instead.
 
 Everything else — how the subject is picked, vectors elementwise,
-equations side by side, inequalities only under I — is `mafcmd-map's."
+equations side by side, inequalities only under I, a matrix by rows or
+columns under M r $ and M c $ — is `mafcmd-map's."
   (interactive)
   (maf--map-refuse-hyperbolic)
   (maf--map-dispatch 'stack))
@@ -8111,11 +8148,13 @@ what decides it, or the filter refuses as the prompt form does."
 (put 'mafcmd-filter-stack 'maf-command t)
 
 (defconst maf--map-flag-carriers
-  '(mafcmd-map-flag calc-fancy-prefix-other-key
+  '(mafcmd-map-flag maf--map-flag-rows maf--map-flag-cols
+    calc-fancy-prefix-other-key
     calc-inverse calc-hyperbolic calc-option calc-keep-args
     universal-argument digit-argument negative-argument)
   "Commands `maf-map-flag' survives, read by `maf--map-flag-expire'.
-The flag's own setter and the machinery a pending flag rides through:
+The flag's own setters — M, and the M r / M c axis keys that restate
+it — and the machinery a pending flag rides through:
 `calc-fancy-prefix-other-key' is what the next key actually runs while
 a fancy prefix is live (it unreads the key and dispatches it for real),
 the other fancy prefixes chain (M I N maps the inverse), and the
@@ -8139,9 +8178,73 @@ See `maf--map-flag-entry'."
         maf-map-flag nil)
   (call-interactively #'mafcmd-map-stack))
 
+(defvar maf--map-axis-keys
+  (let ((map (make-sparse-keymap)))
+    (define-key map ":" #'maf--map-axis-entry)
+    (define-key map "$" #'maf--map-axis-stack)
+    (dotimes (d 10)
+      (define-key map (char-to-string (+ ?0 d))
+                  #'calc-fancy-prefix-other-key))
+    map)
+  "Keymap live for the keypress after \\`M r' or \\`M c'.
+The axis layer of `maf--map-flag-keys', with the same parent attached
+the same way: : is the formula prompt along the axis and $ the stack
+formula, a digit starts a numeric entry, and any other key falls to
+`calc-fancy-prefix-other-key', re-dispatched with the flag still
+naming the axis, so M r N negates each row. The prompt is : here where
+the element layer doubles M — the key the combinators read a typed
+formula on (`maf--read-operation'), free once an axis is named, where
+a doubled M would read as a change of mind.")
+
+(defun maf--map-flag-axis (axis msg)
+  "Restate the pending map flag as AXIS, `rows' or `cols', echoing MSG.
+The next command then maps a matrix subject once per row or column
+rather than once per element; the keypress after this one is read in
+`maf--map-axis-keys'."
+  (setq maf-map-flag axis)
+  (unless (keymap-parent maf--map-axis-keys)
+    (set-keymap-parent maf--map-axis-keys calc-fancy-prefix-map))
+  (setq overriding-terminal-local-map maf--map-axis-keys)
+  (message "%s" msg))
+
+(defun maf--map-flag-rows ()
+  "Map the next command over the rows of a matrix, as \\`M r'.
+See `maf--map-flag-axis'."
+  (interactive)
+  (maf--map-flag-axis 'rows "Map rows..."))
+
+(defun maf--map-flag-cols ()
+  "Map the next command over the columns of a matrix, as \\`M c'.
+See `maf--map-flag-axis'."
+  (interactive)
+  (maf--map-flag-axis 'cols "Map columns..."))
+
+(defun maf--map-axis-entry ()
+  "Run `mafcmd-map' along the pending axis, as \\`M r :' or \\`M c :'.
+The flag is spent here and its axis handed to the mapper through
+`maf--map-axis', as `maf--map-flag-entry' spends the element form."
+  (interactive)
+  (let ((maf--map-axis maf-map-flag))
+    (setq overriding-terminal-local-map nil
+          maf-map-flag nil)
+    (call-interactively #'mafcmd-map)))
+
+(defun maf--map-axis-stack ()
+  "Run `mafcmd-map-stack' along the pending axis, as \\`M r $' or \\`M c $'.
+See `maf--map-axis-entry'."
+  (interactive)
+  (let ((maf--map-axis maf-map-flag))
+    (setq overriding-terminal-local-map nil
+          maf-map-flag nil)
+    (call-interactively #'mafcmd-map-stack)))
+
 (defvar maf--map-flag-keys
   (let ((map (make-sparse-keymap)))
     (define-key map "$" #'maf--map-flag-stack)
+    ;; An axis: the next command, or the : / $ formula forms behind
+    ;; it, map a matrix by rows or by columns instead of by element.
+    (define-key map "r" #'maf--map-flag-rows)
+    (define-key map "c" #'maf--map-flag-cols)
     ;; The doubled key is the formula prompt. Without this entry the
     ;; second M would only re-run the flag setter, a no-op. The prompt
     ;; does not take : as well — : is the square (mafcmd-sqr), and M :
@@ -8159,13 +8262,14 @@ See `maf--map-flag-entry'."
   "Keymap live for the keypress after \\`M', over calc's fancy-prefix map.
 Its parent is `calc-fancy-prefix-map', attached in `mafcmd-map-flag'
 once calc-ext has defined it, so its changes are few: $ runs the
-stack-formula mapping, a doubled M the prompting one, a digit
-starts a numeric entry as it does
-outside the flag (C-u still reads a prefix argument), and any other
-key falls to `calc-fancy-prefix-other-key', which re-dispatches it
-normally with the flag still set. Chaining a fancy prefix drops this
-map with the re-dispatch, so \\`M I' keeps the flag but not the two
-keys — chain as \\`I M $' instead.")
+stack-formula mapping, a doubled M the prompting one, r and c restate
+the flag as an axis and read one more key in `maf--map-axis-keys', a
+digit starts a numeric entry as it does outside the flag (C-u still
+reads a prefix argument), and any other key falls to
+`calc-fancy-prefix-other-key', which re-dispatches it normally with
+the flag still set. Chaining a fancy prefix drops this map with the
+re-dispatch, so \\`M I' keeps the flag but not the two keys — chain
+as \\`I M $' instead.")
 
 (defun maf--map-flag-expire ()
   "Sweep `maf-map-flag' once a command that does not read it has run.
@@ -8181,15 +8285,17 @@ reads its input before its defcmd worker runs, so while a minibuffer is
 active the command the flag waits for has not happened yet — the
 prompt's own keystrokes must not spend it."
   (cond ((null maf-map-flag)
-         ;; A quit after M can leave the prefix keymap behind with the
+         ;; A quit after M can leave a prefix keymap behind with the
          ;; flag already gone; sweep it with the hook.
-         (when (eq overriding-terminal-local-map maf--map-flag-keys)
+         (when (memq overriding-terminal-local-map
+                     (list maf--map-flag-keys maf--map-axis-keys))
            (setq overriding-terminal-local-map nil))
          (remove-hook 'post-command-hook #'maf--map-flag-expire))
         ((> (minibuffer-depth) 0))
         ((not (memq this-command maf--map-flag-carriers))
          (setq maf-map-flag nil)
-         (when (eq overriding-terminal-local-map maf--map-flag-keys)
+         (when (memq overriding-terminal-local-map
+                     (list maf--map-flag-keys maf--map-axis-keys))
            (setq overriding-terminal-local-map nil))
          (remove-hook 'post-command-hook #'maf--map-flag-expire))))
 
@@ -8207,7 +8313,18 @@ table). A binary command's argument is shared across the runs:
   [a, b]  5  M |   =>  [a | 5, b | 5]
 
 A vector subject runs the command once per element, a matrix over its
-individual elements — the same reading M gives one. A relation subject
+individual elements — the same reading M gives one. An axis key after
+M changes that for a matrix: M r runs the command once per row and
+M c once per column, each going in as the vector it is, so M r u M
+is the vector of row means. Behind the axis, : is the formula prompt
+and $ the stack formula, mapped the same way:
+
+  [[1, 2], [3, 4]]  M r u M   =>  [1.5, 3.5]
+  [[1, 2], [3, 4]]  M c u M   =>  [2, 3]
+  [[1, 2], [3, 4]]  M c : vsum($)   =>  [4, 6]
+
+A command answering a vector per column gives the columns back in
+place, one answering a scalar the vector of answers. A relation subject
 runs it once per side, which most commands do anyway; under the flag
 even commands that normally consume a relation whole (the | family,
 solve) split it, since the flag is an explicit request to map — though
