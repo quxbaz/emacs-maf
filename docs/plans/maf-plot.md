@@ -48,8 +48,9 @@ Dial reads: `off / gnuplot-external / gnuplot-embed / desmos`.
    own LaTeX formatter (`maf--latex-string`, already in maf-pretty) is
    the entire translation layer.
 5. **Relation entries plot.** `y = f(x)`: gnuplot backends sample the
-   rhs; desmos receives the equation whole (it graphs equations,
-   including implicit ones, natively).
+   rhs; `x = f(y)` samples the rhs too, columns swapped so the curve
+   runs sideways; desmos receives the equation whole (it graphs
+   equations, including implicit ones, natively).
 6. **Range: never prompt, x only.** y always autoscales. Default x
    range: expressions containing trig get one period around 0,
    angle-mode-aware (±360 in degrees, ±2π in radians); everything else

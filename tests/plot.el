@@ -215,6 +215,36 @@
                  (progn (maf-plot--function-of (math-read-expr "x < 3")) nil)
                (error t)))
 
+  ;; x = f(y) is a function too, drawn sideways: the lhs names the
+  ;; axis the values fall on, so the sampler swaps its columns and
+  ;; x = -2 y^2 - 3 y opens along the x axis rather than standing as
+  ;; y = -2 x^2 - 3 x would. A constant x = 3 is a vertical line the
+  ;; same way. An rhs in x itself, or y on the lhs, stays upright.
+  (cl-assert (maf-plot--sideways-p (math-read-expr "x = -2 y^2 - 3 y")))
+  (cl-assert (maf-plot--sideways-p (math-read-expr "x = 3")))
+  (cl-assert (not (maf-plot--sideways-p (math-read-expr "y = -2 x^2 - 3 x"))))
+  (cl-assert (not (maf-plot--sideways-p (math-read-expr "x = x^2"))))
+  (cl-assert (not (maf-plot--sideways-p (math-read-expr "-2 y^2 - 3 y"))))
+  (maf-plot--sample (math-read-expr "-2 y^2 - 3 y") '(-10.0 . 10.0)
+                    maf-plot-test--file t)
+  (progn (setq maf-plot-test--lines
+               (with-temp-buffer
+                 (insert-file-contents maf-plot-test--file)
+                 (split-string (buffer-string) "\n" t)))
+         nil)
+  (cl-assert (= (length maf-plot-test--lines) 241))
+  (cl-assert (equal (car maf-plot-test--lines) "-170. -10.0"))
+  (cl-assert (member "0. 0.0" maf-plot-test--lines))
+  (cl-assert (equal (car (last maf-plot-test--lines)) "-230. 10.0"))
+  ;; Through the curve builder, the relation itself lands sideways.
+  (cl-assert (let ((curves (maf-plot--gnuplot-curves
+                            (list (cons (math-read-expr "x = 3") "x = 3"))
+                            '(-2.0 . 2.0))))
+               (with-temp-buffer
+                 (insert-file-contents (car (car curves)))
+                 (and (search-forward "3. -2.0" nil t)
+                      (search-forward "3. 2.0" nil t)))))
+
   ;; Desmos reads a stricter LaTeX than calc writes: brace arguments
   ;; become parens (arcsin and its kin — the six trig calls of
   ;; `maf--latex-paren-calls' already arrive parenthesized from maf's

@@ -171,10 +171,12 @@ The next prompt's default; plain invocations still auto-range.")
       entries)))
 
 (defun maf-plot--function-of (entry)
-  "Return what ENTRY samples as a function: itself, or a y = f(x) rhs.
-Any other relation — an implicit equation, an equation between two
-expressions, an inequality — has no single curve to sample; the
-refusal points at g o, since Desmos graphs relations whole."
+  "Return what ENTRY samples as a function: itself, or a VAR = rhs rhs.
+The rhs of y = f(x) is the curve; the rhs of x = f(y) is too, drawn
+sideways (`maf-plot--sideways-p'). Any other relation — an implicit
+equation, an equation between two expressions, an inequality — has no
+single curve to sample; the refusal points at g o, since Desmos graphs
+relations whole."
   (cond
    ((not (maf--relation-p entry)) entry)
    ((and (eq (car entry) 'calcFunc-eq)
@@ -182,6 +184,18 @@ refusal points at g o, since Desmos graphs relations whole."
     (nth 2 entry))
    (t (user-error "Cannot sample %s; g o plots it in Desmos"
                   (maf-plot--label entry)))))
+
+(defun maf-plot--sideways-p (entry)
+  "Non-nil when ENTRY is x = f(y): its rhs runs along the x axis.
+The lhs names the axis the function's values fall on. For y = f(x),
+or a bare expression, that is the vertical axis and the sampled
+variable runs horizontally; for x = f(y) the two trade places, so
+x = -2 y^2 - 3 y opens sideways instead of standing on the y axis as
+if it were y = -2 x^2 - 3 x. An rhs that mentions x itself is no
+function of the other axis and stays upright."
+  (and (eq (car-safe entry) 'calcFunc-eq)
+       (equal (nth 1 entry) '(var x var-x))
+       (not (math-expr-contains (nth 2 entry) '(var x var-x)))))
 
 (defun maf-plot--number (v)
   "Calc value V as an Emacs float, or nil when it is not a real number."
@@ -370,14 +384,20 @@ What is given becomes the next prompt's default."
 
 ;;; Sampling (gnuplot backends)
 
-(defun maf-plot--sample (expr range file)
+(defun maf-plot--sample (expr range file &optional sideways)
   "Sample EXPR over RANGE into FILE as gnuplot data; return FILE.
 Calc evaluates every point — syntax is never translated. Symbolic
 mode is bound off: it leaves sin(1.5) unevaluated, rejecting every
 sample of a trig curve while plain arithmetic still works, a
 per-expression breakage worth ruling out wholesale. Non-real values
 (singularities, complex regions) are skipped; the gaps in the data
-file render as gaps in the curve, which is right."
+file render as gaps in the curve, which is right.
+
+Each line is the sampled variable then the value, gnuplot's x then
+y. With SIDEWAYS non-nil the columns trade places: EXPR is the rhs
+of x = f(y), so its values are the x coordinates and the sampled
+variable climbs the y axis. RANGE spans the sampled variable either
+way — y, for a sideways curve."
   (let* ((calc-symbolic-mode nil)
          (var (maf-plot--variable expr))
          (lo (car range))
@@ -391,8 +411,11 @@ file render as gaps in the curve, which is right."
                       expr var (math-read-number (number-to-string x)))
                    expr))))
         (when (Math-realp v)
-          (push (format "%s %s" x (math-format-value (math-float v) 1000))
-                lines))))
+          (let ((value (math-format-value (math-float v) 1000)))
+            (push (if sideways
+                      (format "%s %s" value x)
+                    (format "%s %s" x value))
+                  lines)))))
     (unless lines
       (user-error "No plottable points for %s over %g:%g"
                   (maf-plot--label expr) (car range) (cdr range)))
@@ -894,9 +917,9 @@ gnuplot can read, not calc's 1:2."
 
 (defun maf-plot--gnuplot-curves (specs range)
   "Turn SPECS — (ENTRY . LABEL) pairs — into (FILE LABEL STYLE) curves.
-A function entry samples over RANGE with the default line style; a
-data vector writes its points directly, drawn as linespoints on its
-indices. A curve that refuses — an implicit relation, several
+A function entry samples over RANGE with the default line style, an
+x = f(y) one sideways; a data vector writes its points directly,
+drawn as linespoints on its indices. A curve that refuses — an implicit relation, several
 variables, no real points — is skipped with a message when others
 remain, so one odd curve does not sink a whole plot; a lone curve's
 error surfaces."
@@ -918,7 +941,8 @@ error surfaces."
                           (cdr spec) nil))
                    (t
                     (list (maf-plot--sample
-                           (maf-plot--function-of entry) range file)
+                           (maf-plot--function-of entry) range file
+                           (maf-plot--sideways-p entry))
                           (cdr spec) nil)))
                   curves))
         (error
@@ -1000,7 +1024,8 @@ the command under it through with the flag intact."
 
 Point anywhere in an entry plots that entry — sub-formula and
 selection make no difference — and at home the top entry plots. A
-relation plots its right side as the curve. A vector entry is a curve
+relation plots its right side as the curve — y = f(x) upright,
+x = f(y) sideways. A vector entry is a curve
 set: one curve per element, so [2 sin(x), cos(x)] overlays both — the
 way to keep a replottable subset of the stack. With prefix ARG,
 prompt for the x range (lo:hi, :hi, or n for -n:n) instead of
