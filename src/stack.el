@@ -7907,9 +7907,9 @@ matrix, which is not implemented yet."
   x^2                                     (the formula, on top)
   [1, 2, 3]  =>  [1, 4, 9]
 
-The same command as `mafcmd-map' (M :) with the formula taken from the
+The same command as `mafcmd-map' (M M) with the formula taken from the
 stack instead of a prompt — the shortcut for a formula already built
-there, and the same thing a lone $ at M :'s prompt does. As for any
+there, and the same thing a lone $ at M M's prompt does. As for any
 binary command, the formula is the entry above the subject (the top
 entry at home) and is consumed on commit, so the subject must lie below
 the top.
@@ -7939,7 +7939,7 @@ the other fancy prefixes chain (M I N maps the inverse), and the
 argument readers carry a prefix argument to the command they precede.")
 
 (defun maf--map-flag-entry ()
-  "Run `mafcmd-map' as \\`M :' or \\`M M', spending the pending map flag.
+  "Run `mafcmd-map' as \\`M M', spending the pending map flag.
 The flag and the prefix keymap are cleared first: the flag asks the
 next command to map, and this command is its own mapping — left set it
 would ask `mafcmd-map' to map the mapper."
@@ -7959,10 +7959,10 @@ See `maf--map-flag-entry'."
 (defvar maf--map-flag-keys
   (let ((map (make-sparse-keymap)))
     (define-key map "$" #'maf--map-flag-stack)
-    (define-key map ":" #'maf--map-flag-entry)
-    ;; The doubled key: the prompt is the flag's commonest exit, and
-    ;; M M reaches it without the shift : costs. Without this entry
-    ;; the second M would only re-run the flag setter, a no-op.
+    ;; The doubled key is the formula prompt. Without this entry the
+    ;; second M would only re-run the flag setter, a no-op. The prompt
+    ;; does not take : as well — : is the square (mafcmd-sqr), and M :
+    ;; falls through to map it like any other command.
     (define-key map "M" #'maf--map-flag-entry)
     ;; The parent collects digits as a prefix argument, but maf's
     ;; digits start a numeric entry: give them the fall-through every
@@ -7976,7 +7976,7 @@ See `maf--map-flag-entry'."
   "Keymap live for the keypress after \\`M', over calc's fancy-prefix map.
 Its parent is `calc-fancy-prefix-map', attached in `mafcmd-map-flag'
 once calc-ext has defined it, so its changes are few: $ runs the
-stack-formula mapping, : and a doubled M the prompting one, a digit
+stack-formula mapping, a doubled M the prompting one, a digit
 starts a numeric entry as it does
 outside the flag (C-u still reads a prefix argument), and any other
 key falls to `calc-fancy-prefix-other-key', which re-dispatches it
@@ -8015,7 +8015,7 @@ prompt's own keystrokes must not spend it."
 
   [x, y]  M N   =>  [-x, -y]      (negate, mapped over the elements)
 
-Where `mafcmd-map' (M :) maps a formula you type and `mafcmd-map-stack'
+Where `mafcmd-map' (M M) maps a formula you type and `mafcmd-map-stack'
 (M $) maps one from the stack, M maps a command — any `maf-defcmd'
 command, unary or binary, with no keymap of blessed operations behind
 it (calc's V M reads its operator from a fixed table; a flag needs no

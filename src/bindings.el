@@ -199,11 +199,11 @@
 ;; target, one run per vector element or equation side. A fancy prefix
 ;; like calc's K/I/H, so it chains with them; M shadows
 ;; calc-more-recursion-depth. The formula-mapping commands live one
-;; keypress behind it (`maf--map-flag-keys'): M : prompts for the
-;; formula (mafcmd-map; M M is its doubled twin, the same prompt
-;; without the shift), M $ takes it from the top of the stack
+;; keypress behind it (`maf--map-flag-keys'): M M prompts for the
+;; formula (mafcmd-map), M $ takes it from the top of the stack
 ;; (mafcmd-map-stack) — $ alone keeps calc's own command, and
-;; # its digit-starter role. Calc's a M keeps the operator prompt
+;; # its digit-starter role. : stays the square, so M : maps it
+;; like any other command. Calc's a M keeps the operator prompt
 ;; (mafcmd-mapeq in the table), which stays the escape hatch.
 (maf-bindings-define '(native) "M" #'mafcmd-map-flag)
 ;; Shift the term under point through its associative chain. Lowercase

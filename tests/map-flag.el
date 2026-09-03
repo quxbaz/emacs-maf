@@ -1,6 +1,6 @@
 ;; mafcmd-map-flag (M): a fancy prefix like calc's K or I — the next
 ;; contextual command, unary or binary, maps over its subject: one run
-;; per vector element or equation side. Where M : maps a formula you
+;; per vector element or equation side. Where M M maps a formula you
 ;; type and M $ maps one from the stack, M maps a command. The prefix is
 ;; driven with real keys where the flow through calc's fancy-prefix
 ;; machinery is itself the thing under test.
@@ -166,20 +166,21 @@
          (cl-assert (null maf-map-flag))
          (cl-assert (null (memq #'maf--map-flag-expire post-command-hook))))
 
-  ;; The colon is the formula prompt: M : runs `mafcmd-map', the
-  ;; flag spent on entry.
+  ;; The colon is not a prompt key: : is the square, and M : maps it
+  ;; over the elements like any other command. The result is the same
+  ;; as the formula prompt with x^2 typed; the flag is spent.
   (maf-push "[1, 2, 3]")
   (goto-char (point-max))
-  (progn (execute-kbd-macro (kbd "M : x ^ 2 RET"))
+  (progn (execute-kbd-macro (kbd "M :"))
          (cl-assert (null maf-map-flag))
          (cl-assert (string= (math-format-value
                               (maf--strip-encasing (calc-top 1 'full)))
                              "[1, 4, 9]")))
   (calc-pop (calc-stack-size))
 
-  ;; The doubled key is the same prompt: M M runs `mafcmd-map' as M :
-  ;; does — without the entry in `maf--map-flag-keys' a second M would
-  ;; only re-run the flag setter.
+  ;; The doubled key is the formula prompt: M M runs `mafcmd-map' —
+  ;; without the entry in `maf--map-flag-keys' a second M would only
+  ;; re-run the flag setter.
   (maf-push "[1, 2, 3]")
   (goto-char (point-max))
   (progn (execute-kbd-macro (kbd "M M x ^ 2 RET"))
