@@ -139,12 +139,28 @@ The next prompt's default; plain invocations still auto-range.")
 (defvar maf-plot--return-window nil
   "The window focus goes back to when the panel is dismissed, or nil.")
 
-(defun maf-plot--work-file (name)
-  "Return the path for NAME in the session's work directory."
+(defun maf-plot--ensure-work-directory ()
+  "Return the session's work directory, creating it if it is gone."
   (unless (and maf-plot--work-directory
                (file-directory-p maf-plot--work-directory))
     (setq maf-plot--work-directory (make-temp-file "maf-plot" t)))
-  (expand-file-name name maf-plot--work-directory))
+  maf-plot--work-directory)
+
+(defun maf-plot--work-file (name)
+  "Return the path for NAME in the session's work directory."
+  (expand-file-name name (maf-plot--ensure-work-directory)))
+
+(defmacro maf-plot--with-work-directory (&rest body)
+  "Run BODY with `default-directory' set to the work directory.
+A subprocess starts in the current buffer's directory, and calc's is
+whichever buffer calc was first opened from. Once that directory is
+deleted every spawn dies on the chdir, before the program runs, with
+an error naming a directory plotting never asked about. The work
+directory is one that exists: `maf-plot--ensure-work-directory'
+recreates it on demand."
+  (declare (indent 0) (debug t))
+  `(let ((default-directory (maf-plot--ensure-work-directory)))
+     ,@body))
 
 ;;; Resolving entries into curves
 
@@ -514,7 +530,8 @@ set title textcolor rgb \"%s\"
     (let ((file (maf-plot--work-file "plot.gp")))
       (with-temp-file file (insert script))
       (with-temp-buffer
-        (let ((status (call-process program nil t nil file)))
+        (let ((status (maf-plot--with-work-directory
+                        (call-process program nil t nil file))))
           (unless (and (integerp status) (zerop status))
             (error "gnuplot failed (%s): %s" status
                    (string-trim (buffer-string)))))))))
@@ -539,9 +556,10 @@ nothing and say nothing."
                         (if (cdr curves) "set key top center\n" "set key off\n")
                         (maf-plot--plot-clauses curves))))
       (set-process-sentinel
-       (start-process "maf-plot-gnuplot"
-                      (generate-new-buffer " *maf-plot-gnuplot*")
-                      program file)
+       (maf-plot--with-work-directory
+         (start-process "maf-plot-gnuplot"
+                        (generate-new-buffer " *maf-plot-gnuplot*")
+                        program file))
        (lambda (process _event)
          (when (memq (process-status process) '(exit signal))
            (let* ((buffer (process-buffer process))
@@ -852,8 +870,9 @@ program, so the answer is read out of that entry."
   (when (executable-find "xdg-settings")
     (with-temp-buffer
       (when (eq 0 (ignore-errors
-                    (call-process "xdg-settings" nil t nil
-                                  "get" "default-web-browser")))
+                    (maf-plot--with-work-directory
+                      (call-process "xdg-settings" nil t nil
+                                    "get" "default-web-browser"))))
         (let ((desktop (string-trim (buffer-string))))
           (unless (string-empty-p desktop)
             (maf-plot--browser-desktop-exec desktop)))))))
@@ -897,8 +916,9 @@ path and silently drops the fragment, opening an empty calculator."
     (unless program
       (user-error
        "No browser found: set `maf-plot-browser' (xdg-open would drop the graph)"))
-    (start-process "maf-plot-browser" nil program
-                   (maf-plot--desmos-url expressions range))
+    (maf-plot--with-work-directory
+      (start-process "maf-plot-browser" nil program
+                     (maf-plot--desmos-url expressions range)))
     (message "Sent %d %s to Desmos" (length expressions)
              (if (cdr expressions) "expressions" "expression"))))
 

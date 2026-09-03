@@ -411,6 +411,17 @@
          (delete-directory maf-plot-test--xdg t)
          nil)
 
+  ;; A spawn starts in the buffer's directory, and calc's is whatever
+  ;; buffer it was opened from — once deleted, a bare spawn dies on
+  ;; the chdir. The backends run in the work directory instead.
+  (cl-assert (let ((default-directory "/nonexistent/maf-plot-test/"))
+               (condition-case nil
+                   (progn (call-process "true") nil)
+                 (file-missing t))))
+  (cl-assert (let ((default-directory "/nonexistent/maf-plot-test/"))
+               (maf-plot--run-gnuplot "set terminal unknown\nplot x\n")
+               t))
+
   ;; Restore what the test flipped.
   (progn (delete-file maf-plot-test--file)
          (maf-use-plot-mode (if maf-plot-test--mode 1 -1))
