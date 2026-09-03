@@ -534,6 +534,12 @@
 ;; and the terminal form both.
 (maf-bindings-define '(native) "M-<return>" #'mafcmd-let)
 (maf-bindings-define '(native) "M-RET" #'mafcmd-let)
+;; The same evaluation on calc's own key for it, s l — the whole-entry
+;; sibling of the M-RET command: it never narrows to a sub-formula
+;; (:scope entry), where M-RET honors a region or selection. Both
+;; profiles take the contextual version on calc's key, as assign and
+;; substitute do.
+(maf-bindings-define '(calc native) "s l" #'mafcmd-let-entry)
 ;; Polynomial roots by factoring, with multiplicity. In the l family
 ;; on a, the letter of its stock a P sibling, unclaimed by the
 ;; log-units prefix. Being in the family, the vim mirror carries it

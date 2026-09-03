@@ -7388,6 +7388,22 @@ chained relation, or anything else, evaluates in one piece."
             (maf--let-evaluate (nth 2 expr) bindings))
     (maf--let-evaluate expr bindings)))
 
+(defun maf--let-result (expr bindings)
+  "Evaluate EXPR under BINDINGS, branching a single-variable vector.
+BINDINGS is an alist as `maf--let-bindings' returns. A vector of
+assignments to distinct variables is one joint set — every variable
+bound at once for one evaluation. A vector naming one variable
+throughout is the exception: a joint set would silently keep only its
+last value, so the subject is evaluated once per assignment instead,
+the results collecting in a vector. This is the single-variable safety
+`mafcmd-let' and `mafcmd-let-entry' share; forcing the branching for
+any variables is `mafcmd-let-each' (H)."
+  (if (and (cdr bindings)
+           (null (cdr (cl-remove-duplicates (mapcar #'car bindings)))))
+      (cons 'vec (mapcar (lambda (b) (maf--let-evaluate-subject expr (list b)))
+                         bindings))
+    (maf--let-evaluate-subject expr bindings)))
+
 (maf-defcmd mafcmd-let (expr arg commit)
   "Evaluate the resolved expression under the top-of-stack assignments.
 
@@ -7456,14 +7472,7 @@ arithmetic — so the subject's operator does not have to be = either.
   (let ((bindings (maf--let-bindings arg)))
     (unless bindings
       (user-error "Top of stack is not an assignment, or a vector of them"))
-    (commit
-     (if (and (cdr bindings)
-              (null (cdr (cl-remove-duplicates (mapcar #'car bindings)))))
-         ;; One variable throughout: branches, as H would read it.
-         (cons 'vec (mapcar (lambda (b)
-                              (maf--let-evaluate-subject expr (list b)))
-                            bindings))
-       (maf--let-evaluate-subject expr bindings)))))
+    (commit (maf--let-result expr bindings))))
 
 (maf-defcmd mafcmd-let-each (expr arg commit)
   "Evaluate the resolved expression once per top-of-stack assignment.
@@ -7499,6 +7508,99 @@ assignment, how the subject resolves, keep-args — is `mafcmd-let's."
     (commit (cons 'vec (mapcar (lambda (b)
                                  (maf--let-evaluate-subject expr (list b)))
                                bindings)))))
+
+(defvar maf--let-entry-bindings nil
+  "The assignments `maf--let-entry-run' evaluates under.
+An alist as `maf--let-bindings' returns, bound per `mafcmd-let-entry'
+call from the assignment typed at its prompt.")
+
+(maf-defcmd maf--let-entry-run (expr _arg commit)
+  "Evaluate the resolved entry under `maf--let-entry-bindings'.
+The typed-assignment form of `mafcmd-let-entry' — see there. Unary:
+the binding comes from the prompt, so no entry is consumed for it and
+the subject is the entry at point, the top at home. The whole entry is
+the subject (`:scope entry'), each side of a relation in turn
+\(`maf--let-result', under `:map -1')."
+  :arity unary
+  :prefix "let"
+  :map -1
+  :scope entry
+  (commit (maf--let-result expr maf--let-entry-bindings)))
+
+(maf-defcmd maf--let-entry-arg-run (expr arg commit)
+  "Evaluate the resolved entry under the top-of-stack assignment.
+The empty-prompt form of `mafcmd-let-entry' — see there. Binary: the
+top of the stack is the assignment and the entry below it the subject,
+consumed on commit as any binary argument. `:scope entry' keeps the
+subject the whole entry, never a selected part — the difference from
+`mafcmd-let', which this otherwise matches."
+  :arity binary
+  :prefix "let"
+  :map -1
+  :pair -1
+  :scope entry
+  (let ((bindings (maf--let-bindings arg)))
+    (unless bindings
+      (user-error "Top of stack is not an assignment, or a vector of them"))
+    (commit (maf--let-result expr bindings))))
+
+(defun mafcmd-let-entry ()
+  "Evaluate the entry at point under an assignment you type.
+
+  x^2 + 1  =>  10      (typed: x = 3)
+
+Calc's own `s l', made contextual: it prompts for an assignment — the
+plain equation x = 3, `mafcmd-assign's x := 3, or a vector of nothing
+but assignments — and evaluates the entry at point with those
+variables bound for this one evaluation. Nothing is stored, and a
+variable that already had a value has it back by the time the command
+returns. The binding is read from the minibuffer where `mafcmd-let'
+\(M-RET) reads it from the stack.
+
+Answering the prompt with nothing takes the assignment from the stack
+instead: the top entry is the assignment and the entry below it the
+subject, consumed on commit — the same reading `mafcmd-let' gives,
+save that the subject is never a narrowed part.
+
+The value is evaluated in rather than pasted in, so the formula folds
+around it as if the number had been there all along; with
+simplification off (@) nothing folds and the value simply lands in
+place. Whatever else is stored comes in too, exactly as calc's `s l'
+does, and a variable with no value anywhere stands.
+
+  a x       =>  6           (typed: [x = 3, a = 2])
+  x + y     =>  y + 3       (typed: x = 3; y unbound, stands)
+
+The whole entry at point is the subject wherever point rests on its
+line, or the top entry at home, each side of a relation in turn. A
+sub-formula is never singled out — not by point, not by a region, not
+by a calc selection (`:scope entry'). That is the one difference from
+`mafcmd-let', which narrows to a selected or regioned part; here the
+entry is always taken whole. A vector of distinct variables binds as
+one joint set, a vector naming one variable throughout branches per
+assignment, and keep-args leaves the entry and pushes the result.
+
+  y = x^2 + 1  =>  y = 10             (typed: x = 3)
+  y = x - 2    =>  [y = -1, y = 0]    (typed: [x = 1, x = 2])
+  x^2 + x|     =>  12                 (typed: x = 3; point within)"
+  (interactive)
+  ;; Read the prompt before any calc state is touched, so C-g aborts
+  ;; with nothing done.
+  (let ((input (string-trim (read-string "Let (e.g. x = 5; empty for the stack's): "))))
+    (if (string-empty-p input)
+        (call-interactively #'maf--let-entry-arg-run)
+      (let ((parsed (math-read-expr input)))
+        (when (eq (car-safe parsed) 'error)
+          (user-error "Bad format in assignment: %s" (nth 2 parsed)))
+        (let ((bindings (maf--let-bindings parsed)))
+          (unless bindings
+            (user-error "Not an assignment: type x = 5, or a vector of them"))
+          (let ((maf--let-entry-bindings bindings))
+            (call-interactively #'maf--let-entry-run)))))))
+(put 'mafcmd-let-entry 'maf-command t)
+(maf-set-command-doc 'mafcmd-let-entry
+                     "evaluate the entry under a typed assignment"
+                     "x + 1 => 3   (typed: x = 2)")
 
 ;;; Mapping
 
