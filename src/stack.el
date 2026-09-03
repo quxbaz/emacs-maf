@@ -8785,6 +8785,11 @@ expression, so a node that gives exactly one part is unwrapped in
 place, and one that gives several has no room for them and stands
 unchanged. Point is never widened to an enclosing node — that reading
 is `mafcmd-unwrap', which peels the innermost wrapper around point.
+The one sub-formula with room is the entry's whole formula — point on
+the opening bracket of [x, y] — whose slot is the entry itself.
+
+Where the parts spread, point lands at the end of the last of them:
+the end of what the entry became.
 
 A numeric prefix argument gives calc's unpacking mode: a positive N
 unwraps N levels deep, a negative N splits a vector by component type.
@@ -8800,6 +8805,7 @@ signaling.
   C-u 2 [(1,2),(3,4)]    =>  4:  1 / 3:  2 / 2:  3 / 1:  4
   x = sin(y)             =>  2:  x / 1:  sin(y)
   x = sin|(y)            =>  x = y             (the node at point)
+  |[x, y]                =>  2:  x / 1:  y     (the whole formula)
   y + sin(a| + b)        =>  unchanged         (a has nothing to give)
   y + f|(a, b)           =>  unchanged         (no room for two parts)"
   :title "unpack onto the stack"
@@ -8815,9 +8821,10 @@ signaling.
      (cond
       ;; Nothing to give: leave the target exactly as it stands.
       ((null parts) expr)
-      ;; A whole stack entry takes the parts as a value list, which
-      ;; commit spreads over one entry each.
-      ((memq maf-target '(home entry)) parts)
+      ;; A whole stack entry — or the sub-formula that is its whole
+      ;; formula — takes the parts as a value list, which commit
+      ;; spreads over one entry each.
+      ((or (memq maf-target '(home entry)) maf-target-root) parts)
       ;; A sub-formula slot — or a relation's side, when the map flag
       ;; forces the relation apart past :map -1 — holds a single
       ;; expression: unwrap when the parts amount to one, otherwise
@@ -8848,11 +8855,12 @@ under point when that fits, otherwise the nearest enclosing one. So
 anywhere within sin(2 x) the command means the same thing: take off
 the sin, leaving what it held in its place.
 
-Where the target is a whole entry the parts have room to spread, and
-the command reads as `mafcmd-unpack' does: one level comes apart at a
-time — a composite object into its components, a function call into
-its arguments, an operator into its operands — one stack entry per
-part.
+Where the target is a whole entry — or the sub-formula that is its
+whole formula — the parts have room to spread, and the command reads
+as `mafcmd-unpack' does: one level comes apart at a time — a composite
+object into its components, a function call into its arguments, an
+operator into its operands — one stack entry per part, point landing
+at the end of the last.
 
 A numeric prefix argument gives calc's unpacking mode: a positive N
 unwraps N levels deep, a negative N splits a vector by component type.
@@ -8885,9 +8893,10 @@ An explicit calc selection is taken as it stands and never widened.
      (cond
       ;; Nothing to give: leave the target exactly as it stands.
       ((null parts) expr)
-      ;; A whole stack entry takes the parts as a value list, which
-      ;; commit spreads over one entry each.
-      ((memq maf-target '(home entry)) parts)
+      ;; A whole stack entry — or the sub-formula that is its whole
+      ;; formula — takes the parts as a value list, which commit
+      ;; spreads over one entry each.
+      ((or (memq maf-target '(home entry)) maf-target-root) parts)
       ;; A sub-formula slot holds a single expression: unwrap when the
       ;; parts amount to one, otherwise there is no room for them.
       ((null (cdr parts)) (car parts))

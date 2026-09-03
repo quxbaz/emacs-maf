@@ -38,7 +38,9 @@ top 2 stack values and push VAL onto the stack.
 Return an alist describing where the result landed, consumed by anchor
 point restoration: :node is the formula cons now sitting in the stack
 entry (the spliced sub-formula for selection/subexpr, the whole pushed
-formula otherwise) and :m is that entry's stack level after the pops."
+formula otherwise) and :m is that entry's stack level after the pops.
+A value list adds :spread, the number of parts it landed, :node then
+being the last of them and :m its level."
   (maf--with-calc-buffer
     (let* ((target   (alist-get :target context))
            (prefix   (alist-get :prefix context))
@@ -51,10 +53,14 @@ formula otherwise) and :m is that entry's stack level after the pops."
            ;; replaces the entry outright. `:commit-scope entry' asks for
            ;; the entry shape from a target that named only a part — the
            ;; part stands as the whole entry, the formula around it gone
-           ;; (`mafcmd-raise').
-           (shape    (if (eq (alist-get :commit-scope context) 'entry)
-                         'entry
-                       target))
+           ;; (`mafcmd-raise'). A value list has no slot to splice into,
+           ;; but at the root the slot is the entry: the parts spread
+           ;; there as they do from the entry target.
+           (root-list (and (alist-get :root context) (maf--value-list-p val)))
+           (shape    (cond ((eq (alist-get :commit-scope context) 'entry)
+                            'entry)
+                           (root-list 'entry)
+                           (t target)))
            ;; The target entry's level once post-pop consumes entries at
            ;; the top: every pop below it renumbers it down by one.
            (landed-m (- commit-m post-pop)))
@@ -106,10 +112,13 @@ formula otherwise) and :m is that entry's stack level after the pops."
          ;; A `:commit-scope entry' command needs the same bypass for the
          ;; opposite reason: its target may well *be* a selection, and
          ;; redirecting the push into it would splice the value back into
-         ;; the formula this command exists to discard.
+         ;; the formula this command exists to discard. So does a value
+         ;; list at a selected root: the selection is the formula the
+         ;; parts replace.
          (let* ((entry-scoped-p
                  (or (eq (alist-get :scope context) 'entry)
                      (eq (alist-get :commit-scope context) 'entry)
+                     root-list
                      ;; A selection the command's *-targets list told
                      ;; resolve to ignore must not pull the push into
                      ;; itself here either: suppressed means absent at
@@ -123,6 +132,12 @@ formula otherwise) and :m is that entry's stack level after the pops."
            (when entry-scoped-p
              (setq calc-any-selections
                    (cl-some (lambda (entry) (nth 2 entry)) calc-stack))))
-         `((:node . ,val) (:m . ,landed-m)))))))
+         ;; A value list lands one entry per part, the last at landed-m;
+         ;; :spread carries the count so point restoration can find the
+         ;; end of what the entry became (`maf--point-restore-spread').
+         (if (maf--value-list-p val)
+             `((:node . ,(car (last val))) (:m . ,landed-m)
+               (:spread . ,(length val)))
+           `((:node . ,val) (:m . ,landed-m))))))))
 
 (provide 'maf-commit)

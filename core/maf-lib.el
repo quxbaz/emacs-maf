@@ -133,6 +133,15 @@ re-normalized."
             (maf--splice-path (nth (car path) expr) (cdr path) fn))
       copy)))
 
+(defun maf--value-list-p (val)
+  "Non-nil when VAL is a list of values rather than one expression.
+The shape a body commits when it means several stack entries — the
+parts `mafcmd-unpack' spreads. Every calc expression is either a
+number or a list headed by a symbol (`vec', `var', a `calcFunc-'
+name, an operator), so a list whose head is not a symbol is a list of
+them."
+  (and (consp val) (not (symbolp (car val)))))
+
 (defmacro maf--literal (&rest body)
   "Evaluate BODY with simplification off: it builds the shape that commits.
 `maf--commit' pushes structurally — it hands the value to
@@ -281,20 +290,55 @@ rendering can start far from where the user was looking."
        (not (alist-get :keep context))
        (not (alist-get :widened context))))
 
+(defun maf--point-restore-spread (context landed)
+  "Place point after a commit spread a value list over the stack.
+LANDED is `maf--commit's return alist with a :spread count: the parts
+landed one entry each, the last of them at level :m. The entry point
+was on is gone, its parts standing where it stood and below, so its end
+is now the end of the last part — point goes there, the way the EOL
+affinity would have carried it had the entry stayed one line. In the
+line-number margin point keeps to the margin, on the last part's line
+\(see `maf--point-restore-margin'). Point at home stays at home, as it
+does for any command. Return the new position, or nil when the last
+part's line cannot be located — the caller then falls back to the
+positional restore."
+  (let ((m (alist-get :m landed))
+        (snapshot (alist-get :point context)))
+    (unless (eq (alist-get :affinity snapshot) 'home)
+      (ignore-errors
+        (when (and (integerp m) (>= m 1) (<= m (calc-stack-size)))
+          ;; The line below entry M starts the entry beneath it (the .
+          ;; line, for the top), so the character before that line's
+          ;; start ends M's rendering, however many lines it takes. A
+          ;; rendering may end in blank lines — Big language spaces its
+          ;; entries so — and the end of the part is the end of its last
+          ;; line with anything on it.
+          (calc-cursor-stack-index (1- m))
+          (backward-char 1)
+          (skip-chars-backward "\n")
+          (when (eq (alist-get :affinity snapshot) 'bol)
+            (calc-cursor-stack-index m)
+            (maf--point-restore-margin (alist-get :col snapshot)))
+          (point))))))
+
 (defun maf--point-restore-commit (context landed)
   "Place point after a command resolved CONTEXT and committed LANDED.
 LANDED is `maf--commit's return (:node, :m), or nil when the command
 signalled before committing.
 
-Three placements, in order. The glyph anchor keeps point on a
-structural glyph of the target it was already on — invoked on the = of
-an equation, point is back on the = after the sides swap, wherever it
-moved. Failing that, point sticks to the start of the committed node
-when it was inside the part the command replaced
-\(`maf--point-stick-p'). Failing both, the positional restore from the
-resolve-time snapshot stands."
+Four placements, in order. A commit that spread a value list over the
+stack puts point at the end of the last part, where the end of the
+entry it came from now is (`maf--point-restore-spread'). Otherwise the
+glyph anchor keeps point on a structural glyph of the target it was
+already on — invoked on the = of an equation, point is back on the =
+after the sides swap, wherever it moved. Failing that, point sticks to
+the start of the committed node when it was inside the part the
+command replaced \(`maf--point-stick-p'). Failing all three, the
+positional restore from the resolve-time snapshot stands."
   (let ((anchor (alist-get :point-anchor context)))
-    (or (and landed anchor (maf--point-restore-anchor anchor landed))
+    (or (and landed (alist-get :spread landed)
+             (maf--point-restore-spread context landed))
+        (and landed anchor (maf--point-restore-anchor anchor landed))
         (and landed (maf--point-stick-p context)
              (maf--point-restore-start landed))
         (maf--point-restore (alist-get :point context)))))

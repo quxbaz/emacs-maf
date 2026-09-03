@@ -172,6 +172,19 @@
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "y"))
   (calc-pop 2)
 
+  ;; So does the sub-formula that is the entry's whole formula -- point
+  ;; on the opening bracket -- its slot being the entry itself. Point
+  ;; lands at the end of the last part.
+  (maf-push "[x, y]")
+  (progn (goto-char (point-min)) (search-forward "[") (backward-char 1))
+  (call-interactively 'mafcmd-unwrap)
+  (cl-assert (= (calc-stack-size) 2))
+  (cl-assert (string= (math-format-value (calc-top 2 'full)) "x"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "y"))
+  (cl-assert (= (calc-locate-cursor-element (point)) 1))
+  (cl-assert (eolp))
+  (calc-pop 2)
+
   ;; A relation at the entry is a function call like any other, so it
   ;; comes apart into its two sides rather than mapping per side.
   (maf-push "x = sin(y)")

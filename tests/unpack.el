@@ -13,13 +13,74 @@
   ;; The j prefix still falls through to calc's own selection commands.
   (cl-assert (eq (key-binding (kbd "j s")) 'calc-select-here))
 
-  ;; Home: a vector spreads one element per stack entry.
+  ;; Home: a vector spreads one element per stack entry, and point
+  ;; stays at home as it does for any command.
   (maf-push "[x, y]")
   (goto-char (point-max))
   (call-interactively 'mafcmd-unpack)
   (cl-assert (= (calc-stack-size) 2))
   (cl-assert (string= (math-format-value (calc-top 2 'full)) "x"))
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "y"))
+  (cl-assert (maf--at-home-p))
+  (calc-pop 2)
+
+  ;; At the entry, point lands at the end of the last part -- the end
+  ;; of what the entry became -- not on the first part's line, where
+  ;; the entry used to be.
+  (maf-push "[x, y]")
+  (progn (goto-char (point-min)) (end-of-line))
+  (call-interactively 'mafcmd-unpack)
+  (cl-assert (= (calc-stack-size) 2))
+  (cl-assert (= (calc-locate-cursor-element (point)) 1))
+  (cl-assert (eolp))
+  (cl-assert (looking-back "1:  y" (line-beginning-position)))
+  (calc-pop 2)
+
+  ;; Point on the opening bracket names the vector itself -- a
+  ;; sub-formula that is the entry's whole formula, whose slot is the
+  ;; entry. The parts spread as from the entry, point at the end of the
+  ;; last one.
+  (maf-push "[x, y]")
+  (progn (goto-char (point-min)) (search-forward "[") (backward-char 1))
+  (call-interactively 'mafcmd-unpack)
+  (cl-assert (= (calc-stack-size) 2))
+  (cl-assert (string= (math-format-value (calc-top 2 'full)) "x"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "y"))
+  (cl-assert (= (calc-locate-cursor-element (point)) 1))
+  (cl-assert (eolp))
+  (calc-pop 2)
+
+  ;; Same from the comma and the closing bracket, the vector's own
+  ;; glyphs.
+  (maf-push "[x, y]")
+  (progn (goto-char (point-min)) (search-forward ","))
+  (call-interactively 'mafcmd-unpack)
+  (cl-assert (= (calc-stack-size) 2))
+  (cl-assert (= (calc-locate-cursor-element (point)) 1))
+  (calc-pop 2)
+
+  ;; A selection of the whole formula is the root too: the parts spread
+  ;; and no selection survives on them.
+  (maf-push "[x, y]")
+  (progn (goto-char (point-min)) (search-forward "[") (backward-char 1))
+  (call-interactively 'calc-select-here)
+  (cl-assert (string= (math-format-value (nth 2 (nth 1 calc-stack))) "[x, y]"))
+  (call-interactively 'mafcmd-unpack)
+  (cl-assert (= (calc-stack-size) 2))
+  (cl-assert (string= (math-format-value (calc-top 2 'full)) "x"))
+  (cl-assert (null (nth 2 (nth 1 calc-stack))))
+  (cl-assert (null (nth 2 (nth 2 calc-stack))))
+  (cl-assert (null calc-any-selections))
+  (calc-pop 2)
+
+  ;; In the line-number margin point keeps to the margin, on the last
+  ;; part's line.
+  (maf-push "[x, y]")
+  (progn (goto-char (point-min)) (forward-char 1))
+  (call-interactively 'mafcmd-unpack)
+  (cl-assert (= (calc-stack-size) 2))
+  (cl-assert (= (calc-locate-cursor-element (point)) 1))
+  (cl-assert (= (current-column) 1))
   (calc-pop 2)
 
   ;; A one-argument function call unwraps to just its argument.
@@ -144,7 +205,8 @@
 
   ;; The entry at point, not the top: point at the end of a lower entry
   ;; names it whole, and its parts spread in place, beneath the entries
-  ;; above it.
+  ;; above it. Point lands at the end of the last part, the line below
+  ;; where the entry was.
   (maf-push "[1, 2]")
   (maf-push "z")
   (progn (calc-cursor-stack-index 2) (end-of-line))
@@ -153,7 +215,22 @@
   (cl-assert (equal (calc-top 3 'full) 1))
   (cl-assert (equal (calc-top 2 'full) 2))
   (cl-assert (equal (calc-top 1 'full) '(var z var-z)))
+  (cl-assert (= (calc-locate-cursor-element (point)) 2))
+  (cl-assert (eolp))
   (calc-pop 3)
+
+  ;; Big language spaces its entries with a blank line; the end of the
+  ;; last part is still the end of its formula line, not the blank
+  ;; line below it.
+  (maf-push "[a + b, c]")
+  (call-interactively 'maf-toggle-big-language)
+  (progn (goto-char (point-min)) (end-of-line))
+  (call-interactively 'mafcmd-unpack)
+  (cl-assert (= (calc-stack-size) 2))
+  (cl-assert (= (calc-locate-cursor-element (point)) 1))
+  (cl-assert (looking-back "1:  c" (line-beginning-position)))
+  (call-interactively 'maf-toggle-big-language)
+  (calc-pop 2)
 
   ;; An explicit calc selection names its node: a one-part selection
   ;; unwraps in place, and the unwrapped result stays selected.
@@ -330,4 +407,16 @@
   (cl-assert (string= (math-format-value (calc-top 3 'full)) "a + b"))
   (cl-assert (string= (math-format-value (calc-top 2 'full)) "a"))
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "b"))
+  (calc-pop 3)
+
+  ;; Keep-args from the entry: the parts go on top and point follows
+  ;; them to the end of the last one.
+  (maf-push "a + b")
+  (progn (goto-char (point-min)) (end-of-line))
+  (call-interactively 'calc-keep-args)
+  (call-interactively 'mafcmd-unpack)
+  (cl-assert (= (calc-stack-size) 3))
+  (cl-assert (string= (math-format-value (calc-top 3 'full)) "a + b"))
+  (cl-assert (= (calc-locate-cursor-element (point)) 1))
+  (cl-assert (looking-back "1:  b" (line-beginning-position)))
   (calc-pop 3))

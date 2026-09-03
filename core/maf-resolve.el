@@ -31,6 +31,10 @@
 ;;                 modes, floating an exact sqrt(2) when symbolic mode is off.
 ;;   :m            Stack position (1 = top) of the target entry. Only set when
 ;;                 the target lives at a specific stack level (e.g. selection).
+;;   :root         Non-nil when the resolved sub-formula is the entry's whole
+;;                 formula. Selection and subexpr targets only — its slot is
+;;                 then the entry itself, with room for a value list (see
+;;                 `maf-target-root').
 ;;   :point-anchor Index of point's glyph among the structural glyphs the
 ;;                 resolved sub-formula renders itself (operator, comma,
 ;;                 function name), or nil when point is inside an operand.
@@ -143,6 +147,8 @@ entry containing the selection, which has no coherent commit semantics."
         ;; eq-based splicing.
         (:expr       . ,(maf--strip-encasing encased))
         (:expr-ref   . ,encased)
+        ;; The encased root is the very cons the stack holds.
+        (:root       . ,(eq encased (calc-top m 'full)))
         (:arg        . ,(maf--resolve-arg arity))
         (:m          . ,m)
         (:commit-m   . ,(if keep 1 m))
@@ -291,6 +297,8 @@ which has no coherent commit semantics."
       ;; eq-based splicing.
       (:expr       . ,(maf--strip-encasing encased))
       (:expr-ref   . ,encased)
+      ;; The encased root is the very cons the stack holds.
+      (:root       . ,(eq encased (calc-top m 'full)))
       ;; Non-nil when point sits on a glyph the sub-formula renders
       ;; itself (its operator, comma, function name): the glyph's
       ;; index, used to re-anchor point on the committed node.

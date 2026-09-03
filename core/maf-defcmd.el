@@ -32,9 +32,20 @@ One of the `:target' symbols `maf--resolve-context' produces — `home',
 Bodies read it when the shape of the result depends on where it will
 land, not just on the operand. A whole stack entry (`home', `entry')
 accepts a list of values, committed as separate stack entries; any
-other target holds exactly one expression. `mafcmd-unpack' is the
-case in point: it spreads a whole entry's parts across the stack, and
-in a slot unwraps only when the parts amount to a single expression.")
+other target holds exactly one expression — except a sub-formula that
+is the entry's whole formula, whose slot is the entry itself (see
+`maf-target-root'). `mafcmd-unpack' is the case in point: it spreads
+a whole entry's parts across the stack, and in a slot unwraps only
+when the parts amount to a single expression.")
+
+(defvar maf-target-root nil
+  "Non-nil while the resolved sub-formula is its entry's whole formula.
+Bound alongside `maf-target' for the `selection' and `subexpr' targets:
+point on the opening bracket of [x, y], or a selection of the whole
+entry, resolves to a sub-formula whose slot is the entry itself. A body
+that spreads a value list over the stack at a whole entry has the same
+room here, and `maf--commit' takes such a list at the root as it takes
+one at the entry target.")
 
 (defun maf--defcmd-parse-docstring (forms)
   "Return the docstring from FORMS if the first element is a string, else nil."
@@ -107,15 +118,6 @@ Skips a leading docstring and keyword-value pairs."
         (body (maf--defcmd-parse-body forms)))
     `(,docstring ,opts ,body)))
 
-(defun maf--defcmd-value-list-p (val)
-  "Non-nil when VAL is a list of values rather than one expression.
-The shape a body commits when it means several stack entries — the
-parts `mafcmd-unpack' spreads. Every calc expression is either a
-number or a list headed by a symbol (`vec', `var', a `calcFunc-'
-name, an operator), so a list whose head is not a symbol is a list of
-them."
-  (and (consp val) (not (symbolp (car val)))))
-
 (defun maf--defcmd-map-slot (val el)
   "The replacement for mapped element EL, given what the body committed as VAL.
 A body that commits nothing leaves its element alone. One that commits
@@ -125,7 +127,7 @@ stands in and several leave the element as it was. The equation target
 reads such a list the same way and for the same reason; see
 `mafcmd-unpack', the command that produces one."
   (cond ((null val) el)
-        ((maf--defcmd-value-list-p val) (if (cdr val) el (car val)))
+        ((maf--value-list-p val) (if (cdr val) el (car val)))
         (t val)))
 
 (defun maf--defcmd-map-vec (runner expr arg)
@@ -208,9 +210,9 @@ body sees:
           the resolved location. Call it once per body run (once per
           side, for an equation target). At a whole-entry target the
           result may be a list of values, committed as one stack entry
-          each; a sub-formula slot takes a single expression. Bodies
-          that can produce either read `maf-target' to tell which
-          applies.
+          each; a sub-formula slot takes a single expression, unless
+          it is the entry's whole formula (`maf-target-root'). Bodies
+          that can produce either read those to tell which applies.
 
 REST is an optional docstring, then zero or more keyword-value option
 pairs (OPTS), then the body forms — in that order.
@@ -387,6 +389,7 @@ ARG, runs the body, and commits its result to the right stack location."
                             ;; ARG must stay unused outside the body.
                             (let ((,oarg (alist-get :arg ,context))
                                   (maf-target (alist-get :target ,context))
+                                  (maf-target-root (alist-get :root ,context))
                                   ;; The body as a function: bind the
                                   ;; caller's EXPR/ARG locals and route its
                                   ;; COMMIT to the given continuation. Every
