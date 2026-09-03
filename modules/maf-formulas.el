@@ -25,6 +25,12 @@
 ;;    :examples ("..." ...)             ; optional worked examples
 ;;    :vars ((A . "area") ...))         ; optional variable meanings
 ;;
+;; An identity that turns on a premise — a + c = b + c holds because
+;; a = b — can show the premise: a :display-expr of
+;; (calcFunc-implies PREMISE CONCLUSION) renders as PREMISE => CONCLUSION,
+;; typeset with the implies arrow, while :expr stays the conclusion,
+;; the form RET pushes.
+;;
 ;; Formulas you insert are remembered in a "Recent" group at the top of
 ;; the menu for the rest of the session; it is not written anywhere.
 ;; The group holds formulas by :name, so a reloaded formula file keeps
@@ -56,6 +62,8 @@
 
 ;; Defined in lazily-loaded calc modules; declared for the byte compiler.
 (declare-function math-format-value "calc-ext")
+(declare-function math-compose-expr "calccomp")
+(defvar calc-language)
 (declare-function calc-pop-push-record-list "calc-ext")
 (declare-function maf-register-module "maf-module")
 (declare-function maf-bindings-module-keys "maf-bindings")
@@ -125,6 +133,36 @@ so the side split is only taken when both halves clear this width."
 
 (defvar maf-formulas--loaded nil
   "Non-nil once `maf-formulas-file' has been consulted this session.")
+
+;;; Implication, for display
+
+;; An identity that turns on a premise — a = b behind a + c = b + c —
+;; shows the premise in the detail pane as P => Q, calc's => put to
+;; the reading it has on paper. Calc has no implication to compute
+;; with, so RET still pushes the conclusion, the working form, and
+;; `implies' is a display-only call: nothing defines it, so nothing
+;; evaluates it, and these compositions are all there is to it. The
+;; nil entry serves every language calc composes for, Big included;
+;; the latex entry serves `maf--latex-string', which composes in
+;; calc's latex language, where the property is read like any other.
+
+(defun maf-formulas--compose-implies (a)
+  "Compose the display call A, implies(P, Q), as P => Q.
+Spaced as calc spaces its own => in each language: doubly in Big,
+singly elsewhere."
+  (list 'horiz (math-compose-expr (nth 1 a) 0)
+        (if (eq calc-language 'big) "  =>  " " => ")
+        (math-compose-expr (nth 2 a) 0)))
+
+(defun maf-formulas--latex-compose-implies (a)
+  "Compose the display call A, implies(P, Q), as P \\implies Q."
+  (list 'horiz (math-compose-expr (nth 1 a) 0)
+        " \\implies "
+        (math-compose-expr (nth 2 a) 0)))
+
+(put 'calcFunc-implies 'math-compose-forms
+     '((nil (nil . maf-formulas--compose-implies))
+       (latex (nil . maf-formulas--latex-compose-implies))))
 
 (defvar maf-formulas-builtin
   '((:name "commutative-property-of-addition"
@@ -206,6 +244,10 @@ so the side split is only taken when both halves clear this width."
      :category "Algebra — Properties of real numbers"
      :expr (calcFunc-lor (calcFunc-eq (var a var-a) 0)
                          (calcFunc-eq (var b var-b) 0))
+     :display-expr (calcFunc-implies
+                    (calcFunc-eq (* (var a var-a) (var b var-b)) 0)
+                    (calcFunc-lor (calcFunc-eq (var a var-a) 0)
+                                  (calcFunc-eq (var b var-b) 0)))
      :doc "When a b = 0, at least one factor is zero."
      :vars ((a . "first factor") (b . "second factor"))
      :examples ("(x - 2) (x - 3) = 0 gives x = 2 or x = 3."))
@@ -214,6 +256,10 @@ so the side split is only taken when both halves clear this width."
      :category "Algebra — Properties of real numbers"
      :expr (calcFunc-eq (+ (var a var-a) (var c var-c))
                         (+ (var b var-b) (var c var-c)))
+     :display-expr (calcFunc-implies
+                    (calcFunc-eq (var a var-a) (var b var-b))
+                    (calcFunc-eq (+ (var a var-a) (var c var-c))
+                                 (+ (var b var-b) (var c var-c))))
      :doc "Adding the same number to both sides of a = b keeps the equality."
      :vars ((a . "left side of a = b") (b . "right side of a = b")
             (c . "number added to both sides"))
@@ -223,6 +269,10 @@ so the side split is only taken when both halves clear this width."
      :category "Algebra — Properties of real numbers"
      :expr (calcFunc-eq (- (var a var-a) (var c var-c))
                         (- (var b var-b) (var c var-c)))
+     :display-expr (calcFunc-implies
+                    (calcFunc-eq (var a var-a) (var b var-b))
+                    (calcFunc-eq (- (var a var-a) (var c var-c))
+                                 (- (var b var-b) (var c var-c))))
      :doc "Subtracting the same number from both sides of a = b keeps the equality."
      :vars ((a . "left side of a = b") (b . "right side of a = b")
             (c . "number subtracted from both sides"))
@@ -232,6 +282,10 @@ so the side split is only taken when both halves clear this width."
      :category "Algebra — Properties of real numbers"
      :expr (calcFunc-eq (* (var a var-a) (var c var-c))
                         (* (var b var-b) (var c var-c)))
+     :display-expr (calcFunc-implies
+                    (calcFunc-eq (var a var-a) (var b var-b))
+                    (calcFunc-eq (* (var a var-a) (var c var-c))
+                                 (* (var b var-b) (var c var-c))))
      :doc "Multiplying both sides of a = b by the same number keeps the equality."
      :vars ((a . "left side of a = b") (b . "right side of a = b")
             (c . "number both sides are multiplied by"))
@@ -241,6 +295,10 @@ so the side split is only taken when both halves clear this width."
      :category "Algebra — Properties of real numbers"
      :expr (calcFunc-eq (/ (var a var-a) (var c var-c))
                         (/ (var b var-b) (var c var-c)))
+     :display-expr (calcFunc-implies
+                    (calcFunc-eq (var a var-a) (var b var-b))
+                    (calcFunc-eq (/ (var a var-a) (var c var-c))
+                                 (/ (var b var-b) (var c var-c))))
      :doc "Dividing both sides of a = b by the same nonzero number keeps the equality."
      :vars ((a . "left side of a = b") (b . "right side of a = b")
             (c . "nonzero number both sides are divided by"))
@@ -390,6 +448,17 @@ so the side split is only taken when both halves clear this width."
                                (- (^ (var b var-b) 2)
                                   (* 4 (* (var a var-a) (var c var-c))))))
                            (* 2 (var a var-a))))
+     :display-expr (calcFunc-implies
+                    (calcFunc-eq (+ (+ (* (var a var-a) (^ (var x var-x) 2))
+                                       (* (var b var-b) (var x var-x)))
+                                    (var c var-c))
+                                 0)
+                    (calcFunc-eq (var x var-x)
+                                 (/ (+ (neg (var b var-b))
+                                       (calcFunc-sqrt
+                                        (- (^ (var b var-b) 2)
+                                           (* 4 (* (var a var-a) (var c var-c))))))
+                                    (* 2 (var a var-a)))))
      :doc "The larger root of a x^2 + b x + c = 0 when a > 0."
      :vars ((a . "coefficient of x^2, nonzero")
             (b . "coefficient of x")
@@ -404,6 +473,17 @@ so the side split is only taken when both halves clear this width."
                                (- (^ (var b var-b) 2)
                                   (* 4 (* (var a var-a) (var c var-c))))))
                            (* 2 (var a var-a))))
+     :display-expr (calcFunc-implies
+                    (calcFunc-eq (+ (+ (* (var a var-a) (^ (var x var-x) 2))
+                                       (* (var b var-b) (var x var-x)))
+                                    (var c var-c))
+                                 0)
+                    (calcFunc-eq (var x var-x)
+                                 (/ (- (neg (var b var-b))
+                                       (calcFunc-sqrt
+                                        (- (^ (var b var-b) 2)
+                                           (* 4 (* (var a var-a) (var c var-c))))))
+                                    (* 2 (var a var-a)))))
      :doc "The other root: the same formula with the root subtracted."
      :vars ((a . "coefficient of x^2, nonzero")
             (b . "coefficient of x")
@@ -680,6 +760,11 @@ so the side split is only taken when both halves clear this width."
      :category "Algebra — Fractions"
      :expr (calcFunc-eq (* (var a var-a) (var d var-d))
                         (* (var b var-b) (var c var-c)))
+     :display-expr (calcFunc-implies
+                    (calcFunc-eq (/ (var a var-a) (var b var-b))
+                                 (/ (var c var-c) (var d var-d)))
+                    (calcFunc-eq (* (var a var-a) (var d var-d))
+                                 (* (var b var-b) (var c var-c))))
      :doc "What a/b = c/d becomes with the denominators cleared."
      :vars ((a . "first numerator")
             (b . "nonzero denominator")
@@ -757,6 +842,10 @@ so the side split is only taken when both halves clear this width."
      :category "Algebra — Absolute value"
      :expr (calcFunc-lor (calcFunc-eq (var x var-x) (var a var-a))
                          (calcFunc-eq (var x var-x) (neg (var a var-a))))
+     :display-expr (calcFunc-implies
+                    (calcFunc-eq (calcFunc-abs (var x var-x)) (var a var-a))
+                    (calcFunc-lor (calcFunc-eq (var x var-x) (var a var-a))
+                                  (calcFunc-eq (var x var-x) (neg (var a var-a)))))
      :doc "What abs(x) = a splits into, for a nonnegative."
      :vars ((x . "the unknown") (a . "nonnegative number"))
      :examples ("abs(x - 1) = 5 gives x = 6 or x = -4."))
@@ -765,6 +854,10 @@ so the side split is only taken when both halves clear this width."
      :category "Algebra — Absolute value"
      :expr (calcFunc-land (calcFunc-lt (neg (var a var-a)) (var x var-x))
                           (calcFunc-lt (var x var-x) (var a var-a)))
+     :display-expr (calcFunc-implies
+                    (calcFunc-lt (calcFunc-abs (var x var-x)) (var a var-a))
+                    (calcFunc-land (calcFunc-lt (neg (var a var-a)) (var x var-x))
+                                   (calcFunc-lt (var x var-x) (var a var-a))))
      :doc "What abs(x) < a splits into: a band around zero."
      :vars ((x . "the unknown") (a . "positive number")))
     (:name "absolute-value-greater-than"
@@ -772,6 +865,10 @@ so the side split is only taken when both halves clear this width."
      :category "Algebra — Absolute value"
      :expr (calcFunc-lor (calcFunc-lt (var x var-x) (neg (var a var-a)))
                          (calcFunc-gt (var x var-x) (var a var-a)))
+     :display-expr (calcFunc-implies
+                    (calcFunc-gt (calcFunc-abs (var x var-x)) (var a var-a))
+                    (calcFunc-lor (calcFunc-lt (var x var-x) (neg (var a var-a)))
+                                  (calcFunc-gt (var x var-x) (var a var-a))))
      :doc "What abs(x) > a splits into: everything outside the band."
      :vars ((x . "the unknown") (a . "positive number")))
     (:name "distance-between-two-numbers"
