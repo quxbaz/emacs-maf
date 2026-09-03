@@ -55,7 +55,7 @@
     (cl-assert (equal (buffer-substring-no-properties (point-min) (point-max))
                       "2:  6 x + 12\n1:  a + b\n"))
     (cl-assert (string-match-p
-                " n/p move .* TAB/o/t switch .* r restore .* D delete .* q quit"
+                " n/p move .* TAB switch .* D delete .* w/\\? help .* q quit"
                 (format-mode-line header-line-format)))
     ;; The entry this step produced is highlighted; the one carried
     ;; over from the state before is not.

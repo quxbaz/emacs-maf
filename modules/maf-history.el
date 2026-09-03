@@ -376,15 +376,17 @@ for it, kept only while each still runs it.")
         ((maf-history-oldest maf-history-newest
           maf-history-stack-first maf-history-stack-last)
          "ends" "<" ">")
-        ;; TAB crosses too, by naming the side it leads to rather than
-        ;; toggling, so it belongs to this control even though it runs a
-        ;; different command in each window — which is also why the
-        ;; commands are listed: a preferred key is kept only while it
-        ;; still runs one of them.
+        ;; TAB alone stands for the crossing: it names the side it
+        ;; leads to rather than toggling, so it runs a different command
+        ;; in each window — which is why the commands are listed: a
+        ;; preferred key is kept only while it still runs one of them.
+        ;; o, t, h and l cross too and stay off the legend.
         ((maf-history-switch maf-history-focus-log maf-history-focus-stack)
-         "switch" "TAB" "o" "t")
+         "switch" "TAB")
+        ;; Restore (r, and RET in the log) is left off: the legend heads
+        ;; the stack window, where RET inserts, and the one key it would
+        ;; show is not worth the width.
         (maf-history-insert "insert" "RET")
-        (maf-history-restore "restore" "r" "RET")
         (maf-history-delete "delete" "D")
         (maf-history-separate "rule" "L")
         ((maf-history-previous-separator maf-history-next-separator)
@@ -394,6 +396,7 @@ for it, kept only while each still runs it.")
         ;; keyboard, so the legend showing it is what says the wipe is
         ;; deliberately out of fingerslip range.
         (maf-history-clear "clear" "C-M-k")
+        (maf-history-describe-command "help" "w" "?")
         (maf-history-quit "quit" "q")))
 
 (defun maf-history--control-keys (command preferred)

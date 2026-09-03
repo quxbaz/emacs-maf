@@ -64,9 +64,16 @@
       (cl-assert (string-match-p "n/p move" legend))
       (cl-assert (not (string-match-p "j/k" legend)))
       (cl-assert (string-match-p "RET insert" legend))
-      ;; TAB crosses between the windows too, by naming the side it
-      ;; leads to rather than toggling, so it joins o/t on the control.
-      (cl-assert (string-match-p "TAB/o/t switch" legend))
+      ;; TAB alone stands for crossing between the windows; o, t, h
+      ;; and l cross too but stay off the legend, as j/k do.
+      (cl-assert (string-match-p "TAB switch" legend))
+      (cl-assert (not (string-match-p "o/t" legend)))
+      ;; Restore is not shown: RET here inserts, and r alone is not
+      ;; worth the width. The binding stays.
+      (cl-assert (not (string-match-p "restore" legend)))
+      (cl-assert (eq (lookup-key maf-history-mode-map (kbd "r")) 'maf-history-restore))
+      ;; Help for the command a row names, on both its keys.
+      (cl-assert (string-match-p "w/\\? help" legend))
       ;; Clearing the whole log is on the legend beside the D that
       ;; deletes one state, chord and all: the key is what keeps a wipe
       ;; out of fingerslip range, so it is the part worth showing.
