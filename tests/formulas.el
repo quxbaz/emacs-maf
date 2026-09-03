@@ -66,11 +66,13 @@
       (cl-assert (eq (get-text-property (string-match "O follows" h) 'face h)
                      'warning)))
 
-    ;; The detail renderer (behind `o' / `?', i.e.
-    ;; `filter-view-show-detail') fills the detail buffer for the
-    ;; formula at point.
-    (cl-assert (eq (key-binding (kbd "o")) #'filter-view-show-detail))
+    ;; The detail renderer (behind `?', i.e. `filter-view-show-detail')
+    ;; fills the detail buffer for the formula at point; `w' shows it
+    ;; and goes there, the pair every maf details view answers to. `o'
+    ;; is no longer a key here.
     (cl-assert (eq (key-binding (kbd "?")) #'filter-view-show-detail))
+    (cl-assert (eq (key-binding (kbd "w")) #'filter-view-visit-detail))
+    (cl-assert (null (lookup-key filter-view-mode-map (kbd "o"))))
     ;; `d' is unbound; `O' toggles the following pane and `D' prunes
     ;; the Recent group.
     (cl-assert (null (lookup-key filter-view-mode-map (kbd "d"))))

@@ -40,7 +40,7 @@
 
   ;; The legend survives a narrowing. It used to be traded for a line
   ;; naming the filter, which took the keys away exactly when they were
-  ;; in use — the narrowed list is still read with `o', marked with `a'
+  ;; in use — the narrowed list is still read with `?', marked with `a'
   ;; and pruned with `D'. Now the narrowing leads the same band, in
   ;; gold, and adds the key that lifts it.
   (with-current-buffer (apply #'filter-view-setup "*maf-formulas*"
@@ -53,7 +53,7 @@
            (s (substring-no-properties h)))
       (cl-assert (string-match-p "\\`filter: sphere" s))
       (cl-assert (string-match-p "c clears" s))
-      (dolist (entry '("RET inserts" "/ filters" "o details" "O follows"
+      (dolist (entry '("RET inserts" "/ filters" "w/? details" "O follows"
                        "a/i adds recent" "D deletes recent" "q quits"))
         (cl-assert (string-match-p (regexp-quote entry) s)))
       ;; The filter itself wears the gold "O follows" takes when the
