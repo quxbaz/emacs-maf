@@ -45,12 +45,30 @@
 
   ;; Widening: point on an operand peels the wrapper enclosing it. The
   ;; node under point (x) has nothing to give, so the target becomes the
-  ;; innermost node that does -- sin(2 x).
+  ;; innermost node that does -- sin(2 x). Point lands on the glyph
+  ;; naming what came out: the space of the product 2 x.
   (maf-push "y + sin(2 x)")
   (progn (goto-char (point-min)) (search-forward "2 x") (backward-char 1))
   (call-interactively 'mafcmd-unwrap)
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "y + 2 x"))
+  (cl-assert (eq (char-after) ?\s))
+  (cl-assert (equal (alist-get :expr (maf--resolve-context '((:arity . unary))))
+                    '(* 2 (var x var-x))))
   (calc-pop 1)
+
+  ;; The landing names the whole of what came out, not its first
+  ;; character: peeling sin off the entry sin(2 x + 1) leaves point on
+  ;; the +, where a second press takes the sum apart.
+  (maf-push "sin(2 x + 1)")
+  (progn (goto-char (point-min)) (search-forward "sin") (backward-char 3))
+  (call-interactively 'mafcmd-unwrap)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "2 x + 1"))
+  (cl-assert (eq (char-after) ?+))
+  (call-interactively 'mafcmd-unwrap)
+  (cl-assert (= (calc-stack-size) 2))
+  (cl-assert (string= (math-format-value (calc-top 2 'full)) "2 x"))
+  (cl-assert (equal (calc-top 1 'full) 1))
+  (calc-pop 2)
 
   ;; Same from the implicit multiplication operator between 2 and x,
   ;; whose own node (2 x) has two parts and does not fit either.

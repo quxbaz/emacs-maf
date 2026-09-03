@@ -218,6 +218,24 @@ the positional restore."
         (when-let ((pos (maf--comp-node-start-pos node)))
           (goto-char pos))))))
 
+(defun maf--point-restore-head (landed)
+  "Put point on the glyph that names the committed node whole.
+LANDED is `maf--commit's return alist (:node, :m). Where
+`maf--point-restore-start' lands on the node's first character — which
+for 2 x + 1 is the atom 2 — this lands on its operator, function name,
+or opening bracket (`maf--comp-node-head-pos'), so that point names the
+node itself: what a command that puts a different node in the slot
+wants when the next command is meant to take that node whole. Return
+the new position, or nil when the node can't be located (entry
+consumed, non-flat rendering) — the caller then falls back."
+  (ignore-errors
+    (let ((node (alist-get :node landed))
+          (m    (alist-get :m landed)))
+      (when (and node (integerp m) (>= m 1))
+        (calc-prepare-selection m)
+        (when-let ((pos (maf--comp-node-head-pos node)))
+          (goto-char pos))))))
+
 (defun maf--point-restore-margin (col)
   "Put point back at COL within the current line's line-number margin.
 The margin is the only part of the line whose width the stack's own
@@ -290,10 +308,23 @@ rendering can start far from where the user was looking."
        (not (alist-get :keep context))
        (not (alist-get :widened context))))
 
+(defun maf--point-land-head-p (context)
+  "Return non-nil when CONTEXT's command asked for the head-glyph landing.
+A `:land head' command lands point on the glyph that names its
+committed node whole (`maf--point-restore-head') — on the part targets
+only, where point is the gesture that named the slot, and not under
+`:keep', which left the entry under point alone and pushed the result
+above it."
+  (and (eq (alist-get :land context) 'head)
+       (memq (alist-get :target context) '(subexpr selection region))
+       (not (alist-get :keep context))))
+
 (defun maf--point-restore-spread (context landed)
   "Place point after a commit spread a value list over the stack.
-LANDED is `maf--commit's return alist with a :spread count: the parts
-landed one entry each, the last of them at level :m. The entry point
+LANDED is `maf--commit's return alist with a :spread count of two or
+more: the parts landed one entry each, the last of them at level :m.
+\(A list of one part replaced its entry in place, and lands like any
+single value.) The entry point
 was on is gone, its parts standing where it stood and below, so its end
 is now the end of the last part — point goes there, the way the EOL
 affinity would have carried it had the entry stayed one line. In the
@@ -326,18 +357,22 @@ positional restore."
 LANDED is `maf--commit's return (:node, :m), or nil when the command
 signalled before committing.
 
-Four placements, in order. A commit that spread a value list over the
-stack puts point at the end of the last part, where the end of the
-entry it came from now is (`maf--point-restore-spread'). Otherwise the
-glyph anchor keeps point on a structural glyph of the target it was
-already on — invoked on the = of an equation, point is back on the =
-after the sides swap, wherever it moved. Failing that, point sticks to
-the start of the committed node when it was inside the part the
-command replaced \(`maf--point-stick-p'). Failing all three, the
-positional restore from the resolve-time snapshot stands."
+The placements, in order. A commit that spread several parts over the
+stack puts point at the end of the last one, where the end of the
+entry it came from now is (`maf--point-restore-spread'). A `:land
+head' command on a part target lands on the glyph that names its
+committed node whole (`maf--point-land-head-p'). Otherwise the glyph
+anchor keeps point on a structural glyph of the target it was already
+on — invoked on the = of an equation, point is back on the = after the
+sides swap, wherever it moved. Failing that, point sticks to the start
+of the committed node when it was inside the part the command replaced
+\(`maf--point-stick-p'). Failing all of these, the positional restore
+from the resolve-time snapshot stands."
   (let ((anchor (alist-get :point-anchor context)))
-    (or (and landed (alist-get :spread landed)
+    (or (and landed (> (or (alist-get :spread landed) 0) 1)
              (maf--point-restore-spread context landed))
+        (and landed (maf--point-land-head-p context)
+             (maf--point-restore-head landed))
         (and landed anchor (maf--point-restore-anchor anchor landed))
         (and landed (maf--point-stick-p context)
              (maf--point-restore-start landed))

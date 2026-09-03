@@ -298,6 +298,14 @@ received it.
           holds it, rather than doing nothing. Explicit calc selections
           are never widened. See `maf--resolve-widen'.
 
+  :land   Where point lands after a commit on a part target. `head'
+          puts it on the glyph that names the committed node whole —
+          its operator, function name, or opening bracket — instead of
+          on the glyph it was on, for a command that puts a different
+          node in the slot: `mafcmd-unwrap' peels sin(2 x + 1) to
+          2 x + 1 and leaves point on the +, naming the sum. See
+          `maf--point-restore-commit'.
+
 Any other keyword in OPTS is merged verbatim into the resolved context
 alist, so resolve/commit extensions can read it.
 

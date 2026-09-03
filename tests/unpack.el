@@ -159,6 +159,51 @@
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "y + x"))
   (calc-pop 1)
 
+  ;; Landing: the part that took the wrapper's place is a different
+  ;; node from the one point was on, so point goes to the glyph that
+  ;; names it whole -- the + of the sum, not its first character (the
+  ;; atom 2). Pressing the key again there would take the sum apart.
+  (maf-push "sin(2 x + 1)")
+  (progn (goto-char (point-min)) (search-forward "sin") (backward-char 3))
+  (call-interactively 'mafcmd-unpack)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "2 x + 1"))
+  (cl-assert (eq (char-after) ?+))
+  (cl-assert (equal (alist-get :expr (maf--resolve-context '((:arity . unary))))
+                    '(+ (* 2 (var x var-x)) 1)))
+  (calc-pop 1)
+
+  ;; A function's name, a vector's opening bracket, an atom itself.
+  (maf-push "sin(cos(x))")
+  (progn (goto-char (point-min)) (search-forward "sin") (backward-char 3))
+  (call-interactively 'mafcmd-unpack)
+  (cl-assert (looking-at "cos(x)"))
+  (calc-pop 1)
+
+  (maf-push "sin([a, b])")
+  (progn (goto-char (point-min)) (search-forward "sin") (backward-char 3))
+  (call-interactively 'mafcmd-unpack)
+  (cl-assert (looking-at "\\[a, b\\]"))
+  (calc-pop 1)
+
+  (maf-push "y + sin(x)")
+  (progn (goto-char (point-min)) (search-forward "sin") (backward-char 3))
+  (call-interactively 'mafcmd-unpack)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "y + x"))
+  (cl-assert (eq (char-after) ?x))
+  (calc-pop 1)
+
+  ;; A juxtaposed product renders its multiplication as a bare space,
+  ;; and that space is the glyph naming it: point lands there, and
+  ;; resolves to the product.
+  (maf-push "sin(2 x)")
+  (progn (goto-char (point-min)) (search-forward "sin") (backward-char 3))
+  (call-interactively 'mafcmd-unpack)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "2 x"))
+  (cl-assert (eq (char-after) ?\s))
+  (cl-assert (equal (alist-get :expr (maf--resolve-context '((:arity . unary))))
+                    '(* 2 (var x var-x))))
+  (calc-pop 1)
+
   ;; Nesting follows point: on cos it peels cos, on sin it peels sin.
   (maf-push "sin(cos(x))")
   (progn (goto-char (point-min)) (search-forward "cos") (backward-char 2))

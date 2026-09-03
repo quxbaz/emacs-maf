@@ -314,6 +314,27 @@ composition (identity lost, or a non-flat rendering)."
                     (point))))
        (maf--comp-flat-to-pos start toppt)))))
 
+(defun maf--comp-node-head-pos (node)
+  "Buffer position of the glyph that names NODE whole, or nil.
+Point on a node's own structural glyph — its operator, function name,
+opening bracket — resolves to that node, where point on its first
+character may resolve to a child instead: in 2 x + 1 the 2 is the atom,
+the + the sum. So this prefers the first structural glyph with ink on
+it, then the first glyph at all (a juxtaposed product renders its
+multiplication as a bare space), and for an atom, which has none, the
+start of its rendering. nil when NODE has no tag in the prepared
+composition (identity lost, or a non-flat rendering)."
+  (pcase (maf--comp-node-span node)
+    (`(,start ,_end ,_children ,text)
+     (let* ((glyphs (maf--comp-node-glyphs node))
+            (fpos (or (cl-find-if (lambda (p) (/= (aref text p) ?\s)) glyphs)
+                      (car glyphs)
+                      start))
+            (toppt (save-excursion
+                     (calc-cursor-stack-index calc-selection-cache-num)
+                     (point))))
+       (maf--comp-flat-to-pos fpos toppt)))))
+
 (defun maf--comp-node-point-offset (node)
   "Point's character offset into NODE's rendering, or nil when outside it.
 The counterpart of `maf--comp-node-offset-pos', read before a rewrite

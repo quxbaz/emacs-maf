@@ -581,9 +581,12 @@ One sub-formula is the exception: the entry's whole formula, which point
 on the opening bracket of =[x, y]= names. Its slot is the entry itself,
 so resolve marks it =:root= (bound as =maf-target-root= for the body)
 and commit takes a value list there the way it does at the entry
-target. A spread commit reports its count as =:spread=, and point then
-lands at the end of the last part — the end of what the entry became
-(=maf--point-restore-spread=).
+target. A commit of several parts reports its count as =:spread=, and
+point then lands at the end of the last part — the end of what the
+entry became (=maf--point-restore-spread=). A single part takes the
+node's place, and both commands declare =:land head= so point lands on
+the glyph that names it whole — =sin(2 x + 1)= peels to =2 x + 1= with
+point on the =+= (=maf--point-restore-head=).
 
 * Widening the sub-formula target
 

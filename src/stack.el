@@ -8789,7 +8789,10 @@ The one sub-formula with room is the entry's whole formula — point on
 the opening bracket of [x, y] — whose slot is the entry itself.
 
 Where the parts spread, point lands at the end of the last of them:
-the end of what the entry became.
+the end of what the entry became. Where one part takes the node's
+place, point lands on that part's own glyph — its operator, name, or
+opening bracket — so that it names the whole of what came out:
+sin(2 x + 1) unwraps to 2 x + 1 with point on the +.
 
 A numeric prefix argument gives calc's unpacking mode: a positive N
 unwraps N levels deep, a negative N splits a vector by component type.
@@ -8816,6 +8819,10 @@ signaling.
   ;; it into its two sides, as calc-unpack does, rather than mapping
   ;; over them and putting the relation back together.
   :map -1
+  ;; What comes out of the wrapper is a different node from the one
+  ;; point was on, so the glyph point sat on means nothing there: land
+  ;; on the glyph that names the part whole instead.
+  :land head
   (let ((parts (maf--unpack-parts expr (maf--unpack-mode))))
     (commit
      (cond
@@ -8860,7 +8867,10 @@ whole formula — the parts have room to spread, and the command reads
 as `mafcmd-unpack' does: one level comes apart at a time — a composite
 object into its components, a function call into its arguments, an
 operator into its operands — one stack entry per part, point landing
-at the end of the last.
+at the end of the last. Where the peeled part takes the wrapper's
+place, point lands on the part's own glyph — its operator, name, or
+opening bracket — naming the whole of what came out: sin(2 x + 1)
+becomes 2 x + 1 with point on the +.
 
 A numeric prefix argument gives calc's unpacking mode: a positive N
 unwraps N levels deep, a negative N splits a vector by component type.
@@ -8888,6 +8898,10 @@ An explicit calc selection is taken as it stands and never widened.
   ;; point happens to name. Without this, pressing the key on an
   ;; operand or on a multi-part operator would silently do nothing.
   :widen maf--unpack-peelable-p
+  ;; What comes out of the wrapper is a different node from the one
+  ;; point was on, so the glyph point sat on means nothing there: land
+  ;; on the glyph that names the part whole instead.
+  :land head
   (let ((parts (maf--unpack-parts expr (maf--unpack-mode))))
     (commit
      (cond
