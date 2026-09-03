@@ -5057,6 +5057,28 @@ the variable, or a bare expression, commits unchanged.
 Matched against the loaded set by left-hand side, so a rule calc has
 since fixed or reworded is simply not found and nothing is replaced.")
 
+;; Calc's power rules read the shape of a formula, and a number has
+;; none: 16 * 2^x matches nothing, since 16 is neither 2^a nor the bare
+;; 2 that opt(a) allows for. Typing 2^4 2^x does not help — calc folds
+;; 2^4 to 16 on entry, and the rewriter normalizes its input the same
+;; way. These rules read the number instead: an integer factor that is
+;; an exact power of the other factor's base joins its exponent. Both
+;; marker positions are given for each operator, as calc's own rules
+;; do, so a selection on either part fires. The guards keep ilog to
+;; the integers above 1 it is defined on — a negative or symbolic
+;; operand is not merged rather than signaled about — and the last
+;; condition is what rejects 12 * 2^x, where ilog rounds down.
+(defconst maf--merge-rule-additions
+  '("a * select(b^y) := select(b^(k + y)) :: integer(a) :: a > 1 :: integer(b) :: b > 1 :: let(k := ilog(a, b)) :: b^k = a"
+    "select(a) * b^y := select(b^(k + y)) :: integer(a) :: a > 1 :: integer(b) :: b > 1 :: let(k := ilog(a, b)) :: b^k = a"
+    "a / select(b^y) := select(b^(k - y)) :: integer(a) :: a > 1 :: integer(b) :: b > 1 :: let(k := ilog(a, b)) :: b^k = a"
+    "select(a) / b^y := select(b^(k - y)) :: integer(a) :: a > 1 :: integer(b) :: b > 1 :: let(k := ilog(a, b)) :: b^k = a"
+    "b^y / select(a) := select(b^(y - k)) :: integer(a) :: a > 1 :: integer(b) :: b > 1 :: let(k := ilog(a, b)) :: b^k = a"
+    "select(b^y) / a := select(b^(y - k)) :: integer(a) :: a > 1 :: integer(b) :: b > 1 :: let(k := ilog(a, b)) :: b^k = a")
+  "Rules merging an integer factor into a power of its base.
+Appended to calc's MergeRules by `maf--merge-rules', after the
+corrected set, so calc's own rules keep first claim.")
+
 (defvar maf--merge-rules-cache nil
   "Memo cell for `maf--merge-rules': a cons of (SOURCE . CORRECTED).
 SOURCE is the `var-MergeRules' value CORRECTED was derived from,
@@ -5064,11 +5086,12 @@ compared by identity — so a user who re-stores MergeRules gets a fresh
 derivation instead of a stale correction.")
 
 (defun maf--merge-rules ()
-  "Return calc's MergeRules with the faulty power-merge rules corrected.
+  "Return calc's MergeRules, corrected and extended.
 Reads whatever `var-MergeRules' currently holds — calc's own accessor
-compiles the rule text on first use — and swaps in the corrections,
-memoized so repeated merges reuse one rule object and calc's
-rewrite-compiler cache stays valid."
+compiles the rule text on first use — swaps in the corrections
+\(`maf--merge-rule-fixes') and appends the numeric-power rules
+\(`maf--merge-rule-additions'), memoized so repeated merges reuse one
+rule object and calc's rewrite-compiler cache stays valid."
   (let ((base (calc-var-value 'var-MergeRules)))
     (unless (eq base (car maf--merge-rules-cache))
       (setq maf--merge-rules-cache
@@ -5077,16 +5100,19 @@ rewrite-compiler cache stays valid."
                       (let ((fixes (math-read-exprs
                                     (string-join maf--merge-rule-fixes ","))))
                         (cons 'vec
-                              (mapcar
-                               (lambda (rule)
-                                 (or (seq-find
-                                      (lambda (fix)
-                                        (and (eq (car-safe rule)
-                                                 'calcFunc-assign)
-                                             (equal (nth 1 fix) (nth 1 rule))))
-                                      fixes)
-                                     rule))
-                               (cdr base))))
+                              (append
+                               (mapcar
+                                (lambda (rule)
+                                  (or (seq-find
+                                       (lambda (fix)
+                                         (and (eq (car-safe rule)
+                                                  'calcFunc-assign)
+                                              (equal (nth 1 fix) (nth 1 rule))))
+                                       fixes)
+                                      rule))
+                                (cdr base))
+                               (math-read-exprs
+                                (string-join maf--merge-rule-additions ",")))))
                     base))))
     (cdr maf--merge-rules-cache)))
 
@@ -5572,7 +5598,13 @@ never named keeps its shape.
 Two of calc's rules for collecting powers of unlike bases answer with
 the wrong value, and two more get the exponent wrong; maf corrects all
 four, so a^x / b^x collects to (a / b)^x from either end of the
-quotient rather than to 1.
+quotient rather than to 1. Calc's rules also read only the shape of a
+power, so 16 2^x is nothing to them; maf adds rules that read the
+number, and an integer that is an exact power of the other factor's
+base joins its exponent:
+
+  16 2^x    =>  2^(x + 4)
+  2^x / 16  =>  2^(x - 4)
 
 One rule fires per invocation. With no rule matching — nothing beside
 the target to collect it with — the entry is left untouched, nothing
