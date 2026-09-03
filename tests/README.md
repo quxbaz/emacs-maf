@@ -10,6 +10,12 @@ against a fresh calc: step forward with `j`/`SPC`, back with `k`, restart with
 output, and any error render beneath it; the header shows progress and the
 calc flag states.
 
+A session starts from calc's stock modes — `alg` simplification, symbolic
+mode off, no preference for fractions — whatever your own calc settings
+file has put in the mode variables, and a rewind resets them the same way.
+A test that needs another mode sets it in its first form and restores it in
+its last, as `tests/complement.el` does with the angle mode.
+
 A test **passes if no error is raised** — the `cl-assert` forms simply signal on
 failure, surfacing as a `;;!` line and `ERROR` in the header.
 

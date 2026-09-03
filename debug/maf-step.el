@@ -101,11 +101,17 @@ keeping the cockpit a clean two-window layout."
   (let ((calc-display-trail nil))
     (save-window-excursion (calc)))
   (with-current-buffer "*Calculator*"
-    ;; The stack can survive the kill (calc global state, or a config that
-    ;; saves/restores it); a fresh session must start empty or tests that
-    ;; assert absolute stack sizes see the previous session's leftovers.
-    (when (> (calc-stack-size) 0)
-      (calc-pop (calc-stack-size)))
+    ;; A session starts from calc's stock modes. The mode variables are
+    ;; globals, and whatever the settings file put in them when calc
+    ;; first loaded it — symbolic mode on, fractions preferred — would
+    ;; otherwise stand in every session, so a test's answers would turn
+    ;; on the developer's calc.el. `calc-reset' with arg 0 restores
+    ;; each variable's default, as the rewind path already does
+    ;; (`maf--step-clean-calc'), and empties the stack, which can
+    ;; survive the kill (calc global state, or a config that saves and
+    ;; restores it) — a session must start empty or tests that assert
+    ;; absolute stack sizes see the previous session's leftovers.
+    (calc-reset 0)
     (current-buffer)))
 
 (defun maf--step-setup-windows ()
