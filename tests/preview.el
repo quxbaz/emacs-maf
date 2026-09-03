@@ -1,4 +1,13 @@
+;; The preview is the one-line stack's companion: with the pretty
+;; module on, the stack is already Big and there is nothing to
+;; preview, so the test runs with the module off and puts it back.
+(defvar maf-preview-test--pretty nil
+  "The pretty module's state on entry, restored at the end.")
+
 (maf-step
+  (progn (setq maf-preview-test--pretty (bound-and-true-p maf-use-pretty-mode))
+         (maf-use-pretty-mode -1)
+         nil)
   (maf-use-preview-mode 1)
   (calc-normal-language)
   (calc-push '(/ (var a var-a) (var b var-b)))
@@ -185,4 +194,7 @@
   (progn
     (when-let ((buf (get-buffer maf-pretty--buffer)))
       (kill-buffer buf))
-    (calc-pop (calc-stack-size))))
+    (calc-pop (calc-stack-size)))
+
+  ;; Restore what the test flipped.
+  (progn (maf-use-pretty-mode (if maf-preview-test--pretty 1 -1)) nil))

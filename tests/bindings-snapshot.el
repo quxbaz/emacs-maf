@@ -35,7 +35,16 @@
           (push (list (car row) :want (cdr row) :got got) bad))))
     (nreverse bad)))
 
+(defvar maf--snapshot-test-pretty nil
+  "The pretty module's state on entry, restored at the end.")
+
 (maf-step
+  ;; The snapshot is of the profile's own answers: the pretty module,
+  ;; when on, shadows G with its own command, so it is off for the
+  ;; reading and put back after.
+  (progn (setq maf--snapshot-test-pretty (bound-and-true-p maf-use-pretty-mode))
+         (maf-use-pretty-mode -1)
+         nil)
   ;; The whole stack map, one answer per key, from inside the calc buffer.
   (cl-assert (null (maf--snapshot-mismatches maf--snapshot-stack-rows)))
 
@@ -61,4 +70,7 @@
       (progn (maf-use-options-mode -1)
              (cl-assert (not (eq (key-binding "?") 'maf-options))))
     (maf-use-options-mode 1))
-  (cl-assert (eq (key-binding "?") 'maf-options)))
+  (cl-assert (eq (key-binding "?") 'maf-options))
+
+  ;; Restore what the test flipped.
+  (progn (maf-use-pretty-mode (if maf--snapshot-test-pretty 1 -1)) nil))
