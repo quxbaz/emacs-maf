@@ -9,9 +9,9 @@
   - [-] hardening
 
 * Todo
-** TODO module suboptions
 ** TODO map across rows
 ** TODO map across cols
+** TODO module suboptions
 ** TODO test w/ other themes
    - [ ] test w/ light theme and other themes
    - [ ] default themes
