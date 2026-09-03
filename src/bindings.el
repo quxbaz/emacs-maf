@@ -557,17 +557,19 @@
 ;; itself (l is its logarithmic-units prefix).
 (maf-bindings-define '(native) "l x" #'mafcmd-swap-vars)
 
-;; Unwrap the entry at point into its parts. M-u is unbound in calc
+;; Unpack what point names into its parts. M-u is unbound in calc
 ;; itself (it shadows the global upcase-dwim, which has no place in the
 ;; stack buffer); v u is calc-unpack, whose whole-entry behavior
-;; mafcmd-unpack matches. Both keys keep the entry-scoped command.
+;; mafcmd-unpack matches at home. Both keys take the node at point as
+;; it stands; the widening reading is j U below.
 (maf-bindings-define '(native) "M-u" #'mafcmd-unpack)
 (maf-bindings-define '(calc native) "v u" #'mafcmd-unpack)
 ;; j U (with its j M-U alias) is calc-sel-unpack, which replaces a
-;; selected one-argument call with its argument. That is the narrowing
+;; selected one-argument call with its argument. That is the widening
 ;; reading of unwrapping, so the key takes mafcmd-unwrap: inside a
-;; formula it peels the wrapper around point in place, and on a whole
-;; entry it spreads the parts as M-u does.
+;; formula it peels the innermost wrapper around point in place,
+;; wherever point sits within it, and on a whole entry it spreads the
+;; parts as M-u does.
 ;; In vim these arrive by derivation and the j motion prunes them —
 ;; the unpack keeps M-u and v u there until the relocation table
 ;; rehomes the j family (profile:vim in docs/bindings.org).

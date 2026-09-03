@@ -33,9 +33,8 @@ Bodies read it when the shape of the result depends on where it will
 land, not just on the operand. A whole stack entry (`home', `entry')
 accepts a list of values, committed as separate stack entries; any
 other target holds exactly one expression. `mafcmd-unpack' is the
-case in point: it spreads its entry's parts across the stack, except
-when the map flag forces a relation apart per side (`equation'), where
-each side's slot fits only a single part.")
+case in point: it spreads a whole entry's parts across the stack, and
+in a slot unwraps only when the parts amount to a single expression.")
 
 (defun maf--defcmd-parse-docstring (forms)
   "Return the docstring from FORMS if the first element is a string, else nil."

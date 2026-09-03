@@ -772,8 +772,9 @@ variant's own variable governs only its direct invocation."
    :title "transpose" :example "[[1, 2], [3, 4]] => [[1, 3], [2, 4]]"
    :doc "Transpose the resolved matrix.")
   ;; Unpacking lives in stack.el: mafcmd-unpack (M-u, and calc's own
-  ;; v u) unwraps the entry at point into its parts, and mafcmd-unwrap
-  ;; (j U) is its narrowing sibling, peeling the wrapper around point.
+  ;; v u) takes what point names apart into its parts, and
+  ;; mafcmd-unwrap (j U) is its widening sibling, peeling the innermost
+  ;; wrapper around point.
   ;; Neither is a row here because calcFunc-unpack is binary — it takes
   ;; a mode ahead of the thing — and the contextual commands take that
   ;; mode from a prefix argument rather than the stack. A row would also

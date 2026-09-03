@@ -8769,24 +8769,27 @@ Nil — one level — when no prefix was given."
   (and current-prefix-arg (prefix-numeric-value current-prefix-arg)))
 
 (maf-defcmd mafcmd-unpack (expr _arg commit)
-  "Unwrap the entry at point, spreading its parts across the stack.
+  "Unpack the resolved expression, spreading its parts across the stack.
 
   [x, y]  =>  2:  x
               1:  y
 
 One level comes apart at a time: a composite object into its
 components, a function call into its arguments, an operator into its
-operands — one stack entry per part.
+operands. A whole entry — the entry at point, the top at home — gives
+one stack entry per part.
 
-The subject is always a whole entry: the entry at point, the top at
-home, whatever the gesture. The parts land as stack entries, and a
-formula slot has no room for them, so a region, a calc selection, or
-point within a formula names the entry that holds it, not a part.
+Inside a formula the subject is what point names, as it stands: the
+sub-formula at point, a calc selection, a region. That slot holds one
+expression, so a node that gives exactly one part is unwrapped in
+place, and one that gives several has no room for them and stands
+unchanged. Point is never widened to an enclosing node — that reading
+is `mafcmd-unwrap', which peels the innermost wrapper around point.
 
 A numeric prefix argument gives calc's unpacking mode: a positive N
 unwraps N levels deep, a negative N splits a vector by component type.
-An entry with nothing to give — a plain number, a bare variable, or
-one the requested mode does not fit — commits unchanged rather than
+An expression with nothing to give — a plain number, a bare variable,
+or one the requested mode does not fit — commits unchanged rather than
 signaling.
 
   sin(x)                 =>  x
@@ -8796,7 +8799,9 @@ signaling.
   x                      =>  x                 (nothing to give)
   C-u 2 [(1,2),(3,4)]    =>  4:  1 / 3:  2 / 2:  3 / 1:  4
   x = sin(y)             =>  2:  x / 1:  sin(y)
-  y + sin(a| + b)        =>  2:  y / 1:  sin(a + b)   (the whole entry)"
+  x = sin|(y)            =>  x = y             (the node at point)
+  y + sin(a| + b)        =>  unchanged         (a has nothing to give)
+  y + f|(a, b)           =>  unchanged         (no room for two parts)"
   :title "unpack onto the stack"
   :example "[1, 2] => 1, 2"
   :arity unary
@@ -8805,21 +8810,20 @@ signaling.
   ;; it into its two sides, as calc-unpack does, rather than mapping
   ;; over them and putting the relation back together.
   :map -1
-  ;; The parts spread over the stack, and only a whole entry has room
-  ;; for that: whatever the gesture, the subject is the entry at point.
-  :scope entry
   (let ((parts (maf--unpack-parts expr (maf--unpack-mode))))
     (commit
      (cond
-      ;; Nothing to give: leave the entry exactly as it stands.
+      ;; Nothing to give: leave the target exactly as it stands.
       ((null parts) expr)
-      ;; The map flag forced a relation apart past :map -1, and each
-      ;; side's slot holds a single expression: unwrap when the parts
-      ;; amount to one, otherwise there is no room for them.
-      ((eq maf-target 'equation) (if (cdr parts) expr (car parts)))
-      ;; The whole entry takes the parts as a value list, which commit
-      ;; spreads over one entry each.
-      (t parts)))))
+      ;; A whole stack entry takes the parts as a value list, which
+      ;; commit spreads over one entry each.
+      ((memq maf-target '(home entry)) parts)
+      ;; A sub-formula slot — or a relation's side, when the map flag
+      ;; forces the relation apart past :map -1 — holds a single
+      ;; expression: unwrap when the parts amount to one, otherwise
+      ;; there is no room for them.
+      ((null (cdr parts)) (car parts))
+      (t expr)))))
 
 ;;; Unwrapping
 

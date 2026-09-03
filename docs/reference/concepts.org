@@ -568,15 +568,14 @@ expression fits. Committing a list there signals.
 Bodies that can produce either read =maf-target= to tell which applies:
 
 #+begin_example
-(cond ((eq maf-target 'equation)                ; forced per-side run
-       (if (cdr parts) expr (car parts)))       ; a side's slot fits one
-      (t parts))                                ; one entry per part
+(cond ((memq maf-target '(home entry)) parts)   ; one entry per part
+      ((null (cdr parts)) (car parts))          ; a slot fits one
+      (t expr))                                 ; no room: unchanged
 #+end_example
 
-=mafcmd-unpack= is the case in point — =[x, y]= becomes two entries.
-Entry-scoped as it is, the only slot it can meet is a relation's side
-when the map flag forces a per-side run, and that slot fits a single
-part.
+=mafcmd-unpack= is the case in point — =[x, y]= becomes two entries,
+while =sin(x)= at point inside a formula unwraps in place, and =f(a, b)=
+there stands, its two parts having nowhere to go.
 
 * Widening the sub-formula target
 
