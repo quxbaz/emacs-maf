@@ -1,8 +1,9 @@
 (maf-step
   ;; The command holds M-u and v u (calc-unpack, whose whole-entry
   ;; behavior it matches at home). j U and j M-U -- calc's own
-  ;; calc-sel-unpack keys -- take the widening sibling instead; that
-  ;; command has its own file, unwrap.el. Assert on resolution rather
+  ;; calc-sel-unpack keys -- take mafcmd-unwrap, the same reading kept
+  ;; as its own command on the selection prefix; that command has its
+  ;; own file, unwrap.el. Assert on resolution rather
   ;; than driving the keys: calc's fancy prefixes do not survive
   ;; execute-kbd-macro, which is why the j-prefix commands are called
   ;; directly throughout these tests.
@@ -217,19 +218,32 @@
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "cos(x)"))
   (calc-pop 1)
 
-  ;; No widening: the node at point is taken as it stands. On x the
-  ;; variable has nothing to give, so the entry is left alone rather
-  ;; than peeling the cos around it -- that reading is mafcmd-unwrap's.
+  ;; Widening: on x the variable has nothing to give, so the target
+  ;; becomes the innermost node around it that gives exactly one part
+  ;; -- the cos, which comes off. Point lands on what came out.
   (maf-push "sin(cos(x))")
   (progn (goto-char (point-min)) (search-forward "(x)") (backward-char 2))
   (call-interactively 'mafcmd-unpack)
   (cl-assert (= (calc-stack-size) 1))
-  (cl-assert (string= (math-format-value (calc-top 1 'full)) "sin(cos(x))"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "sin(x)"))
+  (cl-assert (eq (char-after) ?x))
+  (calc-pop 1)
+
+  ;; From inside a multi-part operand the walk goes out past it: on
+  ;; the product 2 x, two parts and no room, the sin around it is the
+  ;; wrapper that fits. The sum it held stays whole, point on its +.
+  (maf-push "sin(2 x + 1)")
+  (progn (goto-char (point-min)) (search-forward "2 x") (backward-char 2))
+  (call-interactively 'mafcmd-unpack)
+  (cl-assert (= (calc-stack-size) 1))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "2 x + 1"))
+  (cl-assert (eq (char-after) ?+))
   (calc-pop 1)
 
   ;; A multi-part node in a formula slot has no room for its parts:
-  ;; f(a,b) gives two, and a slot fits one. Unchanged, with nothing
-  ;; spilling onto the stack.
+  ;; f(a,b) gives two, and a slot fits one, and here nothing encloses
+  ;; it that would fit either -- the sum gives two as well. Unchanged,
+  ;; with nothing spilling onto the stack.
   (maf-push "y + f(a,b)")
   (progn (goto-char (point-min)) (search-forward "f(a") (backward-char 3))
   (call-interactively 'mafcmd-unpack)
@@ -239,7 +253,8 @@
   (calc-pop 1)
 
   ;; Likewise an operator inside a product: point on the + names the
-  ;; two-part sum, which stays where it is.
+  ;; two-part sum, and the product around it has two parts too, so the
+  ;; walk finds nothing to peel and the entry stays where it is.
   (maf-push "(a + b) (2 c - d)")
   (progn (goto-char (point-min)) (search-forward "+") (backward-char 1))
   (call-interactively 'mafcmd-unpack)

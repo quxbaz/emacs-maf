@@ -1,8 +1,8 @@
 (maf-step
-  ;; The widening sibling of mafcmd-unpack holds calc's own
-  ;; calc-sel-unpack keys, j U and its j M-U alias. The command that
-  ;; takes the node at point as it stands keeps M-u and v u -- see
-  ;; unpack.el. Assert on resolution
+  ;; mafcmd-unwrap holds calc's own calc-sel-unpack keys, j U and its
+  ;; j M-U alias. Today it reads exactly as mafcmd-unpack (M-u, v u --
+  ;; see unpack.el); it stays its own command because it lives on the
+  ;; selection prefix, where it may yet diverge. Assert on resolution
   ;; rather than driving the keys: calc's fancy prefixes do not survive
   ;; execute-kbd-macro, which is why the j-prefix commands are called
   ;; directly throughout these tests.

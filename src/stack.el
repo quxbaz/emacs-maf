@@ -8768,6 +8768,16 @@ dimension entries `calc-unpack' adds for its own stack listing."
 Nil — one level — when no prefix was given."
   (and current-prefix-arg (prefix-numeric-value current-prefix-arg)))
 
+(defun maf--unpack-peelable-p (expr)
+  "Non-nil when EXPR unwraps to exactly one part.
+The `:widen' predicate for `mafcmd-unpack' and `mafcmd-unwrap': a node
+that gives exactly one part is one a sub-formula slot can hold, so it
+is the node to peel. Reads the mode through `maf--unpack-mode', the
+same way the bodies do — resolve and body must agree on what counts,
+or resolve would widen to a node the body then declines to unwrap."
+  (let ((parts (maf--unpack-parts expr (maf--unpack-mode))))
+    (and parts (null (cdr parts)))))
+
 (maf-defcmd mafcmd-unpack (expr _arg commit)
   "Unpack the resolved expression, spreading its parts across the stack.
 
@@ -8779,14 +8789,19 @@ components, a function call into its arguments, an operator into its
 operands. A whole entry — the entry at point, the top at home — gives
 one stack entry per part.
 
-Inside a formula the subject is what point names, as it stands: the
-sub-formula at point, a calc selection, a region. That slot holds one
-expression, so a node that gives exactly one part is unwrapped in
-place, and one that gives several has no room for them and stands
-unchanged. Point is never widened to an enclosing node — that reading
-is `mafcmd-unwrap', which peels the innermost wrapper around point.
-The one sub-formula with room is the entry's whole formula — point on
-the opening bracket of [x, y] — whose slot is the entry itself.
+Inside a formula there is room for only one expression, so point peels
+the innermost wrapper around it that gives exactly one part — the node
+under point when that fits, otherwise the nearest enclosing one. So
+anywhere within sin(2 x) the command means the same thing: take off
+the sin, leaving what it held in its place. A node that gives several
+parts, with no such wrapper around it, has no room for them and stands
+unchanged. A calc selection or a region is taken as it stands and
+never widened. The one sub-formula with room is the entry's whole
+formula — point on the opening bracket of [x, y] — whose slot is the
+entry itself.
+
+`mafcmd-unwrap' on j U does the same today; it stays its own command
+because it lives on calc's selection prefix, where it may yet diverge.
 
 Where the parts spread, point lands at the end of the last of them:
 the end of what the entry became. Where one part takes the node's
@@ -8809,7 +8824,7 @@ signaling.
   x = sin(y)             =>  2:  x / 1:  sin(y)
   x = sin|(y)            =>  x = y             (the node at point)
   |[x, y]                =>  2:  x / 1:  y     (the whole formula)
-  y + sin(a| + b)        =>  unchanged         (a has nothing to give)
+  y + sin(a| + b)        =>  y + (a + b)       (peels the sin)
   y + f|(a, b)           =>  unchanged         (no room for two parts)"
   :title "unpack onto the stack"
   :example "[1, 2] => 1, 2"
@@ -8819,6 +8834,11 @@ signaling.
   ;; it into its two sides, as calc-unpack does, rather than mapping
   ;; over them and putting the relation back together.
   :map -1
+  ;; In a formula slot only a one-part node fits, so resolve hands the
+  ;; body the innermost such node around point instead of whatever
+  ;; point happens to name. Without this, pressing the key on an
+  ;; operand or on a multi-part operator would silently do nothing.
+  :widen maf--unpack-peelable-p
   ;; What comes out of the wrapper is a different node from the one
   ;; point was on, so the glyph point sat on means nothing there: land
   ;; on the glyph that names the part whole instead.
@@ -8840,16 +8860,6 @@ signaling.
       (t expr)))))
 
 ;;; Unwrapping
-
-(defun maf--unpack-peelable-p (expr)
-  "Non-nil when EXPR unwraps to exactly one part.
-The `:widen' predicate for `mafcmd-unwrap': a node that gives exactly
-one part is one a sub-formula slot can hold, so it is the node to peel.
-Reads the mode through `maf--unpack-mode', the same way the body does —
-resolve and body must agree on what counts, or resolve would widen to a
-node the body then declines to unwrap."
-  (let ((parts (maf--unpack-parts expr (maf--unpack-mode))))
-    (and parts (null (cdr parts)))))
 
 (maf-defcmd mafcmd-unwrap (expr _arg commit)
   "Unwrap the resolved expression, taking off the wrapper around point.
@@ -8878,6 +8888,10 @@ An expression with nothing to give — a plain number, a bare variable,
 or one the requested mode does not fit — commits unchanged rather than
 signaling, as does a sub-formula with no peelable wrapper around it.
 An explicit calc selection is taken as it stands and never widened.
+
+Today this is `mafcmd-unpack' under another key: it stays its own
+command because it lives on j U, calc's selection prefix, where the
+selection-mode reading may yet diverge from M-u's.
 
   sin|(2 x)              =>  2 x
   2 x - 3 < sin(|7)      =>  2 x - 3 < 7
