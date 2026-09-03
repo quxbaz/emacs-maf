@@ -28,8 +28,9 @@
 ;; An identity that turns on a premise — a + c = b + c holds because
 ;; a = b — can show the premise: a :display-expr of
 ;; (calcFunc-implies PREMISE CONCLUSION) renders as PREMISE => CONCLUSION,
-;; typeset with the implies arrow, while :expr stays the conclusion,
-;; the form RET pushes.
+;; typeset with the implies arrow, and (calcFunc-iff P Q) as P <=> Q
+;; for one that runs both ways, while :expr stays the conclusion, the
+;; form RET pushes.
 ;;
 ;; Formulas you insert are remembered in a "Recent" group at the top of
 ;; the menu for the rest of the session; it is not written anywhere.
@@ -134,35 +135,53 @@ so the side split is only taken when both halves clear this width."
 (defvar maf-formulas--loaded nil
   "Non-nil once `maf-formulas-file' has been consulted this session.")
 
-;;; Implication, for display
+;;; Implication and equivalence, for display
 
 ;; An identity that turns on a premise — a = b behind a + c = b + c —
 ;; shows the premise in the detail pane as P => Q, calc's => put to
-;; the reading it has on paper. Calc has no implication to compute
-;; with, so RET still pushes the conclusion, the working form, and
-;; `implies' is a display-only call: nothing defines it, so nothing
-;; evaluates it, and these compositions are all there is to it. The
-;; nil entry serves every language calc composes for, Big included;
-;; the latex entry serves `maf--latex-string', which composes in
-;; calc's latex language, where the property is read like any other.
+;; the reading it has on paper, or as P <=> Q where the two sides say
+;; the same thing, as the absolute-value splits do. Calc has neither
+;; connective to compute with, so RET still pushes the conclusion, the
+;; working form, and `implies' and `iff' are display-only calls:
+;; nothing defines them, so nothing evaluates them, and these
+;; compositions are all there is to them. The nil entry serves every
+;; language calc composes for, Big included; the latex entry serves
+;; `maf--latex-string', which composes in calc's latex language, where
+;; the property is read like any other.
 
-(defun maf-formulas--compose-implies (a)
-  "Compose the display call A, implies(P, Q), as P => Q.
+(defun maf-formulas--compose-connective (a arrow)
+  "Compose the display call A, a two-sided connective, with ARROW between.
 Spaced as calc spaces its own => in each language: doubly in Big,
 singly elsewhere."
   (list 'horiz (math-compose-expr (nth 1 a) 0)
-        (if (eq calc-language 'big) "  =>  " " => ")
+        (if (eq calc-language 'big)
+            (concat "  " arrow "  ")
+          (concat " " arrow " "))
         (math-compose-expr (nth 2 a) 0)))
+
+(defun maf-formulas--compose-implies (a)
+  "Compose the display call A, implies(P, Q), as P => Q."
+  (maf-formulas--compose-connective a "=>"))
+
+(defun maf-formulas--compose-iff (a)
+  "Compose the display call A, iff(P, Q), as P <=> Q."
+  (maf-formulas--compose-connective a "<=>"))
 
 (defun maf-formulas--latex-compose-implies (a)
   "Compose the display call A, implies(P, Q), as P \\implies Q."
-  (list 'horiz (math-compose-expr (nth 1 a) 0)
-        " \\implies "
-        (math-compose-expr (nth 2 a) 0)))
+  (maf-formulas--compose-connective a "\\implies"))
+
+(defun maf-formulas--latex-compose-iff (a)
+  "Compose the display call A, iff(P, Q), as P \\iff Q."
+  (maf-formulas--compose-connective a "\\iff"))
 
 (put 'calcFunc-implies 'math-compose-forms
      '((nil (nil . maf-formulas--compose-implies))
        (latex (nil . maf-formulas--latex-compose-implies))))
+
+(put 'calcFunc-iff 'math-compose-forms
+     '((nil (nil . maf-formulas--compose-iff))
+       (latex (nil . maf-formulas--latex-compose-iff))))
 
 (defvar maf-formulas-builtin
   '((:name "commutative-property-of-addition"
@@ -244,7 +263,7 @@ singly elsewhere."
      :category "Algebra — Properties of real numbers"
      :expr (calcFunc-lor (calcFunc-eq (var a var-a) 0)
                          (calcFunc-eq (var b var-b) 0))
-     :display-expr (calcFunc-implies
+     :display-expr (calcFunc-iff
                     (calcFunc-eq (* (var a var-a) (var b var-b)) 0)
                     (calcFunc-lor (calcFunc-eq (var a var-a) 0)
                                   (calcFunc-eq (var b var-b) 0)))
@@ -256,7 +275,7 @@ singly elsewhere."
      :category "Algebra — Properties of real numbers"
      :expr (calcFunc-eq (+ (var a var-a) (var c var-c))
                         (+ (var b var-b) (var c var-c)))
-     :display-expr (calcFunc-implies
+     :display-expr (calcFunc-iff
                     (calcFunc-eq (var a var-a) (var b var-b))
                     (calcFunc-eq (+ (var a var-a) (var c var-c))
                                  (+ (var b var-b) (var c var-c))))
@@ -269,7 +288,7 @@ singly elsewhere."
      :category "Algebra — Properties of real numbers"
      :expr (calcFunc-eq (- (var a var-a) (var c var-c))
                         (- (var b var-b) (var c var-c)))
-     :display-expr (calcFunc-implies
+     :display-expr (calcFunc-iff
                     (calcFunc-eq (var a var-a) (var b var-b))
                     (calcFunc-eq (- (var a var-a) (var c var-c))
                                  (- (var b var-b) (var c var-c))))
@@ -295,7 +314,7 @@ singly elsewhere."
      :category "Algebra — Properties of real numbers"
      :expr (calcFunc-eq (/ (var a var-a) (var c var-c))
                         (/ (var b var-b) (var c var-c)))
-     :display-expr (calcFunc-implies
+     :display-expr (calcFunc-iff
                     (calcFunc-eq (var a var-a) (var b var-b))
                     (calcFunc-eq (/ (var a var-a) (var c var-c))
                                  (/ (var b var-b) (var c var-c))))
@@ -448,17 +467,6 @@ singly elsewhere."
                                (- (^ (var b var-b) 2)
                                   (* 4 (* (var a var-a) (var c var-c))))))
                            (* 2 (var a var-a))))
-     :display-expr (calcFunc-implies
-                    (calcFunc-eq (+ (+ (* (var a var-a) (^ (var x var-x) 2))
-                                       (* (var b var-b) (var x var-x)))
-                                    (var c var-c))
-                                 0)
-                    (calcFunc-eq (var x var-x)
-                                 (/ (+ (neg (var b var-b))
-                                       (calcFunc-sqrt
-                                        (- (^ (var b var-b) 2)
-                                           (* 4 (* (var a var-a) (var c var-c))))))
-                                    (* 2 (var a var-a)))))
      :doc "The larger root of a x^2 + b x + c = 0 when a > 0."
      :vars ((a . "coefficient of x^2, nonzero")
             (b . "coefficient of x")
@@ -473,17 +481,6 @@ singly elsewhere."
                                (- (^ (var b var-b) 2)
                                   (* 4 (* (var a var-a) (var c var-c))))))
                            (* 2 (var a var-a))))
-     :display-expr (calcFunc-implies
-                    (calcFunc-eq (+ (+ (* (var a var-a) (^ (var x var-x) 2))
-                                       (* (var b var-b) (var x var-x)))
-                                    (var c var-c))
-                                 0)
-                    (calcFunc-eq (var x var-x)
-                                 (/ (- (neg (var b var-b))
-                                       (calcFunc-sqrt
-                                        (- (^ (var b var-b) 2)
-                                           (* 4 (* (var a var-a) (var c var-c))))))
-                                    (* 2 (var a var-a)))))
      :doc "The other root: the same formula with the root subtracted."
      :vars ((a . "coefficient of x^2, nonzero")
             (b . "coefficient of x")
@@ -760,7 +757,7 @@ singly elsewhere."
      :category "Algebra — Fractions"
      :expr (calcFunc-eq (* (var a var-a) (var d var-d))
                         (* (var b var-b) (var c var-c)))
-     :display-expr (calcFunc-implies
+     :display-expr (calcFunc-iff
                     (calcFunc-eq (/ (var a var-a) (var b var-b))
                                  (/ (var c var-c) (var d var-d)))
                     (calcFunc-eq (* (var a var-a) (var d var-d))
@@ -842,7 +839,7 @@ singly elsewhere."
      :category "Algebra — Absolute value"
      :expr (calcFunc-lor (calcFunc-eq (var x var-x) (var a var-a))
                          (calcFunc-eq (var x var-x) (neg (var a var-a))))
-     :display-expr (calcFunc-implies
+     :display-expr (calcFunc-iff
                     (calcFunc-eq (calcFunc-abs (var x var-x)) (var a var-a))
                     (calcFunc-lor (calcFunc-eq (var x var-x) (var a var-a))
                                   (calcFunc-eq (var x var-x) (neg (var a var-a)))))
@@ -854,7 +851,7 @@ singly elsewhere."
      :category "Algebra — Absolute value"
      :expr (calcFunc-land (calcFunc-lt (neg (var a var-a)) (var x var-x))
                           (calcFunc-lt (var x var-x) (var a var-a)))
-     :display-expr (calcFunc-implies
+     :display-expr (calcFunc-iff
                     (calcFunc-lt (calcFunc-abs (var x var-x)) (var a var-a))
                     (calcFunc-land (calcFunc-lt (neg (var a var-a)) (var x var-x))
                                    (calcFunc-lt (var x var-x) (var a var-a))))
@@ -865,7 +862,7 @@ singly elsewhere."
      :category "Algebra — Absolute value"
      :expr (calcFunc-lor (calcFunc-lt (var x var-x) (neg (var a var-a)))
                          (calcFunc-gt (var x var-x) (var a var-a)))
-     :display-expr (calcFunc-implies
+     :display-expr (calcFunc-iff
                     (calcFunc-gt (calcFunc-abs (var x var-x)) (var a var-a))
                     (calcFunc-lor (calcFunc-lt (var x var-x) (neg (var a var-a)))
                                   (calcFunc-gt (var x var-x) (var a var-a))))
