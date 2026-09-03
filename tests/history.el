@@ -132,11 +132,18 @@
   (cl-assert (eq (lookup-key maf-history-mode-map (kbd ">")) 'maf-history-oldest))
   (cl-assert (eq (lookup-key maf-history-mode-map (kbd "M-<")) 'maf-history-newest))
   (cl-assert (eq (lookup-key maf-history-mode-map (kbd "M->")) 'maf-history-oldest))
+  ;; h and l name a side by direction, log left and stack right, from
+  ;; either window; pressing the one for the window already selected
+  ;; stays put rather than cycling.
+  (cl-assert (eq (lookup-key maf-history-mode-map (kbd "h")) 'maf-history-focus-log))
+  (cl-assert (eq (lookup-key maf-history-mode-map (kbd "l")) 'maf-history-focus-stack))
+  (cl-assert (eq (lookup-key maf-history-stack-mode-map (kbd "h")) 'maf-history-focus-log))
+  (cl-assert (eq (lookup-key maf-history-stack-mode-map (kbd "l")) 'maf-history-focus-stack))
   ;; Retired keys stay retired: none of them still runs a browsing
   ;; command. They are not asserted unbound — special-mode keeps its
-  ;; own claim on some (h is `describe-mode'), which is what should
-  ;; show through once ours is gone.
-  (dolist (key '("u" "i" "h" "l" "v" "G"))
+  ;; own claim on some, which is what should show through once ours
+  ;; is gone.
+  (dolist (key '("u" "i" "v" "G"))
     (cl-assert (not (memq (lookup-key maf-history-mode-map (kbd key))
                           '(maf-history-previous maf-history-next
                             maf-history-oldest maf-history-newest

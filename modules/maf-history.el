@@ -677,6 +677,13 @@ mean something else beside a stack — line motion and RET.")
 (define-key maf-history-mode-map (kbd "o") #'maf-history-switch)
 (define-key maf-history-mode-map (kbd "t") #'maf-history-switch)
 (define-key maf-history-mode-map (kbd "TAB") #'maf-history-focus-stack)
+;; h and l name a side by direction — the log is the left window, the
+;; stack the right — so pressing the one for the window already
+;; selected stays put rather than cycling. Vim's row beside j/k, and
+;; like j/k left off the legend. h shadows the `describe-mode'
+;; special-mode puts there; C-h m still reaches it.
+(define-key maf-history-mode-map (kbd "h") #'maf-history-focus-log)
+(define-key maf-history-mode-map (kbd "l") #'maf-history-focus-stack)
 ;; RET on a log row takes that state: choosing an item from the log is
 ;; choosing the stack it names, as RET on a completion candidate takes
 ;; it. Picking one entry out of a state instead is RET in the stack.
@@ -693,9 +700,9 @@ mean something else beside a stack — line motion and RET.")
 (define-key maf-history-mode-map (kbd "C-M-k") #'maf-history-clear)
 ;; ? describes the command a row names, the reading that makes the
 ;; echoed command name useful rather than only informative. It shadows
-;; the `describe-mode' special-mode puts here, which stays on h. w is
-;; the same command on a home-row key, for reading down the log without
-;; reaching for a shifted one.
+;; the `describe-mode' special-mode puts here. w is the same command
+;; on a home-row key, for reading down the log without reaching for a
+;; shifted one.
 (define-key maf-history-mode-map (kbd "?") #'maf-history-describe-command)
 (define-key maf-history-mode-map (kbd "w") #'maf-history-describe-command)
 (define-key maf-history-mode-map (kbd "q") #'maf-history-quit)
@@ -902,8 +909,9 @@ without a shifted key."
   "Switch between the action log and the stack beside it.
 Selects whichever of the browser's two windows is not the current
 one, so one key crosses either way. `maf-history-focus-log' and
-`maf-history-focus-stack' name a side instead; TAB runs whichever of
-them leads out of the window it is pressed in."
+`maf-history-focus-stack' name a side instead: h and l by direction,
+and TAB runs whichever of them leads out of the window it is pressed
+in."
   (interactive)
   (if (derived-mode-p 'maf-history-stack-mode)
       (maf-history-focus-log)

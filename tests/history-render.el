@@ -150,8 +150,9 @@
                  'maf-history-describe-command))
   (cl-assert (eq (lookup-key maf-history-stack-mode-map (kbd "w"))
                  'maf-history-describe-command))
-  ;; The mode's own help keeps the h that `special-mode' also puts it on.
-  (cl-assert (eq (lookup-key maf-history-mode-map (kbd "h")) 'describe-mode))
+  ;; h now names the left window (see tests/history.el); the mode's own
+  ;; help is on C-h m rather than the h `special-mode' puts it on.
+  (cl-assert (eq (lookup-key maf-history-mode-map (kbd "h")) 'maf-history-focus-log))
   (with-current-buffer (maf-history--buffer)
     (progn (goto-char (point-min)) (forward-line 1))
     (cl-assert (eq (nth 2 (maf-history--state-at-point)) 'calcDigit-nondigit))
