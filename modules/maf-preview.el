@@ -219,7 +219,15 @@ content is made here: the fringes pad the sides, and STR is framed by
 two blank lines of exactly `maf-preview--posframe-pad' pixels — each a
 stretch glyph, with the top line's newline shrunk under it so no
 full-height glyph props the line open. Plain text is padded more than
-an image — see `maf-preview--posframe-text-pad'."
+an image — see `maf-preview--posframe-text-pad'.
+
+The frame's colors are passed explicitly: a child frame is a new
+frame, and new frames otherwise draw from `default-frame-alist', which
+a config may pin to one theme's colors (a dark background to spare a
+startup flash, say) while the calc window wears another. The panel
+floats over that window, so it wears what the window wears. Passing
+the colors also keeps them current: a theme switch changes the
+arguments, and posframe rebuilds the frame."
   (let* ((imagep (get-text-property 0 'display str))
          (pad (if imagep maf-preview--posframe-pad
                 maf-preview--posframe-text-pad))
@@ -236,6 +244,8 @@ an image — see `maf-preview--posframe-text-pad'."
                          "\n"
                          (propertize " " 'display `(space :height (,(cdr pad)))))
                 :poshandler #'maf-preview--poshandler
+                :foreground-color (face-foreground 'default nil t)
+                :background-color (face-background 'default nil t)
                 :internal-border-width 2
                 :internal-border-color "gray50"
                 :left-fringe 5
