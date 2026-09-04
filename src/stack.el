@@ -28,6 +28,7 @@
 (declare-function calcFunc-expand "calc-poly")
 (declare-function math-simplify "calc-alg")
 (declare-function math-matrixp "calc-ext")
+(declare-function math-check-unit-name "calc-units")
 (declare-function math-transpose "calc-vec")
 (declare-function math-const-var "calc-ext")
 (declare-function calc-undo "calc-undo")
@@ -3525,6 +3526,76 @@ touched; every other product, 4 x included, keeps its juxtaposition."
     (setf (nth 4 comp) "\\cdot "))
   comp)
 
+(defvar maf--latex-typeset-quantities nil
+  "Non-nil to typeset a quantity's units: a thin space before, upright.
+Nil leaves calc's own writing, 3 cm, which TeX sets as 3cm with the
+unit in italics like a variable: the LaTeX string also builds the
+Desmos URL, where a TeX space has no place. The pretty path binds
+this, and 3 cm goes out as 3\\,\\mathrm{cm} — see `maf-pretty--latex'.")
+
+(defvar maf--latex-in-quantity nil
+  "Non-nil while composing the parts of a quantity.
+Bound by `maf--latex-string' around an expression `maf--latex-quantity-p'
+accepts, so that the units inside it are known to be units: calc reads
+3 kg m as 3 times the product kg m, and 3 cm / s as a product over s,
+and neither the inner product nor the denominator has a number of its
+own to say its names are units rather than variables.")
+
+(defun maf--latex-unit-factor-p (x)
+  "Non-nil when X is a unit, a power of one, or a product opening on one.
+The degree unit is not counted: it composes as the raised circle,
+which rides its factor with no gap. Whether a name is a unit is asked
+of calc's table, so a unit the user has defined counts too."
+  (pcase (car-safe x)
+    ('var (and (not (equal x '(var deg var-deg)))
+               (require 'calc-units nil t)
+               (ignore-errors (math-check-unit-name x))
+               t))
+    ('^ (maf--latex-unit-factor-p (nth 1 x)))
+    ('* (maf--latex-unit-factor-p (nth 1 x)))))
+
+(defun maf--latex-scalar-p (x)
+  "Non-nil when X is a number, pi, or a product of those: 3, 2 pi."
+  (or (Math-numberp x)
+      (equal x '(var pi var-pi))
+      (and (eq (car-safe x) '*)
+           (maf--latex-scalar-p (nth 1 x))
+           (maf--latex-scalar-p (nth 2 x)))))
+
+(defun maf--latex-quantity-p (x)
+  "Non-nil when X is a scalar times or over unit factors: 3, 3 kg, 3 cm / s.
+What earns its units their typesetting. A variable beside a unit name
+gets none: calc's table lists c, h, e, m and a good many other single
+letters, and in (a + b^2) c the c is a variable, the product plain
+algebra. Only a number makes the pair a quantity."
+  (or (maf--latex-scalar-p x)
+      (and (memq (car-safe x) '(* /))
+           (maf--latex-quantity-p (nth 1 x))
+           (maf--latex-unit-factor-p (nth 2 x)))))
+
+(defun maf--latex-space-unit-product (a comp)
+  "Write a thin space into COMP where A juxtaposes a quantity and its unit.
+A is the expression COMP was composed from — a quantity times a unit
+factor (`maf--latex-quantity-p'), or unit factors inside one
+\\(`maf--latex-in-quantity') — in the one shape a juxtaposed product
+takes: lhs, a break, a lone space, rhs, the same shape
+`maf--latex-separate-digit-product' watches for. Only that shape is
+touched, and only while `maf--latex-typeset-quantities' is on. A unit
+never opens on a digit, so the two never both write into one product."
+  (when (and maf--latex-typeset-quantities
+             (eq (car-safe a) '*)
+             (eq (car-safe comp) 'horiz)
+             (= (length comp) 6)
+             (eq (car-safe (nth 1 comp)) 'set)
+             (eq (car-safe (nth 3 comp)) 'break)
+             (equal (nth 4 comp) " ")
+             (maf--latex-unit-factor-p (nth 2 a))
+             (or (maf--latex-quantity-p (nth 1 a))
+                 (and maf--latex-in-quantity
+                      (maf--latex-unit-factor-p (nth 1 a)))))
+    (setf (nth 4 comp) "\\,"))
+  comp)
+
 (defun maf--latex-strip-script-parens (latex)
   "LATEX with parens dropped from scripts they span whole.
 Calc writes x^(-n) into TeX as x^{(-n)}: the parens that made the
@@ -3567,7 +3638,11 @@ parens flat notation needed around it: x^{-n}, not x^{(-n)} — see
 `maf--latex-strip-script-parens'; and a juxtaposed factor opening on
 a digit gets its sign written out — 4 \\cdot 2^x, where TeX would
 have run the 4 and 2 together (`maf--latex-separate-digit-product');
-the degree unit deg typesets as the raised circle, 180 deg drawing
+a quantity's units are set upright with a thin space before them
+while `maf--latex-typeset-quantities' is on — 3\\,\\mathrm{cm}, and
+not a variable's c (`maf--latex-space-unit-product'); the degree unit
+deg typesets
+as the raised circle, 180 deg drawing
 as 180 with the \\circ on its shoulder; and the sets read with their
 signs — a vector of intervals joins its pieces with the cup instead
 of bracketing them, and vunion and vint calls draw as A cup B and
@@ -3623,6 +3698,13 @@ is reclassed \\mathrel to match."
                        ;; separated.
                        (cond
                         ((equal a '(var deg var-deg)) "{}^{\\circ}")
+                        ;; A unit inside a quantity is set upright,
+                        ;; the way units are written, and a variable
+                        ;; is not.
+                        ((and maf--latex-in-quantity
+                              (eq (car-safe a) 'var)
+                              (maf--latex-unit-factor-p a))
+                         (format "\\mathrm{%s}" (nth 1 a)))
                         ((and (eq (car-safe a) 'vec)
                               (cdr a)
                               (cl-every (lambda (el)
@@ -3640,8 +3722,13 @@ is reclassed \\mathrel to match."
                          (list 'horiz "\\left[ "
                                (maf--latex-join-composed (cdr a) ", ")
                                " \\right]"))
-                        (t (maf--latex-separate-digit-product
-                            a (funcall compose a prec div)))))))
+                        (t (let ((maf--latex-in-quantity
+                                  (or maf--latex-in-quantity
+                                      (and maf--latex-typeset-quantities
+                                           (maf--latex-quantity-p a)))))
+                             (maf--latex-space-unit-product
+                              a (maf--latex-separate-digit-product
+                                 a (funcall compose a prec div)))))))))
               (maf--latex-strip-script-parens
                (replace-regexp-in-string
                 " \\? " " \\\\mathrel{?} "

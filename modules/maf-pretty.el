@@ -212,7 +212,11 @@ after the script strip, so an exponent's shed parens stay shed."
 The signs are hoisted to the front of their products, printed as
 \\pm — subscripted when the entry carries several distinct signs,
 which stay independent — and a + or - the sign follows folds into
-it, - flipping to \\mp. Everything else is `maf--latex-string'."
+it, - flipping to \\mp. A quantity's units are set upright with a
+thin space before them — 3\\,\\mathrm{cm}, where TeX would set
+calc's 3 cm as 3cm in italics — switched on in `maf--latex-string'
+here, since the same string builds the Desmos URL, where a TeX space
+has no place. Everything else is `maf--latex-string'."
   (let* ((names nil)
          (scan (lambda (scan e)
                  (if (maf-pretty--sign-var-p e)
@@ -221,8 +225,9 @@ it, - flipping to \\mp. Everything else is `maf--latex-string'."
                    (when (and (consp e) (not (eq (car e) 'var)))
                      (dolist (child (cdr e)) (funcall scan scan child))))))
          (latex (progn (funcall scan scan expr)
-                       (maf--latex-string
-                        (if names (maf-pretty--hoist-signs expr) expr)))))
+                       (let ((maf--latex-typeset-quantities t))
+                         (maf--latex-string
+                          (if names (maf-pretty--hoist-signs expr) expr))))))
     (when names
       (let ((lone (null (cdr names))))
         (setq latex (replace-regexp-in-string
