@@ -12,8 +12,9 @@
    - [ ] doom themes
    - [ ] other themes
 ** review
-   - [-] maf-pretty box is always black
+   - [ ] maf-pretty box is always black
      - currently it's using black bg on black text on a light theme
+   - [ ] 3cm in ratex/pretty should render with space before the unit (3 cm)
 
 * delivery
   - [ ] version as 1.0.0
