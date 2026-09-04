@@ -47,7 +47,7 @@ M-x maf-bindings-set-profile          ; switch in a running session</code></pre>
     <tr><th>What</th><th>Needed by</th><th>Notes</th></tr>
     <tr><td>Emacs 28.1+</td><td>everything</td><td>Calc and the other libraries maf uses are built in.</td></tr>
     <tr><td>posframe</td><td>maf-preview, optional</td><td>Gives the preview panel a child frame on graphical displays. Without it, or on a terminal, the panel is drawn inside the window.</td></tr>
-    <tr><td>RaTeX <code>render-svg</code></td><td>maf-pretty</td><td>A program taking one LaTeX formula on stdin and writing SVG. Set <code>maf-pretty-program</code>; the default looks on the exec path, then in <code>~/pkgs/ratex</code>. Needs a graphical Emacs with SVG support.</td></tr>
+    <tr><td><a href="https://github.com/erweixin/RaTeX">RaTeX</a> <code>render-svg</code></td><td>maf-pretty</td><td>A LaTeX math renderer in Rust. Download a prebuilt CLI archive from the <a href="https://github.com/erweixin/RaTeX/releases">RaTeX releases</a> page, for example <code>ratex-cli-v0.1.14-x86_64-unknown-linux-musl</code>, and unpack it; the binaries bundle the KaTeX fonts. Put <code>render-svg</code> on your exec path or in <code>~/pkgs/ratex</code>, where <code>maf-pretty-program</code> looks by default, or point that variable at it. Needs a graphical Emacs with SVG support.</td></tr>
     <tr><td>gnuplot</td><td>maf-plot</td><td>For the embedded SVG plot and the interactive plot window. <code>maf-plot-gnuplot-program</code>.</td></tr>
     <tr><td>A browser</td><td>maf-plot</td><td>For the Desmos plot. Auto-detected; override with <code>maf-plot-browser</code>.</td></tr>
   </table>

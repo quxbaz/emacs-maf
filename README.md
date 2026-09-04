@@ -73,7 +73,7 @@ Pick a profile with `(setq maf-bindings-profile 'vim)` before loading, or `M-x m
 | What | Needed by | Notes |
 |---|---|---|
 | posframe | maf-preview | Child-frame preview panel on graphical displays. Falls back to an in-window panel. |
-| RaTeX `render-svg` | maf-pretty | Takes one LaTeX formula on stdin and writes SVG. Set `maf-pretty-program`. |
+| [RaTeX](https://github.com/erweixin/RaTeX) `render-svg` | maf-pretty | Prebuilt CLI archives on the [releases page](https://github.com/erweixin/RaTeX/releases). Put `render-svg` on the exec path or in `~/pkgs/ratex`, or set `maf-pretty-program`. |
 | gnuplot | maf-plot | Embedded SVG plot and interactive plot window. |
 | A browser | maf-plot | The Desmos plot. |
 

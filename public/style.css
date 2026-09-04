@@ -201,3 +201,5 @@ kbd.k { font-size: .82em; padding: 0 .35em; }
 .band h2.bandtitle { font-size: 1.15rem; border: 0; margin: 0 0 6px; padding: 0; }
 .band .cgroup h2 { font-size: .95rem; }
 .cgroup li .k { margin-right: 2px; }
+mark.hl { background: rgba(0, 155, 124, .28); color: inherit; border-radius: 2px; padding: 0 1px; }
+mark.rg { background: rgba(43, 95, 168, .22); color: inherit; border-radius: 2px; padding: 0 1px; }
