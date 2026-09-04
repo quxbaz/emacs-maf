@@ -21,7 +21,7 @@
       {date, changes, additions} fields (anything else?)
     - [ ] bindings cheat sheet page. on hover, show the example and description.
       also show `H` and `I` flag behavior. group the bindings by category.
-  - [ ] check for accuracy with other agent
+  - [-] check for accuracy with other agent
 
 * website 2
   - [ ] create video/gif examples
