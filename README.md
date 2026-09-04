@@ -38,7 +38,7 @@ Calc's `I` and `H` prefixes route each command to a sibling, so `I S` takes the 
 
 ## Install
 
-Requires Emacs 28.1 or later. Nothing else is required.
+Requires Emacs 28.1 or later. Nothing else is required; RaTeX, gnuplot and posframe are optional and listed below.
 
 ```
 M-x package-vc-install RET https://github.com/quxbaz/emacs-maf RET
@@ -70,12 +70,14 @@ Pick a profile with `(setq maf-bindings-profile 'vim)` before loading, or `M-x m
 
 ### Optional dependencies
 
+None of these is required. Emacs 28.1 is the only requirement; each of these unlocks one module or one key.
+
 | What | Needed by | Notes |
 |---|---|---|
 | posframe | maf-preview | Child-frame preview panel on graphical displays. Falls back to an in-window panel. |
-| [RaTeX](https://github.com/erweixin/RaTeX) `render-svg` | maf-pretty | Prebuilt CLI archives on the [releases page](https://github.com/erweixin/RaTeX/releases). Put `render-svg` on the exec path or in `~/pkgs/ratex`, or set `maf-pretty-program`. |
-| gnuplot | maf-plot | Embedded SVG plot and interactive plot window. |
-| A browser | maf-plot | The Desmos plot. |
+| [RaTeX](https://github.com/erweixin/RaTeX) `render-svg` | maf-pretty, off by default | Prebuilt CLI archives on the [releases page](https://github.com/erweixin/RaTeX/releases). Put `render-svg` on the exec path or in `~/pkgs/ratex`, or set `maf-pretty-program`. |
+| gnuplot | maf-plot, `g l` and `g g` | Embedded SVG plot and interactive plot window. The Desmos plot works without it. |
+| A browser | maf-plot, `g o` | The Desmos plot only. |
 
 ## Modules
 
