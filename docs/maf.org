@@ -13,6 +13,7 @@
    - [ ] other themes
 ** review
    - [ ] maf-pretty box is always black
+     - currently it's using black bg on black text on a light theme
 
 * delivery
   - [ ] version as 1.0.0
