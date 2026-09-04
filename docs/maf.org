@@ -19,7 +19,7 @@
     - [ ] show deps
     - [ ] crawl through every single commit and build a data structure with
       {date, changes, additions} fields (anything else?)
-    - [ ] bindings cheat sheet. on hover, show the example and description.
+    - [ ] bindings cheat sheet page. on hover, show the example and description.
       also show `H` and `I` flag behavior. group the bindings by category.
 p
 * website 2
