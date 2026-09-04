@@ -7,22 +7,24 @@
 
 * Todo
 
-* delivery
+* website
   - [ ] version as 1.0.0
   - [ ] generate readme
   - [ ] generate webpage
-    - [ ] create video/gif examples
     - [ ] show all major features
     - [ ] show all additions
     - [ ] show all changes
     - [ ] show how to use / install
     - [ ] show deps
-    - [ ] try to get into melpa
-    - [ ] post on reddit / forums
     - [ ] crawl through every single commit and build a data structure with
       {date, changes, additions} fields (anything else?)
     - [ ] bindings cheat sheet. on hover, show the example and description.
       also show `H` and `I` flag behavior. group the bindings by category.
+
+* website 2
+  - [ ] create video/gif examples
+  - [ ] try to get into melpa
+  - [ ] post on reddit / forums
 
 * major features
   - [ ] discovery document for useful features, behaviors, modules, etc
