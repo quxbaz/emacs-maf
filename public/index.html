@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>maf — a contextual UX for Emacs Calc</title>
+<link rel="stylesheet" href="style.css">
+<script src="data/bindings.js"></script>
+<script src="data/commits.js"></script>
+</head>
+<body>
+<nav class="nav" id="nav"></nav>
+<main class="wrap">
+  <section class="hero">
+    <h1>maf</h1>
+    <p class="lede">An alternative UX over Emacs Calc. One key does the right thing wherever point is: on the home line, on a stack entry, on a sub-expression, on a calc selection, on one side of an equation, or on a region of a sum. The result goes back where it came from, and point stays put.</p>
+    <div class="cta">
+      <a class="btn primary" href="install.html">Install</a>
+      <a class="btn" href="keys.html">Key bindings</a>
+      <a class="btn" href="https://github.com/quxbaz/emacs-maf">Source on GitHub</a>
+    </div>
+  </section>
+
+  <div class="stats" id="stats"></div>
+
+  <h2>What "contextual" means</h2>
+  <p>A stock Calc command takes its operand from the top of the stack. A maf command first <b>resolves</b> point and the calc state into a target, runs its body on exactly that, then <b>commits</b> the result to the same place. The six targets, in priority order:</p>
+  <table class="plain">
+    <tr><th>Target</th><th>When it fires</th><th>Operates on</th></tr>
+    <tr><td>region</td><td>An active region inside one entry</td><td>The run of terms it covers in a <code>+</code> or <code>*</code> chain</td></tr>
+    <tr><td>selection</td><td>A calc selection exists</td><td>The selected sub-formula</td></tr>
+    <tr><td>home</td><td>Point is on the <code>.</code> line</td><td>The top stack entry</td></tr>
+    <tr><td>subexpr</td><td>Point is inside a formula</td><td>The sub-formula under point</td></tr>
+    <tr><td>equation</td><td>Point is on a relation</td><td>Each side, the body running once per side</td></tr>
+    <tr><td>entry</td><td>Point is on an entry's edge</td><td>The whole formula</td></tr>
+  </table>
+  <p>So with <code>x^2 + 2 x + 1 = 4</code> on the stack, pressing <kbd>a</kbd> <kbd>f</kbd> with point on the left side factors that side in place. Press it at home and the whole entry is factored. The <a href="keys.html">cheat sheet</a> marks the contextual commands with a dot.</p>
+
+  <h3>Flags</h3>
+  <p>Calc's <kbd>I</kbd> and <kbd>H</kbd> prefixes route each command to a sibling, so <kbd>I</kbd> <kbd>S</kbd> takes the arcsine of the resolved sub-expression rather than of the stack top. maf adds a third flag, <kbd>M</kbd>: the next command maps over its subject, once per element of a vector or once per side of a relation, with <kbd>M</kbd> <kbd>r</kbd> and <kbd>M</kbd> <kbd>c</kbd> choosing rows or columns of a matrix. Every command's variants are listed in the cheat sheet's hover.</p>
+
+  <h2>Major features</h2>
+  <div class="grid">
+    <div class="card"><h3>Targeting, everywhere</h3><p>Around 220 contextual commands cover arithmetic, algebra, solving, calculus, trig, vectors and sets, statistics, binary and finance, and dates. Each one's targeting policy is a variable you can retune.</p></div>
+    <div class="card"><h3>Live highlight of the target</h3><p>The innermost sub-formula under point is highlighted as you move, so you see what a command will act on before you press it.</p></div>
+    <div class="card"><h3>Regions over chains</h3><p>Calc has no node for <code>b + c</code> inside <code>a + b + c + d</code>. maf carves the run out, rewrites it, and splices it back, leaving the other terms' text untouched.</p></div>
+    <div class="card"><h3>Edit the stack as text</h3><p><kbd>SPC</kbd> turns the stack into an editable buffer, wdired style. Newlines split and join entries. A handwriting dialect reads <code>2xy</code> as <code>2 x y</code>, and a layer of in-entry shortcuts wraps, retypes, and duplicates groups.</p></div>
+    <div class="card"><h3>The map flag and combinators</h3><p><kbd>M</kbd> maps any contextual command over a vector or an equation. Fold, accumulate, apply, outer and inner products read their operation from the next key, looked up among maf's own commands.</p></div>
+    <div class="card"><h3>Three key profiles</h3><p><b>calc</b> keeps Calc's layout and swaps in maf's commands. <b>native</b> is maf's own layout, the default. <b>vim</b> puts it under <kbd>h</kbd> <kbd>j</kbd> <kbd>k</kbd> <kbd>l</kbd> motions. Your own bindings sit above and are never rewritten.</p></div>
+    <div class="card"><h3>Discoverability built in</h3><p><kbd>l</kbd> <kbd>b</kbd> lists every bound command with a proper name and a worked example. <kbd>?</kbd> shows all of Calc's settings in one readable table. <kbd>m</kbd> <kbd>c</kbd> is the module menu. <kbd>s</kbd> <kbd>o</kbd> opens a formula library.</p></div>
+    <div class="card"><h3>History and persistence</h3><p><kbd>M-h</kbd> browses every past stack state beside the log that produced it, and pushes any old entry back. An opt-in module restores the stack across Emacs sessions.</p></div>
+    <div class="card"><h3>Previews and typesetting</h3><p>A panel follows point showing the entry in Calc's two-dimensional display. With RaTeX installed, <kbd>G</kbd> typesets the entry as an SVG, units upright and all.</p></div>
+    <div class="card"><h3>Plotting three ways</h3><p><kbd>g</kbd> <kbd>l</kbd> embeds a gnuplot SVG themed from your faces, <kbd>g</kbd> <kbd>o</kbd> opens the formula in Desmos in the browser, <kbd>g</kbd> <kbd>g</kbd> opens interactive gnuplot. <kbd>H</kbd> first plots the whole stack.</p></div>
+    <div class="card"><h3>Paper-style output</h3><p>Toggleable rewrite modules keep polynomials in descending order, write <code>exp(x)</code> as <code>e^x</code>, and add the general-base log identities Calc lacks.</p></div>
+    <div class="card"><h3>Upstream fixes included</h3><p>Two Calc selection bugs are fixed on the way through: dropped denominator parens in selected compositions, and the selection cache matching the wrong one of two identical entries.</p></div>
+  </div>
+
+  <h2>Modules</h2>
+  <p>Each feature beyond the command set is a module, a global minor mode you can turn on or off from the <kbd>m</kbd> <kbd>c</kbd> menu or through the <code>maf-modules</code> variable. Everything below is on by default except where marked.</p>
+  <div class="grid" id="modules"></div>
+
+  <h2>Where things stand</h2>
+  <p>maf is under active development and the API is unstable. The version is 0.1.0. The test suite is a set of step tests run against a live Emacs, one file per feature, all expected to pass on <code>main</code>. The <a href="additions.html">additions</a> and <a href="changes.html">changes</a> pages are generated from the commit history, with each commit's recorded reasoning.</p>
+  <footer id="foot"></footer>
+</main>
+<script src="site.js"></script>
+<script>
+(function () {
+  const B = window.MAF_BINDINGS, C = window.MAF_COMMITS;
+  const native = B.profiles.find(p => p.name === B.default_profile);
+  const items = native.groups.flatMap(g => g.items);
+  const ctx = items.filter(i => i.contextual).length;
+  document.getElementById("stats").innerHTML = [
+    [items.length, "commands bound"], [ctx, "of them contextual"], [native.groups.length - 2, "groups"],
+    [18, "modules"], [C.summary.total, "commits since " + C.summary.first.slice(0, 7)]
+  ].map(([n, l]) => '<div class="stat"><b>' + n + "</b><span>" + l + "</span></div>").join("");
+  const mods = [
+    ["maf-hl", "Display", true, "Highlights the sub-formula under point as you move: the target a contextual command would take."],
+    ["maf-edit", "Editing", true, "In-place editing of the stack as text on SPC. RET commits, newline gestures split and join entries."],
+    ["maf-editplus", "Editing", true, "In-entry shortcuts for edit sessions: jump past a closing delimiter, wrap and widen parens, retype brackets, function and exponent keys."],
+    ["maf-editvars", "Editing", true, "A handwriting dialect for edit sessions: a run of letters reads as separate factors, braces quote one name, units show in gold."],
+    ["maf-recall", "Memory", true, "A ring of the entries you typed, walked with M-p and M-n, on the stack or inside an edit session."],
+    ["maf-preview", "Display", true, "A panel following point that shows the entry in Calc's Big two-dimensional display, as a child frame or in the window."],
+    ["maf-pretty", "Display", false, "Typesets the entry at point with RaTeX and shows the SVG. Off by default; needs the render-svg program."],
+    ["maf-formulas", "Memory", true, "A saved-formula library grouped by category with a detail pane, on s o. RET pushes a formula onto the stack."],
+    ["maf-history", "Memory", true, "A browsable log of every past stack state on M-h, with the stack of the selected state shown beside it."],
+    ["maf-persist", "Prefs", false, "Saves each Emacs session's stack under its own name and restores it next time. Off by default because it writes files."],
+    ["maf-selplus", "Display", true, "A header-line badge while any entry carries a selection, naming the key that clears it."],
+    ["maf-poly-order", "Rewrite", true, "Keeps single-variable polynomials in descending degree, the way they are written on paper."],
+    ["maf-plot", "Plots", true, "Plots the entry with gnuplot in a split, in Desmos in the browser, or in an interactive gnuplot window."],
+    ["maf-e-power", "Rewrite", true, "Writes symbolic exp(x) as e^x."],
+    ["maf-log-power", "Rewrite", true, "Adds the general-base log identities Calc lacks, such as b^log(a, b) simplifying to a."],
+    ["maf-options", "Prefs", true, "All of Calc's settings in one buffer on ?, each row showing the current value and the choices."],
+    ["maf-keys", "Help", true, "The bindings help buffer on l b: every key in the active profile, grouped, with names and examples."],
+    ["maf-bindings", "Prefs", true, "The key profile registry and compiler behind the calc, native and vim layouts."]
+  ];
+  document.getElementById("modules").innerHTML = mods.map(([n, g, on, d]) =>
+    '<div class="card"><span class="tag">' + g + (on ? "" : " · off by default") + '</span><h3><code>' + n + "</code></h3><p>" + d + "</p></div>").join("");
+})();
+</script>
+</body>
+</html>

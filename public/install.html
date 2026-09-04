@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>maf — install</title>
+<link rel="stylesheet" href="style.css">
+<script src="data/bindings.js"></script>
+</head>
+<body>
+<nav class="nav" id="nav"></nav>
+<main class="wrap">
+  <h1>Install and use</h1>
+  <p class="lede">maf is a single package with everything it needs in the repository. It requires Emacs 28.1 or later and nothing else. A few modules use optional external programs, listed below.</p>
+
+  <h2>Get the code</h2>
+  <p>With Emacs 29 or later, the package manager can install straight from the repository:</p>
+  <pre><code>M-x package-vc-install RET https://github.com/quxbaz/emacs-maf RET</code></pre>
+  <p>Or clone it and add the directory to your load path. maf's entry file adds its own subdirectories.</p>
+  <pre><code>git clone https://github.com/quxbaz/emacs-maf ~/src/emacs-maf</code></pre>
+  <pre><code>(add-to-list 'load-path "~/src/emacs-maf")
+(require 'maf)
+;; Turn maf on in every calc buffer. Hooking calc-mode rather than
+;; enabling once keeps it on across calc-reset, which re-runs the mode.
+(add-hook 'calc-mode-hook #'maf-mode)</code></pre>
+  <p>With use-package on Emacs 30:</p>
+  <pre><code>(use-package maf
+  :vc (:url "https://github.com/quxbaz/emacs-maf")
+  :hook (calc-mode . maf-mode))</code></pre>
+  <p>Then open Calc as usual with <kbd>M-x</kbd> <code>calc</code>, or use <code>maf-calc</code>, which opens it full-screen from a special buffer and splits right from a single window.</p>
+
+  <h2>Pick a key profile</h2>
+  <p>The default profile is <b>native</b>, maf's own layout. Set the variable before loading, or switch live:</p>
+  <pre><code>(setq maf-bindings-profile 'vim)      ; calc, native, or vim
+M-x maf-bindings-set-profile          ; switch in a running session</code></pre>
+  <p>Your own bindings go in <code>maf-common-user-map</code> or a per-profile user map. maf composes its defaults beneath them and never rewrites them. Whatever is on, <kbd>m</kbd> <kbd>c</kbd> always opens the module menu. The <a href="keys.html">cheat sheet</a> shows every profile.</p>
+
+  <h2>Turn modules on and off</h2>
+  <p>The <code>maf-modules</code> variable lists the modules that start on. Two are off by default: <code>maf-persist</code>, because it writes files, and <code>maf-pretty</code>, because it needs an external program.</p>
+  <pre><code>(with-eval-after-load 'maf
+  (add-to-list 'maf-modules 'maf-persist t)
+  (maf-modules-apply))</code></pre>
+  <p>In a session, <kbd>m</kbd> <kbd>c</kbd> opens a menu where each module can be toggled and its options read.</p>
+
+  <h2>Dependencies</h2>
+  <table class="plain">
+    <tr><th>What</th><th>Needed by</th><th>Notes</th></tr>
+    <tr><td>Emacs 28.1+</td><td>everything</td><td>Calc and the other libraries maf uses are built in.</td></tr>
+    <tr><td>posframe</td><td>maf-preview, optional</td><td>Gives the preview panel a child frame on graphical displays. Without it, or on a terminal, the panel is drawn inside the window.</td></tr>
+    <tr><td>RaTeX <code>render-svg</code></td><td>maf-pretty</td><td>A program taking one LaTeX formula on stdin and writing SVG. Set <code>maf-pretty-program</code>; the default looks on the exec path, then in <code>~/pkgs/ratex</code>. Needs a graphical Emacs with SVG support.</td></tr>
+    <tr><td>gnuplot</td><td>maf-plot</td><td>For the embedded SVG plot and the interactive plot window. <code>maf-plot-gnuplot-program</code>.</td></tr>
+    <tr><td>A browser</td><td>maf-plot</td><td>For the Desmos plot. Auto-detected; override with <code>maf-plot-browser</code>.</td></tr>
+  </table>
+
+  <h2>Try it</h2>
+  <ol>
+    <li>Open Calc and type <code>' x^2 + 2 x + 1 = 4 RET</code>.</li>
+    <li>Press <kbd>C-b</kbd> to step back into the entry, move onto the left side, and press <kbd>a</kbd> <kbd>f</kbd>. That side factors in place.</li>
+    <li>Press <kbd>j</kbd> <kbd>j</kbd> anywhere on the entry to isolate <code>x</code>.</li>
+    <li>Press <kbd>l</kbd> <kbd>b</kbd> to see every key with an example, or <kbd>?</kbd> for Calc's settings.</li>
+  </ol>
+  <footer id="foot"></footer>
+</main>
+<script src="site.js"></script>
+</body>
+</html>
