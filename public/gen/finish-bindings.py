@@ -9,12 +9,12 @@ d = json.load(open(p))
 for prof in d['profiles']:
     for g in prof['groups']:
         for it in g['items']:
-            for k in ('title', 'example', 'inv', 'hyp', 'invhyp'):
+            for k in ('title', 'example', 'example_latex', 'example_parts', 'inv', 'hyp', 'invhyp'):
                 if it[k] == 'null': it[k] = None
 variants = d.get('variants', [])
 if isinstance(variants, list):
     for it in variants:
-        for k in ('title', 'example'):
+        for k in ('title', 'example', 'example_latex', 'example_parts'):
             if it[k] == 'null': it[k] = None
     d['variants'] = {it['cmd']: it for it in variants}
 json.dump(d, open(p, 'w'), ensure_ascii=False)

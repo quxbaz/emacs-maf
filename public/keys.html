@@ -6,6 +6,10 @@
 <title>maf — key bindings cheat sheet</title>
 <link rel="stylesheet" href="style.css">
 <script src="data/bindings.js"></script>
+<script>window.MathJax = { tex: { inlineMath: [["\\(", "\\)"]] }, svg: { fontCache: "global" },
+  options: { skipHtmlTags: ["script", "noscript", "style", "textarea", "code", "annotation", "annotation-xml"] },
+  startup: { typeset: false, ready() { MathJax.startup.defaultReady(); window.dispatchEvent(new Event("mathjax-ready")); } } };</script>
+<script src="vendor/mathjax/tex-svg.js" async></script>
 </head>
 <body>
 <nav class="nav" id="nav"></nav>
@@ -17,11 +21,14 @@
     <select id="profile" title="Key profile"></select>
     <label><input type="checkbox" id="ctxonly"> contextual only</label>
     <label><input type="checkbox" id="flagsonly"> has I/H variant</label>
+    <label title="Commands with no counterpart in stock Calc"><input type="checkbox" id="newonly"> new in maf</label>
+    <label title="Typeset the examples with MathJax instead of showing calc's syntax"><input type="checkbox" id="latex"> LaTeX examples</label>
     <span class="muted" id="count"></span>
   </div>
   <div class="legend">
     <span><span class="chip" style="display:inline-flex;width:auto;padding:2px 8px"><span class="ctx"></span> dot</span> = contextual: acts on what point and the calc state resolve to (home, entry, selection, sub-expression, or each side of an equation) and writes the result back there.</span>
     <span><kbd>I</kbd> inverse flag · <kbd>H</kbd> hyperbolic flag · <kbd>I</kbd><kbd>H</kbd> both, pressed before the key.</span>
+    <span><span class="new">✦</span> = new in maf, no counterpart in stock Calc.</span>
     <span><kbd>M</kbd> map flag: every contextual command runs once per element of a vector, or once per side of a relation.</span>
   </div>
   <div id="groups"></div>

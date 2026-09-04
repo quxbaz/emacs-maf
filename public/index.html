@@ -15,13 +15,26 @@
     <h1>maf</h1>
     <p class="lede">An alternative UX over Emacs Calc. One key does the right thing wherever point is: on the home line, on a stack entry, on a sub-expression, on a calc selection, on one side of an equation, or on a region of a sum. The result goes back where it came from, and point stays put.</p>
     <div class="cta">
-      <a class="btn primary" href="install.html">Install</a>
+      <a class="btn primary" href="quick.html">Quick intro</a>
+      <a class="btn" href="install.html">Install</a>
       <a class="btn" href="keys.html">Key bindings</a>
       <a class="btn" href="https://github.com/quxbaz/emacs-maf">Source on GitHub</a>
     </div>
   </section>
 
   <div class="stats" id="stats"></div>
+
+  <h2>At a glance</h2>
+  <ul class="glance">
+    <li><b>Contextual commands.</b> One key acts on the sub-formula, entry, selection, region, or equation side under point, and the result goes back there.</li>
+    <li><b>Entry and editing are one gesture.</b> <kbd>SPC</kbd> opens the stack as text, you type a new formula or change one, <kbd>RET</kbd> commits. A handwriting dialect reads <code>2xy</code> as <code>2 x y</code>.</li>
+    <li><b>Graphing.</b> <kbd>g</kbd> <kbd>l</kbd> plots below the stack, <kbd>g</kbd> <kbd>o</kbd> opens Desmos, <kbd>g</kbd> <kbd>g</kbd> opens gnuplot.</li>
+    <li><b>History.</b> <kbd>M-h</kbd> browses every past stack state; an opt-in module restores the stack across sessions.</li>
+    <li><b>Preview and typesetting.</b> A panel follows point in two-dimensional display; with RaTeX, <kbd>G</kbd> typesets the entry.</li>
+    <li><b>Discoverability.</b> <kbd>l</kbd> <kbd>b</kbd> lists every key with an example, <kbd>?</kbd> every Calc setting, <kbd>m</kbd> <kbd>c</kbd> every module, <kbd>s</kbd> <kbd>o</kbd> a formula library.</li>
+    <li><b>Mapping and flags.</b> <kbd>M</kbd> maps any command over a vector or equation; <kbd>I</kbd> and <kbd>H</kbd> route to contextual variants.</li>
+    <li><b>Three key profiles.</b> native, calc, and vim. See <a href="basics.html">Basics</a> for worked examples.</li>
+  </ul>
 
   <h2>What "contextual" means</h2>
   <p>A stock Calc command takes its operand from the top of the stack. A maf command first <b>resolves</b> point and the calc state into a target, runs its body on exactly that, then <b>commits</b> the result to the same place. The six targets, in priority order:</p>

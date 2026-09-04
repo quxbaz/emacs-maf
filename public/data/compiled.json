@@ -1,0 +1,748 @@
+{
+"additions": [
+{
+"group": "Core",
+"items": [
+"Some 250 contextual commands wrap Calc's functions on their own keys, I/H variants included",
+"The innermost sub-formula at point is highlighted persistently",
+"An active region over a run of terms acts as a target of its own",
+"`maf-calc` launches Calc full-screen, split right, or inline by window context"
+]
+},
+{
+"group": "Algebra and rewriting",
+"items": [
+"`a f` / `k f` factors the sub-formula under point; `H` gives factor-and-power pairs",
+"`l f` factors by a term taken from the top of the stack",
+"`l F` pulls the gcd of the additive terms out front, undistributed",
+"`k d` factors a binomial by a square or cube identity",
+"`k s` completes the square, rewriting a quadratic in vertex form",
+"`a L` computes the polynomial lcm of the target and the stack top",
+"`l c` combines additive terms into one fraction over the least common denominator",
+"`a a` / `l t` splits into partial fractions, the inverse of `l c`",
+"`X` applies log and exp identities to a fixpoint",
+"`a b` substitutes within the sub-formula, region, or selection at point",
+"`l x` swaps two variables throughout the entry, defaults from solve priority",
+"`M-RET` evaluates the target under the top-of-stack assignments; `H` evaluates per assignment",
+"`k v` evaluates numerically; `I k v` identifies a float as a closed form",
+"`l l` toggles floats and fractions by content; `I` forces floats, `H` floats integers too",
+"`O` commutes the first two operands of the target",
+"`j l` / `j r` move the term at point left or right",
+"`j D` / `j M` distribute inward or merge outward at point",
+"`S-<up>` / `S-<down>` swap an operator with its counterpart: + and -, * and /, ln and exp, trig and inverse",
+"`N` flips the sign of the target without changing the entry's value",
+"`l g` groups a vector's elements N at a time, combinations not permutations",
+"`a s` / `k k` / `C-c C-c` run extended simplification contextually"
+]
+},
+{
+"group": "Equations and solving",
+"items": [
+"`e` / `=` equates the entry at point with the stack top; `I` makes an inequation",
+"`M-.` drops the relation, keeping one side",
+"`M-i` solves the entry, cycling through its variables",
+"`i` solves the entry for a variable you name",
+"`j j` isolates the sub-expression under point on the left side",
+"`j c` collects a variable's terms on the side point stands in",
+"`j e` moves the term at point across the = or !=",
+"`j k` keeps only the part at point, discarding the rest of the entry",
+"`a k` splits an absolute-value inequality into a compound one",
+"`l v` inverts the function the entry describes, in the same shape",
+"`a l` gives the roots for a variable you name, with multiplicity",
+"`l a` finds polynomial roots by factoring, repeated roots preserved",
+"`s l` evaluates the entry under a typed assignment, or the stack top's",
+"`a +` sums the entry over an index variable and bounds you type"
+]
+},
+{
+"group": "Trig and angles",
+"items": [
+"`l d` / `l r` convert between degrees and radians exactly, pi kept symbolic",
+"`M-o` wraps an angle into one turn; `H` wraps to a half turn",
+"`M-l` gives the reference angle",
+"`M-s` / `M-c` give the supplement and complement",
+"`f l` recovers the other leg of a right triangle from hypotenuse and leg",
+"`f L` gives the leg of a unit right triangle",
+"`P` multiplies the target by pi, or pushes pi at home",
+"`M-k` cycles a vector's components through coordinate names x y z, h k l, p q r"
+]
+},
+{
+"group": "Arithmetic",
+"items": [
+"`+ - * / ^` and the rest apply to the sub-formula, entry, selection, or each equation side",
+"`J` multiplies from the home row beside `*`",
+"`\\` takes the square root beside `Q`; `W` / `:` square",
+"`<` / `>` and `M-<` / `M->` step the target down or up by one",
+"`,` reads a letter and multiplies the target by it, or pushes it at home"
+]
+},
+{
+"group": "Vectors and sets",
+"items": [
+"`h h`, `h l`, `h 1`-`h 9` take a vector's head, last, or nth element; `I h N` removes it",
+"`F` folds a vector by an operation you type",
+"`M` maps the next command over a vector's elements or an equation's sides",
+"`M M` / `M $` map a typed or stacked formula over the target",
+"`M-u` unpacks the entry onto the stack, one part per entry",
+"`j U` unwraps the sub-formula at point, peeling off its function",
+"`v L` flattens nested vectors into one",
+"`v RET` prompts for a size and pushes the index vector [1..n]",
+"`C-|` brackets the target as a one-element vector",
+"`M-|` nests two vectors as elements instead of concatenating",
+"`v o` sorts, a second key beside `v S`",
+"`k p` / `k t` count permutations beside `k c`"
+]
+},
+{
+"group": "Stack editing",
+"items": [
+"`SPC` turns the stack into editable text, newlines split and merge entries",
+"`` ` `` edits the top entry from home",
+"`RET` duplicates the item at point, or clears an active selection",
+"`C-RET` duplicates keeping point in place",
+"`C-d` / `DEL` delete the selection, sub-formula, entry, or stack top",
+"`C-k` kills the entry at point onto the kill ring",
+"`M-w` copies the region, entry, or top; pressed twice, copies as LaTeX",
+"`C-y` yanks digit-grouped numbers like 1,234,567 as one number",
+"`TAB` swaps the entry at point with the one above",
+"`M-<up>` / `M-<down>` carry the entry up or down, point riding along",
+"`S-RET` moves the entry at point to the top",
+"`C-M-<backspace>` buries the entry at point at the bottom",
+"`U` / `D` undo and redo without losing point"
+]
+},
+{
+"group": "Digit entry",
+"items": [
+"Typing a number on a sub-formula replaces a numeric leaf or multiplies the rest",
+"`RET` commits the number into the formula at point; `C-RET` keeps point",
+"`j` after a number jumps to that stack level instead of pushing",
+"`:` squares the number typed; `;` types a fraction colon",
+"`o` wraps the number typed into one turn",
+"`e` equates the target with the number typed",
+"`P` / `n` multiply the number typed by pi",
+"`C-g` aborts the entry with point left in place"
+]
+},
+{
+"group": "Navigation",
+"items": [
+"`M-m` moves to the start of the entry's formula",
+"`M-f` / `M-b` move by noun: numbers, variables, function names",
+"`M-e` / `M-a` walk the entry operand by operand",
+"`C-M-u` climbs to the enclosing sub-formula",
+"`C-b` from home lands at the end of the top entry",
+"vim profile: `$` bounces between the line's end and the entry's start"
+]
+},
+{
+"group": "Variables and recall",
+"items": [
+"`p` recalls a variable picked from a list showing what each holds",
+"`r r` and `r 0`-`r 9` recall variables literally, without simplification",
+"`l S` saves the stack per session; `l R` browses every session's saved stack",
+"Stacks persist across sessions: saved at exit and idle, restored on the first calc buffer"
+]
+},
+{
+"group": "Modes, history, and modules",
+"items": [
+"`@` toggles automatic simplification, restoring the previous mode",
+"`M-h` browses a whole-stack history recorded after every command",
+"`C-M-k` resets the session; `C-M-l` resets settings only, keeping the stack",
+"`m c` opens the module menu from any binding state",
+"`l b` shows maf's key bindings by group",
+"Binding profiles: native, calc's own layout, and vim navigation keys"
+]
+},
+{
+"group": "In-place stack editing (maf-edit)",
+"items": [
+"Edits the calc stack as plain text, wdired-style, committing back in one undoable step",
+"`SPC` enters an editing session; `RET` commits, `C-c C-k` discards",
+"`` ` `` opens the level-1 entry for editing, then parks point back home",
+"`M-RET` duplicates the entry at point inside a session, value and all",
+"`;` types the fraction colon, in a session and in digit entry",
+"Typing 1,2,3 at top level commits as the vector [1, 2, 3]",
+"`(` and `)` jump to a relation's whole left or right side",
+"`C-o` crosses to the other side of the relation, and back again",
+"`C-RET` duplicates the entry at point without moving point"
+]
+},
+{
+"group": "Formula-editing shortcuts (maf-editplus)",
+"items": [
+"Keys that only live inside a maf-edit session, for typing formulas fast",
+"`TAB` jumps past the delimiter closing the group point is in",
+"`M-o` wraps the term before point in parentheses; again widens the pair",
+"`C-RET` writes the group at point again right beside itself",
+"`S-up`/`S-down` trade a group's parentheses for brackets and back",
+"`L`, `Q` or `\\`, and `|` wrap the target in ln, sqrt, abs",
+"`S`, `C`, `T` wrap the target in sin, cos, tan",
+"`B` wraps the target in log with its base written out, defaulting to 10",
+"`M-2`..`M-9` type ^2 through ^9; `:` or `W` squares, pressed again raises",
+"`P` types pi, `J` types the multiplication sign",
+"`DEL` or `C-d` beside a ^ deletes the whole power, exponent included",
+"Wrap keys act on the subexpression under point, a region, or the unit just typed",
+"A spaced U between relations commits as calc's || union"
+]
+},
+{
+"group": "Handwritten algebra input (maf-editvars)",
+"items": [
+"Reads an edit session's text the way algebra is written on paper",
+"2xy means 2*x*y: letters are separate factors, not one variable",
+"`{cm}` braces quote a multi-letter name; pi, inf, uinf, nan stay whole",
+"Quoted and exempt names are colored in the buffer as you type"
+]
+},
+{
+"group": "History browser (maf-history)",
+"items": [
+"Records a snapshot after every command that changes the stack",
+"`M-h` opens the action log beside the stack each state produced",
+"`n`/`p`, `j`/`k` and arrows step states; `<`/`>` jump to the ends",
+"`RET` on an entry in a past stack pushes it live; `C-RET` pushes and stays",
+"`r` restores a whole snapshot; `D` deletes a state; `C-M-k` clears the log",
+"`h`/`l`, `TAB`, `o` move between the log and stack panes",
+"`?` or `w` opens the help of the command a log row names",
+"`L` draws a separator under a state; `M-n`/`M-p` jump between separators",
+"A key legend at the top, read live from the keymaps"
+]
+},
+{
+"group": "Saved-formula library (maf-formulas)",
+"items": [
+"A menu of saved formulas grouped by category; `s o` opens it",
+"`RET` pushes the formula at point onto the stack",
+"Ships the identities of school algebra, trigonometry and geometry; yours load from `maf-formulas-file`",
+"The detail pane shows the Big rendering, description and variable meanings",
+"A Recent group at the top remembers the formulas inserted this session"
+]
+},
+{
+"group": "Options menu (maf-options)",
+"items": [
+"Every calc setting in one buffer, found by reading rather than recalled by key",
+"`?` opens it; each row lists all of a setting's values, the live one highlighted",
+"Stepping onto a value that prompts, like fixed-point digits, asks then",
+"`S` saves the settings to calc's own settings file"
+]
+},
+{
+"group": "Stack persistence (maf-persist)",
+"items": [
+"Saves each Emacs session's stack under its own name and restores it next time",
+"`l S` saves on demand, ahead of the idle timer",
+"`l R` browses every session's saved stack, previewing the hovered one beside the list",
+"In the saved-stacks buffer `RET` restores, `R` renames, `D` deletes a save",
+"The history log and its separators are saved beside the stack"
+]
+},
+{
+"group": "Recall ring (maf-recall)",
+"items": [
+"A ring of the entries you typed, never of computed results",
+"`M-p`/`M-n` put a past entry back into the edit session, or onto the stack at home"
+]
+},
+{
+"group": "Plotting (maf-plot)",
+"items": [
+"Plots the entry at point; the Hyperbolic flag plots the whole stack in one picture",
+"`g l` renders an SVG panel below Calc, themed from the live faces",
+"`g g` opens gnuplot's interactive window with mouse zoom and readout",
+"`g o` graphs the formula in the Desmos calculator in a browser",
+"Trig expressions get one period, others a default range; a prefix argument prompts for x",
+"Relations y = f(x) and vectors of numbers plot too"
+]
+},
+{
+"group": "Typeset display (maf-pretty)",
+"items": [
+"Typesets the entry at point as SVG through RaTeX",
+"`G` opens it in an even split below that takes focus; `q` closes",
+"The formula color follows the current theme"
+]
+},
+{
+"group": "Big-display preview (maf-preview)",
+"items": [
+"Shows the entry at point in Big display while the stack stays one-line",
+"Module on: a floating panel over the calc window follows point",
+"Module off: `G` shows the entry in Big in a split below, `q` closes"
+]
+},
+{
+"group": "Bindings help (maf-keys)",
+"items": [
+"`l b` lists every key maf claims in the active profile, grouped by purpose",
+"Each command shows its name, keys, an example and its first doc line",
+"`?` opens a command's full documentation in the detail pane",
+"Keys are read live, so a profile switch or module toggle shows at once"
+]
+},
+{
+"group": "Option dials (dial)",
+"items": [
+"The keyboard-driven table of options behind the options and module menus",
+"`TAB`, `SPC` or `l` step a row's value forward; `S-TAB` or `h` back; `RET` sets",
+"`d` resets a row to its default; `c` shows only changed rows",
+"`K` shows a reference-key column; `?` or `w` shows a row's full details",
+"`m c` opens the module toggle menu, with a `show` row for bindings help"
+]
+},
+{
+"group": "Filterable menus (filter-view)",
+"items": [
+"The grouped, filterable list shell behind the formula library and bindings help",
+"`/` filters as you type; `c` clears the filter",
+"`RET` on a group header narrows the list to that group",
+"`TAB` folds every group to its header; `S-TAB` folds one",
+"`n`/`p`, `j`/`k` move by item; `M-n`/`M-p` by group",
+"`?` or `w` shows the detail pane; `O` pins it to follow point",
+"A Recent group remembers what was reached for; `a`/`i` add, `D` drops"
+]
+},
+{
+"group": "Sub-formula highlight (maf-hl)",
+"items": [
+"Highlights the innermost sub-formula under point as the cursor moves",
+"Live feedback on what a contextual command will act on"
+]
+},
+{
+"group": "Selection badge (maf-selplus)",
+"items": [
+"A header-line badge while a selection is active, naming the key that clears it"
+]
+},
+{
+"group": "Polynomial ordering (maf-poly-order)",
+"items": [
+"Keeps single-variable polynomial sums in descending degree, leading term first"
+]
+},
+{
+"group": "Exponentials as powers of e (maf-e-power)",
+"items": [
+"Writes the symbolic exponential exp(x) as e^x, as on paper"
+]
+},
+{
+"group": "General-base log identities (maf-log-power)",
+"items": [
+"Simplifies b^log(a,b) to a and log(b^y,b) to y for any base"
+]
+}
+],
+"changes": [
+{
+"group": "Targeting and commit",
+"items": [
+"Any target whose formula is a relation runs the command once per side",
+"Two stacked equations pair side by side under a binary command",
+"Table commands commit under the buffer's simplification mode, as calc's own keys do",
+"The stack argument is taken exactly as pushed; an exact `sqrt(2)` stays exact",
+"Sub-formula and selection targets commit without being re-simplified",
+"Every command is a single undo unit with calc's usual trail and refresh",
+"`K` keep-args reaches maf commands on modified and prefixed keys too",
+"Calc's `I` and `H` flags route a key to its contextual variant command",
+"Two identical entries no longer confuse selection targeting",
+"Each conventional command has a `-targets` variable choosing which narrowing gestures it honors",
+"With maf-mode off, a calc buffer behaves like stock calc",
+"A command that errors leaves point where it was, not at home"
+]
+},
+{
+"group": "Navigation and point",
+"items": [
+"Point is restored after every command and sticks to the sub-formula it rewrote",
+"Point on an operator glyph follows that glyph wherever the rewrite moves it",
+"Run from the line-number margin, a command keeps point in the margin",
+"`U` undo and `D` redo restore point to its pre-command position",
+"Point past the last entry snaps onto the home dot after every command",
+"`M-e` and `M-a` step between operations inside the entry, in Big language too",
+"`(` goes to the left side, `)` to the right, `C-o` crosses to the other side",
+"`j e` jumps a term across `<`, `<=`, `>`, `>=` as well as `=`",
+"A homing `RET`, `'`, duplicate, or roll to top leaves a mark; `C-u C-SPC` returns",
+"`M-<` and `M->` are beginning and end of buffer again"
+]
+},
+{
+"group": "Stack editing",
+"items": [
+"`TAB` swap up swaps the sub-formula or selection at point with the top entry",
+"Swap up against a selected entry swaps the whole entry, not the selected part",
+"`M-<up>` and `M-<down>` carry wrap around the stack ends",
+"`M-<up>` from home carries the top entry, point riding along",
+"`H RET` copies the whole entry at point onto the top, however deep point rests",
+"`K RET` duplicates and keeps point where it was",
+"`C-y` strips `2: ` level prefixes from yanked lines and pushes the entries",
+"`S-<return>` roll to top leaves a mark at the spot point left"
+]
+},
+{
+"group": "In-place editing",
+"items": [
+"`SPC` opens the entry for editing; `RET` commits, `C-c C-k` discards",
+"Edited entries commit exactly as typed, never pre-simplified",
+"Modified and new entries show `N*` in the prefix while editing",
+"A header-line banner names the exit keys during an edit",
+"Typed delimiters pair automatically while editing",
+"The cursor cannot enter an entry's line-number prefix",
+"Undo works inside an edit session"
+]
+},
+{
+"group": "Digit entry",
+"items": [
+"A command key after a typed number acts on the entry at point: `1 +` adds to it",
+"Undo reverts the typed number and its command as one step",
+"`RET` commits the typed number into the formula at point; `SPC` is calc's plain terminator",
+"`C-<return>` commits the typed number keeping point",
+"`#` starts a number again, so radix entry like `16#FF` types"
+]
+},
+{
+"group": "Arithmetic",
+"items": [
+"`O` commutes subtraction and division without changing value: `a - b` gives `-b + a`",
+"`O` on a relation reverses its direction: `x < y` gives `y > x`",
+"`n` negates in place the same way for every shape",
+"`n` on an interval gives its complement, symbolic endpoints included",
+"`A` on a two-element vector answers exactly: `sqrt(7)`, not an inert `hypot`",
+"`A` assumes real vector entries unless `maf-abs-assume-real` is off",
+"`f h` hypotenuse answers for radical and symbolic legs",
+"`,` on a variable renames it; at the end of a sub-formula it joins as a factor",
+"`f S`, `v C`, and `u G` take both operands instead of returning an inert call",
+"`a f` factors one expression again instead of demanding an argument"
+]
+},
+{
+"group": "Algebra and rewriting",
+"items": [
+"`a s` is the extended simplify, `a e` the plain one, `x` a single-key expand",
+"`a s` on an equation simplifies the relation whole, dividing through both sides",
+"`j D` and `j M` find the rewrite from any position on the entry",
+"From home, `j D` and `j M` rewrite every marked site and keep point home",
+"`j M` merges an integer factor into a power of its base: `16 2^x`",
+"Distribute and merge power rules no longer return wrong values for `a^x / b^x`",
+"`j l` and `j r` also shift a vector's elements; point keeps its grip on the term",
+"`j e` lets a selection outrank point, and lone factors cross an ordered relation",
+"`j e` commits the moved term unsimplified, so the term named is the one moved",
+"`S-<up>` and `S-<down>` also toggle an interval's bound between open and closed",
+"`M-<return>` evaluates the whole entry wherever point sits; on the assignment it takes the entry below",
+"`M-<return>` keeps a relation argument whole: `x = 2` binds, not pairs",
+"A let vector repeating a variable evaluates once per assignment into a vector",
+"`s l` accepts an empty prompt to use the stack's assignment"
+]
+},
+{
+"group": "Equations and solving",
+"items": [
+"`i` solves for a named variable; `M-i` cycles through the variables",
+"Solutions lead with the variable: `x = 5`, never `5 = x`",
+"`e` equates subject = argument as stacked, so `5 e x` reads `5 = x`",
+"`e` on a constant against a bare variable leads with the variable: `y = 42`",
+"Solving an inequality keeps its direction when the pivot's sign is unknown",
+"`i` peels layers calc's solver cannot take, like `(x - 8)^8 = 256`, and says when it cannot",
+"`a P` and `l a` roots follow every branch through the peel",
+"Reciprocal trig equations solve: `cot(x) = 1:2`",
+"`l a` treats a calc error as no roots instead of failing",
+"`v :` spans an inequality into the interval it bounds: `x <= 3` gives `(-inf .. 3]`",
+"Infinite interval ends are always spelled open",
+"`j c` collects a variable's terms onto one side"
+]
+},
+{
+"group": "Vectors and sets",
+"items": [
+"`|` always builds a vector, even from symbolic operands",
+"The `|` family keeps relations whole: two equations give `[x = 1, y = 2]`",
+"`M-|` nests two vectors without splicing; `C-|` brackets one entry",
+"`M-u` unpack is contextual: the node at point spreads into its slot",
+"`M-u` on the root bracket spreads the whole entry, one part per level",
+"`M-u` widens to the innermost wrapper, so it works from inside `sin(2 x + 1)`",
+"`M-u` works in a fresh session (calc-vec loaded on demand)",
+"`v S` sorts by numeric value: `-sqrt(10)` before `-3`",
+"`v A`, `v R`, `v U`, `v O`, `v I` prompt for the operation"
+]
+},
+{
+"group": "Mapping and flags",
+"items": [
+"`M` sets the map flag; `M M` prompts for a formula, `M $` maps the formula on top",
+"`M r` and `M c` map the next command over a matrix's rows or columns",
+"At the map prompt, `+2`, `/2`, `> 0` read as operations on the element",
+"`$$` at the map prompt pairs the subject's elements with the top entry's",
+"`M $` asks which variable is the element when the formula has several",
+"Mapping acts on the whole entry, ignoring point's narrowing",
+"`M` over a scalar runs the command once on it instead of refusing",
+"A digit after `M` starts a number entry, not a prefix argument",
+"`M :` squares under the flag like any other key; the prompt stays on `M M`",
+"`M M-u` under the flag fits each unpacked element back into its slot"
+]
+},
+{
+"group": "Bindings and profiles",
+"items": [
+"Three profiles: native (default), calc (calc's layout with maf's commands), vim",
+"The vim profile: `hjkl` and `wb` motions, `x` delete, `X` expand, `y` evaluate, `o` and `J` mirror the `l` and `j` families",
+"The profile is picked from the module menu `m c`; custom profiles activate correctly",
+"Startup no longer spends 30 seconds compiling bindings",
+"`k k` and `C-c C-c` are second keys for the extended simplify; `k v` evaluates numerically",
+"`G` shows the typeset preview; `&` and `o` are the reciprocal",
+"`j k` raises the part at point, `j j` isolates",
+"`l a` polynomial roots, `l c` combines fractions, `k F` prime factors",
+"`C-t` is a second key for swap up; `:` a second key for square",
+"`S-<left>` and `S-<right>` move a term left or right",
+"`=` falls through to calc-evaluate; equate lives on `e`",
+"`M-<return>` alone runs let; `C-c C-c` is freed",
+"`<` and `>` decrement and increment; `[` and `]` are calc's vector delimiters again",
+"Every undo key, `C-/` included, goes through maf's point handling",
+"`C-M-<backspace>` roll to bottom works on a terminal",
+"The `?` options menu and the preview module are on by default"
+]
+},
+{
+"group": "Typeset display",
+"items": [
+"Logarithms typeset as `\\log` with a subscripted base; `log10` as bare `\\log`",
+"Product signs typeset as `\\cdot`, only where juxtaposition would misread",
+"No product sign before parenthesized groups: `4 p (x - h)`",
+"Trig and other operator-name calls keep their parentheses: `\\sin(x)`, `\\ln(3)`",
+"Flat-notation parens are shed from exponents: `x^{-n}`",
+"Vectors are bracketed with `\\left[` and `\\right]`, growing with their content",
+"The ternary `?` is spaced like `:`",
+"`\\frac` and its siblings survive in a fresh session"
+]
+},
+{
+"group": "Menus and reset",
+"items": [
+"The module menu is a dial: `TAB`, `SPC`, `t` toggle, `RET` quits, `w` shows details, `d` resets",
+"Module rows echo a one-line summary; changed-from-default values show in gold",
+"Menu groups read Prefs, Display, Rewrite, Editing, Memory; pretty files under preview",
+"The variable browser's divider reads \"calc vars\"",
+"`C-M-k` and `C-M-l` reset work with no settings file",
+"A settings file that errors mid-reset no longer leaves a broken buffer"
+]
+},
+{
+"group": "In-place stack editing (maf-edit)",
+"items": [
+"Editing is refused under the Big display language and while a selection stands",
+"A commit that fails to parse leaves point where you were typing",
+"S-RET splits an entry at point; C-j does the same on a terminal",
+"On the stack, S-RET moves the entry at point to the top",
+"The add-entry-below gestures are gone; C-j is calc-over again",
+"Top-level commas commit as a vector: 1,2,3 lands as [1, 2, 3]",
+"A colon calc refuses as a fraction commits as a quotient: 1:x is 1/x",
+"An entry edited down to () commits as a deleted entry",
+"Yanked stack text drops its level prefixes; yanked LaTeX reads as calc notation"
+]
+},
+{
+"group": "Formula-writing shortcuts (maf-editplus)",
+"items": [
+"The wrap and power keys act on the sub-expression point names, as the stack does",
+"Pressed outside any entry, a wrap key opens a fresh entry at the bottom",
+"A marked region is wrapped or raised as one parenthesized unit",
+"After 24x or a dialect run ab, a key takes only the last factor",
+"Point after padding whitespace means the expression just completed",
+"On a comma, a wrap key takes the argument beside it, not the whole call",
+"In an empty pair or argument slot, a wrap key writes the empty call there",
+"Numbers like 1e-3, 16#ff and .5 are read whole",
+"Every operator calc reads is recognized: ==, **, &&, ||, \\, mod, +/-",
+"An interval keeps its mixed delimiters when wrapped; S-up/S-down toggles one end",
+"Deleting a power with DEL or C-d keeps the base's parentheses",
+"A spaced-out U commits as calc's union ||",
+"A bare range 1..5 commits with its brackets, open toward inf",
+"B with no base writes log(x), which commits as log10(x)"
+]
+},
+{
+"group": "Hand-written algebra dialect (maf-editvars)",
+"items": [
+"The dialect is on by default",
+"A multi-letter name is quoted in braces: {cost}, {cm}",
+"pi, inf, uinf and nan stay whole, never split into factors"
+]
+},
+{
+"group": "History browser (maf-history)",
+"items": [
+"M-h opens the browser; t d is calc's trail display again",
+"Log rows run newest first, marked + - ~ for added, removed, changed",
+"Plain entries and edits are labelled new, edit, del, dupe rather than command noise",
+"A typed value already on the stack reads as new, not dupe",
+"Each log row also names the command that ran",
+"The position counter sits in the buffer above the log, not the header",
+"The log takes a third of the browser's width",
+"L bands a separator under a state, optionally with a centred title",
+"M-n and M-p step between separators",
+"Reopening resumes where the last browse left off",
+"TAB crosses between log and stack; M-< and M-> reach the ends",
+"The legend names TAB, w/? help, and the C-M-k clear chord",
+"The log survives maf-reset; only maf-history-clear discards it"
+]
+},
+{
+"group": "Formula library (maf-formulas)",
+"items": [
+"s o opens the formula menu",
+"Your formulas live in ~/.emacs.d/maf-formulas.el, not in the package",
+"Real-number and equality properties, algebra, trig and geometry formulas ship built in",
+"Identities with a premise display as P => Q or P <=> Q",
+"Opening the menu leaves your window layout alone; q restores it",
+"Reinvoking with the menu on screen visits it, keeping the filter",
+"The detail pane borrows a window and follows point by default, across reopenings",
+"? or w opens the detail pane and selects it; O toggles following",
+"With the pretty module on, the detail pane typesets the formula in a thin box",
+"Variables in the detail's Big rendering are coloured to match their meanings",
+"The Recent group holds ten formulas, shows a gold header, and hides while filtering",
+"A search matches each typed word anywhere in title, category or variables",
+"/ opens empty and keeps the narrowing until you type; a search lifts group narrowing",
+"q always quits; c clears the filter",
+"The list stays unfolded after a search, and fold keys work inside a filtered list",
+"TAB folds every group, S-TAB one; M-n and M-p stop at the ends"
+]
+},
+{
+"group": "Calc settings menu (maf-options)",
+"items": [
+"? opens the settings menu, shadowing calc-help",
+"Every setting calc treats as a mode has a row: 48 across eight groups",
+"Resting on a row echoes its help line; stepping echoes a sample of the output",
+"A value stepped onto but not yet set is outlined; setting it another way clears that",
+"d resets any setting, including open-valued ones like precision",
+"RET prompts for a value; the choose command (e) is gone",
+"The trail row opens and closes the trail window in this session",
+"The algebraic-entry row reflects incomplete algebraic mode"
+]
+},
+{
+"group": "Plotting (maf-plot)",
+"items": [
+"Plotting is on by default, the embedded SVG panel the default backend",
+"g l embeds, g o sends to Desmos, g g opens a gnuplot window; H plots the stack",
+"A vector entry plots one curve per element; a numeric vector plots index against value",
+"Unprompted plots frame on the origin in four equal quadrants, both zero axes drawn",
+"Tick labels sit on the axes, not the border",
+"Only y = f(x) samples on gnuplot; x = f(y) draws sideways; circles are drawn",
+"Other relations refuse toward Desmos, which graphs them whole",
+"Plot titles show calc notation rather than gnuplot markup",
+"A lone foreign variable becomes x for Desmos; a prompted range sets its x bounds",
+"Desmos finds a browser itself; maf-plot-browser is optional",
+"The embedded plot fits the panel's real drawable width",
+"A gnuplot failure reports its exit status and output",
+"Backends run from the work directory, surviving a deleted calc directory"
+]
+},
+{
+"group": "Preview panel (maf-preview)",
+"items": [
+"On a terminal the panel draws in-window instead of in a child frame",
+"The panel shows the entry as stored, without simplifying it",
+"Long vectors are always abbreviated in the panel",
+"The panel no longer hides itself or goes stale after window changes",
+"Enabling the module from the menu draws the panel at once",
+"With the pretty module on, the panel is typeset instead of drawn in Big",
+"The PREVIEW label is gone; Big text draws slightly larger",
+"The child frame keeps even margins and takes the calc frame's colors under any theme"
+]
+},
+{
+"group": "Typeset rendering (maf-pretty)",
+"items": [
+"G opens the typeset view; G, RET or q closes it",
+"Renders at font size 16 by default",
+"Calc's arbitrary signs s1, s2 typeset as plus-minus",
+"Units typeset upright with a thin space: 3 cm; the degree as a raised circle",
+"Grouping parentheses grow to fit superscripts and fractions",
+"Radicals in a product draw at one height",
+"The or and and connectives are spaced away from the relations they join",
+"Toggling the module repaints the preview panel and formula detail at once"
+]
+},
+{
+"group": "Sub-formula highlight (maf-hl)",
+"items": [
+"Highlighting turns off under the Big display language",
+"The highlight hides while a region is active",
+"At the line prefix or end of line the whole entry is highlighted"
+]
+},
+{
+"group": "Entry recall (maf-recall)",
+"items": [
+"In an edit session, recall can overwrite any entry, banking what it displaces",
+"Recalled from home, an entry opens at the bottom of the session",
+"Entries committed from an edit session recall through the same reading, dialect included"
+]
+},
+{
+"group": "Stack persistence (maf-persist)",
+"items": [
+"l S saves the stack; l R browses saved stacks (formerly t l and t u)",
+"l S confirms the save, with entry count and session name",
+"The saved-stacks list marks this session (current); its preview borrows a window"
+]
+},
+{
+"group": "Key bindings browser (maf-keys)",
+"items": [
+"l b opens the browser (formerly C-h C-b)",
+"Each entry is headed by the command's name, keys, then symbol, over its example and description",
+"Every command, plain ones included, shows a proper name",
+"Entries are spaced apart and off their group headers",
+"The filter matches a command's name and example",
+"A command's details end with a Configuration section of its options"
+]
+},
+{
+"group": "Selection badge (maf-selplus)",
+"items": [
+"The badge takes the whole header line, in maf-edit's badge colors"
+]
+},
+{
+"group": "Polynomial ordering (maf-poly-order)",
+"items": [
+"Subtracted terms fold back as subtractions: x^2 - x + 1, not x^2 + -x + 1"
+]
+},
+{
+"group": "Log-power simplification (maf-log-power)",
+"items": [
+"Scaled powers of a log collapse in any base: 3^(2 log(x, 3)) gives x^2"
+]
+},
+{
+"group": "Settings and module menus (dial)",
+"items": [
+"A live value shows purple on its default and gold once changed",
+"Group headings render in blue",
+"Stepping or resetting a row echoes the value's description or an output sample",
+"Any motion onto a row echoes its help, which may run to several lines",
+"w visits the details buffer for reading; ? keeps the glance",
+"Reopening a menu keeps point on its row",
+"A table with no groups drops its Group column",
+"The module menu is grouped: Display, Editing, Memory, Plots, Prefs, Rewrite, Help",
+"Each module's help says what it does at the keyboard and shows its entry keys",
+"A module's details end with a Configuration section of its options"
+]
+},
+{
+"group": "Filterable lists (filter-view)",
+"items": [
+"A blank line sits under each group header and between multi-line entries",
+"Undoing a fold with the same key returns point to its row",
+"? and w both open the detail pane and select it"
+]
+}
+],
+"note": "Compiled from the commit history and deduplicated by hand; the verbose pages list every commit."
+}

@@ -1,7 +1,29 @@
 (function () {
   const D = window.MAF_BINDINGS;
   const $ = s => document.querySelector(s);
-  const profileSel = $("#profile"), q = $("#q"), ctxonly = $("#ctxonly"), flagsonly = $("#flagsonly"), groupsEl = $("#groups"), pop = $("#pop"), count = $("#count");
+  const profileSel = $("#profile"), q = $("#q"), ctxonly = $("#ctxonly"), flagsonly = $("#flagsonly"), newonly = $("#newonly"), latex = $("#latex"), groupsEl = $("#groups"), pop = $("#pop"), count = $("#count");
+  try { latex.checked = localStorage.getItem("maf-keys-latex") === "1"; } catch (e) {}
+  if (new URLSearchParams(location.search).get("latex") === "1") latex.checked = true;
+  latex.addEventListener("change", () => { try { localStorage.setItem("maf-keys-latex", latex.checked ? "1" : "0"); } catch (e) {} if (!pop.hidden && current) show(current); });
+  let current = null;
+  // An example as a stack: its inputs on numbered levels, the last one level 1, then the result.
+  // With the toggle on and a LaTeX form available, each line is typeset by MathJax.
+  function example(it, cls) {
+    if (!it.example) return "";
+    const p = it.example_parts, tex = latex.checked && p && p.inputs_latex;
+    if (!p) return '<div class="' + cls + ' mono">' + esc(it.example) + "</div>";
+    const wrap = (s, t) => tex ? "\\(" + esc(t) + "\\)" : esc(s);
+    const lines = p.inputs.map((s, i) => '<span class="lv">' + (p.inputs.length - i) + ":</span>  " + wrap(s, p.inputs_latex[i]));
+    lines.push('<span class="lv arrow">=></span>  ' + wrap(p.result, p.result_latex));
+    return '<pre class="' + cls + ' stack' + (tex ? " tex" : "") + '">' + lines.join("\n") + "</pre>";
+  }
+  // Typesetting calls are chained: MathJax refuses a second call while one is running.
+  let chain = Promise.resolve();
+  function typeset() {
+    if (!(latex.checked && !pop.hidden && window.MathJax && MathJax.typesetPromise)) return;
+    chain = chain.then(() => MathJax.typesetPromise([pop])).catch(() => {});
+  }
+  window.addEventListener("mathjax-ready", typeset);
   let profile, byCmd = {}, pinned = null;
 
   D.profiles.forEach(p => {
@@ -25,10 +47,10 @@
       const chips = g.items.map((it, ii) => {
         const flags = [it.inv && "I", it.hyp && "H", it.invhyp && "IH"].filter(Boolean).map(f => "<i>" + f + "</i>").join("");
         const hay = [it.cmd, it.title, it.example, it.doc, g.title].concat(it.keys).join(" ").toLowerCase();
-        return '<button class="chip" data-g="' + gi + '" data-i="' + ii + '" data-hay="' + esc(hay) + '" data-ctx="' + (it.contextual ? 1 : 0) + '" data-flags="' + (flags ? 1 : 0) + '">' +
+        return '<button class="chip" data-g="' + gi + '" data-i="' + ii + '" data-hay="' + esc(hay) + '" data-ctx="' + (it.contextual ? 1 : 0) + '" data-flags="' + (flags ? 1 : 0) + '" data-new="' + (it.new ? 1 : 0) + '">' +
           (it.contextual ? '<span class="ctx" title="contextual"></span>' : '') +
           '<span class="keys">' + (it.keys.length ? kbdKeys(it.keys) : '<span class="muted">M-x</span>') + '</span>' +
-          '<span class="title">' + esc(titleOf(it)) + '</span>' +
+          '<span class="title">' + esc(titleOf(it)) + '</span>' + (it.new ? '<span class="new" title="new in maf, no counterpart in stock Calc">✦</span>' : '') +
           (flags ? '<span class="flags">' + flags + '</span>' : '') + '</button>';
       }).join("");
       return '<section class="group" data-g="' + gi + '"><h2>' + esc(g.title) + ' <span class="count">' + g.items.length + '</span></h2><div class="chips">' + chips + '</div></section>';
@@ -43,6 +65,7 @@
       let ok = !needle || ch.dataset.hay.includes(needle);
       if (ok && ctxonly.checked && ch.dataset.ctx !== "1") ok = false;
       if (ok && flagsonly.checked && ch.dataset.flags !== "1") ok = false;
+      if (ok && newonly.checked && ch.dataset.new !== "1") ok = false;
       ch.classList.toggle("hidden", !ok);
       if (ok) shown++;
     });
@@ -58,20 +81,23 @@
     if (!cmd) return "";
     const v = lookup(cmd);
     return "<tr><td>" + label + "</td><td><b>" + esc(titleOf(v)) + "</b> <span class=\"sym mono\">" + esc(v.cmd) + "</span>" +
-      (v.example ? '<div class="mono muted">' + esc(v.example) + "</div>" : "") +
+      example(v, "muted") +
       (v.doc ? '<div class="muted">' + esc(v.doc) + "</div>" : "") + "</td></tr>";
   }
 
   function show(chip) {
+    current = chip;
     const g = profile.groups[+chip.dataset.g], it = g.items[+chip.dataset.i];
     const flags = flagRow("<kbd>I</kbd>", it.inv) + flagRow("<kbd>H</kbd>", it.hyp) + flagRow("<kbd>I</kbd><kbd>H</kbd>", it.invhyp);
     pop.innerHTML = '<div class="head"><b>' + esc(titleOf(it)) + "</b> " + kbdKeys(it.keys) + ' <span class="sym mono">' + esc(it.cmd) + "</span></div>" +
-      (it.example ? '<div class="ex mono">' + esc(it.example) + "</div>" : "") +
+      example(it, "ex") +
       '<div class="doc">' + esc(it.doc) + "</div>" +
       (flags ? "<table>" + flags + "</table>" : "") +
+      (it.new ? '<div class="note"><span class="new">✦</span> New in maf: no counterpart in stock Calc.</div>' : "") +
       (it.contextual ? '<div class="note">Contextual: resolves point and the calc state into a target and commits the result back to it. Answers <kbd>M</kbd> by mapping over a vector or the sides of a relation.</div>' : "") +
       (it.docfull && it.docfull.trim() !== it.doc.trim() ? '<details class="full"><summary>Full documentation</summary><pre>' + esc(it.docfull) + "</pre></details>" : "");
     pop.hidden = false;
+    typeset();
     const r = chip.getBoundingClientRect(), pw = pop.offsetWidth, ph = pop.offsetHeight;
     let left = r.left + window.scrollX, top = r.bottom + window.scrollY + 6;
     if (left + pw > window.scrollX + document.documentElement.clientWidth - 12) left = window.scrollX + document.documentElement.clientWidth - pw - 12;
@@ -98,6 +124,7 @@
   q.addEventListener("input", filter);
   ctxonly.addEventListener("change", filter);
   flagsonly.addEventListener("change", filter);
+  newonly.addEventListener("change", filter);
   profileSel.addEventListener("change", () => { history.replaceState(null, "", "?profile=" + profileSel.value); render(); });
   render();
   // Deep link: keys.html?cmd=mafcmd-pow pins that command's popover on load.

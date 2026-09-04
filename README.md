@@ -2,7 +2,7 @@
 
 An alternative UX over Emacs Calc. One key does the right thing wherever point is: on the home line, on a stack entry, on a sub-expression, on a calc selection, on one side of an equation, or on a region of a sum. The result goes back where it came from, and point stays put.
 
-Website: the `public/` directory holds a static site with an overview, an install guide, a key bindings cheat sheet with hover help, and the full history of additions and changes generated from the commits. Open `public/index.html` in a browser.
+Website: the `public/` directory holds a static site with an overview, a five-minute intro, worked examples, the modules, a key bindings cheat sheet with hover help and optional LaTeX rendering, and the additions and changes both compiled by subject and listed commit by commit. Open `public/index.html` in a browser.
 
 ## What "contextual" means
 
@@ -26,7 +26,7 @@ Calc's `I` and `H` prefixes route each command to a sibling, so `I S` takes the 
 - **About 220 contextual commands** covering arithmetic, algebra and rewriting, equations and solving, calculus, trig and angles, logs, complex numbers, combinatorics, special functions, vectors and sets, statistics, binary and finance, and dates. Each command's targeting policy is a variable you can retune.
 - **Live highlight of the target.** The innermost sub-formula under point is highlighted as you move.
 - **Regions over chains.** Calc has no node for `b + c` inside `a + b + c + d`. maf carves the run out, rewrites it, and splices it back.
-- **Edit the stack as text.** `SPC` turns the stack into an editable buffer, wdired style. Newlines split and join entries. A handwriting dialect reads `2xy` as `2 x y`. In-entry shortcuts wrap, retype, and duplicate groups.
+- **Entry and editing are one gesture.** `SPC` opens the stack as editable text, wdired style; type a new formula or change one, and `RET` commits. Newlines split and join entries. A handwriting dialect reads `2xy` as `2 x y`. In-entry shortcuts wrap, retype, and duplicate groups.
 - **The map flag and combinators.** `M` maps any contextual command. Fold, accumulate, apply, outer and inner products read their operation from the next key.
 - **Three key profiles.** `calc` keeps Calc's layout and swaps in maf's commands. `native`, the default, is maf's own layout. `vim` puts it under `h j k l` motions. Your own bindings sit above and are never rewritten.
 - **Discoverability.** `l b` lists every bound command with a proper name and a worked example. `?` shows all of Calc's settings in one table. `m c` is the module menu. `s o` opens a formula library.

@@ -1,7 +1,7 @@
 // Shared helpers: nav, escaping, footer.
 (function () {
-  const pages = [["index.html", "Overview"], ["keys.html", "Keys"], ["additions.html", "Additions"], ["changes.html", "Changes"], ["install.html", "Install"]];
-  const here = location.pathname.split("/").pop() || "index.html";
+  const pages = [["index.html", "Overview"], ["quick.html", "Quick intro"], ["basics.html", "Basics"], ["modules.html", "Modules"], ["keys.html", "Keys"], ["additions.html", "Additions"], ["changes.html", "Changes"], ["install.html", "Install"]];
+  const here = (location.pathname.split("/").pop() || "index.html").replace("-verbose", "");
   const nav = document.getElementById("nav");
   if (nav) {
     const v = (window.MAF_BINDINGS && window.MAF_BINDINGS.version) || "";

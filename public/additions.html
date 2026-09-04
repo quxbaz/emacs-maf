@@ -6,24 +6,21 @@
 <title>maf — Additions</title>
 <link rel="stylesheet" href="style.css">
 <script src="data/bindings.js"></script>
-<script src="data/commits.js"></script>
+<script src="data/compiled.js"></script>
 </head>
 <body data-mode="additions">
 <nav class="nav" id="nav"></nav>
-<main class="wrap">
-  <h1>Additions</h1>
-  <p class="lede">Every commit that added something: a new contextual command, a module, a binding, or a step test. Built by crawling each commit's patch for new <code>maf-defcmd</code> forms, new table rows, and new files. Click a subject to open the commit on GitHub.</p>
-  <div class="stats" id="stats"></div>
-  <div class="bars" id="bars"></div>
+<main class="wrap full">
+  <h1>Additions <span class="muted" style="font-size:.85rem;font-weight:400">what maf adds over Calc, compiled and grouped · <a href="additions-verbose.html">verbose edition, every commit</a></span></h1>
   <div class="toolbar">
-    <input type="search" id="q" placeholder="Filter by words, a command name, a module, a date, or an area…" autocomplete="off">
-    
+    <input type="search" id="q" placeholder="Filter…" autocomplete="off">
     <span class="muted" id="count"></span>
   </div>
   <div id="list"></div>
   <footer id="foot"></footer>
 </main>
 <script src="site.js"></script>
-<script src="history.js"></script>
+<script src="fmt.js"></script>
+<script src="compiled.js"></script>
 </body>
 </html>

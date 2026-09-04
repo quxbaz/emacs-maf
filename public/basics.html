@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>maf — basics</title>
+<link rel="stylesheet" href="style.css">
+<script src="data/bindings.js"></script>
+</head>
+<body>
+<nav class="nav" id="nav"></nav>
+<main class="wrap">
+  <h1>Basics <span class="muted" style="font-size:.85rem;font-weight:400">using commands contextually, with worked examples</span></h1>
+  <p>Every example below was run in a live Calc buffer with maf's native profile. The left column is what you press, the right column is the stack as it reads after each step. Formulas are entered the way everything is edited: <kbd>SPC</kbd> opens the stack as text, you type, and <kbd>RET</kbd> commits. From home, <kbd>SPC</kbd> opens a fresh entry; on an entry, it opens that entry for editing. The <code>.</code> line at the bottom is <b>home</b>; a command run there acts on the top entry.</p>
+
+  <h2>The rule</h2>
+  <p>A command acts on whatever point names. At home, the top entry. On an entry's edge, its line number or the end of its line, the whole entry. Inside a formula, the innermost sub-formula under point, which the highlight shows. On an operator glyph, the operation that glyph performs. With a region marked, the run of terms the region covers. The result replaces exactly that, and point stays on it.</p>
+
+  <h2>Solving an equation</h2>
+  <p>Three ways, from the most manual to the least.</p>
+
+  <h3>By hand, both sides at once</h3>
+  <p>A typed number followed by an operator applies that operator to the entry at point. Since the entry is an equation, the command runs once per side.</p>
+  <div class="walk">
+    <ol class="steps">
+      <li><kbd>SPC</kbd>, type <code>2 x + 3 = 11</code>, <kbd>RET</kbd></li>
+      <li><kbd>3</kbd> <kbd>-</kbd> subtracts 3 from both sides</li>
+      <li><kbd>2</kbd> <kbd>/</kbd> divides both sides by 2</li>
+    </ol>
+<pre>1:  2 x + 3 = 11
+    .
+<b>1:  2 x = 8</b>
+    .
+<b>1:  x = 4</b>
+    .</pre>
+  </div>
+
+  <h3>Isolate the sub-expression under point</h3>
+  <p>Move point onto the <code>x</code> and press <kbd>j</kbd> <kbd>j</kbd>. Whatever point names is brought alone to the left side. Point on <code>11</code> instead would give <code>11 = 2 x + 3</code>.</p>
+  <div class="walk">
+    <ol class="steps">
+      <li><kbd>SPC</kbd>, type <code>2 x + 3 = 11</code>, <kbd>RET</kbd></li>
+      <li><kbd>C-b</kbd> then move point onto <code>x</code></li>
+      <li><kbd>j</kbd> <kbd>j</kbd> isolates it</li>
+    </ol>
+<pre>1:  2 x + 3 = 11
+    .
+1:  2 <u>x</u> + 3 = 11
+<b>1:  x = 4</b></pre>
+  </div>
+
+  <h3>One key from home</h3>
+  <p><kbd>M-i</kbd> solves the top entry for its variable. Press it again on an equation with several variables to cycle through them.</p>
+  <div class="walk">
+    <ol class="steps">
+      <li><kbd>SPC</kbd>, type <code>2 x + 3 = 11</code>, <kbd>RET</kbd></li>
+      <li><kbd>M-i</kbd></li>
+    </ol>
+<pre>1:  2 x + 3 = 11
+    .
+<b>1:  x = 4</b>
+    .</pre>
+  </div>
+
+  <h2>Acting on one part of a formula</h2>
+
+  <h3>Expand only the side under point</h3>
+  <p>With point on the <code>^</code> of the power, the target is that power, and <kbd>a</kbd> <kbd>x</kbd> expands it in place. The right side is untouched.</p>
+  <div class="walk">
+    <ol class="steps">
+      <li><kbd>SPC</kbd>, type <code>(x + 1)^2 = 9</code>, <kbd>RET</kbd></li>
+      <li>move point onto the <code>^</code></li>
+      <li><kbd>a</kbd> <kbd>x</kbd> expands</li>
+    </ol>
+<pre>1:  (x + 1)^2 = 9
+1:  (x + 1)<u>^</u>2 = 9
+<b>1:  x^2 + 2 x + 1 = 9</b></pre>
+  </div>
+
+  <h3>Factor a run of terms with a region</h3>
+  <p>Mark <code>2 x + 4</code> as a region, which Calc has no node for, and press <kbd>l</kbd> <kbd>F</kbd> to pull out the greatest common divisor. The <code>y</code> outside the region is left alone.</p>
+  <div class="walk">
+    <ol class="steps">
+      <li><kbd>SPC</kbd>, type <code>2 x + 4 + y</code>, <kbd>RET</kbd></li>
+      <li>mark from <code>2</code> to <code>4</code> with <kbd>C-SPC</kbd> and motion</li>
+      <li><kbd>l</kbd> <kbd>F</kbd> factors by the gcd</li>
+    </ol>
+<pre>1:  2 x + 4 + y
+1:  <u>2 x + 4</u> + y
+<b>1:  2 (x + 2) + y</b></pre>
+  </div>
+
+  <h3>Replace a number in place</h3>
+  <p>Typing a number while point is on a numeric leaf replaces that leaf when you press <kbd>RET</kbd>. No re-entry of the formula.</p>
+  <div class="walk">
+    <ol class="steps">
+      <li><kbd>SPC</kbd>, type <code>x + 3 = 11</code>, <kbd>RET</kbd></li>
+      <li>move point onto the <code>3</code></li>
+      <li><kbd>5</kbd> <kbd>RET</kbd></li>
+    </ol>
+<pre>1:  x + 3 = 11
+1:  x + <u>3</u> = 11
+<b>1:  x + 5 = 11</b></pre>
+  </div>
+
+  <h2>Mapping</h2>
+  <p>The <kbd>M</kbd> flag makes the next command run once per element of a vector, or once per side of a relation. Here the square root runs on each element.</p>
+  <div class="walk">
+    <ol class="steps">
+      <li><kbd>SPC</kbd>, type <code>[1, 4, 9]</code>, <kbd>RET</kbd></li>
+      <li><kbd>M</kbd> <kbd>Q</kbd></li>
+    </ol>
+<pre>1:  [1, 4, 9]
+    .
+<b>1:  [1, 2, 3]</b>
+    .</pre>
+  </div>
+
+  <h2>The I and H flags</h2>
+  <p>Calc's inverse and hyperbolic prefixes route a key to a sibling command, still contextually. <kbd>I</kbd> <kbd>S</kbd> takes the arcsine of the sub-expression under point; <kbd>I</kbd> <kbd>^</kbd> takes the nth root; <kbd>H</kbd> <kbd>a</kbd> <kbd>f</kbd> factors into factor-and-power pairs. The <a href="keys.html">cheat sheet</a> shows every key's variants on hover.</p>
+
+  <h2>Editing instead of computing</h2>
+  <p>The same gesture that enters a formula rewrites one. When a change is easier to type than to derive, <kbd>SPC</kbd> on the entry opens it as text. Change what you like, press <kbd>RET</kbd>, and the entries are re-read. A newline inside an entry splits it in two; joining two lines merges them. Inside the session a run of letters reads as separate factors, so <code>2xy</code> is <code>2 x y</code>, and <code>{cm}</code> keeps a multi-letter name whole.</p>
+
+  <h2>Seeing what you have</h2>
+  <ul>
+    <li>The highlight under point shows the target before you press anything.</li>
+    <li>The preview panel shows the entry at point in Calc's two-dimensional display.</li>
+    <li><kbd>M-h</kbd> opens the history: every past stack state beside the log that produced it.</li>
+    <li><kbd>l</kbd> <kbd>b</kbd> lists every key with a worked example; <kbd>?</kbd> shows all of Calc's settings.</li>
+    <li><kbd>g</kbd> <kbd>l</kbd> plots the entry at point below the stack.</li>
+  </ul>
+  <footer id="foot"></footer>
+</main>
+<script src="site.js"></script>
+</body>
+</html>

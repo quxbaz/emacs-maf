@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>maf — quick intro</title>
+<link rel="stylesheet" href="style.css">
+<script src="data/bindings.js"></script>
+</head>
+<body>
+<nav class="nav" id="nav"></nav>
+<main class="wrap">
+  <h1>Quick intro <span class="muted" style="font-size:.85rem;font-weight:400">five minutes, native profile</span></h1>
+
+  <h2>1. Load it</h2>
+  <pre><code>(add-to-list 'load-path "~/src/emacs-maf")
+(require 'maf)
+(add-hook 'calc-mode-hook #'maf-mode)</code></pre>
+  <p>Then <kbd>M-x</kbd> <code>calc</code>.</p>
+
+  <h2>2. The one idea</h2>
+  <p>Everything goes through one gesture: <kbd>SPC</kbd> opens the stack as text, you type or change what you like, <kbd>RET</kbd> commits. From home that enters a new formula; on an entry it edits that entry. Then a command acts on what point names: at the bottom <code>.</code> line, the top entry; inside a formula, the sub-formula under point, which is highlighted; on an equation, both sides. The result replaces exactly that part, and point stays there.</p>
+
+  <h2>3. Try this</h2>
+  <div class="walk">
+    <ol class="steps">
+      <li><kbd>SPC</kbd>, type <code>2 x + 3 = 11</code>, <kbd>RET</kbd></li>
+      <li><kbd>3</kbd> <kbd>-</kbd> subtracts 3 from both sides</li>
+      <li><kbd>2</kbd> <kbd>/</kbd> divides both sides by 2</li>
+      <li><kbd>U</kbd> <kbd>U</kbd> undoes both, then <kbd>M-i</kbd> solves in one key</li>
+    </ol>
+<pre>1:  2 x + 3 = 11
+<b>1:  2 x = 8</b>
+<b>1:  x = 4</b>
+<b>1:  x = 4</b></pre>
+  </div>
+  <div class="walk">
+    <ol class="steps">
+      <li><kbd>SPC</kbd>, type <code>(x + 1)^2 = 9</code>, <kbd>RET</kbd></li>
+      <li><kbd>C-b</kbd>, move point onto the <code>^</code></li>
+      <li><kbd>a</kbd> <kbd>x</kbd> expands that side only</li>
+    </ol>
+<pre>1:  (x + 1)^2 = 9
+1:  (x + 1)<u>^</u>2 = 9
+<b>1:  x^2 + 2 x + 1 = 9</b></pre>
+  </div>
+
+  <h2>4. Keys worth knowing on day one</h2>
+  <table class="plain">
+    <tr><td><kbd>SPC</kbd></td><td>enter or edit a formula as text; <kbd>RET</kbd> commits, <kbd>C-c C-k</kbd> discards</td><td><kbd>M-p</kbd> <kbd>M-n</kbd></td><td>recall an earlier entry into the session</td></tr>
+    <tr><td><kbd>C-b</kbd></td><td>from home, step into the top entry</td><td><kbd>M-f</kbd> <kbd>M-b</kbd></td><td>move by number, variable, function</td></tr>
+    <tr><td><kbd>a</kbd> <kbd>s</kbd></td><td>simplify</td><td><kbd>a</kbd> <kbd>f</kbd> <kbd>a</kbd> <kbd>x</kbd></td><td>factor, expand</td></tr>
+    <tr><td><kbd>j</kbd> <kbd>j</kbd></td><td>isolate what point is on</td><td><kbd>M-i</kbd></td><td>solve for the variable</td></tr>
+    <tr><td><kbd>M</kbd></td><td>map the next command over a vector</td><td><kbd>I</kbd> <kbd>H</kbd></td><td>inverse and hyperbolic variants</td></tr>
+    <tr><td><kbd>U</kbd> <kbd>D</kbd></td><td>undo, redo, point kept</td><td><kbd>M-h</kbd></td><td>browse every past stack state</td></tr>
+    <tr><td><kbd>g</kbd> <kbd>l</kbd></td><td>plot the entry</td><td><kbd>l</kbd> <kbd>b</kbd> <kbd>?</kbd> <kbd>m</kbd> <kbd>c</kbd></td><td>all keys, all settings, all modules</td></tr>
+  </table>
+
+  <h2>5. Where next</h2>
+  <p><a href="basics.html">Basics</a> has more worked examples. <a href="keys.html">Keys</a> is the full cheat sheet with hover help. <a href="modules.html">Modules</a> lists what can be switched on and off. <a href="install.html">Install</a> covers profiles and optional programs.</p>
+  <footer id="foot"></footer>
+</main>
+<script src="site.js"></script>
+</body>
+</html>
