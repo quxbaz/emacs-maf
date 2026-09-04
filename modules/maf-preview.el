@@ -64,15 +64,22 @@
   "Name of the buffer backing the preview child frame.")
 
 (defface maf-preview-panel
-  '((t :inherit default))
-  "Face for the text inside the in-window preview panel.
+  '((((class color) (background light)) :inherit default :background "#fdf0e1")
+    (t :inherit default))
+  "Face for the preview panel's ground, and the text of the in-window one.
 Inherits `default' rather than leaving the face unspecified so the panel
-is opaque: it covers whatever face the stack line beneath it carries."
+is opaque: it covers whatever face the stack line beneath it carries.
+On a light background it carries a tint of its own, a pale peach, so
+the panel reads as a card laid over the stack rather than as more of
+the same page. The child frame wears this face's background too (see
+`maf-preview--posframe-show'), so the two backends look alike."
   :group 'maf)
 
 (defface maf-preview-border
-  '((t :inherit (shadow default)))
-  "Face for the border of the in-window preview panel."
+  '((t :inherit (shadow maf-preview-panel)))
+  "Face for the border of the in-window preview panel.
+`shadow' for the lines, over the panel's own ground, so a tinted panel
+is tinted out to its edge."
   :group 'maf)
 
 (defface maf-preview-big
@@ -225,9 +232,10 @@ The frame's colors are passed explicitly: a child frame is a new
 frame, and new frames otherwise draw from `default-frame-alist', which
 a config may pin to one theme's colors (a dark background to spare a
 startup flash, say) while the calc window wears another. The panel
-floats over that window, so it wears what the window wears. Passing
-the colors also keeps them current: a theme switch changes the
-arguments, and posframe rebuilds the frame."
+floats over that window, so it wears what the window wears: the
+default foreground, and `maf-preview-panel's background, which is the
+default's or a tint of it. Passing the colors also keeps them current:
+a theme switch changes the arguments, and posframe rebuilds the frame."
   (let* ((imagep (get-text-property 0 'display str))
          (pad (if imagep maf-preview--posframe-pad
                 maf-preview--posframe-text-pad))
@@ -245,7 +253,7 @@ arguments, and posframe rebuilds the frame."
                          (propertize " " 'display `(space :height (,(cdr pad)))))
                 :poshandler #'maf-preview--poshandler
                 :foreground-color (face-foreground 'default nil t)
-                :background-color (face-background 'default nil t)
+                :background-color (face-background 'maf-preview-panel nil t)
                 :internal-border-width 2
                 :internal-border-color "gray50"
                 :left-fringe 5
