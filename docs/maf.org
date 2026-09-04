@@ -11,6 +11,8 @@
    - [ ] default themes
    - [ ] doom themes
    - [ ] other themes
+** review
+   - [ ] maf-pretty box is always black
 
 * delivery
   - [ ] version as 1.0.0
