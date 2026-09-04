@@ -3,7 +3,7 @@
 ;; Copyright (C) 2026 David Yeung
 ;;
 ;; Author: David Yeung <quxbaz@gmail.com>
-;; Version: 0.0.1
+;; Version: 0.1.0
 ;; Package-Requires: ((emacs "28.1"))
 ;; Keywords: calc, math, tools
 ;; URL: https://github.com/quxbaz/emacs-maf
