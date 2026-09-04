@@ -6,8 +6,6 @@
   [[https://www.gnu.org/software/emacs/manual/html_mono/calc.html#Symbolic-Lisp-Functions][symbolic lisp functions]]
 
 * Todo
-** review
-   - [ ] 3cm in ratex/pretty should render with space before the unit (3 cm)
 
 * delivery
   - [ ] version as 1.0.0
