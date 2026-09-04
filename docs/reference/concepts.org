@@ -207,9 +207,9 @@ a parenthesized unit (commuting =a b= in =a b c= gives =b a c=, not
 =(b a) c=); the absorption only reassociates.
 
 Resolving consumes the gesture — the mark deactivates — while a
-resolve error leaves the region active for adjustment. Version-1 scope
-is =+=/=-= and =*= chains; =/= is excluded because its textual and
-structural readings diverge (=b / c= inside =a / b / c= contributes
+resolve error leaves the region active for adjustment. The scope is
+=+=/=-= and =*= chains (=maf--chain-kind=); =/= is excluded because its
+textual and structural readings diverge (=b / c= inside =a / b / c= contributes
 =1/(b c)=, not =b/c=).
 
 * The context alist
@@ -408,8 +408,8 @@ matrix once per row or column, each going to the body as a vector
 (=maf--defcmd-map-axis=; columns are the transpose's rows, turned
 back when the results still make a matrix), and behind the axis =:=
 is the formula prompt and =$= the stack formula, walking the matrix
-the same way through =maf--map-axis= — calc's =V M _= and =V M :=,
-=mapr= and =mapc=.
+the same way (=maf--map-axis-entry=, =maf--map-axis-stack=) — calc's
+=V M _= and =V M :=, =mapr= and =mapc=.
 
 =mafcmd-filter= (=f f=) and =mafcmd-filter-stack= (=f $=) are the map
 pair's sibling: the same reader (=maf--map-read=, under its own
@@ -592,9 +592,10 @@ and commit takes a value list there the way it does at the entry
 target. A commit of several parts reports its count as =:spread=, and
 point then lands at the end of the last part — the end of what the
 entry became (=maf--point-restore-spread=). A single part takes the
-node's place, and both commands declare =:land head= so point lands on
-the glyph that names it whole — =sin(2 x + 1)= peels to =2 x + 1= with
-point on the =+= (=maf--point-restore-head=).
+node's place, and both =mafcmd-unpack= and =mafcmd-unwrap= (=j U=)
+declare =:land head= so point lands on the glyph that names it whole —
+=sin(2 x + 1)= unwraps to =2 x + 1= with point on the =+=
+(=maf--point-restore-head=).
 
 * Widening the sub-formula target
 
@@ -845,8 +846,9 @@ every sibling reads =a=:
 (a^x) / select(b^y)  :=  select((b / b^(y-x)) ^ x)
 #+end_example
 
-Two more get the exponent arithmetic wrong. Gathering =a^x= and =b^y=
-under a single power of =x= needs =(b^(y/x))^x = b^y=, but the rules
+The second rule above also gets the exponent arithmetic wrong, as do
+the other two differing-exponent rules. Gathering =a^x= and =b^y=
+under a single power of =x= needs =(b^(y/x))^x = b^y=, but all three
 subtract where they must divide, yielding =b^(x(y-x))=:
 
 #+begin_example
@@ -855,7 +857,7 @@ select(a^x) / (b^y)   :=  select((a / b^(y-x)) ^ x)
 #+end_example
 
 At =a=2, b=4, x=4, y=2= the entry =a^x / b^y= is 1 and calc answers
-1048576.
+=1048576=.
 
 maf corrects all four rather than mirror a wrong answer, the same call
 it makes for the fraction the negation rule mangles. The corrections
@@ -925,8 +927,9 @@ Away from a sub-formula there is nothing to edit and RET pushes too —
 at home, in the line prefix, at EOL, in algebraic mode, for entries
 that escape to algebraic, and for interval entry (=..=). The entry
 minibuffer is calc's own (=calc-digit-map=), so the in-entry keys —
-=_=, =:=, =@=, =#=, =..= — are unchanged but for the handful maf takes
-there, below.
+=_=, =@=, =#=, =..= — are unchanged but for the handful maf takes
+there, below (declared through =maf-bindings-digit-define=, each
+paired with the calc command it stands in for).
 
 C-<return> is SPC's keep-point sibling (=maf-digit-commit-here=): the
 same push, but point stays on the entry it was on instead of dropping
@@ -938,7 +941,12 @@ where point stands.
 without a modifier. It is an alias, not an insertion — it re-dispatches
 calc's own =calcDigit-key= with the event spoofed to =:=, so calc's
 colon handling (the leading 1 for a bare
-=;=, mixed numbers, format validation) applies unchanged. During a
+=;=, mixed numbers, format validation) applies unchanged. The colon
+itself ends the entry and squares the number (=maf-digit-sqr=), the
+in-entry twin of =:= out in the stack (=mafcmd-sqr=): 5 : gives 25.
+Outside the exceptions below, =;= remains the way to enter calc's
+fraction colon while =:= takes the square command. Where the shortcuts
+stand aside, both keys keep their stock meanings instead. During a
 maf-edit session =;= types =:= too (=maf-edit-insert-colon=); the
 literal semicolon — calc's row separator in matrix notation — moves to
 =M-;= there (=maf-edit-insert-semicolon=). While an incomplete object
@@ -958,7 +966,10 @@ the stack: on =x= the entry 5 e gives =x = 5=. It is calc's own
 command-key termination, so the number becomes the command's argument
 and the push folds into the command's undo group; the cost is the
 e-notation the key was, which goes in through algebraic entry
-(=' 1e6=) instead.
+(=' 1e6=) instead. =o= ends the entry and reduces the number modulo
+360 (=maf-digit-mod-360=), the plain-key twin of =M-o= in the stack:
+400 o gives 40. Its cost is the octal suffix the key was, long
+superseded by the =8#= prefix.
 
 =j= is a jump, not a value: the number names a stack level and point
 travels there (=maf-digit-jump=), landing at the entry's EOL — its
@@ -974,12 +985,12 @@ level; the cost is the command-key termination it was, so 3 j e no
 longer pushes the 3 and runs the prefix on it — push first (3 SPC) and
 the prefix is itself again.
 
-=n=, =P=, =e=, and =j= step aside where the key is calc's own: inside
-a radix-prefixed entry — where a letter is a digit and which letters
+=n=, =P=, =e=, =o=, =:=, and =j= step aside where the key is calc's
+own: inside a radix-prefixed entry — where a letter is a digit and which letters
 count depends on the radix (=20#j= is 19), and where a number is
 plainly a value, since no one writes a stack level in base 16 — and
-with =maf-mode= off in the calc buffer the entry belongs to. =e=, =j=,
-and RET stand aside for an incomplete object too: half a vector is no
+with =maf-mode= off in the calc buffer the entry belongs to. =e=, =o=,
+=:=, =j=, and RET stand aside for an incomplete object too: half a vector is no
 entry to equate with, jump from, or commit contextually, so inside one
 RET is calc's own terminator again, as it is with =maf-mode= off. SPC
 stays calc's own everywhere — the element separator inside an
@@ -992,6 +1003,8 @@ multiples of pi.
 | File                    | Role                                                        |
 |-------------------------+-------------------------------------------------------------|
 | [[file:../../maf.el][maf.el]]                  | Package entry point, =maf-mode=, load order                 |
+| [[file:../../src/conf.el][src/conf.el]]             | Customization group and the shared defcustoms (=maf-modules=) |
+| [[file:../../core/maf-module.el][core/maf-module.el]]  | Module system: register minor-mode modules, drive/reconcile against =maf-modules=, =maf-list-modules= toggle menu |
 | [[file:../../core/maf-comp.el][core/maf-comp.el]]    | Flat-rendering coordinates: map formula nodes and point to entry text |
 | [[file:../../core/maf-chain.el][core/maf-chain.el]]   | Chain term lists: flatten, fold, and rebuild =+=/=-= and =*= spines |
 | [[file:../../core/maf-lib.el][core/maf-lib.el]]     | Generic predicates and utilities (find calc buffer, at-*-p, point snapshot/restore) |
@@ -999,30 +1012,46 @@ multiples of pi.
 | [[file:../../core/maf-resolve.el][core/maf-resolve.el]] | Context resolution + target dispatch                        |
 | [[file:../../core/maf-commit.el][core/maf-commit.el]]  | Commit recipes (push/pop choreography per target)           |
 | [[file:../../core/maf-defcmd.el][core/maf-defcmd.el]]  | The =maf-defcmd= macro + parsing helpers + I/H dispatch     |
-| [[file:../../core/maf-module.el][core/maf-module.el]]  | Module system: register minor-mode modules, drive/reconcile against =maf-modules=, =maf-list-modules= toggle menu |
+| [[file:../../core/maf-bindings.el][core/maf-bindings.el]] | Binding registry and compiler: profiles (=calc=, =native=, =vim=), module key claims, digit-entry keys; also the =maf-bindings= module choosing the profile |
 | [[file:../../src/maf-cmds.el][src/maf-cmds.el]]         | The mafcmd table: calcFunc-backed commands, keys, variant links |
 | [[file:../../src/math.el][src/math.el]]             | Pure formula helpers (term walk, terms GCD)                 |
-| [[file:../../src/stack.el][src/stack.el]]            | Hand-written contextual stack commands (factor-by, factor-gcd, undo/redo) |
+| [[file:../../src/stack.el][src/stack.el]]            | Hand-written contextual stack commands (factor-by, factor-gcd, undo/redo, the map flag, the rewrite markers) |
 | [[file:../../src/minibuffer.el][src/minibuffer.el]]       | Digit-entry integration: contextual digit entry, point/undo handoff |
-| [[file:../../src/bindings.el][src/bindings.el]]         | Default key bindings made outside the mafcmd table          |
+| [[file:../../src/bindings.el][src/bindings.el]]         | Default key declarations per profile, made outside the mafcmd table |
 | [[file:../../modules/maf-hl.el][modules/maf-hl.el]]       | Highlight module: =maf-hl-mode= per-buffer, =maf-use-hl-mode= toggle |
-| [[file:../../modules/maf-history.el][modules/maf-history.el]]  | History module: =maf-use-history-mode= records stack snapshots, browse in =*maf-history*= |
+| [[file:../../modules/maf-history.el][modules/maf-history.el]]  | History module: =maf-use-history-mode= records stack snapshots, browse with =M-h= in =*maf-history*= |
 | [[file:../../modules/maf-persist.el][modules/maf-persist.el]]   | Persist module: =maf-persist-mode= saves/restores the stack across sessions |
-| [[file:../../modules/maf-edit.el][modules/maf-edit.el]]      | Edit module: =maf-use-edit-mode= binds SPC/` (plus C-o/"(" in the calc profile) to =maf-edit= in-place stack editing (=maf-edit-mode= session) |
-| [[file:../../modules/maf-preview.el][modules/maf-preview.el]]   | Preview module: =maf-use-preview-mode= shows the entry at point in Big display in a floating panel (posframe child frame, else in-window); =maf-preview-show= (=G=) opens one entry in the preview window below the stack, module on or off |
+| [[file:../../modules/maf-edit.el][modules/maf-edit.el]]      | Edit module: =maf-use-edit-mode= binds SPC to =maf-edit= and ` to =maf-edit-entry-at-home= (plus C-o/"(" in the calc profile) for in-place stack editing (=maf-edit-mode= session) |
+| [[file:../../modules/maf-editplus.el][modules/maf-editplus.el]]  | Editplus module: shortcuts for writing formulas inside a =maf-edit= session |
+| [[file:../../modules/maf-editvars.el][modules/maf-editvars.el]]  | Editvars module: reads =maf-edit= text as handwritten algebra (=2xy= is =2*x*y=) |
+| [[file:../../modules/maf-recall.el][modules/maf-recall.el]]    | Recall module: =M-p=/=M-n= ring of entries typed earlier   |
+| [[file:../../modules/maf-preview.el][modules/maf-preview.el]]   | Preview module: =maf-use-preview-mode= shows the entry at point in Big display in a floating panel (posframe child frame, else in-window); =maf-preview-show= (=G= in native/vim) opens one entry in the preview window below the stack, module on or off |
 | [[file:../../modules/maf-pretty.el][modules/maf-pretty.el]]    | Render module: =maf-pretty= sends the entry at point through Calc LaTeX and RaTeX, then displays the SVG on demand |
-| [[file:../../modules/maf-formulas.el][modules/maf-formulas.el]]  | Formulas module: =maf-formulas= menu of saved formulas by category (detail + RET-insert); data in =maf-formulas-builtin= (shipped) plus =maf-formulas-file= (the user's) |
+| [[file:../../modules/maf-formulas.el][modules/maf-formulas.el]]  | Formulas module: =maf-formulas= (=s o=) menu of saved formulas by category (detail + RET-insert); data in =maf-formulas-builtin= (shipped) plus =maf-formulas-file= (the user's) |
+| [[file:../../modules/maf-selplus.el][modules/maf-selplus.el]]   | Selplus module: header-line badge while a selection stands   |
+| [[file:../../modules/maf-poly-order.el][modules/maf-poly-order.el]] | Poly-order module: one-variable polynomial sums kept in descending degree |
+| [[file:../../modules/maf-plot.el][modules/maf-plot.el]]      | Plot module: =g l= embedded SVG, =g o= Desmos, =g g= gnuplot in the native/vim profiles (the Desmos page is =maf-plot.html=) |
+| [[file:../../modules/maf-e-power.el][modules/maf-e-power.el]]   | E-power module: symbolic =exp(x)= written =e^x=              |
+| [[file:../../modules/maf-log-power.el][modules/maf-log-power.el]] | Log-power module: general-base =b^log(a,b)= and =log(b^y,b)= identities in simplification |
+| [[file:../../modules/maf-options.el][modules/maf-options.el]]   | Options module: =?= opens a dial table of calc's settings   |
+| [[file:../../modules/maf-keys.el][modules/maf-keys.el]]      | Keys module: bindings help for the active profile, opened by =l b= in the calc/native profiles or =M-x maf-keys= in vim |
+| [[file:../../pkg/dial/dial.el][pkg/dial/dial.el]]        | Dial: a tabulated buffer for browsing and setting a table of options (used by the module, options, and saved-stacks menus; its chrome is shared by formulas and keys) |
+| [[file:../../pkg/filter-view/filter-view.el][pkg/filter-view/filter-view.el]] | Filter-view: a filterable grouped list menu (used by the formulas and keys buffers) |
 | [[file:../../debug/maf-step.el][debug/maf-step.el]]       | Step-through harness (cockpit) that drives the tests        |
 | [[file:../../debug/maf-hl-verify.el][debug/maf-hl-verify.el]]  | Programmatic highlight verification (overlay state + render) |
 | [[file:../../debug/maf-hl-sweep.el][debug/maf-hl-sweep.el]]   | Highlight sweep across many expression shapes               |
-| [[file:../../debug/maf-dev-init.el][debug/maf-dev-init.el]]   | Init file for the dedicated =maf-dev= instance              |
+| [[file:../../agent/emacs-init.el][agent/emacs-init.el]]     | Init file for the dedicated dev instance: the per-session server socket |
+| [[file:../../project-init.el][project-init.el]]         | Session setup for the dev instance: loads the package, enables =maf-mode= in calc, opts into =maf-persist= |
 | [[file:../../tests/][tests/]]                  | Step tests; a file passes when no step errors               |
 
 Load order in =maf.el=: =conf= → =module= → =comp= → =chain= → =lib= →
 =sel= → =step= → =hl-verify= → =resolve= → =commit= → =defcmd= →
-=cmds= → =math= → =stack= → =bindings= → =minibuffer=, then the feature
-modules (=maf-hl=, =maf-history=, =maf-persist=, =maf-edit=, =maf-preview=, =maf-pretty=,
-=maf-formulas=), then
+=cmds= → =math= → =stack= → =maf-bindings= → =bindings= →
+=minibuffer=, then the feature modules (=maf-hl=, =maf-history=,
+=maf-persist=, =maf-edit=, =maf-editplus=, =maf-editvars=,
+=maf-recall=, =maf-preview=, =maf-pretty=, =maf-formulas=,
+=maf-selplus=, =maf-poly-order=, =maf-plot=, =maf-e-power=,
+=maf-log-power=, =maf-options=, =maf-keys=), then
 =maf-modules-apply=. Each layer depends only on earlier ones; modules
 load last so =maf-mode-map= exists for any key bindings they install.
 (=maf-hl= also loads earlier as a dependency of the =hl-verify= debug
@@ -1077,9 +1106,12 @@ Two module shapes have appeared, matching the feature's state:
 
 - *Global mode.* The history module (=modules/maf-history.el=) is one
   =maf-use-history-mode= global minor mode: enabling installs the recording
-  hook and the =calc-record= advice and binds =t d= to =maf-history= in
-  =maf-mode-map=; disabling removes them and cedes =t d= back to calc's
-  =calc-trail-display=. Browsing is two side-by-side
+  hook and the =calc-record= advice and claims =M-h= for =maf-history=
+  (through =maf-bindings-module-keys=, so the key is compiled into
+  every profile's map while the mode is on); disabling removes them
+  and the key goes with them. Calc's trail and its =t= bindings are
+  untouched — the history is an alternative to the trail, not a
+  replacement. Browsing is two side-by-side
   windows below calc: =*maf-history*= (=maf-history-mode=) on the left
   is the action log, one line per state, newest at the top, each
   prefixed by a git-style change marker (=+= added, =-= removed, =~=
@@ -1091,27 +1123,28 @@ Two module shapes have appeared, matching the feature's state:
   session's course reads at a glance while stepping.
   Persistence
   (=maf-persist-mode=) is the same shape: enabling installs the save
-  timer and the restore hook and binds =l R= to =maf-saved-stacks=
-  (both it and the history's =t d= bring back an earlier stack, the
-  history's from this session and =l R='s from any session) and =l S=
-  to =maf-save-stack=, its on-demand companion; disabling removes
-  them. The saved-stacks buffer is dial's, like the options menu — a
-  row per save file, previewing its stack in a window beside the list
+  timer and the restore hook. In the calc/native profiles it binds
+  =l R= to =maf-saved-stacks= and =l S= to =maf-save-stack=; vim uses
+  =o R= and =o S=. Both the saved-stacks browser and the history's
+  =M-h= bring back an earlier stack, the history's from this session
+  and the saved-stacks browser's from any session; disabling the mode
+  removes its bindings. The saved-stacks buffer is dial's, like the
+  options menu — a row per save file, previewing its stack in a window beside the list
   as point moves (side by side, so a stack of any depth is read
   without scrolling), restoring one with RET, naming one with =R= —
   which on the session's own row names the running session, its lock
   moving with the file — and deleting one outright with =D=.
   The edit module too
-  (=modules/maf-edit.el=): =maf-use-edit-mode= installs SPC and ` in
-  =maf-mode-map= when enabled (plus C-o and =(= in the calc profile)
-  and cedes them back when disabled — its body is just those bindings,
+  (=modules/maf-edit.el=): =maf-use-edit-mode= claims SPC for
+  =maf-edit= and ` for =maf-edit-entry-at-home= when enabled (plus
+  C-o and =(= in the calc profile) and cedes them back when disabled — its body is just those bindings,
   the on-demand editing session (=maf-edit-mode=, turned on per
   gesture, not a feature switch) being separate.
 
   The pretty module (=modules/maf-pretty.el=) is the same global-mode
-  shape with no background work of its own: =maf-use-pretty-mode= owns
-  which command =G= runs, shadowing the Big-display preview rather than
-  taking a key of its own (see /A module's key over a default's/
+  shape with no background work of its own: in the native/vim profiles,
+  =maf-use-pretty-mode= owns which command =G= runs, shadowing the
+  Big-display preview rather than taking a key of its own (see /A module's key over a default's/
   below), and what the preview panel draws with (see /One module's
   rendering, in another's panel/). =maf-pretty= formats the whole entry
   at point with Calc's LaTeX language, runs =maf-pretty-program= once,
@@ -1144,9 +1177,9 @@ Two module shapes have appeared, matching the feature's state:
   whole buffer is already in Big display and during a =maf-edit=
   session.
 
-- *A command of a module's, bound outside it.* =maf-preview-show= (=G=,
-  declared in =src/bindings.el=) opens the entry at point in the
-  preview window below the stack — the pretty module's window, split
+- *A command of a module's, bound outside it.* =maf-preview-show= (=G=
+  in the native/vim profiles, declared in =src/bindings.el=) opens the
+  entry at point in the preview window below the stack — the pretty module's window, split
   evenly, focused, and handed back on q, filled with Big text — and
   needs nothing of the module: no buffer-local mode, no globalized
   toggle. That is why its key is not declared through
@@ -1156,9 +1189,9 @@ Two module shapes have appeared, matching the feature's state:
   wanted. The module toggle stays a plain on/off, and what it decides
   is only whether a panel follows point.
 
-- *A module's key over a default's: a shadow.* =maf-pretty= claims =G=
-  through =maf-bindings-module-keys=, the key the preview command
-  above already holds. The compiler refuses two modules on one key — nothing there
+- *A module's key over a default's: a shadow.* In the native/vim profiles,
+  =maf-pretty= claims =G= through =maf-bindings-module-keys=, the key
+  the preview command above already holds. The compiler refuses two modules on one key — nothing there
   says which wins — but a module over a default it lets stand, because
   the toggle says it: the module's command holds the key while its mode
   is on and the default comes back when it goes off, so the key keeps
@@ -1211,19 +1244,26 @@ Two module shapes have appeared, matching the feature's state:
   no sign it was cut.
 
 A module owns its whole lifecycle, including bindings: =maf-mode= no
-longer enables highlighting or the history, and =bindings.el= no longer
-holds the =t d= or in-place-editing keys.
+longer enables highlighting or the history, and =src/bindings.el=
+holds only the defaults. A module's keys are declared beside its mode
+with =maf-bindings-module-keys=, per profile, and the registry in
+=core/maf-bindings.el= compiles them in while the mode is on and
+drops them when it goes off (it also refuses a claim it cannot put
+back — two modules on one key, or a key the profile's own motions
+hold, so =l b= is not claimed under vim, where =l= is a motion).
 
-The default =maf-modules= holds the features that belong in the base
-UX — =maf-history=, =maf-hl=, =maf-edit=, =maf-pretty=, and =maf-formulas=.
-The continuously-updating =maf-preview= remains available but is opt-in.
-The persist module
-(=modules/maf-persist.el=) is the exception: it writes save files to disk,
-so it stays out of the default and is opt-in — the dev instance adds
-=maf-persist= to =maf-modules= in =project-init.el= and calls
-=maf-modules-apply=, the documented Lisp way to enable a module.
+The default =maf-modules= (=src/conf.el=) holds the base feature set:
+=maf-bindings=, =maf-history=, =maf-hl=, =maf-edit=, =maf-editplus=,
+=maf-editvars=, =maf-recall=,
+=maf-preview=, =maf-formulas=, =maf-selplus=, =maf-poly-order=,
+=maf-plot=, =maf-e-power=, =maf-log-power=, =maf-options=, and
+=maf-keys=. Two stay out of the default and are opt-in: =maf-pretty=,
+which needs the RaTeX renderer installed, and the persist module
+(=modules/maf-persist.el=), which writes save files to disk — the dev
+instance adds =maf-persist= to =maf-modules= in =project-init.el= and
+calls =maf-modules-apply=, the documented Lisp way to enable a module.
 
 * See also
 
 - [[file:../../core/maf-resolve.el][core/maf-resolve.el]] — context schema reference at top of file
-- [[file:calc-ref.org][calc-ref.org]] — calc API reference
+- =calc-ref.org= — calc API reference (Org source; no HTML export)
