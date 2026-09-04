@@ -8,7 +8,6 @@
 * Todo
 
 * website
-  - [ ] version as 1.0.0
   - [ ] generate readme
   - [ ] generate website
     - [ ] stick to plain html/css/js
