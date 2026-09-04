@@ -100,6 +100,19 @@ The group headers themselves are the shell's, in `filter-view-group'."
   "Face for the formula shown beside each title in the menu list."
   :group 'maf)
 
+(defface maf-formulas-card
+  (if (facep 'maf-preview-panel)
+      '((t :inherit maf-preview-panel))
+    ;; The preview panel's spec, copied: the same ground under a formula
+    ;; wherever one is shown large.
+    '((((class color) (background light)) :inherit default :background "#fdf0e1")
+      (t :inherit default)))
+  "Face for the ground under the rendered formula in the detail pane.
+Inherits `maf-preview-panel' when the preview module is loaded before
+this one, so the detail's formula wears the same ground as the preview
+panel's; standalone it carries the same colors itself."
+  :group 'maf)
+
 (defcustom maf-formulas-file (locate-user-emacs-file "maf-formulas.el")
   "File of saved formulas, loaded on first use when it exists.
 The file sets `maf-formulas-user' to a list of formula plists (see the
@@ -1306,9 +1319,33 @@ color."
         ;; character after it may be the one that bounds the next
         ;; occurrence, as the `+' does between the two `a's in "a+a".
         (while (string-match re s from)
-          (put-text-property (match-beginning 1) (match-end 1)
-                             'face 'maf-formulas-var s)
+          ;; Added over the face the text carries, not in place of it:
+          ;; the name keeps the ground the rest of the formula sits on.
+          (add-face-text-property (match-beginning 1) (match-end 1)
+                                  'maf-formulas-var nil s)
           (setq from (match-end 1)))))))
+
+(defun maf-formulas--big-card (big)
+  "BIG, the Big rendering, laid on a card of `maf-formulas-card'.
+The lines are padded to the widest, with a column of ground each side
+and a blank line above and below, so the ground is a rectangle around
+the formula rather than a ragged tint behind its lines — the text's
+counterpart of the margin the typeset image carries. The text wears
+`maf-formulas-form' over the card, the pair set together: a face put on
+afterwards would replace the card's rather than join it."
+  (let* ((lines (split-string big "\n"))
+         (width (apply #'max 0 (mapcar #'string-width lines)))
+         (blank (make-string (+ width 2) ?\s)))
+    (mapconcat (lambda (l)
+                 (concat "  " (propertize l 'face '(maf-formulas-form maf-formulas-card))))
+               (append (list blank)
+                       (mapcar (lambda (l)
+                                 (concat " " l
+                                         (make-string (- width (string-width l)) ?\s)
+                                         " "))
+                               lines)
+                       (list blank))
+               "\n")))
 
 (defun maf-formulas--detail-string (f width)
   "Detail text for F: title, rendered formula, description, variable meanings.
@@ -1335,16 +1372,15 @@ unit on an angle sum the common case — while RET still pushes :expr."
          ;; A thin box frames the typeset formula, with a margin added
          ;; to this copy of the image so the ink sits well clear of the
          ;; frame — the panel's own rendering is left as it came.
+         ;; The card's ground shows through the image and fills its
+         ;; margin: the SVG is drawn with a foreground only.
          (concat "  " (propertize
                        " "
                        'display (append (get-text-property 0 'display pretty)
                                         '(:margin 8))
-                       'face '(:box (:line-width 1 :color "gray40"))))
-       (maf-formulas--color-vars
-        (propertize
-         (mapconcat (lambda (l) (concat "  " l)) (split-string (or big "") "\n") "\n")
-         'face 'maf-formulas-form)
-        vars))
+                       'face '(:inherit maf-formulas-card
+                               :box (:line-width 1 :color "gray40"))))
+       (maf-formulas--color-vars (maf-formulas--big-card (or big "")) vars))
      "\n"
      (when doc
        (concat "\n"
