@@ -90,6 +90,7 @@
 (defvar var-JumpRules)
 (declare-function calcFunc-factor "calc-poly")
 (declare-function calcFunc-roots "calcalg2")
+(declare-function calcFunc-sum "calcalg2")
 (declare-function calcFunc-sub "calc-arith")
 (declare-function math-evaluate-expr "calc-ext")
 (declare-function calc-is-assignments "calc-store")
@@ -7601,6 +7602,114 @@ assignment, and keep-args leaves the entry and pushes the result.
 (maf-set-command-doc 'mafcmd-let-entry
                      "evaluate the entry under a typed assignment"
                      "x + 1 => 3   (typed: x = 2)")
+
+;;; Summation
+
+(defvar maf--sum-var nil
+  "The index variable `maf--sum-run' sums over.
+A calc variable, bound per `mafcmd-sum' call from the first prompt.")
+
+(defvar maf--sum-low nil
+  "The lower bound `maf--sum-run' sums from, bound per `mafcmd-sum' call.")
+
+(defvar maf--sum-high nil
+  "The upper bound `maf--sum-run' sums to, bound per `mafcmd-sum' call.")
+
+(defvar maf--sum-step nil
+  "The step `maf--sum-run' advances the index by, or nil for one.
+Bound per `mafcmd-sum' call from its prefix argument.")
+
+(defun maf--sum-read-var (default)
+  "Read the index variable to sum over; return it as a calc variable.
+DEFAULT is the variable name empty input stands for, or nil to require
+input. Anything but a single variable is a `user-error'."
+  (let ((expr (maf--subst-parse
+               (string-trim
+                (read-string (if default
+                                 (format "Sum over (default %s): " default)
+                               "Sum over: ")
+                             nil nil default)))))
+    (unless (eq (car-safe expr) 'var)
+      (user-error "Not a variable: %s" (math-format-value expr)))
+    expr))
+
+(maf-defcmd maf--sum-run (expr _arg commit)
+  "Sum the whole entry over `maf--sum-var' between the bounds read.
+The worker behind `mafcmd-sum' — see there. Takes the whole entry
+\(`:scope entry'), so point within the formula never narrows the
+subject; a relation is summed a side at a time. The sum is calc's own,
+under the current modes: `maf--sum-low' to `maf--sum-high', stepping by
+`maf--sum-step' when that is set."
+  :arity unary
+  :prefix "sum"
+  :scope entry
+  (commit (apply #'calcFunc-sum expr maf--sum-var maf--sum-low maf--sum-high
+                 (and maf--sum-step (list maf--sum-step)))))
+
+(defun mafcmd-sum (arg)
+  "Sum the entry at point over an index variable, between two bounds.
+
+  k^2  =>  55      (typed: k, 1, 5)
+
+Calc's own `a +', made contextual: it prompts for the index variable,
+then for the lower and upper bounds, and sums the entry at point over
+that range. The first prompt offers the subject's priority variable as
+its default — x, y, z, t first, then alphabetical — so RET takes the
+variable the entry suggests. The bounds are any formulas. Numeric
+bounds grind the sum out; a symbolic bound gets a closed form when calc
+knows one, and a sum calc cannot do stays written as a sum.
+
+  6 k^2    =>  2 n^3 + 3 n^2 + n      (typed: k, 1, n)
+  k x      =>  6 x                    (typed: k, 1, 3)
+  1 / k    =>  sum(1 / k, k, 1, inf)  (typed: k, 1, inf; no closed form)
+
+A numeric prefix argument steps the index by that amount instead of
+one; a plain prefix asks for the step as a fourth input. A step that
+runs the other way counts down from the lower bound.
+
+  C-u 2 k    =>  25                              (typed: k, 1, 9)
+  C-u -2 a_k =>  a_0 + a_2 + a_4 + a_6 + a_8 + a_10  (typed: k, 10, 0)
+
+The whole entry at point is the subject wherever point rests on its
+line, or the top entry at home, each side of a relation in turn. A
+sub-formula is never singled out — not by point, not by a region, not
+by a calc selection (`:scope entry'). Keep-args leaves the entry and
+pushes the sum.
+
+  x = k      =>  3 x = 6     (typed: k, 1, 3)
+  k^2 + k|   =>  20          (typed: k, 1, 3; point within)"
+  (interactive "P")
+  ;; Read every prompt before any calc state is touched, so C-g aborts
+  ;; with nothing done.
+  (let* ((var (maf--sum-read-var (maf--solve-for-default-var)))
+         (name (math-format-value var))
+         (low (maf--subst-parse
+               (string-trim
+                (read-string (format "Sum over %s from: " name)))))
+         (high (maf--subst-parse
+                (string-trim
+                 (read-string (format "Sum over %s from %s to: "
+                                      name (math-format-value low))))))
+         (step (cond ((consp arg)
+                      (maf--subst-parse
+                       (string-trim
+                        (read-string
+                         (format "Sum over %s from %s to %s, step: "
+                                 name (math-format-value low)
+                                 (math-format-value high))))))
+                     (arg (prefix-numeric-value arg)))))
+    (let ((maf--sum-var var)
+          (maf--sum-low low)
+          (maf--sum-high high)
+          (maf--sum-step step)
+          ;; The prefix argument was the step; the worker must not see
+          ;; it as anything else.
+          (current-prefix-arg nil))
+      (call-interactively #'maf--sum-run))))
+(put 'mafcmd-sum 'maf-command t)
+(maf-set-command-doc 'mafcmd-sum
+                     "sum the entry over an index variable"
+                     "k^2 => 55   (typed: k, 1, 5)")
 
 ;;; Mapping
 

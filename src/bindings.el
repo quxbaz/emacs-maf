@@ -540,6 +540,11 @@
 ;; profiles take the contextual version on calc's key, as assign and
 ;; substitute do.
 (maf-bindings-define '(calc native) "s l" #'mafcmd-let-entry)
+;; Summation on calc's own key for it, a +: the index variable and both
+;; bounds are read from the minibuffer, the subject's priority variable
+;; the default, and the whole entry at point is summed (:scope entry).
+;; Both profiles take the contextual version, as s l does.
+(maf-bindings-define '(calc native) "a +" #'mafcmd-sum)
 ;; Polynomial roots by factoring, with multiplicity. In the l family
 ;; on a, the letter of its stock a P sibling, unclaimed by the
 ;; log-units prefix. Being in the family, the vim mirror carries it
