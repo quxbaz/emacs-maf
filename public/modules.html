@@ -31,7 +31,12 @@
       (m.default_on ? '<span class="on">on by default</span>' : '<span class="off">off by default</span>') +
       (m.keys && m.keys !== "null" ? '<span class="keys">' + esc(m.keys) + "</span>" : "") + "</div>" +
       '<div class="doc">' + esc(m.summary) + "</div>" +
-      (m.details ? '<details><summary>Details</summary><pre>' + esc(m.details) + "</pre></details>" : "") + "</div>";
+      ((m.sections && m.sections.length) || (m.options && m.options.length)
+        ? '<details><summary>Details</summary>' +
+          (m.sections || []).map(sec => '<div class="sec"><b>' + esc(sec.title) + "</b><pre>" + esc(sec.text) + "</pre></div>").join("") +
+          (m.options && m.options.length ? '<table class="plain opts"><tr><th>Option</th><th>Default</th></tr>' +
+            m.options.map(o => "<tr><td><code>" + esc(o.name) + "</code>" + (o.doc ? '<div class="muted">' + esc(o.doc) + "</div>" : "") + "</td><td><code>" + esc(o.default) + "</code></td></tr>").join("") + "</table>" : "") +
+          "</details>" : "") + "</div>";
   }).join("") + "</section>").join("");
   function filter() {
     const needle = q.value.trim().toLowerCase(); let n = 0;

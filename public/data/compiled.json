@@ -73,7 +73,7 @@
 "`+ - * / ^` and the rest apply to the sub-formula, entry, selection, or each equation side",
 "`J` multiplies from the home row beside `*`",
 "`\\` takes the square root beside `Q`; `W` / `:` square",
-"`<` / `>` and `M-<` / `M->` step the target down or up by one",
+"`<` / `>` step the target down or up by one",
 "`,` reads a letter and multiplies the target by it, or pushes it at home"
 ]
 },

@@ -5,7 +5,9 @@
   const list = $("#list"), q = $("#q"), count = $("#count"), statsEl = $("#stats"), typesEl = $("#types");
   const GH = "https://github.com/quxbaz/emacs-maf/commit/";
   const TYPES = ["addition", "change", "fix", "refactor", "docs", "tests", "revert"];
-  const isAddition = c => c.type === "addition" || c.commands_added.length || c.modules_added.length;
+  const isAddition = c => c.type === "addition" || c.commands_added.length || c.modules_added.length || c.tests_added.length;
+  const cutoff = document.getElementById("cutoff");
+  if (cutoff) cutoff.innerHTML = "<code>" + esc(D.summary.head) + "</code> on " + esc(D.summary.last) + ", when this data was generated";
   const commits = D.commits.filter(c => c.type !== "note" && c.type !== "merge").filter(c => mode === "additions" ? isAddition(c) : true).reverse();
 
   // A command's group in the keys taxonomy, for filing a commit under the subject it touched.

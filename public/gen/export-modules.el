@@ -9,6 +9,20 @@
 (require 'json)
 (require 'seq)
 
+(defun maf-site--default-form (sym)
+  "SYM's shipped default as the source form its defcustom wrote.
+custom stores it as (funcall (function (lambda () FORM))), the lambda
+an interpreted closure in a compiled file; the FORM is dug back out.
+A string value is shown with the home directory abbreviated."
+  (let* ((form (car (get sym 'standard-value)))
+         (fn (and (eq (car-safe form) 'funcall)
+                  (eq (car-safe (nth 1 form)) 'function)
+                  (nth 1 (nth 1 form)))))
+    (cond ((and (consp fn) (eq (car fn) 'lambda)) (setq form (car (last fn))))
+          ((and fn (fboundp 'interpreted-function-p) (interpreted-function-p fn))
+           (setq form (car (last (aref fn 1))))))
+    (if (stringp form) (abbreviate-file-name form) form)))
+
 (defun maf-site--module-record (it)
   (let* ((name (car it))
          (entry (assq name maf-module-registry))
@@ -19,7 +33,18 @@
           (cons 'keys (or keys :null))
           (cons 'summary (or (maf-module--summary (nth 2 entry)) ""))
           (cons 'doc (substring-no-properties (or (plist-get (cdr it) :doc) "")))
-          (cons 'details (substring-no-properties (or (ignore-errors (maf-module--details name)) ""))))))
+          ;; The mode docstrings and the options with their shipped
+          ;; defaults, as source forms: nothing read from the live
+          ;; session, whose state and settings are this machine's.
+          (cons 'sections (vconcat (mapcar (lambda (sec) (list (cons 'title (symbol-name (car sec)))
+                                                              (cons 'text (substring-no-properties (cdr sec)))))
+                                           (ignore-errors (maf-module--mode-sections (nth 1 entry))))))
+          (cons 'options (vconcat (mapcar (lambda (sym)
+                                            (let ((form (maf-site--default-form sym)))
+                                              (list (cons 'name (symbol-name sym))
+                                                    (cons 'default (truncate-string-to-width (prin1-to-string form) 90 nil nil "…"))
+                                                    (cons 'doc (or (ignore-errors (car (split-string (documentation-property sym 'variable-documentation) "\n"))) "")))))
+                                          (ignore-errors (maf-module--options name))))))))
 
 (let* ((root (locate-dominating-file (or load-file-name default-directory) "maf.el"))
        (items (maf-module--items))

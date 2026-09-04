@@ -31,8 +31,8 @@
     <li><b>Graphing.</b> <kbd>g</kbd> <kbd>l</kbd> plots below the stack, <kbd>g</kbd> <kbd>o</kbd> opens Desmos, <kbd>g</kbd> <kbd>g</kbd> opens gnuplot.</li>
     <li><b>History.</b> <kbd>M-h</kbd> browses every past stack state; an opt-in module restores the stack across sessions.</li>
     <li><b>Preview and typesetting.</b> A panel follows point in two-dimensional display; with RaTeX, <kbd>G</kbd> typesets the entry.</li>
-    <li><b>Discoverability.</b> <kbd>l</kbd> <kbd>b</kbd> lists every key with an example, <kbd>?</kbd> every Calc setting, <kbd>m</kbd> <kbd>c</kbd> every module, <kbd>s</kbd> <kbd>o</kbd> a formula library.</li>
-    <li><b>Mapping and flags.</b> <kbd>M</kbd> maps any command over a vector or equation; <kbd>I</kbd> and <kbd>H</kbd> route to contextual variants.</li>
+    <li><b>Discoverability.</b> <kbd>l</kbd> <kbd>b</kbd> lists every key with a description and most with an example, <kbd>?</kbd> every Calc setting, <kbd>m</kbd> <kbd>c</kbd> every module, <kbd>s</kbd> <kbd>o</kbd> a formula library.</li>
+    <li><b>Mapping and flags.</b> <kbd>M</kbd> maps any contextual command over a vector or equation; <kbd>I</kbd> and <kbd>H</kbd> route to contextual variants.</li>
     <li><b>Three key profiles.</b> native, calc, and vim. See <a href="basics.html">Basics</a> for worked examples.</li>
   </ul>
 
@@ -60,7 +60,7 @@
     <div class="card"><h3>Edit the stack as text</h3><p><kbd>SPC</kbd> turns the stack into an editable buffer, wdired style. Newlines split and join entries. A handwriting dialect reads <code>2xy</code> as <code>2 x y</code>, and a layer of in-entry shortcuts wraps, retypes, and duplicates groups.</p></div>
     <div class="card"><h3>The map flag and combinators</h3><p><kbd>M</kbd> maps any contextual command over a vector or an equation. Fold, accumulate, apply, outer and inner products read their operation from the next key, looked up among maf's own commands.</p></div>
     <div class="card"><h3>Three key profiles</h3><p><b>calc</b> keeps Calc's layout and swaps in maf's commands. <b>native</b> is maf's own layout, the default. <b>vim</b> puts it under <kbd>h</kbd> <kbd>j</kbd> <kbd>k</kbd> <kbd>l</kbd> motions. Your own bindings sit above and are never rewritten.</p></div>
-    <div class="card"><h3>Discoverability built in</h3><p><kbd>l</kbd> <kbd>b</kbd> lists every bound command with a proper name and a worked example. <kbd>?</kbd> shows all of Calc's settings in one readable table. <kbd>m</kbd> <kbd>c</kbd> is the module menu. <kbd>s</kbd> <kbd>o</kbd> opens a formula library.</p></div>
+    <div class="card"><h3>Discoverability built in</h3><p><kbd>l</kbd> <kbd>b</kbd> lists every bound command with a proper name and description, most with a worked example. <kbd>?</kbd> shows all of Calc's settings in one readable table. <kbd>m</kbd> <kbd>c</kbd> is the module menu. <kbd>s</kbd> <kbd>o</kbd> opens a formula library.</p></div>
     <div class="card"><h3>History and persistence</h3><p><kbd>M-h</kbd> browses every past stack state beside the log that produced it, and pushes any old entry back. An opt-in module restores the stack across Emacs sessions.</p></div>
     <div class="card"><h3>Previews and typesetting</h3><p>A panel follows point showing the entry in Calc's two-dimensional display. With RaTeX installed, <kbd>G</kbd> typesets the entry as an SVG, units upright and all.</p></div>
     <div class="card"><h3>Plotting three ways</h3><p><kbd>g</kbd> <kbd>l</kbd> embeds a gnuplot SVG themed from your faces, <kbd>g</kbd> <kbd>o</kbd> opens the formula in Desmos in the browser, <kbd>g</kbd> <kbd>g</kbd> opens interactive gnuplot. <kbd>H</kbd> first plots the whole stack.</p></div>
@@ -81,10 +81,11 @@
 (function () {
   const B = window.MAF_BINDINGS, C = window.MAF_COMMITS;
   const native = B.profiles.find(p => p.name === B.default_profile);
-  const items = native.groups.flatMap(g => g.items);
+  const items = native.groups.flatMap(g => g.items).filter(i => i.keys.length);
   const ctx = items.filter(i => i.contextual).length;
+  const seqs = items.reduce((n, i) => n + i.keys.length, 0);
   document.getElementById("stats").innerHTML = [
-    [items.length, "commands bound"], [ctx, "of them contextual"], [native.groups.length - 2, "groups"],
+    [items.length, "commands with keys"], [ctx, "of them contextual"], [seqs, "key sequences"], [native.groups.length - 2, "groups"],
     [18, "modules"], [C.summary.total, "commits since " + C.summary.first.slice(0, 7)]
   ].map(([n, l]) => '<div class="stat"><b>' + n + "</b><span>" + l + "</span></div>").join("");
   const mods = [
@@ -104,7 +105,7 @@
     ["maf-e-power", "Rewrite", true, "Writes symbolic exp(x) as e^x."],
     ["maf-log-power", "Rewrite", true, "Adds the general-base log identities Calc lacks, such as b^log(a, b) simplifying to a."],
     ["maf-options", "Prefs", true, "All of Calc's settings in one buffer on ?, each row showing the current value and the choices."],
-    ["maf-keys", "Help", true, "The bindings help buffer on l b: every key in the active profile, grouped, with names and examples."],
+    ["maf-keys", "Help", true, "The bindings help buffer on l b: every key in the active profile, grouped, with names, descriptions and examples."],
     ["maf-bindings", "Prefs", true, "The key profile registry and compiler behind the calc, native and vim layouts."]
   ];
   document.getElementById("modules").innerHTML = mods.map(([n, g, on, d]) =>

@@ -11,7 +11,7 @@
 <nav class="nav" id="nav"></nav>
 <main class="wrap">
   <h1>Install and use</h1>
-  <p class="lede">maf is a single package with everything it needs in the repository. It requires Emacs 28.1 or later and nothing else. Three modules can use external programs, all optional: RaTeX for typesetting, gnuplot and a browser for plotting. Everything else works without them.</p>
+  <p class="lede">maf is a single package with everything it needs in the repository. It requires Emacs 28.1 or later and nothing else. Two modules can use external programs, all optional: maf-pretty needs RaTeX for typesetting, and maf-plot uses gnuplot and a browser for plotting. The preview panel can use the posframe package. Everything else works without them.</p>
 
   <h2>Get the code</h2>
   <p>With Emacs 29 or later, the package manager can install straight from the repository:</p>
@@ -56,8 +56,8 @@ M-x maf-bindings-set-profile          ; switch in a running session</code></pre>
   <ol>
     <li>Open Calc, press <kbd>SPC</kbd>, type <code>x^2 + 2 x + 1 = 4</code>, and press <kbd>RET</kbd>.</li>
     <li>Press <kbd>C-b</kbd> to step back into the entry, move onto the left side, and press <kbd>a</kbd> <kbd>f</kbd>. That side factors in place.</li>
-    <li>Press <kbd>j</kbd> <kbd>j</kbd> anywhere on the entry to isolate <code>x</code>.</li>
-    <li>Press <kbd>l</kbd> <kbd>b</kbd> to see every key with an example, or <kbd>?</kbd> for Calc's settings.</li>
+    <li>Move point onto an <code>x</code> and press <kbd>j</kbd> <kbd>j</kbd> to isolate it. Or press <kbd>M-i</kbd> from anywhere, which solves for the variable regardless of point.</li>
+    <li>Press <kbd>l</kbd> <kbd>b</kbd> to see every key with its description, most with an example, or <kbd>?</kbd> for Calc's settings.</li>
   </ol>
   <footer id="foot"></footer>
 </main>

@@ -83,7 +83,7 @@ for c in commits: c['tag']=tags.get(c['hash'])
 months=collections.OrderedDict()
 for c in commits:
     m=c['date'][:7]; months.setdefault(m,collections.Counter())[c['type']]+=1
-summary=dict(total=len(commits),first=commits[0]['date'],last=commits[-1]['date'],
+summary=dict(total=len(commits),first=commits[0]['date'],last=commits[-1]['date'],head=commits[-1]['short'],
              by_type=dict(collections.Counter(c['type'] for c in commits)),
              by_month={m:dict(v) for m,v in months.items()},
              commands_added=sum(len(c['commands_added']) for c in commits),

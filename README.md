@@ -29,7 +29,7 @@ Calc's `I` and `H` prefixes route each command to a sibling, so `I S` takes the 
 - **Entry and editing are one gesture.** `SPC` opens the stack as editable text, wdired style; type a new formula or change one, and `RET` commits. Newlines split and join entries. A handwriting dialect reads `2xy` as `2 x y`. In-entry shortcuts wrap, retype, and duplicate groups.
 - **The map flag and combinators.** `M` maps any contextual command. Fold, accumulate, apply, outer and inner products read their operation from the next key.
 - **Three key profiles.** `calc` keeps Calc's layout and swaps in maf's commands. `native`, the default, is maf's own layout. `vim` puts it under `h j k l` motions. Your own bindings sit above and are never rewritten.
-- **Discoverability.** `l b` lists every bound command with a proper name and a worked example. `?` shows all of Calc's settings in one table. `m c` is the module menu. `s o` opens a formula library.
+- **Discoverability.** `l b` lists every bound command with a proper name and description, most with a worked example. `?` shows all of Calc's settings in one table. `m c` is the module menu. `s o` opens a formula library.
 - **History and persistence.** `M-h` browses every past stack state beside the log that produced it. An opt-in module restores the stack across sessions.
 - **Previews and typesetting.** A panel follows point showing the entry in Calc's two-dimensional display. With RaTeX, `G` typesets the entry as an SVG.
 - **Plotting three ways.** gnuplot embedded as an SVG, Desmos in the browser, or an interactive gnuplot window.
