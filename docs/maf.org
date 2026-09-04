@@ -6,7 +6,6 @@
   [[https://www.gnu.org/software/emacs/manual/html_mono/calc.html#Symbolic-Lisp-Functions][symbolic lisp functions]]
 
 * Todo
-** IN-PROGRESS module suboptions
 ** TODO test w/ other themes
    - [ ] test w/ light theme and other themes
    - [ ] default themes
