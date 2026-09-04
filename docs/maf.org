@@ -18,7 +18,7 @@
     - [ ] show how to use / install
     - [ ] show deps
     - [ ] crawl through every single commit and build a data structure with
-      {date, changes, additions} fields (anything else?)
+      { date, changes, additions } fields (anything else?)
     - [ ] bindings cheat sheet page. on hover, show the example and description.
       also show `H` and `I` flag behavior. group the bindings by category.
   - [-] check for accuracy with other agent
