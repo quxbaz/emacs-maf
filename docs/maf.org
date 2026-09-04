@@ -10,7 +10,8 @@
 * website
   - [ ] version as 1.0.0
   - [ ] generate readme
-  - [ ] generate webpage
+  - [ ] generate website
+    - [ ] stick to plain html/css/js
     - [ ] show all major features
     - [ ] show all additions
     - [ ] show all changes
