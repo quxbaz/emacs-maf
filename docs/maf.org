@@ -10,6 +10,7 @@
 * website
   - [ ] generate readme
   - [ ] generate website
+    - [ ] put inside public/ directory
     - [ ] stick to plain html/css/js
     - [ ] show all major features
     - [ ] show all additions
@@ -20,7 +21,7 @@
       {date, changes, additions} fields (anything else?)
     - [ ] bindings cheat sheet. on hover, show the example and description.
       also show `H` and `I` flag behavior. group the bindings by category.
-
+p
 * website 2
   - [ ] create video/gif examples
   - [ ] try to get into melpa
