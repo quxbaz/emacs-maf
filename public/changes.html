@@ -3,17 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>maf — Changes</title>
+<title>maf — What’s new</title>
 <link rel="stylesheet" href="style.css">
 <script src="data/bindings.js"></script>
 <script src="data/compiled.js"></script>
 </head>
 <body data-mode="changes">
 <nav class="nav" id="nav"></nav>
-<main class="wrap full">
-  <h1>Changes <span class="muted" style="font-size:.85rem;font-weight:400">how behavior changed along the way, compiled and grouped · <a href="changes-verbose.html">verbose edition, every commit</a></span></h1>
+<main class="wrap full" data-toc>
+  <h1>What’s new</h1>
+  <p class="lede">Behavior changes grouped by feature. <a href="changes-verbose.html">Browse the full commit history →</a></p>
   <div class="toolbar">
-    <input type="search" id="q" placeholder="Filter…" autocomplete="off">
+    <input type="search" aria-label="Filter results" id="q" placeholder="Filter…" autocomplete="off">
     <span class="muted" id="count"></span>
   </div>
   <div id="list"></div>

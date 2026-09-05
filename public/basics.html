@@ -3,18 +3,32 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>maf — basics</title>
+<title>maf — guide</title>
 <link rel="stylesheet" href="style.css">
 <script src="data/bindings.js"></script>
 </head>
 <body>
 <nav class="nav" id="nav"></nav>
-<main class="wrap">
-  <h1>Basics <span class="muted" style="font-size:.85rem;font-weight:400">using commands contextually, with worked examples</span></h1>
+<main class="wrap reading" data-toc>
+  <h1>Guide</h1>
+  <p class="lede">Use commands contextually, with worked examples. New to maf? Start with the <a href="quick.html">five-minute walkthrough</a>.</p>
   <p>Every example below was run in a live Calc buffer with maf's native profile. The left column is what you press, the right column is the stack as it reads after each step. Formulas are entered the way everything is edited: <kbd>SPC</kbd> opens the stack as text, you type, and <kbd>RET</kbd> commits. From home, <kbd>SPC</kbd> opens a fresh entry; on an entry, it opens that entry for editing. The <code>.</code> line at the bottom is <b>home</b>; a command run there acts on the top entry.</p>
 
   <h2>The rule</h2>
   <p>A command acts on whatever point names. At home, the top entry. On an entry's edge, its line number or the end of its line, the whole entry. Inside a formula, the innermost sub-formula under point, which the highlight shows. On an operator glyph, the operation that glyph performs. With a region marked, the run of terms the region covers. The result replaces exactly that, and point stays on it.</p>
+
+  <h2 id="how-targeting-works">How targeting works</h2>
+  <p>A stock Calc command takes its operand from the top of the stack. A maf command first <b>resolves</b> point and the calc state into a target, runs its body on exactly that, then <b>commits</b> the result to the same place. The six targets, in priority order:</p>
+  <div class="table-scroll" role="region" aria-label="Targeting priority" tabindex="0"><table class="plain">
+    <tr><th>Target</th><th>When it fires</th><th>Operates on</th></tr>
+    <tr><td>region</td><td>An active region inside one entry</td><td>The run of terms it covers in a <code>+</code> or <code>*</code> chain</td></tr>
+    <tr><td>selection</td><td>A calc selection exists</td><td>The selected sub-formula</td></tr>
+    <tr><td>home</td><td>Point is on the <code>.</code> line</td><td>The top stack entry</td></tr>
+    <tr><td>subexpr</td><td>Point is inside a formula</td><td>The sub-formula under point</td></tr>
+    <tr><td>equation</td><td>Point is on a relation</td><td>Each side, the body running once per side</td></tr>
+    <tr><td>entry</td><td>Point is on an entry's edge</td><td>The whole formula</td></tr>
+  </table></div>
+  <p>So with <code>x^2 + 2 x + 1 = 4</code> on the stack, pressing <kbd>a</kbd> <kbd>f</kbd> with point on the left side factors that side in place. Press it at home and the whole entry is factored. The <a href="keys.html">cheat sheet</a> marks the contextual commands with a dot.</p>
 
   <h2>Solving an equation</h2>
   <p>Three ways, from the most manual to the least.</p>
@@ -36,7 +50,7 @@
   </div>
 
   <h3>Isolate the sub-expression under point</h3>
-  <p>Move point onto the <code>x</code> and press <kbd>j</kbd> <kbd>j</kbd>. Whatever point names is brought alone to the left side. Point on <code>11</code> instead would give <code>11 = 2 x + 3</code>.</p>
+  <p>Move point onto the <code>x</code> and press <a href="keys.html?cmd=mafcmd-isolate"><kbd>j</kbd> <kbd>j</kbd></a>. Whatever point names is brought alone to the left side. Point on <code>11</code> instead would give <code>11 = 2 x + 3</code>.</p>
   <div class="walk">
     <ol class="steps">
       <li><kbd>SPC</kbd>, type <code>2 x + 3 = 11</code>, <kbd>RET</kbd></li>
@@ -50,7 +64,7 @@
   </div>
 
   <h3>One key from home</h3>
-  <p><kbd>M-i</kbd> solves the top entry for its variable. Press it again on an equation with several variables to cycle through them.</p>
+  <p><a href="keys.html?cmd=mafcmd-auto-solve"><kbd>M-i</kbd></a> solves the top entry for its variable. Press it again on an equation with several variables to cycle through them.</p>
   <div class="walk">
     <ol class="steps">
       <li><kbd>SPC</kbd>, type <code>2 x + 3 = 11</code>, <kbd>RET</kbd></li>
@@ -65,7 +79,7 @@
   <h2>Acting on one part of a formula</h2>
 
   <h3>Expand only the side under point</h3>
-  <p>With point on the <code>^</code> of the power, the target is that power, and <kbd>a</kbd> <kbd>x</kbd> expands it in place. The right side is untouched.</p>
+  <p>With point on the <code>^</code> of the power, the target is that power, and <a href="keys.html?cmd=mafcmd-expand"><kbd>a</kbd> <kbd>x</kbd></a> expands it in place. The right side is untouched.</p>
   <div class="walk">
     <ol class="steps">
       <li><kbd>SPC</kbd>, type <code>(x + 1)^2 = 9</code>, <kbd>RET</kbd></li>
@@ -78,7 +92,7 @@
   </div>
 
   <h3>Factor a run of terms with a region</h3>
-  <p>Mark <code>2 x + 4</code> as a region, which Calc has no node for, and press <kbd>l</kbd> <kbd>F</kbd> to pull out the greatest common divisor. The <code>y</code> outside the region is left alone.</p>
+  <p>Mark <code>2 x + 4</code> as a region, which Calc has no node for, and press <a href="keys.html?cmd=mafcmd-factor-gcd"><kbd>l</kbd> <kbd>F</kbd></a> to pull out the greatest common divisor. The <code>y</code> outside the region is left alone.</p>
   <div class="walk">
     <ol class="steps">
       <li><kbd>SPC</kbd>, type <code>2 x + 4 + y</code>, <kbd>RET</kbd></li>
@@ -117,7 +131,7 @@
   </div>
 
   <h2>The I and H flags</h2>
-  <p>Calc's inverse and hyperbolic prefixes route a key to a sibling command, still contextually. <kbd>I</kbd> <kbd>S</kbd> takes the arcsine of the sub-expression under point; <kbd>I</kbd> <kbd>^</kbd> takes the nth root; <kbd>H</kbd> <kbd>a</kbd> <kbd>f</kbd> factors into factor-and-power pairs. The <a href="keys.html">cheat sheet</a> shows every key's variants on hover.</p>
+  <p>Calc's inverse and hyperbolic prefixes route a key to a sibling command, still contextually. <kbd>I</kbd> <kbd>S</kbd> takes the arcsine of the sub-expression under point; <kbd>I</kbd> <kbd>^</kbd> takes the nth root; <kbd>H</kbd> <kbd>a</kbd> <kbd>f</kbd> factors into factor-and-power pairs. The <a href="keys.html">cheat sheet</a> shows every key's variants when you select a command.</p>
 
   <h2>Editing instead of computing</h2>
   <p>The same gesture that enters a formula rewrites one. When a change is easier to type than to derive, <kbd>SPC</kbd> on the entry opens it as text. Change what you like, press <kbd>RET</kbd>, and the entries are re-read. A newline inside an entry splits it in two; joining two lines merges them. Inside the session a run of letters reads as separate factors, so <code>2xy</code> is <code>2 x y</code>, and <code>{cm}</code> keeps a multi-letter name whole.</p>
@@ -130,6 +144,7 @@
     <li><kbd>l</kbd> <kbd>b</kbd> lists every key with its description, most with a worked example; <kbd>?</kbd> shows all of Calc's settings.</li>
     <li><kbd>g</kbd> <kbd>l</kbd> plots the entry at point below the stack.</li>
   </ul>
+  <p class="next-step">Keep exploring: <a href="keys.html">key bindings</a>, <a href="modules.html">modules</a>, or <a href="additions.html">compared with Calc</a>.</p>
   <footer id="foot"></footer>
 </main>
 <script src="site.js"></script>

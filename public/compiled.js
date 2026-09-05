@@ -21,7 +21,7 @@
     const B = window.MAF_BINDINGS; if (!B || mode !== "additions") return "";
     const prof = B.profiles.find(p => p.name === B.default_profile);
     const gs = prof.groups.map(g => ({ title: g.title, items: g.items.filter(i => i.new) })).filter(g => g.items.length && !/^Unbound/.test(g.title));
-    return '<div class="band"><h2 class="bandtitle">New commands <span class="muted" style="font-size:.8rem;font-weight:400">no counterpart in stock Calc, by group; hover them on the <a href="keys.html">keys</a> page</span></h2><div class="cols">' +
+    return '<div class="band"><h2 class="bandtitle">New commands <span class="muted" style="font-size:.8rem;font-weight:400">no counterpart in stock Calc, by group; select them on the <a href="keys.html">keys</a> page</span></h2><div class="cols">' +
       gs.map((g, gi) => '<section class="cgroup"><h2>' + esc(g.title) + "</h2><ul>" +
         g.items.map(i => '<li data-hay="' + esc((i.cmd + " " + (i.title || "") + " " + g.title).toLowerCase()) + '">' + (i.keys.length ? kbdKeys(i.keys) + " " : "") + esc(i.title ? i.title[0].toUpperCase() + i.title.slice(1) : i.cmd) + "</li>").join("") +
         "</ul></section>").join("") + "</div></div>";
@@ -37,6 +37,7 @@
     list.querySelectorAll(".cgroup").forEach(s => { s.style.display = s.querySelector("li:not(.hidden)") ? "" : "none"; });
     list.querySelectorAll(".band").forEach(b => { b.style.display = b.querySelector("li:not(.hidden)") ? "" : "none"; });
     count.textContent = n + " of " + total;
+    refreshContents();
   }
   q.addEventListener("input", filter); filter();
 })();

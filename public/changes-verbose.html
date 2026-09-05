@@ -3,19 +3,20 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>maf — Changes, verbose</title>
+<title>maf — Commit history</title>
 <link rel="stylesheet" href="style.css">
 <script src="data/bindings.js"></script>
 <script src="data/commits.js"></script>
 </head>
 <body data-mode="changes">
 <nav class="nav" id="nav"></nav>
-<main class="wrap full">
-  <h1>Changes <span class="muted" style="font-size:1rem;font-weight:400">verbose edition · <a href="changes.html">standard</a></span></h1>
+<main class="wrap full" data-toc>
+  <h1>Commit history</h1>
+  <p class="lede">The development history behind maf. <a href="changes.html">Back to the feature summary →</a></p>
   <p class="lede">Every commit of maf up to <span id="cutoff"></span>, one at a time, with the note-keeping commits and merges left out. Grouped by subject, filter by kind, and open a commit's <i>Why</i> for the reasoning recorded with it.</p>
   <div class="stats" id="stats"></div>
   <div class="toolbar">
-    <input type="search" id="q" placeholder="Filter by words, a command name, a module, a date, or an area…" autocomplete="off">
+    <input type="search" aria-label="Filter results" id="q" placeholder="Filter by words, a command name, a module, a date, or an area…" autocomplete="off">
     <span id="types" class="legend" style="margin:0"></span>
     <span class="muted" id="count"></span>
   </div>

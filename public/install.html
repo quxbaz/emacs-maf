@@ -3,31 +3,39 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>maf — install</title>
+<title>maf — get started</title>
 <link rel="stylesheet" href="style.css">
 <script src="data/bindings.js"></script>
 </head>
 <body>
 <nav class="nav" id="nav"></nav>
-<main class="wrap">
-  <h1>Install and use</h1>
+<main class="wrap reading" data-toc>
+  <h1>Get started</h1>
   <p class="lede">maf is a single package with everything it needs in the repository. It requires Emacs 28.1 or later and nothing else. Two modules can use external programs, all optional: maf-pretty needs RaTeX for typesetting, and maf-plot uses gnuplot and a browser for plotting. The preview panel can use the posframe package. Everything else works without them.</p>
 
   <h2>Get the code</h2>
-  <p>With Emacs 29 or later, the package manager can install straight from the repository:</p>
+  <p>Choose one installation method.</p>
+  <h3>With Emacs’s package manager</h3>
+  <p>On Emacs 29 or later, install straight from the repository:</p>
   <pre><code>M-x package-vc-install RET https://github.com/quxbaz/emacs-maf RET</code></pre>
-  <p>Or clone it and add the directory to your load path. maf's entry file adds its own subdirectories.</p>
+  <h3>From a local clone</h3>
+  <p>Clone the repository, then add its directory to your Emacs configuration. maf's entry file adds its own subdirectories.</p>
   <pre><code>git clone https://github.com/quxbaz/emacs-maf ~/src/emacs-maf</code></pre>
-  <pre><code>(add-to-list 'load-path "~/src/emacs-maf")
-(require 'maf)
-;; Turn maf on in every calc buffer. Hooking calc-mode rather than
-;; enabling once keeps it on across calc-reset, which re-runs the mode.
-(add-hook 'calc-mode-hook #'maf-mode)</code></pre>
-  <p>With use-package on Emacs 30:</p>
+  <pre><code>(add-to-list 'load-path "~/src/emacs-maf")</code></pre>
+  <h3>With use-package</h3>
+  <p>On Emacs 30, this installs and enables maf:</p>
   <pre><code>(use-package maf
   :vc (:url "https://github.com/quxbaz/emacs-maf")
   :hook (calc-mode . maf-mode))</code></pre>
+
+  <h2>Enable maf</h2>
+  <p>If you used the package manager or a local clone, add this to your Emacs configuration and evaluate it:</p>
+  <pre><code>(require 'maf)
+;; Keep maf enabled when Calc resets and re-runs its mode.
+(add-hook 'calc-mode-hook #'maf-mode)</code></pre>
   <p>Then open Calc as usual with <kbd>M-x</kbd> <code>calc</code>, or use <code>maf-calc</code>, which opens it full-screen from a special buffer and splits right from a single window.</p>
+
+  <p class="next-step">Ready to calculate? <a href="quick.html">Try the five-minute walkthrough →</a> The options below can wait.</p>
 
   <h2>Pick a key profile</h2>
   <p>The default profile is <b>native</b>, maf's own layout. Set the variable before loading, or switch live:</p>
@@ -43,22 +51,18 @@ M-x maf-bindings-set-profile          ; switch in a running session</code></pre>
   <p>In a session, <kbd>m</kbd> <kbd>c</kbd> opens a menu where each module can be toggled and its options read.</p>
 
   <h2>Dependencies</h2>
-  <table class="plain">
+  <div class="table-scroll" role="region" aria-label="Required and optional dependencies" tabindex="0"><table class="plain">
     <tr><th>What</th><th>Required?</th><th>Needed by</th><th>Notes</th></tr>
     <tr><td>Emacs 28.1+</td><td><b>required</b></td><td>everything</td><td>Calc and the other libraries maf uses are built in. This is the only requirement.</td></tr>
     <tr><td>posframe</td><td><span class="pill area">optional</span></td><td>maf-preview</td><td>Gives the preview panel a child frame on graphical displays. Without it, or on a terminal, the panel is drawn inside the window.</td></tr>
     <tr><td><a href="https://github.com/erweixin/RaTeX">RaTeX</a> <code>render-svg</code></td><td><span class="pill area">optional</span></td><td>maf-pretty, which is off by default</td><td>A LaTeX math renderer in Rust. Without it, the preview panel still shows the entry in Calc's Big display. Download a prebuilt CLI archive from the <a href="https://github.com/erweixin/RaTeX/releases">RaTeX releases</a> page, for example <code>ratex-cli-v0.1.14-x86_64-unknown-linux-musl</code>, and unpack it; the binaries bundle the KaTeX fonts. Put <code>render-svg</code> on your exec path or in <code>~/pkgs/ratex</code>, where <code>maf-pretty-program</code> looks by default, or point that variable at it. Needs a graphical Emacs with SVG support.</td></tr>
     <tr><td>gnuplot</td><td><span class="pill area">optional</span></td><td>maf-plot, <kbd>g</kbd> <kbd>l</kbd> and <kbd>g</kbd> <kbd>g</kbd></td><td>For the embedded SVG plot and the interactive plot window. Without it those two keys report that gnuplot is missing; the Desmos plot still works. <code>maf-plot-gnuplot-program</code>.</td></tr>
     <tr><td>A browser</td><td><span class="pill area">optional</span></td><td>maf-plot, <kbd>g</kbd> <kbd>o</kbd></td><td>For the Desmos plot only. Auto-detected; override with <code>maf-plot-browser</code>.</td></tr>
-  </table>
+  </table></div>
 
-  <h2>Try it</h2>
-  <ol>
-    <li>Open Calc, press <kbd>SPC</kbd>, type <code>x^2 + 2 x + 1 = 4</code>, and press <kbd>RET</kbd>.</li>
-    <li>Press <kbd>C-b</kbd> to step back into the entry, move onto the left side, and press <kbd>a</kbd> <kbd>f</kbd>. That side factors in place.</li>
-    <li>Move point onto an <code>x</code> and press <kbd>j</kbd> <kbd>j</kbd> to isolate it. Or press <kbd>M-i</kbd> from anywhere, which solves for the variable regardless of point.</li>
-    <li>Press <kbd>l</kbd> <kbd>b</kbd> to see every key with its description, most with an example, or <kbd>?</kbd> for Calc's settings.</li>
-  </ol>
+  <h2>Try your first calculation</h2>
+  <p>The five-minute walkthrough takes you from entering an equation to solving it and acting on one part of a formula.</p>
+  <p class="next-step"><a class="btn primary" href="quick.html">Continue to the walkthrough →</a></p>
   <footer id="foot"></footer>
 </main>
 <script src="site.js"></script>

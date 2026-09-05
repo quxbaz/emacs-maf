@@ -81,6 +81,7 @@
     list.querySelectorAll(".commit").forEach(el => { const ok = (!needle || el.dataset.hay.includes(needle)) && enabled.has(el.dataset.t); el.classList.toggle("hidden", !ok); if (ok) n++; });
     list.querySelectorAll(".month").forEach(m => { const k = m.querySelectorAll(".commit:not(.hidden)").length; m.style.display = k ? "" : "none"; m.querySelector(".count").textContent = k; });
     count.textContent = n + " of " + commits.length + " shown";
+    refreshContents();
   }
   q.addEventListener("input", filter); filter();
 })();

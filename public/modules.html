@@ -10,14 +10,15 @@
 </head>
 <body>
 <nav class="nav" id="nav"></nav>
-<main class="wrap">
-  <h1>Modules <span class="muted" style="font-size:.85rem;font-weight:400">grouped as the <kbd>m</kbd> <kbd>c</kbd> menu groups them</span></h1>
-  <p>Each module is a global minor mode. The <code>maf-modules</code> variable lists the ones that start on, and the menu on <kbd>m</kbd> <kbd>c</kbd> toggles any of them live. Every module's text below is read from the running registry: its summary, its entry keys, and the details the menu shows.</p>
+<main class="wrap reading modules-page" data-toc>
+  <h1>Modules</h1>
+  <p class="lede">Browse by category, then expand a module for its behavior and options.</p>
+  <p>Each module is a global minor mode. The <code>maf-modules</code> variable lists the ones that start on, and the menu on <kbd>m</kbd> <kbd>c</kbd> toggles any of them live. Each entry below includes its summary, keys, default state, and available options.</p>
   <div class="toolbar">
-    <input type="search" id="q" placeholder="Filter…" autocomplete="off">
+    <input type="search" aria-label="Filter modules" id="q" placeholder="Filter…" autocomplete="off">
     <span class="muted" id="count"></span>
   </div>
-  <div id="list" class="cols"></div>
+  <div id="list"></div>
   <footer id="foot"></footer>
 </main>
 <script src="site.js"></script>
@@ -27,22 +28,23 @@
   let total = 0;
   list.innerHTML = D.groups.map(g => '<section class="cgroup"><h2>' + esc(g.title) + "</h2>" + g.modules.map(m => {
     total++;
-    return '<div class="mod" data-hay="' + esc((m.name + " " + m.summary + " " + m.doc + " " + g.title).toLowerCase()) + '"><div class="head"><code>' + esc(m.name) + "</code>" +
+    return '<article class="mod" id="' + esc(m.name) + '" data-hay="' + esc((m.name + " " + m.summary + " " + m.doc + " " + g.title).toLowerCase()) + '"><div class="head"><code>' + esc(m.name) + "</code>" +
       (m.default_on ? '<span class="on">on by default</span>' : '<span class="off">off by default</span>') +
       (m.keys && m.keys !== "null" ? '<span class="keys">' + esc(m.keys) + "</span>" : "") + "</div>" +
-      '<div class="doc">' + esc(m.summary) + "</div>" +
+      '<a class="module-link" href="#' + esc(m.name) + '" aria-label="Link to ' + esc(m.name) + '">Link</a><div class="doc">' + esc(m.summary) + "</div>" +
       ((m.sections && m.sections.length) || (m.options && m.options.length)
         ? '<details><summary>Details</summary>' +
           (m.sections || []).map(sec => '<div class="sec"><b>' + esc(sec.title) + "</b><pre>" + esc(sec.text) + "</pre></div>").join("") +
           (m.options && m.options.length ? '<table class="plain opts"><tr><th>Option</th><th>Default</th></tr>' +
             m.options.map(o => "<tr><td><code>" + esc(o.name) + "</code>" + (o.doc ? '<div class="muted">' + esc(o.doc) + "</div>" : "") + "</td><td><code>" + esc(o.default) + "</code></td></tr>").join("") + "</table>" : "") +
-          "</details>" : "") + "</div>";
+          "</details>" : "") + "</article>";
   }).join("") + "</section>").join("");
   function filter() {
     const needle = q.value.trim().toLowerCase(); let n = 0;
     list.querySelectorAll(".mod").forEach(el => { const ok = !needle || el.dataset.hay.includes(needle); el.hidden = !ok; if (ok) n++; });
     list.querySelectorAll(".cgroup").forEach(s => { s.style.display = s.querySelector(".mod:not([hidden])") ? "" : "none"; });
     count.textContent = n + " of " + total + " modules";
+    refreshContents();
   }
   q.addEventListener("input", filter); filter();
 })();
