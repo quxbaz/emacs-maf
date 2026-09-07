@@ -199,12 +199,12 @@ views on one selection, so both read the same index.")
 
 (defvar maf-history--hold nil
   "Non-nil while the next recorded state must leave the selection be.
-Set by an insert from the browser: the push records a state of its
-own, and a view on the newest state would follow to it, off the state
-the entry was taken from. Held, the view stays on that state — its
-index shifted under it, as for any older state — so the next insert,
-or the next browse, finds it where it was. Consumed by
-`maf-history--refresh'.")
+Set by an insert or a restore from the browser: either records a
+state of its own, and a view on the newest state would follow to it,
+off the state the entry or the stack was taken from. Held, the view
+stays on that state — its index shifted under it, as for any older
+state — so the next insert, or the next browse, finds it where it
+was. Consumed by `maf-history--refresh'.")
 
 (defvar maf-history--focus nil
   "Which of the browser's windows was selected when it last quit.
@@ -1104,6 +1104,51 @@ and point onto it, the stack shows what it left."
 
 ;;; Acting on the live stack
 
+(defmacro maf-history--keeping-calc-point (&rest forms)
+  "Evaluate FORMS, then put calc\='s point back where the user left it.
+FORMS rewrite the live stack from the browser, so the `calc-do'
+epilogue that parks point at home runs on calc\='s buffer point, which
+the user never sees: what the calc window shows is its own window
+point, and that rides the rewrite like a marker. A push adds its line
+below every entry and only renumbers the margin, so the window point
+keeps its line and loses its column; a restore deletes the whole stack
+text first, and the window point collapses to the top of the buffer.
+
+So the snapshot is read from the calc window\='s point, and the restore
+is written back to every window showing calc. Line, column and
+affinity, as `maf--point-restore' keeps them: a point on an entry
+comes back on that line at its column, a point at home comes back on
+the dot. A line the restored stack no longer reaches lands at home
+too, the way calc parks point after a command of its own."
+  (declare (indent 0))
+  (let ((snapshot (gensym "snapshot-")))
+    `(let ((,snapshot (maf-history--calc-point-snapshot)))
+       (prog1 (progn ,@forms)
+         (maf-history--calc-point-restore ,snapshot)))))
+
+(defun maf-history--calc-point-snapshot ()
+  "Snapshot the placement the calc window shows, for `maf--point-restore'.
+The window\='s point when calc has a window — the buffer\='s own point
+lags behind it while another window is selected — else the buffer\='s."
+  (maf--with-calc-buffer
+    (let ((win (or (get-buffer-window (current-buffer))
+                   (get-buffer-window (current-buffer) t))))
+      (save-excursion
+        (when win (goto-char (window-point win)))
+        (maf--point-snapshot)))))
+
+(defun maf-history--calc-point-restore (snapshot)
+  "Put calc\='s point back at SNAPSHOT, in the buffer and its windows.
+A `home' snapshot stays where calc\='s epilogue left the buffer point,
+on the dot; any placement that lands in the home section — a line the
+stack no longer has — is tidied onto the dot the same way."
+  (maf--with-calc-buffer
+    (maf--point-restore snapshot)
+    (when (maf--at-home-p)
+      (goto-char (maf--home-dot-position)))
+    (dolist (win (get-buffer-window-list (current-buffer) nil t))
+      (set-window-point win (point)))))
+
 (defun maf-history-insert ()
   "Push the history entry at point onto the live calc stack, and quit.
 Point is in the stack window, on the entry to take. The value is
@@ -1112,7 +1157,8 @@ entry never reach back into the history — and recorded in the history
 as its own step. The browser quits, as after choosing from a list, and
 the next browse reopens on the state this one inserted from, in the
 stack window with point on the entry it took; `maf-history-insert-stay'
-keeps it open."
+keeps it open. Calc\='s own point stays where the user left it
+\(`maf-history--keeping-calc-point')."
   (interactive)
   (maf-history-insert-stay)
   (maf-history-quit))
@@ -1128,33 +1174,39 @@ rather than following to the new one."
     (unless val (user-error "No stack entry at point"))
     (setq val (copy-tree val))
     (setq maf-history--hold t)
-    (maf--with-calc-buffer
-      (calc-wrapper
-       (calc-pop-push-record-list 0 "hist" (list val) 1 (list nil))))
+    (maf-history--keeping-calc-point
+      (maf--with-calc-buffer
+        (calc-wrapper
+         (calc-pop-push-record-list 0 "hist" (list val) 1 (list nil)))))
     (message "Pushed: %s" (math-format-value val))))
 
 (defun maf-history-restore ()
   "Replace the live calc stack with the state being viewed, and quit.
 The whole stack becomes this snapshot — copies, as in
-`maf-history-insert' — and the view jumps back to the newest state,
-which now shows the restored stack. A single undo reverts the
-restore. The browser quits, as after `maf-history-insert': a restore
-is the end of a browse."
+`maf-history-insert' — recorded in the history as its own step. A
+single undo reverts the restore. The browser quits, as after
+`maf-history-insert', and the next browse reopens where this one
+left off: on the state restored from, point on its row, the way an
+insert reopens on the entry it took (see `maf-history--hold') — not
+on the newest state, which merely shows the stack again. Calc\='s
+point keeps its line and column across the new stack, or lands at
+home when the stack no longer reaches it
+\(`maf-history--keeping-calc-point')."
   (interactive)
   (let ((state (nth maf-history--index maf-history--states)))
     (unless state (user-error "No states recorded yet"))
     (let ((values (mapcar #'copy-tree (nth 0 state))))
-      (maf--with-calc-buffer
-        (calc-wrapper
-         (cond (values
-                ;; The list runs deepest-first; values are stored top
-                ;; first.
-                (calc-pop-push-record-list (calc-stack-size) "hist"
-                                           (reverse values)))
-               ((> (calc-stack-size) 0)
-                (calc-pop-stack (calc-stack-size))))))
-      (setq maf-history--index 0)
-      (maf-history--render t)
+      (setq maf-history--hold t)
+      (maf-history--keeping-calc-point
+        (maf--with-calc-buffer
+          (calc-wrapper
+           (cond (values
+                  ;; The list runs deepest-first; values are stored top
+                  ;; first.
+                  (calc-pop-push-record-list (calc-stack-size) "hist"
+                                             (reverse values)))
+                 ((> (calc-stack-size) 0)
+                  (calc-pop-stack (calc-stack-size)))))))
       (message "Stack restored (%d %s)" (length values)
                (if (= (length values) 1) "entry" "entries"))
       (maf-history-quit))))
