@@ -32,10 +32,13 @@
    - [-] *maf-formulas* add half-angle identities for sin/cos/tan
    - [-] *maf-formulas* add triple angle identities for sin/cos/tan
 ** maf-pretty
-   - [-] pretty/ratex: is it possible to render:
+   - [X] pretty/ratex: is it possible to render:
      -1:2
      with the `-` outside the fraction instead of attached to the `1`?
      or is this a breaking change?
+     - done in `maf--latex-string': -1:2 => -\frac{1}{2}, x / -2 =>
+       -\frac{x}{2}, -1 / x => -\frac{1}{x}; not breaking, the yank
+       reads the new shape back to the same value
 ** commands
    - [ ] `M $` should allow multiple vars
    - [ ] add a new command to find the exact expression given an angle
