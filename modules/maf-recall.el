@@ -518,8 +518,8 @@ ring for when the mode is turned on again."
     (define-key maf-edit-mode-map (kbd "M-n") nil)))
 
 (maf-bindings-module-keys 'maf-recall 'maf-use-recall-mode
-  '(((calc native vim) "M-p" maf-recall-previous)
-    ((calc native vim) "M-n" maf-recall-next)))
+  '(((calc ergo vim) "M-p" maf-recall-previous)
+    ((calc ergo vim) "M-n" maf-recall-next)))
 
 ;; Register with the module system when it is present; the mode above
 ;; works on its own without it.

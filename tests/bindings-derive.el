@@ -1,5 +1,5 @@
 ;; Profile derivation (maf-bindings--effective-defaults): the vim
-;; profile compiles as native's whole set beneath its own motions,
+;; profile compiles as ergo's whole set beneath its own motions,
 ;; and the registry-level merge prunes what an own claim overlaps.
 
 (maf-step
@@ -43,7 +43,7 @@
   (cl-assert (eq (key-binding (kbd "X")) 'mafcmd-expand))
   (cl-assert (eq (key-binding (kbd "a x")) 'mafcmd-expand))
 
-  ;; Native's layout flows through the derivation: table siblings,
+  ;; Ergo's layout flows through the derivation: table siblings,
   ;; shadowing, and additions alike, with no declaration naming vim.
   (cl-assert (eq (key-binding (kbd "+")) 'mafcmd-add))
   (cl-assert (eq (key-binding (kbd "i")) 'mafcmd-solve-for))
@@ -58,7 +58,7 @@
   (cl-assert (null (key-binding (kbd "b a"))))
 
   ;; The custom-letter family rides o in vim, second letters intact,
-  ;; mirrored from native's l declarations. The commands it displaces
+  ;; mirrored from ergo's l declarations. The commands it displaces
   ;; from o's case pair trade places one step over: commute on the
   ;; doubled o o, the reciprocal on the capital O commute vacates.
   (cl-assert (eq (key-binding (kbd "o c")) 'mafcmd-collect-fractions))
@@ -70,7 +70,7 @@
   (cl-assert (eq (key-binding (kbd "o e")) 'mafcmd-log-exp))
   ;; The float/frac toggle's single chord, on the family's meta
   ;; letter; the inherited mod-360 cedes it and rides the family
-  ;; instead — o w, wrapping the angle into range, native's l w
+  ;; instead — o w, wrapping the angle into range, ergo's l w
   ;; through the mirror. M-o is the toggle's only vim home: the
   ;; mirror skips l l.
   (cl-assert (eq (key-binding (kbd "M-o")) 'mafcmd-float-frac))
@@ -78,8 +78,8 @@
   (cl-assert (null (key-binding (kbd "o l"))))
 
   ;; The selection/structure family rides its capital in vim, second
-  ;; letters intact, mirrored from native's j declarations. It
-  ;; displaces native's J whole (the second multiply key — mul keeps
+  ;; letters intact, mirrored from ergo's j declarations. It
+  ;; displaces ergo's J whole (the second multiply key — mul keeps
   ;; *); the conjugate rides the custom-letter family on its
   ;; initial: o j. The u prefix is untouched.
   (cl-assert (eq (key-binding (kbd "J k")) 'mafcmd-raise))
@@ -111,7 +111,7 @@
   (cl-assert (eq (key-binding (kbd "+")) 'mafcmd-add))
   (cl-assert (eq (key-binding (kbd "x")) 'calc-execute-extended-command))
   (cl-assert (eq (key-binding (kbd "j D")) 'calc-sel-distribute))
-  (maf-bindings-set-profile 'native)
+  (maf-bindings-set-profile 'ergo)
   (cl-assert (eq (key-binding (kbd "x")) 'mafcmd-expand))
   (cl-assert (eq (key-binding (kbd "o")) 'mafcmd-inv))
   (cl-assert (eq (key-binding (kbd "O")) 'mafcmd-commute))

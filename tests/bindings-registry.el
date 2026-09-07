@@ -223,7 +223,7 @@ prefix — as absent as nil, for these assertions."
     (maf-bindings-set-profile 'test-c)
     (cl-assert (= maf-bindings--compile-count (1+ before)))
     (cl-assert (eq (maf-test-br--lookup 'test-c "5") 'ignore))
-    (maf-bindings-set-profile 'native))
+    (maf-bindings-set-profile 'ergo))
   (maf-bindings--forget 'test-c)
 
   ;; Toy state out of the registry.

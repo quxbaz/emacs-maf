@@ -1242,7 +1242,7 @@ available until they are deleted or Emacs exits."
 ;; (t d and friends) stay untouched — the history is an alternative
 ;; to the trail, not a replacement.
 (maf-bindings-module-keys 'maf-history 'maf-use-history-mode
-  '(((calc native vim) "M-h" maf-history)))
+  '(((calc ergo vim) "M-h" maf-history)))
 
 ;; Register with the module system when it is present; the mode above
 ;; works on its own without it.

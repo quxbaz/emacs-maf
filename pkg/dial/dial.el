@@ -864,7 +864,7 @@ Signals on a group separator, whose id names no setting."
 Nil without a :describe function, and nil when the function answers
 nil. The value's label heads the text —
 
-  native
+  ergo
 
   maf's opinionated layout (the default)
 

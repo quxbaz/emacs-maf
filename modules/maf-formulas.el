@@ -1448,7 +1448,7 @@ You can still open the menu with M-x maf-formulas."
     (maf-bindings--refresh)))
 
 (maf-bindings-module-keys 'maf-formulas 'maf-use-formulas-mode
-  '(((calc native vim) "s o" maf-formulas)))
+  '(((calc ergo vim) "s o" maf-formulas)))
 
 (when (require 'maf-module nil t)
   (maf-register-module 'maf-formulas #'maf-use-formulas-mode

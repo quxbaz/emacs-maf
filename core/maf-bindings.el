@@ -4,7 +4,7 @@
 ;;
 ;; Binding profiles: the registry, the compiler, and the dispatcher
 ;; behind maf's key layout (docs/bindings.org). A *profile* is a named
-;; key layout — calc, native, vim — over one shared base map of command
+;; key layout — calc, ergo, vim — over one shared base map of command
 ;; remaps. Declarations are data owned in whole sets, compiled into one
 ;; generated keymap per profile; the user's own maps sit above the
 ;; generated ones and are never written or rebuilt by maf.
@@ -332,11 +332,11 @@ references them stays live."
 
 ;;; The dispatcher
 
-(defcustom maf-bindings-profile 'native
+(defcustom maf-bindings-profile 'ergo
   "The active binding profile's name.
 Set before maf loads, switch live with `maf-bindings-set-profile', or
 set through Customize; a plain setq after load does not re-apply."
-  :type '(choice (const calc) (const native) (const vim)
+  :type '(choice (const calc) (const ergo) (const vim)
                  (symbol :tag "Custom profile"))
   :set (lambda (sym val)
          (set-default sym val)
@@ -461,7 +461,7 @@ module declared no keys, or none reach the active profile."
   "Turn maf's key bindings on or off.
 
 When this mode is on, maf uses the layout named by
-`maf-bindings-profile'. The built-in choices are `native' (maf's
+`maf-bindings-profile'. The built-in choices are `ergo' (maf's
 default layout), `calc' (keys closer to stock Calc), and `vim' (maf's
 layout with Vim-style movement). You can change profiles in the
 *maf-modules* buffer or with `maf-bindings-set-profile'.
@@ -471,7 +471,7 @@ keeps is m c, so you can return to the module menu and turn bindings
 back on. Maf commands remain available through M-x.
 
 Personal bindings belong in the user map for the chosen profile, such
-as `maf-native-user-map'."
+as `maf-ergo-user-map'."
   :global t
   :group 'maf
   (if maf-use-bindings-mode
@@ -499,7 +499,7 @@ moment it is registered."
                         (reverse maf-bindings--profiles)))
         :current (lambda (raw) (and raw maf-bindings-profile))
         ;; d (dial-reset) puts the row back on the shipped default.
-        :default 'native
+        :default 'ergo
         :describe #'maf-bindings--describe-value))
 
 (defun maf-bindings--describe-value (value)
@@ -514,7 +514,7 @@ A profile's own :description, or the meaning of off."
   (maf-register-module 'maf-bindings #'maf-use-bindings-mode
                        "Choose which keys maf uses.
 
-Select native for maf's default keys, calc for a layout closer to
+Select ergo for maf's default keys, calc for a layout closer to
 stock Calc, or vim for Vim-style movement. Select off to use Calc's
 keys unchanged. The m c key always returns to this menu."
                        nil "Prefs" #'maf-bindings--module-values))

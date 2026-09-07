@@ -153,7 +153,7 @@
 "`C-M-k` resets the session; `C-M-l` resets settings only, keeping the stack",
 "`m c` opens the module menu from any binding state",
 "`l b` shows maf's key bindings by group",
-"Binding profiles: native, calc's own layout, and vim navigation keys"
+"Binding profiles: ergo, calc's own layout, and vim navigation keys"
 ]
 },
 {
@@ -488,7 +488,7 @@
 {
 "group": "Bindings and profiles",
 "items": [
-"Three profiles: native (default), calc (calc's layout with maf's commands), vim",
+"Three profiles: ergo (default), calc (calc's layout with maf's commands), vim",
 "The vim profile: `hjkl` and `wb` motions, `x` delete, `X` expand, `y` evaluate, `o` and `J` mirror the `l` and `j` families",
 "The profile is picked from the module menu `m c`; custom profiles activate correctly",
 "Startup no longer spends 30 seconds compiling bindings",

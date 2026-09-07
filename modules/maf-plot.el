@@ -1115,9 +1115,9 @@ graphing is untouched."
 
 (when (require 'maf-bindings nil t)
   (maf-bindings-module-keys 'maf-plot 'maf-use-plot-mode
-    '(((native vim) "g l" maf-plot-embed)
-      ((native vim) "g o" maf-plot-desmos)
-      ((native vim) "g g" maf-plot-gnuplot))))
+    '(((ergo vim) "g l" maf-plot-embed)
+      ((ergo vim) "g o" maf-plot-desmos)
+      ((ergo vim) "g g" maf-plot-gnuplot))))
 
 (when (require 'maf-module nil t)
   (maf-register-module 'maf-plot #'maf-use-plot-mode

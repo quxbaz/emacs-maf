@@ -764,8 +764,8 @@ stops automatic saving but does not delete existing save files."
 ;; Register with the module system when it is present; the mode above
 ;; works on its own without it.
 (maf-bindings-module-keys 'maf-persist 'maf-persist-mode
-  '(((calc native) "l R" maf-saved-stacks)
-    ((calc native) "l S" maf-save-stack)
+  '(((calc ergo) "l R" maf-saved-stacks)
+    ((calc ergo) "l S" maf-save-stack)
     ((vim) "o R" maf-saved-stacks)
     ((vim) "o S" maf-save-stack)))
 

@@ -12,7 +12,7 @@
 <main class="wrap reading" data-toc>
   <h1>Guide</h1>
   <p class="lede">Use commands contextually, with worked examples. New to maf? Start with the <a href="quick.html">five-minute walkthrough</a>.</p>
-  <p>Every example below was run in a live Calc buffer with maf's native profile. The left column is what you press, the right column is the stack as it reads after each step. Formulas are entered the way everything is edited: <kbd>SPC</kbd> opens the stack as text, you type, and <kbd>RET</kbd> commits. From home, <kbd>SPC</kbd> opens a fresh entry; on an entry, it opens that entry for editing. The <code>.</code> line at the bottom is <b>home</b>; a command run there acts on the top entry.</p>
+  <p>Every example below was run in a live Calc buffer with maf's ergo profile. The left column is what you press, the right column is the stack as it reads after each step. Formulas are entered the way everything is edited: <kbd>SPC</kbd> opens the stack as text, you type, and <kbd>RET</kbd> commits. From home, <kbd>SPC</kbd> opens a fresh entry; on an entry, it opens that entry for editing. The <code>.</code> line at the bottom is <b>home</b>; a command run there acts on the top entry.</p>
 
   <h2>The rule</h2>
   <p>A command acts on whatever point names. At home, the top entry. On an entry's edge, its line number or the end of its line, the whole entry. Inside a formula, the innermost sub-formula under point, which the highlight shows. On an operator glyph, the operation that glyph performs. With a region marked, the run of terms the region covers. The result replaces exactly that, and point stays on it.</p>

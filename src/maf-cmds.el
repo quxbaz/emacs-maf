@@ -225,8 +225,8 @@ variant's own variable governs only its direct invocation."
   ;; their function under `calc-normalize', which normalizes the
   ;; arguments first, and that floats an exact sqrt(3) entry before the
   ;; command can see it was exact.
-  ;; conj's J is shadowed in native by a second multiply key
-  ;; (bindings.el); the calc profile keeps it, and native's conj
+  ;; conj's J is shadowed in ergo by a second multiply key
+  ;; (bindings.el); the calc profile keeps it, and ergo's conj
   ;; home is l j.
   (conj unary calcFunc-conj "J"
    :title "complex conjugate" :example "(3, 4) => (3, -4)"
@@ -246,7 +246,7 @@ variant's own variable governs only its direct invocation."
   (max binary calcFunc-max "f x"
    :title "maximum" :example "3, 5 => 5"
    :doc "Take the larger of the target and the top-of-stack argument.")
-  ;; floor cedes F in native to a second key for mafcmd-fold
+  ;; floor cedes F in ergo to a second key for mafcmd-fold
   ;; (bindings.el); the calc profile keeps F = floor.
   (floor unary calcFunc-floor "F" :inv ceil :hyp ffloor :invhyp fceil
    :title "floor" :example "2.7 => 2"

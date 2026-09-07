@@ -765,7 +765,7 @@ available through M-x maf-options."
     (maf-bindings--refresh)))
 
 (maf-bindings-module-keys 'maf-options 'maf-use-options-mode
-  '(((calc native vim) "?" maf-options)))
+  '(((calc ergo vim) "?" maf-options)))
 
 ;; Register with the module system when it is present; the mode above
 ;; works on its own without it.

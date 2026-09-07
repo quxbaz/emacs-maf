@@ -685,7 +685,7 @@ with M-x maf-keys."
   ;; Not vim: `l' is `forward-char' there, so it cannot take a
   ;; prefix — the registry refuses the claim rather than shadowing
   ;; the motion. That profile reaches the buffer by name for now.
-  '(((calc native) "l b" maf-keys)))
+  '(((calc ergo) "l b" maf-keys)))
 
 (defun maf-keys--module-values ()
   "The module row's dial overrides: a single [show] action, no toggle.

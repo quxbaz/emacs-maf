@@ -433,7 +433,7 @@ should not decide how the menu reads."
                      ;; own values — rebuilt each time, so a value set
                      ;; that grows (binding profiles) stays current —
                      ;; and may state its own :default (the profile
-                     ;; picker's is native); a plain toggle's default
+                     ;; picker's is ergo); a plain toggle's default
                      ;; is its shipped state, so the row can wear gold
                      ;; once toggled away from it.
                      (let ((values (or (and values-fn (funcall values-fn))

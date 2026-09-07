@@ -9,7 +9,7 @@
 ;; parens became the relation motions maf-goto-left-side and
 ;; maf-goto-right-side, ( displacing maf-edit-add-vector, which the
 ;; motion still reaches at home and which keeps the key outright in the
-;; calc profile; F is a second key for mafcmd-fold in native, floor,
+;; calc profile; F is a second key for mafcmd-fold in ergo, floor,
 ;; whose table key it was, keeping no key there; and : left the
 ;; fall-throughs for mafcmd-sqr, the unshifted key beside W, calc's
 ;; fdiv keeping the key in the calc profile; and & and G left the two
@@ -55,7 +55,7 @@
         (push (car row) bad)))
     (cl-assert (null bad)))
 
-  ;; The native layout now takes Calc's evaluation key for equating too.
+  ;; The ergo layout now takes Calc's evaluation key for equating too.
   (cl-assert (eq (key-binding "=") 'mafcmd-equal-to))
 
   ;; Deliberate fall-throughs to calc stay calc's.

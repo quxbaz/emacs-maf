@@ -470,11 +470,11 @@ back to Big; the command remains available by name."
 ;; and which rendering that look comes back in is the only thing this
 ;; module decides. So the toggle chooses what G shows rather than
 ;; whether G is there at all, and the Big look keeps the key untouched for
-;; everyone who never turns the module on. vim inherits G from native,
+;; everyone who never turns the module on. vim inherits G from ergo,
 ;; but module claims are not derived: the shadow is declared once per
 ;; profile that has a look to cover.
 (maf-bindings-module-keys 'maf-pretty 'maf-use-pretty-mode
-  '(((native) "G" maf-pretty)
+  '(((ergo) "G" maf-pretty)
      ((vim) "G" maf-pretty)))
 
 (when (require 'maf-module nil t)

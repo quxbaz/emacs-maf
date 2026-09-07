@@ -20,4 +20,4 @@ if isinstance(variants, list):
 json.dump(d, open(p, 'w'), ensure_ascii=False)
 open('public/data/bindings.js', 'w').write('window.MAF_BINDINGS = ' + json.dumps(d, ensure_ascii=False) + ';\n')
 n = d['profiles'][0]
-print('profiles', [p['name'] for p in d['profiles']], 'native items', sum(len(g['items']) for g in n['groups']), 'variants', len(d['variants']))
+print('profiles', [p['name'] for p in d['profiles']], 'ergo items', sum(len(g['items']) for g in n['groups']), 'variants', len(d['variants']))

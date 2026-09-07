@@ -1,4 +1,4 @@
-;; C-b in the native layout is `maf-backward-char': plain
+;; C-b in the ergo layout is `maf-backward-char': plain
 ;; backward-char everywhere but home, where one press puts point at
 ;; the end of the entry on level 1 — back into the stack without
 ;; walking the dot line a column at a time. A step passes when it

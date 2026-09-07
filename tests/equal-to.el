@@ -2,7 +2,7 @@
 ;; at point with the top-of-stack argument, following the binary-command
 ;; convention.  Run in a live Emacs (see tests/README.md).
 (maf-step
-  ;; Both native-profile keys reach the same command.
+  ;; Both ergo-profile keys reach the same command.
   (cl-assert (eq (key-binding (kbd "e")) 'mafcmd-equal-to))
   (cl-assert (eq (key-binding (kbd "=")) 'mafcmd-equal-to))
 

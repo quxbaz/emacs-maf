@@ -128,7 +128,7 @@ mode toggle. Not caught by the name rule below.")
        (out
         `((generated . ,(format-time-string "%Y-%m-%d"))
           (version . ,(lm-version (expand-file-name "maf.el" root)))
-          (default_profile . "native")
+          (default_profile . "ergo")
           (profiles
            . ,(mapcar
                (lambda (p)
@@ -142,7 +142,7 @@ mode toggle. Not caught by the name rule below.")
                                       (items . ,(vconcat (mapcar (lambda (it) (funcall item-of (car it) (cdr it)))
                                                                  (cdr g))))))
                                   (maf-keys--groups)))))))
-               '(native calc vim)))
+               '(ergo calc vim)))
           (variants . ,variants))))
   (with-temp-file out-file (insert (json-encode out)))
   out-file)

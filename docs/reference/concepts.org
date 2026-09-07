@@ -1012,7 +1012,7 @@ multiples of pi.
 | [[file:../../core/maf-resolve.el][core/maf-resolve.el]] | Context resolution + target dispatch                        |
 | [[file:../../core/maf-commit.el][core/maf-commit.el]]  | Commit recipes (push/pop choreography per target)           |
 | [[file:../../core/maf-defcmd.el][core/maf-defcmd.el]]  | The =maf-defcmd= macro + parsing helpers + I/H dispatch     |
-| [[file:../../core/maf-bindings.el][core/maf-bindings.el]] | Binding registry and compiler: profiles (=calc=, =native=, =vim=), module key claims, digit-entry keys; also the =maf-bindings= module choosing the profile |
+| [[file:../../core/maf-bindings.el][core/maf-bindings.el]] | Binding registry and compiler: profiles (=calc=, =ergo=, =vim=), module key claims, digit-entry keys; also the =maf-bindings= module choosing the profile |
 | [[file:../../src/maf-cmds.el][src/maf-cmds.el]]         | The mafcmd table: calcFunc-backed commands, keys, variant links |
 | [[file:../../src/math.el][src/math.el]]             | Pure formula helpers (term walk, terms GCD)                 |
 | [[file:../../src/stack.el][src/stack.el]]            | Hand-written contextual stack commands (factor-by, factor-gcd, undo/redo, the map flag, the rewrite markers) |
@@ -1025,16 +1025,16 @@ multiples of pi.
 | [[file:../../modules/maf-editplus.el][modules/maf-editplus.el]]  | Editplus module: shortcuts for writing formulas inside a =maf-edit= session |
 | [[file:../../modules/maf-editvars.el][modules/maf-editvars.el]]  | Editvars module: reads =maf-edit= text as handwritten algebra (=2xy= is =2*x*y=) |
 | [[file:../../modules/maf-recall.el][modules/maf-recall.el]]    | Recall module: =M-p=/=M-n= ring of entries typed earlier   |
-| [[file:../../modules/maf-preview.el][modules/maf-preview.el]]   | Preview module: =maf-use-preview-mode= shows the entry at point in Big display in a floating panel (posframe child frame, else in-window); =maf-preview-show= (=G= in native/vim) opens one entry in the preview window below the stack, module on or off |
+| [[file:../../modules/maf-preview.el][modules/maf-preview.el]]   | Preview module: =maf-use-preview-mode= shows the entry at point in Big display in a floating panel (posframe child frame, else in-window); =maf-preview-show= (=G= in ergo/vim) opens one entry in the preview window below the stack, module on or off |
 | [[file:../../modules/maf-pretty.el][modules/maf-pretty.el]]    | Render module: =maf-pretty= sends the entry at point through Calc LaTeX and RaTeX, then displays the SVG on demand |
 | [[file:../../modules/maf-formulas.el][modules/maf-formulas.el]]  | Formulas module: =maf-formulas= (=s o=) menu of saved formulas by category (detail + RET-insert); data in =maf-formulas-builtin= (shipped) plus =maf-formulas-file= (the user's) |
 | [[file:../../modules/maf-selplus.el][modules/maf-selplus.el]]   | Selplus module: header-line badge while a selection stands   |
 | [[file:../../modules/maf-poly-order.el][modules/maf-poly-order.el]] | Poly-order module: one-variable polynomial sums kept in descending degree |
-| [[file:../../modules/maf-plot.el][modules/maf-plot.el]]      | Plot module: =g l= embedded SVG, =g o= Desmos, =g g= gnuplot in the native/vim profiles (the Desmos page is =maf-plot.html=) |
+| [[file:../../modules/maf-plot.el][modules/maf-plot.el]]      | Plot module: =g l= embedded SVG, =g o= Desmos, =g g= gnuplot in the ergo/vim profiles (the Desmos page is =maf-plot.html=) |
 | [[file:../../modules/maf-e-power.el][modules/maf-e-power.el]]   | E-power module: symbolic =exp(x)= written =e^x=              |
 | [[file:../../modules/maf-log-power.el][modules/maf-log-power.el]] | Log-power module: general-base =b^log(a,b)= and =log(b^y,b)= identities in simplification |
 | [[file:../../modules/maf-options.el][modules/maf-options.el]]   | Options module: =?= opens a dial table of calc's settings   |
-| [[file:../../modules/maf-keys.el][modules/maf-keys.el]]      | Keys module: bindings help for the active profile, opened by =l b= in the calc/native profiles or =M-x maf-keys= in vim |
+| [[file:../../modules/maf-keys.el][modules/maf-keys.el]]      | Keys module: bindings help for the active profile, opened by =l b= in the calc/ergo profiles or =M-x maf-keys= in vim |
 | [[file:../../pkg/dial/dial.el][pkg/dial/dial.el]]        | Dial: a tabulated buffer for browsing and setting a table of options (used by the module, options, and saved-stacks menus; its chrome is shared by formulas and keys) |
 | [[file:../../pkg/filter-view/filter-view.el][pkg/filter-view/filter-view.el]] | Filter-view: a filterable grouped list menu (used by the formulas and keys buffers) |
 | [[file:../../debug/maf-step.el][debug/maf-step.el]]       | Step-through harness (cockpit) that drives the tests        |
@@ -1123,7 +1123,7 @@ Two module shapes have appeared, matching the feature's state:
   session's course reads at a glance while stepping.
   Persistence
   (=maf-persist-mode=) is the same shape: enabling installs the save
-  timer and the restore hook. In the calc/native profiles it binds
+  timer and the restore hook. In the calc/ergo profiles it binds
   =l R= to =maf-saved-stacks= and =l S= to =maf-save-stack=; vim uses
   =o R= and =o S=. Both the saved-stacks browser and the history's
   =M-h= bring back an earlier stack, the history's from this session
@@ -1142,7 +1142,7 @@ Two module shapes have appeared, matching the feature's state:
   gesture, not a feature switch) being separate.
 
   The pretty module (=modules/maf-pretty.el=) is the same global-mode
-  shape with no background work of its own: in the native/vim profiles,
+  shape with no background work of its own: in the ergo/vim profiles,
   =maf-use-pretty-mode= owns which command =G= runs, shadowing the
   Big-display preview rather than taking a key of its own (see /A module's key over a default's/
   below), and what the preview panel draws with (see /One module's
@@ -1178,7 +1178,7 @@ Two module shapes have appeared, matching the feature's state:
   session.
 
 - *A command of a module's, bound outside it.* =maf-preview-show= (=G=
-  in the native/vim profiles, declared in =src/bindings.el=) opens the
+  in the ergo/vim profiles, declared in =src/bindings.el=) opens the
   entry at point in the preview window below the stack — the pretty module's window, split
   evenly, focused, and handed back on q, filled with Big text — and
   needs nothing of the module: no buffer-local mode, no globalized
@@ -1189,7 +1189,7 @@ Two module shapes have appeared, matching the feature's state:
   wanted. The module toggle stays a plain on/off, and what it decides
   is only whether a panel follows point.
 
-- *A module's key over a default's: a shadow.* In the native/vim profiles,
+- *A module's key over a default's: a shadow.* In the ergo/vim profiles,
   =maf-pretty= claims =G= through =maf-bindings-module-keys=, the key
   the preview command above already holds. The compiler refuses two modules on one key — nothing there
   says which wins — but a module over a default it lets stand, because

@@ -1413,7 +1413,7 @@ Committed untouched it pushes the empty vector []; \\<maf-edit-mode-map>\\[maf-e
 instead. Unlike `maf-edit-add-entry-below', point returns to where it
 was before the command when the session ends.
 
-In the native layout the key reaches this command from home alone —
+In the ergo layout the key reaches this command from home alone —
 `maf-goto-left-side' owns it on an entry, where the vector would have
 nothing to do with what point is on — and in the calc layout from
 anywhere."
@@ -1654,10 +1654,10 @@ With this mode on:
   SPC  Edit the entry at point.
   `    Go to the bottom of the stack and add an entry there.
   C-o  Add an entry above the one at point. Pressed at home in the
-       native layout, where the key is otherwise the relation
+       ergo layout, where the key is otherwise the relation
        crossing; anywhere on the stack in the calc layout.
   (    Add an empty vector at the bottom of the stack. Pressed at home
-       in the native layout, where the parens are otherwise the
+       in the ergo layout, where the parens are otherwise the
        relation motions; anywhere on the stack in the calc layout.
 
 While editing, change formulas directly in the Calc buffer. For
@@ -1676,7 +1676,7 @@ does not change the stack."
   (maf-bindings--refresh))
 
 ;; The vector-add's "(" and the entry-add's C-o are calc-profile keys
-;; alone: in native (and in vim, by derivation) the parens are the
+;; alone: in ergo (and in vim, by derivation) the parens are the
 ;; relation motions `maf-goto-left-side' and `maf-goto-right-side' and
 ;; C-o is the crossing `maf-goto-other-side' (src/bindings.el), which
 ;; hand the keys back to these commands at home — the one place there
@@ -1684,8 +1684,8 @@ does not change the stack."
 ;; too would be a second owner on the keys, which the compiler refuses
 ;; outright rather than resolving by precedence.
 (maf-bindings-module-keys 'maf-edit 'maf-use-edit-mode
-  '(((calc native vim) "SPC" maf-edit)
-    ((calc native vim) "`" maf-edit-entry-at-home)
+  '(((calc ergo vim) "SPC" maf-edit)
+    ((calc ergo vim) "`" maf-edit-entry-at-home)
     ((calc) "C-o" maf-edit-add-entry-above)
     ((calc) "(" maf-edit-add-vector)))
 
