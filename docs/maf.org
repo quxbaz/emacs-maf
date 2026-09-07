@@ -26,8 +26,11 @@
        - [ ] these entries should be labeld as "reset"
        - [ ] they should also be given a special background color (a `reset`
          action often denotes the beginning of a new session)also
-   - [ ] *maf-history*: filter command doesn't label entry correctly. eg,
+   - [ ] *maf-history*: filter command (`f f`) doesn't label entry correctly. eg,
      ▸ ~ filter (autopair-newline)
+     `autopair-newline` is incorrect here
+     this is likely because the filter command takes input from minibuffer,
+     causing it to be mislabeled
 ** maf-editplus
    - [ ] *maf-editplus*: convert "or" to or-representation and "and" to
      and-representation
