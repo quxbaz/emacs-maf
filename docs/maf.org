@@ -18,11 +18,9 @@
 ** maf-pretty
 ** commands
    - [-] `M $` should allow multiple vars
-   - [ ] add a new command to find the exact expression given an angle
-     - see [[https://chatgpt.com/c/6a9cb014-31e8-83e8-aa41-40ee931e5adf][convo]]
-   - [ ] (mafcmd-factor-gcd) command should message in minibuffer if no gcd can
+   - [-] (mafcmd-factor-gcd) command should message in minibuffer if no gcd can
      be found
-   - [ ] stack: C-u prefix RET doesn't work. eg,
+   - [-] stack: C-u prefix RET doesn't work. eg,
      2: x
      1: y
      |.
@@ -32,8 +30,8 @@
      2: x
      1: y
      but instead it ignores the prefix value and just duplicates once
-   - [ ] (mafcmd-poly-lcm) should work on vectors. eg,
-     [2 x^2, 2 x, x] => 2 x^2j
+   - [ ] (mafcmd-poly-lcm) and (mafcmd-pgcd) should work on vectors. eg,
+     [2 x^2, 2 x, x] =(lcm)> 2 x^2
 
 * IN-PROGRESS website
   - [ ] generate readme
