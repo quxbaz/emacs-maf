@@ -25,7 +25,7 @@
        - [ ] they should also be given a special background color (a `reset`
          action often denotes the beginning of a new session)also
 ** maf-editplus
-   - [-] *maf-editplus*: convert "or" to or-representation and "and" to
+   - [X] *maf-editplus*: convert "or" to or-representation and "and" to
      and-representation
    - [ ] (maf-editplus-wrap-parens)
      does not work properly here:

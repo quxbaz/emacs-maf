@@ -1,5 +1,5 @@
 ;; A union typed inside a maf-edit session is the letter U, and commit
-;; trades it for the || calc reads (`maf-editplus--commit-union', on
+;; trades it for the || calc reads (`maf-editplus--commit-words', on
 ;; `maf-edit-transform-text-functions'). A step passes when it raises
 ;; no error.
 ;;
@@ -12,7 +12,7 @@
 ;; syntax.
 
 (maf-step
-  (cl-assert (memq 'maf-editplus--commit-union
+  (cl-assert (memq 'maf-editplus--commit-words
                    maf-edit-transform-text-functions))
   (calc-pop (calc-stack-size))
 
@@ -83,16 +83,16 @@
   ;; The discriminations, on the rewrite itself. A U inside a name
   ;; belongs to the name, and one written tight against a neighbour is
   ;; a factor: only whitespace on both sides makes it the operator.
-  (cl-assert (equal (maf-editplus--commit-union "aUb") "aUb"))
-  (cl-assert (equal (maf-editplus--commit-union "x^2 U_1") "x^2 U_1"))
-  (cl-assert (equal (maf-editplus--commit-union "a U b") "a || b"))
-  (cl-assert (equal (maf-editplus--commit-union "a  U  b") "a  ||  b"))
+  (cl-assert (equal (maf-editplus--commit-words "aUb") "aUb"))
+  (cl-assert (equal (maf-editplus--commit-words "x^2 U_1") "x^2 U_1"))
+  (cl-assert (equal (maf-editplus--commit-words "a U b") "a || b"))
+  (cl-assert (equal (maf-editplus--commit-words "a  U  b") "a  ||  b"))
   ;; A U at either end of the text has no second operand.
-  (cl-assert (equal (maf-editplus--commit-union "U") "U"))
-  (cl-assert (equal (maf-editplus--commit-union "U + 1") "U + 1"))
-  (cl-assert (equal (maf-editplus--commit-union "x = U") "x = U"))
+  (cl-assert (equal (maf-editplus--commit-words "U") "U"))
+  (cl-assert (equal (maf-editplus--commit-words "U + 1") "U + 1"))
+  (cl-assert (equal (maf-editplus--commit-words "x = U") "x = U"))
   ;; And a U inside a string literal is text, like every other
   ;; character there.
-  (cl-assert (equal (maf-editplus--commit-union "\"a U b\"") "\"a U b\""))
-  (cl-assert (equal (maf-editplus--commit-union "x + \"U\" U y")
+  (cl-assert (equal (maf-editplus--commit-words "\"a U b\"") "\"a U b\""))
+  (cl-assert (equal (maf-editplus--commit-words "x + \"U\" U y")
                     "x + \"U\" || y")))
