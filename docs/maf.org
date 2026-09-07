@@ -13,8 +13,6 @@
    - [ ] website: mvp; animated examples, additions, most important bindings
      (module bindings, editing)
 ** other
-*** misc
-    - [ ] rename "native" key profile to "ergo"
 *** maf-history
     - [ ] *maf-history* does point return after restoring stack?
     - [ ] *maf-history* given a history entry like:
