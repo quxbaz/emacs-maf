@@ -13,9 +13,9 @@
 ;; What is here now are the four delimiter gestures, TAB, M-o, C-RET
 ;; and the shifted arrows, the function keys L, Q, |, S, C, T and B,
 ;; the exponent keys M-2 through M-9 and :, P for the constant pi and
-;; J for the multiplication sign, the union U that commit trades for
-;; calc's ||, and DEL and C-d, which delete a power whole from either
-;; side of its operator.
+;; J for the multiplication sign, the union U and the words or and
+;; and that commit trades for calc's || and &&, and DEL and C-d, which
+;; delete a power whole from either side of its operator.
 ;;
 ;; TAB escapes. Typing a formula runs forward past closing delimiters
 ;; constantly — sqrt(x^2+1), f(g(x)) — and reaching the far side of one
@@ -1650,8 +1650,8 @@ nothing behind point:
 Bound to `|' in `maf-edit-mode-map', which costs the character its own
 key for the length of a session — calc reads it as vector
 concatenation, and one wanted literally has to be yanked in. The
-union `||' is the exception, and it is spelled U instead
-\(`maf-editplus--commit-union')."
+union `||' is the exception, and it is spelled U or the word or
+instead (`maf-editplus--commit-words')."
   (interactive)
   (maf-editplus--apply-function "abs"))
 
@@ -1839,28 +1839,33 @@ through untouched, as does everything else in EXPR."
     (list 'calcFunc-log10 (maf-editplus--commit-log10 (nth 1 expr))))
    (t (cons (car expr) (mapcar #'maf-editplus--commit-log10 (cdr expr))))))
 
-;;; The union
+;;; The union, and the words or and and
 
 ;; A solution set is written with a union — x < -1 || x > 1, the shape
 ;; `a k' and `a S' hand back — and the vertical bar is not a character
 ;; an edit session can type: `|' is the modulus key here, and pressing
 ;; it twice only wraps twice. So the union is spelled U, the letter
-;; drawn like the sign, and commit trades it for calc's own || .
+;; drawn like the sign, and commit trades it for calc's own || . The
+;; words or and and are the same trade for the reader who thinks in
+;; words: x < -1 or x > 1 commits as x < -1 || x > 1, and
+;; x > 0 and x < 1 as x > 0 && x < 1, calc's && having no better key
+;; here than its || has.
 ;;
 ;; The trade is the log key's, one layer further down. log(x)
 ;; parses as itself and wants only renaming, so it rides
-;; `maf-edit-transform-value-functions'; a U does not parse as an
-;; operator at all — calc reads a lone U as a variable, and
-;; x<-1 U x>1 as nothing — so this one rewrites the text before the
-;; parser sees it, on `maf-edit-transform-text-functions'.
+;; `maf-edit-transform-value-functions'; a U, or or and does not
+;; parse as an operator at all — calc reads a lone U as a variable,
+;; and x<-1 U x>1 as nothing — so this one rewrites the text before
+;; the parser sees it, on `maf-edit-transform-text-functions'.
 ;;
-;; Which U: one standing between two operands with whitespace on both
-;; sides — [1,2] U [3], x < -1 U x > 1. A U inside a name is part of
-;; the name; a U written tight against a neighbour is a factor; and a
-;; U with an operator rather than an operand beside it is the variable
-;; it looks like, so E = U + K commits as written. What the rule does
-;; cost is a spaced-out U used as a factor — a U b — a product nobody
-;; writes that way while * has a key of its own.
+;; Which word: one standing between two operands with whitespace on
+;; both sides — [1,2] U [3], x < -1 or x > 1. A word inside a name is
+;; part of the name (order, sand, U_1); one written tight against a
+;; neighbour is a factor; and one with an operator rather than an
+;; operand beside it is the variable it looks like, so E = U + K
+;; commits as written. What the rule does cost is a spaced-out word
+;; used as a factor — a U b — a product nobody writes that way while
+;; * has a key of its own.
 
 (defun maf-editplus--top-level-dotdots (text)
   "Indexes of TEXT's .. tokens at bracket depth zero, outside strings.
@@ -1916,55 +1921,74 @@ composite is left to say what it says."
                       trimmed
                       (if (maf-editplus--interval-open-p rhs) ")" "]")))))))))
 
-(defconst maf-editplus--union-space '(?\s ?\t ?\n)
-  "Whitespace separating the union U from its operands.")
+(defconst maf-editplus--words
+  '(("U" . "||") ("or" . "||") ("and" . "&&"))
+  "Words an edit session spells an operator with, and what each commits as.
+The union U and the word or both stand for calc's ||, the word and
+for its &&.")
 
-(defconst maf-editplus--union-enders '(?\) ?\] ?\} ?\")
-  "Non-name characters that can end the operand before a union U.")
+(defconst maf-editplus--word-space '(?\s ?\t ?\n)
+  "Whitespace separating an operator word from its operands.")
 
-(defconst maf-editplus--union-starters '(?\( ?\[ ?\{ ?\" ?- ?+)
-  "Non-name characters that can start the operand after a union U.")
+(defconst maf-editplus--word-enders '(?\) ?\] ?\} ?\")
+  "Non-name characters that can end the operand before an operator word.")
 
-(defun maf-editplus--union-at-p (text i)
-  "Non-nil when the U at index I of TEXT stands as the union operator.
-Whitespace on both sides, an operand ending somewhere before it and
-another starting somewhere after — a name character or one of
-`maf-editplus--union-enders' and `maf-editplus--union-starters'. Nil
-for a U at either end of TEXT, one touching a neighbour, and one
-whose neighbour is an operator: those are names and factors, and the
-text means them as it spells them."
-  (let ((n (length text)))
+(defconst maf-editplus--word-starters '(?\( ?\[ ?\{ ?\" ?- ?+)
+  "Non-name characters that can start the operand after an operator word.")
+
+(defun maf-editplus--word-at-p (text i len)
+  "Non-nil when the LEN characters at index I of TEXT stand as an operator.
+Whitespace on both sides, an operand ending somewhere before the
+word and another starting somewhere after — a name character or one
+of `maf-editplus--word-enders' and `maf-editplus--word-starters'.
+Nil for a word at either end of TEXT, one touching a neighbour, and
+one whose neighbour is an operator: those are names and factors, and
+the text means them as it spells them."
+  (let ((n (length text))
+        (end (+ i len)))
     (and (> i 0)
-         (< (1+ i) n)
-         (memq (aref text (1- i)) maf-editplus--union-space)
-         (memq (aref text (1+ i)) maf-editplus--union-space)
+         (< end n)
+         (memq (aref text (1- i)) maf-editplus--word-space)
+         (memq (aref text end) maf-editplus--word-space)
          (let ((j (1- i))
-               (k (1+ i)))
+               (k end))
            (while (and (>= j 0)
-                       (memq (aref text j) maf-editplus--union-space))
+                       (memq (aref text j) maf-editplus--word-space))
              (setq j (1- j)))
            (while (and (< k n)
-                       (memq (aref text k) maf-editplus--union-space))
+                       (memq (aref text k) maf-editplus--word-space))
              (setq k (1+ k)))
            (and (>= j 0)
                 (< k n)
                 (let ((before (aref text j))
                       (after (aref text k)))
                   (and (or (maf-editplus--name-char-p before)
-                           (memq before maf-editplus--union-enders))
+                           (memq before maf-editplus--word-enders))
                        (or (maf-editplus--name-char-p after)
-                           (memq after maf-editplus--union-starters)))))))))
+                           (memq after maf-editplus--word-starters)))))))))
 
-(defun maf-editplus--commit-union (text)
-  "TEXT with each union U rewritten as the || calc reads.
+(defun maf-editplus--word-at (text i)
+  "The entry of `maf-editplus--words' whose word TEXT spells at index I.
+The word must stand as an operator there (`maf-editplus--word-at-p');
+nil otherwise."
+  (seq-find (lambda (entry)
+              (let ((len (length (car entry))))
+                (and (eq t (compare-strings (car entry) nil nil
+                                            text i (+ i len)))
+                     (maf-editplus--word-at-p text i len))))
+            maf-editplus--words))
+
+(defun maf-editplus--commit-words (text)
+  "TEXT with each operator word rewritten as the operator calc reads.
 On `maf-edit-transform-text-functions' while the module is on, so a
 union can be typed at all: the vertical bar has no key in an edit
 session, `|' being the modulus (`maf-editplus-wrap-abs'), and U is
-the letter drawn like the sign.
+the letter drawn like the sign. The words or and and go the same
+way, to || and && (`maf-editplus--words').
 
-Only a U standing between two operands, whitespace on both sides
-\(`maf-editplus--union-at-p'), and only outside a string literal —
-where a U is text like any other character. Everything else in TEXT
+Only a word standing between two operands, whitespace on both sides
+\(`maf-editplus--word-at-p'), and only outside a string literal —
+where it is text like any other character. Everything else in TEXT
 passes through untouched."
   (let ((strings (maf-edit--string-regions text))
         (parts nil)
@@ -1972,14 +1996,16 @@ passes through untouched."
         (i 0)
         (n (length text)))
     (while (< i n)
-      (when (and (eq (aref text i) ?U)
-                 (not (seq-find (lambda (r) (and (>= i (car r)) (< i (cdr r))))
-                                strings))
-                 (maf-editplus--union-at-p text i))
-        (push (substring text last i) parts)
-        (push "||" parts)
-        (setq last (1+ i)))
-      (setq i (1+ i)))
+      (let ((entry (and (not (seq-find (lambda (r)
+                                         (and (>= i (car r)) (< i (cdr r))))
+                                       strings))
+                        (maf-editplus--word-at text i))))
+        (if (null entry)
+            (setq i (1+ i))
+          (push (substring text last i) parts)
+          (push (cdr entry) parts)
+          (setq i (+ i (length (car entry)))
+                last i))))
     (if (null parts)
         text
       (push (substring text last) parts)
@@ -2369,6 +2395,8 @@ earlier nearby log supplies another base or you give a numeric prefix.
 
 A U with a space on either side is the union: type x < -1 U x > 1 and
 it commits as x < -1 || x > 1, the bar having no key of its own here.
+The words or and and, spaced the same way, commit as || and &&:
+x < -1 or x > 1 and x > 0 and x < 1.
 
 The single-character shortcuts replace normal insertion of those
 characters during the edit session. Yank a literal character if needed.
@@ -2403,20 +2431,21 @@ Turning this mode off restores the ordinary editing keys."
                   (and on #'maf-editplus-insert-power)))
     ;; The commit-time half of B: the base-10 default trades its
     ;; visible spelling for calc's log10 as the entry leaves the text.
-    ;; The union U is the same trade one layer down — it never parsed,
-    ;; so it is traded in the text rather than in the value.
+    ;; The union U and the words or and and are the same trade one
+    ;; layer down — they never parsed, so they are traded in the text
+    ;; rather than in the value.
     (if on
         (progn
           (add-hook 'maf-edit-transform-value-functions
                     #'maf-editplus--commit-log10)
           (add-hook 'maf-edit-transform-text-functions
-                    #'maf-editplus--commit-union)
+                    #'maf-editplus--commit-words)
           (add-hook 'maf-edit-transform-text-functions
                     #'maf-editplus--commit-interval))
       (remove-hook 'maf-edit-transform-value-functions
                    #'maf-editplus--commit-log10)
       (remove-hook 'maf-edit-transform-text-functions
-                   #'maf-editplus--commit-union)
+                   #'maf-editplus--commit-words)
       (remove-hook 'maf-edit-transform-text-functions
                    #'maf-editplus--commit-interval))))
 
@@ -2429,8 +2458,8 @@ Turning this mode off restores the ordinary editing keys."
 For example, Q wraps x as sqrt(x), W changes x to x^2, and M-3 types
 ^3. TAB moves out of parentheses, M-o adds them, and DEL or C-d
 removes a whole power cleanly. J types the multiplication sign, and a
-spaced-out U commits as the union ||. These keys work only while
-editing."
+spaced-out U or the word or commits as ||, the word and as &&. These
+keys work only while editing."
                        nil "Editing"))
 
 (provide 'maf-editplus)
