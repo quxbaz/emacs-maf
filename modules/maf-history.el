@@ -64,6 +64,25 @@
   "Face for the marker on a state that changed the stack in place."
   :group 'maf)
 
+;; A reset empties the session, so the state it records is where one
+;; stretch of work ends and the next begins. That gets a band of colour
+;; behind the whole row rather than another marker character: the log is
+;; read by scanning down it, and a band is what the eye finds without
+;; reading. `:extend' carries it past the end of the line to the window
+;; edge, so a short row bands as wide as a long one.
+;;
+;; Unlike `maf-history-separator', which is a rule of its own and so sets
+;; its own foreground, this tint sits under the row's ordinary text and
+;; has to leave it readable — hence a dark tint on a dark theme and a
+;; light one on a light theme, rather than one band for both. Violet, to
+;; land clear of the marker faces (green/red/yellow) and of the
+;; separator's tan.
+(defface maf-history-reset
+  '((((background dark)) :background "#3b2f4a" :extend t)
+    (t :background "#ece4f5" :extend t))
+  "Face banding the row of a state a reset recorded in the action log."
+  :group 'maf)
+
 ;; The separator a state can carry (`maf-history-separate'), drawn as a
 ;; row of its own under the state's row: a band of background colour,
 ;; `:extend' carrying it past the end of the line to the window edge,
@@ -107,12 +126,12 @@ history stays cheap."
 Each state is a list (VALUES LABEL COMMAND): VALUES the stack's formula
 values top first, with `calc-encase-atoms' wrappers stripped; LABEL
 what produced the state — the change's trail prefix (a string,
-\"fctr\"), else \"undo\"/\"redo\", else a structural classification of
-the change against the previous stack (see `maf-history--classify');
-and COMMAND the command the change landed under (see
-`maf-history--command'), the precise name behind a label that names an
-operation rather than a command. COMMAND is nil for a state recorded
-outside any command.
+\"fctr\"), else \"undo\"/\"redo\"/\"reset\", else a structural
+classification of the change against the previous stack (see
+`maf-history--classify'); and COMMAND the command the change landed
+under (see `maf-history--command'), the precise name behind a label
+that names an operation rather than a command. COMMAND is nil for a
+state recorded outside any command.
 
 A state may carry a fourth slot, SEPARATOR, non-nil when the log draws
 a rule under its row (see `maf-history-separate'): t for a plain band,
@@ -300,6 +319,11 @@ swallowed so a bad calc state can never get the hook disabled."
                         (maf-history--classify old raw))
                        ((memq command '(maf-undo calc-undo)) "undo")
                        ((memq command '(maf-redo calc-redo)) "redo")
+                       ;; A reset empties the stack, which reads
+                       ;; structurally as a plain "del" — true, but it
+                       ;; buries the one thing about the state worth
+                       ;; knowing, that the session restarted here.
+                       ((memq command '(maf-reset calc-reset)) "reset")
                        ((and (stringp trail) (> (length trail) 0)) trail)
                        (t (maf-history--typed old raw prefix)))))
                 (setq maf-history--last-raw raw)
@@ -363,6 +387,14 @@ multi-value push) — so unnamed steps stay legible and 1:1 with `u'/`i'."
           ((stringp label) label)
           ((symbolp label) (symbol-name label))
           (t "entry"))))
+
+(defun maf-history--reset-p (state)
+  "Return non-nil when STATE was recorded by a reset.
+Read off the display label rather than the command, so a state carries
+its band on the same terms the log names it on: whatever put \"reset\"
+in the label — `maf-history--capture' does, for `maf-reset' and
+`calc-reset' — is what the row is banded for."
+  (equal (maf-history--label state) "reset"))
 
 (defun maf-history--command-name (state)
   "Return the name of the command that made STATE, or nil to show none.
@@ -508,7 +540,8 @@ bottom, so the latest work is where the eye starts. Each line is a
 change marker (see `maf-history--marker') and the action that produced
 the state — its label, and after it the command that ran (see
 `maf-history--command-name') — the current one marked and on
-`maf-history-current'. A state marked with `maf-history-separate' is
+`maf-history-current'; a state a reset recorded has its row banded on
+`maf-history-reset'. A state marked with `maf-history-separate' is
 followed by a row banded to the window edge — blank, or carrying the
 text the mark was given, centred in it — the separator that divides
 the log into stretches of work. Every line carries a state's
@@ -546,6 +579,14 @@ line carries the position counter."
             (insert " " (propertize (format "(%s)" name) 'face 'shadow)))
           (insert "\n")
           (put-text-property start (point) 'maf-history-index i)
+          ;; A reset restarts the session, so its row is banded to the
+          ;; window edge (see `maf-history-reset') — the log's coarsest
+          ;; landmark, found by scanning rather than by reading. Appended
+          ;; before the current state's face, so the band outranks it:
+          ;; `maf-history-current' sets a foreground and a weight and no
+          ;; background, and the two layer rather than compete.
+          (when (maf-history--reset-p state)
+            (add-face-text-property start (point) 'maf-history-reset t))
           (when current
             ;; Appended, so the marker keeps its own colour and only
             ;; picks up the current state's weight.
@@ -798,7 +839,10 @@ mean something else beside a stack — line motion and RET.")
 The left window of the browser: one line per recorded state, newest at
 the top, each a change marker (+ added, - removed, ~ changed in place)
 and the action that produced it — the operation it goes by, and after
-it the command that ran — the current one marked.
+it the command that ran — the current one marked. A state a reset
+recorded reads `reset' and is banded in colour across the row: the
+session was emptied there, so it is where one stretch of work ends and
+the next begins.
 The stack that action left shows in `maf-history-stack-mode' beside
 it, following point as it moves. \<maf-history-mode-map>
 \[maf-history-previous] steps to older states and \[maf-history-next]
