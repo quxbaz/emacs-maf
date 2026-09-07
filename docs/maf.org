@@ -12,62 +12,63 @@
    - [ ] website: less stuff, less content, concentrate, focus
    - [ ] website: mvp; animated examples, additions, most important bindings
      (module bindings, editing)
-** other
-*** maf-history
-    - [ ] *maf-history*
-      bug: point is not retained after restoring stack
-      - we specified in an earlier commit that point should restore when an
-        stack item or history entry is inserted/restored (RET). however this
-        does not work when a history entry is restored. it works when a stack
-        item is restored.
-    - [ ] *maf-history* given a history entry like:
-      - del (maf-del)
-        - [ ] these entries should be labeld as "reset"
-        - [ ] they should also be given a special background color (a `reset`
-          action often denotes the beginning of a new session)
-    - [ ] *maf-history*: filter command doesn't label entry correctly. eg,
-      ▸ ~ filter (autopair-newline)
-*** maf-editplus
-    - [ ] *maf-editplus*: convert "or" to or-representation and "and" to
-      and-representation
-    - [ ] (maf-editplus-wrap-parens)
-      does not work proprely here:
-      x+2 * x-(4)|
-    - [ ] why doesn't yanking this in work?
-      \dfrac{p-3}{4p} = \dfrac{2p+4}{3p} - \dfrac{1-p}{12p}
-    - [ ] in mafedit, if the standing entry is something like:
-      \dfrac{1}{y} = \dfrac{3 + y}{3y} + \dfrac{ 1 }{6y}
-      then RET should convert is to (i think):
-      => 1 / y = (3 + y) / (3 y) + 1 / (6 y)
-*** maf-formulas
-    - [ ] *maf-formulas* add distance formula in 3 dimensions using x, y, z
-    - [ ] *maf-formulas* add sum and difference formulas for sine
-    - [ ] *maf-formulas* add sum and difference formulas for cosine
-    - [ ] *maf-formulas* add half-angle identities for sin/cos/tan
-    - [ ] *maf-formulas* add triple angle identities for sin/cos/tan
-*** maf-pretty
-    - [ ] pretty/ratex: is it possible to render:
-      -1:2
-      with the `-` outside the fraction instead of attached to the `1`?
-      or is this a breaking change?
-*** commands
-    - [ ] `M $` should allow multiple vars
-    - [ ] add a new command to find the exact expression given an angle
-      - see [[https://chatgpt.com/c/6a9cb014-31e8-83e8-aa41-40ee931e5adf][convo]]
-    - [ ] (mafcmd-factor-gcd) command should message in minibuffer if no gcd can
-      be found
-    - [ ] stack: C-u prefix RET doesn't work. eg,
-      2: x
-      1: y
-      |.
-      `C-u 2 RET` should result in:
-      4: x
-      3: y
-      2: x
-      1: y
-      but instead it ignores the prefix value and just duplicates once
-    - [ ] (mafcmd-poly-lcm) should work on vectors. eg,
-      [2 x^2, 2 x, x] => 2 x^2
+** box
+   - [ ] does `C-c C-c` in box send sequence to main claude?
+** maf-history
+   - [-] *maf-history*
+     bug: point is not retained after restoring stack
+     - we specified in an earlier commit that point should restore when an
+       stack item or history entry is inserted/restored (RET). however this
+       does not work when a history entry is restored. it works when a stack
+       item is restored.
+   - [ ] *maf-history* given a history entry like:
+     - del (maf-del)
+       - [ ] these entries should be labeld as "reset"
+       - [ ] they should also be given a special background color (a `reset`
+         action often denotes the beginning of a new session)also
+   - [ ] *maf-history*: filter command doesn't label entry correctly. eg,
+     ▸ ~ filter (autopair-newline)
+** maf-editplus
+   - [ ] *maf-editplus*: convert "or" to or-representation and "and" to
+     and-representation
+   - [ ] (maf-editplus-wrap-parens)
+     does not work proprely here:
+     x+2 * x-(4)|
+   - [ ] why doesn't yanking this in work?
+     \dfrac{p-3}{4p} = \dfrac{2p+4}{3p} - \dfrac{1-p}{12p}
+   - [ ] in mafedit, if the standing entry is something like:
+     \dfrac{1}{y} = \dfrac{3 + y}{3y} + \dfrac{ 1 }{6y}
+     then RET should convert is to (i think):
+     => 1 / y = (3 + y) / (3 y) + 1 / (6 y)
+** maf-formulas
+   - [ ] *maf-formulas* add distance formula in 3 dimensions using x, y, z
+   - [ ] *maf-formulas* add sum and difference formulas for sine
+   - [ ] *maf-formulas* add sum and difference formulas for cosine
+   - [ ] *maf-formulas* add half-angle identities for sin/cos/tan
+   - [ ] *maf-formulas* add triple angle identities for sin/cos/tan
+** maf-pretty
+   - [ ] pretty/ratex: is it possible to render:
+     -1:2
+     with the `-` outside the fraction instead of attached to the `1`?
+     or is this a breaking change?
+** commands
+   - [ ] `M $` should allow multiple vars
+   - [ ] add a new command to find the exact expression given an angle
+     - see [[https://chatgpt.com/c/6a9cb014-31e8-83e8-aa41-40ee931e5adf][convo]]
+   - [ ] (mafcmd-factor-gcd) command should message in minibuffer if no gcd can
+     be found
+   - [ ] stack: C-u prefix RET doesn't work. eg,
+     2: x
+     1: y
+     |.
+     `C-u 2 RET` should result in:
+     4: x
+     3: y
+     2: x
+     1: y
+     but instead it ignores the prefix value and just duplicates once
+   - [ ] (mafcmd-poly-lcm) should work on vectors. eg,
+     [2 x^2, 2 x, x] => 2 x^2j
 
 * IN-PROGRESS website
   - [ ] generate readme
