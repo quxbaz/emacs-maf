@@ -14,17 +14,6 @@
      (module bindings, editing)
 ** maf-history
 ** maf-editplus
-   - [X] *maf-editplus*: convert "or" to or-representation and "and" to
-     and-representation
-   - [X] (maf-editplus-wrap-parens)
-     does not work properly here:
-     x + 2 * x - (4)| => x + (2 * x - 4)
-     i expect
-     => x + 2 * (x - 4)
-     it seems like the `*` isn't respected as a delimiter
-
-     if we're using structural inspection to decide where to wrap, maybe we need
-     a hybrid approach instead where do inspect by structure *and* string?
 ** maf-formulas
    - [X] *maf-formulas* add distance formula in 3 dimensions using x, y, z
    - [X] *maf-formulas* add sum and difference formulas for sine
