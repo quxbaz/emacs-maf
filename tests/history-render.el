@@ -5,6 +5,11 @@
   (cl-assert (equal (maf-history--label '((1) "...")) "entry"))
   (cl-assert (equal (maf-history--label '((1) "fctr")) "fctr"))
 
+  ;; A reset is read off that same label, so the row is banded on the
+  ;; terms the log names it on rather than on a second reading of its own.
+  (cl-assert (maf-history--reset-p '((1) "reset" maf-reset)))
+  (cl-assert (not (maf-history--reset-p '((1) "del" maf-del))))
+
   ;; The browser is two buffers on one selection. Stash the session's
   ;; log, render a made-up one into a scratch pair, and put it back at
   ;; the end.
@@ -176,6 +181,39 @@
   ;; state the browser has selected, which is the one that window shows.
   (with-current-buffer (maf-history--stack-buffer)
     (cl-assert (eq (nth 2 (maf-history--state-at-point)) 'mafcmd-mul)))
+
+  ;; A reset restarts the session, and its row says so twice: the label
+  ;; reads "reset" rather than the "del" the emptied stack classifies as,
+  ;; and the row carries a band of its own — the landmark the log is
+  ;; scanned for, where one stretch of work ends and the next begins.
+  (progn (setq maf-history--states (list (list (list 4) "new" 'maf-push)
+                                         (list nil "reset" 'maf-reset)
+                                         (list (list 9 2) "mul" 'mafcmd-mul))
+               maf-history--index 1)
+         (maf-history--render t))
+  (with-current-buffer (maf-history--buffer)
+    (cl-assert (equal (buffer-substring-no-properties (point-min) (point-max))
+                      (concat "  + new (maf-push)\n"
+                              "▸ - reset (maf-reset)\n"
+                              "  · mul (mafcmd-mul)\n")))
+    (progn (goto-char (point-min)) (forward-line 1) (search-forward "reset")
+           (backward-char 1))
+    (cl-assert (equal (get-text-property (point) 'face)
+                      '(maf-history-reset maf-history-current)))
+    ;; Structurally it is still a removal, so the marker stays `-' and
+    ;; keeps its own colour: the band goes under it, not over it.
+    (progn (beginning-of-line) (search-forward "-") (backward-char 1))
+    (cl-assert (equal (get-text-property (point) 'face)
+                      '(maf-history-removed maf-history-reset maf-history-current)))
+    ;; The band reaches the newline, which is what `:extend' carries out
+    ;; to the window edge — so a short row bands as wide as a long one.
+    (progn (end-of-line))
+    (cl-assert (memq 'maf-history-reset (get-text-property (point) 'face)))
+    ;; And only that row: the states either side of it are unbanded.
+    (progn (goto-char (point-min)))
+    (cl-assert (null (get-text-property (point) 'face)))
+    (progn (goto-char (point-min)) (forward-line 2))
+    (cl-assert (null (get-text-property (point) 'face))))
 
   ;; A state before an emptied stack is still a state to diff against, so
   ;; the first entry after one is highlighted rather than left plain.

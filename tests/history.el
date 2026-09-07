@@ -242,6 +242,21 @@
          (let ((this-command 'my-fake-command)) (maf-history--capture))
          (cl-assert (eq (nth 2 (car maf-history--states)) 'my-fake-command)))
 
+  ;; A reset empties the stack, which structurally is a plain removal —
+  ;; true, and it buries the one thing about the state worth knowing.
+  ;; The label names the operation instead, the way undo and redo are
+  ;; named: this is where the session restarted.
+  (progn (calc-wrapper (maf-push "q"))
+         (maf-history--capture)
+         (calc-pop (calc-stack-size))
+         (let ((this-command 'maf-reset)) (maf-history--capture))
+         (cl-assert (equal (maf-history--label (car maf-history--states)) "reset"))
+         (cl-assert (eq (nth 2 (car maf-history--states)) 'maf-reset))
+         (cl-assert (null (nth 0 (car maf-history--states))))
+         ;; The structural reading it overrides, and the marker that
+         ;; still comes from it.
+         (cl-assert (equal (maf-history--classify '(q) nil) "del")))
+
   ;; Put the session's log back and re-render the browser over it.
   (progn
     (setq maf-history--states (nth 0 maf--history-stash)
