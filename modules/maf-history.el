@@ -109,9 +109,10 @@ values top first, with `calc-encase-atoms' wrappers stripped; LABEL
 what produced the state — the change's trail prefix (a string,
 \"fctr\"), else \"undo\"/\"redo\", else a structural classification of
 the change against the previous stack (see `maf-history--classify');
-and COMMAND the `this-command' the change landed under, the precise
-name behind a label that names an operation rather than a command.
-COMMAND is nil for a state recorded outside any command.
+and COMMAND the command the change landed under (see
+`maf-history--command'), the precise name behind a label that names an
+operation rather than a command. COMMAND is nil for a state recorded
+outside any command.
 
 A state may carry a fourth slot, SEPARATOR, non-nil when the log draws
 a rule under its row (see `maf-history-separate'): t for a plain band,
@@ -130,14 +131,66 @@ prefix never outlives the command that recorded it.")
 
 (defun maf-history--stash-prefix (_val &optional prefix)
   "Stash PREFIX for `maf-history--capture'; advice on `calc-record'.
-The interactive command running when a stack change lands is often
-noise — a minibuffer RET terminating an entry — while the trail prefix
-names the operation. The FIRST prefix of a command wins: a multi-value
-push records its first value with the real prefix and the rest with
-calc's \"...\" continuation marker, so keeping the first preserves the
-operation name instead of the meaningless continuation."
+The command a stack change lands under names the code that ran, while
+the trail prefix names the operation — \"fctr\" for a factoring, where
+the command is `mafcmd-factor' — and the log leads with the operation.
+The FIRST prefix of a command wins: a multi-value push records its
+first value with the real prefix and the rest with calc's \"...\"
+continuation marker, so keeping the first preserves the operation name
+instead of the meaningless continuation."
   (unless maf-history--record-prefix
     (setq maf-history--record-prefix (list prefix))))
+
+(defvar maf-history--minibuffer-command nil
+  "The command that opened the minibuffer, noted as it opened.
+Reading from the minibuffer runs a command loop of its own, and each
+command it runs is named as `this-command' in turn, so by the time the
+outer command commits its change, `this-command' (and
+`real-this-command' with it) names the command that ended the entry —
+`exit-minibuffer', or whatever RET is bound to in the minibuffer —
+rather than the one the user ran, `mafcmd-filter'. The setup hook runs
+before any inner command, while `this-command' still names the outer
+one, so it is noted there (see `maf-history--note-minibuffer-entry')
+and read back by `maf-history--command'. Cleared once the command that
+read has been captured, so it never outlives that command.")
+
+(defvar maf-history--minibuffer-exit-command nil
+  "The command that ended the last minibuffer read, noted as it ended.
+What `this-command' is left naming after a read (see
+`maf-history--minibuffer-command'), so `maf-history--command' can tell
+a `this-command' the read left behind from one set on purpose
+afterwards — `execute-extended-command' names the command it runs as
+`this-command' once its own read is over, and that name is the right
+one. Noted on `minibuffer-exit-hook', which runs under the ending
+command, whether it exited or aborted the read.")
+
+(defun maf-history--command ()
+  "Return the command the current change is landing under.
+`this-command', unless it is what the last minibuffer read left behind
+\(see `maf-history--minibuffer-exit-command'); then the command the
+minibuffer was opened from (see `maf-history--minibuffer-command')."
+  (if (and maf-history--minibuffer-command
+           (eq this-command maf-history--minibuffer-exit-command))
+      maf-history--minibuffer-command
+    this-command))
+
+(defun maf-history--note-minibuffer-entry ()
+  "Note the command entering the minibuffer; on `minibuffer-setup-hook'.
+Only the outermost minibuffer notes: one opened from within another
+\(with `enable-recursive-minibuffers') opens under a minibuffer
+command, which is not the one the change will land under. The note is
+resolved through `maf-history--command' rather than read off
+`this-command': a command reading for the second time (`f f' after
+\\[execute-extended-command] read its name) is still the one to note,
+while one that read once already (a substitution reads the target,
+then the replacement) is by then named by its first read's ending
+command, and keeps the note its first read made."
+  (when (= (minibuffer-depth) 1)
+    (setq maf-history--minibuffer-command (maf-history--command))))
+
+(defun maf-history--note-minibuffer-exit ()
+  "Note the command ending the minibuffer; on `minibuffer-exit-hook'."
+  (setq maf-history--minibuffer-exit-command this-command))
 
 (defvar maf-history--index 0
   "Index into `maf-history--states' of the state shown, 0 the newest.
@@ -216,7 +269,16 @@ swallowed so a bad calc state can never get the hook disabled."
                  (let ((b (get-buffer "*Calculator*")))
                    (and b
                         (with-current-buffer b (derived-mode-p 'calc-mode))
-                        b)))))
+                        b))))
+          (command (maf-history--command)))
+      ;; Consume the minibuffer notes once the command that read is
+      ;; over, calc buffer or none — a note left standing would name a
+      ;; later change after the wrong command. The hook runs for the
+      ;; commands inside the minibuffer too, and those must leave the
+      ;; notes for the outer command's own capture.
+      (when (zerop (minibuffer-depth))
+        (setq maf-history--minibuffer-command nil
+              maf-history--minibuffer-exit-command nil))
       (when buf
         (with-current-buffer buf
           (let ((raw (mapcar #'car (nthcdr calc-stack-top calc-stack)))
@@ -234,15 +296,15 @@ swallowed so a bad calc state can never get the hook disabled."
                      ;; wins, falling back to a structural classification.
                      (label
                       (cond
-                       ((eq this-command 'maf-edit-commit)
+                       ((eq command 'maf-edit-commit)
                         (maf-history--classify old raw))
-                       ((memq this-command '(maf-undo calc-undo)) "undo")
-                       ((memq this-command '(maf-redo calc-redo)) "redo")
+                       ((memq command '(maf-undo calc-undo)) "undo")
+                       ((memq command '(maf-redo calc-redo)) "redo")
                        ((and (stringp trail) (> (length trail) 0)) trail)
                        (t (maf-history--typed old raw prefix)))))
                 (setq maf-history--last-raw raw)
                 (maf-history--record (mapcar #'maf--strip-encasing raw)
-                                      label this-command)))))))))
+                                      label command)))))))))
 
 (defun maf-history--typed (old new prefix)
   "Classify OLD to NEW, reading a typed value as new input, not a copy.
@@ -1191,7 +1253,9 @@ at a time."
   (interactive)
   (let ((n (length maf-history--states)))
     (setq maf-history--states nil
-          maf-history--record-prefix nil)
+          maf-history--record-prefix nil
+          maf-history--minibuffer-command nil
+          maf-history--minibuffer-exit-command nil)
     ;; Rebaseline on the live stack rather than on nil: with the stack
     ;; left standing, a nil baseline would make the next capture record
     ;; the whole stack as if it had just been built.
@@ -1228,11 +1292,15 @@ available until they are deleted or Emacs exits."
   (if maf-use-history-mode
       (progn
         (advice-add 'calc-record :after #'maf-history--stash-prefix)
+        (add-hook 'minibuffer-setup-hook #'maf-history--note-minibuffer-entry)
+        (add-hook 'minibuffer-exit-hook #'maf-history--note-minibuffer-exit)
         (add-hook 'post-command-hook #'maf-history--capture)
         (maf-bindings--refresh)
         ;; Baseline the current stack so the first change diffs against it.
         (maf-history--capture))
     (remove-hook 'post-command-hook #'maf-history--capture)
+    (remove-hook 'minibuffer-setup-hook #'maf-history--note-minibuffer-entry)
+    (remove-hook 'minibuffer-exit-hook #'maf-history--note-minibuffer-exit)
     (advice-remove 'calc-record #'maf-history--stash-prefix)
     (maf-bindings--refresh)))
 
