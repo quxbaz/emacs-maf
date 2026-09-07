@@ -32,7 +32,7 @@
    - [-] *maf-formulas* add half-angle identities for sin/cos/tan
    - [-] *maf-formulas* add triple angle identities for sin/cos/tan
 ** maf-pretty
-   - [ ] pretty/ratex: is it possible to render:
+   - [-] pretty/ratex: is it possible to render:
      -1:2
      with the `-` outside the fraction instead of attached to the `1`?
      or is this a breaking change?
