@@ -25,8 +25,6 @@
 
      if we're using structural inspection to decide where to wrap, maybe we need
      a hybrid approach instead where do inspect by structure *and* string?
-   - [ ] why doesn't yanking this in work?
-     \dfrac{p-3}{4p} = \dfrac{2p+4}{3p} - \dfrac{1-p}{12p}
    - [ ] in mafedit, if the standing entry is something like:
      \dfrac{1}{y} = \dfrac{3 + y}{3y} + \dfrac{ 1 }{6y}
      then RET should convert is to (i think):
