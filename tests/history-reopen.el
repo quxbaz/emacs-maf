@@ -122,17 +122,25 @@
     (with-current-buffer maf-history--stack-buffer
       (cl-assert (looking-at "4:  a"))))
 
-  ;; Restore replaces the stack and is the end of a browse: the next
-  ;; one starts on the newest state, which shows what was restored.
-  (with-selected-window (get-buffer-window maf-history--log-buffer t)
-    (call-interactively 'maf-history-oldest)
-    (call-interactively 'maf-history-restore))
-  (maf-history--capture)
-  ;; The restore ran from the log, so the log is selected.
-  (cl-assert (eq (progn (maf-history) (window-buffer))
-                 (get-buffer maf-history--log-buffer)))
-  (cl-assert (= maf-history--index 0))
-  (cl-assert (= (calc-stack-size) 1))
+  ;; Restore replaces the stack and records a state of its own, and
+  ;; like an insert the view holds on the state it restored from: the
+  ;; next browse reopens on it, point on its row, not on the newest
+  ;; state.
+  (let ((state (car (last maf-history--states)))
+        (total (length maf-history--states)))
+    (with-selected-window (get-buffer-window maf-history--log-buffer t)
+      (call-interactively 'maf-history-oldest)
+      (call-interactively 'maf-history-restore))
+    (maf-history--capture)
+    (cl-assert (= (length maf-history--states) (1+ total)))
+    (cl-assert (null maf-history--hold))
+    ;; The restore ran from the log, so the log is selected.
+    (cl-assert (eq (progn (maf-history) (window-buffer))
+                   (get-buffer maf-history--log-buffer)))
+    (cl-assert (= maf-history--index total))
+    (cl-assert (eq (nth maf-history--index maf-history--states) state))
+    (cl-assert (eql (maf--history-reopen-log-index) total))
+    (cl-assert (= (maf--with-calc-buffer (calc-stack-size)) 1)))
 
   ;; Clean up: quit the browser, pop what the test pushed, restore the
   ;; log.

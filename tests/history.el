@@ -191,9 +191,11 @@
     (cl-assert (equal (buffer-substring-no-properties (point-min) (point-max))
                       "1:  6 x + 12\n")))
 
-  ;; r replaces the whole stack with the state shown, jumps the view to
-  ;; the newest state — which now shows the restored stack — and quits
-  ;; the browser; the excursion keeps the quit off the cockpit's window.
+  ;; r replaces the whole stack with the state shown, recorded as a
+  ;; step of its own, and quits the browser; the excursion keeps the
+  ;; quit off the cockpit's window. The view holds on the state it
+  ;; restored from — the oldest, the log growing under it — as after
+  ;; an insert, rather than jumping to the newest.
   (save-window-excursion
     (with-current-buffer (maf-history--buffer)
       (call-interactively 'maf-history-restore)))
@@ -201,7 +203,7 @@
   (cl-assert (= (calc-stack-size) 1))
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "6 x + 12"))
   (with-current-buffer (maf-history--buffer)
-    (cl-assert (equal header-line-format "maf-history  4/4")))
+    (cl-assert (equal header-line-format "maf-history  1/4")))
 
   ;; A single undo reverts the restore, and lands in the log as its own
   ;; step.
