@@ -226,6 +226,80 @@
   (cl-assert (null (mark t)))
   (calc-pop (calc-stack-size))
 
+  ;; --- A numeric prefix is a count of whole entries ---
+
+  ;; C-u 2 RET at home copies the top two as a block, order preserved:
+  ;; x y becomes x y x y. Real keys, since the prefix must survive RET's
+  ;; dispatcher; point homes as a single copy does.
+  (maf-push "x")
+  (maf-push "y")
+  (progn (goto-char (point-max)) (execute-kbd-macro (kbd "C-u 2 RET")) nil)
+  (cl-assert (= (calc-stack-size) 4))
+  (cl-assert (equal (mapcar (lambda (i) (math-format-value (calc-top i 'full)))
+                            '(4 3 2 1))
+                    '("x" "y" "x" "y")))
+  (cl-assert (maf--at-home-p))
+  (calc-pop (calc-stack-size))
+
+  ;; The count is contextual, as calc's context-sensitive enter is: from
+  ;; point's entry it copies that many entries starting there, so a
+  ;; sub-formula under point does not narrow it. Point on level 2 of
+  ;; a b c copies the block b a, and a mark is left at the origin.
+  (maf-push "a")
+  (maf-push "b + q")
+  (maf-push "c")
+  (progn (calc-cursor-stack-index 2) (search-forward "+") (backward-char 1)
+         (setq mark-ring nil) (set-mark nil)
+         (execute-kbd-macro (kbd "C-u 2 RET")) nil)
+  (cl-assert (equal (mapcar (lambda (i) (math-format-value (calc-top i 'full)))
+                            '(5 4 3 2 1))
+                    '("a" "b + q" "c" "a" "b + q")))
+  (cl-assert (maf--at-home-p))
+  (cl-assert (integerp (mark t)))
+  (calc-pop (calc-stack-size))
+
+  ;; Zero copies the whole stack; a negative count copies the single
+  ;; entry at that level.
+  (maf-push "a")
+  (maf-push "b")
+  (progn (goto-char (point-max)) (execute-kbd-macro (kbd "C-u 0 RET")) nil)
+  (cl-assert (equal (mapcar (lambda (i) (math-format-value (calc-top i 'full)))
+                            '(4 3 2 1))
+                    '("a" "b" "a" "b")))
+  (calc-pop (calc-stack-size))
+  (maf-push "a")
+  (maf-push "b")
+  (progn (goto-char (point-max)) (execute-kbd-macro (kbd "C-u - 2 RET")) nil)
+  (cl-assert (equal (mapcar (lambda (i) (math-format-value (calc-top i 'full)))
+                            '(3 2 1))
+                    '("a" "b" "a")))
+  (calc-pop (calc-stack-size))
+
+  ;; K 2 RET holds point for the block copy as K RET does for one:
+  ;; calc's fancy prefix reads the digit as a prefix argument. Point on
+  ;; level 2 of three, so the block b a fits the stack.
+  (maf-push "a")
+  (maf-push "b")
+  (maf-push "c")
+  (progn (calc-cursor-stack-index 2) (end-of-line)
+         (execute-kbd-macro (kbd "K 2 RET")) nil)
+  (cl-assert (= (calc-stack-size) 5))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "b"))
+  (cl-assert (not (maf--at-home-p)))
+  (cl-assert (not calc-keep-args-flag))
+  (calc-pop (calc-stack-size))
+
+  ;; A count deeper than the stack signals and copies nothing.
+  (maf-push "a")
+  (cl-assert (equal (condition-case e
+                        (progn (goto-char (point-max))
+                               (let ((current-prefix-arg 3))
+                                 (call-interactively 'maf-dup)))
+                      (error (cadr e)))
+                    "Too few elements on stack"))
+  (cl-assert (= (calc-stack-size) 1))
+  (calc-pop (calc-stack-size))
+
   ;; empty stack: signals a user-error and the stack stays empty.
   (cl-assert (equal (condition-case e
                         (progn (goto-char (point-max))

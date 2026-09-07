@@ -423,10 +423,12 @@
 ;; stays on the target instead of homing, so the next command still
 ;; resolves there. C-RET below is that same variant on a key, so the
 ;; prefix is the spelling for a terminal that cannot deliver the GUI
-;; event. Contextual dup has no numeric reading to conflict with; cf.
-;; `maf-swap-up', whose prefix likewise switches mode rather than
-;; counting. The prefix reaches the duplicate only: with a selection
-;; active the key clears, which has nothing for a prefix to vary.
+;; event. A numeric prefix is a count instead, read as calc's own
+;; context-sensitive `calc-enter' reads it: C-u 2 RET copies the two
+;; entries from point's level (the top two at home) as a block, 0 the
+;; whole stack, a negative N the entry at level -N. The prefix reaches
+;; the duplicate only: with a selection active the key clears, which
+;; has nothing for a prefix to vary.
 (maf-bindings-define '(calc ergo) "RET" #'maf-dup-or-clear-selections)
 ;; C-RET is the keep-point duplicate: RET's own push, with point staying
 ;; on what it copied instead of parking home, so the next command still

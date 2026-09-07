@@ -4203,7 +4203,7 @@ behaves as `calc-yank', RADIX prefix included."
                                 (maf--yank-strip-levels
                                  (current-kill 0 t)))))))
 
-(defun maf-dup (&optional keep-point)
+(defun maf-dup (&optional arg)
   "Duplicate the item at point, pushing a copy onto the stack.
 
   1:  a + b|   =>   2:  a + b
@@ -4228,15 +4228,29 @@ within it.
                         1:  x = y        (whole relation, from the margin)
 
 Point moves home to the copy, leaving a mark where it was so a single
-`pop-to-mark-command' returns there. With a prefix argument (KEEP-POINT
-non-nil) point stays put instead and no mark is left, so the next
-command still targets what point was on — C-u RET, or C-RET, which is
-that same prefix on a key of its own
+`pop-to-mark-command' returns there. With a plain prefix argument (ARG
+a raw C-u, or any non-numeric non-nil value) point stays put instead
+and no mark is left, so the next command still targets what point was
+on — C-u RET, or C-RET, which is that same prefix on a key of its own
 (`maf-dup-here-or-clear-selections'); `maf-dup-here' is the named entry
 point.
 
   1:  (a +| b) c   C-u RET  =>   2:  (a +| b) c
                                  1:  b            (point stays on b)
+
+A numeric prefix (ARG an integer: C-u 2 RET, M-2 RET) is a count, read
+the way calc's own `calc-enter' reads it with context-sensitive entry
+on: N copies the N entries starting at point's — at home, the top N —
+as a block, so their order is preserved; 0 copies the whole stack; a
+negative N copies just the entry at level -N. The count names whole
+entries, so a sub-formula, selection, or region under point does not
+narrow it. Point homes with a mark left as it does for a single copy;
+calc's keep-args flag (K 2 RET) holds it instead.
+
+  2:  x      C-u 2 RET  =>   4:  x
+  1:  y                      3:  y
+                             2:  x
+                             1:  y
 
 Calc's keep-args prefix asks for the same hold: K RET duplicates and
 keeps point, the modifier route to what C-u RET does. The flag reads as
@@ -4254,12 +4268,43 @@ their subject.
   (maf--with-calc-buffer
     (when (zerop (calc-stack-size))
       (user-error "Stack is empty"))
-    ;; The origin to mark before point homes, captured now, before
-    ;; resolve probes calc state and may move point; the buffer is
-    ;; unedited until the push, so the position stays valid. Unused when
-    ;; point turns out to be held (keep-args is only known after
-    ;; resolve), and nil when point is already home.
-    (let* ((origin (unless (maf--at-home-p) (point)))
+    (if (or (integerp arg) (eq arg '-))
+        (maf--dup-count (prefix-numeric-value arg))
+      (maf--dup-contextual arg))))
+
+(defun maf--dup-count (n)
+  "Copy N whole entries starting at point's level, as `maf-dup' reads a count.
+N positive copies the N entries from point's entry (the top N at home)
+as a block, 0 the whole stack, N negative the single entry at level -N.
+Point homes, leaving a mark at the origin, unless calc's keep-args flag
+holds it. Signals an error when the stack is too shallow."
+  (let* ((origin (unless (maf--at-home-p) (point)))
+         (snapshot (maf--point-snapshot))
+         ;; Point's own level; home gives 0, clamped to the top entry.
+         (at (max 1 (calc-locate-cursor-element (point))))
+         ;; Read before calc-wrapper's epilogue clears it.
+         (keep calc-keep-args-flag)
+         (push (lambda ()
+                 (calc-wrapper
+                  (calc-push-list
+                   (cond ((< n 0) (calc-top-list 1 (- n)))
+                         ((= n 0) (calc-top-list (calc-stack-size)))
+                         (t (calc-top-list n at))))))))
+    (if keep
+        (maf--preserve-point (funcall push))
+      (when origin (maf--mark-before-home origin))
+      (funcall push))
+    (maf--undo-record-cmd-point snapshot)))
+
+(defun maf--dup-contextual (keep-point)
+  "Push a copy of the item at point, as `maf-dup' does without a count.
+KEEP-POINT non-nil holds point instead of homing it."
+  ;; The origin to mark before point homes, captured now, before
+  ;; resolve probes calc state and may move point; the buffer is
+  ;; unedited until the push, so the position stays valid. Unused when
+  ;; point turns out to be held (keep-args is only known after
+  ;; resolve), and nil when point is already home.
+  (let* ((origin (unless (maf--at-home-p) (point)))
            ;; Unary resolution (no arg, so no below-top restriction) with
            ;; :map -1 so a relation stays whole in :expr rather than mapping
            ;; per side. We only read :expr and push it. The Hyperbolic
@@ -4286,7 +4331,7 @@ their subject.
           (calc-wrapper (calc-push expr))))
       ;; Record the resolve-time point so a single `maf-undo' reverts
       ;; point along with the pushed copy, back to where the command ran.
-      (maf--undo-record-cmd-point (alist-get :point context)))))
+      (maf--undo-record-cmd-point (alist-get :point context))))
 
 (defun maf-dup-here ()
   "Duplicate the item at point like `maf-dup', but keep point in place.
@@ -4404,7 +4449,7 @@ cursor for the next command. With nothing selected this does nothing."
     (maf--preserve-point
       (calc-clear-selections))))
 
-(defun maf-dup-or-clear-selections (&optional keep-point)
+(defun maf-dup-or-clear-selections (&optional arg)
   "Clear active selections, or duplicate the item at point.
 
 With any selection active the selections are cleared and the stack is
@@ -4412,10 +4457,11 @@ left alone (`maf-clear-selections'); the key that narrows down to a
 sub-formula is also the one that steps back out. With none active the
 item at point is duplicated onto the top of the stack (`maf-dup').
 
-A prefix argument (KEEP-POINT non-nil) passes through to the duplicate,
-which then keeps point instead of homing — RET's prefix must reach
-`maf-dup' through this dispatcher, since RET is bound here. The clear
-moves point nowhere to begin with, so the prefix does not vary it.
+The prefix argument ARG passes through to the duplicate — RET's prefix
+must reach `maf-dup' through this dispatcher, since RET is bound here.
+A plain C-u keeps point instead of homing; a numeric prefix is a count
+of whole entries to copy (C-u 2 RET copies two). The clear moves point
+nowhere and copies nothing to begin with, so the prefix does not vary it.
 Calc's keep-args flag (K RET) holds point the same way; `maf-dup' reads
 it, and `maf--fancy-prefix-keep' is what lets it survive the key. The
 Hyperbolic flag (H RET) reaches `maf-dup' the same way and widens the
@@ -4424,7 +4470,7 @@ still wins, flag or no flag."
   (interactive "P")
   (if (maf--sel-any-p)
       (maf-clear-selections)
-    (maf-dup keep-point)))
+    (maf-dup arg)))
 
 ;; RET is bound to a hand-written command rather than a `maf-defcmd' one,
 ;; so nothing stamps the property for it. It reads `calc-keep-args-flag'
