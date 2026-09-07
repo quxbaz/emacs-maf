@@ -1035,6 +1035,31 @@ singly elsewhere."
                            (- 1 (^ (calcFunc-tan (var x var-x)) 2))))
      :doc "The sum formula for tangent with both angles the same."
      :vars ((x . "any angle with tan(x)^2 not 1")))
+    (:name "sine-of-a-triple-angle"
+     :title "Sine of a triple angle"
+     :category "Trigonometry — Triple angle"
+     :expr (calcFunc-eq (calcFunc-sin (* 3 (var x var-x)))
+                        (- (* 3 (calcFunc-sin (var x var-x)))
+                           (* 4 (^ (calcFunc-sin (var x var-x)) 3))))
+     :doc "The sum formula on 2x + x, reduced to sines alone."
+     :vars ((x . "any angle")))
+    (:name "cosine-of-a-triple-angle"
+     :title "Cosine of a triple angle"
+     :category "Trigonometry — Triple angle"
+     :expr (calcFunc-eq (calcFunc-cos (* 3 (var x var-x)))
+                        (- (* 4 (^ (calcFunc-cos (var x var-x)) 3))
+                           (* 3 (calcFunc-cos (var x var-x)))))
+     :doc "The same on cosine, reduced to cosines alone."
+     :vars ((x . "any angle")))
+    (:name "tangent-of-a-triple-angle"
+     :title "Tangent of a triple angle"
+     :category "Trigonometry — Triple angle"
+     :expr (calcFunc-eq (calcFunc-tan (* 3 (var x var-x)))
+                        (/ (- (* 3 (calcFunc-tan (var x var-x)))
+                              (^ (calcFunc-tan (var x var-x)) 3))
+                           (- 1 (* 3 (^ (calcFunc-tan (var x var-x)) 2)))))
+     :doc "The sum formula for tangent on 2x + x, in the tangents alone."
+     :vars ((x . "any angle with 3 tan(x)^2 not 1")))
     (:name "sine-of-a-half-angle-squared"
      :title "Sine of a half angle, squared"
      :category "Trigonometry — Half angle"
@@ -1049,6 +1074,14 @@ singly elsewhere."
                         (/ (+ 1 (calcFunc-cos (var x var-x))) 2))
      :doc "Squared, so no sign to choose; the root takes the quadrant's sign."
      :vars ((x . "any angle")))
+    (:name "tangent-of-a-half-angle-squared"
+     :title "Tangent of a half angle, squared"
+     :category "Trigonometry — Half angle"
+     :expr (calcFunc-eq (^ (calcFunc-tan (/ (var x var-x) 2)) 2)
+                        (/ (- 1 (calcFunc-cos (var x var-x)))
+                           (+ 1 (calcFunc-cos (var x var-x)))))
+     :doc "The squared sine and cosine halves divided; no sign to choose."
+     :vars ((x . "any angle with cos(x) not -1")))
     (:name "tangent-of-a-half-angle"
      :title "Tangent of a half angle"
      :category "Trigonometry — Half angle"
@@ -1149,6 +1182,21 @@ singly elsewhere."
      :vars ((d . "distance") (x1 . "first point's x") (y1 . "first point's y")
             (x2 . "second point's x") (y2 . "second point's y"))
      :examples ("From (1, 2) to (4, 6) is 5."))
+    (:name "distance-formula-in-space"
+     :title "Distance formula in space"
+     :category "Geometry — 3D: Coordinate space"
+     :expr (calcFunc-eq (var d var-d)
+                        (calcFunc-sqrt
+                         (+ (+ (^ (- (var x2 var-x2) (var x1 var-x1)) 2)
+                               (^ (- (var y2 var-y2) (var y1 var-y1)) 2))
+                            (^ (- (var z2 var-z2) (var z1 var-z1)) 2))))
+     :doc "Distance between two points of space: the plane's formula with the z run under the same root."
+     :vars ((d . "distance")
+            (x1 . "first point's x") (y1 . "first point's y")
+            (z1 . "first point's z")
+            (x2 . "second point's x") (y2 . "second point's y")
+            (z2 . "second point's z"))
+     :examples ("From (1, 2, 3) to (4, 6, 15) is 13."))
     (:name "circumference-of-circle"
      :title "Circumference of circle"
      :category "Geometry — 2D: Circle"
@@ -1162,13 +1210,14 @@ school geometry measures a solid with, and the ones a rewrite is most
 often reaching for. They come in categories the menu sorts by name and
 narrows to one at a time: the properties of real numbers, absolute
 value, exponents, fractions, logarithms, quadratic equations and
-radicals, then the trig identities in six groups of their own, then the
-circle's circumference, the coordinate plane's distance formula, the
-rectangular solid and the cube — a group per figure, as a library of
-one's own names its geometry. The properties of real numbers calc applies in its
-own default simplifications, so those earn their place by being
-readable and by naming what a rewrite is doing rather than by teaching
-calc anything; the rest calc will not supply on its own.
+radicals, then the trig identities in seven groups of their own, then
+the circle's circumference, the distance formula in the coordinate
+plane and again in space, the rectangular solid and the cube — a group
+per figure, as a library of one's own names its geometry. The
+properties of real numbers calc applies in its own default
+simplifications, so those earn their place by being readable and by
+naming what a rewrite is doing rather than by teaching calc anything;
+the rest calc will not supply on its own.
 
 An equation cannot carry its own conditions — that x is positive, that
 a base is not 1, that a denominator is nonzero — so each is named in

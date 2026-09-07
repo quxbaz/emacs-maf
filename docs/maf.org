@@ -26,11 +26,11 @@
      if we're using structural inspection to decide where to wrap, maybe we need
      a hybrid approach instead where do inspect by structure *and* string?
 ** maf-formulas
-   - [-] *maf-formulas* add distance formula in 3 dimensions using x, y, z
-   - [-] *maf-formulas* add sum and difference formulas for sine
-   - [-] *maf-formulas* add sum and difference formulas for cosine
-   - [-] *maf-formulas* add half-angle identities for sin/cos/tan
-   - [-] *maf-formulas* add triple angle identities for sin/cos/tan
+   - [X] *maf-formulas* add distance formula in 3 dimensions using x, y, z
+   - [X] *maf-formulas* add sum and difference formulas for sine
+   - [X] *maf-formulas* add sum and difference formulas for cosine
+   - [X] *maf-formulas* add half-angle identities for sin/cos/tan
+   - [X] *maf-formulas* add triple angle identities for sin/cos/tan
 ** maf-pretty
    - [X] pretty/ratex: is it possible to render:
      -1:2

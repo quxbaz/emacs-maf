@@ -82,6 +82,10 @@
           ;; The 3-4-5 triangle laid on the plane.
           ("distance-formula"
            (d . "5") (x1 . "1") (y1 . "2") (x2 . "4") (y2 . "6"))
+          ;; The 3-4-12 box's diagonal again, this time as two points.
+          ("distance-formula-in-space"
+           (d . "13") (x1 . "1") (y1 . "2") (z1 . "3")
+           (x2 . "4") (y2 . "6") (z2 . "15"))
           ;; The circle of radius 3. The pi in its circumference is
           ;; substituted with the rest.
           ("circumference-of-circle" (C . "6 pi") (r . "3"))))

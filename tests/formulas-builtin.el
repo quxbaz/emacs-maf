@@ -54,6 +54,7 @@
                       "Algebra — Radicals"
                       "Geometry — 2D: Circle"
                       "Geometry — 2D: Coordinate plane"
+                      "Geometry — 3D: Coordinate space"
                       "Geometry — 3D: Cube"
                       "Geometry — 3D: Rectangular Solid"
                       "Trigonometry — Angle sum and difference"
@@ -61,7 +62,8 @@
                       "Trigonometry — Even and odd"
                       "Trigonometry — Half angle"
                       "Trigonometry — Pythagorean identities"
-                      "Trigonometry — Reciprocal and quotient")))
+                      "Trigonometry — Reciprocal and quotient"
+                      "Trigonometry — Triple angle")))
 
   ;; A formula each group promises is in it.
   (cl-assert (seq-every-p
@@ -75,9 +77,11 @@
                 "logarithm-of-a-product" "quadratic-formula-first-root"
                 "product-of-radicals" "sine-of-a-sum"
                 "sine-of-a-double-angle" "cosine-is-even"
-                "tangent-of-a-half-angle" "pythagorean-identity"
+                "tangent-of-a-half-angle" "sine-of-a-triple-angle"
+                "pythagorean-identity"
                 "cosecant-as-a-reciprocal" "volume-of-rectangular-solid"
-                "distance-formula" "circumference-of-circle")))
+                "distance-formula" "distance-formula-in-space"
+                "circumference-of-circle")))
 
   ;; `maf-formulas--all' is the shipped set and then the user's, so a
   ;; library of one's own extends the menu rather than replacing it.
