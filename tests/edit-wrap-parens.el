@@ -3,10 +3,11 @@
 ;; and pressing it again widens that pair one operator at a time instead
 ;; of nesting a new one. A step passes when it raises no error.
 ;;
-;; The contract: the scan crosses `*' but stops at anything looser, a
-;; function call or bracketed group is one unit, only a bare paren pair
-;; widens, the first press never changes what the entry means, and the
-;; scan never leaves the entry point started in.
+;; The contract: the first press's scan crosses `*' but stops at
+;; anything looser, widening takes one operand per press (so `*' stops
+;; it), a function call or bracketed group is one unit, only a bare
+;; paren pair widens, the first press never changes what the entry
+;; means, and the scan never leaves the entry point started in.
 
 (maf-step
   ;; The module owns the key, and it lives in maf-edit's own map — so
@@ -65,6 +66,45 @@
   (call-interactively 'maf-editplus-wrap-parens)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
                     "a^b*(c)"))
+  (call-interactively 'maf-edit-discard)
+
+  ;; Widening takes one operand per press, so the `*' the first press
+  ;; crosses is a boundary there like any other: the pair grows from
+  ;; the 4 to x - 4 to 2 * x - 4, one factor at a time, never jumping
+  ;; straight to x + (2 * x - 4).
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (execute-kbd-macro "x + 2 * x - 4") nil)
+  (call-interactively 'maf-editplus-wrap-parens)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "x + 2 * x - (4)"))
+  (call-interactively 'maf-editplus-wrap-parens)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "x + 2 * (x - 4)"))
+  (call-interactively 'maf-editplus-wrap-parens)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "x + (2 * x - 4)"))
+  (call-interactively 'maf-editplus-wrap-parens)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "(x + 2 * x - 4)"))
+  (call-interactively 'maf-edit-discard)
+
+  ;; The factor comes with its sign, as a term does.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (execute-kbd-macro "2*-3*(4)") nil)
+  (call-interactively 'maf-editplus-wrap-parens)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "2*(-3*4)"))
+  (call-interactively 'maf-edit-discard)
+
+  ;; The space of an implicit product is not a boundary widening
+  ;; stops at: calc reads a name, a space and a paren as a call — a b
+  ;; (c+d) is a*b(c+d) — so a pair opened there would change what the
+  ;; entry means, and the whole product is taken in instead.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (execute-kbd-macro "a b + (c)") nil)
+  (call-interactively 'maf-editplus-wrap-parens)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "(a b + c)"))
   (call-interactively 'maf-edit-discard)
 
   ;; An atom is never split. Point between two digits stands inside

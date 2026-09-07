@@ -16,7 +16,7 @@
 ** maf-editplus
    - [X] *maf-editplus*: convert "or" to or-representation and "and" to
      and-representation
-   - [-] (maf-editplus-wrap-parens)
+   - [X] (maf-editplus-wrap-parens)
      does not work properly here:
      x + 2 * x - (4)| => x + (2 * x - 4)
      i expect
