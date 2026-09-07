@@ -30,7 +30,7 @@
      2: x
      1: y
      but instead it ignores the prefix value and just duplicates once
-   - [ ] (mafcmd-poly-lcm) and (mafcmd-pgcd) should work on vectors. eg,
+   - [-] (mafcmd-poly-lcm) and (mafcmd-pgcd) should work on vectors. eg,
      [2 x^2, 2 x, x] =(lcm)> 2 x^2
 
 * IN-PROGRESS website
