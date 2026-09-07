@@ -57,6 +57,35 @@
 (defvar math-poly-mult-powers)
 (defvar math-poly-frac-powers)
 
+;;; Upstream fix: polynomial GCD of polynomials sharing no variable
+
+(declare-function math-poly-gcd-base "calc-poly")
+(declare-function calcFunc-pcont "calc-poly")
+(declare-function math-constp "calc-ext")
+
+(defun maf--poly-gcd-disjoint (orig u v)
+  "Around `math-poly-gcd': fix its answer for polynomials sharing no variable.
+Calc's fallback branch for that case — no common base to run the
+polynomial GCD over — computes gcd(pcont(U), pcont(U)), a typo for
+gcd(pcont(U), pcont(V)) that has been in calc-poly.el since the
+beginning (Emacs 30.1 still has it). The result is U's own numeric
+content: pgcd(7 y, 5 x) comes back 7, and the stack order picks
+which operand's content wins, since pgcd(5 x, 7 y) is 5. Anything
+built on `math-poly-gcd' inherits the error — `calcFunc-nrat' turns
+7 y / (5 x) into y / (5:7 x) after cancelling that phantom 7.
+
+This takes just that branch — both operands non-constant and
+`math-poly-gcd-base' finding no shared variable — and answers with
+the GCD of the two contents; every other case goes to ORIG untouched."
+  (if (and (not (math-constp u))
+           (not (math-constp v))
+           (not (Math-equal u v))
+           (null (math-poly-gcd-base u v)))
+      (calcFunc-gcd (calcFunc-pcont u) (calcFunc-pcont v))
+    (funcall orig u v)))
+
+(advice-add 'math-poly-gcd :around #'maf--poly-gcd-disjoint)
+
 (defun maf--sum-terms (expr)
   "Return a flat list of the additive terms in EXPR.
 Flattens +, -, and unary negation, negating terms under the latter two,
@@ -436,11 +465,13 @@ modulus, a declared-real variable's already its square."
 
 (defun maf--terms-gcd (terms)
   "Return the GCD of TERMS via `calcFunc-pgcd', iterated to a fixpoint.
-A single reduce can overshoot when both arguments carry variables the
-other lacks — calc's pgcd(10 x y, 15 x z) yields 10 x, not 5 x — but
-against the bare candidate it computes correctly (pgcd(10 x, 15 x z)
-is 5 x), so folding the candidate back in and re-reducing converges on
-the true common factor."
+A single reduce used to overshoot when both arguments carry variables
+the other lacks — calc's pgcd(10 x y, 15 x z) gave 10 x, not 5 x —
+the disjoint-variable typo `maf--poly-gcd-disjoint' now corrects
+(the coefficients 10 y and 15 z hit that branch). The fixpoint stays
+as a guard: against the bare candidate pgcd was always right
+(pgcd(10 x, 15 x z) is 5 x), so folding the candidate back in and
+re-reducing converges on the true common factor either way."
   (let ((f (cl-reduce #'calcFunc-pgcd terms)))
     (cl-loop repeat 8
              for g = (cl-reduce #'calcFunc-pgcd terms :initial-value f)
@@ -632,11 +663,12 @@ forever on some of the shapes involved, ((-6 x - 6) (4 x + 4)) over
 (defun maf--poly-lcm-by-gcd (a b)
   "Return A B / pgcd(A, B), expanded, or nil when calc cannot compute it.
 The textbook LCM, built from calc's own polynomial GCD. It is exact in
-its factors but expanded, and its content can overshoot where pgcd's
-does — calc's pgcd(10 x y, 15 x z) is 10 x, not 5 x — so
-`maf--poly-lcm' uses it as a yardstick for the merged LCM rather than
-as the answer. Nil when pgcd declines the operands (float
-coefficients: \"Coefficients must be rational\") or the GCD is zero."
+its factors but expanded, and its content could overshoot where
+pgcd's did — calc's pgcd(10 x y, 15 x z) was 10 x, not 5 x, before
+`maf--poly-gcd-disjoint' — so `maf--poly-lcm' uses it as a yardstick
+for the merged LCM rather than as the answer. Nil when pgcd declines
+the operands (float coefficients: \"Coefficients must be rational\")
+or the GCD is zero."
   (ignore-errors
     (let ((g (let ((calc-simplify-mode nil) (calc-prefer-frac t))
                (calcFunc-pgcd a b))))

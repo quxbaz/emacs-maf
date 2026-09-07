@@ -33,8 +33,9 @@
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "6 x"))
   (calc-pop (calc-stack-size))
 
-  ;; Multivariate: calc's pgcd overshoots pairwise (pgcd(10xy, 15xz)
-  ;; gives 10x); the fixpoint reduce must converge on 5x.
+  ;; Multivariate: calc's pgcd used to overshoot pairwise (pgcd(10xy,
+  ;; 15xz) gave 10x, the disjoint-variable typo `maf--poly-gcd-disjoint'
+  ;; fixes); with or without that the fixpoint reduce lands on 5x.
   (maf-push "10 x y + 15 x z")
   (call-interactively 'mafcmd-factor-gcd)
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "(5 x)*(3 z + 2 y)"))
