@@ -179,7 +179,9 @@ widening never crosses.
 
 `*' is deliberately absent: a product is the innermost term worth
 wrapping, so a+b*c wraps b*c and not c alone. `/' is present because
-a denominator is a unit of its own — 27/sqrt(3) wraps the root.")
+a denominator is a unit of its own — 27/sqrt(3) wraps the root.
+Widening is the exception: it takes one factor per press, and treats
+`*' as a stop (`maf-editplus--term-start' with FACTOR).")
 
 (defconst maf-editplus--wrap-tight '(?/ ?^ ?%)
   "Stops that bind at least as tightly as the `*' the scan crosses.
@@ -327,7 +329,7 @@ what the wrap is about."
              (maf-editplus--group-end (1+ pos) bound))
         pos)))
 
-(defun maf-editplus--term-start (from limit)
+(defun maf-editplus--term-start (from limit &optional factor)
   "Start of the term ending at FROM, scanning back no further than LIMIT.
 Ordinary characters are crossed one at a time, a balanced group (with
 its function name) is crossed as a single unit, and the scan stops
@@ -340,11 +342,19 @@ so the scan crosses it and stops there, nothing further left being
 able to join that term.
 
 Crossing a `*' is taken back when the scan then stops at a tighter
-operator — see `maf-editplus--wrap-tight'."
+operator — see `maf-editplus--wrap-tight'.
+
+With FACTOR non-nil the scan finds a single factor instead: a `*'
+stops it like any other operator. Widening uses this, so that each
+press takes in one operand and no more. The space of an implicit
+product (2 x) is still crossed: calc reads a name followed by a space
+and a paren as a call — a b (c+d) is a*b(c+d) — so a pair opened
+there would change the entry's meaning, not just its grouping."
   (let ((pos from) (star nil) (stop nil))
     (while (and (not stop) (> pos limit))
       (let ((c (char-before pos)))
         (cond
+         ((and factor (eq c ?*)) (setq stop c))
          ((get-text-property (1- pos) 'maf-edit-prefix) (setq pos (1- pos)))
          ;; A number's exponent sign is not the operator it looks like:
          ;; 1e-3 is one atom, and stopping at the sign would wrap the
@@ -435,9 +445,12 @@ digits, not between them.
 From there the same key widens the pair it just placed, one operator
 at a time, rather than nesting a second pair inside it: pi+(2) becomes
 \(pi+2), and widening is where a regrouping can happen — deliberately,
-one press at a time. Only a bare pair widens; an argument list and a
-vector are structure, and a press beside one wraps it instead. When
-there is nothing left to take in, the pair stays as it is.
+one press at a time. One operator means one operand: here a `*' is a
+boundary like any other, so x + 2 * x - (4) widens to x + 2 * (x - 4)
+and only the press after that to x + (2 * x - 4). Only a bare pair
+widens; an argument list and a vector are structure, and a press
+beside one wraps it instead. When there is nothing left to take in,
+the pair stays as it is.
 
 With an active region the region is wrapped exactly as marked, and
 point again ends after the closer, so widening can carry on from
@@ -475,10 +488,15 @@ home line and a blank pending line have no term to wrap."
               ;; closer, is left where it stands by the two edits.
               (let* ((outer (maf-editplus--skip-fill-back open limit))
                      ;; Cross the operator that stopped the previous
-                     ;; scan, then scan on from there. Anything else in
-                     ;; front of the pair — a closer, a name — the scan
-                     ;; takes as the unit it is, and an opener is a wall
-                     ;; it stops at, leaving the pair where it is.
+                     ;; scan, then take the one factor in front of it:
+                     ;; one operator at a time means one operand at a
+                     ;; time, so the `*' the first press crosses is a
+                     ;; boundary here — x + 2 * x - (4) widens to
+                     ;; x + 2 * (x - 4), not x + (2 * x - 4). Anything
+                     ;; else in front of the pair — a closer, a name —
+                     ;; the scan takes as the unit it is, and an opener
+                     ;; is a wall it stops at, leaving the pair where it
+                     ;; is.
                      (from (let ((p outer))
                              (while (and (> p limit)
                                          (memq (char-before p)
@@ -486,7 +504,7 @@ home line and a blank pending line have no term to wrap."
                                (setq p (1- p)))
                              p))
                      (start (maf-editplus--skip-fill-forward
-                             (maf-editplus--term-start from limit) open)))
+                             (maf-editplus--term-start from limit t) open)))
                 (when (>= start outer)
                   (user-error "Nothing left to wrap"))
                 (save-excursion
