@@ -13,21 +13,10 @@
    - [ ] website: mvp; animated examples, additions, most important bindings
      (module bindings, editing)
 ** maf-history
-   - [-] *maf-history*
-     bug: point is not retained after restoring stack
-     - we specified in an earlier commit that point should restore when an
-       stack item or history entry is inserted/restored (RET). however this
-       does not work when a history entry is restored. it works when a stack
-       item is restored.
-   - [-] *maf-history* given a history entry like:
-     - del (maf-del)
-       - [ ] these entries should be labeld as "reset"
-       - [ ] they should also be given a special background color (a `reset`
-         action often denotes the beginning of a new session)also
 ** maf-editplus
    - [X] *maf-editplus*: convert "or" to or-representation and "and" to
      and-representation
-   - [ ] (maf-editplus-wrap-parens)
+   - [-] (maf-editplus-wrap-parens)
      does not work properly here:
      x + 2 * x - (4)| => x + (2 * x - 4)
      i expect
