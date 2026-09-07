@@ -25,10 +25,6 @@
 
      if we're using structural inspection to decide where to wrap, maybe we need
      a hybrid approach instead where do inspect by structure *and* string?
-   - [ ] in mafedit, if the standing entry is something like:
-     \dfrac{1}{y} = \dfrac{3 + y}{3y} + \dfrac{ 1 }{6y}
-     then RET should convert is to (i think):
-     => 1 / y = (3 + y) / (3 y) + 1 / (6 y)
 ** maf-formulas
    - [ ] *maf-formulas* add distance formula in 3 dimensions using x, y, z
    - [ ] *maf-formulas* add sum and difference formulas for sine
