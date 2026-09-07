@@ -63,6 +63,8 @@ COPY files/container-init.el /etc/maf/container-init.el
 # Agent config, pre-seeded so `claude` starts straight into a session:
 # no onboarding, no trust prompt, no per-tool permission prompts (the
 # container is the sandbox). Edit files/settings.json to tighten that.
+# No model here: the entrypoint seeds it from the host's settings at
+# every start, so a box follows the host rather than a baked-in id.
 COPY --chown=dev:dev files/claude.json /home/dev/.claude.json
 COPY --chown=dev:dev files/settings.json /home/dev/.claude/settings.json
 
@@ -97,8 +99,8 @@ ENV MAF_CONTAINER=1
 # what its script expects: an image built before a feature that box now
 # relies on would otherwise start boxes that quietly lack it. Bump it when
 # the entrypoint gains something box depends on. 1: seeds Claude's model
-# caches from /seed/claude.json.
-LABEL maf.entrypoint=1
+# caches from /seed/claude.json. 2: seeds the model from /seed/settings.json.
+LABEL maf.entrypoint=2
 
 # The entrypoint installs credentials and starts Emacs, then runs CMD.
 ENTRYPOINT ["/usr/local/bin/entrypoint"]

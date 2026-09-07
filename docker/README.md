@@ -36,8 +36,9 @@ Spelled `docker/box` until `dev.sh` is sourced.
 
    The agents are installed into the image, so every box runs the
    versions of the day it was built. `docker/box --rebuild` refreshes
-   them, keeping the old image as `maf-old`; `box` says so itself once
-   the image is a month old. Boxes already made keep the image they
+   them, keeping the old image as `maf-old`; `box` says so itself when
+   the host's Claude is newer than the image's (a newer model can be
+   refused by an older agent). Boxes already made keep the image they
    were made from; to move one over, replace its container alone —
    `docker rm maf-<feature> && box <feature>` — the worktree and branch
    stay, and the same name makes a fresh box on them.
@@ -125,6 +126,7 @@ sudo docker run -it --name maf-my-feature \
   -v "$HOME/lab/emacs-maf/.git:$HOME/lab/emacs-maf/.git" \
   -e CLAUDE_CODE_OAUTH_TOKEN="$(< ~/.claude/box-token)" \
   -v ~/.claude.json:/seed/claude.json:ro \
+  -v ~/conf/claude/settings.json:/seed/settings.json:ro \
   -v ~/.codex/auth.json:/seed/codex-auth.json:ro \
   -v ~/.gitconfig:/home/dev/.gitconfig:ro \
   -v ~/conf/claude/CLAUDE.md:/home/dev/.claude/CLAUDE.md:ro \
@@ -145,6 +147,7 @@ sudo docker run -it --name maf-my-feature \
 | `-v ...emacs-maf/.git:<same path>` | the main `.git`, at its *host path*: a worktree's `.git` file names that path absolutely, so git inside only resolves if the path matches exactly |
 | `-e CLAUDE_CODE_OAUTH_TOKEN=...` | Claude auth: the long-lived token from `~/.claude/box-token` (minted by `claude setup-token`, per machine — see `conf/install/setup.org`). It never rotates, so boxes cannot log each other — or the host — out. Without the file, `box` falls back to `-v ~/.claude/.credentials.json:/seed/credentials.json:ro`, a copy of the live session; copies rotate independently and fight, so expect login prompts |
 | `-v ~/.claude.json:/seed/claude.json:ro` | which models Claude offers: its `/model` menu is built from entitlement caches in this file that only a login fills in, and a token is not a login — without this a box's menu is the built-in list, no Fable (though `--model fable` still works). The entrypoint copies those cache keys, and only those, into the box's own `.claude.json` on every start; nothing else in the host file is taken |
+| `-v ~/conf/claude/settings.json:/seed/settings.json:ro` | which model Claude starts on: the host's. The entrypoint copies the `model` key, and only that, into the box's own `settings.json` on every start, so a box defaults to what the host does today rather than to an id baked into the image. The host's permission rules and hooks stay out |
 | `-v ~/.codex/auth.json:/seed/...:ro` | codex auth, seeded as a copy. Optional: without it a box still starts and codex asks you to sign in there |
 | `-v ~/.gitconfig:...:ro` | your name/email, so commits from inside are attributed |
 | `-v ~/conf/claude/...:ro` (×6) | your agent config, each file where its agent reads it — on the host these paths are symlinks into `~/conf`, a box takes the real files. `AGENTS.md` appears twice: for codex, and at the path `CLAUDE.md` imports. Any that is missing is skipped; `$MAF_CONF` names another `conf` |
@@ -176,16 +179,22 @@ the repo's `CLAUDE.md` keys off.
   `box my-feature`. Completion alone lives in `docker/completions/`
   (bash, zsh, fish) — each shim asks `box --names` for the candidates
   rather than parsing the listing, and says how to load it.
-- The agent's defaults are `docker/files/settings.json`: Fable as the
-  model (`claude-fable-5[1m]`, the host's own default — an explicit
-  model id, which the agent honors whether or not the model-menu seed
-  below reached the box), and permission prompts off (`defaultMode:
-  bypassPermissions`) — the container is the sandbox. Change that file
-  and rebuild to alter either.
+- The agent's defaults are `docker/files/settings.json`: permission
+  prompts off (`defaultMode: bypassPermissions`) — the container is the
+  sandbox. Change that file and rebuild to alter it. The model is not
+  in there: the entrypoint seeds it from the host's `settings.json`
+  (mounted at `/seed`) on every start, so a box starts on the model the
+  host is set to — an explicit id, honored whether or not the model-menu
+  seed below reached the box. A host with no model set leaves the box
+  on the agent's own default.
 - The agents themselves are as old as the image: npm-installed at build,
   root-owned, so they cannot update themselves in a box. `box --rebuild`
   refreshes them (the previous image stays as `maf-old`), and `box`
-  points that out on its own once the image is past a month. Nothing
+  points that out on its own when it makes a box from an image whose
+  Claude is older than the host's — the case that bites, since a model
+  the host offers can be one the box's agent refuses until updated.
+  Without a `claude` on the host to compare against, it falls back to
+  saying so once the image is past a month. Nothing
   else in the image goes stale the same way — the code is mounted, and
   your config is mounted or seeded — so a rebuild is only ever about the
   agents. Existing boxes keep their image; `docker rm maf-<feature> &&
@@ -221,8 +230,9 @@ the repo's `CLAUDE.md` keys off.
   the box bakes its own `claude.json` and `settings.json` (onboarding
   done, `/work` trusted, permissions bypassed) and mounts only
   `CLAUDE.md` and `keybindings.json` from `~/conf` — your host
-  `settings.json` is deliberately *not* mounted, so a box does not
-  inherit its permission rules or hooks. Codex has no baked box config
+  `settings.json` is deliberately *not* mounted in place, so a box does
+  not inherit its permission rules or hooks; it is mounted at `/seed`
+  for the one key the entrypoint takes from it, the model. Codex has no baked box config
   at all: `config.toml` is mounted from `~/conf` verbatim, so a box gets
   your host settings whole. That file needs a `[projects."/work"]`
   trust entry, since none of its host paths exist in a container.

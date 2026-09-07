@@ -96,12 +96,21 @@ build="docker build --build-arg UID=\$(id -u) --build-arg GID=\$(id -g) -t maf d
 # The entrypoint feature level this script counts on — LABEL
 # maf.entrypoint in the Dockerfile, bumped there whenever the entrypoint
 # gains something box relies on. 1: seeds Claude's model caches from
-# /seed/claude.json.
-entrypoint_level=1
+# /seed/claude.json. 2: seeds the model itself from /seed/settings.json.
+entrypoint_level=2
 image_age_days() {
     local created
     created=$($sudo docker image inspect -f '{{.Created}}' maf 2>/dev/null) || return 1
     echo $(( ($(date +%s) - $(date -d "$created" +%s)) / 86400 ))
+}
+# The Claude in the image, asked directly: the label route would need
+# the version known at build time, and this runs only when a box is
+# being made, so a second's docker run is nothing.
+image_claude_version() {
+    $sudo docker run --rm --entrypoint claude maf --version 2>/dev/null | awk '{print $1}'
+}
+host_claude_version() {
+    command -v claude >/dev/null 2>&1 && claude --version 2>/dev/null | awk '{print $1}'
 }
 build_image() {
     $sudo docker build --build-arg UID="$(id -u)" --build-arg GID="$(id -g)" \
@@ -140,6 +149,22 @@ check_image() {
         echo "box: the maf image predates this box script (entrypoint level ${level:-none}, wants $entrypoint_level)" >&2
         echo "     boxes made from it start, but skip what the newer entrypoint does —" >&2
         echo "     box --rebuild to catch it up (this box keeps the old image)" >&2
+        return
+    fi
+    # Stale agents. Age is only a proxy; what actually bites is the
+    # host's Claude having moved past the image's — a model the host
+    # offers can be one the box's older agent refuses ("update Claude").
+    # So compare versions when the host has a claude to ask, and fall
+    # back to age when it does not.
+    local host image
+    host=$(host_claude_version)
+    if [ -n "$host" ] && image=$(image_claude_version) && [ -n "$image" ]; then
+        if [ "$image" != "$host" ] \
+           && [ "$(printf '%s\n' "$image" "$host" | sort -V | head -1)" = "$image" ]; then
+            echo "box: the maf image's claude is $image, the host's is $host —" >&2
+            echo "     a model the host has may be refused in a box until it catches up" >&2
+            echo "     box --rebuild to refresh the agents (this box keeps the old image)" >&2
+        fi
         return
     fi
     age=$(image_age_days) || return 0
@@ -389,6 +414,14 @@ fi
 # per-project state, history) is taken. Optional, like the rest of /seed.
 mount_ro "$HOME/.claude.json" /seed/claude.json
 
+# Which model Claude starts on: the host's, read from its settings by
+# the entrypoint on every start and written into the box's own
+# settings.json — the model key alone, so the host's permission rules
+# and hooks stay out (the box's settings are baked with permissions
+# off; see files/settings.json). A box thus defaults to what the host
+# does today, not to an id fixed when the image was built.
+mount_ro "$conf/claude/settings.json" /seed/settings.json
+
 # My whole Emacs config, seeded rather than mounted, since Emacs writes
 # into it — the entrypoint copies it in. Left out under --bare, which
 # also costs the port skill its source: the legacy my/calc config
@@ -451,12 +484,18 @@ case $state in
         # container alone: the worktree and branch stay, and naming the
         # feature again makes a fresh box on them. Not --close, which is
         # for a feature that has landed and takes all three away.
-        if [ -e "$HOME/.claude.json" ] \
-           && ! $sudo docker inspect -f '{{range .Mounts}}{{.Destination}}{{"\n"}}{{end}}' "maf-$box" \
-                | grep -qx /seed/claude.json; then
-            echo "box: maf-$box was made before Claude's model menu was seeded into boxes;" >&2
-            echo "     its /model lacks what the host's has (--model fable still works)." >&2
-            echo "     To get it, replace the container alone — the worktree stays:" >&2
+        have=$($sudo docker inspect -f '{{range .Mounts}}{{.Destination}}{{"\n"}}{{end}}' "maf-$box")
+        missing=()
+        if [ -e "$HOME/.claude.json" ] && ! grep -qx /seed/claude.json <<<"$have"; then
+            missing+=("Claude's model menu (/model lacks what the host's has; --model <name> still works)")
+        fi
+        if [ -e "$conf/claude/settings.json" ] && ! grep -qx /seed/settings.json <<<"$have"; then
+            missing+=("the host's default model (the box starts on its baked one)")
+        fi
+        if [ ${#missing[@]} -gt 0 ]; then
+            echo "box: maf-$box was made before these were seeded into boxes:" >&2
+            for m in "${missing[@]}"; do echo "     - $m" >&2; done
+            echo "     To get them, replace the container alone — the worktree stays:" >&2
             echo "     ${sudo:+$sudo }docker rm maf-$box && box $feature" >&2
         fi
         exec $sudo docker start -ai "${detach[@]}" "maf-$box"

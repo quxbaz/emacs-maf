@@ -44,6 +44,29 @@ if [ -f /seed/claude.json ]; then
     '
 fi
 
+# Which model Claude starts on. The box's settings.json is baked with
+# permissions alone; the model is the host's, taken from its settings
+# mounted at /seed on every start, so a box defaults to whatever the
+# host does today rather than to an id fixed at image build — one that
+# goes stale the moment a newer model ships. Only the model key moves:
+# the host's permission rules and hooks are its own business. Absent
+# on the host, or no seed at all, and the agent's own default stands.
+if [ -f /seed/settings.json ]; then
+    node -e '
+        const fs = require("fs");
+        const own = process.env.HOME + "/.claude/settings.json";
+        let seed, box;
+        try { seed = JSON.parse(fs.readFileSync("/seed/settings.json", "utf8")); }
+        catch { process.exit(0); }
+        try { box = JSON.parse(fs.readFileSync(own, "utf8")); }
+        catch { box = {}; }
+        if (seed.model != null && seed.model !== box.model) {
+            box.model = seed.model;
+            fs.writeFileSync(own, JSON.stringify(box, null, 2) + "\n");
+        }
+    '
+fi
+
 # Codex keeps its own auth in a separate file, seeded the same way and
 # for the same reason. Absent when the host has never signed in to
 # codex; the box still runs, and codex asks you to sign in there.
