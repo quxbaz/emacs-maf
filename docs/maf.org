@@ -18,18 +18,6 @@
 ** maf-pretty
 ** commands
    - [-] `M $` should allow multiple vars
-   - [-] (mafcmd-factor-gcd) command should message in minibuffer if no gcd can
-     be found
-   - [-] stack: C-u prefix RET doesn't work. eg,
-     2: x
-     1: y
-     |.
-     `C-u 2 RET` should result in:
-     4: x
-     3: y
-     2: x
-     1: y
-     but instead it ignores the prefix value and just duplicates once
 
 * IN-PROGRESS website
   - [ ] generate readme
