@@ -27,7 +27,7 @@
 ** maf-editplus
    - [ ] *maf-editplus*: convert "or" to or-representation and "and" to
      and-representation
-   - [ ] (maf-editplus-wrap-parens)
+   - [X] (maf-editplus-wrap-parens)
      does not work proprely here:
      x+2 * x-(4)|
    - [ ] why doesn't yanking this in work?
