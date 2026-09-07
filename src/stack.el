@@ -145,10 +145,11 @@ home; the top entry is always the argument, popped on commit.
 
 The GCD is pulled across all terms with the product left
 undistributed; a negative leading term pulls out the negated GCD.
-With nothing to pull out the expression commits unchanged, so
-equation sides that don't factor pass through quietly. Point picks
-the target as usual: a sub-formula at point, each side of an
-equation, the top entry at home.
+With nothing to pull out the expression commits unchanged and the
+echo area says so — naming the side on an equation, since the other
+side may well have factored. Point picks the target as usual: a
+sub-formula at point, each side of an equation, the top entry at
+home.
 
   -3 x + 3         =>  -3 (x - 1)
   10 x y + 15 x z  =>  (5 x)*(3 z + 2 y)
@@ -178,7 +179,15 @@ equation, the top entry at home.
       (when (math-looks-negp factor) (setq factor (math-neg factor)))
       (when (math-looks-negp (car terms)) (setq factor (math-neg factor))))
     (if (or (null factor) (null (cdr terms)) (equal factor 1))
-        (commit expr)
+        (progn
+          ;; Say why nothing changed: a silent unchanged commit reads
+          ;; as a no-op bug. On an equation the body runs once per
+          ;; side, so name the side this message is about.
+          (if (eq maf-target 'equation)
+              (message "No common factor to pull out of %s"
+                       (math-format-value expr))
+            (message "No common factor to pull out"))
+          (commit expr))
       (let ((quotient (let ((calc-prefer-frac t))
                         (math-simplify
                          (calcFunc-expand
