@@ -3603,10 +3603,13 @@ exponent one expression in flat notation ride along into the
 superscript, where the raised position already groups it — nobody
 writes the parens by hand. Dropped from a super- or subscript only
 when the pair spans the whole braced group, so a script holding a
-product of groups keeps its inner pairs."
+product of groups keeps its inner pairs. A pair calc grew to \\left(
+and \\right) — around an exponent it does not consider flat, a
+negated fraction — goes the same way, the growth with it."
   (let ((i 0))
-    (while (setq i (string-match "[_^]{(" latex i))
-      (let* ((open (+ i 2))
+    (while (setq i (string-match "[_^]{\\(\\\\left\\)?(" latex i))
+      (let* ((start (+ i 2))
+             (open (1- (match-end 0)))
              (depth 1)
              (j (1+ open)))
         (while (and (> depth 0) (< j (length latex)))
@@ -3616,15 +3619,30 @@ product of groups keeps its inner pairs."
           (setq j (1+ j)))
         ;; J is one past the matching close paren. A } right there
         ;; means the pair spans the script — nothing stands between it
-        ;; and either brace — and the parens go.
+        ;; and either brace — and the parens go, along with the \right
+        ;; a grown close paren wears.
         (if (and (zerop depth)
                  (< j (length latex))
                  (eq (aref latex j) ?\}))
-            (setq latex (concat (substring latex 0 open)
-                                (substring latex (1+ open) (1- j))
-                                (substring latex j)))
+            (let ((close (1- j)))
+              (when (and (> open start)
+                         (string-suffix-p "\\right" (substring latex 0 close)))
+                (setq close (- close 6)))
+              (setq latex (concat (substring latex 0 start)
+                                  (string-trim (substring latex (1+ open) close))
+                                  (substring latex j))))
           (setq i (+ i 2)))))
     latex))
+
+(defun maf--latex-negative-term-p (x)
+  "Whether X is a term whose sign `maf--latex-string' can hoist.
+A negative number, a fraction with a negative numerator, a negation,
+or a product led by one of those: `math-looks-negp' outside a sum. A
+sum that opens on a negative term looks negative to calc too, but
+negating it to move the sign out reorders it — -x - 1 comes back as
+1 + x — so it keeps its sign where it is."
+  (and (math-looks-negp x)
+       (not (memq (car-safe x) '(+ -)))))
 
 (defun maf--latex-string (expr)
   "Format EXPR as a single line of LaTeX.
@@ -3638,6 +3656,10 @@ parens flat notation needed around it: x^{-n}, not x^{(-n)} — see
 `maf--latex-strip-script-parens'; and a juxtaposed factor opening on
 a digit gets its sign written out — 4 \\cdot 2^x, where TeX would
 have run the 4 and 2 together (`maf--latex-separate-digit-product');
+a fraction carries its sign in front of the bar — -\\frac{1}{2} for
+-1:2 and -\\frac{x}{2} for x / -2, where calc's own composition
+leaves the minus in whichever part it was stored in, and \\frac{x}{-2}
+is a shape nobody writes;
 a quantity's units are set upright with a thin space before them
 while `maf--latex-typeset-quantities' is on — 3\\,\\mathrm{cm}, and
 not a variable's c (`maf--latex-space-unit-product'); the degree unit
@@ -3698,6 +3720,33 @@ is reclassed \\mathrel to match."
                        ;; separated.
                        (cond
                         ((equal a '(var deg var-deg)) "{}^{\\circ}")
+                        ;; A negative fraction's sign goes in front of
+                        ;; the bar: calc typesets -1:2 through -1 / 2,
+                        ;; which puts the minus in the numerator, and
+                        ;; x / -2 with it in the denominator. Both read
+                        ;; as the negation of the positive fraction,
+                        ;; which is where calc itself puts the sign
+                        ;; when the denominator is a negated symbol.
+                        ;; A division carrying its sign in the
+                        ;; numerator — -1 / x, -3:2 / y — the same. A
+                        ;; sum is left alone: (-x - 1) / y hoists only
+                        ;; by negating the sum, which reorders it.
+                        ((and (eq (car-safe a) 'frac)
+                              (math-negp (nth 1 a)))
+                         (math-compose-expr (list 'neg (math-neg a))
+                                            prec div))
+                        ((and (eq (car-safe a) '/)
+                              (maf--latex-negative-term-p (nth 1 a)))
+                         (math-compose-expr
+                          (list 'neg (list '/ (math-neg (nth 1 a))
+                                           (nth 2 a)))
+                          prec div))
+                        ((and (eq (car-safe a) '/)
+                              (maf--latex-negative-term-p (nth 2 a)))
+                         (math-compose-expr
+                          (list 'neg (list '/ (nth 1 a)
+                                           (math-neg (nth 2 a))))
+                          prec div))
                         ;; A unit inside a quantity is set upright,
                         ;; the way units are written, and a variable
                         ;; is not.

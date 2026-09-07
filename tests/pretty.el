@@ -136,6 +136,44 @@
                     "-b \\leq x \\land x \\leq b"))
   (cl-assert (equal (maf--latex-string (math-read-expr "3 cm")) "3 cm"))
 
+  ;; A fraction's sign goes in front of the bar. Calc composes -1:2
+  ;; through -1 / 2, the minus in the numerator, and stores -x/2 as
+  ;; x / -2, the minus in the denominator; both typeset as the negated
+  ;; positive fraction, the shape written by hand. As a power's base the
+  ;; negation earns parens, where the numerator's minus had left the
+  ;; bare bar under the exponent; as an exponent it sheds the \left(
+  ;; calc grows around it. A sum keeps its sign in place: negating
+  ;; -x - 1 reorders it. `maf--latex-string' does it, so Desmos and the
+  ;; LaTeX yank see the same shape, and the yank reads it back.
+  (cl-assert (equal (maf--latex-string (math-read-expr "-1:2"))
+                    "-\\frac{1}{2}"))
+  (cl-assert (equal (maf--latex-string (math-read-expr "-x/2"))
+                    "-\\frac{x}{2}"))
+  (cl-assert (equal (maf--latex-string (math-read-expr "-x/(2 y)"))
+                    "-\\frac{x}{2 y}"))
+  (cl-assert (equal (maf--latex-string (math-read-expr "1/(-x)"))
+                    "-\\frac{1}{x}"))
+  (cl-assert (equal (maf--latex-string (math-read-expr "-sqrt(3)/2"))
+                    "-\\frac{\\sqrt{3}}{2}"))
+  (cl-assert (equal (maf--latex-string (math-read-expr "(x+1)/-2"))
+                    "-\\frac{x + 1}{2}"))
+  (cl-assert (equal (maf--latex-string (math-read-expr "[-1:2, x/-2]"))
+                    "\\left[ -\\frac{1}{2}, -\\frac{x}{2} \\right]"))
+  (cl-assert (equal (maf--latex-string (math-read-expr "(-1:2)^x"))
+                    "\\left( -\\frac{1}{2} \\right)^x"))
+  (cl-assert (equal (maf--latex-string (math-read-expr "x^(-1:2)"))
+                    "x^{-\\frac{1}{2}}"))
+  (cl-assert (equal (maf--latex-string (math-read-expr "2^(x/-2)"))
+                    "2^{-\\frac{x}{2}}"))
+  (cl-assert (equal (maf--latex-string (math-read-expr "x^(-n)")) "x^{-n}"))
+  (cl-assert (equal (maf--latex-string (math-read-expr "(-x-1)/y"))
+                    "\\frac{-x - 1}{y}"))
+  (cl-assert (equal (maf--latex-string (math-read-expr "1/(-x+1)"))
+                    "\\frac{1}{-x + 1}"))
+  (cl-assert (equal (maf-latex-to-calc "-\\frac{x}{2}") "-(x / 2)"))
+  (cl-assert (equal (math-simplify (math-read-expr (maf-latex-to-calc "-\\frac{x}{2}")))
+                    (math-read-expr "x/-2")))
+
   ;; Restore the shared dev session and remove the preview window/buffer.
   (progn
     (when-let ((win (get-buffer-window maf-pretty--buffer)))
