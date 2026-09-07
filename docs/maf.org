@@ -30,7 +30,7 @@
      this is likely because the filter command takes input from minibuffer,
      causing it to be mislabeled
 ** maf-editplus
-   - [ ] *maf-editplus*: convert "or" to or-representation and "and" to
+   - [X] *maf-editplus*: convert "or" to or-representation and "and" to
      and-representation
    - [ ] (maf-editplus-wrap-parens)
      does not work proprely here:
