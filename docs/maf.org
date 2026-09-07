@@ -12,12 +12,11 @@
    - [ ] website: less stuff, less content, concentrate, focus
    - [ ] website: mvp; animated examples, additions, most important bindings
      (module bindings, editing)
+** commands
 ** maf-history
 ** maf-editplus
 ** maf-formulas
 ** maf-pretty
-** commands
-   - [-] `M $` should allow multiple vars
 
 * IN-PROGRESS website
   - [ ] generate readme
