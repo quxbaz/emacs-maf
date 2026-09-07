@@ -14,7 +14,12 @@
      (module bindings, editing)
 ** other
 *** maf-history
-    - [ ] *maf-history* does point return after restoring stack?
+    - [ ] *maf-history*
+      bug: point is not retained after restoring stack
+      - we specified in an earlier commit that point should restore when an
+        stack item or history entry is inserted/restored (RET). however this
+        does not work when a history entry is restored. it works when a stack
+        item is restored.
     - [ ] *maf-history* given a history entry like:
       - del (maf-del)
         - [ ] these entries should be labeld as "reset"
