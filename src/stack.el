@@ -5840,14 +5840,14 @@ whichever of its sides are vectors and leaves the rest alone, so v =
 (maf-defcmd mafcmd-coordinate-toggle (expr _arg commit)
   "Cycle the resolved vector through the coordinate name sets.
 
-  [2, 4]  =>  [x = 2, y = 4]
+  [2, 4]  =>  [a = 2, b = 4]
 
-A plain vector is named x, y, z, w; naming again advances to h, k, l, m,
-then p, q, r, s, then back to x, y, z, w — so repeated presses walk the
-naming conventions for a point, a vertex, and a second point without
-disturbing the values. A vector named with anything else, or named only
-in part, re-enters the cycle at x, y, z, w. The sets are
-`maf-coordinate-name-sets'.
+A plain vector is named a, b, c, d; naming again advances to x, y, z, w,
+then h, k, l, m, then p, q, r, s, then back to a, b, c, d — so repeated
+presses walk the naming conventions for a pair, a point, a vertex, and a
+second point without disturbing the values. A vector named with anything
+else, or named only in part, re-enters the cycle at a, b, c, d. The sets
+are `maf-coordinate-name-sets'.
 
 An equation f(a) = b whose function is undefined is a graph point and
 unfolds to [a, b], which the next press names. Any other relation names
@@ -5858,12 +5858,12 @@ expression with no coordinate reading.
 Point picks the target as usual: a vector under point, the vector entry
 at point, the top entry at home.
 
-  [1, 2, 3]          =>  [x = 1, y = 2, z = 3]
+  [1, 2, 3]          =>  [a = 1, b = 2, c = 3]
   [x = 1, y = 2]     =>  [h = 1, k = 2]
-  [p = 1, q = 2]     =>  [x = 1, y = 2]
-  [a = 1, b = 2]     =>  [x = 1, y = 2]
+  [p = 1, q = 2]     =>  [a = 1, b = 2]
+  [u = 1, v = 2]     =>  [a = 1, b = 2]
   f(2) = 0           =>  [2, 0]
-  v = [1, 2]         =>  v = [x = 1, y = 2]"
+  v = [1, 2]         =>  v = [a = 1, b = 2]"
   :title "name the coordinates"
   :arity unary
   :prefix "crd"
