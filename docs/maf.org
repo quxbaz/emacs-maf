@@ -25,11 +25,17 @@
        - [ ] they should also be given a special background color (a `reset`
          action often denotes the beginning of a new session)also
 ** maf-editplus
-   - [ ] *maf-editplus*: convert "or" to or-representation and "and" to
+   - [-] *maf-editplus*: convert "or" to or-representation and "and" to
      and-representation
    - [ ] (maf-editplus-wrap-parens)
-     does not work proprely here:
-     x+2 * x-(4)|
+     does not work properly here:
+     x + 2 * x - (4)| => x + (2 * x - 4)
+     i expect
+     => x + 2 * (x - 4)
+     it seems like the `*` isn't respected as a delimiter
+
+     if we're using structural inspection to decide where to wrap, maybe we need
+     a hybrid approach instead where do inspect by structure *and* string?
    - [ ] why doesn't yanking this in work?
      \dfrac{p-3}{4p} = \dfrac{2p+4}{3p} - \dfrac{1-p}{12p}
    - [ ] in mafedit, if the standing entry is something like:
