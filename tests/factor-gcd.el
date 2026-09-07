@@ -18,17 +18,24 @@
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "-3 (x - 1)"))
   (calc-pop (calc-stack-size))
 
-  ;; Nothing to pull out: coprime terms and single terms pass through.
+  ;; Nothing to pull out: coprime terms and single terms pass through,
+  ;; and the echo area says so. The harness binds `inhibit-message',
+  ;; which keeps output out of `current-message'; lift it here.
   (maf-push "3 x + 7")
-  (call-interactively 'mafcmd-factor-gcd)
+  (let ((inhibit-message nil))
+    (call-interactively 'mafcmd-factor-gcd)
+    (cl-assert (equal (current-message) "No common factor to pull out")))
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "3 x + 7"))
   (maf-push "6 x")
-  (call-interactively 'mafcmd-factor-gcd)
+  (let ((inhibit-message nil))
+    (call-interactively 'mafcmd-factor-gcd)
+    (cl-assert (equal (current-message) "No common factor to pull out")))
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "6 x"))
   (calc-pop (calc-stack-size))
 
-  ;; Multivariate: calc's pgcd overshoots pairwise (pgcd(10xy, 15xz)
-  ;; gives 10x); the fixpoint reduce must converge on 5x.
+  ;; Multivariate: calc's pgcd used to overshoot pairwise (pgcd(10xy,
+  ;; 15xz) gave 10x, the disjoint-variable typo `maf--poly-gcd-disjoint'
+  ;; fixes); with or without that the fixpoint reduce lands on 5x.
   (maf-push "10 x y + 15 x z")
   (call-interactively 'mafcmd-factor-gcd)
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "(5 x)*(3 z + 2 y)"))
@@ -53,6 +60,17 @@
   (call-interactively 'mafcmd-factor-gcd)
   (cl-assert (string= (math-format-value (calc-top 1 'full))
                       "6 (x + 2) = 6 (3 y + 1)"))
+  (calc-pop (calc-stack-size))
+
+  ;; Equation with one side that doesn't factor: the other side still
+  ;; does, and the message names the side that had nothing to give.
+  (maf-push "6 x + 12 = 3 y + 7")
+  (let ((inhibit-message nil))
+    (call-interactively 'mafcmd-factor-gcd)
+    (cl-assert (equal (current-message)
+                      "No common factor to pull out of 3 y + 7")))
+  (cl-assert (string= (math-format-value (calc-top 1 'full))
+                      "6 (x + 2) = 3 y + 7"))
   (calc-pop (calc-stack-size))
 
   ;; Subexpr: only the sub-formula under point factors. Point was on
