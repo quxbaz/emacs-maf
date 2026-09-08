@@ -1,4 +1,4 @@
-:root { --bg: #fff; --fg: #1d1d1d; --muted: #777; --line: #e6e6e6; --accent: #5b3fd1; --mark: rgba(91, 63, 209, .18); --band: rgba(0, 0, 0, .05); }
+:root { --bg: #fff; --fg: #1d1d1d; --muted: #777; --line: #e6e6e6; --accent: #5b3fd1; --mark: rgba(91, 63, 209, .18); --band: rgba(0, 0, 0, .05); --mono: Monaco, Menlo, ui-monospace, Consolas, monospace; }
 @media (prefers-color-scheme: dark) { :root { --bg: #121214; --fg: #eaeaea; --muted: #8e8e93; --line: #2a2a2e; --accent: #b09cff; --band: rgba(255, 255, 255, .06); } }
 * { box-sizing: border-box; }
 html { color-scheme: light dark; }
@@ -10,7 +10,7 @@ p { margin: 0 0 .8em; }
 .subtitle { color: var(--muted); font-size: 1.15rem; margin-top: -.3em; }
 pre { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .95rem; line-height: 1.65; background: var(--line); padding: 14px 16px; border-radius: 8px; margin: .6em 0 1em; overflow-x: auto; }
 pre b { color: var(--accent); font-weight: 600; }
-.calcbuf { --pad-y: 14px; --pad-x: 16px; background: var(--line); border-radius: 8px; padding: var(--pad-y) var(--pad-x); font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .95rem; line-height: 1.65; min-width: 0; }
+.calcbuf { --pad-y: 14px; --pad-x: 16px; background: var(--line); border-radius: 8px; padding: var(--pad-y) var(--pad-x); font-family: var(--mono); font-size: .95rem; line-height: 1.65; min-width: 0; }
 .calcbuf .header { color: var(--muted); font-size: .7em; line-height: 1.5; white-space: pre; overflow: hidden; margin: calc(-1 * var(--pad-y)) calc(-1 * var(--pad-x)) 10px; padding: 3px var(--pad-x); background: var(--band); }
 .calcbuf .buffer { background: none; padding: 0; margin: 0; border-radius: 0; font: inherit; min-height: calc(var(--rows, 2) * 1.65em); }
 .calcbuf mark { background: none; outline: 1px solid var(--accent); outline-offset: 1px; border-radius: 2px; }
@@ -30,7 +30,7 @@ pre b { color: var(--accent); font-weight: 600; }
 .stacky-diff button.caption { justify-self: start; font: inherit; font-size: .9rem; color: var(--fg); background: var(--bg); border: 2px solid var(--accent); border-radius: 4px; padding: 3px 12px; cursor: pointer; }
 .stacky-diff button.caption:hover { background: var(--mark); }
 .stacky-diff .caption kbd { color: var(--fg); }
-.stacky-diff .caption .command { font-family: ui-monospace, Menlo, Consolas, monospace; color: var(--accent); font-size: .85rem; margin-left: .4em; }
+.stacky-diff .caption .command { font-family: var(--mono); color: var(--accent); font-size: .85rem; margin-left: .4em; }
 .stacky-diff .calcbuf { --pad-y: 10px; --pad-x: 12px; font-size: .85rem; }
 .stacky-diff .arrow { color: var(--muted); text-align: center; }
 .stacky-diff .arrow::before { content: "\2192"; font-size: 1.3rem; line-height: 1; }
