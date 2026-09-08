@@ -1,0 +1,21 @@
+/* One sentence at a time. */
+:root { --bg: #fff; --fg: #1d1d1d; --muted: #777; --line: #e6e6e6; --accent: #5b3fd1; --mark: rgba(91, 63, 209, .18); }
+@media (prefers-color-scheme: dark) { :root { --bg: #121214; --fg: #eaeaea; --muted: #8e8e93; --line: #2a2a2e; --accent: #b09cff; } }
+* { box-sizing: border-box; }
+html { color-scheme: light dark; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 19px/1.55 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
+main { max-width: 600px; margin: 0 auto; padding: 80px 22px 100px; }
+.layer { display: none; margin-bottom: 26px; animation: in .25s ease-out; }
+.layer.on { display: block; }
+@keyframes in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+h1 { font-size: 1.9rem; letter-spacing: -.02em; margin: 0 0 .6em; line-height: 1.2; }
+p { margin: 0 0 .8em; }
+.more { display: inline-block; font: inherit; font-size: 1rem; font-weight: 600; color: var(--accent); background: none; border: 1px solid var(--accent); border-radius: 999px; padding: 6px 16px; cursor: pointer; }
+.more:hover { background: var(--mark); }
+.more[hidden] { display: none; }
+pre { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .95rem; line-height: 1.65; background: var(--line); padding: 14px 16px; border-radius: 8px; margin: .6em 0 1em; overflow-x: auto; }
+pre b { color: var(--accent); font-weight: 600; }
+kbd { font-family: ui-monospace, Menlo, monospace; border: 1px solid var(--muted); border-radius: 4px; padding: 0 .35em; font-size: .8em; }
+mark { background: var(--mark); color: inherit; }
+.muted { color: var(--muted); font-size: .95rem; }
+a { color: var(--accent); }
