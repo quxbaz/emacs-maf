@@ -5,18 +5,21 @@
 //   { entries:   ['x + 1', '(x + 1)^2 = 9'],  // entries[0] is level 1, the top of the stack
 //     point:     HOME | { level: 1, col: 7 },  // col counts from the start of the entry text
 //     highlight: null | { level: 1, from: 0, to: 9 },  // a range of an entry's text, `to` excluded
-//     fresh:     null | 1 }                    // a level whose entry just changed
+//     fresh:     null | 1,                     // a level whose entry just changed
+//     result:    null | 'x^2 + 2 x + 1 = 9' }  // an answer shown under the buffer, after "=>"
 //
 // lines() lays the stack out the way calc does: one numbered line per entry,
-// highest level first, then the home line, an indented dot. text() gives the
-// buffer as a string and html() as markup; render() puts it in an element.
+// highest level first, then the home line, an indented dot; a result, which
+// calc has no such line for, goes last. text() gives the buffer as a string
+// and html() as markup; render() puts it in an element.
 
 export const HOME = Object.freeze({ home: true })
 export const INDENT = '    '  // width of a level prefix ("1:  "), and the home line's indent
 export const DOT = '.'
+export const RESULT = '=>  '  // the result line's prefix, as wide as a level's
 
-export function stack(entries = [], { point = HOME, highlight = null, fresh = null } = {}) {
-  return { entries: [...entries], point, highlight, fresh }
+export function stack(entries = [], { point = HOME, highlight = null, fresh = null, result = null } = {}) {
+  return { entries: [...entries], point, highlight, fresh, result }
 }
 
 export const depth = s => s.entries.length
@@ -33,6 +36,7 @@ export const pop = (s, n = 1) => ({ ...s, entries: s.entries.slice(n) })
 export const setPoint = (s, point) => ({ ...s, point })
 export const setHighlight = (s, highlight) => ({ ...s, highlight })
 export const setFresh = (s, fresh) => ({ ...s, fresh })
+export const setResult = (s, result) => ({ ...s, result })
 
 // Insert text at point; point moves past it. On the home line there is
 // nothing to type into, so the stack is returned unchanged.
@@ -71,9 +75,9 @@ export function pointAt(s, row, col) {
   return { level, col: Math.max(0, Math.min(len, col - INDENT.length)) }
 }
 
-// Display options: whether to show the cursor, the highlight, and (in a
-// pane) the header line.
-export const SHOW = Object.freeze({ cursor: true, highlight: true, header: true })
+// Display options: whether to show the cursor and whether it blinks, and
+// whether to show the highlight, the home line, and (in a pane) the header.
+export const SHOW = Object.freeze({ cursor: true, blink: false, highlight: true, home: true, header: true })
 
 export function lines(s, show = SHOW) {
   const out = []
@@ -81,9 +85,10 @@ export function lines(s, show = SHOW) {
     const text = entry(s, level)
     const cursor = show.cursor && !isHome(s.point) && s.point.level === level ? s.point.col : null
     const mark = show.highlight && s.highlight && s.highlight.level === level ? { from: s.highlight.from, to: s.highlight.to } : null
-    out.push({ level, prefix: prefix(level), text, cursor, mark, fresh: s.fresh === level })
+    out.push({ level, prefix: prefix(level), text, cursor, blink: show.blink, mark, fresh: s.fresh === level })
   }
-  out.push({ home: true, prefix: INDENT, text: DOT, cursor: show.cursor && isHome(s.point) ? 0 : null, mark: null, fresh: false })
+  if (show.home) out.push({ home: true, prefix: INDENT, text: DOT, cursor: show.cursor && isHome(s.point) ? 0 : null, blink: show.blink, mark: null, fresh: false })
+  if (s.result != null) out.push({ result: true, prefix: RESULT, text: s.result, cursor: null, mark: null, fresh: false })
   return out
 }
 
@@ -93,17 +98,18 @@ const escape = t => t.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>':
 
 export function lineHtml(l) {
   let out = escape(l.prefix)
+  const cursorTag = l.blink ? 'cursor' : 'cursor steady'
   let inMark = false
   const chars = [...l.text]
   chars.forEach((c, i) => {
     const marked = l.mark && i >= l.mark.from && i < l.mark.to
     if (marked && !inMark) { out += '<mark>'; inMark = true }
     if (!marked && inMark) { out += '</mark>'; inMark = false }
-    out += l.cursor === i ? `<span class="cursor">${escape(c)}</span>` : escape(c)
+    out += l.cursor === i ? `<span class="${cursorTag}">${escape(c)}</span>` : escape(c)
   })
   if (inMark) out += '</mark>'
-  if (l.cursor !== null && l.cursor >= chars.length) out += '<span class="cursor"> </span>'
-  const cls = ['line', l.home ? 'home' : 'entry', l.fresh ? 'fresh' : ''].filter(Boolean).join(' ')
+  if (l.cursor !== null && l.cursor >= chars.length) out += `<span class="${cursorTag}"> </span>`
+  const cls = ['line', l.home ? 'home' : l.result ? 'result' : 'entry', l.fresh ? 'fresh' : ''].filter(Boolean).join(' ')
   return `<span class="${cls}">${out}</span>`
 }
 

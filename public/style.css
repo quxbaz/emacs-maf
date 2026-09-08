@@ -16,8 +16,10 @@ pre b { color: var(--accent); font-weight: 600; }
 .calcbuf mark { background: none; outline: 1px solid var(--accent); outline-offset: 1px; border-radius: 2px; }
 .calcbuf .cursor { background: var(--fg); color: var(--bg); animation: blink 1s steps(1) infinite; }
 @keyframes blink { 50% { background: none; color: inherit; } }
+.calcbuf .cursor.steady { animation: none; }
 @media (prefers-reduced-motion: reduce) { .calcbuf .cursor { animation: none; } }
 .calcbuf .fresh { color: var(--accent); font-weight: 600; }
+.calcbuf .result { color: var(--accent); }
 .showy { margin: .6em 0 1em; }
 .showy .controls { display: flex; justify-content: flex-end; min-height: 1.4rem; }
 .showy .echo { border-top: 1px solid var(--bg); margin-top: 8px; padding-top: 6px; min-height: 1.65em; color: var(--muted); }
@@ -32,6 +34,7 @@ pre b { color: var(--accent); font-weight: 600; }
 .stacky-diff .caption kbd { color: var(--fg); }
 .stacky-diff .caption .command { font-family: var(--mono); color: var(--accent); font-size: .85rem; margin-left: .4em; }
 .stacky-diff .calcbuf { --pad-y: 10px; --pad-x: 12px; font-size: .85rem; }
+.stacky-diff.result { grid-template-columns: 1fr; }
 .stacky-diff .arrow { color: var(--muted); text-align: center; }
 .stacky-diff .arrow::before { content: "\2192"; font-size: 1.3rem; line-height: 1; }
 @media (max-width: 520px) { .stacky-diff { grid-template-columns: 1fr; } .stacky-diff .arrow::before { content: "\2193"; } }

@@ -1,35 +1,49 @@
-// stacky-diff: a stack before and after a command, side by side.
+// stacky-diff: a stack before and after a command.
 //
 // The data is a plain object:
 //
 //   { before: <stacky stack>, after: <stacky stack>, keys: 'a x', command: 'mafcmd-expand',
-//     caption: '<b>a x</b> expands only that side', reveal: false,
-//     show: { before: { cursor: true, highlight: true, header: true, change: false },
-//             after: { cursor: false, highlight: false, header: true, change: true } } }
+//     caption: '<b>a x</b> expands only that side', reveal: false, result: false,
+//     show: { before: { cursor: true, blink: false, highlight: true, home: true, header: true, change: false },
+//             after: { cursor: false, blink: false, highlight: false, home: true, header: true, change: true } } }
 //
-// The line above the pair is `caption`, any HTML; without one it is the keys
-// and the command's name. `show` says whether each pane draws the cursor,
-// the highlight and the header line, and whether it outlines the part of the
-// stack that differs between the two (`change`); the defaults above apply to
-// whatever it leaves out.
+// Two panes side by side, or with `result` one pane: the stack before, and on
+// a last line after "=>" the entry the command produced (the home dot hidden
+// unless asked for). The line above is `caption`, any HTML; without one it is
+// the keys and the command's name. `show` says whether each pane draws the
+// cursor and whether it blinks, the highlight, the home line and the header
+// line, and whether it
+// outlines the part of the stack that differs between the two (`change`);
+// the defaults above apply to whatever it leaves out. With `reveal`, the
+// after pane (or the result line) starts empty and the caption is a button
+// that shows it; clicking again empties it.
+//
 // fromScene() derives the stacks, keys and command from a showy scene:
 // `before` is the stack as it stands when the scene's first keys step
 // begins, `after` the stack at the end, and the keys and command are that
-// step's. mount() draws the pair in an element, the caption above them; an
-// element mounted by mountAll() gives its own content as the caption. With
-// `reveal`, the after pane starts as an empty stack, just the home dot, and
-// the caption is a button that shows the result; clicking again empties it.
-// From the page, `data-reveal`.
+// step's. mountAll() mounts every element with data-diff="name", the name of
+// a scene: its content, if any, is the caption, data-reveal and data-result
+// set those flags.
 
 import * as stacky from './stacky.js'
 import { walk } from './showy.js'
 
 export const SHOW = Object.freeze({
-  before: Object.freeze({ cursor: true, highlight: true, header: true, change: false }),
-  after: Object.freeze({ cursor: false, highlight: false, header: true, change: true }),
+  before: Object.freeze({ cursor: true, blink: false, highlight: true, home: true, header: true, change: false }),
+  after: Object.freeze({ cursor: false, blink: false, highlight: false, home: true, header: true, change: true }),
 })
 
-export const showOf = (ab, side) => ({ ...SHOW[side], ...(ab.show?.[side] ?? {}) })
+export const showOf = (ab, side) => ({ ...SHOW[side], ...(ab.result && side === 'before' ? { home: false } : {}), ...(ab.show?.[side] ?? {}) })
+
+export function fromScene(scene, { caption, show = {}, reveal = false, result = false } = {}) {
+  const steps = walk(scene)
+  const i = steps.findIndex(({ step }) => 'keys' in step)
+  if (i < 0) throw new Error('stacky-diff: the scene has no keys step')
+  const before = (i > 0 ? steps[i - 1] : { state: { stack: stacky.stack() } }).state.stack
+  const after = steps[steps.length - 1].state.stack
+  const { keys, command = '' } = steps[i].step
+  return { before, after, keys, command, caption, show, reveal, result }
+}
 
 // The part of `to` that differs from `from`, as a highlight on `to`: the
 // changed span of the lowest level whose entry differs, or the whole top
@@ -49,6 +63,12 @@ export function change(from, to) {
   return null
 }
 
+// The entry the command produced: the one that changed, else the top.
+export function result(ab) {
+  const c = change(ab.before, ab.after)
+  return c ? stacky.entry(ab.after, c.level) : stacky.entry(ab.after, 1) ?? ''
+}
+
 // A side's stack and display options as drawn: with `change`, the outline is
 // the changed part rather than the stack's own highlight.
 function shown(ab, side) {
@@ -56,16 +76,6 @@ function shown(ab, side) {
   const other = side === 'before' ? 'after' : 'before'
   const stack = show.change ? stacky.setHighlight(ab[side], change(ab[other], ab[side])) : ab[side]
   return { stack, show: show.change ? { ...show, highlight: true } : show }
-}
-
-export function fromScene(scene, { caption, show = {}, reveal = false } = {}) {
-  const steps = walk(scene)
-  const i = steps.findIndex(({ step }) => 'keys' in step)
-  if (i < 0) throw new Error('stacky-diff: the scene has no keys step')
-  const before = (i > 0 ? steps[i - 1] : { state: { stack: stacky.stack() } }).state.stack
-  const after = steps[steps.length - 1].state.stack
-  const { keys, command = '' } = steps[i].step
-  return { before, after, keys, command, caption, show, reveal }
 }
 
 const escape = t => t.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
@@ -80,31 +90,41 @@ export function captionHtml({ caption, keys = '', command }) {
 
 export function mount(el, ab) {
   el.classList.add('stacky-diff')
+  el.classList.toggle('result', !!ab.result)
   el.innerHTML = ''
-  if (!ab.caption && !ab.keys && !ab.command) throw new Error('stacky-diff: nothing to caption with')
   el.style.setProperty('--rows', Math.max(stacky.depth(ab.before), stacky.depth(ab.after)) + 1)
   const caption = document.createElement(ab.reveal ? 'button' : 'div'); caption.className = 'caption'; caption.innerHTML = captionHtml(ab)
   if (ab.reveal) caption.type = 'button'
-  const before = document.createElement('div'); before.className = 'side before'
-  const arrow = document.createElement('div'); arrow.className = 'arrow'
-  const after = document.createElement('div'); after.className = 'side after'
-  el.append(caption, before, arrow, after)
-  const b = shown(ab, 'before'), a = shown(ab, 'after')
-  stacky.pane(before, b.stack, b.show)
-  const drawAfter = stacky.pane(after, a.stack, a.show)
+  el.append(caption)
+  const b = shown(ab, 'before')
+  let show
+  if (ab.result) {
+    const pane = document.createElement('div'); pane.className = 'side before'
+    el.append(pane)
+    const draw = stacky.pane(pane, undefined, b.show)
+    const full = stacky.setResult(b.stack, result(ab))
+    show = on => draw(on ? full : b.stack)
+  } else {
+    const before = document.createElement('div'); before.className = 'side before'
+    const arrow = document.createElement('div'); arrow.className = 'arrow'
+    const after = document.createElement('div'); after.className = 'side after'
+    el.append(before, arrow, after)
+    stacky.pane(before, b.stack, b.show)
+    const a = shown(ab, 'after')
+    const draw = stacky.pane(after, undefined, a.show)
+    show = on => draw(on ? a.stack : stacky.stack())
+  }
   let revealed = !ab.reveal
-  const show = on => { revealed = on; drawAfter(on ? a.stack : stacky.stack()); caption.setAttribute('aria-pressed', String(on)) }
-  if (ab.reveal) { show(false); caption.addEventListener('click', () => show(!revealed)) }
-  return { ab, reveal: () => show(true), hide: () => show(false) }
+  const set = on => { revealed = on; show(on); caption.setAttribute('aria-pressed', String(on)) }
+  set(revealed)
+  if (ab.reveal) caption.addEventListener('click', () => set(!revealed))
+  return { ab, reveal: () => set(true), hide: () => set(false) }
 }
 
-// Mount every element carrying data-diff: its value names a scene in
-// `scenes`, its content, if any, is the caption, and data-reveal asks for a
-// blank after pane until the caption is clicked.
 export function mountAll(scenes, root = document) {
   return [...root.querySelectorAll('[data-diff]')].map(el => {
     const caption = el.innerHTML.trim() || undefined
-    const reveal = 'reveal' in el.dataset
-    return mount(el, fromScene(scenes[el.dataset.diff], { caption, reveal }))
+    const reveal = 'reveal' in el.dataset, result = 'result' in el.dataset
+    return mount(el, fromScene(scenes[el.dataset.diff], { caption, reveal, result }))
   })
 }

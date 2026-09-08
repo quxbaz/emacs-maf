@@ -27,7 +27,8 @@ from the repository root with a reloading server while working:
   the pair is the keys and command, or any HTML given as the caption: for an
   element mounted from the page, its own content. With `reveal` (`data-reveal`
   on the page) the after pane starts as an empty stack and the caption is a
-  button that shows the result. Takes explicit before and after stacks, or derives them
+  button that shows the result. With `result` (`data-result`) there is one
+  pane, the stack before with the produced entry on a last line after `=>`. Takes explicit before and after stacks, or derives them
   from a showy scene so the two views of one example cannot drift. An element
   with `data-diff="name"` shows the scene of that name this way.
 - `scenes.js`: the scenes the pages show, as data. An element with
