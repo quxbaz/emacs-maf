@@ -8,33 +8,26 @@
 </head>
 <body>
 <main>
-  <div class="layer on">
+  <div class="layer">
     <h1>maf makes Emacs Calc act on the part of the formula under point.</h1>
-    <button class="more" data-next="2">Show me</button>
   </div>
-  <div class="layer" id="l2">
+  <div class="layer">
     <p>Put point on the <code>^</code> and press <kbd>a</kbd> <kbd>x</kbd>. Only that side expands.</p>
 <pre>1:  (x + 1)<mark>^</mark>2 = 9
 <b>1:  x^2 + 2 x + 1 = 9</b></pre>
-    <button class="more" data-next="3">How does it decide?</button>
   </div>
-  <div class="layer" id="l3">
+  <div class="layer">
     <p>On the home line at the bottom, a command acts on the top entry, like Calc always did. Inside a formula, it acts on the sub-formula under point, which is highlighted. On an equation, it runs once per side. With a region marked, it acts on just those terms. The result replaces exactly that, and point stays put.</p>
-    <button class="more" data-next="4">How do I type a formula?</button>
   </div>
-  <div class="layer" id="l4">
+  <div class="layer">
     <p><kbd>SPC</kbd> opens the stack as text. Type, then <kbd>RET</kbd>. On an entry, <kbd>SPC</kbd> edits it in place. That one gesture is how everything is entered and changed.</p>
-    <button class="more" data-next="5">I want it</button>
   </div>
-  <div class="layer" id="l5">
+  <div class="layer">
     <p>Emacs 28.1 or later, nothing else.</p>
 <pre>M-x package-vc-install RET https://github.com/quxbaz/emacs-maf RET
 (add-hook 'calc-mode-hook #'maf-mode)</pre>
     <p class="muted">Then <kbd>M-x</kbd> <code>calc</code>. Inside, <kbd>l</kbd> <kbd>b</kbd> lists every key with an example. <a href="https://github.com/quxbaz/emacs-maf">Source on GitHub.</a> Under active development; the API is unstable.</p>
   </div>
 </main>
-<script>
-document.querySelectorAll(".more").forEach(b => b.addEventListener("click", () => { b.hidden = true; const n = document.getElementById("l" + b.dataset.next); n.classList.add("on"); n.scrollIntoView({ behavior: "smooth", block: "nearest" }); }));
-</script>
 </body>
 </html>
