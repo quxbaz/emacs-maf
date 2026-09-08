@@ -153,7 +153,7 @@ const escape = t => t.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>':
 
 export function echoHtml(echo) {
   const keys = echo.keys.map(k => `<kbd>${escape(k)}</kbd>`).join(' ')
-  const command = echo.command ? `<span class="command">${escape(echo.command)}</span>` : ''
+  const command = echo.command ? `<span class="command">(${escape(echo.command)})</span>` : ''
   return keys + (keys && command ? ' ' : '') + command
 }
 

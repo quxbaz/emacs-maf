@@ -85,7 +85,7 @@ const escape = t => t.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>':
 export function captionHtml({ caption, keys = '', command }) {
   if (caption) return caption
   const kbds = keys.split(' ').filter(Boolean).map(k => `<kbd>${escape(k)}</kbd>`).join(' ')
-  return `<span class="keys">${kbds}</span>` + (command ? ` <span class="command">${escape(command)}</span>` : '')
+  return `<span class="keys">${kbds}</span>` + (command ? ` <span class="command">(${escape(command)})</span>` : '')
 }
 
 export function mount(el, ab) {
