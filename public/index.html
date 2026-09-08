@@ -15,6 +15,8 @@
   <div class="layer">
     <p>Put point on the <code>^</code> and press <kbd>a</kbd> <kbd>x</kbd>. Only that side expands.</p>
     <div data-scene="expand"></div>
+    <div data-diff="expand"></div>
+    <div data-diff="expand" data-reveal></div>
   </div>
   <div class="layer">
     <p>On the home line at the bottom, a command acts on the top entry, like Calc always did. Inside a formula, it acts on the sub-formula under point, which is highlighted. On an equation, it runs once per side. With a region marked, it acts on just those terms. The result replaces exactly that, and point stays put.</p>
@@ -30,9 +32,11 @@
   </div>
 </main>
 <script type="module">
-import { mountAll } from "./showy.js"
+import * as showy from "./showy.js"
+import * as stackyDiff from "./stacky-diff.js"
 import * as scenes from "./scenes.js"
-mountAll(scenes)
+showy.mountAll(scenes)
+stackyDiff.mountAll(scenes)
 </script>
 </body>
 </html>
