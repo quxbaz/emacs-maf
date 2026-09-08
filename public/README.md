@@ -9,7 +9,8 @@ from the repository root with a reloading server while working:
 
 - `stacky.js`: a calc stack buffer as data. Entries by level, point, a
   highlight range, and a layout that matches calc's: numbered lines, highest
-  level first, then the home line's indented dot. `text()` gives the buffer as
+  level first, then the home line's indented dot, under calc's header-line
+  banner built for a given width. `text()` gives the buffer as
   a string, `html()` as markup.
 - `showy.js`: an animated presentation of maf at work, on top of stacky and a
   vanilla redux store. A scene is a list of plain steps (set the stack, walk

@@ -119,6 +119,14 @@ export function timeline(scene, state = initialState, timing = TIMING) {
   return out
 }
 
+// The state after each step of a scene: [{ step, state }].
+export function walk(scene, state = initialState, timing = TIMING) {
+  return scene.map(step => {
+    for (const { action } of expandStep(step, state, timing)) if (action) state = reducer(state, action)
+    return { step, state }
+  })
+}
+
 // Every state the timeline passes through, in order, starting from `state`.
 export function states(tl, state = initialState) {
   return tl.reduce((acc, { action }) => (acc.push(reducer(acc[acc.length - 1], action)), acc), [state])
@@ -153,9 +161,16 @@ export function mount(el, scene, { timing = TIMING, autoplay = true } = {}) {
   const rows = Math.max(...states(tl).map(s => stacky.depth(s.stack))) + 1
   el.classList.add('showy')
   el.style.setProperty('--rows', rows)
-  el.innerHTML = '<pre class="buffer"></pre><div class="echo"></div><button class="replay" type="button" hidden>replay</button>'
-  const buffer = el.querySelector('.buffer'), echo = el.querySelector('.echo'), replay = el.querySelector('.replay')
-  const draw = () => { const s = store.getState(); stacky.render(buffer, s.stack); echo.innerHTML = echoHtml(s.echo) }
+  el.innerHTML = ''
+  const controls = document.createElement('div'); controls.className = 'controls'
+  const replay = document.createElement('button'); replay.className = 'replay'; replay.type = 'button'; replay.textContent = 'replay'; replay.hidden = true
+  controls.append(replay)
+  const pane = document.createElement('div')
+  el.append(controls, pane)
+  const drawStack = stacky.pane(pane)
+  const echo = document.createElement('div'); echo.className = 'echo'
+  pane.append(echo)
+  const draw = () => { const s = store.getState(); drawStack(s.stack); echo.innerHTML = echoHtml(s.echo) }
   store.subscribe(draw)
   draw()
   let player = null

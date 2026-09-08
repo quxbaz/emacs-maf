@@ -47,6 +47,20 @@ export function insert(s, text) {
 // "1:  ", "10: "
 export const prefix = level => (level + ':').padEnd(INDENT.length)
 
+// The header line calc puts above the buffer: the banner centered between
+// runs of dashes, for a header `width` columns wide. Built the way calc does
+// it: a shorter title when the long one does not fit, the same fill on both
+// sides, and a space separating each fill from the title.
+export const BANNER = 'Emacs Calculator Mode'
+export const BANNER_SHORT = 'Emacs Calc'
+export function banner(width, long = BANNER, short = BANNER_SHORT, fudge = -3) {
+  const title = width > long.length + fudge ? long : short
+  const size = Math.max(Math.floor((width - title.length) / 2), 0)
+  const fill = '-'.repeat(size)
+  const pre = fill.replace(/.$/, ' '), post = fill.replace(/^./, ' ')
+  return pre + title + post
+}
+
 // Buffer geometry. Row 0 is the highest level; the home line is the last row.
 export const rowOf = (s, point) => isHome(point) ? depth(s) : depth(s) - point.level
 export const colOf = point => INDENT.length + (isHome(point) ? 0 : point.col)
@@ -57,15 +71,19 @@ export function pointAt(s, row, col) {
   return { level, col: Math.max(0, Math.min(len, col - INDENT.length)) }
 }
 
-export function lines(s) {
+// Display options: whether to show the cursor, the highlight, and (in a
+// pane) the header line.
+export const SHOW = Object.freeze({ cursor: true, highlight: true, header: true })
+
+export function lines(s, show = SHOW) {
   const out = []
   for (let level = depth(s); level >= 1; level--) {
     const text = entry(s, level)
-    const cursor = !isHome(s.point) && s.point.level === level ? s.point.col : null
-    const mark = s.highlight && s.highlight.level === level ? { from: s.highlight.from, to: s.highlight.to } : null
+    const cursor = show.cursor && !isHome(s.point) && s.point.level === level ? s.point.col : null
+    const mark = show.highlight && s.highlight && s.highlight.level === level ? { from: s.highlight.from, to: s.highlight.to } : null
     out.push({ level, prefix: prefix(level), text, cursor, mark, fresh: s.fresh === level })
   }
-  out.push({ home: true, prefix: INDENT, text: DOT, cursor: isHome(s.point) ? 0 : null, mark: null, fresh: false })
+  out.push({ home: true, prefix: INDENT, text: DOT, cursor: show.cursor && isHome(s.point) ? 0 : null, mark: null, fresh: false })
   return out
 }
 
@@ -89,6 +107,35 @@ export function lineHtml(l) {
   return `<span class="${cls}">${out}</span>`
 }
 
-export const html = s => lines(s).map(lineHtml).join('\n') + '\n'
+export const html = (s, show = SHOW) => lines(s, show).map(lineHtml).join('\n') + '\n'
 
-export function render(el, s) { el.innerHTML = html(s) }
+export function render(el, s, show = SHOW) { el.innerHTML = html(s, show) }
+
+// Fill a header element with the banner for as many columns as fit in it.
+export function fitBanner(header) {
+  const probe = document.createElement('span')
+  probe.textContent = 'x'.repeat(20)
+  header.textContent = ''
+  header.appendChild(probe)
+  const cell = probe.getBoundingClientRect().width / 20
+  const style = getComputedStyle(header)
+  const inner = header.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight)
+  header.textContent = banner(cell > 0 ? Math.floor(inner / cell) : 40)
+}
+
+// Turn an element into a calc buffer pane: the header line, if shown, above
+// the buffer text. Returns a function that redraws it from a stack.
+export function pane(el, s, show = SHOW) {
+  el.classList.add('calcbuf')
+  if (show.header) {
+    const header = document.createElement('div'); header.className = 'header'
+    el.append(header)
+    fitBanner(header)
+    if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => fitBanner(header)).observe(el)
+  }
+  const buffer = document.createElement('pre'); buffer.className = 'buffer'
+  el.append(buffer)
+  const draw = s => render(buffer, s, show)
+  if (s) draw(s)
+  return draw
+}

@@ -1,5 +1,5 @@
-:root { --bg: #fff; --fg: #1d1d1d; --muted: #777; --line: #e6e6e6; --accent: #5b3fd1; --mark: rgba(91, 63, 209, .18); }
-@media (prefers-color-scheme: dark) { :root { --bg: #121214; --fg: #eaeaea; --muted: #8e8e93; --line: #2a2a2e; --accent: #b09cff; } }
+:root { --bg: #fff; --fg: #1d1d1d; --muted: #777; --line: #e6e6e6; --accent: #5b3fd1; --mark: rgba(91, 63, 209, .18); --band: rgba(0, 0, 0, .05); }
+@media (prefers-color-scheme: dark) { :root { --bg: #121214; --fg: #eaeaea; --muted: #8e8e93; --line: #2a2a2e; --accent: #b09cff; --band: rgba(255, 255, 255, .06); } }
 * { box-sizing: border-box; }
 html { color-scheme: light dark; }
 body { margin: 0; background: var(--bg); color: var(--fg); font: 19px/1.55 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
@@ -10,14 +10,20 @@ p { margin: 0 0 .8em; }
 .subtitle { color: var(--muted); font-size: 1.15rem; margin-top: -.3em; }
 pre { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .95rem; line-height: 1.65; background: var(--line); padding: 14px 16px; border-radius: 8px; margin: .6em 0 1em; overflow-x: auto; }
 pre b { color: var(--accent); font-weight: 600; }
-.showy { background: var(--line); border-radius: 8px; padding: 14px 16px; margin: .6em 0 1em; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .95rem; line-height: 1.65; position: relative; }
-.showy .buffer { background: none; padding: 0; margin: 0; border-radius: 0; min-height: calc(var(--rows, 2) * 1.65em); }
-.showy .cursor { background: var(--fg); color: var(--bg); }
-.showy .fresh { color: var(--accent); font-weight: 600; }
+.calcbuf { --pad-y: 14px; --pad-x: 16px; background: var(--line); border-radius: 8px; padding: var(--pad-y) var(--pad-x); font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .95rem; line-height: 1.65; min-width: 0; }
+.calcbuf .header { color: var(--muted); font-size: .8em; line-height: 1.5; white-space: pre; overflow: hidden; margin: calc(-1 * var(--pad-y)) calc(-1 * var(--pad-x)) 10px; padding: 3px var(--pad-x); background: var(--band); }
+.calcbuf .buffer { background: none; padding: 0; margin: 0; border-radius: 0; font: inherit; min-height: calc(var(--rows, 2) * 1.65em); }
+.calcbuf mark { background: none; outline: 1px solid var(--accent); outline-offset: 1px; border-radius: 2px; }
+.calcbuf .cursor { background: var(--fg); color: var(--bg); animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { background: none; color: inherit; } }
+@media (prefers-reduced-motion: reduce) { .calcbuf .cursor { animation: none; } }
+.calcbuf .fresh { color: var(--accent); font-weight: 600; }
+.showy { margin: .6em 0 1em; }
+.showy .controls { display: flex; justify-content: flex-end; min-height: 1.4rem; }
 .showy .echo { border-top: 1px solid var(--bg); margin-top: 8px; padding-top: 6px; min-height: 1.65em; color: var(--muted); }
 .showy .echo kbd { font-size: inherit; color: var(--fg); }
 .showy .echo .command { color: var(--accent); }
-.showy .replay { position: absolute; top: 8px; right: 10px; font: inherit; font-size: .8rem; color: var(--muted); background: none; border: 0; cursor: pointer; padding: 2px 6px; }
+.showy .replay { font: inherit; font-size: .8rem; color: var(--muted); background: none; border: 0; cursor: pointer; padding: 0 0 4px; }
 .showy .replay:hover { color: var(--accent); }
 kbd { font-family: ui-monospace, Menlo, monospace; border: 1px solid var(--muted); border-radius: 4px; padding: 0 .35em; font-size: .8em; }
 mark { background: var(--mark); color: inherit; }
