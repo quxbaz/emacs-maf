@@ -29,6 +29,7 @@ export const HIGHLIGHT = 'showy/highlight'  // { highlight }
 export const FRESH = 'showy/fresh'          // { level }
 export const INSERT = 'showy/insert'        // { text }
 export const ECHO = 'showy/echo'            // { keys: [...], command }
+export const RESET = 'showy/reset'          // { state }: replace the whole state
 
 export const initialState = { stack: stacky.stack(), echo: { keys: [], command: '' } }
 
@@ -44,6 +45,7 @@ export function reducer(state = initialState, action) {
     case FRESH: return withStack(stacky.setFresh(state.stack, action.level))
     case INSERT: return withStack(stacky.insert(state.stack, action.text))
     case ECHO: return { ...state, echo: { keys: action.keys ?? [], command: action.command ?? '' } }
+    case RESET: return action.state
     default: return state
   }
 }
@@ -162,9 +164,11 @@ export function mount(el, scene, { timing = TIMING, autoplay = true } = {}) {
   el.classList.add('showy')
   el.style.setProperty('--rows', rows)
   el.innerHTML = ''
+  // The opening picture: everything the timeline does at time zero.
+  const start = states(tl.filter(({ at }) => at === 0)).pop()
   const controls = document.createElement('div'); controls.className = 'controls'
-  const replay = document.createElement('button'); replay.className = 'replay'; replay.type = 'button'; replay.textContent = 'replay'; replay.hidden = true
-  controls.append(replay)
+  const button = document.createElement('button'); button.className = 'replay'; button.type = 'button'; button.hidden = true
+  controls.append(button)
   const pane = document.createElement('div')
   el.append(controls, pane)
   const drawStack = stacky.pane(pane)
@@ -174,14 +178,21 @@ export function mount(el, scene, { timing = TIMING, autoplay = true } = {}) {
   store.subscribe(draw)
   draw()
   let player = null
+  const label = playing => { button.textContent = playing ? 'reset' : 'replay'; button.hidden = false }
   const run = () => {
     player?.stop()
-    replay.hidden = true
-    player = play(store, tl, { onDone: () => { replay.hidden = false } })
+    label(true)
+    player = play(store, tl, { onDone: () => label(false) })
   }
-  replay.addEventListener('click', run)
-  if (autoplay) run(); else replay.hidden = false
-  return { store, timeline: tl, replay: run, stop: () => player?.stop() }
+  const reset = () => {
+    player?.stop()
+    player = null
+    store.dispatch({ type: RESET, state: start })
+    label(false)
+  }
+  button.addEventListener('click', () => (player && button.textContent === 'reset' ? reset : run)())
+  if (autoplay) run(); else label(false)
+  return { store, timeline: tl, replay: run, reset, stop: () => player?.stop() }
 }
 
 // Mount every element carrying data-scene from a table of scenes.

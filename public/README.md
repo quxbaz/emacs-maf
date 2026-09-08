@@ -16,7 +16,9 @@ from the repository root with a reloading server while working:
   vanilla redux store. A scene is a list of plain steps (set the stack, walk
   the cursor somewhere, echo keys and a command name, replace an entry, type
   text, pause). `timeline()` turns a scene into timed redux actions and
-  `play()` dispatches them; `mount()` does both in an element.
+  `play()` dispatches them; `mount()` does both in an element, with a
+  control above the pane that resets a playing scene and replays a finished
+  one.
 - `stacky-diff.js`: a stack before and after a command, side by side, the keys and
   command above them. Each pane can show or hide the cursor, the
   highlight and the header line, and can outline the part that changed
