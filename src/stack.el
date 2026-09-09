@@ -2724,10 +2724,14 @@ displaced sub-formula becomes the new level-1 entry."
              ;; Commit ARG into the resolved slot, consuming the old
              ;; level-1 entry. Then put the displaced slot value on top.
              (setq landed (maf--commit arg context))
-             (calc-push-list (list expr))
-             ;; Commit reports the target's level after consuming level 1.
-             ;; Pushing EXPR restores its original level.
-             (setcdr (assq :m landed) (1+ (alist-get :m landed)))))
+             ;; Under keep-args the commit consumed nothing and pushed
+             ;; the rewritten entry on top; the displaced value still
+             ;; sits in its original entry, so there is nothing to push.
+             (unless (alist-get :keep context)
+               (calc-push-list (list expr))
+               ;; Commit reports the target's level after consuming
+               ;; level 1. Pushing EXPR restores its original level.
+               (setcdr (assq :m landed) (1+ (alist-get :m landed))))))
           (maf--undo-amalgamate-digit-entry)
           ;; Deliberately not the glyph anchor other commands use: swap
           ;; puts a foreign value in the slot rather than rewriting the
@@ -2770,6 +2774,14 @@ the swapped-in sub-formula is what the next command sees.
 With the entry at point already the highest, or with fewer than two
 entries, there is nothing to swap and the command does nothing.
 
+With calc's keep-args flag, the sub-formula swap leaves both entries
+as they are and pushes the rewritten entry on top; the displaced
+sub-formula is not pushed, since it still sits in its own entry.
+
+  K TAB  2:  a + 1|      3:  a + 1
+         1:  b       =>  2:  b
+                         1:  a + |b
+
 A prefix argument N bypasses the contextual swap and rolls the top N
 entries by one, as calc's own roll does.
 
@@ -2802,6 +2814,12 @@ entries by one, as calc's own roll does.
       (maf--swap-target-with-top))
      (t
       (maf--swap-adjacent-entries)))))
+
+;; TAB is a control character, one of the keys calc's fancy prefix
+;; strips the flags from; the mark lets K reach the sub-formula swap
+;; on TAB as it does on the GUI's <tab> event (see
+;; `maf--fancy-prefix-keep').
+(put 'maf-swap-up 'maf-command t)
 
 (defun maf--swap-adjacent-entries ()
   "Swap the entry at point with the one above it on screen.

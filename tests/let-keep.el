@@ -110,8 +110,13 @@
   (cl-assert (not (memq #'maf--fancy-prefix-decide pre-command-hook)))
 
   ;; The mark is on the commands that read the flag, not on everything maf
-  ;; binds: a plain stack command keeps calc's own behavior.
+  ;; binds: a plain stack command keeps calc's own behavior. maf-swap-up
+  ;; carries it since its sub-formula swap commits through resolve and
+  ;; honors keep-args (tests/swap-up.el); TAB is a control character, so
+  ;; without the mark K never reached it.
   (cl-assert (get 'mafcmd-let 'maf-command))
   (cl-assert (get 'mafcmd-toggle-op 'maf-command))
   (cl-assert (get 'maf-dup-or-clear-selections 'maf-command))
-  (cl-assert (null (get 'maf-swap-up 'maf-command))))
+  (cl-assert (get 'maf-swap-up 'maf-command))
+  (cl-assert (null (get 'maf-roll-to-top 'maf-command)))
+  (cl-assert (null (get 'maf-erase 'maf-command))))

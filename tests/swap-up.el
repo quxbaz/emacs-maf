@@ -189,4 +189,69 @@
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "7"))
   (cl-assert (= (line-number-at-pos) 2))
   (cl-assert (eolp))
-  (cl-assert (= (current-column) 5)))
+  (cl-assert (= (current-column) 5))
+
+  ;; Keep-args: the sub-formula swap leaves both entries as they are and
+  ;; pushes the rewritten entry on top. The displaced sub-formula is not
+  ;; pushed — it still sits in its own entry — so the stack grows by
+  ;; exactly one. Point lands on the arriving value in the new entry.
+  ;; Real keys through the keymap: the flag reaches the command via
+  ;; calc's fancy prefix, which `call-interactively' bypasses. The GUI
+  ;; sends the <tab> event, which calc lets through on its own; the
+  ;; control character TAB (C-i, a terminal) needs the `maf-command'
+  ;; mark, so both forms are driven.
+  (calc-pop (calc-stack-size))
+  (maf-push "a + 1")
+  (maf-push "b")
+  (calc-refresh)
+  (progn (goto-char (point-min)) (search-forward "2:  a + 1") (backward-char 1))
+  (progn (execute-kbd-macro (kbd "K <tab>")) nil)
+  (cl-assert (= (calc-stack-size) 3))
+  (cl-assert (string= (math-format-value (maf--strip-encasing (calc-top 1 'full)))
+                      "a + b"))
+  (cl-assert (string= (math-format-value (calc-top 2 'full)) "b"))
+  (cl-assert (string= (math-format-value (calc-top 3 'full)) "a + 1"))
+  (cl-assert (= (calc-locate-cursor-element (point)) 1))
+  (cl-assert (looking-at "b"))
+  (cl-assert (not calc-keep-args-flag))
+  (progn (setq last-command nil) (call-interactively 'maf-undo))
+  (cl-assert (= (calc-stack-size) 2))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "b"))
+  (cl-assert (string= (math-format-value (calc-top 2 'full)) "a + 1"))
+  (progn (goto-char (point-min)) (search-forward "2:  a + 1") (backward-char 1))
+  (progn (execute-kbd-macro (kbd "K TAB")) nil)
+  (cl-assert (= (calc-stack-size) 3))
+  (cl-assert (string= (math-format-value (maf--strip-encasing (calc-top 1 'full)))
+                      "a + b"))
+  (cl-assert (string= (math-format-value (calc-top 3 'full)) "a + 1"))
+  (cl-assert (looking-at "b"))
+  (cl-assert (not calc-keep-args-flag))
+  (cl-assert (not (memq #'maf--fancy-prefix-decide pre-command-hook)))
+
+  ;; Keep-args with an explicit selection: the same shape. The selected
+  ;; entry and the argument both stay, the rewritten entry lands on top
+  ;; carrying the arrival as its selection, and the original keeps its
+  ;; own selection untouched.
+  (calc-pop (calc-stack-size))
+  (maf-push "20 x + 10")
+  (calc-push 8)
+  (calc-push 7)
+  (calc-refresh)
+  (progn (goto-char (point-min)) (search-forward "3:  20") (backward-char 2))
+  (progn (setq last-command nil) (call-interactively 'calc-select-here))
+  (progn (calc-cursor-stack-index 2) (end-of-line))
+  (progn (execute-kbd-macro (kbd "K <tab>")) nil)
+  (cl-assert (= (calc-stack-size) 4))
+  (cl-assert (string= (math-format-value (maf--strip-encasing (calc-top 1 'full)))
+                      "7 x + 10"))
+  (cl-assert (equal (maf--strip-encasing (calc-top 1 'sel)) 7))
+  (cl-assert (string= (math-format-value (calc-top 2 'full)) "7"))
+  (cl-assert (string= (math-format-value (calc-top 3 'full)) "8"))
+  (cl-assert (string= (math-format-value (maf--strip-encasing (calc-top 4 'full)))
+                      "20 x + 10"))
+  (cl-assert (equal (maf--strip-encasing (calc-top 4 'sel)) 20))
+  (cl-assert (= (calc-locate-cursor-element (point)) 1))
+  (cl-assert (looking-at "7"))
+  (cl-assert (not calc-keep-args-flag))
+  (progn (setq last-command nil) (call-interactively 'calc-clear-selections))
+  (calc-pop (calc-stack-size)))
