@@ -1,12 +1,13 @@
 ;; `maf-reset' and `maf-reset-settings' (src/stack.el). The contract:
-;; reset empties the session — stack, undo/redo, trail — and re-reads
-;; `calc-settings-file'; reset-settings restores the modes from that
-;; file and leaves the session standing. The history survives both:
-;; it is a log of what happened, not part of the session, and only
-;; `maf-history-clear' empties it. A prefix argument
-;; means "calc's factory defaults" for both, and then the settings file
-;; is deliberately not read, since loading it would put the saved modes
-;; straight back.
+;; reset erases the stack and nothing else — one undoable step, so `U'
+;; brings the values back — while reset-settings restores the modes
+;; from `calc-settings-file', re-reads the rest of that file, and
+;; leaves the stack standing. The two are halves; both together are
+;; the full reset. The history survives both: it is a log of what
+;; happened, not part of the session, and only `maf-history-clear'
+;; empties it. A prefix argument to reset-settings means "calc's
+;; factory defaults", and then the settings file is deliberately not
+;; read, since loading it would put the saved modes straight back.
 ;;
 ;; The settings file is a temporary one the test writes, so the
 ;; assertions never depend on what is in the user's own ~/.emacs.d/calc.el.
@@ -38,9 +39,9 @@ nothing captured yet. See the restoring step below.")
     (makunbound 'var-maf-test-canary)
     maf-test--settings-file)
 
-  ;; --- maf-reset: everything in the session goes ---
+  ;; --- maf-reset: the stack goes, nothing else does ---
 
-  ;; Build a session worth losing: two entries, a selection, an undo
+  ;; Build a stack worth losing: two entries, a selection, an undo
   ;; record, a trail line, and modes knocked off their saved values.
   (maf-push "6 x + 12")
   (maf-push "a + b")
@@ -61,48 +62,55 @@ nothing captured yet. See the restoring step below.")
     (maf-history--capture)
     (cl-assert maf-history--states))
 
-  ;; One command clears the lot.
-  (call-interactively 'maf-reset)
+  ;; One command empties the stack, selection and all — and only the
+  ;; stack. The trail keeps its line, the modes stay where they were
+  ;; knocked to, and the settings file is not read: the canary outside
+  ;; its marker block stays unbound.
+  (let ((trail (buffer-size (get-buffer "*Calc Trail*"))))
+    (call-interactively 'maf-reset)
+    (cl-assert (= (buffer-size (get-buffer "*Calc Trail*")) trail)))
   (cl-assert (= (calc-stack-size) 0))
-  (cl-assert (null calc-undo-list))
-  (cl-assert (null calc-redo-list))
-  (cl-assert (= (buffer-size (get-buffer "*Calc Trail*")) 0))
-
-  ;; The saved modes are back — from the marker block, which
-  ;; `calc-reset' handles — and so is the stored variable outside it,
-  ;; which only the full re-read of the file reaches.
-  (cl-assert (eq calc-symbolic-mode t))
-  (cl-assert (eq calc-prefer-frac t))
-  (cl-assert (equal (bound-and-true-p var-maf-test-canary) 99))
-
-  ;; maf-mode survives its own command: `calc-reset' re-runs `calc-mode',
-  ;; which kills the buffer-local that keeps maf's keymap alive.
+  (cl-assert (not (maf--sel-any-p)))
+  (cl-assert (null calc-symbolic-mode))
+  (cl-assert (null calc-prefer-frac))
+  (cl-assert (not (boundp 'var-maf-test-canary)))
   (cl-assert (bound-and-true-p maf-mode))
   (cl-assert (eq (key-binding (kbd "C-M-k")) 'maf-reset))
   (cl-assert (eq (key-binding (kbd "C-M-l")) 'maf-reset-settings))
 
+  ;; The erase is one undo step: `U' puts both values back, in order,
+  ;; and redo takes them away again.
+  (cl-assert calc-undo-list)
+  (call-interactively 'maf-undo)
+  (cl-assert (= (calc-stack-size) 2))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "a + b"))
+  (cl-assert (string= (math-format-value (calc-top 2 'full)) "6 x + 12"))
+  (call-interactively 'maf-redo)
+  (cl-assert (= (calc-stack-size) 0))
+
+  ;; On an empty stack it is a no-op that says so, and leaves no undo
+  ;; record behind for `U' to trip over.
+  (let ((undo calc-undo-list))
+    (call-interactively 'maf-reset)
+    (cl-assert (eq calc-undo-list undo)))
+
   ;; The history survives — it is a log of what happened, not part of
-  ;; the session, and stays browsable after the wipe.
+  ;; the session, and stays browsable after the erase.
   (cl-assert (or (not (fboundp 'maf-history--capture))
                  maf-history--states))
 
-  ;; --- maf-reset with a prefix: factory defaults ---
-
-  ;; C-u picks calc's defaults over the saved settings, and then leaves
-  ;; the file unread — the legacy version loaded it either way, which
-  ;; put the saved modes straight back and made the prefix a no-op.
-  (maf-push "1")
-  (let ((current-prefix-arg '(4)))
-    (call-interactively 'maf-reset))
-  (cl-assert (= (calc-stack-size) 0))
-  (cl-assert (null calc-symbolic-mode))
-  (cl-assert (null calc-prefer-frac))
-
   ;; --- maf-reset-settings: modes only, session kept ---
 
-  ;; Back to the saved modes, then knock them off again with a stack,
-  ;; a selection, and undo history in place.
-  (call-interactively 'maf-reset)
+  ;; The saved modes come from the marker block, which `calc-reset'
+  ;; handles, and the stored variable outside it from the full re-read
+  ;; of the file, which only this command does.
+  (call-interactively 'maf-reset-settings)
+  (cl-assert (eq calc-symbolic-mode t))
+  (cl-assert (eq calc-prefer-frac t))
+  (cl-assert (equal (bound-and-true-p var-maf-test-canary) 99))
+
+  ;; Knock the modes off again with a stack, a selection, and undo
+  ;; history in place.
   (maf-push "6 x + 12")
   (maf-push "a + b")
   (progn (calc-cursor-stack-index 2) (search-forward "x"))
@@ -134,17 +142,9 @@ nothing captured yet. See the restoring step below.")
   (cl-assert (null calc-symbolic-mode))
   (cl-assert (null calc-prefer-frac))
 
-  ;; --- The trail helper on its own ---
+  ;; --- The settings helper on its own ---
 
-  ;; No trail buffer at all is a no-op, not an error.
-  (progn
-    (let ((kill-buffer-query-functions nil))
-      (when (get-buffer "*Calc Trail*") (kill-buffer "*Calc Trail*")))
-    (maf--reset-clear-trail)
-    (cl-assert (null (get-buffer "*Calc Trail*")))
-    :no-trail-ok)
-
-  ;; A missing settings file is a no-op too: `load' would signal, so the
+  ;; A missing settings file is a no-op: `load' would signal, so the
   ;; helper checks first and reports that it read nothing.
   (let ((calc-settings-file "/nonexistent/maf/calc.el"))
     (cl-assert (null (maf--reset-load-settings)))
@@ -162,6 +162,7 @@ nothing captured yet. See the restoring step below.")
     (delete-file maf-test--settings-file)
     (makunbound 'var-maf-test-canary)
     (call-interactively 'maf-reset)
+    (call-interactively 'maf-reset-settings)
     ;; `equal' against the slot cannot carry this alone: with an empty
     ;; slot it compares nil to nil and passes, certifying the damage.
     ;; The assertion above, that the slot was captured at all, is what

@@ -64,7 +64,7 @@
   "Face for the marker on a state that changed the stack in place."
   :group 'maf)
 
-;; A reset empties the session, so the state it records is where one
+;; A reset empties the stack, so the state it records is where one
 ;; stretch of work ends and the next begins. That gets a band of colour
 ;; behind the whole row rather than another marker character: the log is
 ;; read by scanning down it, and a band is what the eye finds without
@@ -579,7 +579,7 @@ line carries the position counter."
             (insert " " (propertize (format "(%s)" name) 'face 'shadow)))
           (insert "\n")
           (put-text-property start (point) 'maf-history-index i)
-          ;; A reset restarts the session, so its row is banded to the
+          ;; A reset empties the stack, so its row is banded to the
           ;; window edge (see `maf-history-reset') — the log's coarsest
           ;; landmark, found by scanning rather than by reading. Appended
           ;; before the current state's face, so the band outranks it:
@@ -841,7 +841,7 @@ the top, each a change marker (+ added, - removed, ~ changed in place)
 and the action that produced it — the operation it goes by, and after
 it the command that ran — the current one marked. A state a reset
 recorded reads `reset' and is banded in colour across the row: the
-session was emptied there, so it is where one stretch of work ends and
+stack was emptied there, so it is where one stretch of work ends and
 the next begins.
 The stack that action left shows in `maf-history-stack-mode' beside
 it, following point as it moves. \<maf-history-mode-map>
@@ -1339,7 +1339,7 @@ The history is a log of what happened rather than part of the calc
 state, so nothing here is undoable and the stack is untouched — the
 next change starts a fresh log, baselined against the stack as it
 stands. Recording carries on if it was on; this only empties what was
-recorded. Nothing else empties the log — `maf-reset' wipes the session
+recorded. Nothing else empties the log — `maf-reset' erases the stack
 but deliberately leaves the history standing — so this is the one way
 to discard it.
 

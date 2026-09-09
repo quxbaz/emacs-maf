@@ -1871,29 +1871,6 @@ that itself and falls back to the defaults on its own."
       (when (fboundp 'maf-modules-apply)
         (maf-modules-apply)))))
 
-(defun maf--reset-clear-trail ()
-  "Empty calc's trail buffer, if one exists.
-Erases the text rather than killing the buffer, so a window showing
-the trail keeps showing it — the \"Emacs Calculator Trail\" banner is
-a header line, not buffer text, and survives. Calc has no command for
-this: \\`t k' kills one line and the trail otherwise grows for the
-life of the session.
-
-The overlay arrow marking `calc-trail-pointer' goes too. Calc only
-drops it from `calc-trail-here', so left alone it would sit parked on
-the first line of an empty trail; it is cleared in the calc buffer
-only when it really points into the trail, since there the variable
-may be the global one that a debugger is also using."
-  (when-let ((buf (get-buffer "*Calc Trail*")))
-    (with-current-buffer buf
-      (let ((inhibit-read-only t))
-        (erase-buffer))
-      (setq overlay-arrow-position nil))
-    (maf--with-calc-buffer
-      (when (and (markerp overlay-arrow-position)
-                 (eq (marker-buffer overlay-arrow-position) buf))
-        (setq overlay-arrow-position nil)))))
-
 (defun maf--reset-load-settings ()
   "Re-read `calc-settings-file' whole, if it names a readable file.
 `calc-reset' already restores the mode settings from that file, but
@@ -1908,30 +1885,21 @@ Returns non-nil if the file was loaded."
                    (substitute-in-file-name calc-settings-file))))
     (and file (file-readable-p file) (load file t t))))
 
-(defun maf-reset (&optional defaults)
-  "Reset calc to a clean slate: empty stack, empty history, fresh settings.
+(defun maf-reset ()
+  "Erase the stack, and nothing else.
 
-Clears the stack, calc's undo and redo lists, and the trail, restores
-the mode settings saved in `calc-settings-file', then re-reads the
-rest of that file (see `maf--reset-load-settings'). What survives is
-what lives outside the calc buffer: stored variables, the formula
-library, the kill ring — and the maf stack history, which is a log
-of what happened rather than part of the session, and stays browsable
-across the reset. `maf-history-clear' empties it separately.
-
-With a prefix argument DEFAULTS, restore calc's factory default modes
-instead of the saved ones — and then leave the settings file alone,
-since loading it would immediately put the saved modes back and make
-the prefix do nothing.
-
-Nothing here is undoable: the undo list is one of the things cleared."
-  (interactive "P")
+Every entry goes, selections included, as one undoable step: \\`U'
+puts the values back, without their selections. Modes, the trail, the
+undo history, stored variables, and the maf stack history all stay as
+they are. `maf-reset-settings' is the other half — the modes without
+the stack — and running both is the full reset."
+  (interactive)
   (maf--with-calc-buffer
-    (maf--reset-calc (if defaults 0 nil))
-    (maf--reset-clear-trail)
-    (message (if (and (not defaults) (maf--reset-load-settings))
-                 "Calc reset; settings reloaded"
-               "Calc reset"))))
+    (let ((n (calc-stack-size)))
+      (if (zerop n)
+          (message "Stack already empty")
+        (calc-wrapper (calc-pop-stack n 1 t))
+        (message "Stack erased (%d %s)" n (if (= n 1) "entry" "entries"))))))
 
 (defun maf-reset-settings (&optional defaults)
   "Reset calc's modes and display settings, keeping the stack.
@@ -1943,8 +1911,9 @@ command for when a mode got toggled by accident and the session is
 worth keeping.
 
 With a prefix argument DEFAULTS, restore calc's factory default modes
-instead of the saved ones, and leave the settings file unread — as in
-`maf-reset'.
+instead of the saved ones, and leave the settings file unread, since
+loading it would immediately put the saved modes back and make the
+prefix do nothing.
 
 Undo and redo survive as well. `calc-reset' clears both whatever its
 argument, which makes sense when it also clears the stack; with the
