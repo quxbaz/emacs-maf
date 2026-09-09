@@ -12,6 +12,7 @@
    - [ ] website: less stuff, less content, concentrate, focus
    - [ ] website: mvp; animated examples, additions, most important bindings
      (module bindings, editing)
+   - [ ] the binding `a x` is wrong. it should just be `x`
 ** commands
 ** maf-history
 ** maf-editplus
