@@ -62,9 +62,9 @@ always wins: with x declared complex, abssqr(x) stands either way."
   :group 'maf)
 
 (defcustom maf-coordinate-name-sets
-  '(((var a var-a) (var b var-b) (var c var-c) (var d var-d))
-    ((var x var-x) (var y var-y) (var z var-z) (var w var-w))
+  '(((var x var-x) (var y var-y) (var z var-z) (var w var-w))
     ((var h var-h) (var k var-k) (var l var-l) (var m var-m))
+    ((var a var-a) (var b var-b) (var c var-c) (var d var-d))
     ((var p var-p) (var q var-q) (var r var-r) (var s var-s)))
   "Coordinate name sets cycled by `mafcmd-coordinate-toggle'.
 Each element is an ordered list of calc variable nodes, one per
