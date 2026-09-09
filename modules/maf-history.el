@@ -64,8 +64,8 @@
   "Face for the marker on a state that changed the stack in place."
   :group 'maf)
 
-;; A reset empties the stack, so the state it records is where one
-;; stretch of work ends and the next begins. That gets a band of colour
+;; An erase (or calc's reset) empties the stack, so the state it
+;; records is where one stretch of work ends and the next begins. That gets a band of colour
 ;; behind the whole row rather than another marker character: the log is
 ;; read by scanning down it, and a band is what the eye finds without
 ;; reading. `:extend' carries it past the end of the line to the window
@@ -319,11 +319,12 @@ swallowed so a bad calc state can never get the hook disabled."
                         (maf-history--classify old raw))
                        ((memq command '(maf-undo calc-undo)) "undo")
                        ((memq command '(maf-redo calc-redo)) "redo")
-                       ;; A reset empties the stack, which reads
-                       ;; structurally as a plain "del" — true, but it
-                       ;; buries the one thing about the state worth
-                       ;; knowing, that the session restarted here.
-                       ((memq command '(maf-reset calc-reset)) "reset")
+                       ;; An erase or a reset empties the stack, which
+                       ;; reads structurally as a plain "del" — true, but
+                       ;; it buries the one thing about the state worth
+                       ;; knowing, that the stack was wiped here.
+                       ((eq command 'maf-erase) "erase")
+                       ((eq command 'calc-reset) "reset")
                        ((and (stringp trail) (> (length trail) 0)) trail)
                        (t (maf-history--typed old raw prefix)))))
                 (setq maf-history--last-raw raw)
@@ -389,12 +390,12 @@ multi-value push) — so unnamed steps stay legible and 1:1 with `u'/`i'."
           (t "entry"))))
 
 (defun maf-history--reset-p (state)
-  "Return non-nil when STATE was recorded by a reset.
+  "Return non-nil when STATE was recorded by an erase or a reset.
 Read off the display label rather than the command, so a state carries
-its band on the same terms the log names it on: whatever put \"reset\"
-in the label — `maf-history--capture' does, for `maf-reset' and
-`calc-reset' — is what the row is banded for."
-  (equal (maf-history--label state) "reset"))
+its band on the same terms the log names it on: whatever put \"erase\"
+or \"reset\" in the label — `maf-history--capture' does, for
+`maf-erase' and `calc-reset' — is what the row is banded for."
+  (member (maf-history--label state) '("erase" "reset")))
 
 (defun maf-history--command-name (state)
   "Return the name of the command that made STATE, or nil to show none.
@@ -579,7 +580,7 @@ line carries the position counter."
             (insert " " (propertize (format "(%s)" name) 'face 'shadow)))
           (insert "\n")
           (put-text-property start (point) 'maf-history-index i)
-          ;; A reset empties the stack, so its row is banded to the
+          ;; An erase empties the stack, so its row is banded to the
           ;; window edge (see `maf-history-reset') — the log's coarsest
           ;; landmark, found by scanning rather than by reading. Appended
           ;; before the current state's face, so the band outranks it:
@@ -839,10 +840,10 @@ mean something else beside a stack — line motion and RET.")
 The left window of the browser: one line per recorded state, newest at
 the top, each a change marker (+ added, - removed, ~ changed in place)
 and the action that produced it — the operation it goes by, and after
-it the command that ran — the current one marked. A state a reset
-recorded reads `reset' and is banded in colour across the row: the
-stack was emptied there, so it is where one stretch of work ends and
-the next begins.
+it the command that ran — the current one marked. A state an erase
+recorded reads `erase' (calc's own reset, `reset') and is banded in
+colour across the row: the stack was emptied there, so it is where one
+stretch of work ends and the next begins.
 The stack that action left shows in `maf-history-stack-mode' beside
 it, following point as it moves. \<maf-history-mode-map>
 \[maf-history-previous] steps to older states and \[maf-history-next]
@@ -1339,7 +1340,7 @@ The history is a log of what happened rather than part of the calc
 state, so nothing here is undoable and the stack is untouched — the
 next change starts a fresh log, baselined against the stack as it
 stands. Recording carries on if it was on; this only empties what was
-recorded. Nothing else empties the log — `maf-reset' erases the stack
+recorded. Nothing else empties the log — `maf-erase' erases the stack
 but deliberately leaves the history standing — so this is the one way
 to discard it.
 

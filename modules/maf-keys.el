@@ -214,7 +214,7 @@ anyone edits it in.")
         ("Mapping & modes"
          mafcmd-map-flag mafcmd-map mafcmd-map-stack
          mafcmd-filter mafcmd-filter-stack
-         maf-toggle-simplify maf-reset maf-reset-settings)
+         maf-toggle-simplify maf-erase maf-reset-settings)
         ("Modules & menus"
          maf-keys maf-list-modules maf-options maf-formulas maf-history
          maf-history-clear maf-preview-show maf-pretty maf-plot-embed
@@ -276,7 +276,7 @@ which the buffer owns rather than the command.")
         (maf-preview-show "preview" nil)
         (maf-pretty "typeset display" nil)
         (maf-toggle-simplify "toggle simplification" nil)
-        (maf-reset "erase the stack" nil)
+        (maf-erase "erase the stack" nil)
         (maf-pi "pi" "=> 3.14159265359")
         (mafcmd-negate "flip the sign" "x = 2 => -x = -2")
         (mafcmd-collect-terms "collect a variable's terms" "2 x = x + 3 => x = 3")

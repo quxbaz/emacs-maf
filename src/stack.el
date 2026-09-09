@@ -1885,7 +1885,7 @@ Returns non-nil if the file was loaded."
                    (substitute-in-file-name calc-settings-file))))
     (and file (file-readable-p file) (load file t t))))
 
-(defun maf-reset ()
+(defun maf-erase ()
   "Erase the stack, and nothing else.
 
 Every entry goes, selections included, as one undoable step: \\`U'
@@ -1904,7 +1904,7 @@ the stack — and running both is the full reset."
 (defun maf-reset-settings (&optional defaults)
   "Reset calc's modes and display settings, keeping the stack.
 
-The other half of `maf-reset': restores the mode settings saved in
+The other half of `maf-erase': restores the mode settings saved in
 `calc-settings-file' and re-reads the rest of that file, but leaves
 the stack, its selections, and the history exactly as they are. The
 command for when a mode got toggled by accident and the session is

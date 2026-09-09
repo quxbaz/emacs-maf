@@ -483,7 +483,7 @@
 ;; (erase-buffer, `reposition-window', a magit command) has no business
 ;; in a stack buffer, and C-M-k is exactly the destructive global these
 ;; shadow — one fingerslip away from wiping the wrong buffer.
-(maf-bindings-define '(ergo) "C-M-k" #'maf-reset)
+(maf-bindings-define '(ergo) "C-M-k" #'maf-erase)
 (maf-bindings-define '(ergo) "C-M-l" #'maf-reset-settings)
 
 ;; Auto-solve: solve the entry for a variable, cycling through them on

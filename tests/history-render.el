@@ -7,7 +7,8 @@
 
   ;; A reset is read off that same label, so the row is banded on the
   ;; terms the log names it on rather than on a second reading of its own.
-  (cl-assert (maf-history--reset-p '((1) "reset" maf-reset)))
+  (cl-assert (maf-history--reset-p '((1) "erase" maf-erase)))
+  (cl-assert (maf-history--reset-p '((1) "reset" calc-reset)))
   (cl-assert (not (maf-history--reset-p '((1) "del" maf-del))))
 
   ;; The browser is two buffers on one selection. Stash the session's
@@ -182,21 +183,21 @@
   (with-current-buffer (maf-history--stack-buffer)
     (cl-assert (eq (nth 2 (maf-history--state-at-point)) 'mafcmd-mul)))
 
-  ;; A reset restarts the session, and its row says so twice: the label
-  ;; reads "reset" rather than the "del" the emptied stack classifies as,
+  ;; An erase wipes the stack, and its row says so twice: the label
+  ;; reads "erase" rather than the "del" the emptied stack classifies as,
   ;; and the row carries a band of its own — the landmark the log is
   ;; scanned for, where one stretch of work ends and the next begins.
   (progn (setq maf-history--states (list (list (list 4) "new" 'maf-push)
-                                         (list nil "reset" 'maf-reset)
+                                         (list nil "erase" 'maf-erase)
                                          (list (list 9 2) "mul" 'mafcmd-mul))
                maf-history--index 1)
          (maf-history--render t))
   (with-current-buffer (maf-history--buffer)
     (cl-assert (equal (buffer-substring-no-properties (point-min) (point-max))
                       (concat "  + new (maf-push)\n"
-                              "▸ - reset (maf-reset)\n"
+                              "▸ - erase (maf-erase)\n"
                               "  · mul (mafcmd-mul)\n")))
-    (progn (goto-char (point-min)) (forward-line 1) (search-forward "reset")
+    (progn (goto-char (point-min)) (forward-line 1) (search-forward "erase")
            (backward-char 1))
     (cl-assert (equal (get-text-property (point) 'face)
                       '(maf-history-reset maf-history-current)))
