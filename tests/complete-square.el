@@ -60,6 +60,40 @@
                       "(x + 1)^2 + y^2 - 1"))
   (calc-pop (calc-stack-size))
 
+  ;; A quadratic in a power: terms only at degrees 0, n and 2n
+  ;; complete in x^n, the square kept visible rather than folded back
+  ;; to x^4.
+  (maf-push "x^4 - 16")
+  (call-interactively 'mafcmd-complete-square)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "(x^2)^2 - 16"))
+  (calc-pop (calc-stack-size))
+  (maf-push "x^4 + 4 x^2 - 16")
+  (call-interactively 'mafcmd-complete-square)
+  (cl-assert (string= (math-format-value (calc-top 1 'full))
+                      "(x^2 + 2)^2 - 20"))
+  (calc-pop (calc-stack-size))
+  (maf-push "x^6 + 2 x^3 + 5")
+  (call-interactively 'mafcmd-complete-square)
+  (cl-assert (string= (math-format-value (calc-top 1 'full))
+                      "(x^3 + 1)^2 + 4"))
+  (calc-pop (calc-stack-size))
+  (maf-push "2 x^4 + 4 x^2")
+  (call-interactively 'mafcmd-complete-square)
+  (cl-assert (string= (math-format-value (calc-top 1 'full))
+                      "2 (x^2 + 1)^2 - 2"))
+  (calc-pop (calc-stack-size))
+  ;; A compound base raised the same way.
+  (maf-push "sin(y)^4 + 2 sin(y)^2")
+  (call-interactively 'mafcmd-complete-square)
+  (cl-assert (string= (math-format-value (calc-top 1 'full))
+                      "(sin(y)^2 + 1)^2 - 1"))
+  (calc-pop (calc-stack-size))
+  ;; An odd term in between is no quadratic in any power.
+  (maf-push "x^4 + x")
+  (call-interactively 'mafcmd-complete-square)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "x^4 + x"))
+  (calc-pop (calc-stack-size))
+
   ;; Not a quadratic: cubic, reciprocal, and atom all pass through.
   (maf-push "x^3 + x^2")
   (call-interactively 'mafcmd-complete-square)

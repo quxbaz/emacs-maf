@@ -277,20 +277,27 @@ built from the quadratic's coefficients, so any quadratic works:
 symbolic coefficients, a negative or fractional leading term, a
 constant term already present. The square is completed in the
 leftmost sub-expression the formula is quadratic in — usually the
-variable, but sin(y)^2 + 2 sin(y) completes in sin(y). Exact
-coefficients give exact results: fractions, not floats. An expression
-that is not a quadratic commits unchanged, so equation sides without
-one — a bare constant on the right — pass through quietly. Point
-picks the target as usual: a sub-formula at point, each side of an
-equation, the top entry at home.
+variable, but sin(y)^2 + 2 sin(y) completes in sin(y). A polynomial
+with terms only at degrees 0, n and 2n is a quadratic in the n-th
+power, and completes in that: x^4 - 16 in x^2, so the square stays
+visible for a difference of squares to take apart. Exact coefficients
+give exact results: fractions, not floats. An expression that is not
+a quadratic commits unchanged, so equation sides without one — a bare
+constant on the right — pass through quietly. Point picks the target
+as usual: a sub-formula at point, each side of an equation, the top
+entry at home.
 
   2 x^2 + 6 x + 1        =>  2 (x + 3:2)^2 - 7:2
   a x^2 + b x + c        =>  a*(x + b / (2 a))^2 + c - b^2 / (4 a)
   -x^2 + 6 x             =>  9 - (x - 3)^2
   x^2 + 6 x + 9          =>  (x + 3)^2
   sin(y)^2 + 2 sin(y)    =>  (sin(y) + 1)^2 - 1
+  x^4 - 16               =>  (x^2)^2 - 16
+  x^4 + 4 x^2 - 16       =>  (x^2 + 2)^2 - 20
+  x^6 + 2 x^3 + 5        =>  (x^3 + 1)^2 + 4
   x^2 + 6 x = 10         =>  (x + 3)^2 - 9 = 10
-  x^3 + x^2              =>  x^3 + x^2   (not a quadratic: unchanged)"
+  x^3 + x^2              =>  x^3 + x^2   (not a quadratic: unchanged)
+  x^4 + x                =>  x^4 + x     (an odd term: unchanged)"
   :title "complete the square"
   :example "x^2 + 2 x => (x + 1)^2 - 1"
   :arity unary

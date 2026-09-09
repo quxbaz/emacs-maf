@@ -971,20 +971,58 @@ reorder, or extend the candidates, change this function."
                    (close-p (list 'calcFunc-ln n))
                    (sym (list 'calcFunc-ln n)))))))))
 
+(defun maf--quadratic-power (expr base)
+  "The power of BASE that EXPR is a quadratic in, or nil.
+1 when EXPR is a plain quadratic in BASE. n when EXPR is a polynomial
+of degree 2n in BASE with terms only at degrees 0, n and 2n — x^4 - 16
+is a quadratic in x^2, x^6 + 2 x^3 + 5 one in x^3 — so the square
+can be completed in BASE^n. Nil otherwise: a cubic, a quartic with an
+odd term, anything that is no polynomial in BASE at all."
+  (let ((calc-prefer-frac t)
+        ;; Pin the recognizer to plain integer powers of BASE; these
+        ;; are its defaults, but calc's own callers rebind them and
+        ;; the recognizer setqs some of them while it works.
+        (math-poly-base-variable nil)
+        (math-poly-neg-powers nil)
+        (math-poly-mult-powers 1)
+        (math-poly-frac-powers nil))
+    (let* ((degree (math-polynomial-p expr base))
+           (n (and (integerp degree) (cl-evenp degree) (/ degree 2))))
+      (and n (> n 0)
+           (let ((coeffs (math-is-polynomial expr base degree))
+                 (i 0)
+                 (ok t))
+             (when (= (length coeffs) (1+ degree))
+               (dolist (c coeffs)
+                 (unless (or (zerop (% i n)) (math-zerop c))
+                   (setq ok nil))
+                 (setq i (1+ i)))
+               (and ok n)))))))
+
 (defun maf--quadratic-base (expr)
   "Return the base EXPR is a quadratic in, or nil if there is none.
 The base is the leftmost sub-expression in which EXPR is a polynomial
 of degree exactly 2 — usually a variable, but any sub-formula
-qualifies: sin(y)^2 + 2 sin(y) is a quadratic in sin(y)."
-  (math-polynomial-base
-   expr (lambda (base) (eq (math-polynomial-p expr base) 2))))
+qualifies: sin(y)^2 + 2 sin(y) is a quadratic in sin(y). A polynomial
+of degree 2n with terms only at degrees 0, n and 2n is a quadratic in
+the n-th power, and that power is the base: x^4 - 16 in x^2,
+x^6 + 2 x^3 + 5 in x^3 (`maf--quadratic-power')."
+  (let* ((n nil)
+         (base (math-polynomial-base
+                expr (lambda (base)
+                       (setq n (maf--quadratic-power expr base))))))
+    (and base
+         (if (= n 1) base (list '^ base n)))))
 
 (defun maf--quadratic-coeffs (expr base)
   "Return EXPR's coefficients as a quadratic in BASE: a list (C B A).
 The list is constant-first, as calc's polynomial routines return it,
 and A is never zero. Nil when EXPR is not a polynomial of degree 2 in
 BASE. Exact coefficients stay exact: integer division yields
-fractions, not floats."
+fractions, not floats. BASE may be a power of the sub-expression EXPR
+is a polynomial in, as `maf--quadratic-base' returns it for x^4 - 16:
+the coefficients are then those at degrees 0, n and 2n of the
+polynomial in the power's own base."
   (let ((calc-prefer-frac t)
         ;; Pin the recognizer to plain integer powers of BASE; these
         ;; are its defaults, but calc's own callers rebind them and
@@ -994,7 +1032,15 @@ fractions, not floats."
         (math-poly-mult-powers 1)
         (math-poly-frac-powers nil))
     (let ((coeffs (math-is-polynomial expr base 2)))
-      (and (= (length coeffs) 3) coeffs))))
+      (cond
+       ((= (length coeffs) 3) coeffs)
+       ((and (eq (car-safe base) '^)
+             (integerp (nth 2 base))
+             (> (nth 2 base) 1)
+             (eq (maf--quadratic-power expr (nth 1 base)) (nth 2 base)))
+        (let* ((n (nth 2 base))
+               (all (math-is-polynomial expr (nth 1 base) (* 2 n))))
+          (list (nth 0 all) (nth n all) (nth (* 2 n) all))))))))
 
 (defun maf--vertex-form (coeffs base)
   "Build the vertex form A (BASE + h)^2 + k from COEFFS, a list (C B A).
