@@ -346,15 +346,19 @@ operator — see `maf-editplus--wrap-tight'.
 
 With FACTOR non-nil the scan finds a single factor instead: a `*'
 stops it like any other operator. Widening uses this, so that each
-press takes in one operand and no more. The space of an implicit
-product (2 x) is still crossed: calc reads a name followed by a space
-and a paren as a call — a b (c+d) is a*b(c+d) — so a pair opened
-there would change the entry's meaning, not just its grouping."
+press takes in one operand and no more. A power is one factor, so
+the scan crosses a `^' there and takes the base along with the
+exponent — the operand in front of x^2 + (a) is x^2, and a pair
+closing on the 2 alone would regroup the power. The space of an
+implicit product (2 x) is still crossed: calc reads a name followed
+by a space and a paren as a call — a b (c+d) is a*b(c+d) — so a pair
+opened there would change the entry's meaning, not just its grouping."
   (let ((pos from) (star nil) (stop nil))
     (while (and (not stop) (> pos limit))
       (let ((c (char-before pos)))
         (cond
          ((and factor (eq c ?*)) (setq stop c))
+         ((and factor (eq c ?^)) (setq pos (1- pos)))
          ((get-text-property (1- pos) 'maf-edit-prefix) (setq pos (1- pos)))
          ;; A number's exponent sign is not the operator it looks like:
          ;; 1e-3 is one atom, and stopping at the sign would wrap the
@@ -447,7 +451,10 @@ at a time, rather than nesting a second pair inside it: pi+(2) becomes
 \(pi+2), and widening is where a regrouping can happen — deliberately,
 one press at a time. One operator means one operand: here a `*' is a
 boundary like any other, so x + 2 * x - (4) widens to x + 2 * (x - 4)
-and only the press after that to x + (2 * x - 4). Only a bare pair
+and only the press after that to x + (2 * x - 4). A power is one
+operand, so x^2 + (a) widens to (x^2 + a), never to x^(2 + a) — the
+one grouping that would change a power rather than the sum around it.
+Only a bare pair
 widens; an argument list and a vector are structure, and a press
 beside one wraps it instead. When there is nothing left to take in,
 the pair stays as it is.

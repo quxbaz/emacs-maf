@@ -88,6 +88,50 @@
                     "(x + 2 * x - 4)"))
   (call-interactively 'maf-edit-discard)
 
+  ;; A power is one operand. Widening across the `+' takes x^2 whole,
+  ;; never the 2 alone — x^(2 + a) would regroup the power, the one
+  ;; thing widening is not for — and across a `*' the same.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (execute-kbd-macro "x^2 + a") nil)
+  (call-interactively 'maf-editplus-wrap-parens)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "x^2 + (a)"))
+  (call-interactively 'maf-editplus-wrap-parens)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "(x^2 + a)"))
+  (call-interactively 'maf-edit-discard)
+
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (execute-kbd-macro "x^2*y") nil)
+  (call-interactively 'maf-editplus-wrap-parens)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "x^2*(y)"))
+  (call-interactively 'maf-editplus-wrap-parens)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "(x^2*y)"))
+  (call-interactively 'maf-edit-discard)
+
+  ;; A power chain and a grouped base are one factor too.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (execute-kbd-macro "(x+1)^b^c + a") nil)
+  (call-interactively 'maf-editplus-wrap-parens)
+  (call-interactively 'maf-editplus-wrap-parens)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "((x+1)^b^c + a)"))
+  (call-interactively 'maf-edit-discard)
+
+  ;; Widening a pair that sits on the exponent crosses the `^' itself
+  ;; and takes the base: x^(2) becomes (x^2), as before.
+  (call-interactively 'maf-edit-add-entry-below)
+  (progn (execute-kbd-macro "x^2") nil)
+  (call-interactively 'maf-editplus-wrap-parens)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "x^(2)"))
+  (call-interactively 'maf-editplus-wrap-parens)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "(x^2)"))
+  (call-interactively 'maf-edit-discard)
+
   ;; The factor comes with its sign, as a term does.
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "2*-3*(4)") nil)
