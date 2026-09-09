@@ -1,7 +1,8 @@
 ;; S-up and S-down inside a maf-edit session retype the delimiters of
-;; the group at point (`maf-editplus-toggle-brackets', the editplus
-;; module's third delimiter gesture). A step passes when it raises no
-;; error.
+;; the group at point (`maf-editplus-toggle-op' on a delimiter, the
+;; editplus module's third delimiter gesture; what the same key does on
+;; an operator or a term is tests/edit-toggle-op.el's). A step passes
+;; when it raises no error.
 ;;
 ;; The contract: both ends move together, so the pair is never left
 ;; mismatched by the gesture; the group is the one point stands on or
@@ -12,9 +13,9 @@
   ;; A toggle is its own inverse, so both arrows run it — as they do
   ;; for `mafcmd-toggle-op' on the stack.
   (cl-assert (eq (lookup-key maf-edit-mode-map (kbd "S-<up>"))
-                 'maf-editplus-toggle-brackets))
+                 'maf-editplus-toggle-op))
   (cl-assert (eq (lookup-key maf-edit-mode-map (kbd "S-<down>"))
-                 'maf-editplus-toggle-brackets))
+                 'maf-editplus-toggle-op))
 
   ;; The gesture as it is used: parens typed, brackets meant. Point is
   ;; inside the group, where the typing left it, and the real key is
@@ -46,7 +47,7 @@
   (progn (execute-kbd-macro "(a+b)") nil)
   (maf-edit-move-beginning-of-line 1)
   (cl-assert (eq (char-after) ?\())
-  (call-interactively 'maf-editplus-toggle-brackets)
+  (call-interactively 'maf-editplus-toggle-op)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
                     "[a+b]"))
   ;; Point has not moved: the characters are replaced where they sit.
@@ -57,7 +58,7 @@
   ;; is where `maf-editplus-escape-group' and M-o leave point.
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "1+(a+b)") nil)
-  (call-interactively 'maf-editplus-toggle-brackets)
+  (call-interactively 'maf-editplus-toggle-op)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
                     "1+[a+b]"))
   (cl-assert (eolp))
@@ -68,7 +69,7 @@
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "(1+(a+b))") nil)
   (progn (backward-char 2) nil)
-  (call-interactively 'maf-editplus-toggle-brackets)
+  (call-interactively 'maf-editplus-toggle-op)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
                     "(1+[a+b])"))
   ;; Stepping out of it reaches the outer one. Twice: one press leaves
@@ -76,7 +77,7 @@
   ;; the inner group — the second press clears the outer closer too.
   (call-interactively 'maf-editplus-escape-group)
   (call-interactively 'maf-editplus-escape-group)
-  (call-interactively 'maf-editplus-toggle-brackets)
+  (call-interactively 'maf-editplus-toggle-op)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
                     "[1+[a+b]]"))
   (call-interactively 'maf-edit-discard)
@@ -85,7 +86,7 @@
   ;; about delimiters, not about what they enclose.
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "sqrt(3)") nil)
-  (call-interactively 'maf-editplus-toggle-brackets)
+  (call-interactively 'maf-editplus-toggle-op)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
                     "sqrt[3]"))
   (call-interactively 'maf-edit-discard)
@@ -96,10 +97,10 @@
   (call-interactively 'maf-edit-add-entry-below)
   (progn (insert "{1,2}") nil)
   (progn (backward-char 1) nil)
-  (call-interactively 'maf-editplus-toggle-brackets)
+  (call-interactively 'maf-editplus-toggle-op)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
                     "(1,2)"))
-  (call-interactively 'maf-editplus-toggle-brackets)
+  (call-interactively 'maf-editplus-toggle-op)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
                     "[1,2]"))
   (call-interactively 'maf-edit-discard)
@@ -111,7 +112,7 @@
   (call-interactively 'maf-edit-add-entry-below)
   (progn (insert "[1 .. 2)") nil)
   (progn (backward-char 1) nil)
-  (call-interactively 'maf-editplus-toggle-brackets)
+  (call-interactively 'maf-editplus-toggle-op)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
                     "[1 .. 2]"))
   ;; Both bounds included: calc's mask counts 2 for the lower end and
@@ -127,11 +128,11 @@
   (progn (insert "[1 .. 2]") nil)
   (progn (goto-char (- (line-end-position) 6)) nil)
   (cl-assert (eq (char-before) ?1))
-  (call-interactively 'maf-editplus-toggle-brackets)
+  (call-interactively 'maf-editplus-toggle-op)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
                     "(1 .. 2]"))
   (progn (goto-char (line-end-position)) nil)
-  (call-interactively 'maf-editplus-toggle-brackets)
+  (call-interactively 'maf-editplus-toggle-op)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
                     "(1 .. 2)"))
   (call-interactively 'maf-edit-commit)
@@ -143,7 +144,7 @@
   (call-interactively 'maf-edit-add-entry-below)
   (progn (insert "[1 .. 2)") nil)
   (maf-edit-move-beginning-of-line 1)
-  (call-interactively 'maf-editplus-toggle-brackets)
+  (call-interactively 'maf-editplus-toggle-op)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
                     "(1 .. 2)"))
   (call-interactively 'maf-edit-discard)
@@ -153,7 +154,7 @@
   (call-interactively 'maf-edit-add-entry-below)
   (progn (insert "(1.5,2.5)") nil)
   (progn (backward-char 1) nil)
-  (call-interactively 'maf-editplus-toggle-brackets)
+  (call-interactively 'maf-editplus-toggle-op)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
                     "[1.5,2.5]"))
   (call-interactively 'maf-edit-discard)
@@ -163,45 +164,41 @@
   (call-interactively 'maf-edit-add-entry-below)
   (progn (insert "([1 .. 2],3)") nil)
   (progn (goto-char (line-end-position)) nil)
-  (call-interactively 'maf-editplus-toggle-brackets)
+  (call-interactively 'maf-editplus-toggle-op)
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
                     "[[1 .. 2],3]"))
   (call-interactively 'maf-edit-discard)
 
   ;; A group whose other half has not been typed yet has no pair to
-  ;; toggle, and the entry is left exactly as it stands.
+  ;; toggle. On its opener the press says so and the entry is left
+  ;; exactly as it stands; at the end of the entry the unit behind
+  ;; point is what the key turns over instead.
   (call-interactively 'maf-edit-add-entry-below)
   (progn (insert "(1,2") nil)
-  (progn (goto-char (line-end-position)) nil)
+  (maf-edit-move-beginning-of-line 1)
   (cl-assert (string-match-p
               "No complete group"
               (condition-case e
-                  (progn (call-interactively 'maf-editplus-toggle-brackets) "")
+                  (progn (call-interactively 'maf-editplus-toggle-op) "")
                 (error (error-message-string e)))))
   (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
                     "(1,2"))
-  (call-interactively 'maf-edit-discard)
-
-  ;; Neither is there anything to toggle where no group reaches point.
-  (call-interactively 'maf-edit-add-entry-below)
-  (progn (execute-kbd-macro "a+b") nil)
-  (cl-assert (string-match-p
-              "No complete group"
-              (condition-case e
-                  (progn (call-interactively 'maf-editplus-toggle-brackets) "")
-                (error (error-message-string e)))))
+  (progn (goto-char (line-end-position)) nil)
+  (call-interactively 'maf-editplus-toggle-op)
+  (cl-assert (equal (maf-edit--entry-text (maf-editplus--entry-at-point))
+                    "(1,1:2"))
   (call-interactively 'maf-edit-discard)
 
   ;; The scan never leaves the entry point is in: a neighbour's
-  ;; delimiters are not this entry's to retype.
+  ;; delimiters are not this entry's to retype, and a closer behind
+  ;; point on the line above is not this entry's closer.
   (call-interactively 'maf-edit-add-entry-below)
   (progn (execute-kbd-macro "(a+b)") nil)
   (call-interactively 'maf-edit-newline)
-  (progn (execute-kbd-macro "c") nil)
   (cl-assert (string-match-p
-              "No complete group"
+              "Nothing to toggle"
               (condition-case e
-                  (progn (call-interactively 'maf-editplus-toggle-brackets) "")
+                  (progn (call-interactively 'maf-editplus-toggle-op) "")
                 (error (error-message-string e)))))
   (call-interactively 'maf-edit-discard)
 
@@ -213,7 +210,7 @@
   (cl-assert (string-match-p
               "not in a stack entry"
               (condition-case e
-                  (progn (call-interactively 'maf-editplus-toggle-brackets) "")
+                  (progn (call-interactively 'maf-editplus-toggle-op) "")
                 (error (error-message-string e)))))
   (call-interactively 'maf-edit-discard)
   (calc-pop (calc-stack-size))
@@ -226,7 +223,7 @@
   (cl-assert (string-match-p
               "not active"
               (condition-case e
-                  (progn (call-interactively 'maf-editplus-toggle-brackets) "")
+                  (progn (call-interactively 'maf-editplus-toggle-op) "")
                 (error (error-message-string e)))))
   (cl-assert (equal (calc-top 1) '(vec 1 2)))
   (calc-pop (calc-stack-size)))

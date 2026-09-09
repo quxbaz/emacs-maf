@@ -31,13 +31,17 @@
 ;; point, and pressing it again widens that pair one operator at a time
 ;; — the paren pair walks outward instead of being placed by hand.
 ;;
-;; S-up and S-down retype a pair. The third thing wanted of a group
-;; already typed, after escaping it and widening it: the parens around
-;; it turning out to have been meant as the brackets of a vector. Both
-;; ends move at once, which is what the character typed by hand cannot
-;; do — except on an interval, where `[' and `(' say included and
-;; excluded rather than merely opening the group, and the end point is
-;; at moves alone.
+;; S-up and S-down toggle. On the stack the same keys flip an operator
+;; (`mafcmd-toggle-op'), and here they read the text the same way: a
+;; + under point becomes a -, a * a /, and a term becomes its
+;; reciprocal — x under 1, a whole number as the fraction 1:N — with
+;; the same press turning it back. On a delimiter they retype a pair,
+;; the third thing wanted of a group already typed, after escaping it
+;; and widening it: the parens around it turning out to have been
+;; meant as the brackets of a vector. Both ends move at once, which
+;; is what the character typed by hand cannot do — except on an
+;; interval, where `[' and `(' say included and excluded rather than
+;; merely opening the group, and the end point is at moves alone.
 ;;
 ;; C-RET duplicates a pair. The fourth thing wanted of a group already
 ;; typed: a second one beside it differing in a character. (x+1)(x-1)
@@ -597,47 +601,49 @@ characters are skipped, as in the other scans."
       (setq pos (1+ pos)))
     found))
 
-(defun maf-editplus-toggle-brackets ()
-  "Toggle the delimiters of the group at point between ( ) and [ ].
-Both ends move together, so a group typed as parens becomes the vector
-it was meant to be without the pair ever being mismatched:
+(defconst maf-editplus--op-toggle '((?+ . ?-) (?- . ?+) (?* . ?/) (?/ . ?*))
+  "What each operator character becomes when it is toggled.
+The two pairs `mafcmd-toggle-op' flips on the stack that are one
+character in the text: a sum and a difference, a product and a
+quotient.")
 
-  (1,2|)     =>  [1,2]
-  |(a+b)     =>  [a+b]
-  [1,2]|     =>  (1,2)
+(defconst maf-editplus--quotient-hosts '("+" "-" ".." "|" "&&" "||" ":=" "::" "=>")
+  "Operators a quotient stands under as it is, besides the relations.
+Each binds looser than `/', so 1/x written as their operand needs no
+parentheses: a+1/x is a plus the reciprocal. Under anything tighter —
+a product, a power, the space of a juxtaposition — the quotient is
+parenthesized, a/1/x being (a/1)/x and a^1/x being (a^1)/x.")
 
-The group is the one point stands on or inside, so the gesture works
-from where the typing left off rather than only with point parked on a
-delimiter. A brace group becomes a paren group, calc reading {1,2} as
-the same vector [1,2] denotes.
+(defun maf-editplus--node-lineage (root start end)
+  "The node of ROOT's tree spanning exactly START..END, with its parent.
+A cons (NODE . PARENT), PARENT nil for the root; nil when no node has
+that span. Spans are compared rather than nodes, so a node from one
+parse finds itself in another."
+  (cl-labels ((walk (n parent)
+                (if (and (= (maf-editplus--node-start n) start)
+                         (= (maf-editplus--node-end n) end))
+                    (cons n parent)
+                  (seq-some (lambda (kid) (walk kid n))
+                            (maf-editplus--node-children n)))))
+    (and root (walk root nil))))
 
-An interval is the exception, and moves one end only:
+(defun maf-editplus--op-position (node)
+  "Where the operator character heading NODE is.
+Between its two operands for a binary node, past any padding, and at
+the start for a sign written in front of its operand — the start of
+the text inside a bare pair, when NODE carries one."
+  (let ((kids (maf-editplus--node-children node))
+        (start (car (maf-editplus--node-inner node))))
+    (if (and kids (= (maf-editplus--node-start (car kids)) start))
+        (maf-editplus--skip-fill-forward (maf-editplus--node-end (car kids))
+                                         (maf-editplus--node-end node))
+      start)))
 
-  [1 .. 3|)  =>  [1 .. 3]
-  [|1 .. 3)  =>  (1 .. 3)
-
-There a delimiter is not punctuation around a group but a value in its
-own right — `[' saying the bound is included and `(' that it is not —
-so the two ends are independent and a mixed pair is the notation
-working, not a group left broken. The end that moves is the end point
-is at: before the `..' the lower one, after it the upper. To move both,
-press once on each side.
-
-With no complete group in the entry — none at point, or one whose
-other half has not been typed yet — nothing is changed. Runs only
-during a maf-edit session, and only inside an entry."
-  (interactive)
-  (unless maf-edit-mode
-    (user-error "maf-edit is not active"))
-  (let* ((entry (or (maf-editplus--entry-at-point)
-                    (user-error "Point is not in a stack entry")))
-         (limit (+ (overlay-start entry)
-                   (maf-edit--leading-prefix-run (overlay-start entry))))
-         (pair (or (maf-editplus--group-at-point limit (overlay-end entry))
-                   (user-error "No complete group at point")))
-         (open (car pair))
-         (close (cdr pair))
-         (dots (maf-editplus--interval-dots open close)))
+(defun maf-editplus--toggle-group (open close)
+  "Retype the delimiters at OPEN and CLOSE, the two ends of one group.
+Both move together, except on an interval, where the end point is at
+moves alone (see `maf-editplus-toggle-op')."
+  (let ((dots (maf-editplus--interval-dots open close)))
     ;; Replaced in place rather than deleted and reinserted: the entry
     ;; overlay keeps its bounds, and point keeps its position even when
     ;; it is sitting on one of the characters. Closer first, so that a
@@ -652,6 +658,224 @@ during a maf-edit session, and only inside an entry."
       (subst-char-in-region
        pos (1+ pos) (char-after pos)
        (cdr (assq (char-after pos) maf-editplus--bracket-toggle))))))
+
+(defun maf-editplus--reciprocate (node parent)
+  "Write the reciprocal of NODE in its place; return its new bounds.
+The bounds are a cons: where NODE's own text now begins, and where
+everything written ends. PARENT is the node NODE is an operand of, or
+nil. A whole number becomes calc's fraction 1:N, a fraction turns
+over, and 1 — its own reciprocal — stands. The denominator of 1/x is
+x again, so the gesture undoes itself. Anything else is written as
+1/NODE, parenthesized where the text needs it: around NODE when it is
+not one unit as it stands — a power is, binding tighter than the
+quotient — and around the quotient when PARENT binds
+tighter than `/' (`maf-editplus--quotient-hosts'). A juxtaposed
+factor takes a `*' in front of its quotient, since y (1/x) would read
+as a call — and so does a term the scan split off a run it is fused
+to, 24x being 24 times x."
+  (let* ((start (maf-editplus--node-start node))
+         (end (maf-editplus--node-end node))
+         (text (buffer-substring-no-properties start end))
+         (kids (and parent (maf-editplus--node-children parent)))
+         (m1 (copy-marker start t))
+         (m2 (copy-marker end t)))
+    (prog1
+        (cond
+         ((string-match "\\`\\([0-9]+\\):\\([0-9]+\\)\\'" text)
+          (let ((num (match-string 1 text))
+                (den (match-string 2 text)))
+            (delete-region start end)
+            (save-excursion
+              (goto-char start)
+              (insert (if (equal num "1") den (concat den ":" num))))
+            (cons start (marker-position m2))))
+         ((string-match-p "\\`[0-9]+\\'" text)
+          (unless (equal text "1")
+            (save-excursion (goto-char start) (insert "1:")))
+          (cons (marker-position m1) (marker-position m2)))
+         ;; The denominator of 1/x: the 1/ goes, and with it the pair
+         ;; the quotient carried for its place — (1/x)*y giving back x*y.
+         ((and parent
+               (equal (maf-editplus--node-kind parent) "/")
+               (= (length kids) 2)
+               (= (maf-editplus--node-start (cadr kids)) start)
+               (equal (buffer-substring-no-properties
+                       (maf-editplus--node-start (car kids))
+                       (maf-editplus--node-end (car kids)))
+                      "1"))
+          (let ((pstart (maf-editplus--node-start parent))
+                (pend (maf-editplus--node-end parent)))
+            (when (maf-editplus--node-parenthesized-p parent)
+              (delete-region (1- pend) pend))
+            (delete-region pstart start)
+            (cons pstart (marker-position m2))))
+         (t
+          ;; A power stands bare under the 1, binding tighter than the
+          ;; quotient does: 1/x^2 is what the pencil writes.
+          (let* ((whole (not (or (maf-editplus--node-atomic-p node)
+                                 (maf-editplus--node-parenthesized-p node)
+                                 (member (maf-editplus--node-kind node)
+                                         '("^" "**")))))
+                 (kind (and parent (maf-editplus--node-kind parent)))
+                 ;; A run the scan split — the x of 24x, the b of ab
+                 ;; under the dialect — is fused to what is before it.
+                 (fused (and (null parent)
+                             (not (get-text-property (1- start)
+                                                     'maf-edit-prefix))
+                             (maf-editplus--atom-char-p (1- start))))
+                 (tight (or fused
+                            (and parent
+                                 (not (memq kind '(nil group call)))
+                                 (not (member kind maf-editplus--quotient-hosts))
+                                 (not (member kind maf-editplus--relation-ops))))))
+            (save-excursion
+              (goto-char m2)
+              (insert (concat (and whole ")") (and tight ")")))
+              (goto-char m1)
+              (insert (concat (and fused "*") (and tight "(") "1/" (and whole "(")))
+              ;; A juxtaposed factor's space is its operator, and a
+              ;; name before a paren reads as a call: y*(1/x), not
+              ;; y (1/x).
+              (when (and (eq kind 'juxta)
+                         (= (maf-editplus--node-start (cadr kids)) start))
+                (let ((left (maf-editplus--node-end (car kids))))
+                  (delete-region left (maf-editplus--skip-fill-forward left m1))
+                  (goto-char left)
+                  (insert "*"))))
+            (cons (marker-position m1) (marker-position m2)))))
+      (set-marker m1 nil)
+      (set-marker m2 nil))))
+
+(defun maf-editplus-toggle-op ()
+  "Toggle what point is on: an operator, a group's delimiters, or a term.
+The edit-session counterpart of `mafcmd-toggle-op', reading the text
+the way that reads the stack.
+
+An operator flips to its partner — a sum to a difference, a product
+to a quotient — where it stands, and so does the sign in front of a
+term:
+
+  a |+ b     =>  a - b
+  a |* b     =>  a / b
+  |-x        =>  +x
+
+A term becomes its reciprocal. A whole number is written as calc's
+fraction, a fraction turns over, and a name or anything else is
+written under 1 — which the same press takes away again, so the
+gesture is its own inverse there too:
+
+  |x         =>  1/x     =>  x
+  |5         =>  1:5     =>  5
+  2:3        =>  3:2
+  a/|x       =>  a/(1/x)          (parenthesized where the text needs it)
+  |sin(x)^2  =>  (1/sin(x))^2
+
+Point names the term the way it names the argument of
+`maf-editplus-wrap-ln' — the innermost sub-expression the character
+under point belongs to, with an operator naming the node it heads —
+and at the end of the entry the smallest complete unit ending at
+point, so a term just typed turns over without going back to it:
+
+  a+b|       =>  a+1/b
+
+A delimiter retypes the group it belongs to, parens becoming the
+brackets of a vector and back. Both ends move together, so the pair
+is never left mismatched:
+
+  (1,2|)     =>  [1,2]
+  |(a+b)     =>  [a+b]
+  [1,2]|     =>  (1,2)
+
+The group is the one whose delimiter point stands on or just after,
+so the gesture works from where the typing left off. A brace group
+becomes a paren group, calc reading {1,2} as the same vector [1,2]
+denotes. An interval is the exception, and moves one end only:
+
+  [1 .. 3|)  =>  [1 .. 3]
+  [|1 .. 3)  =>  (1 .. 3)
+
+There a delimiter is not punctuation around a group but a value in its
+own right — `[' saying the bound is included and `(' that it is not —
+so the two ends are independent and a mixed pair is the notation
+working, not a group left broken. The end that moves is the end point
+is at: before the `..' the lower one, after it the upper. To move both,
+press once on each side.
+
+An active region is written under 1 exactly as marked, in the
+parentheses that keep the marked text one unit. A delimiter whose
+other half has not been typed yet has no pair to toggle, and nothing
+at all under or behind point leaves the entry as it stands. Runs only
+during a maf-edit session, and only inside an entry."
+  (interactive)
+  (unless maf-edit-mode
+    (user-error "maf-edit is not active"))
+  (let* ((entry (or (maf-editplus--entry-at-point)
+                    (user-error "Point is not in a stack entry")))
+         (limit (+ (overlay-start entry)
+                   (maf-edit--leading-prefix-run (overlay-start entry))))
+         (bound (overlay-end entry))
+         (tree (maf-editplus--parse limit bound)))
+    ;; Point stays on the character it named — the same press undoes
+    ;; the turn — and after a unit behind point it stays at the end,
+    ;; where typing carries on.
+    (cl-flet ((turn (start end)
+                (let* ((lineage (maf-editplus--node-lineage tree start end))
+                       (node (or (car lineage)
+                                 (maf-editplus--make-node 'atom start end
+                                                          nil nil)))
+                       (off (- (point) start))
+                       (new (maf-editplus--reciprocate node (cdr lineage))))
+                  (goto-char (if (>= off (- end start))
+                                 (cdr new)
+                               (+ (car new)
+                                  (min (max off 0)
+                                       (max 0 (1- (- (cdr new) (car new)))))))))))
+      (cond
+       ((use-region-p)
+        (let ((beg (max (region-beginning) limit))
+              (end (region-end)))
+          (when (> end bound)
+            (user-error "Region reaches past the entry"))
+          (when (>= beg end)
+            (user-error "Nothing marked to act on"))
+          (deactivate-mark)
+          (goto-char (cdr (maf-editplus--reciprocate
+                           (maf-editplus--make-node nil beg end nil nil)
+                           nil)))))
+       ;; A delimiter under point, or a closer just behind it, is the
+       ;; group's: the same reading `maf-editplus-duplicate-group' has.
+       ((or (memq (char-after) maf-editplus--openers)
+            (memq (char-after) maf-editplus--closers)
+            (memq (char-before) maf-editplus--closers))
+        (let ((pair (or (maf-editplus--group-at-point limit bound)
+                        (user-error "No complete group at point"))))
+          (maf-editplus--toggle-group (car pair) (cdr pair))))
+       (t
+        (let ((node (maf-editplus--subexpr-node)))
+          (cond
+           ((and node
+                 (member (maf-editplus--node-kind node) '("+" "-" "*" "/")))
+            (let* ((pos (maf-editplus--op-position node))
+                   (to (cdr (assq (char-after pos) maf-editplus--op-toggle))))
+              (unless to
+                (user-error "No operator to toggle at point"))
+              (subst-char-in-region pos (1+ pos) (char-after pos) to)))
+           ;; Inside a vector or an interval on nothing in particular —
+           ;; the padding, the dots — the group is what point names.
+           ((and node (eq (maf-editplus--node-kind node) 'group))
+            (maf-editplus--toggle-group (maf-editplus--node-start node)
+                                        (1- (maf-editplus--node-end node))))
+           (node
+            (turn (maf-editplus--node-start node)
+                  (maf-editplus--node-end node)))
+           ((maf-editplus--group-at-point limit bound)
+            (let ((pair (maf-editplus--group-at-point limit bound)))
+              (maf-editplus--toggle-group (car pair) (cdr pair))))
+           ((maf-editplus--unit-before (point) limit)
+            (let* ((unit (maf-editplus--unit-before (point) limit))
+                   (beg (maf-editplus--unit-last-factor (car unit) (cdr unit))))
+              (turn beg (cdr unit))))
+           (t (user-error "Nothing to toggle at point")))))))))
 
 ;;; Duplicating a group
 
@@ -715,7 +939,7 @@ multiplication, so (x+1)(x-1) is the product it looks like — and
 [1,2][1,2] is the product calc means for two vectors, their dot.
 
 The group is the one point stands on or inside, as it is for
-`maf-editplus-toggle-brackets': the opener point sits before, else the
+`maf-editplus-toggle-op': the opener point sits before, else the
 closer just behind point, else the group enclosing point. A call is
 copied whole, name and all — the name in front of an argument list
 belongs to it — while a number in that place does not, 2(a+b) being a
@@ -2404,7 +2628,8 @@ These keys work only while a maf-edit session is active:
   TAB           Move past the closing parenthesis or bracket.
   M-o           Put parentheses around the term before point.
   C-RET         Duplicate the group at point.
-  S-up/S-down   Change parentheses to brackets, or back.
+  S-up/S-down   Toggle + and -, * and /, a term and its reciprocal,
+                or parentheses and brackets.
   L, Q, \\, |   Wrap the target in ln, sqrt, or abs.
   S/C/T         Wrap the target in sin, cos, or tan.
   B             Wrap the target in log with an explicit base.
@@ -2432,8 +2657,8 @@ Turning this mode off restores the ordinary editing keys."
     (dolist (b '(("TAB" . maf-editplus-escape-group)
                  ("M-o" . maf-editplus-wrap-parens)
                  ("C-<return>" . maf-editplus-duplicate-group)
-                 ("S-<up>"   . maf-editplus-toggle-brackets)
-                 ("S-<down>" . maf-editplus-toggle-brackets)
+                 ("S-<up>"   . maf-editplus-toggle-op)
+                 ("S-<down>" . maf-editplus-toggle-op)
                  ("L"   . maf-editplus-wrap-ln)
                  ("Q"   . maf-editplus-wrap-sqrt)
                  ("\\"  . maf-editplus-wrap-sqrt)

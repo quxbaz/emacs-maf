@@ -43,7 +43,7 @@
   (call-interactively 'maf-edit-discard)
 
   ;; A press with point before the opener takes the group that opens
-  ;; there, as `maf-editplus-toggle-brackets' does, and point stays on
+  ;; there, as `maf-editplus-toggle-op' does, and point stays on
   ;; an opener — the copy's.
   (call-interactively 'maf-edit-add-entry-below)
   (progn (insert "(a+b)") (maf-edit-move-beginning-of-line 1) nil)
