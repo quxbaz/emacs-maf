@@ -26,6 +26,61 @@
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "a + 2 x"))
   (calc-pop (calc-stack-size))
 
+  ;; Subexpr on a zero: replaced, not multiplied. A zero times the
+  ;; variable is only zero again, so the multiply could never be what
+  ;; the gesture meant; the variable takes the zero's place. The
+  ;; entry is spliced, not re-simplified, so the sum keeps its shape.
+  (maf-push "x + 0")
+  (progn (goto-char (point-min)) (search-forward "0") (backward-char 1))
+  (progn (setq unread-command-events (listify-key-sequence "y"))
+         (call-interactively 'maf-quick-variable))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "x + y"))
+  (calc-pop (calc-stack-size))
+
+  ;; Just past a zero, the join replaces as well, for the same reason.
+  (maf-push "x + 0")
+  (progn (goto-char (point-min)) (search-forward "0"))
+  (progn (setq unread-command-events (listify-key-sequence "y"))
+         (call-interactively 'maf-quick-variable))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "x + y"))
+  (calc-pop (calc-stack-size))
+
+  ;; A float zero is a zero too.
+  (maf-push "x + 0.")
+  (progn (goto-char (point-min)) (search-forward "0") (backward-char 1))
+  (progn (setq unread-command-events (listify-key-sequence "y"))
+         (call-interactively 'maf-quick-variable))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "x + y"))
+  (calc-pop (calc-stack-size))
+
+  ;; From the left margin the whole entry is the target; a bare zero
+  ;; is replaced from there too — the margin rule that spares a name
+  ;; is about naming, and a zero has nothing else it could become.
+  (maf-push "0")
+  (progn (goto-char (point-min)) (beginning-of-line))
+  (progn (setq unread-command-events (listify-key-sequence "y"))
+         (call-interactively 'maf-quick-variable))
+  (cl-assert (equal (calc-top 1 'full) '(var y var-y)))
+  (calc-pop (calc-stack-size))
+
+  ;; A zero side of a relation, from the margin, is replaced while the
+  ;; other side is multiplied as usual.
+  (maf-push "0 = b + 1")
+  (progn (goto-char (point-min)) (beginning-of-line))
+  (progn (setq unread-command-events (listify-key-sequence "y"))
+         (call-interactively 'maf-quick-variable))
+  (cl-assert (string= (math-format-value (calc-top 1 'full))
+                      "y = y*(b + 1)"))
+  (calc-pop (calc-stack-size))
+
+  ;; A nonzero number keeps the multiply: only zero is special.
+  (maf-push "x + 1")
+  (progn (goto-char (point-min)) (search-forward "x + 1") (backward-char 1))
+  (progn (setq unread-command-events (listify-key-sequence "y"))
+         (call-interactively 'maf-quick-variable))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "x + y"))
+  (calc-pop (calc-stack-size))
+
   ;; Point on the operator names the whole sum: multiplied like any
   ;; other sub-formula, variable on the left.
   (maf-push "x + 2")

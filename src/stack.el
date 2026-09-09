@@ -108,6 +108,7 @@
 (declare-function math-vectorp "calc-ext")
 (declare-function math-num-integerp "calc-ext")
 (declare-function math-trunc "calc-misc")
+(declare-function math-zerop "calc-misc")
 (declare-function math-evenp "calc-misc")
 (defvar calc-unpack-with-type)
 ;; Defined in maf.el, which cannot be required from here — it loads
@@ -1490,17 +1491,19 @@ Internal: `maf-quick-variable' reads the variable, binds it, and
 dispatches here when point names an expression rather than sitting
 just past one. A target the user pointed at — a selection, a region,
 the sub-formula under point — that is itself a variable is
-overwritten: naming a name means renaming it. Anything else is
-multiplied, variable on the left; a target reached from a margin is
-never renamed, a margin being where the entry is taken whole rather
-than a name pointed at."
+overwritten: naming a name means renaming it. A zero is overwritten
+whatever the gesture, since multiplying it could only give zero back.
+Anything else is multiplied, variable on the left; a target reached
+from a margin is never renamed, a margin being where the entry is
+taken whole rather than a name pointed at."
   :arity unary
   :prefix "qvar"
   :targets-var maf-quick-variable-targets
-  (commit (if (and (eq (car-safe expr) 'var)
-                   (memq maf-target '(subexpr selection region)))
-              maf--quick-variable
-            (calcFunc-mul maf--quick-variable expr))))
+  (commit (cond ((math-zerop expr) maf--quick-variable)
+                ((and (eq (car-safe expr) 'var)
+                      (memq maf-target '(subexpr selection region)))
+                 maf--quick-variable)
+                (t (calcFunc-mul maf--quick-variable expr)))))
 
 (maf-defcmd mafcmd--quick-variable-join (expr _arg commit)
   "Join `maf--quick-variable' onto the sub-formula at `maf--quick-variable-path'.
@@ -1508,16 +1511,20 @@ Internal: `maf-quick-variable' dispatches here when point sits just
 past a sub-formula, where the gesture is to carry on writing rather
 than to name what is there. The variable multiplies that sub-formula
 on its right, in place; the rest of the entry is untouched, so nothing
-else re-simplifies. The entry is the subject whole — a relation
-included, since the variable lands at one place inside it rather than
-once per side."
+else re-simplifies. A zero takes the variable in its place instead,
+since multiplying it could only give zero back. The entry is the
+subject whole — a relation included, since the variable lands at one
+place inside it rather than once per side."
   :arity unary
   :prefix "qvar"
   :scope entry
   :map -1
   (commit (maf--splice-path
            expr maf--quick-variable-path
-           (lambda (node) (calcFunc-mul node maf--quick-variable)))))
+           (lambda (node)
+             (if (math-zerop node)
+                 maf--quick-variable
+               (calcFunc-mul node maf--quick-variable))))))
 
 (defun maf--quick-variable-join-path ()
   "Path for `mafcmd--quick-variable-join', or nil to target normally.
@@ -1539,6 +1546,8 @@ the position of point within it."
   y on a = x| + 2 =>  a = x y + 2
   y on x + 2|     =>  x + 2 y
   y on x +| 2     =>  y (x + 2)
+  y on x + |0     =>  x + y        (a zero is replaced, either way)
+  y on x + 0|     =>  x + y
 
 At home with no selection active, the variable is pushed as a new
 stack entry instead.
@@ -1557,7 +1566,9 @@ margin. A target that is itself a variable is replaced by the new
 one — naming a name means renaming it — but only where the user
 pointed at that name; a margin is not a name pointed at, so nothing
 reached from one is ever renamed. Every other target is multiplied by
-the variable, on the left.
+the variable, on the left — except a zero, which takes the variable in
+its place from any gesture, joined or named, since multiplying it
+could only give zero back.
 
 Any letter is a valid variable; anything else aborts."
   (interactive)
