@@ -8,8 +8,8 @@
 //             after: { cursor: false, blink: false, highlight: false, home: true, header: true, change: true } } }
 //
 // Two panes side by side, or with `result` one pane: the stack before, and on
-// a last line after "=>" the entry the command produced (the home dot hidden
-// unless asked for). The line above is `caption`, any HTML; without one it is
+// a last line after "=>" the entry the command produced (the home dot and
+// the highlight hidden unless asked for). The line above is `caption`, any HTML; without one it is
 // the keys and the command's name. `show` says whether each pane draws the
 // cursor and whether it blinks, the highlight, the home line and the header
 // line, and whether it
@@ -33,7 +33,7 @@ export const SHOW = Object.freeze({
   after: Object.freeze({ cursor: false, blink: false, highlight: false, home: true, header: true, change: true }),
 })
 
-export const showOf = (ab, side) => ({ ...SHOW[side], ...(ab.result && side === 'before' ? { home: false } : {}), ...(ab.show?.[side] ?? {}) })
+export const showOf = (ab, side) => ({ ...SHOW[side], ...(ab.result && side === 'before' ? { home: false, highlight: false } : {}), ...(ab.show?.[side] ?? {}) })
 
 export function fromScene(scene, { caption, show = {}, reveal = false, result = false } = {}) {
   const steps = walk(scene)
