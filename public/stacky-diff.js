@@ -8,8 +8,8 @@
 //             after: { cursor: false, blink: false, highlight: false, home: true, header: true, change: true } } }
 //
 // Two panes side by side, or with `result` one pane: the stack before, and on
-// a last line after "=>" the entry the command produced (the home dot hidden
-// unless asked for). The line above is `caption`, any HTML; without one it is
+// a last line after "=>" the entry the command produced, its changed part in
+// the accent color (the home dot hidden unless asked for). The line above is `caption`, any HTML; without one it is
 // the keys and the command's name. `show` says whether each pane draws the
 // cursor and whether it blinks, the highlight, the home line and the header
 // line, and whether it
@@ -63,10 +63,11 @@ export function change(from, to) {
   return null
 }
 
-// The entry the command produced: the one that changed, else the top.
+// The entry the command produced, as a stacky result: the one that changed,
+// with the changed part set off, else the top.
 export function result(ab) {
   const c = change(ab.before, ab.after)
-  return c ? stacky.entry(ab.after, c.level) : stacky.entry(ab.after, 1) ?? ''
+  return c ? { text: stacky.entry(ab.after, c.level), changed: { from: c.from, to: c.to } } : { text: stacky.entry(ab.after, 1) ?? '', changed: null }
 }
 
 // A side's stack and display options as drawn: with `change`, the outline is

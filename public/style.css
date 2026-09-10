@@ -20,7 +20,7 @@ pre b { color: var(--accent); font-weight: 600; }
 .calcbuf .cursor.steady { animation: none; }
 @media (prefers-reduced-motion: reduce) { .calcbuf .cursor { animation: none; } }
 .calcbuf .fresh { color: var(--accent); font-weight: 600; }
-.calcbuf .result { color: var(--accent); }
+.calcbuf .result .changed { color: var(--accent); }
 .showy { margin: .6em 0 1em; }
 .showy .controls { display: flex; justify-content: flex-end; min-height: 1.4rem; }
 .showy .echo { border-top: 1px solid var(--bg); margin-top: 8px; padding-top: 6px; min-height: 1.65em; color: var(--muted); }

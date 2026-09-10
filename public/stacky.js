@@ -6,7 +6,8 @@
 //     point:     HOME | { level: 1, col: 7 },  // col counts from the start of the entry text
 //     highlight: null | { level: 1, from: 0, to: 9 },  // a range of an entry's text, `to` excluded
 //     fresh:     null | 1,                     // a level whose entry just changed
-//     result:    null | 'x^2 + 2 x + 1 = 9' }  // an answer shown under the buffer, after "=>"
+//     result:    null | 'x^2 + 2 x + 1 = 9'    // an answer shown under the buffer, after "=>"
+//                | { text: 'x^2 + 2 x + 1 = 9', changed: { from: 0, to: 13 } } }  // with the part to set off
 //
 // lines() lays the stack out the way calc does: one numbered line per entry,
 // highest level first, then the home line, an indented dot; a result, which
@@ -88,7 +89,10 @@ export function lines(s, show = SHOW) {
     out.push({ level, prefix: prefix(level), text, cursor, blink: show.blink, mark, fresh: s.fresh === level })
   }
   if (show.home) out.push({ home: true, prefix: INDENT, text: DOT, cursor: show.cursor && isHome(s.point) ? 0 : null, blink: show.blink, mark: null, fresh: false })
-  if (s.result != null) out.push({ result: true, prefix: RESULT, text: s.result, cursor: null, mark: null, fresh: false })
+  if (s.result != null) {
+    const { text, changed = null } = typeof s.result === 'string' ? { text: s.result } : s.result
+    out.push({ result: true, prefix: RESULT, text, cursor: null, mark: null, changed, fresh: false })
+  }
   return out
 }
 
@@ -99,14 +103,21 @@ const escape = t => t.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>':
 export function lineHtml(l) {
   let out = escape(l.prefix)
   const cursorTag = l.blink ? 'cursor' : 'cursor steady'
-  let inMark = false
+  // The mark and the changed span each wrap a run of characters; the mark
+  // opens first and closes last, so one must contain the other if both fall
+  // on a line.
+  let inMark = false, inChanged = false
   const chars = [...l.text]
   chars.forEach((c, i) => {
     const marked = l.mark && i >= l.mark.from && i < l.mark.to
-    if (marked && !inMark) { out += '<mark>'; inMark = true }
+    const changed = l.changed && i >= l.changed.from && i < l.changed.to
+    if (!changed && inChanged) { out += '</span>'; inChanged = false }
     if (!marked && inMark) { out += '</mark>'; inMark = false }
+    if (marked && !inMark) { out += '<mark>'; inMark = true }
+    if (changed && !inChanged) { out += '<span class="changed">'; inChanged = true }
     out += l.cursor === i ? `<span class="${cursorTag}">${escape(c)}</span>` : escape(c)
   })
+  if (inChanged) out += '</span>'
   if (inMark) out += '</mark>'
   if (l.cursor !== null && l.cursor >= chars.length) out += `<span class="${cursorTag}"> </span>`
   const cls = ['line', l.home ? 'home' : l.result ? 'result' : 'entry', l.fresh ? 'fresh' : ''].filter(Boolean).join(' ')
