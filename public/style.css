@@ -1,5 +1,5 @@
-:root { --bg: #fff; --fg: #1d1d1d; --muted: #777; --line: #e6e6e6; --accent: #a3512b; --mark: rgba(163, 81, 43, .18); --band: rgba(0, 0, 0, .05); --mono: Monaco, Menlo, ui-monospace, Consolas, monospace; }
-@media (prefers-color-scheme: dark) { :root { --bg: #121214; --fg: #eaeaea; --muted: #8e8e93; --line: #2a2a2e; --accent: #f4a261; --band: rgba(255, 255, 255, .06); } }
+:root { --bg: #fff; --fg: #1d1d1d; --muted: #777; --line: #e6e6e6; --accent: #9a7b1c; --mark: rgba(154, 123, 28, .18); --band: rgba(0, 0, 0, .05); --mono: Monaco, Menlo, ui-monospace, Consolas, monospace; }
+@media (prefers-color-scheme: dark) { :root { --bg: #121214; --fg: #eaeaea; --muted: #8e8e93; --line: #2a2a2e; --accent: #e9c46a; --band: rgba(255, 255, 255, .06); } }
 * { box-sizing: border-box; }
 html { color-scheme: light dark; }
 body { margin: 0; background: var(--bg); color: var(--fg); font: 19px/1.55 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
@@ -10,7 +10,7 @@ p { margin: 0 0 .8em; }
 .subtitle { color: var(--muted); font-size: 1.15rem; margin-top: -.3em; }
 pre { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .95rem; line-height: 1.65; background: var(--line); padding: 14px 16px; border-radius: 8px; margin: .6em 0 1em; overflow-x: auto; }
 pre b { color: var(--accent); font-weight: 600; }
-.calcbuf { --bg: #121214; --fg: #eaeaea; --muted: #8e8e93; --line: #2a2a2e; --accent: #f4a261; --band: rgba(255, 255, 255, .06); color: var(--fg); }
+.calcbuf { --bg: #121214; --fg: #eaeaea; --muted: #8e8e93; --line: #2a2a2e; --accent: #e9c46a; --band: rgba(255, 255, 255, .06); color: var(--fg); }
 .calcbuf { --pad-y: 20px; --pad-x: 24px; --lh: 1.9; background: var(--line); border-radius: 8px; padding: var(--pad-y) var(--pad-x); font-family: var(--mono); font-size: 1rem; line-height: var(--lh); min-width: 0; }
 .calcbuf .header { color: var(--muted); font-size: .85em; line-height: 1.5; white-space: pre; overflow: hidden; margin: calc(-1 * var(--pad-y)) calc(-1 * var(--pad-x)) 10px; padding: 8px var(--pad-x); background: var(--band); }
 .calcbuf .buffer { background: none; padding: 0; margin: 0; border-radius: 0; font: inherit; min-height: calc(var(--rows, 2) * var(--lh) * 1em); }
