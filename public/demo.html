@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>emacs maf: components</title>
+<link rel="stylesheet" href="style.css">
+<style>
+h2 { font-size: 1.2rem; margin: 2em 0 .3em; }
+.markup { font-size: .8rem; margin: .4em 0 .6em; }
+</style>
+</head>
+<body>
+<main>
+  <div class="layer">
+    <h1>components</h1>
+    <p class="subtitle">every way the site shows an example, on one scene</p>
+    <p class="muted">A reference for choosing the fitting one. All use the <code>expand</code> scene from <code>scenes.js</code>; the markup under each heading is what produces it.</p>
+  </div>
+
+  <h2>scene</h2>
+  <p>Animated: the cursor walks to the sub-formula, the keys echo, the result flashes in. Replays from the control above the pane.</p>
+  <pre class="markup">&lt;div data-scene="expand"&gt;&lt;/div&gt;</pre>
+  <div data-scene="expand"></div>
+
+  <h2>diff</h2>
+  <p>Before and after side by side. The before pane shows the cursor and highlight; the after pane outlines the part that changed.</p>
+  <pre class="markup">&lt;div data-diff="expand"&gt;&lt;/div&gt;</pre>
+  <div data-diff="expand"></div>
+
+  <h2>diff with a caption</h2>
+  <p>The element's own content replaces the keys and command name above the panes.</p>
+  <pre class="markup">&lt;div data-diff="expand"&gt;&lt;b&gt;x&lt;/b&gt; expands only that side&lt;/div&gt;</pre>
+  <div data-diff="expand"><b>x</b> expands only that side</div>
+
+  <h2>reveal</h2>
+  <p>The after pane starts empty; the caption is a button that shows the result, and hides it again.</p>
+  <pre class="markup">&lt;div data-diff="expand" data-reveal&gt;&lt;/div&gt;</pre>
+  <div data-diff="expand" data-reveal></div>
+
+  <h2>result</h2>
+  <p>One pane: the stack before, and the produced entry on a last line after <code>=&gt;</code>. No home dot, no highlight.</p>
+  <pre class="markup">&lt;div data-diff="expand" data-result&gt;&lt;/div&gt;</pre>
+  <div data-diff="expand" data-result></div>
+
+  <h2>result, revealed</h2>
+  <p>The same, with the result line behind the button.</p>
+  <pre class="markup">&lt;div data-diff="expand" data-result data-reveal&gt;&lt;/div&gt;</pre>
+  <div data-diff="expand" data-result data-reveal></div>
+
+  <div class="layer" style="margin-top: 3em">
+    <p class="muted"><a href="index.html">Back to the site.</a></p>
+  </div>
+</main>
+<script type="module">
+import * as showy from "./showy.js"
+import * as stackyDiff from "./stacky-diff.js"
+import * as scenes from "./scenes.js"
+showy.mountAll(scenes)
+stackyDiff.mountAll(scenes)
+</script>
+</body>
+</html>
