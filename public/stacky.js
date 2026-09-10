@@ -101,7 +101,7 @@ export const text = s => lines(s).map(l => l.prefix + l.text).join('\n') + '\n'
 const escape = t => t.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
 
 export function lineHtml(l) {
-  let out = escape(l.prefix)
+  let out = `<span class="prefix">${escape(l.prefix)}</span>`
   const cursorTag = l.blink ? 'cursor' : 'cursor steady'
   // The mark and the changed span each wrap a run of characters; the mark
   // opens first and closes last, so one must contain the other if both fall
