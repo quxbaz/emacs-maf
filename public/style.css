@@ -14,7 +14,7 @@ pre b { color: var(--accent); font-weight: 600; }
 .calcbuf .header { color: var(--muted); font-size: .7em; line-height: 1.5; white-space: pre; overflow: hidden; margin: calc(-1 * var(--pad-y)) calc(-1 * var(--pad-x)) 10px; padding: 3px var(--pad-x); background: var(--band); }
 .calcbuf .buffer { background: none; padding: 0; margin: 0; border-radius: 0; font: inherit; min-height: calc(var(--rows, 2) * 1.65em); }
 .calcbuf mark { background: none; outline: 1px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
-.calcbuf .cursor { background: var(--fg); color: var(--bg); animation: blink 1s steps(1) infinite; }
+.calcbuf .cursor { background: var(--accent); color: var(--bg); animation: blink 1s steps(1) infinite; }
 @keyframes blink { 50% { background: none; color: inherit; } }
 .calcbuf .cursor.steady { animation: none; }
 @media (prefers-reduced-motion: reduce) { .calcbuf .cursor { animation: none; } }
