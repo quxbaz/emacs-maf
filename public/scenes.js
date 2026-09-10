@@ -6,6 +6,6 @@ export const expand = [
   { pause: 900 },
   { point: { level: 1, col: 7 }, highlight: { level: 1, from: 0, to: 9 } },
   { pause: 700 },
-  { keys: 'a x', command: 'mafcmd-expand' },
+  { keys: 'x', command: 'mafcmd-expand' },
   { entry: { level: 1, text: 'x^2 + 2 x + 1 = 9' }, point: { level: 1, col: 9 }, highlight: { level: 1, from: 0, to: 13 } },
 ]

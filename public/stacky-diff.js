@@ -2,8 +2,8 @@
 //
 // The data is a plain object:
 //
-//   { before: <stacky stack>, after: <stacky stack>, keys: 'a x', command: 'mafcmd-expand',
-//     caption: '<b>a x</b> expands only that side', reveal: false, result: false,
+//   { before: <stacky stack>, after: <stacky stack>, keys: 'x', command: 'mafcmd-expand',
+//     caption: '<b>x</b> expands only that side', reveal: false, result: false,
 //     show: { before: { cursor: true, blink: false, highlight: true, home: true, header: true, change: false },
 //             after: { cursor: false, blink: false, highlight: false, home: true, header: true, change: true } } }
 //

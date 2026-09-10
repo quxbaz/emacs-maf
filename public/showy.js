@@ -4,7 +4,7 @@
 //
 //   { stack: ['(x + 1)^2 = 9'] }                  set the stack; point goes home unless `point` is given
 //   { point: { level: 1, col: 7 }, highlight: r }  walk the cursor there one cell at a time, then highlight r
-//   { keys: 'a x', command: 'mafcmd-expand' }      echo the keys one by one, then name the command and hold
+//   { keys: 'x', command: 'mafcmd-expand' }      echo the keys one by one, then name the command and hold
 //   { entry: { level: 1, text }, point, highlight } replace an entry, the result of the command; it flashes
 //   { push: 'x + 1' } / { pop: 1 }                  change the stack
 //   { insert: 'x^2' }                               type text at point, one character at a time
