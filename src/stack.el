@@ -8383,9 +8383,9 @@ The result is normalized under the current simplification mode."
   x^2                                     (the formula, on top)
   [1, 2, 3]  =>  [1, 4, 9]
 
-The same command as `mafcmd-map' (M M) with the formula taken from the
+The same command as `mafcmd-map' (M :) with the formula taken from the
 stack instead of a prompt — the shortcut for a formula already built
-there, and the same thing a lone $ at M M's prompt does. As for any
+there, and the same thing a lone $ at M :'s prompt does. As for any
 binary command, the formula is the entry above the subject (the top
 entry at home) and is consumed on commit, so the subject must lie below
 the top.
@@ -8568,7 +8568,7 @@ the other fancy prefixes chain (M I N maps the inverse), and the
 argument readers carry a prefix argument to the command they precede.")
 
 (defun maf--map-flag-entry ()
-  "Run `mafcmd-map' as \\`M M', spending the pending map flag.
+  "Run `mafcmd-map' as \\`M :', spending the pending map flag.
 The flag and the prefix keymap are cleared first: the flag asks the
 next command to map, and this command is its own mapping — left set it
 would ask `mafcmd-map' to map the mapper."
@@ -8598,10 +8598,9 @@ The axis layer of `maf--map-flag-keys', with the same parent attached
 the same way: : is the formula prompt along the axis and $ the stack
 formula, a digit starts a numeric entry, and any other key falls to
 `calc-fancy-prefix-other-key', re-dispatched with the flag still
-naming the axis, so M r N negates each row. The prompt is : here where
-the element layer doubles M — the key the combinators read a typed
-formula on (`maf--read-operation'), free once an axis is named, where
-a doubled M would read as a change of mind.")
+naming the axis, so M r N negates each row. The prompt is : here as
+in the element layer — the key the combinators read a typed formula
+on (`maf--read-operation').")
 
 (defun maf--map-flag-axis (axis msg)
   "Restate the pending map flag as AXIS, `rows' or `cols', echoing MSG.
@@ -8652,11 +8651,11 @@ See `maf--map-axis-entry'."
     ;; it, map a matrix by rows or by columns instead of by element.
     (define-key map "r" #'maf--map-flag-rows)
     (define-key map "c" #'maf--map-flag-cols)
-    ;; The doubled key is the formula prompt. Without this entry the
-    ;; second M would only re-run the flag setter, a no-op. The prompt
-    ;; does not take : as well — : is the square (mafcmd-sqr), and M :
-    ;; falls through to map it like any other command.
-    (define-key map "M" #'maf--map-flag-entry)
+    ;; The formula prompt, on the key every maf operation prompt reads
+    ;; a typed formula on (`maf--read-operation', and the axis layer's
+    ;; M r :). : alone is the square (mafcmd-sqr); its mapped form is
+    ;; M W, as at the combinator prompts.
+    (define-key map ":" #'maf--map-flag-entry)
     ;; The parent collects digits as a prefix argument, but maf's
     ;; digits start a numeric entry: give them the fall-through every
     ;; other key gets, so M 1 + types the 1 and adds it plainly (the
@@ -8669,7 +8668,7 @@ See `maf--map-axis-entry'."
   "Keymap live for the keypress after \\`M', over calc's fancy-prefix map.
 Its parent is `calc-fancy-prefix-map', attached in `mafcmd-map-flag'
 once calc-ext has defined it, so its changes are few: $ runs the
-stack-formula mapping, a doubled M the prompting one, r and c restate
+stack-formula mapping, : the prompting one, r and c restate
 the flag as an axis and read one more key in `maf--map-axis-keys', a
 digit starts a numeric entry as it does outside the flag (C-u still
 reads a prefix argument), and any other key falls to
@@ -8711,7 +8710,7 @@ prompt's own keystrokes must not spend it."
 
   [x, y]  M N   =>  [-x, -y]      (negate, mapped over the elements)
 
-Where `mafcmd-map' (M M) maps a formula you type and `mafcmd-map-stack'
+Where `mafcmd-map' (M :) maps a formula you type and `mafcmd-map-stack'
 (M $) maps one from the stack, M maps a command — any `maf-defcmd'
 command, unary or binary, with no keymap of blessed operations behind
 it (calc's V M reads its operator from a fixed table; a flag needs no
@@ -8743,15 +8742,14 @@ once on the whole entry, so M Q on a scalar is plain Q.
 
 The flag lasts for exactly one command, like calc's K or I: it chains
 with those prefixes (M I | runs |'s inverse variant, vconcatrev, once
-per element), a second M is the formula prompt rather than a cancel
-(C-g cancels), and a command that has no reading of it simply drops
-it. It also survives a command's own prompt, so
+per element), a second M cancels it as a doubled K or I does (so does
+C-g), and a command that has no reading of it simply drops it. It also survives a command's own prompt, so
 M i on a vector of relations solves each one for the variable typed."
   (interactive "P")
   (calc-fancy-prefix 'maf-map-flag "Map..." n)
   (when maf-map-flag
     ;; Ride over calc's fancy-prefix map for the next keypress, adding
-    ;; $ and M on top of it. The parent attaches here rather than at
+    ;; : and $ on top of it. The parent attaches here rather than at
     ;; the defvar: `calc-fancy-prefix-map' is calc-ext's, not yet
     ;; loaded when this file is.
     (unless (keymap-parent maf--map-flag-keys)

@@ -1,6 +1,6 @@
 ;; mafcmd-map-flag (M): a fancy prefix like calc's K or I — the next
 ;; contextual command, unary or binary, maps over its subject: one run
-;; per vector element or equation side. Where M M maps a formula you
+;; per vector element or equation side. Where M : maps a formula you
 ;; type and M $ maps one from the stack, M maps a command. The prefix is
 ;; driven with real keys where the flow through calc's fancy-prefix
 ;; machinery is itself the thing under test.
@@ -166,29 +166,32 @@
          (cl-assert (null maf-map-flag))
          (cl-assert (null (memq #'maf--map-flag-expire post-command-hook))))
 
-  ;; The colon is not a prompt key: : is the square, and M : maps it
-  ;; over the elements like any other command. The result is the same
-  ;; as the formula prompt with x^2 typed; the flag is spent.
+  ;; The colon is the formula prompt, as at every maf operation
+  ;; prompt: M : runs `mafcmd-map', and the flag is spent.
   (maf-push "[1, 2, 3]")
   (goto-char (point-max))
-  (progn (execute-kbd-macro (kbd "M :"))
+  (progn (execute-kbd-macro (kbd "M : x ^ 2 RET"))
          (cl-assert (null maf-map-flag))
          (cl-assert (string= (math-format-value
                               (maf--strip-encasing (calc-top 1 'full)))
                              "[1, 4, 9]")))
   (calc-pop (calc-stack-size))
 
-  ;; The doubled key is the formula prompt: M M runs `mafcmd-map' —
-  ;; without the entry in `maf--map-flag-keys' a second M would only
-  ;; re-run the flag setter.
+  ;; The square's mapped form is its other key: M W squares each
+  ;; element, where the bare command would take the dot product.
   (maf-push "[1, 2, 3]")
   (goto-char (point-max))
-  (progn (execute-kbd-macro (kbd "M M x ^ 2 RET"))
+  (progn (execute-kbd-macro (kbd "M W"))
          (cl-assert (null maf-map-flag))
          (cl-assert (string= (math-format-value
                               (maf--strip-encasing (calc-top 1 'full)))
                              "[1, 4, 9]")))
   (calc-pop (calc-stack-size))
+
+  ;; A doubled M is no key of its own: the second M re-runs the
+  ;; setter, which toggles the flag off as a doubled K or I does.
+  (progn (execute-kbd-macro (kbd "M M"))
+         (cl-assert (null maf-map-flag)))
 
   ;; It chains with calc's own prefixes: after M I both are pending,
   ;; and a command that reads neither clears both.
