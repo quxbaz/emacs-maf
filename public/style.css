@@ -11,7 +11,7 @@ p { margin: 0 0 .8em; }
 pre { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .95rem; line-height: 1.65; background: var(--line); padding: 14px 16px; border-radius: 8px; margin: .6em 0 1em; overflow-x: auto; }
 pre b { color: var(--accent); font-weight: 600; }
 .calcbuf { --bg: #121214; --fg: #eaeaea; --muted: #8e8e93; --line: #2a2a2e; --accent: #daa520; --band: rgba(255, 255, 255, .06); color: var(--fg); }
-.calcbuf { --pad-y: 20px; --pad-x: 24px; --lh: 1.9; background: var(--line); border-radius: 8px; padding: var(--pad-y) var(--pad-x); font-family: var(--mono); font-size: 1rem; line-height: var(--lh); min-width: 0; }
+.calcbuf { --pad-y: 20px; --pad-x: 24px; --lh: 1.9; background: var(--line); border-radius: 8px; padding: var(--pad-y) var(--pad-x) calc(var(--pad-y) - 2px); font-family: var(--mono); font-size: 1rem; line-height: var(--lh); min-width: 0; }
 .calcbuf .header { color: var(--muted); font-size: .85em; line-height: 1.5; white-space: pre; overflow: hidden; margin: calc(-1 * var(--pad-y)) calc(-1 * var(--pad-x)) 14px; padding: 8px var(--pad-x); background: var(--band); }
 .calcbuf .buffer { background: none; padding: 0; margin: 0; border-radius: 0; font: inherit; min-height: calc(var(--rows, 2) * var(--lh) * 1em); }
 .calcbuf .prefix { color: #737379; }
