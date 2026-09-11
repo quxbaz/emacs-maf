@@ -111,7 +111,14 @@ keeping the cockpit a clean two-window layout."
     ;; survive the kill (calc global state, or a config that saves and
     ;; restores it) — a session must start empty or tests that assert
     ;; absolute stack sizes see the previous session's leftovers.
-    (calc-reset 0)
+    ;;
+    ;; The trail setting is a mode variable too, and its default is on:
+    ;; the reset would switch it back on in an instance whose settings
+    ;; file turned it off, and the developer's next `M-x calc' there
+    ;; would open with a trail. No test asserts on it, so it survives.
+    (let ((trail calc-display-trail))
+      (calc-reset 0)
+      (setq calc-display-trail trail))
     (current-buffer)))
 
 (defun maf--step-setup-windows ()
