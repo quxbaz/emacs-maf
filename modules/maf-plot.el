@@ -400,14 +400,41 @@ What is given becomes the next prompt's default."
 
 ;;; Sampling (gnuplot backends)
 
+(defun maf-plot--sample-value (expr var x)
+  "EXPR at VAR = X: the calc value and its Emacs float, or nil when not real.
+Return (VALUE . FLOAT); VALUE is what the data file prints, FLOAT what
+the pole test compares. With VAR nil EXPR is a constant."
+  (let ((v (math-evaluate-expr
+            (if var
+                (math-expr-subst expr var (math-read-number (number-to-string x)))
+              expr))))
+    (when (Math-realp v)
+      (cons v (maf-plot--number v)))))
+
+(defun maf-plot--pole-between-p (expr var x1 y1 x2 y2)
+  "Non-nil when EXPR blows up between the kept samples (X1 Y1) and (X2 Y2).
+Only a sign change is a candidate; it is a pole, not a zero crossing,
+when the curve is growing toward the middle: the midpoint's magnitude
+exceeds both neighbours', or the midpoint is not real at all. One
+extra evaluation per sign change, none elsewhere."
+  (and (or (and (< y1 0) (> y2 0)) (and (> y1 0) (< y2 0)))
+       (let ((mid (maf-plot--sample-value expr var (/ (+ x1 x2) 2.0))))
+         (or (null mid)
+             (> (abs (cdr mid)) (max (abs y1) (abs y2)))))))
+
 (defun maf-plot--sample (expr range file &optional sideways)
   "Sample EXPR over RANGE into FILE as gnuplot data; return FILE.
 Calc evaluates every point — syntax is never translated. Symbolic
 mode is bound off: it leaves sin(1.5) unevaluated, rejecting every
 sample of a trig curve while plain arithmetic still works, a
-per-expression breakage worth ruling out wholesale. Non-real values
-(singularities, complex regions) are skipped; the gaps in the data
-file render as gaps in the curve, which is right.
+per-expression breakage worth ruling out wholesale.
+
+Gnuplot joins consecutive rows whatever lies between them, so a gap
+in the curve has to be a blank line in the file. One goes where a
+sample is dropped for not being real (a singularity hit exactly, a
+complex region), and where a pole falls between two kept samples
+\=(`maf-plot--pole-between-p'): without it csc's asymptotes would be
+drawn as near-vertical strokes between the huge values either side.
 
 Each line is the sampled variable then the value, gnuplot's x then
 y. With SIDEWAYS non-nil the columns trade places: EXPR is the rhs
@@ -418,21 +445,28 @@ way — y, for a sideways curve."
          (var (maf-plot--variable expr))
          (lo (car range))
          (step (/ (- (cdr range) lo) (float maf-plot-samples)))
-         (lines nil))
+         (lines nil)
+         (kept 0)
+         (prev nil))                    ; (X . FLOAT) of the last kept sample, nil across a gap
     (dotimes (i (1+ maf-plot-samples))
       (let* ((x (+ lo (* i step)))
-             (v (math-evaluate-expr
-                 (if var
-                     (math-expr-subst
-                      expr var (math-read-number (number-to-string x)))
-                   expr))))
-        (when (Math-realp v)
-          (let ((value (math-format-value (math-float v) 1000)))
+             (sample (maf-plot--sample-value expr var x)))
+        (cond
+         ((null sample)
+          (when prev (push "" lines))
+          (setq prev nil))
+         (t
+          (when (and prev
+                     (maf-plot--pole-between-p expr var (car prev) (cdr prev) x (cdr sample)))
+            (push "" lines))
+          (let ((value (math-format-value (math-float (car sample)) 1000)))
             (push (if sideways
                       (format "%s %s" value x)
                     (format "%s %s" x value))
-                  lines)))))
-    (unless lines
+                  lines))
+          (setq kept (1+ kept)
+                prev (cons x (cdr sample)))))))
+    (when (zerop kept)
       (user-error "No plottable points for %s over %g:%g"
                   (maf-plot--label expr) (car range) (cdr range)))
     (with-temp-file file

@@ -88,6 +88,46 @@
                   (insert-file-contents maf-plot-test--file)
                   (length (split-string (buffer-string) "\n" t)))
                 240))
+  ;; Gnuplot joins consecutive rows whatever lies between, so the gap
+  ;; is a blank line in the file: 1/x has one, between the rows either
+  ;; side of the dropped sample.
+  (progn (setq maf-plot-test--lines
+               (with-temp-buffer
+                 (insert-file-contents maf-plot-test--file)
+                 (split-string (buffer-string) "\n")))
+         nil)
+  (cl-assert (= (cl-count "" (butlast maf-plot-test--lines) :test #'equal) 1))
+  ;; csc in degrees: every pole on the grid is dropped and the four
+  ;; interior ones each leave a blank line, so no stroke joins the
+  ;; huge values either side of an asymptote.
+  (maf-plot--sample (math-read-expr "csc(x)") '(-360.0 . 360.0)
+                    maf-plot-test--file)
+  (progn (setq maf-plot-test--lines
+               (with-temp-buffer
+                 (insert-file-contents maf-plot-test--file)
+                 (split-string (buffer-string) "\n")))
+         nil)
+  (cl-assert (= (length (cl-remove "" maf-plot-test--lines :test #'equal)) 236))
+  (cl-assert (equal (cl-subseq (member "-3.0 -19.1073226093" maf-plot-test--lines) 0 3)
+                    '("-3.0 -19.1073226093" "" "3.0 19.1073226093")))
+  ;; A pole between grid points is found by the sign change and the
+  ;; midpoint growing past both neighbours; a zero crossing is not.
+  (maf-plot--sample (math-read-expr "1/(x-0.3)") '(-10.0 . 10.0)
+                    maf-plot-test--file)
+  (progn (setq maf-plot-test--lines
+               (with-temp-buffer
+                 (insert-file-contents maf-plot-test--file)
+                 (split-string (buffer-string) "\n")))
+         nil)
+  (cl-assert (= (length (cl-remove "" maf-plot-test--lines :test #'equal)) 241))
+  (cl-assert (equal (cl-subseq (member "0.25 -20." maf-plot-test--lines) 0 2)
+                    '("0.25 -20." "")))
+  (maf-plot--sample (math-read-expr "x-0.3") '(-10.0 . 10.0)
+                    maf-plot-test--file)
+  (cl-assert (= (with-temp-buffer
+                  (insert-file-contents maf-plot-test--file)
+                  (cl-count "" (butlast (split-string (buffer-string) "\n")) :test #'equal))
+                0))
 
   ;; A constant still plots — a horizontal line, no variable to bind.
   (maf-plot--sample (math-read-expr "5") '(-1.0 . 1.0) maf-plot-test--file)

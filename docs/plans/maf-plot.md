@@ -86,9 +86,11 @@ Sampling requirements, all hit during prototyping:
   (which leaks in via calc-settings-file) leaves `sin(1.5)` unevaluated
   and every sample gets rejected — while plain arithmetic still
   evaluates, so the breakage is per-expression and confusing.
-- **Filter with `Math-realp`** and simply skip non-real samples.
-  Singularities and complex regions become gaps, which gnuplot renders
-  correctly.
+- **Filter with `Math-realp`** and skip non-real samples, writing a
+  blank line in their place: gnuplot joins consecutive rows however far
+  apart, so only a blank line breaks the curve. A pole between two kept
+  samples (sign change, magnitude growing toward the midpoint) gets a
+  blank line too, or csc's asymptotes draw as vertical strokes.
 - **Respect the angle mode.** Evaluation happens in the calc buffer, so
   `calc-angle-mode` applies; the range default must match (a ±7 range
   on a degrees-mode sine is a flat line).
