@@ -521,6 +521,10 @@
 ;; calc-substitute, keeping the two prompts and adding a default for
 ;; the first, a contextual subject, and $ for the stack.
 (maf-bindings-define '(calc ergo) "a b" #'mafcmd-substitute)
+;; Units conversion, on calc's own key for it: mafcmd-convert-units
+;; shadows calc-convert-units, keeping its prompts and mapping over a
+;; vector's elements, which calc's reads as unitless.
+(maf-bindings-define '(calc ergo) "u c" #'mafcmd-convert-units)
 ;; Quick substitution: apply an assignment from the stack to the
 ;; contextual subject. On the RET family's meta member since the swap
 ;; with the traveling duplicate (above); shadows calc-last-args, as

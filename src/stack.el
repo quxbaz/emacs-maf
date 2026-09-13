@@ -29,6 +29,16 @@
 (declare-function math-simplify "calc-alg")
 (declare-function math-matrixp "calc-ext")
 (declare-function math-check-unit-name "calc-units")
+(declare-function math-units-in-expr-p "calc-units")
+(declare-function math-convert-units "calc-units")
+(declare-function math-to-standard-units "calc-units")
+(declare-function math-simplify-units "calc-units")
+(declare-function math-get-default-units "calc-units")
+(declare-function math-put-default-units "calc-units")
+(declare-function math-check-unit-consistency "calc-units")
+(declare-function math-consistent-units-p "calc-units")
+(defvar math-standard-units-systems)   ; calc-units'
+(defvar calc-ensure-consistent-units)  ; calc-units'
 (declare-function math-transpose "calc-vec")
 (declare-function math-const-var "calc-ext")
 (declare-function calc-undo "calc-undo")
@@ -7403,11 +7413,12 @@ Bound per `mafcmd-substitute' call, from the prompt it reads.")
 Bound per `mafcmd-substitute' call; nil for the $ form, whose
 replacement is the stack arg `maf--substitute-arg-run' receives.")
 
-(defun maf--subst-subject (arity)
-  "Return the expression `mafcmd-substitute' will act on, or nil.
-Read-only: resolves the target an ARITY command would resolve without
-touching calc state, so the prompt can offer a default and a
-substitution that matches nothing can be refused before anything is
+(defun maf--peek-subject (opts)
+  "Return the expression a `maf-defcmd' with OPTS would act on, or nil.
+Read-only: resolves the target OPTS describe — its `:arity' at least,
+any `:widen' the command declares — without touching calc state, so a
+front command can look at its subject before prompting: offer a
+default, or refuse an input that cannot apply before anything is
 committed.
 
 The mark is saved and restored around the resolve: the region target
@@ -7416,7 +7427,12 @@ leave the region standing for the run that follows. Nil when point
 resolves to no target at all — the run then raises the real error."
   (ignore-errors
     (save-mark-and-excursion
-      (alist-get :expr (maf--resolve-context `((:arity . ,arity)))))))
+      (alist-get :expr (maf--resolve-context opts)))))
+
+(defun maf--subst-subject (arity)
+  "Return the expression `mafcmd-substitute' will act on, or nil.
+The `maf--peek-subject' of an ARITY command with no other options."
+  (maf--peek-subject `((:arity . ,arity))))
 
 (defun maf--subst-parse (input)
   "Return INPUT parsed as a calc expression.
@@ -7798,6 +7814,229 @@ assignment, and keep-args leaves the entry and pushes the result.
 (maf-set-command-doc 'mafcmd-let-entry
                      "evaluate the entry under a typed assignment"
                      "x + 1 => 3   (typed: x = 2)")
+
+;;; Units
+
+(defvar maf--cvun-units nil
+  "The units `maf--convert-units-run' converts its subject to, parsed.
+Bound per `mafcmd-convert-units' call.")
+
+(defvar maf--cvun-old nil
+  "The units a unitless subject is taken to be in, parsed, or nil.
+Bound per `mafcmd-convert-units' call: read when the subject carries no
+units at all, and nil otherwise.")
+
+(defun maf--units-in-p (expr)
+  "Non-nil when a unit name occurs anywhere in EXPR.
+Calc's own test looks only at a node's first two operands, so it does
+not see a unit in a vector's third element; this one looks at all of
+them."
+  (and (consp expr)
+       (if (eq (car expr) 'var)
+           (math-check-unit-name expr)
+         (seq-some #'maf--units-in-p (cdr expr)))))
+
+(defun maf--units-widen-p (expr)
+  "Non-nil when EXPR carries units and is more than a bare unit name.
+The `:widen' predicate for `maf--convert-units-run': point on the 3 or
+the m of 3 m widens to the quantity 3 m, not to the 3 alone (no units)
+or the m alone (converting the name by itself would leave 1 3.28 ft
+in place of 1 m)."
+  (and (maf--units-in-p expr)
+       (not (math-check-unit-name expr))))
+
+(defun maf--units-carrier (expr)
+  "The first part of EXPR that carries units, or nil.
+EXPR itself when it is not a vector or relation; else the first element
+or side that carries any, searched in turn."
+  (cond ((or (eq (car-safe expr) 'vec) (maf--relation-p expr))
+         (seq-some #'maf--units-carrier (cdr expr)))
+        ((maf--units-in-p expr) expr)))
+
+(defun maf--units-system (units)
+  "The substitutions of the standard units system UNITS names, or nil.
+Naming a system — si, base, mks, cgs — at the units prompt means its
+base units rather than a units expression."
+  (and (eq (car-safe units) 'var)
+       (nth 1 (assq (nth 1 units) math-standard-units-systems))))
+
+(defun maf--units-read (prompt &optional default)
+  "Read a units expression with PROMPT; return it parsed.
+DEFAULT, a string, is what empty input stands for; with no default,
+empty input is refused. A leading / is read as 1/, so 1/s can be
+typed as /s, as calc reads it."
+  (let ((input (string-trim
+                (read-string (format-prompt prompt default) nil nil default))))
+    (when (string-empty-p input)
+      (user-error "No units specified"))
+    (when (string-match "\\` */" input)
+      (setq input (concat "1" input)))
+    (let ((units (math-read-expr input)))
+      (when (eq (car-safe units) 'error)
+        (user-error "Bad format in units expression: %s" (nth 2 units)))
+      (unless (or (maf--units-in-p units) (maf--units-system units))
+        (user-error "No units specified"))
+      units)))
+
+(defvar maf--cvun-hit nil
+  "Non-nil once `maf--convert-units' has met a quantity it could convert.
+Bound by `mafcmd-convert-units' around a dry run of its subject, to
+tell a subject with nothing to convert from one already in the target
+units — both come back unchanged.")
+
+(defun maf--units-convert-quantity (x convert)
+  "The conversion CONVERT of quantity X, in X's numeric form.
+With `maf-convert-units-exact' on, CONVERT runs with fractions
+preferred, so an exact conversion comes out exact — 1 cm to mm is
+10 mm — and a result that is not a whole number floats unless
+fractions are preferred or X already carried one. Off, CONVERT runs
+under the mode as it is. Either way the result is normalized as
+calc's entry of it would be: a bare unit name converted comes back as
+an unfolded product otherwise."
+  (if maf-convert-units-exact
+      (let ((res (let ((calc-prefer-frac t))
+                   (math-normalize (funcall convert x)))))
+        (if (or calc-prefer-frac (maf--contains-type-p x 'frac))
+            res
+          (maf--float-fracs res)))
+    (math-normalize (funcall convert x))))
+
+(defun maf--convert-units (expr units old)
+  "Convert every quantity in EXPR to UNITS; return the result.
+A quantity is a product, quotient or power carrying units — the
+operands calc converts one by one — and one whose units are
+inconsistent with UNITS stands, so a mixed table converts its lengths
+and leaves its times; with `calc-ensure-consistent-units' on it
+signals instead, as calc does. Everything else is walked through to
+the quantities in it: a vector element by element, a relation side by
+side, a sum term by term — a sum of quantities is combined first, as
+calc combines it, so 3 m + 2 in converts as one length. Each quantity
+keeps its numeric form through the conversion, exact staying exact
+\(`maf--units-convert-quantity').
+
+OLD, when non-nil, is the units a unitless subject was said to be in:
+every number is then taken in those and comes back a pure number, as
+calc's own conversion answers when the old units were typed. UNITS
+naming a standard units system converts every quantity to its base
+units instead."
+  (let ((system (maf--units-system units)))
+    (cl-labels
+        ((walk (x)
+           (cond ((eq (car-safe x) 'vec)
+                  (cons 'vec (mapcar #'walk (cdr x))))
+                 (old
+                  (setq maf--cvun-hit t)
+                  (maf--units-convert-quantity
+                   x (lambda (q) (math-convert-units (math-mul q old) units t))))
+                 ((not (maf--units-in-p x)) x)
+                 ((math-units-in-expr-p x nil)
+                  (cond (system
+                         (setq maf--cvun-hit t)
+                         (maf--units-convert-quantity
+                          x (lambda (q)
+                              (math-simplify-units
+                               (math-to-standard-units q system)))))
+                        ((math-consistent-units-p x units)
+                         (setq maf--cvun-hit t)
+                         (maf--units-convert-quantity
+                          x (lambda (q) (math-convert-units q units))))
+                        (calc-ensure-consistent-units
+                         (math-check-unit-consistency x units))
+                        (t x)))
+                 ((Math-primp x) x)
+                 ((eq (car x) '+)
+                  ;; Combined as calc combines a sum before converting
+                  ;; it; one that stays a sum walks term by term.
+                  (let ((sum (math-simplify-units x)))
+                    (if (eq (car-safe sum) '+)
+                        (cons '+ (mapcar #'walk (cdr sum)))
+                      (walk sum))))
+                 (t (cons (car x) (mapcar #'walk (cdr x)))))))
+      (walk expr))))
+
+(maf-defcmd maf--convert-units-run (expr _arg commit)
+  "Convert the resolved expression to `maf--cvun-units'.
+The worker behind `mafcmd-convert-units' — see there. A subject with
+no units carries `maf--cvun-old', the units it was said to be in."
+  :arity unary
+  :prefix "cvun"
+  :targets-var mafcmd-convert-units-targets
+  :widen maf--units-widen-p
+  (commit (maf--convert-units expr maf--cvun-units maf--cvun-old)))
+
+(defun mafcmd-convert-units ()
+  "Convert the resolved expression to other units, element by element.
+
+  3 m  =>  9.84251968504 ft     (typed: ft)
+
+Reads the new units from the minibuffer in calc's notation — ft, m/s^2,
+kg m/s — offering as default the units a quantity of the same kind was
+last converted to. Naming a units system — si, base, mks or cgs —
+converts to its base units instead. A vector converts each element
+that carries units and leaves the rest standing, so a mixed table
+converts its lengths without a complaint about its times.
+
+  [1 m, 2 m]    =>  [3.28083989501 ft, 6.56167979003 ft]
+  [1 m, 2 s]    =>  [3.28083989501 ft, 2 s]     (no length: untouched)
+  [3 ft, 2 lb]  =>  [0.9144 m, 0.90718474 kg]   (typed: si)
+
+An exact quantity stays exact when its conversion is: 1 cm is 10 mm,
+not 10. mm, whatever the mode. A result that is not a whole number
+takes the mode's form — a float unless fractions are preferred, or
+the quantity already carried one — and a float converts to a float.
+Option `maf-convert-units-exact'; off, calc's own arithmetic decides.
+
+  [1 cm, 2 cm, 1 m]  =>  [10 mm, 20 mm, 1000 mm]      (typed: mm)
+  1:3 m              =>  1250:1143 ft                  (a fraction stays one)
+  [1 cm, 2 cm, 1 m]  =>  [10. mm, 20. mm, 1000 mm]    (option off)
+
+A subject with no units at all is first asked which units it is in, as
+calc's own conversion asks, and the answer is then a pure number.
+
+  3       =>  9.84251968504                    (typed: m, then ft)
+  [1, 2]  =>  [3.28083989501, 6.56167979003]   (typed: m, then ft)
+
+Point picks the subject as usual: a sub-formula at point — widened to
+the quantity it is part of, so the 3 of 3 m converts as 3 m — each
+side of an equation, the top entry at home.
+
+  3 m| + 2 s  =>  9.84251968504 ft + 2 s   (the term at point)
+  x = 3 m     =>  x = 9.84251968504 ft"
+  (interactive)
+  (let* ((opts '((:arity . unary) (:widen . maf--units-widen-p)))
+         (subject (maf--peek-subject opts))
+         ;; Both prompts read before any calc state is touched, so C-g
+         ;; aborts with nothing done.
+         (old (and subject (not (maf--units-carrier subject))
+                   (maf--units-read "Old units")))
+         (carrier (and subject
+                       (maf--units-carrier
+                        (if old (math-mul subject old) subject))))
+         (units (maf--units-read
+                 (if old
+                     (format "Old units: %s, new units"
+                             (math-format-value old))
+                   "New units")
+                 (and carrier (math-get-default-units carrier)))))
+    ;; A subject that carries units none of which fit the target would
+    ;; come back unchanged; refuse it before anything is committed.
+    (when (and subject (not old))
+      (let ((maf--cvun-hit nil))
+        (maf--convert-units subject units old)
+        (unless maf--cvun-hit
+          (user-error "Nothing here converts to %s"
+                      (math-format-value units)))))
+    (let ((maf--cvun-units units)
+          (maf--cvun-old old))
+      (call-interactively #'maf--convert-units-run))
+    ;; Remember the target as the default for the next quantity of
+    ;; its kind, as calc does; a system name is not a units expression.
+    (unless (maf--units-system units)
+      (math-put-default-units units (and (eq (car-safe units) '+) units)))))
+(put 'mafcmd-convert-units 'maf-command t)
+(maf-set-command-doc 'mafcmd-convert-units
+                     "convert units"
+                     "3 m => 9.84251968504 ft   (typed: ft)")
 
 ;;; Summation
 

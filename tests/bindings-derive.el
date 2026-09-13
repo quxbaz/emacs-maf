@@ -92,7 +92,7 @@
   (cl-assert (eq (key-binding (kbd "J U")) 'mafcmd-unwrap))
   (cl-assert (eq (key-binding (kbd "o j")) 'mafcmd-conj))
   (cl-assert (eq (key-binding (kbd "u M")) 'mafcmd-vmean))
-  (cl-assert (eq (key-binding (kbd "u c")) 'calc-convert-units))
+  (cl-assert (eq (key-binding (kbd "u t")) 'calc-convert-temperature))
 
   ;; Numeric evaluation, homeless since k became a motion, on the
   ;; last weak single letter; complete-square rides the family on

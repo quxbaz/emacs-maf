@@ -61,6 +61,19 @@ always wins: with x declared complex, abssqr(x) stands either way."
   :type 'boolean
   :group 'maf)
 
+(defcustom maf-convert-units-exact t
+  "Non-nil keeps an exact quantity exact through a units conversion.
+`mafcmd-convert-units' then works each quantity out with fractions
+preferred, so a conversion that is exact stays so whatever the mode:
+1 cm to mm is 10 mm, not 10. mm. A result that is not a whole number
+takes the mode's form — a float unless fractions are preferred or the
+quantity already carried one — so 3 m to ft is 9.84251968504 ft, and
+1:3 m to ft is 1250:1143 ft. A float quantity converts to a float
+either way. Set to nil for calc's own arithmetic, where 1 cm to mm
+is 10. mm unless fractions are preferred."
+  :type 'boolean
+  :group 'maf)
+
 (defcustom maf-coordinate-name-sets
   '(((var x var-x) (var y var-y) (var z var-z) (var w var-w))
     ((var h var-h) (var k var-k) (var l var-l) (var m var-m))
