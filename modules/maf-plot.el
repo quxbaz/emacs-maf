@@ -20,9 +20,12 @@
 ;; the formula instead — Desmos resamples as you zoom, and calc's own
 ;; LaTeX language (`maf--latex-string') is the entire translation
 ;; layer. Relation entries plot: gnuplot samples the rhs of y = f(x)
-;; and refuses any other relation toward g o; desmos receives the
-;; equation whole and graphs it natively. A vector of numbers is data
-;; — index→value points — on every backend.
+;; or x = f(y), solving an implicit equation in x and y into one of
+;; those first when a single branch comes out (a parabola in standard
+;; form), draws a circle parametrically, and refuses any other
+;; relation toward g o; desmos receives the equation whole and graphs
+;; it natively. A vector of numbers is data — index→value points — on
+;; every backend.
 ;;
 ;; The x range is not prompted for by default (y always autoscales):
 ;; trig expressions get one period around 0, angle-mode-aware,
@@ -192,7 +195,9 @@ The rhs of y = f(x) is the curve; the rhs of x = f(y) is too, drawn
 sideways (`maf-plot--sideways-p'). Any other relation — an implicit
 equation, an equation between two expressions, an inequality — has no
 single curve to sample; the refusal points at g o, since Desmos graphs
-relations whole."
+relations whole. The curve builder gives an implicit equation its
+chance first (`maf-plot--solved'), so what refuses here is one no
+solve made explicit."
   (cond
    ((not (maf--relation-p entry)) entry)
    ((and (eq (car entry) 'calcFunc-eq)
@@ -212,6 +217,43 @@ function of the other axis and stays upright."
   (and (eq (car-safe entry) 'calcFunc-eq)
        (equal (nth 1 entry) '(var x var-x))
        (not (math-expr-contains (nth 2 entry) '(var x var-x)))))
+
+(defun maf-plot--single-branch (entry var other)
+  "ENTRY solved for VAR as one function of OTHER — VAR = rhs — or nil.
+Calc's full solve gives every solution at once, and marks a
+multiplicity with a variable of its own: a sign (s1) for a pair of
+root branches, a counter (n1) for a family, the complex unit for a
+complex one. So a rhs in any variable but OTHER is no single curve,
+and nil; so is a vector of solutions, or a solve calc leaves standing."
+  (let ((sol (ignore-errors
+               (math-normalize (list 'calcFunc-fsolve entry var)))))
+    (when (and (eq (car-safe sol) 'calcFunc-eq)
+               (equal (nth 1 sol) var)
+               (cl-every (lambda (v) (equal v other))
+                         (maf--expr-vars (nth 2 sol))))
+      sol)))
+
+(defun maf-plot--solved (entry)
+  "ENTRY, an implicit equation in x and y, made explicit — or nil.
+An equation with no bare variable on its left — a parabola in standard
+form, (x + 1)^2 = -8 (y + 2), a line in general form, 2 x + 3 y = 6 —
+is solved for y, and failing a single branch there, for x: what comes
+back is the y = f(x) or x = f(y) the gnuplot backends sample already,
+upright or sideways, so (y + 2)^2 = -8 (x + 1) opens along the x
+axis as x = (y + 2)^2 / -8 - 1. Nil when neither solve gives one
+branch — an ellipse or a hyperbola, whose root forks; anything calc
+cannot solve in closed form — and the entry still points at Desmos.
+Nil too for anything already explicit, which is left as it is, and
+for an equation in other letters than x and y. Circles never reach
+here: `maf-plot--circle-of' draws them parametrically, even where
+solving for y would flatten their poles."
+  (let ((x '(var x var-x))
+        (y '(var y var-y)))
+    (when (and (eq (car-safe entry) 'calcFunc-eq)
+               (not (eq (car-safe (nth 1 entry)) 'var))
+               (equal (maf--solve-sorted-vars entry) (list x y)))
+      (or (maf-plot--single-branch entry y x)
+          (maf-plot--single-branch entry x y)))))
 
 (defun maf-plot--number (v)
   "Calc value V as an Emacs float, or nil when it is not a real number."
@@ -972,11 +1014,13 @@ gnuplot can read, not calc's 1:2."
 (defun maf-plot--gnuplot-curves (specs range)
   "Turn SPECS — (ENTRY . LABEL) pairs — into (FILE LABEL STYLE) curves.
 A function entry samples over RANGE with the default line style, an
-x = f(y) one sideways; a data vector writes its points directly,
-drawn as linespoints on its indices. A curve that refuses — an implicit relation, several
-variables, no real points — is skipped with a message when others
-remain, so one odd curve does not sink a whole plot; a lone curve's
-error surfaces."
+x = f(y) one sideways, an implicit equation as the explicit form it
+solves to (`maf-plot--solved'); a circle samples parametrically; a
+data vector writes its points directly, drawn as linespoints on its
+indices. A curve that refuses — an implicit relation no solve makes
+explicit, several variables, no real points — is skipped with a
+message when others remain, so one odd curve does not sink a whole
+plot; a lone curve's error surfaces."
   (let ((index 0)
         (curves nil)
         (skipped nil))
@@ -994,10 +1038,11 @@ error surfaces."
                            (maf-plot--circle-of entry) file)
                           (cdr spec) nil))
                    (t
-                    (list (maf-plot--sample
-                           (maf-plot--function-of entry) range file
-                           (maf-plot--sideways-p entry))
-                          (cdr spec) nil)))
+                    (let ((explicit (or (maf-plot--solved entry) entry)))
+                      (list (maf-plot--sample
+                             (maf-plot--function-of explicit) range file
+                             (maf-plot--sideways-p explicit))
+                            (cdr spec) nil))))
                   curves))
         (error
          (if (cdr specs)
@@ -1079,7 +1124,14 @@ the command under it through with the flag intact."
 Point anywhere in an entry plots that entry — sub-formula and
 selection make no difference — and at home the top entry plots. A
 relation plots its right side as the curve — y = f(x) upright,
-x = f(y) sideways. A vector entry is a curve
+x = f(y) sideways — and an implicit equation in x and y is first
+solved into one of those, when a single branch comes out:
+
+  1:  (x + 1)^2 = -8 (y + 2)     g l  =>  the parabola, vertex (-1, -2),
+                                          opening downward
+
+A circle draws whatever its spelling; an ellipse or a hyperbola, whose
+root forks, still points at Desmos. A vector entry is a curve
 set: one curve per element, so [2 sin(x), cos(x)] overlays both — the
 way to keep a replottable subset of the stack. With prefix ARG,
 prompt for the x range (lo:hi, :hi, or n for -n:n) instead of

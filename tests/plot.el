@@ -285,6 +285,58 @@
                  (and (search-forward "3. -2.0" nil t)
                       (search-forward "3. 2.0" nil t)))))
 
+  ;; An implicit equation in x and y solves into the explicit form the
+  ;; backends sample when a single branch comes out: a parabola in
+  ;; standard form upright, its sideways twin as x = f(y), a line in
+  ;; general form. Asserted at a point, so the mode's spelling of the
+  ;; coefficients (a fraction, a float) does not matter.
+  (cl-assert (let ((sol (maf-plot--solved
+                         (math-read-expr "(x + 1)^2 = -8 (y + 2)"))))
+               (and (equal (nth 1 sol) '(var y var-y))
+                    (not (maf-plot--sideways-p sol))
+                    (= (cdr (maf-plot--sample-value
+                             (nth 2 sol) '(var x var-x) 1.0))
+                       -2.5))))
+  (cl-assert (let ((sol (maf-plot--solved
+                         (math-read-expr "(y + 2)^2 = -8 (x + 1)"))))
+               (and (equal (nth 1 sol) '(var x var-x))
+                    (maf-plot--sideways-p sol)
+                    (= (cdr (maf-plot--sample-value
+                             (nth 2 sol) '(var y var-y) 2.0))
+                       -3.0))))
+  (cl-assert (let ((sol (maf-plot--solved (math-read-expr "2 x + 3 y = 6"))))
+               (and (equal (nth 1 sol) '(var y var-y))
+                    (= (cdr (maf-plot--sample-value
+                             (nth 2 sol) '(var x var-x) 3.0))
+                       0.0))))
+  ;; A forking root (ellipse, hyperbola), a solve calc cannot close, an
+  ;; equation already explicit, other letters than x and y: nil, and
+  ;; the entry keeps pointing at Desmos.
+  (cl-assert (null (maf-plot--solved (math-read-expr "x^2/4 + y^2/9 = 1"))))
+  (cl-assert (null (maf-plot--solved (math-read-expr "x^2/4 - y^2/9 = 1"))))
+  (cl-assert (null (maf-plot--solved (math-read-expr "sin(x) = y^3 + y"))))
+  (cl-assert (null (maf-plot--solved (math-read-expr "y = x^2"))))
+  (cl-assert (null (maf-plot--solved
+                    (math-read-expr "(a + 1)^2 = -8 (b + 2)"))))
+  ;; Through the curve builder: the parabola's vertex is a sample, and
+  ;; the sideways one's lands with its columns swapped.
+  (cl-assert (let ((curves (maf-plot--gnuplot-curves
+                            (list (cons (math-read-expr
+                                         "(x + 1)^2 = -8 (y + 2)")
+                                        "p"))
+                            '(-3.0 . 1.0))))
+               (with-temp-buffer
+                 (insert-file-contents (car (car curves)))
+                 (search-forward "-1.0 -2." nil t))))
+  (cl-assert (let ((curves (maf-plot--gnuplot-curves
+                            (list (cons (math-read-expr
+                                         "(y + 2)^2 = -8 (x + 1)")
+                                        "p"))
+                            '(-4.0 . 0.0))))
+               (with-temp-buffer
+                 (insert-file-contents (car (car curves)))
+                 (search-forward "-1. -2.0" nil t))))
+
   ;; Desmos reads a stricter LaTeX than calc writes: brace arguments
   ;; become parens (arcsin and its kin — the six trig calls of
   ;; `maf--latex-paren-calls' already arrive parenthesized from maf's

@@ -49,7 +49,12 @@ Dial reads: `off / gnuplot-external / gnuplot-embed / desmos`.
    the entire translation layer.
 5. **Relation entries plot.** `y = f(x)`: gnuplot backends sample the
    rhs; `x = f(y)` samples the rhs too, columns swapped so the curve
-   runs sideways; desmos receives the equation whole (it graphs
+   runs sideways; an implicit equation in x and y is solved into one
+   of those first when calc's full solve gives a single branch (a
+   parabola in standard form, a line in general form) — a forking
+   root (ellipse, hyperbola) is not sampled branch by branch, since
+   uniform x sampling flattens the turning points, the reason circles
+   go parametric; desmos receives the equation whole (it graphs
    equations, including implicit ones, natively).
 6. **Range: never prompt, x only.** y always autoscales. Default x
    range: expressions containing trig get one period around 0,
