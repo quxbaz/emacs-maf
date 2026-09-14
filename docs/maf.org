@@ -75,6 +75,8 @@ x#+title: maf
 ** maf-pretty
 
 * IN-PROGRESS website
+  - [ ] use this spacing/layout/font
+    https://mayakaczorowski.com/blogs/burnout
   - [ ] generate readme
   - [ ] generate website
     - [ ] put inside public/ directory
