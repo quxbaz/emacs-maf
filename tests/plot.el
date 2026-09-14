@@ -212,6 +212,17 @@
                           (error (error-message-string e)))))
                 (and err (string-match-p "2 variables" err))))
 
+  ;; Calc's constants are numbers to the sampler, not axes: tan(x + pi)
+  ;; is a curve in x alone, and pi evaluates in every sample.
+  (cl-assert (equal (maf-plot--variable (math-read-expr "tan(x + pi)"))
+                    '(var x var-x)))
+  (cl-assert (equal (maf-plot--variable (math-read-expr "e^x + pi"))
+                    '(var x var-x)))
+  (cl-assert (null (maf-plot--variable (math-read-expr "2 pi"))))
+  (cl-assert (let ((v (maf-plot--sample-value (math-read-expr "x + pi")
+                                              '(var x var-x) 1.0)))
+               (and v (< (abs (- (cdr v) (+ 1 float-pi))) 1e-9))))
+
   ;; A vector entry is a curve set: one curve per element, labeled by
   ;; element; a relation element keeps its shape here — its rhs is
   ;; taken at sampling, where a refusal can be skipped per curve.

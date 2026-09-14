@@ -10,7 +10,7 @@ x#+title: maf
   push yet:
 
   1) [X] *maf-formulas* add standard formula for `segment addition postulate`
-  2) [ ] bug: entries like `tan(x + pi)` can't be plotted (i tested using `g l`
+  2) [X] bug: entries like `tan(x + pi)` can't be plotted (i tested using `g l`
      command) because plotter treats `pi` as an independent variable
   3) [ ] update the website by taking the math problem:
 

@@ -59,6 +59,7 @@
 (declare-function math-simplify "calc-alg")
 (declare-function math-is-polynomial "calc-alg")
 (declare-function math-expr-contains "calc-alg")
+(declare-function math-const-var "calc-ext")
 (declare-function calc-stack-size "calc" ())
 
 (defconst maf-plot--load-directory
@@ -230,7 +231,7 @@ and nil; so is a vector of solutions, or a solve calc leaves standing."
     (when (and (eq (car-safe sol) 'calcFunc-eq)
                (equal (nth 1 sol) var)
                (cl-every (lambda (v) (equal v other))
-                         (maf--expr-vars (nth 2 sol))))
+                         (maf-plot--vars (nth 2 sol))))
       sol)))
 
 (defun maf-plot--solved (entry)
@@ -361,11 +362,18 @@ per element (Desmos draws a bare coordinate pair as a point)."
              (t (list entry))))
           entries))
 
+(defun maf-plot--vars (expr)
+  "The variables of EXPR that are unknowns, as var nodes; duplicates kept.
+Calc's constants — pi, e, i, and their kin — are variables to the
+reader but not axes: tan(x + pi) is a curve in x, its pi a number
+the sampler evaluates."
+  (cl-remove-if #'math-const-var (maf--expr-vars expr)))
+
 (defun maf-plot--variable (expr)
   "Return the var node EXPR is sampled over, or nil for a constant.
 Signals for an expression in two or more variables — a curve needs
 one axis."
-  (let ((vars (cl-delete-duplicates (maf--expr-vars expr) :test #'equal)))
+  (let ((vars (cl-delete-duplicates (maf-plot--vars expr) :test #'equal)))
     (when (cdr vars)
       (user-error "Cannot plot in %d variables: %s"
                   (length vars)
