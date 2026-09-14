@@ -25,6 +25,22 @@
 ** maf-formulas
 ** maf-pretty
 
+* website, structure
+** major features
+   - contextualized commands (including region context)
+   - selection replacement, direct commands on subexpression
+   - passive subexpression highlighting
+   - direct stack editing instead of separate buffer
+   - embedded graphs
+   - history to replace trail
+   - session persist
+** minor features
+   - latex rendering
+   - editing shortcuts
+   - rewrite rules
+   - formulas
+   - options
+
 * IN-PROGRESS website
   - [ ] generate readme
   - [ ] generate website
