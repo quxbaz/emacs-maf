@@ -3,15 +3,7 @@
 * { box-sizing: border-box; }
 html { color-scheme: light dark; }
 body { margin: 0; background: var(--bg); color: var(--fg); font: 19px/1.55 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
-/* The frame: a centered container 48rem wide, 64rem from 1024px up,
-   with 1rem of side padding that goes at 1280px; inside it the text
-   column is 65ch and sits at the left, so the margins are uneven —
-   more room on the right than on the left once the viewport is wider
-   than the container. */
-main { max-width: 48rem; margin: 0 auto; padding: 80px 1rem 100px; }
-@media (min-width: 1024px) { main { max-width: 64rem; } }
-@media (min-width: 1280px) { main { padding-inline: 0; } }
-main > * { max-width: 65ch; }
+main { max-width: 720px; margin: 0 auto; padding: 80px 22px 100px; }
 .layer { margin-bottom: 26px; }
 h1 { font-size: 1.9rem; letter-spacing: -.02em; margin: 0 0 .6em; line-height: 1.2; }
 p { margin: 0 0 .8em; }
