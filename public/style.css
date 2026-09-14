@@ -1,23 +1,21 @@
-:root { --bg: #fff; --fg: #1d1d1d; --muted: #777; --line: #e6e6e6; --accent: #b8860b; --mark: rgba(184, 134, 11, .18); --band: rgba(0, 0, 0, .05); --cream: #fdfbf5; --mono: Monaco, Menlo, ui-monospace, Consolas, monospace; }
-@media (prefers-color-scheme: dark) { :root { --bg: #121214; --fg: #eaeaea; --muted: #8e8e93; --line: #2a2a2e; --accent: #daa520; --band: rgba(255, 255, 255, .06); --cream: #1a1815; } }
+:root { --bg: #fff; --fg: #1d1d1d; --muted: #777; --line: #e6e6e6; --accent: #b8860b; --mark: rgba(184, 134, 11, .18); --band: rgba(0, 0, 0, .05); --tint: #e8f1fa; --mono: Monaco, Menlo, ui-monospace, Consolas, monospace; }
+@media (prefers-color-scheme: dark) { :root { --bg: #121214; --fg: #eaeaea; --muted: #8e8e93; --line: #2a2a2e; --accent: #daa520; --band: rgba(255, 255, 255, .06); --tint: #151a21; } }
 * { box-sizing: border-box; }
 html { color-scheme: light dark; }
 body { margin: 0; background: var(--bg); color: var(--fg); font: 19px/1.55 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
 /* Two bands, each with a centered column: the intro and install at
-   720px on the page's ground, the examples wider below on a cream
-   ground, parted by a rule across the whole page. */
+   720px on the page's ground, the examples wider below on a blue
+   ground, which is what parts them. */
 main > section > .col { margin: 0 auto; padding-inline: 22px; }
 /* The intro is a fold: at least one screen tall, its column centered
    in it. */
 .intro { min-height: 100vh; min-height: 100svh; display: grid; align-content: center; padding: 60px 0; }
 .intro .col { max-width: 720px; }
-.examples { background: var(--cream); padding: 2.6em 0 100px; }
+.examples { background: var(--tint); padding: 2.6em 0 100px; }
 .examples .col { max-width: 1240px; }
 .layer { margin-bottom: 26px; }
 h1 { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: .6em; font-size: 1.9rem; letter-spacing: -.02em; margin: 0 0 .8em; line-height: 1.2; }
 p { margin: 0 0 .8em; }
-hr { border: 0; border-top: 1px solid var(--line); margin: 1em 0 2.4em; }
-main > hr { margin: .6em 0 0; }
 .subtitle { color: var(--muted); font-size: 1.25rem; font-weight: 400; letter-spacing: 0; }
 .subtitle code { font-size: .9em; }
 pre { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .95rem; line-height: 1.65; background: var(--line); padding: 14px 16px; border-radius: 8px; margin: .6em 0 1em; overflow-x: auto; }
