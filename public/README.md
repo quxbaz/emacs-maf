@@ -19,7 +19,10 @@ from the repository root with a reloading server while working:
   under `media/` — pause). `timeline()` turns a scene into timed redux actions and
   `play()` dispatches them; `mount()` does both in an element, with a
   control above the pane that resets a playing scene and replays a finished
-  one.
+  one, and a step-by-step toggle: on, the scene advances one step per
+  press of next, and prev walks it back. A step may carry a `note`, a
+  sentence on what is happening mathematically, shown under the pane
+  from the moment the step begins.
 - `stacky-diff.js`: a stack before and after a command, side by side, the keys and
   command above them. Each pane can show or hide the cursor, the
   highlight and the header line, and can outline the part that changed

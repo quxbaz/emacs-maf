@@ -6,15 +6,22 @@
 //   { point: { level: 1, col: 7 }, highlight: r }  walk the cursor there one cell at a time, then highlight r
 //   { keys: 'x', command: 'mafcmd-expand' }      echo the keys one by one, then name the command and hold
 //   { entry: { level: 1, text }, point, highlight } replace an entry, the result of the command; it flashes
-//   { push: 'x + 1' } / { pop: 1 }                  change the stack
+//   { push: 'x + 1' } / { pop: 1 }                  change the stack; a pop applies first, so
+//                                                   { pop: 1, entry: {...} } consumes and replaces
 //   { insert: 'x^2' }                               type text at point, one character at a time
 //   { image: 'media/plot.svg', alt }                show a picture under the pane, what a plot command drew
 //   { pause: 600 }                                  wait
 //
+// Any step may carry `note`, a sentence on what is happening
+// mathematically — not which key does it — shown under the pane from
+// the moment the step begins until another step's note replaces it.
+//
 // timeline() turns a scene into a list of { at, action } pairs, absolute
 // milliseconds and redux actions, threading the state through the reducer so
 // each step can see where the previous one left things. play() dispatches
-// them on schedule to a store; mount() does the whole thing in an element.
+// them on schedule to a store; mount() does the whole thing in an element,
+// with a step-by-step mode beside the replay control: the scene then
+// advances one step per press of next, and prev walks it back (beats()).
 
 import { createStore } from './vendor/redux/redux.mjs'
 import * as stacky from './stacky.js'
@@ -31,9 +38,10 @@ export const FRESH = 'showy/fresh'          // { level }
 export const INSERT = 'showy/insert'        // { text }
 export const ECHO = 'showy/echo'            // { keys: [...], command }
 export const IMAGE = 'showy/image'          // { image: { src, alt } | null }
+export const NOTE = 'showy/note'            // { note: string | null }
 export const RESET = 'showy/reset'          // { state }: replace the whole state
 
-export const initialState = { stack: stacky.stack(), echo: { keys: [], command: '' }, image: null }
+export const initialState = { stack: stacky.stack(), echo: { keys: [], command: '' }, image: null, note: null }
 
 export function reducer(state = initialState, action) {
   const withStack = stack => ({ ...state, stack })
@@ -48,6 +56,7 @@ export function reducer(state = initialState, action) {
     case INSERT: return withStack(stacky.insert(state.stack, action.text))
     case ECHO: return { ...state, echo: { keys: action.keys ?? [], command: action.command ?? '' } }
     case IMAGE: return { ...state, image: action.image ?? null }
+    case NOTE: return { ...state, note: action.note ?? null }
     case RESET: return action.state
     default: return state
   }
@@ -85,10 +94,14 @@ export function expandStep(step, state, timing = TIMING) {
     acts.push(now({ type: STACK, stack: stacky.stack(step.stack, { point: step.point ?? stacky.HOME, highlight: step.highlight ?? null }) }))
     acts.push(now({ type: ECHO, keys: [], command: '' }))
     acts.push(now({ type: IMAGE, image: null }))
+    acts.push(now({ type: NOTE, note: step.note ?? null }))
     return acts
   }
-  if ('push' in step) acts.push(now({ type: PUSH, text: step.push }))
+  if ('note' in step) acts.push(now({ type: NOTE, note: step.note }))
+  // A pop goes before a push or an entry in the same step, so one step
+  // can consume entries and put the result in their place.
   if ('pop' in step) acts.push(now({ type: POP, n: step.pop }))
+  if ('push' in step) acts.push(now({ type: PUSH, text: step.push }))
   if ('entry' in step) {
     acts.push(now({ type: ENTRY, level: step.entry.level, text: step.entry.text }))
     acts.push(now({ type: HIGHLIGHT, highlight: step.highlight ?? null }))
@@ -134,6 +147,23 @@ export function walk(scene, state = initialState, timing = TIMING) {
   })
 }
 
+// The scene as steps to take by hand: [{ step, state, index }], one per
+// step that is not a bare pause, `state` being where the scene stands
+// once that step is done. An entry a step produced stays lit until the
+// next step, where the timeline would let it fade.
+export function beats(scene, state = initialState, timing = TIMING) {
+  const out = []
+  scene.forEach((step, index) => {
+    if (Object.keys(step).every(k => k === 'pause')) return
+    state = reducer(state, { type: FRESH, level: null })
+    for (const { action } of expandStep(step, state, timing)) {
+      if (action && !(action.type === FRESH && action.level === null)) state = reducer(state, action)
+    }
+    out.push({ step, state, index })
+  })
+  return out
+}
+
 // Every state the timeline passes through, in order, starting from `state`.
 export function states(tl, state = initialState) {
   return tl.reduce((acc, { action }) => (acc.push(reducer(acc[acc.length - 1], action)), acc), [state])
@@ -173,7 +203,17 @@ export function mount(el, scene, { timing = TIMING, autoplay = true } = {}) {
   const start = states(tl.filter(({ at }) => at === 0)).pop()
   const controls = document.createElement('div'); controls.className = 'controls'
   const button = document.createElement('button'); button.className = 'replay'; button.type = 'button'; button.hidden = true
-  controls.append(button)
+  // Step-by-step mode: a toggle, and while it is on, prev and next
+  // with a count, in place of the replay.
+  const stepper = document.createElement('div'); stepper.className = 'stepper'
+  const prev = document.createElement('button'); prev.className = 'step'; prev.type = 'button'; prev.textContent = '\u2039 prev'
+  const next = document.createElement('button'); next.className = 'step'; next.type = 'button'; next.textContent = 'next \u203a'
+  const count = document.createElement('span'); count.className = 'count'
+  stepper.append(prev, count, next); stepper.hidden = true
+  const toggle = document.createElement('label'); toggle.className = 'stepmode'
+  const check = document.createElement('input'); check.type = 'checkbox'
+  toggle.append(check, document.createTextNode(' step by step'))
+  controls.append(toggle, stepper, button)
   const pane = document.createElement('div')
   el.append(controls, pane)
   const drawStack = stacky.pane(pane)
@@ -187,7 +227,13 @@ export function mount(el, scene, { timing = TIMING, autoplay = true } = {}) {
     image.hidden = !im
     if (im && image.getAttribute('src') !== im.src) { image.src = im.src; image.alt = im.alt }
   }
-  const draw = () => { const s = store.getState(); drawStack(s.stack); echo.innerHTML = echoHtml(s.echo); drawImage(s.image) }
+  const note = document.createElement('div'); note.className = 'note'
+  pane.append(note)
+  const draw = () => {
+    const s = store.getState()
+    drawStack(s.stack); echo.innerHTML = echoHtml(s.echo); drawImage(s.image)
+    note.textContent = s.note ?? ''; note.hidden = !s.note
+  }
   store.subscribe(draw)
   draw()
   let player = null
@@ -204,8 +250,29 @@ export function mount(el, scene, { timing = TIMING, autoplay = true } = {}) {
     label(false)
   }
   button.addEventListener('click', () => (player && button.textContent === 'reset' ? reset : run)())
+  // Stepping: the beats of the scene, shown one at a time.
+  const steps = beats(scene, initialState, timing)
+  let at = 0
+  const showBeat = i => {
+    at = Math.max(0, Math.min(steps.length - 1, i))
+    store.dispatch({ type: RESET, state: steps[at].state })
+    count.textContent = `${at + 1} / ${steps.length}`
+    prev.disabled = at === 0
+    next.disabled = at === steps.length - 1
+  }
+  prev.addEventListener('click', () => showBeat(at - 1))
+  next.addEventListener('click', () => showBeat(at + 1))
+  const setStepMode = on => {
+    player?.stop(); player = null
+    stepper.hidden = !on
+    button.hidden = on
+    el.classList.toggle('stepping', on)
+    if (on) showBeat(0); else run()
+  }
+  check.addEventListener('change', () => setStepMode(check.checked))
   if (autoplay) run(); else label(false)
-  return { store, timeline: tl, replay: run, reset, stop: () => player?.stop() }
+  return { store, timeline: tl, beats: steps, replay: run, reset, stop: () => player?.stop(),
+           step: showBeat, stepMode: on => { check.checked = on; setStepMode(on) } }
 }
 
 // Mount every element carrying data-scene from a table of scenes.
