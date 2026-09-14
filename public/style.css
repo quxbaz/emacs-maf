@@ -10,7 +10,7 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
 .intro { padding-top: 80px; }
 .intro .col { max-width: 840px; }
 .examples { background: var(--cream); padding: 2.6em 0 100px; }
-.examples .col { max-width: 1120px; }
+.examples .col { max-width: 1240px; }
 .layer { margin-bottom: 26px; }
 h1 { font-size: 1.9rem; letter-spacing: -.02em; margin: 0 0 .6em; line-height: 1.2; }
 p { margin: 0 0 .8em; }
