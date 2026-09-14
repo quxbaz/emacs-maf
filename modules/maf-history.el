@@ -12,7 +12,8 @@
 ;; itself with the entries that step produced highlighted. Moving in
 ;; the log re-renders the stack beside it: n/p/j/k step through the
 ;; states. Press RET on an entry in the stack to push it onto the live
-;; stack, r to restore the whole snapshot.
+;; stack, C-RET on a row in the log to add that whole state to it, r to
+;; restore the whole snapshot in place of the stack.
 ;;
 ;; Recording costs one value-list comparison per command; a snapshot
 ;; shares all formula structure with the stack it was taken from, so
@@ -796,6 +797,12 @@ mean something else beside a stack — line motion and RET.")
 ;; it. Picking one entry out of a state instead is RET in the stack.
 (define-key maf-history-mode-map (kbd "RET") #'maf-history-restore)
 (define-key maf-history-mode-map (kbd "r") #'maf-history-restore)
+;; C-RET takes the same state RET does, but adds it to the live stack
+;; instead of replacing it: what is there stays, the state's entries go
+;; on top, and the browser stays open. The stack window overrides this
+;; with its own C-RET, the one-entry push that stays open too.
+(define-key maf-history-mode-map (kbd "C-<return>")
+            #'maf-history-insert-state)
 ;; Capital, so a fingerslip on the motion keys cannot reach a delete.
 (define-key maf-history-mode-map (kbd "D") #'maf-history-delete)
 ;; L for the line it draws. Capital, beside the other key that edits
@@ -849,7 +856,9 @@ it, following point as it moves. \<maf-history-mode-map>
 \[maf-history-previous] steps to older states and \[maf-history-next]
 to newer ones; \[maf-history-oldest] and \[maf-history-newest] jump
 to the ends. \[maf-history-restore] takes the state at point, making
-it the live stack again, and quits. \[maf-history-switch] crosses into
+it the live stack again, and quits; \[maf-history-insert-state] adds
+it to the live stack instead, keeping what is already there and
+leaving the browser open. \[maf-history-switch] crosses into
 the stack instead, to take one entry out of a state rather than the
 whole of it. \[maf-history-delete] deletes the state shown from the
 log; \[maf-history-clear] clears the whole log.
@@ -1194,6 +1203,19 @@ stack no longer has — is tidied onto the dot the same way."
     (dolist (win (get-buffer-window-list (current-buffer) nil t))
       (set-window-point win (point)))))
 
+(defun maf-history--calc-point-home ()
+  "Park calc\='s point on the home line, in its buffer and its windows.
+The counterpart of `maf-history--keeping-calc-point' for a command
+that ends at home rather than where the user left off. Calc\='s own
+epilogue puts the buffer point there, but the windows showing calc
+keep the line they were on across the rewrite, so each window\='s
+point is moved too. No window is selected, so a browser command
+calling this keeps the focus where it is."
+  (maf--with-calc-buffer
+    (goto-char (maf--home-dot-position))
+    (dolist (win (get-buffer-window-list (current-buffer) nil t))
+      (set-window-point win (point)))))
+
 (defun maf-history-insert ()
   "Push the history entry at point onto the live calc stack, and quit.
 Point is in the stack window, on the entry to take. The value is
@@ -1224,6 +1246,34 @@ rather than following to the new one."
         (calc-wrapper
          (calc-pop-push-record-list 0 "hist" (list val) 1 (list nil)))))
     (message "Pushed: %s" (math-format-value val))))
+
+(defun maf-history-insert-state ()
+  "Add the whole state being viewed to the live calc stack.
+Every entry of the snapshot goes on top of the live stack, in its own
+order, and nothing already there is disturbed — the difference from
+`maf-history-restore', which puts the state in place of the stack
+rather than on it. The values are copies, as in `maf-history-insert',
+so later edits to the live entries never reach back into the history,
+and the push records a state of its own, which a single undo reverts.
+The browser stays open, as after `maf-history-insert-stay', with the
+view held on the state it inserted from (see `maf-history--hold')
+rather than following to the new one, ready to insert more, and the
+focus stays in it. Calc\='s point parks at home, on the dot under the
+entries this added, the way it does after a command of calc\='s own
+\(`maf-history--calc-point-home')."
+  (interactive)
+  (let ((state (nth maf-history--index maf-history--states)))
+    (unless state (user-error "No states recorded yet"))
+    (let ((values (mapcar #'copy-tree (nth 0 state))))
+      (unless values (user-error "That state has an empty stack"))
+      (setq maf-history--hold t)
+      (maf--with-calc-buffer
+        (calc-wrapper
+         ;; The list runs deepest-first; values are stored top first.
+         (calc-pop-push-record-list 0 "hist" (reverse values))))
+      (maf-history--calc-point-home)
+      (message "Inserted %d %s" (length values)
+               (if (= (length values) 1) "entry" "entries")))))
 
 (defun maf-history-restore ()
   "Replace the live calc stack with the state being viewed, and quit.
