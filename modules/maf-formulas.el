@@ -1203,7 +1203,16 @@ singly elsewhere."
      :expr (calcFunc-eq (var C var-C) (* 2 (* (var pi var-pi) (var r var-r))))
      :doc "Circumference of a circle from its radius: two pi times the radius."
      :vars ((C . "circumference") (r . "radius"))
-     :examples ("A circle of radius 3 has circumference 6 pi.")))
+     :examples ("A circle of radius 3 has circumference 6 pi."))
+    (:name "segment-addition-postulate"
+     :title "Segment addition postulate"
+     :category "Geometry — 2D: Segments"
+     :expr (calcFunc-eq (+ (var AB var-AB) (var BC var-BC)) (var AC var-AC))
+     :doc "A point B between A and C splits the segment: the two parts add up to the whole."
+     :vars ((AB . "length from A to B") (BC . "length from B to C")
+            (AC . "length from A to C, with B between them"))
+     :examples ("With AB = 3 and BC = 5, AC = 8."
+                "Solved for BC: a part is the whole less the other part.")))
   "The formulas maf ships with, in the plist shape of `maf-formulas-user'.
 The identities school algebra and trigonometry rest on, the formulas
 school geometry measures a solid with, and the ones a rewrite is most
@@ -1211,9 +1220,10 @@ often reaching for. They come in categories the menu sorts by name and
 narrows to one at a time: the properties of real numbers, absolute
 value, exponents, fractions, logarithms, quadratic equations and
 radicals, then the trig identities in seven groups of their own, then
-the circle's circumference, the distance formula in the coordinate
-plane and again in space, the rectangular solid and the cube — a group
-per figure, as a library of one's own names its geometry. The
+the segment addition postulate, the circle's circumference, the
+distance formula in the coordinate plane and again in space, the
+rectangular solid and the cube — a group per figure, as a library of
+one's own names its geometry. The
 properties of real numbers calc applies in its own default
 simplifications, so those earn their place by being readable and by
 naming what a rewrite is doing rather than by teaching calc anything;

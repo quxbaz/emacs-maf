@@ -9,7 +9,7 @@ x#+title: maf
   do each of these tasks in order and create a commit after each one, but don't
   push yet:
 
-  1) [ ] *maf-formulas* add standard formula for `segment addition postulate`
+  1) [X] *maf-formulas* add standard formula for `segment addition postulate`
   2) [ ] bug: entries like `tan(x + pi)` can't be plotted (i tested using `g l`
      command) because plotter treats `pi` as an independent variable
   3) [ ] update the website by taking the math problem:
