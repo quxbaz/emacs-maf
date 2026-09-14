@@ -7,6 +7,7 @@ main { max-width: 720px; margin: 0 auto; padding: 80px 22px 100px; }
 .layer { margin-bottom: 26px; }
 h1 { font-size: 1.9rem; letter-spacing: -.02em; margin: 0 0 .6em; line-height: 1.2; }
 p { margin: 0 0 .8em; }
+hr { border: 0; border-top: 1px solid var(--line); margin: 1em 0 2.4em; }
 .subtitle { color: var(--muted); font-size: 1.15rem; margin-top: -.3em; }
 pre { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .95rem; line-height: 1.65; background: var(--line); padding: 14px 16px; border-radius: 8px; margin: .6em 0 1em; overflow-x: auto; }
 pre b { color: var(--accent); font-weight: 600; }
