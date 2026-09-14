@@ -1,0 +1,379 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8"/>
+    <title>*maf-formulas*</title>
+<meta name="generator" content="emacs 31.1; htmlfontify" />
+<style type="text/css"><!-- 
+body, pre { text-decoration: none;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  color: #ffffff;  background: #000000;  font-size: 10pt; }
+span.default   { text-decoration: none;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  color: #ffffff;  background: #000000;  font-size: 10pt; }
+span.default a {  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  color: #ffffff;  background: #000000;  font-size: 10pt; text-decoration: underline; }
+span.maf-formulas-form   { text-decoration: none;  color: #ffffff;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  background: #000000;  font-size: 10pt; }
+span.maf-formulas-form a {  color: #ffffff;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  background: #000000;  font-size: 10pt; text-decoration: underline; }
+span.maf-formulas-leader   { text-decoration: none;  color: #989898;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  background: #000000;  font-size: 10pt; }
+span.maf-formulas-leader a {  color: #989898;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  background: #000000;  font-size: 10pt; text-decoration: underline; }
+span.maf-formulas-title   { text-decoration: none;  color: #b3b3b3;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  background: #000000;  font-size: 10pt; }
+span.maf-formulas-title a {  color: #b3b3b3;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  background: #000000;  font-size: 10pt; text-decoration: underline; }
+span.filter-view-group   { text-decoration: none;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  color: #ffffff;  background: #000000;  font-size: 10pt; }
+span.filter-view-group a {  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  color: #ffffff;  background: #000000;  font-size: 10pt; text-decoration: underline; }
+ --></style>
+
+    <script type="text/javascript"><!--
+  // this function is needed to work around
+  // a bug in IE related to element attributes
+  function hasClass(obj)
+  {
+      var result = false;
+      if (obj.getAttributeNode("class") != null)
+      {
+          result = obj.getAttributeNode("class").value;
+      }
+      return result;
+  }
+
+  function stripe(id)
+  {
+      // the flag we'll use to keep track of
+      // whether the current row is odd or even
+      var even = false;
+
+      // if arguments are provided to specify the colors
+      // of the even & odd rows, then use them;
+      // otherwise use the following defaults:
+      var evenColor = arguments[1] ? arguments[1] : "#fff";
+      var oddColor  = arguments[2] ? arguments[2] : "#ddd";
+
+      // obtain a reference to the desired table
+      // if no such table exists, abort
+      var table = document.getElementById(id);
+      if (! table) { return; }
+
+      // by definition, tables can have more than one tbody
+      // element, so we'll have to get the list of child
+      // &lt;tbody&gt;s
+      var tbodies = table.getElementsByTagName("tbody");
+
+      // and iterate through them...
+      for (var h = 0; h < tbodies.length; h++)
+      {
+          // find all the &lt;tr&gt; elements...
+          var trs = tbodies[h].getElementsByTagName("tr");
+
+          // ... and iterate through them
+          for (var i = 0; i < trs.length; i++)
+          {
+              // avoid rows that have a class attribute
+              // or backgroundColor style
+              if (! hasClass(trs[i]) &&
+                  ! trs[i].style.backgroundColor)
+              {
+                  // get all the cells in this row...
+                  var tds = trs[i].getElementsByTagName("td");
+
+                  // and iterate through them...
+                  for (var j = 0; j < tds.length; j++)
+                  {
+                      var mytd = tds[j];
+
+                      // avoid cells that have a class attribute
+                      // or backgroundColor style
+                      if (! hasClass(mytd) &&
+                          ! mytd.style.backgroundColor)
+                      {
+                          mytd.style.backgroundColor =
+                            even ? evenColor : oddColor;
+                      }
+                  }
+              }
+              // flip from odd to even, or vice-versa
+              even =  ! even;
+          }
+      }
+  }
+
+  function toggle_invis( name )
+  {
+      var filter =
+        { acceptNode:
+          function( node )
+          { var classname = node.id;
+            if( classname )
+            { var classbase = classname.substr( 0, name.length );
+              if( classbase == name ) { return NodeFilter.FILTER_ACCEPT; } }
+            return NodeFilter.FILTER_SKIP; } };
+      var walker = document.createTreeWalker( document.body           ,
+                                              NodeFilter.SHOW_ELEMENT ,
+                                              filter                  ,
+                                              false                   );
+      while( walker.nextNode() )
+      {
+          var e = walker.currentNode;
+          if( e.style.display == "none" ) { e.style.display = "inline"; }
+          else                            { e.style.display = "none";   }
+      }
+  }
+--> </script>
+  </head>
+  <body onload="stripe('index'); return true;">
+
+<pre><span class="filter-view-group">Algebra</span>
+  <span class="maf-formulas-title">Square of binomial sum</span> <span class="maf-formulas-leader">.........................</span> <span class="maf-formulas-form">(a + b)^2 = a^2 + 2 a b + b^2</span>
+  <span class="maf-formulas-title">Square of binomial difference</span> <span class="maf-formulas-leader">..................</span> <span class="maf-formulas-form">(a - b)^2 = a^2 - 2 a b + b^2</span>
+  <span class="maf-formulas-title">Difference of squares</span> <span class="maf-formulas-leader">..........................</span> <span class="maf-formulas-form">a^2 - b^2 = (a + b) (a - b)</span>
+  <span class="maf-formulas-title">Factoring a trinomial</span> <span class="maf-formulas-leader">..........................</span> <span class="maf-formulas-form">x^2 + (a + b) x + a b = (x + a) (x + b)</span>
+  <span class="maf-formulas-title">Sum of cubes identity</span> <span class="maf-formulas-leader">..........................</span> <span class="maf-formulas-form">a^3 + b^3 = (a + b) (a^2 - a b + b^2)</span>
+  <span class="maf-formulas-title">Difference of cubes identity</span> <span class="maf-formulas-leader">...................</span> <span class="maf-formulas-form">a^3 - b^3 = (a - b) (a^2 + a b + b^2)</span>
+  <span class="maf-formulas-title">Log change of base formula</span> <span class="maf-formulas-leader">.....................</span> <span class="maf-formulas-form">log(x, b) = log(x, k) / log(b, k)</span>
+  <span class="maf-formulas-title">Standard form of reciprocal function</span> <span class="maf-formulas-leader">...........</span> <span class="maf-formulas-form">y = a / (x - h) + k</span>
+  <span class="maf-formulas-title">Exponential growth</span> <span class="maf-formulas-leader">.............................</span> <span class="maf-formulas-form">f(x) = a b^x</span>
+  <span class="maf-formulas-title">Binomial sign flip rule</span> <span class="maf-formulas-leader">........................</span> <span class="maf-formulas-form">(k - x)^2 = (x - k)^2</span>
+
+<span class="filter-view-group">Algebra — Absolute value</span>
+  <span class="maf-formulas-title">Absolute value as a root</span> <span class="maf-formulas-leader">.......................</span> <span class="maf-formulas-form">abs(x) = sqrt(x^2)</span>
+  <span class="maf-formulas-title">Absolute value is nonnegative</span> <span class="maf-formulas-leader">..................</span> <span class="maf-formulas-form">abs(x) &gt;= 0</span>
+  <span class="maf-formulas-title">Absolute value of a negative</span> <span class="maf-formulas-leader">...................</span> <span class="maf-formulas-form">abs(-x) = abs(x)</span>
+  <span class="maf-formulas-title">Absolute value of a product</span> <span class="maf-formulas-leader">....................</span> <span class="maf-formulas-form">abs(a b) = abs(a) abs(b)</span>
+  <span class="maf-formulas-title">Absolute value of a quotient</span> <span class="maf-formulas-leader">...................</span> <span class="maf-formulas-form">abs(a / b) = abs(a) / abs(b)</span>
+  <span class="maf-formulas-title">Triangle inequality</span> <span class="maf-formulas-leader">............................</span> <span class="maf-formulas-form">abs(a + b) &lt;= abs(a) + abs(b)</span>
+  <span class="maf-formulas-title">Reverse triangle inequality</span> <span class="maf-formulas-leader">....................</span> <span class="maf-formulas-form">abs(abs(a) - abs(b)) &lt;= abs(a - b)</span>
+  <span class="maf-formulas-title">Absolute value equation</span> <span class="maf-formulas-leader">........................</span> <span class="maf-formulas-form">x = a || x = -a</span>
+  <span class="maf-formulas-title">Absolute value less than</span> <span class="maf-formulas-leader">.......................</span> <span class="maf-formulas-form">-a &lt; x &amp;&amp; x &lt; a</span>
+  <span class="maf-formulas-title">Absolute value greater than</span> <span class="maf-formulas-leader">....................</span> <span class="maf-formulas-form">x &lt; -a || x &gt; a</span>
+  <span class="maf-formulas-title">Distance between two numbers</span> <span class="maf-formulas-leader">...................</span> <span class="maf-formulas-form">abs(x - y) = abs(y - x)</span>
+
+<span class="filter-view-group">Algebra — Combinatorics</span>
+  <span class="maf-formulas-title">Permutations</span> <span class="maf-formulas-leader">...................................</span> <span class="maf-formulas-form">P = n! / (n - r)!</span>
+  <span class="maf-formulas-title">Combinations</span> <span class="maf-formulas-leader">...................................</span> <span class="maf-formulas-form">C = n! / (r! (n - r)!)</span>
+
+<span class="filter-view-group">Algebra — Exponents</span>
+  <span class="maf-formulas-title">Zero exponent</span> <span class="maf-formulas-leader">..................................</span> <span class="maf-formulas-form">x^0 = 1</span>
+  <span class="maf-formulas-title">First power</span> <span class="maf-formulas-leader">....................................</span> <span class="maf-formulas-form">x^1 = x</span>
+  <span class="maf-formulas-title">Negative exponent</span> <span class="maf-formulas-leader">..............................</span> <span class="maf-formulas-form">x^(-n) = 1 / x^n</span>
+  <span class="maf-formulas-title">Product of powers</span> <span class="maf-formulas-leader">..............................</span> <span class="maf-formulas-form">x^m x^n = x^(m + n)</span>
+  <span class="maf-formulas-title">Quotient of powers</span> <span class="maf-formulas-leader">.............................</span> <span class="maf-formulas-form">x^m / x^n = x^(m - n)</span>
+  <span class="maf-formulas-title">Power of a power</span> <span class="maf-formulas-leader">...............................</span> <span class="maf-formulas-form">(x^m)^n = x^(m n)</span>
+  <span class="maf-formulas-title">Power of a product</span> <span class="maf-formulas-leader">.............................</span> <span class="maf-formulas-form">(x y)^n = x^n y^n</span>
+  <span class="maf-formulas-title">Power of a quotient</span> <span class="maf-formulas-leader">............................</span> <span class="maf-formulas-form">(x / y)^n = x^n / y^n</span>
+  <span class="maf-formulas-title">Rational exponent</span> <span class="maf-formulas-leader">..............................</span> <span class="maf-formulas-form">x^(m / n) = (x^(1 / n))^m</span>
+  <span class="maf-formulas-title">Reciprocal of negative exponent rule</span> <span class="maf-formulas-leader">...........</span> <span class="maf-formulas-form">1 / x^(-n) = x^n</span>
+
+<span class="filter-view-group">Algebra — Fractions</span>
+  <span class="maf-formulas-title">Addition of fractions</span> <span class="maf-formulas-leader">..........................</span> <span class="maf-formulas-form">a / b + c / d = (a d + b c) / (b d)</span>
+  <span class="maf-formulas-title">Subtraction of fractions</span> <span class="maf-formulas-leader">.......................</span> <span class="maf-formulas-form">a / b - c / d = (a d - b c) / (b d)</span>
+  <span class="maf-formulas-title">Common denominator</span> <span class="maf-formulas-leader">.............................</span> <span class="maf-formulas-form">a / c + b / c = (a + b) / c</span>
+  <span class="maf-formulas-title">Multiplication of fractions</span> <span class="maf-formulas-leader">....................</span> <span class="maf-formulas-form">(a / b) (c / d) = a c / (b d)</span>
+  <span class="maf-formulas-title">Division of fractions</span> <span class="maf-formulas-leader">..........................</span> <span class="maf-formulas-form">a / b / (c / d) = a d / (b c)</span>
+  <span class="maf-formulas-title">Cancel a common factor</span> <span class="maf-formulas-leader">.........................</span> <span class="maf-formulas-form">a c / (b c) = a / b</span>
+  <span class="maf-formulas-title">Cross multiplication</span> <span class="maf-formulas-leader">...........................</span> <span class="maf-formulas-form">a d = b c</span>
+  <span class="maf-formulas-title">Reciprocal of a fraction</span> <span class="maf-formulas-leader">.......................</span> <span class="maf-formulas-form">1 / (a / b) = b / a</span>
+  <span class="maf-formulas-title">Sign of a fraction</span> <span class="maf-formulas-leader">.............................</span> <span class="maf-formulas-form">-(a / b) = -a / b</span>
+
+<span class="filter-view-group">Algebra — Linear equations</span>
+  <span class="maf-formulas-title">Linear equation standard form</span> <span class="maf-formulas-leader">..................</span> <span class="maf-formulas-form">a x + b y = c</span>
+  <span class="maf-formulas-title">Linear equation slope intercept form</span> <span class="maf-formulas-leader">...........</span> <span class="maf-formulas-form">y = m x + b</span>
+  <span class="maf-formulas-title">Linear equation point slope form</span> <span class="maf-formulas-leader">...............</span> <span class="maf-formulas-form">y - y1 = m*(x - x1)</span>
+  <span class="maf-formulas-title">Slope formula</span> <span class="maf-formulas-leader">..................................</span> <span class="maf-formulas-form">m = (y2 - y1) / (x2 - x1)</span>
+  <span class="maf-formulas-title">Midpoint formula</span> <span class="maf-formulas-leader">...............................</span> <span class="maf-formulas-form">M = [(x1 + x2) / 2, (y1 + y2) / 2]</span>
+
+<span class="filter-view-group">Algebra — Logarithms</span>
+  <span class="maf-formulas-title">Logarithm of a product</span> <span class="maf-formulas-leader">.........................</span> <span class="maf-formulas-form">log(x y, b) = log(x, b) + log(y, b)</span>
+  <span class="maf-formulas-title">Logarithm of a quotient</span> <span class="maf-formulas-leader">........................</span> <span class="maf-formulas-form">log(x / y, b) = log(x, b) - log(y, b)</span>
+  <span class="maf-formulas-title">Logarithm of a power</span> <span class="maf-formulas-leader">...........................</span> <span class="maf-formulas-form">log(x^p, b) = p log(x, b)</span>
+  <span class="maf-formulas-title">Logarithm of a root</span> <span class="maf-formulas-leader">............................</span> <span class="maf-formulas-form">log(x^(1 / n), b) = log(x, b) / n</span>
+  <span class="maf-formulas-title">Logarithm of a reciprocal</span> <span class="maf-formulas-leader">......................</span> <span class="maf-formulas-form">log(1 / x, b) = -log(x, b)</span>
+  <span class="maf-formulas-title">Base raised to a logarithm</span> <span class="maf-formulas-leader">.....................</span> <span class="maf-formulas-form">b^log(x, b) = x</span>
+  <span class="maf-formulas-title">Logarithm of a power of the base</span> <span class="maf-formulas-leader">...............</span> <span class="maf-formulas-form">log(b^x, b) = x</span>
+  <span class="maf-formulas-title">Change of base</span> <span class="maf-formulas-leader">.................................</span> <span class="maf-formulas-form">log(x, b) = ln(x) / ln(b)</span>
+  <span class="maf-formulas-title">Logarithm of one</span> <span class="maf-formulas-leader">...............................</span> <span class="maf-formulas-form">log(1, b) = 0</span>
+  <span class="maf-formulas-title">Logarithm of the base</span> <span class="maf-formulas-leader">..........................</span> <span class="maf-formulas-form">log(b, b) = 1</span>
+  <span class="maf-formulas-title">Exponential of a natural logarithm</span> <span class="maf-formulas-leader">.............</span> <span class="maf-formulas-form">exp(ln(x)) = x</span>
+  <span class="maf-formulas-title">Natural logarithm of an exponential</span> <span class="maf-formulas-leader">............</span> <span class="maf-formulas-form">ln(exp(x)) = x</span>
+
+<span class="filter-view-group">Algebra — Properties of real numbers</span>
+  <span class="maf-formulas-title">Commutative property of addition</span> <span class="maf-formulas-leader">...............</span> <span class="maf-formulas-form">a + b = b + a</span>
+  <span class="maf-formulas-title">Commutative property of multiplication</span> <span class="maf-formulas-leader">.........</span> <span class="maf-formulas-form">a b = b a</span>
+  <span class="maf-formulas-title">Associative property of addition</span> <span class="maf-formulas-leader">...............</span> <span class="maf-formulas-form">a + b + c = a + (b + c)</span>
+  <span class="maf-formulas-title">Associative property of multiplication</span> <span class="maf-formulas-leader">.........</span> <span class="maf-formulas-form">(a b) c = a b c</span>
+  <span class="maf-formulas-title">Distributive property</span> <span class="maf-formulas-leader">..........................</span> <span class="maf-formulas-form">a*(b + c) = a b + a c</span>
+  <span class="maf-formulas-title">Distributive property over subtraction</span> <span class="maf-formulas-leader">.........</span> <span class="maf-formulas-form">a*(b - c) = a b - a c</span>
+  <span class="maf-formulas-title">Additive identity</span> <span class="maf-formulas-leader">..............................</span> <span class="maf-formulas-form">a + 0 = a</span>
+  <span class="maf-formulas-title">Multiplicative identity</span> <span class="maf-formulas-leader">........................</span> <span class="maf-formulas-form">a 1 = a</span>
+  <span class="maf-formulas-title">Additive inverse</span> <span class="maf-formulas-leader">...............................</span> <span class="maf-formulas-form">a + -a = 0</span>
+  <span class="maf-formulas-title">Multiplicative inverse</span> <span class="maf-formulas-leader">.........................</span> <span class="maf-formulas-form">a*(1 / a) = 1</span>
+  <span class="maf-formulas-title">Multiplication by zero</span> <span class="maf-formulas-leader">.........................</span> <span class="maf-formulas-form">a 0 = 0</span>
+  <span class="maf-formulas-title">Zero product property</span> <span class="maf-formulas-leader">..........................</span> <span class="maf-formulas-form">a = 0 || b = 0</span>
+  <span class="maf-formulas-title">Addition property of equality</span> <span class="maf-formulas-leader">..................</span> <span class="maf-formulas-form">a + c = b + c</span>
+  <span class="maf-formulas-title">Subtraction property of equality</span> <span class="maf-formulas-leader">...............</span> <span class="maf-formulas-form">a - c = b - c</span>
+  <span class="maf-formulas-title">Multiplication property of equality</span> <span class="maf-formulas-leader">............</span> <span class="maf-formulas-form">a c = b c</span>
+  <span class="maf-formulas-title">Division property of equality</span> <span class="maf-formulas-leader">..................</span> <span class="maf-formulas-form">a / c = b / c</span>
+  <span class="maf-formulas-title">Double negation</span> <span class="maf-formulas-leader">................................</span> <span class="maf-formulas-form">--a = a</span>
+  <span class="maf-formulas-title">Subtraction as addition</span> <span class="maf-formulas-leader">........................</span> <span class="maf-formulas-form">a - b = a + -b</span>
+  <span class="maf-formulas-title">Division as multiplication</span> <span class="maf-formulas-leader">.....................</span> <span class="maf-formulas-form">a / b = a*(1 / b)</span>
+  <span class="maf-formulas-title">Sign rule for a product</span> <span class="maf-formulas-leader">........................</span> <span class="maf-formulas-form">-a b = a*-b</span>
+  <span class="maf-formulas-title">Product of two negatives</span> <span class="maf-formulas-leader">.......................</span> <span class="maf-formulas-form">-a*-b = a b</span>
+
+<span class="filter-view-group">Algebra — Quadratic equations</span>
+  <span class="maf-formulas-title">Quadratic formula, first root</span> <span class="maf-formulas-leader">..................</span> <span class="maf-formulas-form">x = (-b + sqrt(b^2 - 4 a c)) / (2 a)</span>
+  <span class="maf-formulas-title">Quadratic formula, second root</span> <span class="maf-formulas-leader">.................</span> <span class="maf-formulas-form">x = (-b - sqrt(b^2 - 4 a c)) / (2 a)</span>
+  <span class="maf-formulas-title">Discriminant</span> <span class="maf-formulas-leader">...................................</span> <span class="maf-formulas-form">d = b^2 - 4 a c</span>
+  <span class="maf-formulas-title">Sum of the roots (Vieta)</span> <span class="maf-formulas-leader">.......................</span> <span class="maf-formulas-form">r1 + r2 = -b / a</span>
+  <span class="maf-formulas-title">Product of the roots (Vieta)</span> <span class="maf-formulas-leader">...................</span> <span class="maf-formulas-form">r1 r2 = c / a</span>
+  <span class="maf-formulas-title">Factored form of a quadratic</span> <span class="maf-formulas-leader">...................</span> <span class="maf-formulas-form">a x^2 + b x + c = a*(x - r1) (x - r2)</span>
+  <span class="maf-formulas-title">Completing the square</span> <span class="maf-formulas-leader">..........................</span> <span class="maf-formulas-form">a x^2 + b x + c = a*(x + b / (2 a))^2 + (c - b^2 / (4 a))</span>
+  <span class="maf-formulas-title">Vertex of a parabola</span> <span class="maf-formulas-leader">...........................</span> <span class="maf-formulas-form">x = -b / (2 a)</span>
+
+<span class="filter-view-group">Algebra — Radicals</span>
+  <span class="maf-formulas-title">Square root as an exponent</span> <span class="maf-formulas-leader">.....................</span> <span class="maf-formulas-form">sqrt(x) = x^(1/2)</span>
+  <span class="maf-formulas-title">Nth root as an exponent</span> <span class="maf-formulas-leader">........................</span> <span class="maf-formulas-form">nroot(x, n) = x^(1 / n)</span>
+  <span class="maf-formulas-title">Product of radicals</span> <span class="maf-formulas-leader">............................</span> <span class="maf-formulas-form">sqrt(x y) = sqrt(x) sqrt(y)</span>
+  <span class="maf-formulas-title">Quotient of radicals</span> <span class="maf-formulas-leader">...........................</span> <span class="maf-formulas-form">sqrt(x / y) = sqrt(x) / sqrt(y)</span>
+  <span class="maf-formulas-title">Root of a square</span> <span class="maf-formulas-leader">...............................</span> <span class="maf-formulas-form">sqrt(x^2) = abs(x)</span>
+  <span class="maf-formulas-title">Rationalize a root denominator</span> <span class="maf-formulas-leader">.................</span> <span class="maf-formulas-form">1 / sqrt(x) = sqrt(x) / x</span>
+  <span class="maf-formulas-title">Rationalize by the conjugate</span> <span class="maf-formulas-leader">...................</span> <span class="maf-formulas-form">1 / (a + sqrt(b)) = (a - sqrt(b)) / (a^2 - b)</span>
+
+<span class="filter-view-group">Conic sections — Parabola</span>
+  <span class="maf-formulas-title">Vertex form of horizontal parabola</span> <span class="maf-formulas-leader">.............</span> <span class="maf-formulas-form">x = a*(y - k)^2 + h</span>
+  <span class="maf-formulas-title">Vertex form of vertical parabola</span> <span class="maf-formulas-leader">...............</span> <span class="maf-formulas-form">y = a*(x - h)^2 + k</span>
+  <span class="maf-formulas-title">Standard form of horizontal parabola</span> <span class="maf-formulas-leader">...........</span> <span class="maf-formulas-form">(y - k)^2 = 4 p*(x - h)</span>
+  <span class="maf-formulas-title">Standard form of horizontal parabola at origin</span> <span class="maf-formulas-leader">.</span> <span class="maf-formulas-form">y^2 = 4 p x</span>
+  <span class="maf-formulas-title">Standard form of vertical parabola</span> <span class="maf-formulas-leader">.............</span> <span class="maf-formulas-form">(x - h)^2 = 4 p*(y - k)</span>
+  <span class="maf-formulas-title">Standard form of vertical parabola at origin</span> <span class="maf-formulas-leader">...</span> <span class="maf-formulas-form">x^2 = 4 p y</span>
+  <span class="maf-formulas-title">Focus of horizontal parabola</span> <span class="maf-formulas-leader">...................</span> <span class="maf-formulas-form">x = h + p</span>
+  <span class="maf-formulas-title">Axis of symmetry of parabola</span> <span class="maf-formulas-leader">...................</span> <span class="maf-formulas-form">x = -(b / (2 a))</span>
+  <span class="maf-formulas-title">Focus of vertical parabola</span> <span class="maf-formulas-leader">.....................</span> <span class="maf-formulas-form">y = k + p</span>
+  <span class="maf-formulas-title">Directrix of horizontal parabola</span> <span class="maf-formulas-leader">...............</span> <span class="maf-formulas-form">x = h - p</span>
+  <span class="maf-formulas-title">Directrix of vertical parabola</span> <span class="maf-formulas-leader">.................</span> <span class="maf-formulas-form">y = k - p</span>
+  <span class="maf-formulas-title">Average of roots</span> <span class="maf-formulas-leader">...............................</span> <span class="maf-formulas-form">x = (x1 + x2) / 2</span>
+
+<span class="filter-view-group">Finance</span>
+  <span class="maf-formulas-title">Compound interest</span> <span class="maf-formulas-leader">..............................</span> <span class="maf-formulas-form">A = P*(1 + r / n)^(n t)</span>
+  <span class="maf-formulas-title">Continous compound interest</span> <span class="maf-formulas-leader">....................</span> <span class="maf-formulas-form">A = P e^(r t)</span>
+  <span class="maf-formulas-title">Simple compound interest</span> <span class="maf-formulas-leader">.......................</span> <span class="maf-formulas-form">A = P*(1 + r)^t</span>
+
+<span class="filter-view-group">Geometry — 2D</span>
+  <span class="maf-formulas-title">Area of triangle</span> <span class="maf-formulas-leader">...............................</span> <span class="maf-formulas-form">A = 1:2 b h</span>
+  <span class="maf-formulas-title">Area of general triangle</span> <span class="maf-formulas-leader">.......................</span> <span class="maf-formulas-form">A = 1:2 a b sin(C)</span>
+  <span class="maf-formulas-title">Area of trapezoid</span> <span class="maf-formulas-leader">..............................</span> <span class="maf-formulas-form">A = 1:2 h*(b1 + b2)</span>
+  <span class="maf-formulas-title">Area of circular sector</span> <span class="maf-formulas-leader">........................</span> <span class="maf-formulas-form">A = 1:2 r^2 a</span>
+  <span class="maf-formulas-title">Sum of interior polygon angles</span> <span class="maf-formulas-leader">.................</span> <span class="maf-formulas-form">S = 180 (n - 2)</span>
+  <span class="maf-formulas-title">Standard equation of circle</span> <span class="maf-formulas-leader">....................</span> <span class="maf-formulas-form">(x - h)^2 + (y - k)^2 = r^2</span>
+
+<span class="filter-view-group">Geometry — 2D: Circle</span>
+  <span class="maf-formulas-title">Circumference of circle</span> <span class="maf-formulas-leader">........................</span> <span class="maf-formulas-form">C = 2 pi r</span>
+
+<span class="filter-view-group">Geometry — 2D: Coordinate plane</span>
+  <span class="maf-formulas-title">Distance formula</span> <span class="maf-formulas-leader">...............................</span> <span class="maf-formulas-form">d = sqrt((x2 - x1)^2 + (y2 - y1)^2)</span>
+
+<span class="filter-view-group">Geometry — 3D: Cone</span>
+  <span class="maf-formulas-title">Surface area of cone</span> <span class="maf-formulas-leader">...........................</span> <span class="maf-formulas-form">S = pi r s + pi r^2</span>
+  <span class="maf-formulas-title">Lateral surface area of cone</span> <span class="maf-formulas-leader">...................</span> <span class="maf-formulas-form">SL = pi r s</span>
+  <span class="maf-formulas-title">Volume of cone</span> <span class="maf-formulas-leader">.................................</span> <span class="maf-formulas-form">V = 1:3 pi r^2 h</span>
+
+<span class="filter-view-group">Geometry — 3D: Conical Frustum</span>
+  <span class="maf-formulas-title">Surface area of conical frustrum</span> <span class="maf-formulas-leader">...............</span> <span class="maf-formulas-form">S = pi s*(r1 + r2) + pi r1^2 + pi r2^2</span>
+  <span class="maf-formulas-title">Lateral surface area of conical frustrum</span> <span class="maf-formulas-leader">.......</span> <span class="maf-formulas-form">SL = pi s*(r1 + r2)</span>
+  <span class="maf-formulas-title">Volume of conical frustrum</span> <span class="maf-formulas-leader">.....................</span> <span class="maf-formulas-form">V = 1:3 pi h*(R^2 + r^2 + R r)</span>
+
+<span class="filter-view-group">Geometry — 3D: Coordinate space</span>
+  <span class="maf-formulas-title">Distance formula in space</span> <span class="maf-formulas-leader">......................</span> <span class="maf-formulas-form">d = sqrt((x2 - x1)^2 + (y2 - y1)^2 + (z2 - z1)^2)</span>
+
+<span class="filter-view-group">Geometry — 3D: Cube</span>
+  <span class="maf-formulas-title">Volume of cube</span> <span class="maf-formulas-leader">.................................</span> <span class="maf-formulas-form">V = s^3</span>
+  <span class="maf-formulas-title">Surface area of cube</span> <span class="maf-formulas-leader">...........................</span> <span class="maf-formulas-form">S = 6 s^2</span>
+  <span class="maf-formulas-title">Diagonal of cube</span> <span class="maf-formulas-leader">...............................</span> <span class="maf-formulas-form">d = s sqrt(3)</span>
+
+<span class="filter-view-group">Geometry — 3D: Cylinder</span>
+  <span class="maf-formulas-title">Surface area of cylinder</span> <span class="maf-formulas-leader">.......................</span> <span class="maf-formulas-form">S = 2 pi r h + 2 pi r^2</span>
+  <span class="maf-formulas-title">Lateral surface area of cylinder</span> <span class="maf-formulas-leader">...............</span> <span class="maf-formulas-form">SL = 2 h pi r</span>
+  <span class="maf-formulas-title">Volume of cylinder</span> <span class="maf-formulas-leader">.............................</span> <span class="maf-formulas-form">V = pi r^2 h</span>
+
+<span class="filter-view-group">Geometry — 3D: Pyramid</span>
+  <span class="maf-formulas-title">Surface area of pyramid</span> <span class="maf-formulas-leader">........................</span> <span class="maf-formulas-form">S = 1:2 p s + B</span>
+  <span class="maf-formulas-title">Lateral surface area of pyramid</span> <span class="maf-formulas-leader">................</span> <span class="maf-formulas-form">SL = 1:2 p s</span>
+  <span class="maf-formulas-title">Volume of pyramid</span> <span class="maf-formulas-leader">..............................</span> <span class="maf-formulas-form">V = 1:3 B h</span>
+
+<span class="filter-view-group">Geometry — 3D: Rectangular Solid</span>
+  <span class="maf-formulas-title">Volume of rectangular solid</span> <span class="maf-formulas-leader">....................</span> <span class="maf-formulas-form">V = l w h</span>
+  <span class="maf-formulas-title">Surface area of rectangular solid</span> <span class="maf-formulas-leader">..............</span> <span class="maf-formulas-form">S = 2 (l w + w h + h l)</span>
+  <span class="maf-formulas-title">Lateral surface area of rectangular solid</span> <span class="maf-formulas-leader">......</span> <span class="maf-formulas-form">SL = 2 h*(l + w)</span>
+  <span class="maf-formulas-title">Diagonal of rectangular solid</span> <span class="maf-formulas-leader">..................</span> <span class="maf-formulas-form">d = sqrt(l^2 + w^2 + h^2)</span>
+
+<span class="filter-view-group">Geometry — 3D: Sphere</span>
+  <span class="maf-formulas-title">Surface area of sphere</span> <span class="maf-formulas-leader">.........................</span> <span class="maf-formulas-form">S = 4 pi r^2</span>
+  <span class="maf-formulas-title">Volume of sphere</span> <span class="maf-formulas-leader">...............................</span> <span class="maf-formulas-form">V = 4:3 pi r^3</span>
+
+<span class="filter-view-group">Trig — Asymptotes</span>
+  <span class="maf-formulas-title">Tan asymptotes</span> <span class="maf-formulas-leader">.................................</span> <span class="maf-formulas-form">n pi + pi / 2</span>
+  <span class="maf-formulas-title">Cotan asymptotes</span> <span class="maf-formulas-leader">...............................</span> <span class="maf-formulas-form">n pi</span>
+  <span class="maf-formulas-title">Secant asymptotes</span> <span class="maf-formulas-leader">..............................</span> <span class="maf-formulas-form">n pi + pi / 2</span>
+  <span class="maf-formulas-title">Cosecant asymptotes</span> <span class="maf-formulas-leader">............................</span> <span class="maf-formulas-form">n pi</span>
+
+<span class="filter-view-group">Trig — Zeros and extrema</span>
+  <span class="maf-formulas-title">Sine roots</span> <span class="maf-formulas-leader">.....................................</span> <span class="maf-formulas-form">sin(n pi) = 0</span>
+  <span class="maf-formulas-title">Sine maxima</span> <span class="maf-formulas-leader">....................................</span> <span class="maf-formulas-form">sin(2 n pi + pi / 2) = 1</span>
+  <span class="maf-formulas-title">Sine minima</span> <span class="maf-formulas-leader">....................................</span> <span class="maf-formulas-form">sin(2 n pi - pi / 2) = -1</span>
+  <span class="maf-formulas-title">Cosine roots</span> <span class="maf-formulas-leader">...................................</span> <span class="maf-formulas-form">cos(n pi + pi / 2) = 0</span>
+  <span class="maf-formulas-title">Cosine maxima</span> <span class="maf-formulas-leader">..................................</span> <span class="maf-formulas-form">cos(2 n pi) = 1</span>
+  <span class="maf-formulas-title">Cosine minima</span> <span class="maf-formulas-leader">..................................</span> <span class="maf-formulas-form">cos(2 n pi + pi) = -1</span>
+  <span class="maf-formulas-title">Tan roots</span> <span class="maf-formulas-leader">......................................</span> <span class="maf-formulas-form">tan(n pi) = 0</span>
+  <span class="maf-formulas-title">Cotan roots</span> <span class="maf-formulas-leader">....................................</span> <span class="maf-formulas-form">cot(n pi + pi / 2) = 0</span>
+
+<span class="filter-view-group">Trigonometry</span>
+  <span class="maf-formulas-title">Pythagorean triple</span> <span class="maf-formulas-leader">.............................</span> <span class="maf-formulas-form">a^2 + b^2 = c^2</span>
+  <span class="maf-formulas-title">Law of sines</span> <span class="maf-formulas-leader">...................................</span> <span class="maf-formulas-form">eq(a / sin(A), b / sin(B), c / sin(C))</span>
+  <span class="maf-formulas-title">Law of cosines 1</span> <span class="maf-formulas-leader">...............................</span> <span class="maf-formulas-form">c^2 = a^2 + b^2 - 2 a b cos(C)</span>
+  <span class="maf-formulas-title">Law of cosines 2</span> <span class="maf-formulas-leader">...............................</span> <span class="maf-formulas-form">cos(C) = (a^2 + b^2 - c^2) / (2 a b)</span>
+
+<span class="filter-view-group">Trigonometry — Angle sum and difference</span>
+  <span class="maf-formulas-title">Sine of a sum</span> <span class="maf-formulas-leader">..................................</span> <span class="maf-formulas-form">sin(a + b) = sin(a) cos(b) + cos(a) sin(b)</span>
+  <span class="maf-formulas-title">Sine of a difference</span> <span class="maf-formulas-leader">...........................</span> <span class="maf-formulas-form">sin(a - b) = sin(a) cos(b) - cos(a) sin(b)</span>
+  <span class="maf-formulas-title">Cosine of a sum</span> <span class="maf-formulas-leader">................................</span> <span class="maf-formulas-form">cos(a + b) = cos(a) cos(b) - sin(a) sin(b)</span>
+  <span class="maf-formulas-title">Cosine of a difference</span> <span class="maf-formulas-leader">.........................</span> <span class="maf-formulas-form">cos(a - b) = cos(a) cos(b) + sin(a) sin(b)</span>
+  <span class="maf-formulas-title">Tangent of a sum</span> <span class="maf-formulas-leader">...............................</span> <span class="maf-formulas-form">tan(a + b) = (tan(a) + tan(b)) / (1 - tan(a) tan(b))</span>
+  <span class="maf-formulas-title">Tangent of a difference</span> <span class="maf-formulas-leader">........................</span> <span class="maf-formulas-form">tan(a - b) = (tan(a) - tan(b)) / (1 + tan(a) tan(b))</span>
+
+<span class="filter-view-group">Trigonometry — Double angle</span>
+  <span class="maf-formulas-title">Sine of a double angle</span> <span class="maf-formulas-leader">.........................</span> <span class="maf-formulas-form">sin(2 x) = 2 sin(x) cos(x)</span>
+  <span class="maf-formulas-title">Cosine of a double angle</span> <span class="maf-formulas-leader">.......................</span> <span class="maf-formulas-form">cos(2 x) = cos(x)^2 - sin(x)^2</span>
+  <span class="maf-formulas-title">Cosine of a double angle, in sine</span> <span class="maf-formulas-leader">..............</span> <span class="maf-formulas-form">cos(2 x) = 1 - 2 sin(x)^2</span>
+  <span class="maf-formulas-title">Cosine of a double angle, in cosine</span> <span class="maf-formulas-leader">............</span> <span class="maf-formulas-form">cos(2 x) = 2 cos(x)^2 - 1</span>
+  <span class="maf-formulas-title">Tangent of a double angle</span> <span class="maf-formulas-leader">......................</span> <span class="maf-formulas-form">tan(2 x) = 2 tan(x) / (1 - tan(x)^2)</span>
+
+<span class="filter-view-group">Trigonometry — Even and odd</span>
+  <span class="maf-formulas-title">Sine is odd</span> <span class="maf-formulas-leader">....................................</span> <span class="maf-formulas-form">sin(-x) = -sin(x)</span>
+  <span class="maf-formulas-title">Cosine is even</span> <span class="maf-formulas-leader">.................................</span> <span class="maf-formulas-form">cos(-x) = cos(x)</span>
+  <span class="maf-formulas-title">Tangent is odd</span> <span class="maf-formulas-leader">.................................</span> <span class="maf-formulas-form">tan(-x) = -tan(x)</span>
+
+<span class="filter-view-group">Trigonometry — Half angle</span>
+  <span class="maf-formulas-title">Sine of a half angle, squared</span> <span class="maf-formulas-leader">..................</span> <span class="maf-formulas-form">sin(x / 2)^2 = (1 - cos(x)) / 2</span>
+  <span class="maf-formulas-title">Cosine of a half angle, squared</span> <span class="maf-formulas-leader">................</span> <span class="maf-formulas-form">cos(x / 2)^2 = (1 + cos(x)) / 2</span>
+  <span class="maf-formulas-title">Tangent of a half angle, squared</span> <span class="maf-formulas-leader">...............</span> <span class="maf-formulas-form">tan(x / 2)^2 = (1 - cos(x)) / (1 + cos(x))</span>
+  <span class="maf-formulas-title">Tangent of a half angle</span> <span class="maf-formulas-leader">........................</span> <span class="maf-formulas-form">tan(x / 2) = (1 - cos(x)) / sin(x)</span>
+  <span class="maf-formulas-title">Tangent of a half angle, by sine</span> <span class="maf-formulas-leader">...............</span> <span class="maf-formulas-form">tan(x / 2) = sin(x) / (1 + cos(x))</span>
+
+<span class="filter-view-group">Trigonometry — Pythagorean identities</span>
+  <span class="maf-formulas-title">Pythagorean identity</span> <span class="maf-formulas-leader">...........................</span> <span class="maf-formulas-form">sin(x)^2 + cos(x)^2 = 1</span>
+  <span class="maf-formulas-title">Pythagorean identity for tangent</span> <span class="maf-formulas-leader">...............</span> <span class="maf-formulas-form">1 + tan(x)^2 = sec(x)^2</span>
+  <span class="maf-formulas-title">Pythagorean identity for cotangent</span> <span class="maf-formulas-leader">.............</span> <span class="maf-formulas-form">1 + cot(x)^2 = csc(x)^2</span>
+
+<span class="filter-view-group">Trigonometry — Reciprocal and quotient</span>
+  <span class="maf-formulas-title">Cosecant as a reciprocal</span> <span class="maf-formulas-leader">.......................</span> <span class="maf-formulas-form">csc(x) = 1 / sin(x)</span>
+  <span class="maf-formulas-title">Secant as a reciprocal</span> <span class="maf-formulas-leader">.........................</span> <span class="maf-formulas-form">sec(x) = 1 / cos(x)</span>
+  <span class="maf-formulas-title">Cotangent as a reciprocal</span> <span class="maf-formulas-leader">......................</span> <span class="maf-formulas-form">cot(x) = 1 / tan(x)</span>
+  <span class="maf-formulas-title">Tangent as a quotient</span> <span class="maf-formulas-leader">..........................</span> <span class="maf-formulas-form">tan(x) = sin(x) / cos(x)</span>
+  <span class="maf-formulas-title">Cotangent as a quotient</span> <span class="maf-formulas-leader">........................</span> <span class="maf-formulas-form">cot(x) = cos(x) / sin(x)</span>
+
+<span class="filter-view-group">Trigonometry — Sinusoidal Functions</span>
+  <span class="maf-formulas-title">Sinusoidal period</span> <span class="maf-formulas-leader">..............................</span> <span class="maf-formulas-form">T = (1 / B) 2 pi</span>
+  <span class="maf-formulas-title">Sinusoidal frequency</span> <span class="maf-formulas-leader">...........................</span> <span class="maf-formulas-form">f = 1 / T</span>
+
+<span class="filter-view-group">Trigonometry — Triple angle</span>
+  <span class="maf-formulas-title">Sine of a triple angle</span> <span class="maf-formulas-leader">.........................</span> <span class="maf-formulas-form">sin(3 x) = 3 sin(x) - 4 sin(x)^3</span>
+  <span class="maf-formulas-title">Cosine of a triple angle</span> <span class="maf-formulas-leader">.......................</span> <span class="maf-formulas-form">cos(3 x) = 4 cos(x)^3 - 3 cos(x)</span>
+  <span class="maf-formulas-title">Tangent of a triple angle</span> <span class="maf-formulas-leader">......................</span> <span class="maf-formulas-form">tan(3 x) = (3 tan(x) - tan(x)^3) / (1 - 3 tan(x)^2)</span>
+</pre>
+
+ </body>
+</html>

@@ -45,4 +45,6 @@ curve data maf samples, drawn in the calc pane's palette (`.calcbuf` in
 
 ## Data
 
-The generators under `gen/` write `data/`; see `gen/README.md`.
+The generators under `gen/` write `data/`; see `gen/README.md`. The
+screenshots under `media/screens/` — a PNG and a fontified HTML per
+feature — come from `gen/screens.el`, run in the live dev instance.

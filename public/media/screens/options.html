@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8"/>
+    <title>*maf-options*</title>
+<meta name="generator" content="emacs 31.1; htmlfontify" />
+<style type="text/css"><!-- 
+body, pre { text-decoration: none;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  color: #ffffff;  background: #000000;  font-size: 10pt; }
+span.default   { text-decoration: none;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  color: #ffffff;  background: #000000;  font-size: 10pt; }
+span.default a {  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  color: #ffffff;  background: #000000;  font-size: 10pt; text-decoration: underline; }
+span.dial-changed   { text-decoration: none;  color: #e6b422;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  background: #000000;  font-size: 10pt; }
+span.dial-changed a {  color: #e6b422;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  background: #000000;  font-size: 10pt; text-decoration: underline; }
+span.dial-group   { text-decoration: none;  color: #6fa8f5;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  background: #000000;  font-size: 10pt; }
+span.dial-group a {  color: #6fa8f5;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  background: #000000;  font-size: 10pt; text-decoration: underline; }
+span.shadow   { text-decoration: none;  color: #989898;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  background: #000000;  font-size: 10pt; }
+span.shadow a {  color: #989898;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  background: #000000;  font-size: 10pt; text-decoration: underline; }
+span.dial-value   { text-decoration: none;  color: #b48ee0;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  background: #000000;  font-size: 10pt; }
+span.dial-value a {  color: #b48ee0;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  background: #000000;  font-size: 10pt; text-decoration: underline; }
+span.help-key-binding   { text-decoration: none;  font-weight: 700;  font-family: "Monaco";  font-stretch: normal;  font-style: normal;  color: #ffffff;  background: #000000;  font-size: 10pt; }
+span.help-key-binding a {  font-weight: 700;  font-family: "Monaco";  font-stretch: normal;  font-style: normal;  color: #ffffff;  background: #000000;  font-size: 10pt; text-decoration: underline; }
+span.dial-controls   { text-decoration: none;  background: #1c2733;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  color: #ffffff;  font-size: 10pt; }
+span.dial-controls a {  background: #1c2733;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  color: #ffffff;  font-size: 10pt; text-decoration: underline; }
+ --></style>
+
+    <script type="text/javascript"><!--
+  // this function is needed to work around
+  // a bug in IE related to element attributes
+  function hasClass(obj)
+  {
+      var result = false;
+      if (obj.getAttributeNode("class") != null)
+      {
+          result = obj.getAttributeNode("class").value;
+      }
+      return result;
+  }
+
+  function stripe(id)
+  {
+      // the flag we'll use to keep track of
+      // whether the current row is odd or even
+      var even = false;
+
+      // if arguments are provided to specify the colors
+      // of the even & odd rows, then use them;
+      // otherwise use the following defaults:
+      var evenColor = arguments[1] ? arguments[1] : "#fff";
+      var oddColor  = arguments[2] ? arguments[2] : "#ddd";
+
+      // obtain a reference to the desired table
+      // if no such table exists, abort
+      var table = document.getElementById(id);
+      if (! table) { return; }
+
+      // by definition, tables can have more than one tbody
+      // element, so we'll have to get the list of child
+      // &lt;tbody&gt;s
+      var tbodies = table.getElementsByTagName("tbody");
+
+      // and iterate through them...
+      for (var h = 0; h < tbodies.length; h++)
+      {
+          // find all the &lt;tr&gt; elements...
+          var trs = tbodies[h].getElementsByTagName("tr");
+
+          // ... and iterate through them
+          for (var i = 0; i < trs.length; i++)
+          {
+              // avoid rows that have a class attribute
+              // or backgroundColor style
+              if (! hasClass(trs[i]) &&
+                  ! trs[i].style.backgroundColor)
+              {
+                  // get all the cells in this row...
+                  var tds = trs[i].getElementsByTagName("td");
+
+                  // and iterate through them...
+                  for (var j = 0; j < tds.length; j++)
+                  {
+                      var mytd = tds[j];
+
+                      // avoid cells that have a class attribute
+                      // or backgroundColor style
+                      if (! hasClass(mytd) &&
+                          ! mytd.style.backgroundColor)
+                      {
+                          mytd.style.backgroundColor =
+                            even ? evenColor : oddColor;
+                      }
+                  }
+              }
+              // flip from odd to even, or vice-versa
+              even =  ! even;
+          }
+      }
+  }
+
+  function toggle_invis( name )
+  {
+      var filter =
+        { acceptNode:
+          function( node )
+          { var classname = node.id;
+            if( classname )
+            { var classbase = classname.substr( 0, name.length );
+              if( classbase == name ) { return NodeFilter.FILTER_ACCEPT; } }
+            return NodeFilter.FILTER_SKIP; } };
+      var walker = document.createTreeWalker( document.body           ,
+                                              NodeFilter.SHOW_ELEMENT ,
+                                              filter                  ,
+                                              false                   );
+      while( walker.nextNode() )
+      {
+          var e = walker.currentNode;
+          if( e.style.display == "none" ) { e.style.display = "inline"; }
+          else                            { e.style.display = "none";   }
+      }
+  }
+--> </script>
+  </head>
+  <body onload="stripe('index'); return true;">
+
+<pre><span class="dial-controls"> </span><span class="help-key-binding">TAB</span><span class="dial-controls"> select   </span><span class="help-key-binding">RET</span><span class="dial-controls"> set   </span><span class="help-key-binding">d</span><span class="dial-controls"> reset   </span><span class="help-key-binding">c</span><span class="dial-controls"> changed   </span><span class="help-key-binding">K</span><span class="dial-controls"> calc keys   </span><span class="help-key-binding">S</span><span class="dial-controls"> save   </span><span class="help-key-binding">M-n</span><span class="dial-controls">/</span><span class="help-key-binding">M-p</span><span class="dial-controls"> group   </span><span class="help-key-binding">g</span><span class="dial-controls"> refresh   </span><span class="help-key-binding">q</span><span class="dial-controls"> quit   </span><span class="dial-value">value</span><span class="shadow"> = default</span><span class="dial-controls">
+</span>
+ <span class="dial-group">Numbers</span>   Angle measure      <span class="dial-value">degrees</span>  <span class="shadow">radians</span>  <span class="shadow">HMS</span>
+           Precision          <span class="dial-value">12</span>
+           Fraction mode      <span class="dial-changed">on</span>  <span class="shadow">off</span>
+           Symbolic mode      <span class="dial-changed">on</span>  <span class="shadow">off</span>
+           Infinite mode      <span class="shadow">on</span>  <span class="dial-value">off</span>
+           Complex form       <span class="dial-value">rectangular</span>  <span class="shadow">polar</span>
+                              
+ <span class="dial-group">Algebra</span>   Simplification     <span class="shadow">none</span>  <span class="shadow">numeric</span>  <span class="shadow">basic</span>  <span class="shadow">binary</span>  <span class="dial-value">algebraic</span>  <span class="shadow">extended</span>  <span class="shadow">units</span>
+           Algebraic entry    <span class="dial-value">off</span>  <span class="shadow">partial</span>  <span class="shadow">incomplete</span>  <span class="shadow">total</span>
+           Matrix mode        <span class="dial-value">unknown</span>  <span class="shadow">matrix</span>  <span class="shadow">square matrix</span>  <span class="shadow">scalar</span>
+           Auto-recompute     <span class="dial-value">on</span>  <span class="shadow">off</span>
+                              
+ <span class="dial-group">Display</span>   Radix              <span class="dial-value">decimal</span>  <span class="shadow">binary</span>  <span class="shadow">octal</span>  <span class="shadow">hexadecimal</span>
+           Float format       <span class="dial-value">normal</span>  <span class="shadow">fixed point</span>  <span class="shadow">scientific</span>  <span class="shadow">engineering</span>
+           Digit grouping     <span class="shadow">on</span>  <span class="dial-value">off</span>
+           Leading zeros      <span class="shadow">on</span>  <span class="dial-value">off</span>
+           Line numbers       <span class="dial-value">on</span>  <span class="shadow">off</span>
+           Line breaking      <span class="dial-value">on</span>  <span class="shadow">off</span>
+           Justification      <span class="dial-value">left</span>  <span class="shadow">center</span>  <span class="shadow">right</span>
+           Decimal point      <span class="dial-value">.</span>
+           Strings            <span class="shadow">on</span>  <span class="dial-value">off</span>
+           Raw display        <span class="shadow">on</span>  <span class="dial-value">off</span>
+           Language           <span class="dial-value">normal</span>  <span class="shadow">flat</span>  <span class="shadow">big</span>  <span class="shadow">unformatted</span>  <span class="shadow">C</span>  <span class="shadow">Pascal</span>  <span class="shadow">FORTRAN</span>  <span class="shadow">TeX</span>  <span class="shadow">LaTeX</span>  <span class="shadow">eqn</span>  <span class="shadow">Yacas</span>  <span class="shadow">Maxima</span>  <span class="shadow">Giac</span>  <span class="shadow">Mathematica</span>  <span class="shadow">Maple</span>
+                              
+ <span class="dial-group">Formats</span>   Complex numbers    <span class="dial-value">(x,y)</span>  <span class="shadow">x+yi</span>  <span class="shadow">x+yj</span>
+           Fractions          <span class="dial-value">:</span>
+           HMS                <span class="dial-value">%s@ %s' %s&quot;</span>
+           Dates              <span class="dial-value">H:mmCSSpp Www Mmm D, YYYY</span>
+           Group separator    <span class="dial-value">,</span>
+           Left label         <span class="dial-value">none</span>
+           Right label        <span class="dial-value">none</span>
+                              
+ <span class="dial-group">Vectors</span>   Vector brackets    <span class="dial-value">[ ]</span>  <span class="shadow">{ }</span>  <span class="shadow">( )</span>  <span class="shadow">none</span>
+           Vector commas      <span class="dial-value">on</span>  <span class="shadow">off</span>
+           Long vectors       <span class="dial-value">on</span>  <span class="shadow">off</span>
+           One per line       <span class="shadow">on</span>  <span class="dial-value">off</span>
+           Trail vectors      <span class="dial-value">on</span>  <span class="shadow">off</span>
+           Matrix columns     <span class="shadow">left</span>  <span class="dial-value">center</span>  <span class="shadow">right</span>
+           Matrix brackets    <span class="dial-value">R O</span>
+                              
+ <span class="dial-group">Binary</span>    Word size          <span class="shadow">8</span>  <span class="shadow">16</span>  <span class="dial-value">32</span>  <span class="shadow">64</span>
+           Two's complement   <span class="shadow">on</span>  <span class="dial-value">off</span>
+                              
+ <span class="dial-group">Selection</span> Show selection     <span class="dial-value">on</span>  <span class="shadow">off</span>
+           Associative        <span class="dial-value">on</span>  <span class="shadow">off</span>
+                              
+ <span class="dial-group">Session</span>   Working message    <span class="shadow">off</span>  <span class="shadow">brief</span>  <span class="dial-value">detailed</span>
+           Explain results    <span class="shadow">never</span>  <span class="dial-value">sometimes</span>  <span class="shadow">always</span>
+           Trail window       <span class="shadow">on</span>  <span class="dial-changed">off</span>
+           Banner             <span class="dial-value">on</span>  <span class="shadow">off</span>
+           Window height      <span class="dial-value">7</span>
+           Shifted prefixes   <span class="shadow">on</span>  <span class="dial-value">off</span>
+           Load extensions    <span class="dial-changed">on</span>  <span class="shadow">off</span>
+           Autorange units    <span class="shadow">on</span>  <span class="dial-value">off</span>
+           Record modes       <span class="shadow">nowhere</span>  <span class="dial-value">local</span>  <span class="shadow">edit</span>  <span class="shadow">perm</span>  <span class="shadow">global</span>  <span class="shadow">settings</span>
+</pre>
+
+ </body>
+</html>

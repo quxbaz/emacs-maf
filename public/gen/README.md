@@ -39,3 +39,24 @@ name rule plus a short override list in the file).
 The pages load the `.js` files, so they work when opened straight from disk.
 MathJax is vendored under `public/vendor/mathjax` for the keys page's LaTeX
 toggle.
+
+## Screenshots
+
+`screens.el` is different from the exporters above: it runs inside the
+live dev instance rather than in batch, since what it captures is the
+frame. Each scene sets the calc buffer up, drives a feature with the
+keys a person would press, exports the frame (`x-export-frames`),
+crops the image to the windows the feature occupies, and writes the
+buffer of interest through `htmlfontify-buffer`. Output lands in
+`media/screens/` as `NAME.png` and `NAME.html`; the window layout and
+the stack are put back after every scene. Needs ImageMagick's
+`convert`.
+
+    emacsclient -s '#emacs' --eval '(progn (load-file "public/gen/screens.el") (maf-screens-run))'
+
+`(maf-screens-run (list "plot"))` redoes one scene; `maf-screens-log`
+says what each did. Two things the harness works around: the preview
+panel's child frame is a frame of its own, invisible to the export, so
+that scene forces the in-window panel; and a key macro run from the
+server socket does not open the menus' windows, so those are opened by
+command.

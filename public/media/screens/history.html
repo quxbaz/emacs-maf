@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8"/>
+    <title>*maf-history*</title>
+<meta name="generator" content="emacs 31.1; htmlfontify" />
+<style type="text/css"><!-- 
+body, pre { text-decoration: none;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  color: #ffffff;  background: #000000;  font-size: 10pt; }
+span.default   { text-decoration: none;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  color: #ffffff;  background: #000000;  font-size: 10pt; }
+span.default a {  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  color: #ffffff;  background: #000000;  font-size: 10pt; text-decoration: underline; }
+span.maf-history-added   { text-decoration: none;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  color: #ffffff;  background: #000000;  font-size: 10pt; }
+span.maf-history-added a {  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  color: #ffffff;  background: #000000;  font-size: 10pt; text-decoration: underline; }
+span.maf-history-removed   { text-decoration: none;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  color: #ffffff;  background: #000000;  font-size: 10pt; }
+span.maf-history-removed a {  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  color: #ffffff;  background: #000000;  font-size: 10pt; text-decoration: underline; }
+span.shadow   { text-decoration: none;  color: #989898;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  background: #000000;  font-size: 10pt; }
+span.shadow a {  color: #989898;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  background: #000000;  font-size: 10pt; text-decoration: underline; }
+span.maf-history-modified   { text-decoration: none;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  color: #ffffff;  background: #000000;  font-size: 10pt; }
+span.maf-history-modified a {  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  color: #ffffff;  background: #000000;  font-size: 10pt; text-decoration: underline; }
+span.maf-history-current   { text-decoration: none;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  color: #ffffff;  background: #000000;  font-size: 10pt; }
+span.maf-history-current a {  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  color: #ffffff;  background: #000000;  font-size: 10pt; text-decoration: underline; }
+ --></style>
+
+    <script type="text/javascript"><!--
+  // this function is needed to work around
+  // a bug in IE related to element attributes
+  function hasClass(obj)
+  {
+      var result = false;
+      if (obj.getAttributeNode("class") != null)
+      {
+          result = obj.getAttributeNode("class").value;
+      }
+      return result;
+  }
+
+  function stripe(id)
+  {
+      // the flag we'll use to keep track of
+      // whether the current row is odd or even
+      var even = false;
+
+      // if arguments are provided to specify the colors
+      // of the even & odd rows, then use them;
+      // otherwise use the following defaults:
+      var evenColor = arguments[1] ? arguments[1] : "#fff";
+      var oddColor  = arguments[2] ? arguments[2] : "#ddd";
+
+      // obtain a reference to the desired table
+      // if no such table exists, abort
+      var table = document.getElementById(id);
+      if (! table) { return; }
+
+      // by definition, tables can have more than one tbody
+      // element, so we'll have to get the list of child
+      // &lt;tbody&gt;s
+      var tbodies = table.getElementsByTagName("tbody");
+
+      // and iterate through them...
+      for (var h = 0; h < tbodies.length; h++)
+      {
+          // find all the &lt;tr&gt; elements...
+          var trs = tbodies[h].getElementsByTagName("tr");
+
+          // ... and iterate through them
+          for (var i = 0; i < trs.length; i++)
+          {
+              // avoid rows that have a class attribute
+              // or backgroundColor style
+              if (! hasClass(trs[i]) &&
+                  ! trs[i].style.backgroundColor)
+              {
+                  // get all the cells in this row...
+                  var tds = trs[i].getElementsByTagName("td");
+
+                  // and iterate through them...
+                  for (var j = 0; j < tds.length; j++)
+                  {
+                      var mytd = tds[j];
+
+                      // avoid cells that have a class attribute
+                      // or backgroundColor style
+                      if (! hasClass(mytd) &&
+                          ! mytd.style.backgroundColor)
+                      {
+                          mytd.style.backgroundColor =
+                            even ? evenColor : oddColor;
+                      }
+                  }
+              }
+              // flip from odd to even, or vice-versa
+              even =  ! even;
+          }
+      }
+  }
+
+  function toggle_invis( name )
+  {
+      var filter =
+        { acceptNode:
+          function( node )
+          { var classname = node.id;
+            if( classname )
+            { var classbase = classname.substr( 0, name.length );
+              if( classbase == name ) { return NodeFilter.FILTER_ACCEPT; } }
+            return NodeFilter.FILTER_SKIP; } };
+      var walker = document.createTreeWalker( document.body           ,
+                                              NodeFilter.SHOW_ELEMENT ,
+                                              filter                  ,
+                                              false                   );
+      while( walker.nextNode() )
+      {
+          var e = walker.currentNode;
+          if( e.style.display == "none" ) { e.style.display = "inline"; }
+          else                            { e.style.display = "none";   }
+      }
+  }
+--> </script>
+  </head>
+  <body onload="stripe('index'); return true;">
+
+<pre><span class="maf-history-current">▸ </span><span class="maf-history-modified">~</span><span class="maf-history-current"> factor </span><span class="shadow">(mafcmd-factor)</span><span class="maf-history-current">
+</span>  <span class="maf-history-modified">~</span> edit
+  <span class="maf-history-removed">-</span> del
+  <span class="maf-history-modified">~</span> change
+  <span class="maf-history-modified">~</span> edit
+  <span class="maf-history-removed">-</span> del
+  <span class="maf-history-modified">~</span> change
+  <span class="maf-history-removed">-</span> del
+  <span class="maf-history-modified">~</span> esimplify <span class="shadow">(mafcmd-esimplify)</span>
+  <span class="maf-history-added">+</span> new
+  <span class="maf-history-modified">~</span> esimplify <span class="shadow">(mafcmd-esimplify)</span>
+  <span class="maf-history-added">+</span> new
+  <span class="maf-history-modified">~</span> esimplify <span class="shadow">(mafcmd-esimplify)</span>
+  <span class="maf-history-modified">~</span> edit
+  <span class="maf-history-modified">~</span> factor <span class="shadow">(mafcmd-factor)</span>
+  <span class="maf-history-modified">~</span> edit
+  <span class="maf-history-removed">-</span> del
+  <span class="maf-history-modified">~</span> change
+  <span class="maf-history-modified">~</span> edit
+  <span class="maf-history-removed">-</span> del
+  <span class="maf-history-modified">~</span> change
+  <span class="maf-history-removed">-</span> del
+  <span class="maf-history-modified">~</span> change <span class="shadow">(maf-edit-commit)</span>
+  <span class="maf-history-removed">-</span> del
+  <span class="maf-history-modified">~</span> factor <span class="shadow">(mafcmd-factor)</span>
+  <span class="maf-history-modified">~</span> edit
+  <span class="maf-history-removed">-</span> del
+  <span class="maf-history-modified">~</span> change
+  <span class="maf-history-modified">~</span> edit
+  <span class="maf-history-removed">-</span> del
+  <span class="maf-history-modified">~</span> change
+  <span class="maf-history-modified">~</span> factor <span class="shadow">(mafcmd-factor)</span>
+  <span class="maf-history-modified">~</span> edit
+  <span class="maf-history-removed">-</span> del
+  <span class="maf-history-added">+</span> new
+  <span class="maf-history-modified">~</span> edit
+  <span class="maf-history-modified">~</span> factor <span class="shadow">(mafcmd-factor)</span>
+  <span class="maf-history-modified">~</span> edit <span class="shadow">(mafcmd-factor)</span>
+  <span class="maf-history-modified">~</span> edit <span class="shadow">(mafcmd-factor)</span>
+  <span class="maf-history-modified">~</span> edit
+  <span class="maf-history-removed">-</span> del
+  <span class="maf-history-modified">~</span> change
+  <span class="maf-history-modified">~</span> edit
+  <span class="maf-history-removed">-</span> del
+  <span class="maf-history-modified">~</span> change
+  <span class="maf-history-modified">~</span> edit
+  <span class="maf-history-modified">~</span> edit
+  <span class="maf-history-modified">~</span> edit
+  <span class="maf-history-removed">-</span> del
+  <span class="maf-history-modified">~</span> change
+  <span class="maf-history-modified">~</span> edit
+  <span class="maf-history-removed">-</span> del
+  <span class="maf-history-modified">~</span> edit
+  <span class="maf-history-modified">~</span> fctr <span class="shadow">(mafcmd-factor-gcd)</span>
+  <span class="maf-history-modified">~</span> esimplify <span class="shadow">(mafcmd-esimplify)</span>
+  <span class="maf-history-modified">~</span> jump <span class="shadow">(maf-jump-equals)</span>
+  <span class="maf-history-modified">~</span> csqr <span class="shadow">(mafcmd-complete-square)</span>
+  <span class="maf-history-modified">~</span> clct <span class="shadow">(mafcmd-collect-terms)</span>
+  <span class="maf-history-modified">~</span> edit
+  <span class="maf-history-modified">~</span> fctr <span class="shadow">(mafcmd-factor-gcd)</span>
+  <span class="maf-history-modified">~</span> esimplify <span class="shadow">(mafcmd-esimplify)</span>
+  <span class="maf-history-modified">~</span> jump <span class="shadow">(maf-jump-equals)</span>
+  <span class="maf-history-modified">~</span> csqr <span class="shadow">(mafcmd-complete-square)</span>
+  <span class="maf-history-modified">~</span> clct <span class="shadow">(mafcmd-collect-terms)</span>
+  <span class="maf-history-removed">-</span> del
+  <span class="maf-history-modified">~</span> esimplify <span class="shadow">(mafcmd-esimplify)</span>
+  <span class="maf-history-modified">~</span> jump <span class="shadow">(maf-jump-equals)</span>
+  <span class="maf-history-modified">~</span> csqr <span class="shadow">(mafcmd-complete-square)</span>
+  <span class="maf-history-added">+</span> new
+  <span class="maf-history-modified">~</span> jump <span class="shadow">(maf-jump-equals)</span>
+  <span class="maf-history-modified">~</span> csqr <span class="shadow">(mafcmd-complete-square)</span>
+  <span class="maf-history-modified">~</span> edit
+  <span class="maf-history-modified">~</span> frml
+  <span class="maf-history-modified">~</span> edit
+  <span class="maf-history-modified">~</span> undo <span class="shadow">(maf-undo)</span>
+  <span class="maf-history-modified">~</span> undo <span class="shadow">(maf-undo)</span>
+  <span class="maf-history-modified">~</span> cvun <span class="shadow">(mafcmd-convert-units)</span>
+  <span class="maf-history-modified">~</span> edit <span class="shadow">(maf-edit-commit)</span>
+  <span class="maf-history-modified">~</span> undo <span class="shadow">(maf-undo)</span>
+  <span class="maf-history-modified">~</span> cvun <span class="shadow">(mafcmd-convert-units)</span>
+  <span class="maf-history-removed">-</span> del <span class="shadow">(next-line)</span>
+  <span class="maf-history-modified">~</span> cvun <span class="shadow">(mafcmd-convert-units)</span>
+  <span class="maf-history-modified">~</span> change <span class="shadow">(autopair-newline)</span>
+  <span class="maf-history-modified">~</span> cvun <span class="shadow">(autopair-newline)</span>
+  <span class="maf-history-modified">~</span> cvun <span class="shadow">(autopair-newline)</span>
+  <span class="maf-history-modified">~</span> cvun <span class="shadow">(autopair-newline)</span>
+  <span class="maf-history-modified">~</span> cvun <span class="shadow">(autopair-newline)</span>
+  <span class="maf-history-modified">~</span> cvun <span class="shadow">(autopair-newline)</span>
+  <span class="maf-history-modified">~</span> cvun <span class="shadow">(autopair-newline)</span>
+  <span class="maf-history-modified">~</span> cvun <span class="shadow">(autopair-newline)</span>
+  <span class="maf-history-modified">~</span> cvun <span class="shadow">(autopair-newline)</span>
+  <span class="maf-history-modified">~</span> cvun <span class="shadow">(autopair-newline)</span>
+  <span class="maf-history-modified">~</span> cvun <span class="shadow">(autopair-newline)</span>
+  <span class="maf-history-modified">~</span> cvun <span class="shadow">(autopair-newline)</span>
+  <span class="maf-history-modified">~</span> cvun <span class="shadow">(autopair-newline)</span>
+  <span class="maf-history-modified">~</span> cvun <span class="shadow">(autopair-newline)</span>
+  <span class="maf-history-modified">~</span> cvun <span class="shadow">(autopair-newline)</span>
+  <span class="maf-history-modified">~</span> edit
+  <span class="maf-history-modified">~</span> undo <span class="shadow">(maf-undo)</span>
+  <span class="shadow">·</span> redo <span class="shadow">(maf-redo)</span>
+</pre>
+
+ </body>
+</html>

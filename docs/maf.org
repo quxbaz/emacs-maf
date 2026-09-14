@@ -54,7 +54,7 @@ x#+title: maf
 
      # step 10: `g l` show a plot
 
-  4) [ ] pilot emacs, going through the various features (especially the modules) and
+  4) [X] pilot emacs, going through the various features (especially the modules) and
      take screenshots AND export as html/css (emacs has a built-in command to do
      this, `htmlfontify-buffer`)
 

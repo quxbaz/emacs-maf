@@ -182,3 +182,17 @@ and redisplay) runs as it does for the user.
 4. Dispatch real keypresses with `execute-kbd-macro`.
 5. Read back state/buffer text via `--eval` and confirm.
 6. Only then commit.
+
+## Screenshots without leaving Emacs
+
+`(x-export-frames nil 'png)` returns the selected frame as PNG bytes
+(GUI frames with cairo). No screenshot tool, no focus stealing. Crop to
+a window with `window-pixel-edges` (header line included) and
+ImageMagick; `window-text-pixel-size` gives the text's extent for a
+tight crop. Two limits: a posframe child frame is not in the export,
+and calc's banner pads itself to the window width, so narrow the
+window first (`split-window` with a pixel width) for a small picture.
+`public/gen/screens.el` is the worked example. A buffer's look as
+HTML/CSS is `htmlfontify-buffer`; measure a header line in the
+window's buffer, not the server's (`with-selected-window` does not
+change the current buffer).

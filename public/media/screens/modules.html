@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8"/>
+    <title>*maf-modules*</title>
+<meta name="generator" content="emacs 31.1; htmlfontify" />
+<style type="text/css"><!-- 
+body, pre { text-decoration: none;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  color: #ffffff;  background: #000000;  font-size: 10pt; }
+span.default   { text-decoration: none;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  color: #ffffff;  background: #000000;  font-size: 10pt; }
+span.default a {  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  color: #ffffff;  background: #000000;  font-size: 10pt; text-decoration: underline; }
+span.dial-changed   { text-decoration: none;  color: #e6b422;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  background: #000000;  font-size: 10pt; }
+span.dial-changed a {  color: #e6b422;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  background: #000000;  font-size: 10pt; text-decoration: underline; }
+span.dial-group   { text-decoration: none;  color: #6fa8f5;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  background: #000000;  font-size: 10pt; }
+span.dial-group a {  color: #6fa8f5;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  background: #000000;  font-size: 10pt; text-decoration: underline; }
+span.shadow   { text-decoration: none;  color: #989898;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  background: #000000;  font-size: 10pt; }
+span.shadow a {  color: #989898;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  background: #000000;  font-size: 10pt; text-decoration: underline; }
+span.dial-value   { text-decoration: none;  color: #b48ee0;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  background: #000000;  font-size: 10pt; }
+span.dial-value a {  color: #b48ee0;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  background: #000000;  font-size: 10pt; text-decoration: underline; }
+span.help-key-binding   { text-decoration: none;  font-weight: 700;  font-family: "Monaco";  font-stretch: normal;  font-style: normal;  color: #ffffff;  background: #000000;  font-size: 10pt; }
+span.help-key-binding a {  font-weight: 700;  font-family: "Monaco";  font-stretch: normal;  font-style: normal;  color: #ffffff;  background: #000000;  font-size: 10pt; text-decoration: underline; }
+span.dial-controls   { text-decoration: none;  background: #1c2733;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  color: #ffffff;  font-size: 10pt; }
+span.dial-controls a {  background: #1c2733;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  color: #ffffff;  font-size: 10pt; text-decoration: underline; }
+ --></style>
+
+    <script type="text/javascript"><!--
+  // this function is needed to work around
+  // a bug in IE related to element attributes
+  function hasClass(obj)
+  {
+      var result = false;
+      if (obj.getAttributeNode("class") != null)
+      {
+          result = obj.getAttributeNode("class").value;
+      }
+      return result;
+  }
+
+  function stripe(id)
+  {
+      // the flag we'll use to keep track of
+      // whether the current row is odd or even
+      var even = false;
+
+      // if arguments are provided to specify the colors
+      // of the even & odd rows, then use them;
+      // otherwise use the following defaults:
+      var evenColor = arguments[1] ? arguments[1] : "#fff";
+      var oddColor  = arguments[2] ? arguments[2] : "#ddd";
+
+      // obtain a reference to the desired table
+      // if no such table exists, abort
+      var table = document.getElementById(id);
+      if (! table) { return; }
+
+      // by definition, tables can have more than one tbody
+      // element, so we'll have to get the list of child
+      // &lt;tbody&gt;s
+      var tbodies = table.getElementsByTagName("tbody");
+
+      // and iterate through them...
+      for (var h = 0; h < tbodies.length; h++)
+      {
+          // find all the &lt;tr&gt; elements...
+          var trs = tbodies[h].getElementsByTagName("tr");
+
+          // ... and iterate through them
+          for (var i = 0; i < trs.length; i++)
+          {
+              // avoid rows that have a class attribute
+              // or backgroundColor style
+              if (! hasClass(trs[i]) &&
+                  ! trs[i].style.backgroundColor)
+              {
+                  // get all the cells in this row...
+                  var tds = trs[i].getElementsByTagName("td");
+
+                  // and iterate through them...
+                  for (var j = 0; j < tds.length; j++)
+                  {
+                      var mytd = tds[j];
+
+                      // avoid cells that have a class attribute
+                      // or backgroundColor style
+                      if (! hasClass(mytd) &&
+                          ! mytd.style.backgroundColor)
+                      {
+                          mytd.style.backgroundColor =
+                            even ? evenColor : oddColor;
+                      }
+                  }
+              }
+              // flip from odd to even, or vice-versa
+              even =  ! even;
+          }
+      }
+  }
+
+  function toggle_invis( name )
+  {
+      var filter =
+        { acceptNode:
+          function( node )
+          { var classname = node.id;
+            if( classname )
+            { var classbase = classname.substr( 0, name.length );
+              if( classbase == name ) { return NodeFilter.FILTER_ACCEPT; } }
+            return NodeFilter.FILTER_SKIP; } };
+      var walker = document.createTreeWalker( document.body           ,
+                                              NodeFilter.SHOW_ELEMENT ,
+                                              filter                  ,
+                                              false                   );
+      while( walker.nextNode() )
+      {
+          var e = walker.currentNode;
+          if( e.style.display == "none" ) { e.style.display = "inline"; }
+          else                            { e.style.display = "none";   }
+      }
+  }
+--> </script>
+  </head>
+  <body onload="stripe('index'); return true;">
+
+<pre><span class="dial-controls"> </span><span class="help-key-binding">TAB</span><span class="dial-controls">/</span><span class="help-key-binding">SPC</span><span class="dial-controls"> toggle   </span><span class="help-key-binding">w</span><span class="dial-controls">/</span><span class="help-key-binding">?</span><span class="dial-controls"> details   </span><span class="help-key-binding">d</span><span class="dial-controls"> reset   </span><span class="help-key-binding">g</span><span class="dial-controls"> refresh   </span><span class="help-key-binding">q</span><span class="dial-controls"> quit   </span><span class="dial-value">value</span><span class="shadow"> = default</span><span class="dial-controls">
+</span>
+ <span class="dial-group">Prefs</span>     maf-bindings       <span class="shadow">off</span>  <span class="shadow">calc</span>  <span class="dial-value">ergo</span>  <span class="shadow">vim</span>
+           maf-options        <span class="dial-value">on</span>  <span class="shadow">off</span>
+           maf-persist        <span class="dial-changed">on</span>  <span class="shadow">off</span>
+                              
+ <span class="dial-group">Help</span>      maf-keys           <span class="shadow">show</span>
+                              
+ <span class="dial-group">Display</span>   maf-hl             <span class="dial-value">on</span>  <span class="shadow">off</span>
+           maf-preview        <span class="dial-value">on</span>  <span class="shadow">off</span>
+           maf-pretty         <span class="dial-changed">on</span>  <span class="shadow">off</span>
+           maf-selplus        <span class="dial-value">on</span>  <span class="shadow">off</span>
+                              
+ <span class="dial-group">Rewrite</span>   maf-e-power        <span class="dial-value">on</span>  <span class="shadow">off</span>
+           maf-log-power      <span class="dial-value">on</span>  <span class="shadow">off</span>
+           maf-poly-order     <span class="dial-value">on</span>  <span class="shadow">off</span>
+                              
+ <span class="dial-group">Editing</span>   maf-edit           <span class="dial-value">on</span>  <span class="shadow">off</span>
+           maf-editplus       <span class="dial-value">on</span>  <span class="shadow">off</span>
+           maf-editvars       <span class="dial-value">on</span>  <span class="shadow">off</span>
+                              
+ <span class="dial-group">Memory</span>    maf-formulas       <span class="dial-value">on</span>  <span class="shadow">off</span>
+           maf-history        <span class="dial-value">on</span>  <span class="shadow">off</span>
+           maf-recall         <span class="dial-value">on</span>  <span class="shadow">off</span>
+                              
+ <span class="dial-group">Plots</span>     maf-plot           <span class="dial-value">on</span>  <span class="shadow">off</span>
+</pre>
+
+ </body>
+</html>
