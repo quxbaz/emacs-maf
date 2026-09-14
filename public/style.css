@@ -1,4 +1,4 @@
-:root { --bg: #fff; --fg: #1d1d1d; --muted: #777; --line: #e6e6e6; --accent: #b8860b; --mark: rgba(184, 134, 11, .18); --band: rgba(0, 0, 0, .05); --cream: #faf6ec; --mono: Monaco, Menlo, ui-monospace, Consolas, monospace; }
+:root { --bg: #fff; --fg: #1d1d1d; --muted: #777; --line: #e6e6e6; --accent: #b8860b; --mark: rgba(184, 134, 11, .18); --band: rgba(0, 0, 0, .05); --cream: #fdfbf5; --mono: Monaco, Menlo, ui-monospace, Consolas, monospace; }
 @media (prefers-color-scheme: dark) { :root { --bg: #121214; --fg: #eaeaea; --muted: #8e8e93; --line: #2a2a2e; --accent: #daa520; --band: rgba(255, 255, 255, .06); --cream: #1a1815; } }
 * { box-sizing: border-box; }
 html { color-scheme: light dark; }
