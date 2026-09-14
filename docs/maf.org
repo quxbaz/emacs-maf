@@ -26,6 +26,10 @@
 ** maf-pretty
 
 * website, structure
+  - fold should be more impactful, and clear
+  - the `what`, at a glance
+** the why (section 2)
+   - explain the `why`, the origin
 ** major features
    - contextualized commands (including region context)
    - selection replacement, direct commands on subexpression
