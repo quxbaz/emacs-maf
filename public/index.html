@@ -23,6 +23,12 @@
     <p><kbd>SPC</kbd> opens the stack as text. Type, then <kbd>RET</kbd>. On an entry, <kbd>SPC</kbd> edits it in place. That one gesture is how everything is entered and changed.</p>
   </div>
   <div class="layer">
+    <p>Emacs 28.1 or later, nothing else.</p>
+<pre>M-x package-vc-install RET https://github.com/quxbaz/emacs-maf RET
+(add-hook 'calc-mode-hook #'maf-mode)</pre>
+    <p class="muted">Then <kbd>M-x</kbd> <code>calc</code>. Inside, <kbd>l</kbd> <kbd>b</kbd> lists every key with an example. <a href="https://github.com/quxbaz/emacs-maf">Source on GitHub.</a> Under active development; the API is unstable.</p>
+  </div>
+  <div class="layer">
     <p>A longer one: a parabola brought into standard form, then plotted. Collect the <code>x</code> terms, complete the square where point sits, move the stray constant across, simplify the other side, factor out its gcd, plot.</p>
     <div data-scene="parabola"></div>
   </div>
@@ -100,12 +106,6 @@
       <figcaption>With persistence on, every session saves its stack under its own name and gets it back next time; this menu previews, restores, names or deletes any session's. <a href="media/screens/saved-stacks.html">html</a></figcaption>
       <img src="media/screens/saved-stacks.png" width="500" alt="the saved stacks of every session, with age and size">
     </figure>
-  </div>
-  <div class="layer">
-    <p>Emacs 28.1 or later, nothing else.</p>
-<pre>M-x package-vc-install RET https://github.com/quxbaz/emacs-maf RET
-(add-hook 'calc-mode-hook #'maf-mode)</pre>
-    <p class="muted">Then <kbd>M-x</kbd> <code>calc</code>. Inside, <kbd>l</kbd> <kbd>b</kbd> lists every key with an example. <a href="https://github.com/quxbaz/emacs-maf">Source on GitHub.</a> Under active development; the API is unstable.</p>
   </div>
 </main>
 <script type="module">
