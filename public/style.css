@@ -69,9 +69,8 @@ h2 { font-size: 1.25rem; letter-spacing: -.01em; margin: 1.2em 0 .4em; }
    and the picture at the right. One column where the row would not fit. */
 .shots figure { display: grid; grid-template-columns: minmax(14rem, 2fr) minmax(0, 3fr); gap: 6px 28px; align-items: start; margin: 0 0 2.2em; }
 .shots h3 { grid-column: 1 / -1; margin: 0; font-size: 1.05rem; font-weight: 600; letter-spacing: -.01em; }
-.shots figcaption { color: var(--muted); font-size: .95rem; line-height: 1.5; }
+.shots figcaption { color: var(--fg); }
 .shots img { display: block; width: 100%; height: auto; border-radius: 8px; background: #121214; }
 .shots .tall img { max-height: 560px; object-fit: cover; object-position: top; }
 @media (max-width: 760px) { .shots figure { grid-template-columns: 1fr; } }
-.shots figcaption code { color: var(--fg); }
 .shots figcaption a { font-size: .8rem; margin-left: .4em; }
