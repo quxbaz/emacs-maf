@@ -1,5 +1,5 @@
-:root { --bg: #fff; --fg: #1d1d1d; --muted: #777; --line: #e6e6e6; --accent: #b8860b; --mark: rgba(184, 134, 11, .18); --band: rgba(0, 0, 0, .05); --tint: #e8f1fa; --mono: Monaco, Menlo, ui-monospace, Consolas, monospace; }
-@media (prefers-color-scheme: dark) { :root { --bg: #121214; --fg: #eaeaea; --muted: #8e8e93; --line: #2a2a2e; --accent: #daa520; --band: rgba(255, 255, 255, .06); --tint: #151a21; } }
+:root { --bg: #fff; --fg: #1d1d1d; --muted: #777; --line: #e6e6e6; --accent: #b8860b; --mark: rgba(184, 134, 11, .18); --band: rgba(0, 0, 0, .05); --tint: #e8f1fa; --tint-line: #93bce2; --mono: Monaco, Menlo, ui-monospace, Consolas, monospace; }
+@media (prefers-color-scheme: dark) { :root { --bg: #121214; --fg: #eaeaea; --muted: #8e8e93; --line: #2a2a2e; --accent: #daa520; --band: rgba(255, 255, 255, .06); --tint: #151a21; --tint-line: #2f4257; } }
 * { box-sizing: border-box; }
 html { color-scheme: light dark; }
 body { margin: 0; background: var(--bg); color: var(--fg); font: 19px/1.55 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
@@ -11,13 +11,14 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
    in it. */
 .intro { position: relative; min-height: 100vh; min-height: 100svh; display: grid; align-content: center; padding: 60px 0; }
 /* A fade over the fold's last quarter, easing the white into the blue
-   of the band below rather than meeting it at a hard edge — the hint
-   that the page carries on past the first screen. The column is
-   lifted over it, so a short viewport that pushes text into the
-   bottom quarter keeps it legible. */
-.intro::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 25%; background: linear-gradient(to bottom, transparent, var(--tint)); pointer-events: none; }
+   of the band below. It is a dome rather than a flat wash: the blue
+   is deepest in the bottom corners and thins to nothing at the bottom
+   centre, so the band reads as rising around a clear middle. The
+   column is lifted over it, so a short viewport that pushes text into
+   the bottom quarter keeps it legible. */
+.intro::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 25%; background: radial-gradient(ellipse 62% 118% at 50% 100%, transparent 0%, transparent 38%, var(--tint) 100%); pointer-events: none; }
 .intro .col { position: relative; z-index: 1; max-width: 720px; }
-.examples { background: var(--tint); padding: 2.6em 0 100px; }
+.examples { background: var(--tint); border-top: 2px solid var(--tint-line); padding: 2.6em 0 100px; }
 .examples .col { max-width: 1240px; }
 .layer { margin-bottom: 26px; }
 h1 { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: .6em; font-size: 1.9rem; letter-spacing: -.02em; margin: 0 0 .8em; line-height: 1.2; }
