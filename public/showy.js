@@ -8,6 +8,7 @@
 //   { entry: { level: 1, text }, point, highlight } replace an entry, the result of the command; it flashes
 //   { push: 'x + 1' } / { pop: 1 }                  change the stack
 //   { insert: 'x^2' }                               type text at point, one character at a time
+//   { image: 'media/plot.svg', alt }                show a picture under the pane, what a plot command drew
 //   { pause: 600 }                                  wait
 //
 // timeline() turns a scene into a list of { at, action } pairs, absolute
@@ -29,9 +30,10 @@ export const HIGHLIGHT = 'showy/highlight'  // { highlight }
 export const FRESH = 'showy/fresh'          // { level }
 export const INSERT = 'showy/insert'        // { text }
 export const ECHO = 'showy/echo'            // { keys: [...], command }
+export const IMAGE = 'showy/image'          // { image: { src, alt } | null }
 export const RESET = 'showy/reset'          // { state }: replace the whole state
 
-export const initialState = { stack: stacky.stack(), echo: { keys: [], command: '' } }
+export const initialState = { stack: stacky.stack(), echo: { keys: [], command: '' }, image: null }
 
 export function reducer(state = initialState, action) {
   const withStack = stack => ({ ...state, stack })
@@ -45,6 +47,7 @@ export function reducer(state = initialState, action) {
     case FRESH: return withStack(stacky.setFresh(state.stack, action.level))
     case INSERT: return withStack(stacky.insert(state.stack, action.text))
     case ECHO: return { ...state, echo: { keys: action.keys ?? [], command: action.command ?? '' } }
+    case IMAGE: return { ...state, image: action.image ?? null }
     case RESET: return action.state
     default: return state
   }
@@ -81,6 +84,7 @@ export function expandStep(step, state, timing = TIMING) {
   if ('stack' in step) {
     acts.push(now({ type: STACK, stack: stacky.stack(step.stack, { point: step.point ?? stacky.HOME, highlight: step.highlight ?? null }) }))
     acts.push(now({ type: ECHO, keys: [], command: '' }))
+    acts.push(now({ type: IMAGE, image: null }))
     return acts
   }
   if ('push' in step) acts.push(now({ type: PUSH, text: step.push }))
@@ -106,6 +110,7 @@ export function expandStep(step, state, timing = TIMING) {
   if ('insert' in step) {
     for (const c of step.insert) acts.push({ delay: timing.char, action: { type: INSERT, text: c } })
   }
+  if ('image' in step) acts.push(now({ type: IMAGE, image: { src: step.image, alt: step.alt ?? '' } }))
   return acts
 }
 
@@ -174,7 +179,15 @@ export function mount(el, scene, { timing = TIMING, autoplay = true } = {}) {
   const drawStack = stacky.pane(pane)
   const echo = document.createElement('div'); echo.className = 'echo'
   pane.append(echo)
-  const draw = () => { const s = store.getState(); drawStack(s.stack); echo.innerHTML = echoHtml(s.echo) }
+  // The picture a plot command draws, under the echo; absent until a
+  // step shows one, and gone again when the stack is reset.
+  const image = document.createElement('img'); image.className = 'plot'; image.hidden = true
+  pane.append(image)
+  const drawImage = im => {
+    image.hidden = !im
+    if (im && image.getAttribute('src') !== im.src) { image.src = im.src; image.alt = im.alt }
+  }
+  const draw = () => { const s = store.getState(); drawStack(s.stack); echo.innerHTML = echoHtml(s.echo); drawImage(s.image) }
   store.subscribe(draw)
   draw()
   let player = null

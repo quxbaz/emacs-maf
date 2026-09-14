@@ -15,7 +15,8 @@ from the repository root with a reloading server while working:
 - `showy.js`: an animated presentation of maf at work, on top of stacky and a
   vanilla redux store. A scene is a list of plain steps (set the stack, walk
   the cursor somewhere, echo keys and a command name, replace an entry, type
-  text, pause). `timeline()` turns a scene into timed redux actions and
+  text, show a picture under the pane — what a plot command drew, an SVG
+  under `media/` — pause). `timeline()` turns a scene into timed redux actions and
   `play()` dispatches them; `mount()` does both in an element, with a
   control above the pane that resets a playing scene and replays a finished
   one.
@@ -38,7 +39,9 @@ from the repository root with a reloading server while working:
 - `vendor/`: redux 5.0.1 (ESM) and MathJax 3.2.2.
 
 Scenes should use the columns and highlight ranges maf really produces; check
-them in a live calc buffer.
+them in a live calc buffer. A plot a scene shows is gnuplot's SVG of the
+curve data maf samples, drawn in the calc pane's palette (`.calcbuf` in
+`style.css`) rather than the live instance's theme.
 
 ## Data
 

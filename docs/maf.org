@@ -12,7 +12,7 @@ x#+title: maf
   1) [X] *maf-formulas* add standard formula for `segment addition postulate`
   2) [X] bug: entries like `tan(x + pi)` can't be plotted (i tested using `g l`
      command) because plotter treats `pi` as an independent variable
-  3) [ ] update the website by taking the math problem:
+  3) [X] update the website by taking the math problem:
 
        Rewrite the equation of the vertical parabola in standard form:
        x^2 + 2x + 8y + 17 = 0

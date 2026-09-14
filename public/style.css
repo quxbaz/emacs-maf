@@ -29,6 +29,7 @@ pre b { color: var(--accent); font-weight: 600; }
 .showy .echo .command { color: var(--accent); }
 .showy .replay { font: inherit; font-size: .8rem; color: var(--muted); background: none; border: 0; cursor: pointer; padding: 0 0 4px; }
 .showy .replay:hover { color: var(--accent); }
+.showy img.plot { display: block; width: 100%; margin-top: 10px; border-radius: 8px; background: var(--line); }
 .stacky-diff { display: grid; grid-template-columns: 1fr auto 1fr; gap: 6px 10px; align-items: center; margin: .6em 0 1em; }
 .stacky-diff .caption { grid-column: 1 / -1; color: var(--muted); font-size: .9rem; }
 .stacky-diff button.caption { justify-self: start; font: inherit; font-size: .9rem; color: var(--fg); background: var(--bg); border: 2px solid var(--accent); border-radius: 4px; padding: 3px 12px; cursor: pointer; }
