@@ -64,14 +64,15 @@ mark { background: var(--mark); color: inherit; }
 .muted { color: var(--muted); font-size: .95rem; }
 a { color: var(--accent); }
 h2 { font-size: 1.25rem; letter-spacing: -.01em; margin: 1.2em 0 .4em; }
-/* The gallery takes the whole container: each figure is a row, the
-   picture at the left and its caption at the right, in the room the
-   text column leaves. One column again where the row would not fit. */
+/* The gallery takes the whole container: each figure is a title over
+   a row, the text at the left and the picture at the right, in the
+   room the text column leaves. One column where the row would not fit. */
 main > .shots { max-width: none; }
-.shots figure { display: grid; grid-template-columns: minmax(0, 3fr) minmax(14rem, 2fr); gap: 8px 24px; align-items: start; margin: 0 0 2em; }
+.shots figure { display: grid; grid-template-columns: minmax(14rem, 2fr) minmax(0, 3fr); gap: 6px 28px; align-items: start; margin: 0 0 2.2em; }
+.shots h3 { grid-column: 1 / -1; margin: 0; font-size: 1.05rem; font-weight: 600; letter-spacing: -.01em; }
+.shots figcaption { color: var(--muted); font-size: .95rem; line-height: 1.5; }
 .shots img { display: block; width: 100%; height: auto; border-radius: 8px; background: #121214; }
 .shots .tall img { max-height: 560px; object-fit: cover; object-position: top; }
-.shots figcaption { color: var(--muted); font-size: .95rem; line-height: 1.5; }
 @media (max-width: 760px) { .shots figure { grid-template-columns: 1fr; } }
 .shots figcaption code { color: var(--fg); }
 .shots figcaption a { font-size: .8rem; margin-left: .4em; }
