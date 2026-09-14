@@ -5,16 +5,6 @@ x#+title: maf
   [[https://www.gnu.org/software/emacs/manual/html_mono/calc.html#Stack-Access][stack access]]
   [[https://www.gnu.org/software/emacs/manual/html_mono/calc.html#Symbolic-Lisp-Functions][symbolic lisp functions]]
 
-* tasks
-  do each of these tasks in order and create a commit after each one, but don't
-  push yet:
-  4) [X] pilot emacs, going through the various features (especially the modules) and
-     take screenshots AND export as html/css (emacs has a built-in command to do
-     this, `htmlfontify-buffer`)
-
-     these screenshots will be showcased on the website to show the various
-     features of maf.
-
 * review
 ** website
    - [ ] website: interactive maf stack emulator w/ step function
