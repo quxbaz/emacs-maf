@@ -3,7 +3,8 @@
 * { box-sizing: border-box; }
 html { color-scheme: light dark; }
 body { margin: 0; background: var(--bg); color: var(--fg); font: 19px/1.55 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
-main { max-width: 720px; margin: 0 auto; padding: 80px 22px 100px; }
+/* One centered column, 64rem wide, for text and gallery alike. */
+main { max-width: 64rem; margin: 0 auto; padding: 80px 1rem 100px; }
 .layer { margin-bottom: 26px; }
 h1 { font-size: 1.9rem; letter-spacing: -.02em; margin: 0 0 .6em; line-height: 1.2; }
 p { margin: 0 0 .8em; }
@@ -56,10 +57,8 @@ mark { background: var(--mark); color: inherit; }
 .muted { color: var(--muted); font-size: .95rem; }
 a { color: var(--accent); }
 h2 { font-size: 1.25rem; letter-spacing: -.01em; margin: 1.2em 0 .4em; }
-/* The gallery breaks out of the text column to 64rem, centered: each
-   figure is a title over a row, the text at the left and the picture
-   at the right. One column where the row would not fit. */
-main > .shots { width: min(64rem, 100vw - 2rem); margin-inline: calc(50% - min(32rem, 50vw - 1rem)); }
+/* The gallery: each figure is a title over a row, the text at the left
+   and the picture at the right. One column where the row would not fit. */
 .shots figure { display: grid; grid-template-columns: minmax(14rem, 2fr) minmax(0, 3fr); gap: 6px 28px; align-items: start; margin: 0 0 2.2em; }
 .shots h3 { grid-column: 1 / -1; margin: 0; font-size: 1.05rem; font-weight: 600; letter-spacing: -.01em; }
 .shots figcaption { color: var(--muted); font-size: .95rem; line-height: 1.5; }
