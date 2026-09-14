@@ -4,13 +4,13 @@
 html { color-scheme: light dark; }
 body { margin: 0; background: var(--bg); color: var(--fg); font: 19px/1.55 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
 /* Two bands, each with a centered column: the intro and install at
-   840px on the page's ground, the examples wider below on a cream
+   720px on the page's ground, the examples wider below on a cream
    ground, parted by a rule across the whole page. */
 main > section > .col { margin: 0 auto; padding-inline: 22px; }
 /* The intro is a fold: at least one screen tall, its column centered
    in it. */
 .intro { min-height: 100vh; min-height: 100svh; display: grid; align-content: center; padding: 60px 0; }
-.intro .col { max-width: 840px; }
+.intro .col { max-width: 720px; }
 .examples { background: var(--cream); padding: 2.6em 0 100px; }
 .examples .col { max-width: 1240px; }
 .layer { margin-bottom: 26px; }
