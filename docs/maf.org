@@ -8,52 +8,6 @@ x#+title: maf
 * tasks
   do each of these tasks in order and create a commit after each one, but don't
   push yet:
-
-  1) [X] *maf-formulas* add standard formula for `segment addition postulate`
-  2) [X] bug: entries like `tan(x + pi)` can't be plotted (i tested using `g l`
-     command) because plotter treats `pi` as an independent variable
-  3) [X] update the website by taking the math problem:
-
-       Rewrite the equation of the vertical parabola in standard form:
-       x^2 + 2x + 8y + 17 = 0
-
-     and add a `showy` example to the website (add as last example). this will be
-     intended to showcase different features of `maf`.
-
-     in this order, demonstrate solving the problem:
-
-     # step 1: first show the example
-     x^2 + 2x + 8y + 17 = 0
-     |.
-
-     # step 2: `j c` to collect `x` terms on one side
-     x^2 + 2 x = -8 y - 17
-     |.
-
-     # step 3: move point
-     x^2 |+ 2 x = -8 y - 17
-     .
-
-     # step 4: `k s` complete the square over the expression
-     (x + 1)^2 |- 1 = -8 y - 17
-
-     # step 5: move point
-     (x + 1)^2 - |1 = -8 y - 17
-
-     # step 6: `j e` move term to other side
-     (x + 1)^2 = |1 - (17 + 8 y)
-
-     # step 7: move point
-     (x + 1)^2 = 1 |- (17 + 8 y)
-
-     # step 8: `k k` simplify expression on RHS
-     (x + 1)^2 = -8 y |- 16
-
-     # step 9: `l F` factor out the gcd
-     (x + 1)^2 = -8| (y + 2)
-
-     # step 10: `g l` show a plot
-
   4) [X] pilot emacs, going through the various features (especially the modules) and
      take screenshots AND export as html/css (emacs has a built-in command to do
      this, `htmlfontify-buffer`)
