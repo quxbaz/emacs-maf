@@ -1,16 +1,16 @@
-:root { --bg: #fff; --fg: #1d1d1d; --muted: #777; --line: #e6e6e6; --accent: #b8860b; --mark: rgba(184, 134, 11, .18); --band: rgba(0, 0, 0, .05); --mono: Monaco, Menlo, ui-monospace, Consolas, monospace; }
-@media (prefers-color-scheme: dark) { :root { --bg: #121214; --fg: #eaeaea; --muted: #8e8e93; --line: #2a2a2e; --accent: #daa520; --band: rgba(255, 255, 255, .06); } }
+:root { --bg: #fff; --fg: #1d1d1d; --muted: #777; --line: #e6e6e6; --accent: #b8860b; --mark: rgba(184, 134, 11, .18); --band: rgba(0, 0, 0, .05); --cream: #faf6ec; --mono: Monaco, Menlo, ui-monospace, Consolas, monospace; }
+@media (prefers-color-scheme: dark) { :root { --bg: #121214; --fg: #eaeaea; --muted: #8e8e93; --line: #2a2a2e; --accent: #daa520; --band: rgba(255, 255, 255, .06); --cream: #1a1815; } }
 * { box-sizing: border-box; }
 html { color-scheme: light dark; }
 body { margin: 0; background: var(--bg); color: var(--fg); font: 19px/1.55 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
 /* Two bands, each with a centered column: the intro and install at
-   840px on the page's ground, the examples wider below on a tinted
+   840px on the page's ground, the examples wider below on a cream
    ground, parted by a rule across the whole page. */
 main > section > .col { margin: 0 auto; padding-inline: 22px; }
 .intro { padding-top: 80px; }
 .intro .col { max-width: 840px; }
-.examples { background: var(--band); padding: 2.6em 0 100px; }
-.examples .col { max-width: 1000px; }
+.examples { background: var(--cream); padding: 2.6em 0 100px; }
+.examples .col { max-width: 1120px; }
 .layer { margin-bottom: 26px; }
 h1 { font-size: 1.9rem; letter-spacing: -.02em; margin: 0 0 .6em; line-height: 1.2; }
 p { margin: 0 0 .8em; }
