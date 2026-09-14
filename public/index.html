@@ -8,6 +8,8 @@
 </head>
 <body>
 <main>
+<section class="intro">
+<div class="col">
   <div class="layer">
     <h1>emacs maf</h1>
     <p class="subtitle">enhancement suite for <code>M-x calc</code></p>
@@ -28,7 +30,11 @@
 (add-hook 'calc-mode-hook #'maf-mode)</pre>
     <p class="muted">Then <kbd>M-x</kbd> <code>calc</code>. Inside, <kbd>l</kbd> <kbd>b</kbd> lists every key with an example. <a href="https://github.com/quxbaz/emacs-maf">Source on GitHub.</a> Under active development; the API is unstable.</p>
   </div>
-  <hr>
+</div>
+</section>
+<hr>
+<section class="examples">
+<div class="col">
   <div class="layer">
     <p>A longer one: a parabola brought into standard form, then plotted. Collect the <code>x</code> terms, complete the square where point sits, move the stray constant across, simplify the other side, factor out its gcd, plot.</p>
     <div data-scene="parabola"></div>
@@ -108,6 +114,8 @@
       <img src="media/screens/saved-stacks.png" width="500" alt="the saved stacks of every session, with age and size">
     </figure>
   </div>
+</div>
+</section>
 </main>
 <script type="module">
 import * as showy from "./showy.js"

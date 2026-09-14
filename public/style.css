@@ -3,11 +3,19 @@
 * { box-sizing: border-box; }
 html { color-scheme: light dark; }
 body { margin: 0; background: var(--bg); color: var(--fg); font: 19px/1.55 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
-main { max-width: 840px; margin: 0 auto; padding: 80px 22px 100px; }
+/* Two bands, each with a centered column: the intro and install at
+   840px on the page's ground, the examples wider below on a tinted
+   ground, parted by a rule across the whole page. */
+main > section > .col { margin: 0 auto; padding-inline: 22px; }
+.intro { padding-top: 80px; }
+.intro .col { max-width: 840px; }
+.examples { background: var(--band); padding: 2.6em 0 100px; }
+.examples .col { max-width: 1000px; }
 .layer { margin-bottom: 26px; }
 h1 { font-size: 1.9rem; letter-spacing: -.02em; margin: 0 0 .6em; line-height: 1.2; }
 p { margin: 0 0 .8em; }
 hr { border: 0; border-top: 1px solid var(--line); margin: 1em 0 2.4em; }
+main > hr { margin: .6em 0 0; }
 .subtitle { color: var(--muted); font-size: 1.15rem; margin-top: -.3em; }
 pre { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .95rem; line-height: 1.65; background: var(--line); padding: 14px 16px; border-radius: 8px; margin: .6em 0 1em; overflow-x: auto; }
 pre b { color: var(--accent); font-weight: 600; }
@@ -58,15 +66,12 @@ mark { background: var(--mark); color: inherit; }
 a { color: var(--accent); }
 h2 { font-size: 1.25rem; letter-spacing: -.01em; margin: 1.2em 0 .4em; }
 /* The gallery: each figure is a title over a row, the text at the left
-   and the picture at the right. The row starts at the text column's
-   left edge and runs past its right edge, to 60rem or the viewport's
-   edge, so the picture breaks out to the right. One column, inside the
-   text column, where the row would not fit. */
-.shots figure { display: grid; grid-template-columns: minmax(14rem, 2fr) minmax(0, 3fr); gap: 6px 28px; align-items: start; margin: 0 0 2.2em; width: min(60rem, 50% + 50vw - 1rem); }
+   and the picture at the right. One column where the row would not fit. */
+.shots figure { display: grid; grid-template-columns: minmax(14rem, 2fr) minmax(0, 3fr); gap: 6px 28px; align-items: start; margin: 0 0 2.2em; }
 .shots h3 { grid-column: 1 / -1; margin: 0; font-size: 1.05rem; font-weight: 600; letter-spacing: -.01em; }
 .shots figcaption { color: var(--muted); font-size: .95rem; line-height: 1.5; }
 .shots img { display: block; width: 100%; height: auto; border-radius: 8px; background: #121214; }
 .shots .tall img { max-height: 560px; object-fit: cover; object-position: top; }
-@media (max-width: 760px) { .shots figure { grid-template-columns: 1fr; width: auto; } }
+@media (max-width: 760px) { .shots figure { grid-template-columns: 1fr; } }
 .shots figcaption code { color: var(--fg); }
 .shots figcaption a { font-size: .8rem; margin-left: .4em; }
