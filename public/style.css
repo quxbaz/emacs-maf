@@ -9,8 +9,14 @@ body { margin: 0; background: var(--bg); color: var(--fg); font: 19px/1.55 -appl
 main > section > .col { margin: 0 auto; padding-inline: 22px; }
 /* The intro is a fold: at least one screen tall, its column centered
    in it. */
-.intro { min-height: 100vh; min-height: 100svh; display: grid; align-content: center; padding: 60px 0; }
-.intro .col { max-width: 720px; }
+.intro { position: relative; min-height: 100vh; min-height: 100svh; display: grid; align-content: center; padding: 60px 0; }
+/* A fade over the fold's last quarter, easing the white into the blue
+   of the band below rather than meeting it at a hard edge — the hint
+   that the page carries on past the first screen. The column is
+   lifted over it, so a short viewport that pushes text into the
+   bottom quarter keeps it legible. */
+.intro::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 25%; background: linear-gradient(to bottom, transparent, var(--tint)); pointer-events: none; }
+.intro .col { position: relative; z-index: 1; max-width: 720px; }
 .examples { background: var(--tint); padding: 2.6em 0 100px; }
 .examples .col { max-width: 1240px; }
 .layer { margin-bottom: 26px; }
