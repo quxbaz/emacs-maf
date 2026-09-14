@@ -1204,6 +1204,15 @@ singly elsewhere."
      :doc "Circumference of a circle from its radius: two pi times the radius."
      :vars ((C . "circumference") (r . "radius"))
      :examples ("A circle of radius 3 has circumference 6 pi."))
+    (:name "pythagorean-theorem"
+     :title "Pythagorean theorem"
+     :category "Geometry — 2D: Right triangle"
+     :expr (calcFunc-eq (+ (^ (var a var-a) 2) (^ (var b var-b) 2))
+                        (^ (var c var-c) 2))
+     :doc "In a right triangle the squares of the legs add up to the square of the hypotenuse."
+     :vars ((a . "one leg") (b . "the other leg") (c . "hypotenuse"))
+     :examples ("Legs 3 and 4 give a hypotenuse of 5."
+                "Solved for c: the hypotenuse is the root of the sum of the squares."))
     (:name "segment-addition-postulate"
      :title "Segment addition postulate"
      :category "Geometry — 2D: Segments"
@@ -1220,7 +1229,7 @@ often reaching for. They come in categories the menu sorts by name and
 narrows to one at a time: the properties of real numbers, absolute
 value, exponents, fractions, logarithms, quadratic equations and
 radicals, then the trig identities in seven groups of their own, then
-the segment addition postulate, the circle's circumference, the
+the Pythagorean theorem, the segment addition postulate, the circle's circumference, the
 distance formula in the coordinate plane and again in space, the
 rectangular solid and the cube — a group per figure, as a library of
 one's own names its geometry. The

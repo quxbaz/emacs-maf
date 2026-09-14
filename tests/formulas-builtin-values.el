@@ -68,6 +68,8 @@
           ;; A segment split by a point between its ends: the parts
           ;; must add to the whole.
           ("segment-addition-postulate" (AB . "3") (BC . "5") (AC . "8"))
+          ;; The right triangle: the 3-4-5 one.
+          ("pythagorean-theorem" (a . "3") (b . "4") (c . "5"))
           ;; The solids relate measurements to each other, so each
           ;; names a consistent box: the 3-4-12 one, whose diagonal is
           ;; the integer 13, and the edge-2 cube.
