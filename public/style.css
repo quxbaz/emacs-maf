@@ -7,9 +7,10 @@ body { margin: 0; background: var(--bg); color: var(--fg); font: 19px/1.55 -appl
    then the install block and the examples below on a blue ground,
    which is what parts them. */
 main > section > .col { margin: 0 auto; padding-inline: 22px; }
-/* The intro is a fold: at least one screen tall, its column centered
-   in it. */
-.intro { position: relative; min-height: 100vh; min-height: 100svh; display: grid; align-content: center; padding: 60px 0; }
+/* The intro is a fold: at least one screen tall, two rows. The column
+   is centered in the first, which takes all the height left over; the
+   line that closes the fold sits in the second, at the bottom. */
+.intro { position: relative; min-height: 100vh; min-height: 100svh; display: grid; grid-template-rows: 1fr auto; padding: 60px 0; }
 /* A fade over the fold's lower half, easing the white into the blue
    of the band below. It is the negative of a circle sitting on the
    seam: clear inside the circle, blue outside it, so the corners are
@@ -24,7 +25,7 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
    to be read. The column is a grid item, and an auto margin there
    shrinks an item to its content, so it is held at full width and
    capped by max-width instead. */
-.intro .col { position: relative; z-index: 1; width: 100%; max-width: 1240px; }
+.intro .col { position: relative; z-index: 1; align-self: center; width: 100%; max-width: 1240px; }
 /* The source link keeps to the fold's upper right, on the content
    column's right edge while there is room, the page's margin after. It
    is drawn at full strength: a faded mark reads as a disabled one. */
@@ -40,11 +41,14 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
 .intro .lede { font-size: 1.15rem; }
 .intro .lede h2 { margin: 0 0 .3em; }
 .intro .lede p { margin: 0; }
-/* The line that opens out to the rest of the suite closes the fold,
-   standing apart from the examples above it on a blue of its own so it
-   carries across the page and leaves the accent to the marks inside
-   the panes. */
-.intro .more { margin: 44px 0 0; background: hsl(205 80% 42% / 1); color: #fff; border-radius: 8px; padding: 18px 22px; }
+/* The line that opens out to the rest of the suite closes the fold:
+   at its bottom, centered under the two examples, on a blue of its
+   own so it carries across the page and leaves the accent to the
+   marks inside the panes. Its wrapper is lifted over the fade like
+   the column and takes the column's left edge and the pair's width,
+   so centering in it is centering between the examples. */
+.intro .foot { position: relative; z-index: 1; width: 100%; max-width: 1084px; margin-left: max(0px, calc((100% - 1240px) / 2)); padding-inline: 22px; }
+.intro .more { max-width: 70ch; margin: 44px auto 0; background: hsl(205 80% 42% / 1); color: #fff; border-radius: 8px; padding: 18px 22px; }
 .intro .more p { margin: 0; }
 .intro .col strong { color: var(--strong); font-weight: 600; }
 /* The description under each example reads as a caption, not body
@@ -66,7 +70,7 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
 .intro .pair > div { display: grid; grid-template-rows: subgrid; grid-row: span 2; }
 /* Stacked, the examples no longer need their own width, so they take
    the text measure. */
-@media (max-width: 960px) { .intro .pair { grid-template-columns: 1fr; max-width: 720px; } .intro .pair > div { display: block; } }
+@media (max-width: 960px) { .intro .pair { grid-template-columns: 1fr; max-width: 720px; } .intro .pair > div { display: block; } .intro .foot { max-width: 764px; } }
 /* Below the fold, the install block opens the blue ground; the
    examples follow on the same ground. The install lines are
    monospace, so that layer is let out to whatever they need and no
