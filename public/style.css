@@ -91,8 +91,11 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
 /* The section's heading is set like the page title. */
 .examples .title { grid-column: 1 / -1; font-size: 1.9rem; letter-spacing: -.02em; line-height: 1.2; margin: 0 0 .8em; }
 /* The index: one link per figure, one per line, a step smaller and
-   set close. It stays in view as the content scrolls past. */
+   set close, in two groups under their own small headings. It stays
+   in view as the content scrolls past. */
 .examples .index { align-self: start; position: sticky; top: 24px; font-size: .85rem; }
+.examples .index h3 { font-size: inherit; font-weight: 600; margin: 0 0 .3em; }
+.examples .index ul + h3 { margin-top: 1.2em; }
 .examples .index ul { list-style: none; margin: 0; padding: 0; }
 .examples .index li { line-height: 1.5; }
 .examples .index a { color: var(--fg); text-decoration: none; border-bottom: 1px solid var(--line); }
