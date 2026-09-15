@@ -6,7 +6,7 @@
 //     point:     HOME | { level: 1, col: 7 },  // col counts from the start of the entry text
 //     highlight: null | { level: 1, from: 0, to: 9 },  // a range of an entry's text, `to` excluded
 //     fresh:     null | 1,                     // a level whose entry just changed
-//     keys:      null | '2 /',                  // the keys typed, shown on a line of their own
+//     keys:      null | '2 /',                  // the keys typed, on a line of their own in the gutter
 //     result:    null | 'x^2 + 2 x + 1 = 9'    // an answer shown under the buffer, after "=>"
 //                | { text: 'x^2 + 2 x + 1 = 9', changed: { from: 0, to: 13 } } }  // with the part to set off
 //
@@ -91,7 +91,7 @@ export function lines(s, show = SHOW) {
     out.push({ level, prefix: prefix(level), text, cursor, blink: show.blink, mark, fresh: s.fresh === level })
   }
   if (show.home) out.push({ home: true, prefix: INDENT, text: DOT, cursor: show.cursor && isHome(s.point) ? 0 : null, blink: show.blink, mark: null, fresh: false })
-  if (s.keys) out.push({ keys: true, prefix: INDENT, text: s.keys, cursor: null, mark: null, fresh: false })
+  if (s.keys) out.push({ keys: true, prefix: '', text: s.keys, cursor: null, mark: null, fresh: false })
   if (s.result != null) {
     const { text, changed = null } = typeof s.result === 'string' ? { text: s.result } : s.result
     out.push({ result: true, prefix: RESULT, text, cursor: null, mark: null, changed, fresh: false })
@@ -107,7 +107,7 @@ export function lineHtml(l) {
   // The keys line is not buffer text but the gesture that produced the line
   // under it, so each key is drawn as a key rather than as characters.
   if (l.keys) {
-    const chips = l.text.split(' ').filter(Boolean).map(k => `<kbd>${escape(k)}</kbd>`).join(' ')
+    const chips = l.text.split(' ').filter(Boolean).map(k => `<kbd>${escape(k)}</kbd>`).join('')
     return `<span class="line keys"><span class="prefix">${escape(l.prefix)}</span>${chips}</span>`
   }
   let out = `<span class="prefix">${escape(l.prefix)}</span>`

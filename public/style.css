@@ -76,8 +76,11 @@ pre b { color: var(--accent); font-weight: 600; }
 .calcbuf .buffer { background: none; padding: 0; margin: 0; border-radius: 0; font: inherit; min-height: calc(var(--rows, 2) * var(--lh) * 1em); }
 .calcbuf .prefix { color: #737379; }
 /* The keys line: what was typed between the entry above and the result
-   below, each key drawn as a key. */
-.calcbuf .line.keys kbd { font-family: inherit; font-size: .8em; color: var(--fg); border-color: #55555d; padding: .1em .45em; margin-right: .2em; }
+   below, each key drawn as a keycap off an off-white keyboard: two
+   tones only, the flat face and the wall under it, over a shadow on
+   the buffer. The legend is set in a grotesque, the way a keyboard
+   sets its own, not in the buffer's mono. */
+.calcbuf .line.keys kbd { display: inline-flex; align-items: center; justify-content: center; width: 1.9em; height: 1.9em; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-weight: 500; font-size: .8em; letter-spacing: .02em; line-height: 1.15; color: #33312c; background: #f4f2eb; border: 0; border-radius: 3px 3px 4px 4px; padding: 0; margin-right: .38em; box-shadow: 0 3px 0 #837d70, 0 5px 7px rgba(0, 0, 0, .4); }
 .calcbuf mark { background: none; outline: 1px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
 .calcbuf .cursor { background: var(--accent); color: var(--bg); animation: blink 1s steps(1) infinite; }
 @keyframes blink { 50% { background: none; color: inherit; } }
