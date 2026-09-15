@@ -180,4 +180,3 @@ h2 { font-size: 1.25rem; letter-spacing: -.01em; margin: 1.2em 0 .4em; }
 .shots img { display: block; width: 100%; height: auto; border-radius: 8px; background: #121214; }
 .shots .tall img { max-height: 560px; object-fit: cover; object-position: top; }
 @media (max-width: 760px) { .shots figure { grid-template-columns: 1fr; } }
-.shots figcaption a { font-size: .8rem; margin-left: .4em; }
