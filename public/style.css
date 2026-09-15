@@ -10,13 +10,14 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
 /* The intro is a fold: at least one screen tall, its column centered
    in it. */
 .intro { position: relative; min-height: 100vh; min-height: 100svh; display: grid; align-content: center; padding: 60px 0; }
-/* A fade over the fold's last quarter, easing the white into the blue
-   of the band below. It is a dome rather than a flat wash: the blue
-   is deepest in the bottom corners and thins to nothing at the bottom
-   centre, so the band reads as rising around a clear middle. The
-   column is lifted over it, so a short viewport that pushes text into
-   the bottom quarter keeps it legible. */
-.intro::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 25%; background: radial-gradient(ellipse 62% 118% at 50% 100%, transparent 0%, transparent 38%, var(--tint) 100%); pointer-events: none; }
+/* A fade over the fold's lower half, easing the white into the blue
+   of the band below. It is the negative of a circle sitting on the
+   seam: clear inside the circle, blue outside it, so the corners are
+   deepest and the arc rises around a clear middle. A mask fades the
+   whole thing out toward the top, so the pseudo-element has no edge.
+   The column is lifted over it, so a short viewport that pushes text
+   into the lower half keeps it legible. */
+.intro::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 50%; background: radial-gradient(circle 46vmin at 50% 100%, transparent 0 58%, var(--tint) 100%); -webkit-mask-image: linear-gradient(to top, #000 25%, transparent); mask-image: linear-gradient(to top, #000 25%, transparent); pointer-events: none; }
 .intro .col { position: relative; z-index: 1; max-width: 720px; }
 .examples { background: var(--tint); border-top: 2px solid var(--tint-line); padding: 2.6em 0 100px; }
 .examples .col { max-width: 1240px; }
