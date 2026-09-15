@@ -87,16 +87,16 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
 .examples { background: var(--tint); padding: 2.6em 0 100px; }
 /* The column is two: the index of the features down the left, the
    content beside it. The heading spans both. */
-.examples .col { max-width: 1360px; display: grid; grid-template-columns: max-content minmax(0, 1fr); column-gap: 44px; }
+.examples .col { max-width: 1360px; display: grid; grid-template-columns: 190px minmax(0, 1fr); column-gap: 44px; }
 /* The section's heading is set like the page title. */
 .examples .title { grid-column: 1 / -1; font-size: 1.9rem; letter-spacing: -.02em; line-height: 1.2; margin: 0 0 .8em; }
 /* The index: one link per figure, one per line, a step smaller and
    set close, in two groups under their own small headings. It stays
    in view as the content scrolls past. */
-.examples .index { align-self: start; position: sticky; top: 24px; font-size: .85rem; }
+.examples .index { align-self: start; position: sticky; top: 24px; font-size: .95rem; }
 .examples .index h3 { font-size: inherit; font-weight: 600; margin: 0 0 .3em; }
 .examples .index ul + h3 { margin-top: 1.2em; }
-.examples .index ul { list-style: none; margin: 0; padding: 0; }
+.examples .index ul { margin: 0; padding-left: 1.1em; }
 .examples .index li { line-height: 1.5; }
 .examples .index a { color: var(--fg); text-decoration: none; border-bottom: 1px solid var(--line); }
 .examples .index a:hover { color: var(--strong); border-bottom-color: var(--accent); }
