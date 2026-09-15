@@ -85,15 +85,20 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
    the text measure. */
 @media (max-width: 960px) { .intro .pair { grid-template-columns: 1fr; max-width: 720px; } .intro .pair > div { display: block; } .intro .foot { max-width: 764px; } }
 .examples { background: var(--tint); padding: 2.6em 0 100px; }
-.examples .col { max-width: 1240px; }
+/* The column is two: the index of the features down the left, the
+   content beside it. The heading spans both. */
+.examples .col { max-width: 1240px; display: grid; grid-template-columns: max-content minmax(0, 1fr); column-gap: 44px; }
 /* The section's heading is set like the page title. */
-.examples .title { font-size: 1.9rem; letter-spacing: -.02em; line-height: 1.2; margin: 0 0 .8em; }
-/* Under it, an index of the features: one link per figure, one per
-   line. */
-.examples .index { list-style: none; margin: 0; padding: 0; }
-.examples .index li { line-height: 1.7; }
+.examples .title { grid-column: 1 / -1; font-size: 1.9rem; letter-spacing: -.02em; line-height: 1.2; margin: 0 0 .8em; }
+/* The index: one link per figure, one per line, a step smaller and
+   set close. It stays in view as the content scrolls past. */
+.examples .index { align-self: start; position: sticky; top: 24px; font-size: .85rem; }
+.examples .index ul { list-style: none; margin: 0; padding: 0; }
+.examples .index li { line-height: 1.5; }
 .examples .index a { color: var(--fg); text-decoration: none; border-bottom: 1px solid var(--line); }
 .examples .index a:hover { color: var(--strong); border-bottom-color: var(--accent); }
+/* Narrow, the index goes above the content instead. */
+@media (max-width: 960px) { .examples .col { grid-template-columns: 1fr; } .examples .index { position: static; margin-bottom: 26px; } }
 .layer { margin-bottom: 26px; }
 h1 { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: .6em; font-size: 1.9rem; letter-spacing: -.02em; margin: 0 0 .8em; line-height: 1.2; }
 p { margin: 0 0 .8em; }
