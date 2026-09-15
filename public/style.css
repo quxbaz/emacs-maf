@@ -92,9 +92,10 @@ pre b { color: var(--accent); font-weight: 600; }
 .stacky-diff button.caption { justify-self: start; font: inherit; font-size: .9rem; color: var(--fg); background: var(--bg); border: 2px solid var(--accent); border-radius: 4px; padding: 3px 12px; cursor: pointer; }
 .stacky-diff button.caption:hover { background: var(--mark); }
 .stacky-diff .caption kbd { color: var(--fg); }
-/* In the fold the command line reads as a label under the example it
-   names, so it is ordered last; everywhere else it heads the pair. */
-.intro .stacky-diff .caption { order: 1; }
+/* In the fold the caption under each example carries what to look at,
+   so the pair's own keys-and-command line is left out; everywhere else
+   it heads the pair. */
+.intro .stacky-diff .caption { display: none; }
 .stacky-diff .caption .command { font-family: var(--mono); color: var(--accent); font-size: .85rem; margin-left: .4em; }
 .stacky-diff .calcbuf { --pad-y: 16px; --pad-x: 20px; font-size: 1rem; }
 .stacky-diff.result { grid-template-columns: 1fr; }
