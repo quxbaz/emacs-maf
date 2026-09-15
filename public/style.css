@@ -40,6 +40,7 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
 .intro .col > .layer:first-child { margin-bottom: 58px; }
 /* The line that names what the examples show. */
 .intro .lede { font-size: 1.15rem; }
+.intro .lede strong { color: var(--strong); font-weight: 600; }
 /* The description under each example reads as a caption, not body
    copy: a step smaller and muted, its label leading in bold. The pane
    above drops its own bottom margin, so the two sit close. */
@@ -48,7 +49,10 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
 .intro .pair .cap .label { color: var(--strong); font-weight: 600; }
 /* A character named in the caption is set in the pane's own face, so
    the reader matches it to what is on screen above. */
-.intro .pair .cap code { font-family: var(--mono); font-size: .95em; color: var(--fg); }
+.intro .lede code, .intro .pair .cap code { font-family: var(--mono); font-size: .95em; color: var(--fg); }
+/* The value the examples divide by is set off on the accent's own
+   wash, so the eye finds it in the prose and again on the stack. */
+.intro .lede code { background: var(--mark); border-radius: 4px; padding: .06em .36em; }
 /* The two examples: each is its text over its example, and the cells
    share rows, so the examples line up whatever the text's height. On a
    narrow screen they stack. */
