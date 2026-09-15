@@ -28,7 +28,10 @@
 * IN-PROGRESS website, structure
   - fold should be more impactful, and clear
   - the `what`, at a glance
-** the why (section 2)
+** sect-1: fold
+** sect-2: installation
+   - install info
+** sect-3: the why
    - explain the `why`, the origin
 ** major features
    - contextualized commands (including region context)
