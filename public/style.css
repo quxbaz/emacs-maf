@@ -70,6 +70,7 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
 /* A character named in the caption is set in the pane's own face, so
    the reader matches it to what is on screen above. */
 .intro .lede code, .intro .pair .cap code { font-family: var(--mono); font-size: .95em; color: var(--fg); }
+.intro .lede code { font-size: .8em; }
 /* A character quoted from the pane is set off on the accent's own
    wash, so the eye finds it in the prose and again on the stack. */
 .intro .lede code, .intro .pair .cap code { background: var(--mark); border-radius: 4px; padding: .06em .36em; }
