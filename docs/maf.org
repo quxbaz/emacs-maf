@@ -25,14 +25,12 @@
 ** maf-formulas
 ** maf-pretty
 
-* IN-PROGRESS website - home page
+* IN-PROGRESS website page - home
   - fold should be more impactful, and clear
   - the `what`, at a glance
 ** sect-1: fold
-** sect-2: the why
-   - explain the `why`, the origin
-** sect-3: major features
-** sect-4: examples
+** sect-2: major features
+** sect-3: examples
 ** text
    maf works on top of calc as a set of optional features. features can be
    toggled on or off tailored to your preferences
@@ -51,7 +49,11 @@
    - formulas
    - options
 
-* website - install page
+* website page - install
+* website page - why
+  - explain the `why`, the origin
+  - short page with just a few paragraphs
+  - more for interested readers and calc enthusiasts than required reading
 
 * IN-PROGRESS website
   - [ ] generate readme
