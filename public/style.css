@@ -40,6 +40,8 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
 .intro .col > .layer:first-child { margin-bottom: 58px; }
 /* The line that names what the examples show. */
 .intro .lede { font-size: 1.15rem; }
+.intro .lede h2 { margin: 0 0 .3em; }
+.intro .lede p { margin: 0; }
 /* The line that opens out to the rest of the suite stands apart from
    the examples above it and the install block below, on a blue of its
    own so it carries across the page and leaves the accent to the
