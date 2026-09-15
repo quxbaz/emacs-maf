@@ -37,7 +37,6 @@
    maf works on top of calc as a set of optional features. features can be
    toggled on or off tailored to your preferences
 ** major features
-
    - contextualized commands (including region context)
    - selection replacement, direct commands on subexpression
    - passive subexpression highlighting
