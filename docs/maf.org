@@ -50,10 +50,13 @@
    - options
 
 * website page - install
+
 * website page - why
   - explain the `why`, the origin
   - short page with just a few paragraphs
   - more for interested readers and calc enthusiasts than required reading
+
+* website page - commands
 
 * IN-PROGRESS website
   - [ ] generate readme
