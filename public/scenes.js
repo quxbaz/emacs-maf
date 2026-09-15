@@ -1,10 +1,29 @@
 // Scenes for showy: each is a list of steps, see showy.js.
 // Columns and highlight ranges are as maf places them in a live calc buffer.
 
-// The same key on the same entry, twice: where point stands decides
-// what it acts on. On the left side's caret only that side expands;
-// at the end of the line the whole equation is the target and both
-// sides do. Ranges are as maf highlights them in a live calc buffer.
+// The same keys on the same entry, twice: where point stands decides
+// what they act on. On the + only the side under point is divided; on
+// the = the whole equation is the target and both sides are. Entries,
+// ranges and results are as a live calc buffer gives them.
+export const divide = [
+  { stack: ['y = x^2 + 2'] },
+  { pause: 900 },
+  { point: { level: 1, col: 8 }, highlight: { level: 1, from: 4, to: 11 } },
+  { pause: 700 },
+  { keys: '2 /', command: 'mafcmd-div' },
+  { entry: { level: 1, text: 'y = x^2 / 2 + 1' }, point: { level: 1, col: 12 }, highlight: { level: 1, from: 4, to: 15 } },
+]
+
+export const divideWhole = [
+  { stack: ['y = x^2 + 2'] },
+  { pause: 900 },
+  { point: { level: 1, col: 2 }, highlight: { level: 1, from: 0, to: 11 } },
+  { pause: 700 },
+  { keys: '2 /', command: 'mafcmd-div' },
+  { entry: { level: 1, text: 'y / 2 = x^2 / 2 + 1' }, point: { level: 1, col: 6 }, highlight: { level: 1, from: 0, to: 19 } },
+]
+
+// The expand pair, kept for the scene reference in demo.html.
 export const expand = [
   { stack: ['(x + 1)^2 = (y + 2)^2'] },
   { pause: 900 },
@@ -12,15 +31,6 @@ export const expand = [
   { pause: 700 },
   { keys: 'x', command: 'mafcmd-expand' },
   { entry: { level: 1, text: 'x^2 + 2 x + 1 = (y + 2)^2' }, point: { level: 1, col: 7 }, highlight: { level: 1, from: 0, to: 13 } },
-]
-
-export const expandWhole = [
-  { stack: ['(x + 1)^2 = (y + 2)^2'] },
-  { pause: 900 },
-  { point: { level: 1, col: 21 }, highlight: { level: 1, from: 0, to: 21 } },
-  { pause: 700 },
-  { keys: 'x', command: 'mafcmd-expand' },
-  { entry: { level: 1, text: 'x^2 + 2 x + 1 = y^2 + 4 y + 4' }, point: { level: 1, col: 29 }, highlight: { level: 1, from: 0, to: 29 } },
 ]
 
 // A parabola brought into standard form, then plotted: collect the x
