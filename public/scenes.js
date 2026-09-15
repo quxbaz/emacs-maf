@@ -1,26 +1,26 @@
 // Scenes for showy: each is a list of steps, see showy.js.
 // Columns and highlight ranges are as maf places them in a live calc buffer.
 
-// The same keys on the same entry, twice: where point stands decides
-// what they act on. On the + only the side under point is divided; on
+// The same key on the same entry, twice: where point stands decides
+// what it acts on. On the + only the side under point is squared; on
 // the = the whole equation is the target and both sides are. Entries,
 // ranges and results are as a live calc buffer gives them.
-export const divide = [
-  { stack: ['y = x^2 + 2'] },
+export const square = [
+  { stack: ['y = x^2 + 1'] },
   { pause: 900 },
   { point: { level: 1, col: 8 }, highlight: { level: 1, from: 4, to: 11 } },
   { pause: 700 },
-  { keys: '2 /', command: 'mafcmd-div' },
-  { entry: { level: 1, text: 'y = x^2 / 2 + 1' }, point: { level: 1, col: 12 }, highlight: { level: 1, from: 4, to: 15 } },
+  { keys: 'W', command: 'mafcmd-sqr' },
+  { entry: { level: 1, text: 'y = (x^2 + 1)^2' }, point: { level: 1, col: 13 }, highlight: { level: 1, from: 4, to: 15 } },
 ]
 
-export const divideWhole = [
-  { stack: ['y = x^2 + 2'] },
+export const squareWhole = [
+  { stack: ['y = x^2 + 1'] },
   { pause: 900 },
   { point: { level: 1, col: 2 }, highlight: { level: 1, from: 0, to: 11 } },
   { pause: 700 },
-  { keys: '2 /', command: 'mafcmd-div' },
-  { entry: { level: 1, text: 'y / 2 = x^2 / 2 + 1' }, point: { level: 1, col: 6 }, highlight: { level: 1, from: 0, to: 19 } },
+  { keys: 'W', command: 'mafcmd-sqr' },
+  { entry: { level: 1, text: 'y^2 = (x^2 + 1)^2' }, point: { level: 1, col: 4 }, highlight: { level: 1, from: 0, to: 17 } },
 ]
 
 // The expand pair, kept for the scene reference in demo.html.
