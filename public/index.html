@@ -26,14 +26,10 @@
   <div class="layer">
     <p>On the home line at the bottom, a command acts on the top entry, like Calc always did. Inside a formula, it acts on the sub-formula under point, which is highlighted. On an equation, it runs once per side. With a region marked, it acts on just those terms. The result replaces exactly that, and point stays put.</p>
   </div>
-  <div class="layer">
-    <p><kbd>SPC</kbd> opens the stack as text. Type, then <kbd>RET</kbd>. On an entry, <kbd>SPC</kbd> edits it in place. That one gesture is how everything is entered and changed.</p>
-  </div>
-  <div class="layer">
-    <p>Emacs 28.1 or later, nothing else.</p>
+  <div class="layer install">
+    <h2>Installation</h2>
 <pre>M-x package-vc-install RET https://github.com/quxbaz/emacs-maf RET
 (add-hook 'calc-mode-hook #'maf-mode)</pre>
-    <p class="muted">Then <kbd>M-x</kbd> <code>calc</code>. Inside, <kbd>l</kbd> <kbd>b</kbd> lists every key with an example. <a href="https://github.com/quxbaz/emacs-maf">Source on GitHub.</a> Under active development; the API is unstable.</p>
   </div>
 </div>
 </section>

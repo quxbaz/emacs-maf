@@ -25,7 +25,10 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
    shrinks an item to its content, so it is held at full width and
    capped by max-width instead. */
 .intro .col { position: relative; z-index: 1; width: 100%; max-width: 1240px; }
-.intro .col > .layer:not(.pair) { max-width: 720px; }
+.intro .col > .layer:not(.pair):not(.install) { max-width: 720px; }
+/* The install lines are monospace and longer than the prose measure,
+   so that layer is let out to whatever they need and no further. */
+.intro .col > .install pre { width: fit-content; max-width: 100%; }
 /* The two examples: each is its text over its example, and the cells
    share rows, so the examples line up whatever the text's height. On a
    narrow screen they stack. */
