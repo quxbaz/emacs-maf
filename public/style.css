@@ -25,6 +25,10 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
    shrinks an item to its content, so it is held at full width and
    capped by max-width instead. */
 .intro .col { position: relative; z-index: 1; width: 100%; max-width: 1240px; }
+/* The source link keeps to the fold's upper right, on the content
+   column's right edge while there is room, the page's margin after. */
+.intro .gh { position: absolute; z-index: 2; top: 26px; right: max(22px, calc((100% - 1240px) / 2 + 22px)); display: block; line-height: 0; color: var(--muted); }
+.intro .gh:hover { color: var(--fg); }
 .intro .col > .layer:not(.pair):not(.install) { max-width: 720px; }
 /* The install lines are monospace and longer than the prose measure,
    so that layer is let out to whatever they need and no further. */
