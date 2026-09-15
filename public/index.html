@@ -44,9 +44,10 @@
   <nav class="index">
     <h3>Major features</h3>
     <ul>
+      <li><a href="#contextual">Contextual editing</a></li>
+      <li><a href="#edit">Direct stack editing</a></li>
       <li><a href="#highlight">The live highlight</a></li>
       <li><a href="#equation">The equation target</a></li>
-      <li><a href="#edit">The stack as text</a></li>
       <li><a href="#preview">The preview panel</a></li>
       <li><a href="#plot">Plotting</a></li>
       <li><a href="#formulas">The formula library</a></li>
@@ -63,6 +64,16 @@
   </nav>
   <div class="body">
   <div class="layer shots">
+    <figure id="contextual">
+      <h3>Contextual editing</h3>
+      <figcaption>A command acts on the expression under point: the same key squares one side of an equation with the cursor on that side, and both sides with the cursor on the equals sign.</figcaption>
+      <div class="placeholder" role="img" aria-label="placeholder: screenshot to come"></div>
+    </figure>
+    <figure id="edit">
+      <h3>Direct stack editing</h3>
+      <figcaption><kbd>SPC</kbd> opens the stack as text. A new line is a new entry, typed the way it is written on paper: <code>3xy^2</code> is three factors, <code>{cm}</code> quotes a name that must stay whole.</figcaption>
+      <img src="media/screens/edit.png" width="500" alt="the stack opened as editable text, a new entry typed in the handwriting dialect">
+    </figure>
     <figure id="highlight">
       <h3>The live highlight</h3>
       <figcaption>Point inside a formula marks the sub-formula a command will act on, here <code>y + 2</code>, and the highlight follows point as it moves.</figcaption>
@@ -72,11 +83,6 @@
       <h3>The equation target</h3>
       <figcaption>Point on one side of an equation and that whole side is the subject; a command run at home takes each side in turn.</figcaption>
       <img src="media/screens/equation.png" width="500" alt="an equation with its whole left side highlighted">
-    </figure>
-    <figure id="edit">
-      <h3>The stack as text</h3>
-      <figcaption><kbd>SPC</kbd> opens the stack as text. A new line is a new entry, typed the way it is written on paper: <code>3xy^2</code> is three factors, <code>{cm}</code> quotes a name that must stay whole.</figcaption>
-      <img src="media/screens/edit.png" width="500" alt="the stack opened as editable text, a new entry typed in the handwriting dialect">
     </figure>
     <figure id="preview">
       <h3>The preview panel</h3>
