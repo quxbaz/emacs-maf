@@ -47,13 +47,13 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
 .intro .lede { font-size: 1.15rem; margin-top: 59px; }
 .intro .lede p { margin: 0; }
 /* The line that opens out to the rest of the suite closes the fold:
-   at its bottom, flush with the right edge of the second example, on
-   a blue of its own so it carries across the page and leaves the
-   accent to the marks inside the panes. Its wrapper is lifted over
-   the fade like the column and takes the column's left edge and the
-   pair's width, so its right edge is the pair's. */
+   at its bottom, centered under the two examples, on a blue of its
+   own so it carries across the page and leaves the accent to the
+   marks inside the panes. Its wrapper is lifted over the fade like
+   the column and takes the column's left edge and the pair's width,
+   so centering in it is centering between the examples. */
 .intro .foot { position: relative; z-index: 1; width: 100%; max-width: 1084px; margin-left: max(0px, calc((100% - 1240px) / 2)); padding-inline: 22px; }
-.intro .more { position: relative; max-width: 70ch; margin: 44px 0 0 auto; background: hsl(205 80% 42% / 1); color: #fff; border-radius: 8px; padding: 18px 22px; }
+.intro .more { position: relative; max-width: 70ch; margin: 44px auto 0; background: hsl(205 80% 42% / 1); color: #fff; border-radius: 8px; padding: 18px 22px; }
 /* A small caret a little under the middle of the line points on down
    the page, in the line's own blue: a triangle made of borders. */
 .intro .more::after { content: ""; position: absolute; top: calc(100% + 10px); left: 50%; transform: translateX(-50%); border: 10px solid transparent; border-top: 10px solid hsl(205 80% 42% / 1); border-bottom: 0; }
