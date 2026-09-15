@@ -83,6 +83,12 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
 .examples .col { max-width: 1240px; }
 /* The section's heading is set like the page title. */
 .examples .title { font-size: 1.9rem; letter-spacing: -.02em; line-height: 1.2; margin: 0 0 .8em; }
+/* Under it, an index of the features: one link per figure, one per
+   line. */
+.examples .index { list-style: none; margin: 0; padding: 0; }
+.examples .index li { line-height: 1.7; }
+.examples .index a { color: var(--fg); text-decoration: none; border-bottom: 1px solid var(--line); }
+.examples .index a:hover { color: var(--strong); border-bottom-color: var(--accent); }
 .layer { margin-bottom: 26px; }
 h1 { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: .6em; font-size: 1.9rem; letter-spacing: -.02em; margin: 0 0 .8em; line-height: 1.2; }
 p { margin: 0 0 .8em; }
