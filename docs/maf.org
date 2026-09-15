@@ -30,6 +30,13 @@
   - the `what`, at a glance
 ** sect-1: fold
 ** sect-2: major features
+   - contextualized commands (including region context)
+   - selection replacement, direct commands on subexpression
+   - passive subexpression highlighting
+   - direct stack editing instead of separate buffer
+   - embedded graphs
+   - history to replace trail
+   - session persist
 ** sect-3: examples
 ** text
    maf works on top of calc as a set of optional features. features can be
