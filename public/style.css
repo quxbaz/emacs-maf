@@ -3,9 +3,9 @@
 * { box-sizing: border-box; }
 html { color-scheme: light dark; }
 body { margin: 0; background: var(--bg); color: var(--fg); font: 19px/1.55 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
-/* Bands, each with a centered column: the intro on the page's ground,
-   then the install block and the examples below on a blue ground,
-   which is what parts them. */
+/* Two bands, each with a centered column: the intro on the page's
+   ground, the examples below on a blue ground, which is what parts
+   them. */
 main > section > .col { margin: 0 auto; padding-inline: 22px; }
 /* The intro is a fold: at least one screen tall, two rows. The column
    is centered in the first, which takes all the height left over; the
@@ -79,13 +79,6 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
 /* Stacked, the examples no longer need their own width, so they take
    the text measure. */
 @media (max-width: 960px) { .intro .pair { grid-template-columns: 1fr; max-width: 720px; } .intro .pair > div { display: block; } .intro .foot { max-width: 764px; } }
-/* Below the fold, the install block opens the blue ground; the
-   examples follow on the same ground. The install lines are
-   monospace, so that layer is let out to whatever they need and no
-   further. */
-.sect-1 { background: var(--tint); padding: 2.6em 0 0; }
-.sect-1 .col { max-width: 1240px; }
-.sect-1 .install pre { width: fit-content; max-width: 100%; }
 .examples { background: var(--tint); padding: 2.6em 0 100px; }
 .examples .col { max-width: 1240px; }
 .layer { margin-bottom: 26px; }
