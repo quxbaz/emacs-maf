@@ -24,7 +24,7 @@
 // begins, `after` the stack at the end, and the keys and command are that
 // step's. mountAll() mounts every element with data-diff="name", the name of
 // a scene: its content, if any, is the caption, data-reveal and data-result
-// set those flags.
+// set those flags, and data-blink lets the cursor blink.
 
 import * as stacky from './stacky.js'
 import { walk } from './showy.js'
@@ -127,6 +127,7 @@ export function mountAll(scenes, root = document) {
   return [...root.querySelectorAll('[data-diff]')].map(el => {
     const caption = el.innerHTML.trim() || undefined
     const reveal = 'reveal' in el.dataset, result = 'result' in el.dataset
-    return mount(el, fromScene(scenes[el.dataset.diff], { caption, reveal, result }))
+    const show = 'blink' in el.dataset ? { before: { blink: true }, after: { blink: true } } : {}
+    return mount(el, fromScene(scenes[el.dataset.diff], { caption, reveal, result, show }))
   })
 }
