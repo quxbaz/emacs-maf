@@ -177,6 +177,8 @@ h2 { font-size: 1.25rem; letter-spacing: -.01em; margin: 1.2em 0 .4em; }
 .shots figure { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 28px; align-items: start; margin: 0 0 2.2em; }
 .shots h3 { grid-column: 1 / -1; margin: 0; font-size: 1.05rem; font-weight: 600; letter-spacing: -.01em; }
 .shots figcaption { color: var(--fg); }
+/* Each picture links to itself at full size, in a new tab. */
+.shots a { display: block; }
 .shots img { display: block; width: 100%; height: auto; border-radius: 8px; background: #121214; }
 /* A figure whose picture is still to come shows a blank pane of the
    same ground, at the proportions of the others. */
