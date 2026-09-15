@@ -26,9 +26,10 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
    capped by max-width instead. */
 .intro .col { position: relative; z-index: 1; width: 100%; max-width: 1240px; }
 /* The source link keeps to the fold's upper right, on the content
-   column's right edge while there is room, the page's margin after. */
-.intro .gh { position: absolute; z-index: 2; top: 26px; right: max(22px, calc((100% - 1240px) / 2 + 22px)); display: block; line-height: 0; color: var(--muted); }
-.intro .gh:hover { color: var(--fg); }
+   column's right edge while there is room, the page's margin after. It
+   is drawn at full strength: a faded mark reads as a disabled one. */
+.intro .gh { position: absolute; z-index: 2; top: 26px; right: max(22px, calc((100% - 1240px) / 2 + 22px)); display: block; line-height: 0; color: var(--fg); }
+.intro .gh:hover { color: var(--strong); }
 /* The prose measure is set in characters, not pixels: 70ch of the body
    face. The line runs longer than that in practice, since the average
    letter is narrower than the zero that ch measures. */
