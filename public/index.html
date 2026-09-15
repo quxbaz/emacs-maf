@@ -13,11 +13,15 @@
   <div class="layer">
     <h1>emacs maf <span class="subtitle">an enhancement suite for <code>M-x calc</code></span></h1>
   </div>
-  <div class="layer">
-    <p>One key, one entry, two places to stand. On the <code>^</code>, only that side expands.</p>
-    <div data-diff="expand" data-result></div>
-    <p>At the end of the line the whole equation is the target, and both sides expand.</p>
-    <div data-diff="expandWhole" data-result></div>
+  <div class="layer pair">
+    <div>
+      <p>One key, one entry, two places to stand. On the <code>^</code>, only that side expands.</p>
+      <div data-diff="expand" data-result></div>
+    </div>
+    <div>
+      <p>At the end of the line the whole equation is the target, and both sides expand.</p>
+      <div data-diff="expandWhole" data-result></div>
+    </div>
   </div>
   <div class="layer">
     <p>On the home line at the bottom, a command acts on the top entry, like Calc always did. Inside a formula, it acts on the sub-formula under point, which is highlighted. On an equation, it runs once per side. With a region marked, it acts on just those terms. The result replaces exactly that, and point stays put.</p>

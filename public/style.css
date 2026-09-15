@@ -18,7 +18,22 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
    The column is lifted over it, so a short viewport that pushes text
    into the lower half keeps it legible. */
 .intro::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 50%; background: radial-gradient(circle 46vmin at 50% 100%, transparent 0 58%, var(--tint) 100%); -webkit-mask-image: linear-gradient(to top, #000 25%, transparent); mask-image: linear-gradient(to top, #000 25%, transparent); pointer-events: none; }
-.intro .col { position: relative; z-index: 1; max-width: 720px; }
+/* The fold's column is as wide as the band below's, so the two share a
+   left edge at every width; what each layer is allowed is set within
+   it. The prose keeps a text measure, the examples the width they need
+   to be read. The column is a grid item, and an auto margin there
+   shrinks an item to its content, so it is held at full width and
+   capped by max-width instead. */
+.intro .col { position: relative; z-index: 1; width: 100%; max-width: 1240px; }
+.intro .col > .layer:not(.pair) { max-width: 720px; }
+/* The two examples: each is its text over its example, and the cells
+   share rows, so the examples line up whatever the text's height. On a
+   narrow screen they stack. */
+.intro .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 0 32px; max-width: 1040px; }
+.intro .pair > div { display: grid; grid-template-rows: subgrid; grid-row: span 2; }
+/* Stacked, the examples no longer need their own width, so they take
+   the text measure. */
+@media (max-width: 960px) { .intro .pair { grid-template-columns: 1fr; max-width: 720px; } .intro .pair > div { display: block; } }
 .examples { background: var(--tint); padding: 2.6em 0 100px; }
 .examples .col { max-width: 1240px; }
 .layer { margin-bottom: 26px; }
