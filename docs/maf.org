@@ -54,6 +54,7 @@
 
 * IN-PROGRESS website
   - [ ] generate readme
+  - [ ] link to ratex binaries
   - [ ] generate website
     - [ ] put inside public/ directory
     - [ ] stick to plain html/css/js
