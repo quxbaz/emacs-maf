@@ -81,6 +81,8 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
 @media (max-width: 960px) { .intro .pair { grid-template-columns: 1fr; max-width: 720px; } .intro .pair > div { display: block; } .intro .foot { max-width: 764px; } }
 .examples { background: var(--tint); padding: 2.6em 0 100px; }
 .examples .col { max-width: 1240px; }
+/* The section's heading is set like the page title. */
+.examples .title { font-size: 1.9rem; letter-spacing: -.02em; line-height: 1.2; margin: 0 0 .8em; }
 .layer { margin-bottom: 26px; }
 h1 { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: .6em; font-size: 1.9rem; letter-spacing: -.02em; margin: 0 0 .8em; line-height: 1.2; }
 p { margin: 0 0 .8em; }
