@@ -40,6 +40,9 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
 .intro .col > .layer:first-child { margin-bottom: 58px; }
 /* The line that names what the examples show. */
 .intro .lede { font-size: 1.15rem; }
+/* The line that opens out to the rest of the suite stands apart from
+   the examples above it and the install block below. */
+.intro .more { margin: 44px 0 40px; }
 .intro .col strong { color: var(--strong); font-weight: 600; }
 /* The description under each example reads as a caption, not body
    copy: a step smaller and muted, its label leading in bold. The pane
