@@ -99,6 +99,10 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
 .examples .index a:hover { color: var(--strong); border-bottom-color: var(--accent); }
 /* Narrow, the index goes above the content instead. */
 @media (max-width: 960px) { .examples .col { grid-template-columns: 1fr; } .examples .index { position: static; margin-bottom: 26px; } }
+/* The worked examples, back on the page's ground, as wide as the
+   features above. */
+.scenes { padding: 2.6em 0 100px; }
+.scenes .col { max-width: 1360px; }
 .layer { margin-bottom: 26px; }
 h1 { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: .6em; font-size: 1.9rem; letter-spacing: -.02em; margin: 0 0 .8em; line-height: 1.2; }
 p { margin: 0 0 .8em; }
