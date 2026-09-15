@@ -7,9 +7,10 @@
 //     show: { before: { cursor: true, blink: false, highlight: true, home: true, header: true, change: false },
 //             after: { cursor: false, blink: false, highlight: false, home: true, header: true, change: true } } }
 //
-// Two panes side by side, or with `result` one pane: the stack before, and on
-// a last line after "=>" the entry the command produced, its changed part in
-// the accent color (the home dot hidden unless asked for). The line above is `caption`, any HTML; without one it is
+// Two panes side by side, or with `result` one pane: the stack before, the
+// keys typed on a line of their own, and on a last line after "=>" the entry
+// the command produced, its changed part in the accent color (the home dot
+// hidden unless asked for). The line above is `caption`, any HTML; without one it is
 // the keys and the command's name. `show` says whether each pane draws the
 // cursor and whether it blinks, the highlight, the home line and the header
 // line, and whether it
@@ -93,7 +94,7 @@ export function mount(el, ab) {
   el.classList.add('stacky-diff')
   el.classList.toggle('result', !!ab.result)
   el.innerHTML = ''
-  el.style.setProperty('--rows', Math.max(stacky.depth(ab.before), stacky.depth(ab.after)) + 1)
+  el.style.setProperty('--rows', Math.max(stacky.depth(ab.before), stacky.depth(ab.after)) + (ab.result && ab.keys ? 2 : 1))
   const caption = document.createElement(ab.reveal ? 'button' : 'div'); caption.className = 'caption'; caption.innerHTML = captionHtml(ab)
   if (ab.reveal) caption.type = 'button'
   el.append(caption)
@@ -103,7 +104,7 @@ export function mount(el, ab) {
     const pane = document.createElement('div'); pane.className = 'side before'
     el.append(pane)
     const draw = stacky.pane(pane, undefined, b.show)
-    const full = stacky.setResult(b.stack, result(ab))
+    const full = stacky.setKeys(stacky.setResult(b.stack, result(ab)), ab.keys)
     show = on => draw(on ? full : b.stack)
   } else {
     const before = document.createElement('div'); before.className = 'side before'
