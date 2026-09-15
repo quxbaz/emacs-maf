@@ -1,5 +1,5 @@
-:root { --bg: #fff; --fg: #1d1d1d; --muted: #777; --line: #e6e6e6; --accent: #b8860b; --mark: rgba(184, 134, 11, .18); --band: rgba(0, 0, 0, .05); --tint: #e8f1fa; --mono: Monaco, Menlo, ui-monospace, Consolas, monospace; }
-@media (prefers-color-scheme: dark) { :root { --bg: #121214; --fg: #eaeaea; --muted: #8e8e93; --line: #2a2a2e; --accent: #daa520; --band: rgba(255, 255, 255, .06); --tint: #151a21; } }
+:root { --bg: #fff; --fg: #1d1d1d; --muted: #777; --line: #e6e6e6; --accent: #b8860b; --mark: rgba(184, 134, 11, .18); --band: rgba(0, 0, 0, .05); --strong: #000; --tint: #e8f1fa; --mono: Monaco, Menlo, ui-monospace, Consolas, monospace; }
+@media (prefers-color-scheme: dark) { :root { --bg: #121214; --fg: #eaeaea; --muted: #8e8e93; --line: #2a2a2e; --accent: #daa520; --band: rgba(255, 255, 255, .06); --strong: #fff; --tint: #151a21; } }
 * { box-sizing: border-box; }
 html { color-scheme: light dark; }
 body { margin: 0; background: var(--bg); color: var(--fg); font: 19px/1.55 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
@@ -40,6 +40,15 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
 .intro .col > .layer:first-child { margin-bottom: 58px; }
 /* The line that names what the examples show. */
 .intro .lede { font-size: 1.15rem; }
+/* The description under each example reads as a caption, not body
+   copy: a step smaller and muted, its label leading in bold. The pane
+   above drops its own bottom margin, so the two sit close. */
+.intro .pair .stacky-diff { margin-bottom: 0; }
+.intro .pair .cap { margin: 14px 0 0; font-size: .95rem; line-height: 1.5; color: var(--muted); }
+.intro .pair .cap .label { color: var(--strong); font-weight: 600; }
+/* A character named in the caption is set in the pane's own face, so
+   the reader matches it to what is on screen above. */
+.intro .pair .cap code { font-family: var(--mono); font-size: .95em; color: var(--fg); }
 /* The two examples: each is its text over its example, and the cells
    share rows, so the examples line up whatever the text's height. On a
    narrow screen they stack. */
