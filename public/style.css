@@ -37,14 +37,14 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
 .intro .col > .layer:not(.pair) { max-width: 70ch; }
 /* The title stands clear of the examples under it. */
 .intro .col > .layer:first-child { margin-bottom: 58px; }
-/* The line that names what the examples show. Its heading stands as
-   far under the paragraph above as that paragraph stands under the
-   title, so the layer before it gives up its margin and its
-   paragraph's and the heading carries the whole gap itself. */
+/* The line that names what the examples show: a bold line in the
+   lede's own face and leading, not a heading. The lede stands as far
+   under the paragraph above as that paragraph stands under the title,
+   so the layer before it gives up its margin and its paragraph's and
+   the lede carries the whole gap itself. */
 .intro .col > .layer:has(+ .lede) { margin-bottom: 0; }
 .intro .col > .layer:has(+ .lede) p { margin-bottom: 0; }
-.intro .lede { font-size: 1.15rem; }
-.intro .lede h2 { margin: 59px 0 .3em; }
+.intro .lede { font-size: 1.15rem; margin-top: 59px; }
 .intro .lede p { margin: 0; }
 /* The line that opens out to the rest of the suite closes the fold:
    at its bottom, centered under the two examples, on a blue of its
