@@ -25,7 +25,7 @@
 ** maf-formulas
 ** maf-pretty
 
-* IN-PROGRESS website, structure
+* IN-PROGRESS website - home page
   - fold should be more impactful, and clear
   - the `what`, at a glance
 ** sect-1: fold
@@ -50,6 +50,8 @@
    - rewrite rules
    - formulas
    - options
+
+* website - install page
 
 * IN-PROGRESS website
   - [ ] generate readme
