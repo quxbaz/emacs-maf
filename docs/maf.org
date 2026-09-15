@@ -33,6 +33,8 @@
    - install info
 ** sect-3: the why
    - explain the `why`, the origin
+** sect-4: major features
+** sect-5: examples
 ** major features
    - contextualized commands (including region context)
    - selection replacement, direct commands on subexpression
