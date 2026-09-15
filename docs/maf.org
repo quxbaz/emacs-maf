@@ -29,12 +29,10 @@
   - fold should be more impactful, and clear
   - the `what`, at a glance
 ** sect-1: fold
-** sect-2: installation
-   - install info
-** sect-3: the why
+** sect-2: the why
    - explain the `why`, the origin
-** sect-4: major features
-** sect-5: examples
+** sect-3: major features
+** sect-4: examples
 ** major features
    - contextualized commands (including region context)
    - selection replacement, direct commands on subexpression
