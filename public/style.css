@@ -29,14 +29,19 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
    column's right edge while there is room, the page's margin after. */
 .intro .gh { position: absolute; z-index: 2; top: 26px; right: max(22px, calc((100% - 1240px) / 2 + 22px)); display: block; line-height: 0; color: var(--muted); }
 .intro .gh:hover { color: var(--fg); }
-.intro .col > .layer:not(.pair):not(.install) { max-width: 720px; }
+/* The prose measure is set in characters, not pixels: 70ch of the body
+   face. The line runs longer than that in practice, since the average
+   letter is narrower than the zero that ch measures. */
+.intro .col > .layer:not(.pair):not(.install) { max-width: 70ch; }
+/* The title stands clear of the examples under it. */
+.intro .col > .layer:first-child { margin-bottom: 58px; }
 /* The install lines are monospace and longer than the prose measure,
    so that layer is let out to whatever they need and no further. */
 .intro .col > .install pre { width: fit-content; max-width: 100%; }
 /* The two examples: each is its text over its example, and the cells
    share rows, so the examples line up whatever the text's height. On a
    narrow screen they stack. */
-.intro .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 0 32px; max-width: 1040px; }
+.intro .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 0 30px; max-width: 1040px; }
 .intro .pair > div { display: grid; grid-template-rows: subgrid; grid-row: span 2; }
 /* Stacked, the examples no longer need their own width, so they take
    the text measure. */
@@ -51,8 +56,8 @@ p { margin: 0 0 .8em; }
 pre { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .95rem; line-height: 1.65; background: var(--line); padding: 14px 16px; border-radius: 8px; margin: .6em 0 1em; overflow-x: auto; }
 pre b { color: var(--accent); font-weight: 600; }
 .calcbuf { --bg: #121214; --fg: #eaeaea; --muted: #8e8e93; --line: #2a2a2e; --accent: #daa520; --band: rgba(255, 255, 255, .06); color: var(--fg); }
-.calcbuf { --pad-y: 20px; --pad-x: 24px; --lh: 1.9; background: var(--line); border-radius: 8px; padding: var(--pad-y) var(--pad-x) calc(var(--pad-y) - 2px); font-family: var(--mono); font-size: 1rem; line-height: var(--lh); min-width: 0; }
-.calcbuf .header { color: var(--muted); font-size: .85em; line-height: 1.5; white-space: pre; overflow: hidden; margin: calc(-1 * var(--pad-y)) calc(-1 * var(--pad-x)) 14px; padding: 8px var(--pad-x); background: var(--band); }
+.calcbuf { --pad-y: 20px; --pad-x: 24px; --lh: 1.9; background: var(--line); border-radius: 8px; padding: var(--pad-y) var(--pad-x) calc(var(--pad-y) - 3px); font-family: var(--mono); font-size: 1rem; line-height: var(--lh); min-width: 0; }
+.calcbuf .header { color: var(--muted); font-size: .78em; line-height: 1.5; white-space: pre; overflow: hidden; margin: calc(-1 * var(--pad-y)) calc(-1 * var(--pad-x)) 14px; padding: 8px var(--pad-x); background: var(--band); }
 .calcbuf .buffer { background: none; padding: 0; margin: 0; border-radius: 0; font: inherit; min-height: calc(var(--rows, 2) * var(--lh) * 1em); }
 .calcbuf .prefix { color: #737379; }
 .calcbuf mark { background: none; outline: 1px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
