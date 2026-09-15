@@ -1,5 +1,5 @@
-:root { --bg: #fff; --fg: #1d1d1d; --muted: #777; --line: #e6e6e6; --accent: #b8860b; --mark: rgba(184, 134, 11, .18); --band: rgba(0, 0, 0, .05); --tint: #e8f1fa; --tint-line: #93bce2; --mono: Monaco, Menlo, ui-monospace, Consolas, monospace; }
-@media (prefers-color-scheme: dark) { :root { --bg: #121214; --fg: #eaeaea; --muted: #8e8e93; --line: #2a2a2e; --accent: #daa520; --band: rgba(255, 255, 255, .06); --tint: #151a21; --tint-line: #2f4257; } }
+:root { --bg: #fff; --fg: #1d1d1d; --muted: #777; --line: #e6e6e6; --accent: #b8860b; --mark: rgba(184, 134, 11, .18); --band: rgba(0, 0, 0, .05); --tint: #e8f1fa; --mono: Monaco, Menlo, ui-monospace, Consolas, monospace; }
+@media (prefers-color-scheme: dark) { :root { --bg: #121214; --fg: #eaeaea; --muted: #8e8e93; --line: #2a2a2e; --accent: #daa520; --band: rgba(255, 255, 255, .06); --tint: #151a21; } }
 * { box-sizing: border-box; }
 html { color-scheme: light dark; }
 body { margin: 0; background: var(--bg); color: var(--fg); font: 19px/1.55 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
@@ -19,7 +19,7 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
    into the lower half keeps it legible. */
 .intro::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 50%; background: radial-gradient(circle 46vmin at 50% 100%, transparent 0 58%, var(--tint) 100%); -webkit-mask-image: linear-gradient(to top, #000 25%, transparent); mask-image: linear-gradient(to top, #000 25%, transparent); pointer-events: none; }
 .intro .col { position: relative; z-index: 1; max-width: 720px; }
-.examples { background: var(--tint); border-top: 2px solid var(--tint-line); padding: 2.6em 0 100px; }
+.examples { background: var(--tint); padding: 2.6em 0 100px; }
 .examples .col { max-width: 1240px; }
 .layer { margin-bottom: 26px; }
 h1 { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: .6em; font-size: 1.9rem; letter-spacing: -.02em; margin: 0 0 .8em; line-height: 1.2; }
