@@ -1206,7 +1206,7 @@ singly elsewhere."
      :examples ("A circle of radius 3 has circumference 6 pi."))
     (:name "pythagorean-theorem"
      :title "Pythagorean theorem"
-     :category "Geometry — 2D: Right triangle"
+     :category "Geometry — 2D: Triangle"
      :expr (calcFunc-eq (+ (^ (var a var-a) 2) (^ (var b var-b) 2))
                         (^ (var c var-c) 2))
      :doc "In a right triangle the squares of the legs add up to the square of the hypotenuse."
