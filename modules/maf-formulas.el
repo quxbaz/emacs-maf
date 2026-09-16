@@ -468,7 +468,8 @@ singly elsewhere."
                                   (* 4 (* (var a var-a) (var c var-c))))))
                            (* 2 (var a var-a))))
      :doc "The larger root of a x^2 + b x + c = 0 when a > 0."
-     :vars ((a . "coefficient of x^2, nonzero")
+     :vars ((x . "the root")
+            (a . "coefficient of x^2, nonzero")
             (b . "coefficient of x")
             (c . "constant term"))
      :examples ("x^2 - 5 x + 6 = 0 gives 3 here and 2 from the other root."))
@@ -482,7 +483,8 @@ singly elsewhere."
                                   (* 4 (* (var a var-a) (var c var-c))))))
                            (* 2 (var a var-a))))
      :doc "The other root: the same formula with the root subtracted."
-     :vars ((a . "coefficient of x^2, nonzero")
+     :vars ((x . "the root")
+            (a . "coefficient of x^2, nonzero")
             (b . "coefficient of x")
             (c . "constant term")))
     (:name "discriminant"
@@ -557,7 +559,8 @@ singly elsewhere."
      :doc "For y = a x^2 + b x + c, the axis of symmetry — and so the x\
  of the vertex, not the vertex itself. The turning point sits halfway\
  between the roots."
-     :vars ((a . "coefficient of x^2, nonzero") (b . "coefficient of x")))
+     :vars ((x . "the axis, and the vertex's x")
+            (a . "coefficient of x^2, nonzero") (b . "coefficient of x")))
     (:name "zero-exponent"
      :title "Zero exponent"
      :category "Algebra — Exponents"
