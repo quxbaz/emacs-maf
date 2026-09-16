@@ -550,11 +550,13 @@ singly elsewhere."
             (c . "constant term")
             (x . "the variable")))
     (:name "vertex-of-a-parabola"
-     :title "Vertex of a parabola"
+     :title "Axis of symmetry / vertex x-coordinate"
      :category "Algebra — Quadratic equations"
      :expr (calcFunc-eq (var x var-x)
                         (/ (neg (var b var-b)) (* 2 (var a var-a))))
-     :doc "The turning point sits halfway between the roots."
+     :doc "For y = a x^2 + b x + c, the axis of symmetry — and so the x\
+ of the vertex, not the vertex itself. The turning point sits halfway\
+ between the roots."
      :vars ((a . "coefficient of x^2, nonzero") (b . "coefficient of x")))
     (:name "zero-exponent"
      :title "Zero exponent"
