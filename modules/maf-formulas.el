@@ -1123,14 +1123,14 @@ singly elsewhere."
      :vars ((x . "any angle with cos(x) not 0")))
     (:name "volume-of-rectangular-solid"
      :title "Volume of rectangular solid"
-     :category "Geometry — 3D: Rectangular Solid"
+     :category "Geometry — 3D: Rectangular solid"
      :expr (calcFunc-eq (var V var-V)
                         (* (var l var-l) (* (var w var-w) (var h var-h))))
      :doc "Volume of a rectangular solid: length times width times height."
      :vars ((V . "volume") (l . "length") (w . "width") (h . "height")))
     (:name "surface-area-of-rectangular-solid"
      :title "Surface area of rectangular solid"
-     :category "Geometry — 3D: Rectangular Solid"
+     :category "Geometry — 3D: Rectangular solid"
      :expr (calcFunc-eq (var S var-S)
                         (* 2 (+ (+ (* (var l var-l) (var w var-w))
                                    (* (var w var-w) (var h var-h)))
@@ -1139,7 +1139,7 @@ singly elsewhere."
      :vars ((S . "surface area") (l . "length") (w . "width") (h . "height")))
     (:name "lateral-surface-area-of-rectangular-solid"
      :title "Lateral surface area of rectangular solid"
-     :category "Geometry — 3D: Rectangular Solid"
+     :category "Geometry — 3D: Rectangular solid"
      :expr (calcFunc-eq (var SL var-SL)
                         (* 2 (* (var h var-h)
                                 (+ (var l var-l) (var w var-w)))))
@@ -1148,7 +1148,7 @@ singly elsewhere."
             (h . "height")))
     (:name "diagonal-of-rectangular-solid"
      :title "Diagonal of rectangular solid"
-     :category "Geometry — 3D: Rectangular Solid"
+     :category "Geometry — 3D: Rectangular solid"
      :expr (calcFunc-eq (var d var-d)
                         (calcFunc-sqrt (+ (+ (^ (var l var-l) 2)
                                              (^ (var w var-w) 2))

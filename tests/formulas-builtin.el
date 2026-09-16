@@ -58,7 +58,7 @@
                       "Geometry — 2D: Triangle"
                       "Geometry — 3D: Coordinate space"
                       "Geometry — 3D: Cube"
-                      "Geometry — 3D: Rectangular Solid"
+                      "Geometry — 3D: Rectangular solid"
                       "Trigonometry — Angle sum and difference"
                       "Trigonometry — Double angle"
                       "Trigonometry — Even and odd"
