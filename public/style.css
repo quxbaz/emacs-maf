@@ -1,4 +1,4 @@
-:root { --bg: #fff; --fg: #1d1d1d; --muted: #777; --line: #e6e6e6; --accent: #b8860b; --mark: rgba(184, 134, 11, .18); --band: rgba(0, 0, 0, .05); --strong: #000; --tint: #e8f1fa; --mono: Monaco, Menlo, ui-monospace, Consolas, monospace; }
+:root { --bg: #fff; --fg: #1d1d1d; --muted: #777; --line: #e6e6e6; --accent: #b8860b; --mark: rgba(184, 134, 11, .18); --band: rgba(0, 0, 0, .05); --strong: #000; --tint: #e8f1fa; --ocean: #124a72; --on-ocean: #f4f9fd; --ocean-link: #9ad4fb; --mono: Monaco, Menlo, ui-monospace, Consolas, monospace; }
 @media (prefers-color-scheme: dark) { :root { --bg: #121214; --fg: #eaeaea; --muted: #8e8e93; --line: #2a2a2e; --accent: #daa520; --band: rgba(255, 255, 255, .06); --strong: #fff; --tint: #151a21; } }
 * { box-sizing: border-box; }
 html { color-scheme: light dark; }
@@ -46,16 +46,22 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
 .intro .lede { font-size: 1.15rem; margin-top: 59px; }
 .intro .lede p { margin: 0; }
 /* The line that opens out to the rest of the suite follows the
-   examples, set off by a bar of blue down its left. */
-.intro .more { position: relative; margin: 51px 0 0; border-left: 6px solid hsl(205 80% 42% / 1); padding: 4px 0 4px 20px; }
+   examples, set off as a panel on a deep ocean blue: the page's own
+   blue hue taken down to a quarter lightness, so it is the band's
+   color at depth rather than a second one. It is the one dark thing
+   on the fold, which is what makes it read as a door. The color runs
+   dark enough in both schemes to need no counterpart, so the panel
+   carries its own text and link colors rather than the page's. */
+.intro .more { position: relative; margin: 51px 0 0; background: var(--ocean); color: var(--on-ocean); border-radius: 8px; padding: 14px 20px; }
 /* A small caret a little under the middle of the line points on down
-   the page, in the bar's blue: a triangle made of borders. */
-.intro .more::after { content: ""; position: absolute; top: calc(100% + 10px); left: 50%; transform: translateX(-50%); border: 10px solid transparent; border-top: 10px solid hsl(205 80% 42% / 1); border-bottom: 0; }
+   the page, in the panel's own blue: a triangle made of borders. */
+.intro .more::after { content: ""; position: absolute; top: calc(100% + 10px); left: 50%; transform: translateX(-50%); border: 10px solid transparent; border-top: 10px solid var(--ocean); border-bottom: 0; }
 .intro .more p { margin: 0; }
 /* Each feature named in the line links to its figure below, marked
-   by color alone: the bar's blue, darker on hover. */
-.intro .more a { color: hsl(205 80% 42% / 1); text-decoration: none; }
-.intro .more a:hover { color: hsl(205 80% 30% / 1); }
+   by color alone: a pale blue off the panel's ground, lighter on
+   hover. */
+.intro .more a { color: var(--ocean-link); text-decoration: none; }
+.intro .more a:hover { color: #cfe8fd; }
 .intro .col strong { color: var(--strong); font-weight: 600; }
 /* The description under each example reads as a caption, not body
    copy: a step smaller and muted, its label leading in bold. The pane
