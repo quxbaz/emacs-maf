@@ -54,6 +54,8 @@
                       "Algebra — Radicals"
                       "Geometry — 2D: Circle"
                       "Geometry — 2D: Coordinate plane"
+                      "Geometry — 2D: Segments"
+                      "Geometry — 2D: Triangle"
                       "Geometry — 3D: Coordinate space"
                       "Geometry — 3D: Cube"
                       "Geometry — 3D: Rectangular Solid"
@@ -81,7 +83,8 @@
                 "pythagorean-identity"
                 "cosecant-as-a-reciprocal" "volume-of-rectangular-solid"
                 "distance-formula" "distance-formula-in-space"
-                "circumference-of-circle")))
+                "circumference-of-circle" "pythagorean-theorem"
+                "segment-addition-postulate")))
 
   ;; `maf-formulas--all' is the shipped set and then the user's, so a
   ;; library of one's own extends the menu rather than replacing it.
