@@ -1209,6 +1209,21 @@ singly elsewhere."
      :doc "Circumference of a circle from its radius: two pi times the radius."
      :vars ((C . "circumference") (r . "radius"))
      :examples ("A circle of radius 3 has circumference 6 pi."))
+    (:name "area-of-circle"
+     :title "Area of circle"
+     :category "Geometry — 2D: Circle"
+     :expr (calcFunc-eq (var A var-A) (* (var pi var-pi) (^ (var r var-r) 2)))
+     :doc "Area of a circle from its radius: pi times the radius squared."
+     :vars ((A . "area") (r . "radius"))
+     :examples ("A circle of radius 3 has area 9 pi."))
+    (:name "arc-length"
+     :title "Arc length"
+     :category "Geometry — 2D: Circle"
+     :expr (calcFunc-eq (var s var-s) (* (var r var-r) (var a var-a)))
+     :doc "Length of a circular arc: the radius times the central angle, \
+the angle in radians."
+     :vars ((s . "arc length") (r . "radius") (a . "central angle (radians)"))
+     :examples ("Radius 4 through a quarter turn, pi/2, gives an arc of 2 pi."))
     (:name "pythagorean-theorem"
      :title "Pythagorean theorem"
      :category "Geometry — 2D: Triangle"

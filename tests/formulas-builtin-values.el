@@ -93,7 +93,11 @@
            (x2 . "4") (y2 . "6") (z2 . "15"))
           ;; The circle of radius 3. The pi in its circumference is
           ;; substituted with the rest.
-          ("circumference-of-circle" (C . "6 pi") (r . "3"))))
+          ("circumference-of-circle" (C . "6 pi") (r . "3"))
+          ("area-of-circle" (A . "9 pi") (r . "3"))
+          ;; A quarter turn of that circle: the angle in radians, as
+          ;; the formula wants it.
+          ("arc-length" (s . "3 pi / 2") (r . "3") (a . "pi / 2"))))
 
   (defun blv--subst (expr vals)
     "EXPR with each variable in VALS replaced by its number.
