@@ -164,17 +164,24 @@ mark { background: var(--mark); color: inherit; }
 .muted { color: var(--muted); font-size: .95rem; }
 a { color: var(--accent); }
 h2 { font-size: 1.25rem; letter-spacing: -.01em; margin: 1.2em 0 .4em; }
-/* The gallery: each figure is a title over a row, the text at the left
-   and the picture at the right, at 2:3. One column where the row would
-   not fit. */
-.shots figure { display: grid; grid-template-columns: 2fr 3fr; gap: 6px 28px; align-items: start; margin: 0 0 2.2em; }
-.shots h3 { grid-column: 1 / -1; margin: 0; font-size: 1.05rem; font-weight: 600; letter-spacing: -.01em; }
-.shots figcaption { color: var(--fg); }
-/* Each picture links to itself at full size, in a new tab. */
+/* The gallery: three tiles across, each a picture of one height over
+   its title and text. Every feature is the same size, so the section
+   is a wall of them rather than a run of rows, and a dozen features
+   fit in a couple of screens. Two across, then one, as the width
+   goes. */
+.shots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 26px 24px; }
+.shots figure { margin: 0; }
+.shots h3 { margin: 0 0 .25em; font-size: 1.05rem; font-weight: 600; letter-spacing: -.01em; }
+.shots figcaption { margin-bottom: 10px; font-size: .92rem; line-height: 1.45; color: var(--muted); }
+/* Each picture links to itself at full size, in a new tab. In the
+   tile it is cropped to its top. A short stack pane is fitted whole
+   instead, since a crop would blow it up, and the pane's own ground
+   fills what is left. */
 .shots a { display: block; }
-.shots img { display: block; width: 100%; height: auto; border-radius: 8px; background: #121214; }
+.shots img { display: block; width: 100%; height: 190px; object-fit: cover; object-position: top left; border-radius: 8px; background: #121214; }
+.shots .fit img { object-fit: contain; }
 /* A figure whose picture is still to come shows a blank pane of the
-   same ground, at the proportions of the others. */
-.shots .placeholder { width: 100%; aspect-ratio: 5 / 2; border-radius: 8px; background: #121214; }
-.shots .tall img { max-height: 560px; object-fit: cover; object-position: top; }
-@media (max-width: 760px) { .shots figure { grid-template-columns: 1fr; } }
+   same ground, at the size of the others. */
+.shots .placeholder { width: 100%; height: 190px; border-radius: 8px; background: #121214; }
+@media (max-width: 960px) { .shots { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px) { .shots { grid-template-columns: 1fr; } }
