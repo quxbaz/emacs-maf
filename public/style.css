@@ -213,7 +213,7 @@ mark { background: var(--mark); color: inherit; }
 .muted { color: var(--muted); font-size: .95rem; }
 a { color: var(--accent); }
 h2 { font-size: 1.25rem; letter-spacing: -.01em; margin: 1.2em 0 .4em; }
-/* Every feature has a short summary; screenshots expand for inspection. */
+/* Every feature has a short summary. */
 .features-heading { margin-bottom: 28px; }
 .features-heading h2 { margin: 0 0 8px; font-size: 2rem; letter-spacing: -.03em; line-height: 1.2; }
 .features-heading p { margin: 0; color: var(--muted); font-size: 1rem; }
@@ -222,25 +222,8 @@ h2 { font-size: 1.25rem; letter-spacing: -.01em; margin: 1.2em 0 .4em; }
 .feature-overview > section:nth-child(n+4) { border-top: 1px solid var(--grid-line); padding-top: 16px; }
 .feature-overview h3 { margin: 0 0 8px; font-size: 1rem; font-weight: 600; letter-spacing: -.01em; }
 .feature-overview p { margin: 0; font-size: .92rem; line-height: 1.55; }
-.feature-overview > section:has(.feature-shot) p { flex: 1; }
 .feature-overview .key-sequence { white-space: nowrap; }
 .feature-overview code { font-family: var(--mono); font-size: .9em; }
-.feature-shot { display: flex; align-items: center; justify-content: center; height: 126px; flex-shrink: 0; margin-top: 16px; border-radius: 6px; background: #121214; overflow: hidden; cursor: zoom-in; }
-.feature-shot img { display: block; width: 100%; height: 100%; object-fit: contain; }
-/* Show the top of long menus in thumbnails; the dialog shows them whole. */
-.feature-shot.menu img { object-fit: cover; object-position: top; }
-.feature-shot:hover { outline: 2px solid var(--link-2); outline-offset: 3px; }
-.feature-shot:focus-visible, .feature-viewer :is(a, button):focus-visible { outline: 2px solid var(--link-2); outline-offset: 4px; }
-/* The dialog keeps the full screenshot visible and offers its original size. */
-.feature-viewer { width: min(1280px, calc(100vw - 40px)); max-width: none; max-height: calc(100dvh - 40px); padding: 20px; border: 1px solid var(--grid-line); border-radius: 12px; background: var(--bg); color: var(--fg); }
-.feature-viewer::backdrop { background: rgb(0 0 0 / .75); }
-.feature-viewer header { display: flex; align-items: center; gap: 20px; margin-bottom: 16px; }
-.feature-viewer h2 { flex: 1; margin: 0; font-size: 1.1rem; }
-.feature-viewer .original { color: var(--link-2); font-size: .9rem; text-underline-offset: .2em; }
-.feature-viewer form { margin: 0; }
-.feature-viewer button { font: inherit; font-size: .9rem; background: var(--bg); color: var(--fg); border: 1px solid var(--muted); border-radius: 5px; padding: 5px 12px; cursor: pointer; }
-.feature-viewer > img { display: block; width: 100%; max-height: calc(100dvh - 140px); object-fit: contain; background: #121214; }
-html:has(.feature-viewer[open]) { overflow: hidden; }
 @media (max-width: 960px) {
   .feature-overview { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; padding: 24px; }
   .feature-overview > section:nth-child(n+3) { border-top: 1px solid var(--grid-line); padding-top: 16px; }
@@ -248,10 +231,4 @@ html:has(.feature-viewer[open]) { overflow: hidden; }
 @media (max-width: 640px) {
   .feature-overview { grid-template-columns: 1fr; padding: 22px; }
   .feature-overview > section:nth-child(n+2) { border-top: 1px solid var(--grid-line); padding-top: 16px; }
-  .feature-viewer { width: calc(100vw - 20px); padding: 14px; }
-  .feature-viewer header { flex-wrap: wrap; gap: 12px; }
-  .feature-viewer h2 { flex-basis: calc(100% - 90px); }
-  .feature-viewer form { order: 1; }
-  .feature-viewer .original { order: 2; flex-basis: 100%; }
-  .feature-viewer > img { max-height: calc(100dvh - 180px); }
 }
