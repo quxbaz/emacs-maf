@@ -44,7 +44,7 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
    common margin would count in the rows, so here they give it up.
    The gutter between the columns is a column of the grid itself,
    since the brace is drawn in it. */
-.intro .col { display: grid; grid-template-columns: minmax(0, 2fr) 110px minmax(0, 3fr); grid-template-rows: auto auto minmax(20px, 1fr) auto minmax(20px, 1fr) auto minmax(20px, 1fr); }
+.intro .col { display: grid; grid-template-columns: minmax(0, 2fr) 110px minmax(0, 3fr); grid-template-rows: auto auto minmax(20px, 1fr) auto minmax(53px, 1fr) auto minmax(20px, 1fr); }
 .intro .col > .layer { grid-column: 1; margin-bottom: 0; }
 .intro .col > .layer:nth-child(1) { grid-row: 1; }
 .intro .col > .layer:nth-child(2) { grid-row: 2; }
@@ -96,6 +96,13 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
 .intro .more a { color: var(--link-2); text-decoration: none; }
 .intro .more a:hover { text-decoration: underline; text-underline-offset: .15em; }
 .intro .more p::after { content: ""; display: inline-block; margin-left: .45em; vertical-align: middle; border: 6px solid transparent; border-top: 8px solid var(--on-panel-2); border-bottom: 0; }
+/* Between the two panels a short trail of dots, in the brace's blue,
+   leads the eye from the one down to the other. It stands in the
+   flexible row between them, centered in it, and that row's floor is
+   raised so the trail keeps air on either side when the prose is the
+   taller. Narrow, the examples come between the panels, so it goes. */
+.intro .col > .trail { grid-column: 1; grid-row: 5; align-self: center; justify-self: center; display: grid; gap: 7px; padding: 12px 0; }
+.intro .trail i { display: block; width: 5px; height: 5px; border-radius: 50%; background: var(--brace); }
 .intro .col strong { color: var(--strong); font-weight: 600; }
 /* On the panel the lede's first line is set apart by color alone, a
    light blue of the panel's own hue, at the text's normal weight. */
@@ -118,7 +125,7 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
 /* Narrow, the column is one again: the examples follow the lede,
    the brace has nothing to gather them toward, and the closing line
    ends the fold. */
-@media (max-width: 960px) { .intro .col { grid-template-columns: 1fr; grid-template-rows: none; } .intro .col > :is(.layer, .pair, .more):nth-child(n) { grid-column: 1; grid-row: auto; } .intro .col > .pair { max-width: 720px; margin-top: 34px; } .intro .col > .brace:nth-child(n) { display: none; } .intro .col > .lede { margin-top: 40px; } .intro .col > .more { margin-top: 40px; } }
+@media (max-width: 960px) { .intro .col { grid-template-columns: 1fr; grid-template-rows: none; } .intro .col > :is(.layer, .pair, .more):nth-child(n) { grid-column: 1; grid-row: auto; } .intro .col > .pair { max-width: 720px; margin-top: 34px; } .intro .col > :is(.brace, .trail):nth-child(n) { display: none; } .intro .col > .lede { margin-top: 40px; } .intro .col > .more { margin-top: 40px; } }
 .examples { background: var(--tint); padding: 2.6em 0 100px; }
 .examples .col { max-width: 1560px; }
 /* The section's heading is set like the page title. */
