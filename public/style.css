@@ -221,7 +221,7 @@ h2 { font-size: 1.25rem; letter-spacing: -.01em; margin: 1.2em 0 .4em; }
 .feature-overview { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--grid-line); border: 1px solid var(--grid-line); border-radius: 12px; overflow: hidden; }
 .feature-overview > * { padding: 24px 28px; background: var(--bg); }
 .feature-overview > section { display: flex; flex-direction: column; min-width: 0; scroll-margin-top: 28px; }
-.feature-overview h3 { margin: 0 0 8px; font-size: 1rem; font-weight: 600; letter-spacing: -.01em; }
+.feature-overview h3 { margin: 0 0 8px; font-size: 1rem; font-weight: 600; letter-spacing: -.01em; color: var(--link-2); text-decoration: underline; text-underline-offset: .2em; }
 .feature-overview p { margin: 0; font-size: .92rem; line-height: 1.55; }
 .feature-overview .key-sequence { white-space: nowrap; }
 .feature-overview code { font-family: var(--mono); font-size: .9em; }
