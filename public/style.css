@@ -1,5 +1,5 @@
-:root { --bg: #fff; --fg: #1d1d1d; --muted: #777; --line: #e6e6e6; --accent: #b8860b; --mark: rgba(184, 134, 11, .18); --band: rgba(0, 0, 0, .05); --strong: #000; --tint: #e8f1fa; --panel: #124a72; --on-panel: #f4f9fd; --panel-link: hsl(205 73% 66%); --brace: hsl(205 67% 72%); --panel-2: hsl(45 62% 92%); --on-panel-2: var(--fg); --link-2: #124a72; --more-lead: hsl(32 28% 50%); --grid-line: rgba(18, 74, 114, .14); --mono: Monaco, Menlo, ui-monospace, Consolas, monospace; }
-@media (prefers-color-scheme: dark) { :root { --bg: #121214; --fg: #eaeaea; --muted: #8e8e93; --line: #2a2a2e; --accent: #daa520; --band: rgba(255, 255, 255, .06); --strong: #fff; --tint: #151a21; --panel-2: hsl(42 18% 22%); --link-2: hsl(205 73% 66%); --more-lead: hsl(32 28% 66%); --grid-line: rgba(255, 255, 255, .09); } }
+:root { --bg: #fff; --fg: #1d1d1d; --muted: #777; --line: #e6e6e6; --accent: #b8860b; --mark: rgba(184, 134, 11, .18); --band: rgba(0, 0, 0, .05); --strong: #000; --tint: #e8f1fa; --panel: #124a72; --on-panel: #f4f9fd; --panel-link: hsl(205 73% 66%); --brace: hsl(205 67% 72%); --panel-2: hsl(45 62% 92%); --on-panel-2: var(--fg); --link-2: #124a72; --more-lead: hsl(32 28% 50%); --grid-line: #cadae7; --mono: Monaco, Menlo, ui-monospace, Consolas, monospace; }
+@media (prefers-color-scheme: dark) { :root { --bg: #121214; --fg: #eaeaea; --muted: #8e8e93; --line: #2a2a2e; --accent: #daa520; --band: rgba(255, 255, 255, .06); --strong: #fff; --tint: #151a21; --panel-2: hsl(42 18% 22%); --link-2: hsl(205 73% 66%); --more-lead: hsl(32 28% 66%); --grid-line: #2a2f35; } }
 * { box-sizing: border-box; }
 html { color-scheme: light dark; }
 body { margin: 0; background: var(--bg); color: var(--fg); font: 19px/1.55 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
@@ -134,8 +134,14 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
    the brace has nothing to gather them toward, and the closing line
    ends the fold. */
 @media (max-width: 960px) { .intro .col { grid-template-columns: 1fr; grid-template-rows: none; } .intro .col > :is(.layer, .pair, .more):nth-child(n) { grid-column: 1; grid-row: auto; } .intro .col > .pair { max-width: 720px; margin-top: 34px; } .intro .pair > .brace, .intro .col > .trail { display: none; } .intro .col > .lede { margin-top: 40px; } .intro .col > .more { margin-top: 40px; } }
+/* The features' wall of cells is ruled to its own edges, so the
+   column gives up its cap and its side padding and the wall sets its
+   own width: most of the page's, up to a cap, centered, and the whole
+   of it once the page is narrow. */
 .examples { background: var(--tint); padding: 2.6em 0 100px; }
-.examples .col { max-width: 1560px; }
+.examples .col { max-width: none; padding-inline: 0; }
+.examples .shots { width: min(92%, 1480px); margin: 0 auto; }
+@media (max-width: 960px) { .examples { padding-bottom: 0; } .examples .shots { width: 100%; } }
 /* The section's heading is set like the page title. */
 .examples .title { text-align: center; font-size: 1.9rem; letter-spacing: -.02em; line-height: 1.2; margin: 0 0 .8em; }
 /* The worked examples, back on the page's ground, as wide as the
@@ -214,51 +220,36 @@ mark { background: var(--mark); color: inherit; }
 .muted { color: var(--muted); font-size: .95rem; }
 a { color: var(--accent); }
 h2 { font-size: 1.25rem; letter-spacing: -.01em; margin: 1.2em 0 .4em; }
-/* The gallery: three tiles across, each a picture of one height over
-   its title and text. Every feature is the same size, so the section
-   is a wall of them rather than a run of rows, and a dozen features
-   fit in a couple of screens. Two across, then one, as the width
-   goes. */
-.shots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 44px 40px; }
-.shots figure { margin: 0; }
-.shots h3 { margin: 12px 0 4px; font-size: 1.05rem; font-weight: 600; letter-spacing: -.01em; }
+/* The gallery: three tiles across the whole page, each a picture of
+   one shape over its title and text. Every feature is the same size,
+   so the section is a wall of them rather than a run of rows. Two
+   across, then one, as the width goes. */
+.shots { display: grid; grid-template-columns: repeat(3, 1fr); --cols: 3; }
+.shots figure { margin: 0; padding: 40px 44px 48px; }
+.shots h3 { margin: 16px 0 4px; font-size: 1.05rem; font-weight: 600; letter-spacing: -.01em; }
 .shots figcaption { font-size: .92rem; line-height: 1.45; color: var(--muted); }
 /* Each picture links to itself at full size, in a new tab. In the
-   tile it is cropped to its top. A short stack pane is fitted whole
-   instead, since a crop would blow it up, and the pane's own ground
-   fills what is left. */
+   tile it is cropped to its top, in a frame of one proportion at any
+   width. A short stack pane is fitted whole instead, since a crop
+   would blow it up, and the pane's own ground fills what is left. */
 .shots a { display: block; }
-.shots img { display: block; width: 100%; height: 190px; object-fit: cover; object-position: top left; border-radius: 8px; background: #121214; }
+.shots img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 10; object-fit: cover; object-position: top left; border-radius: 8px; background: #121214; }
 .shots .fit img { object-fit: contain; }
 /* A figure whose picture is still to come shows a blank pane of the
-   same ground, at the size of the others. */
-.shots .placeholder { width: 100%; height: 190px; border-radius: 8px; background: #121214; }
-/* Hairlines part the tiles, down the middle of each gap. Each tile
-   draws the line to its right and the line under it, only where a
-   neighbor is there to be parted from: a right line unless the tile
-   ends its row or the run, a bottom line unless the tile is in the
-   last row, which is the last three tiles in three columns. The
-   right line runs on through the row gap below when a row follows,
-   and the bottom line on through the column gap, so the lines
-   cross. */
-.shots figure { position: relative; }
-.shots figure::before, .shots figure::after { content: ""; position: absolute; background: var(--grid-line); }
-.shots figure:not(:nth-child(3n)):not(:last-child)::before { top: 0; bottom: 0; right: -20px; width: 1px; }
-.shots figure:not(:nth-child(3n)):not(:last-child):not(:nth-last-child(-n+3))::before { bottom: -44px; }
-.shots figure:not(:nth-last-child(-n+3))::after { left: 0; right: -40px; bottom: -22px; height: 1px; }
-.shots figure:nth-child(3n):not(:nth-last-child(-n+3))::after { right: 0; }
-/* Two across, the same with the row two tiles long; one across, the
-   bottom lines alone. */
-@media (max-width: 960px) {
-  .shots { grid-template-columns: 1fr 1fr; }
-  .shots figure::before, .shots figure::after { display: none; }
-  .shots figure:not(:nth-child(2n)):not(:last-child)::before { display: block; top: 0; bottom: 0; right: -20px; width: 1px; }
-  .shots figure:not(:nth-child(2n)):not(:last-child):not(:nth-last-child(-n+2))::before { bottom: -44px; }
-  .shots figure:not(:nth-last-child(-n+2))::after { display: block; left: 0; right: -40px; bottom: -22px; height: 1px; }
-  .shots figure:nth-child(2n):not(:nth-last-child(-n+2))::after { right: 0; }
-}
-@media (max-width: 560px) {
-  .shots { grid-template-columns: 1fr; }
-  .shots figure::before, .shots figure::after { display: none; }
-  .shots figure:not(:last-child)::after { display: block; left: 0; right: 0; bottom: -22px; height: 1px; }
-}
+   same ground, in the shape of the others. */
+.shots .placeholder { width: 100%; aspect-ratio: 16 / 10; border-radius: 8px; background: #121214; }
+/* Hairlines rule the wall into cells, edge to edge, and through the
+   cells a short last row leaves empty. The wall is bordered all
+   round. The lines across are each tile's bottom border, so a tile is
+   underlined whether or not one stands under it; a tile gives up a
+   pixel of its row so that the last row's line falls on the wall's
+   own. The lines down are the wall's background, one at the left of
+   every column, shifted a pixel out so the first falls on the wall's
+   left border. Lines lie over one another in places, so the color is
+   opaque: a translucent one would double there. */
+.shots { border: 1px solid var(--grid-line); background: linear-gradient(to right, var(--grid-line) 1px, transparent 1px) -1px 0 / calc(100% / var(--cols)) 100% padding-box; }
+.shots figure { border-bottom: 1px solid var(--grid-line); margin-bottom: -1px; }
+/* Two across; one across, with no lines down and the cells' side
+   padding at the page's margin. */
+@media (max-width: 960px) { .shots { grid-template-columns: 1fr 1fr; --cols: 2; } .shots figure { padding: 32px 28px 38px; } }
+@media (max-width: 560px) { .shots { grid-template-columns: 1fr; background: none; } .shots figure { padding: 30px 22px 34px; } }
