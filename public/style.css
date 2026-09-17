@@ -43,7 +43,7 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
    keeps a floor, for when the prose is the taller. The layers'
    common margin would count in the rows, so here they give it up.
    The gutter between the columns is a column of the grid itself,
-   since the brace is drawn in it in pieces placed by row. */
+   since the brace is drawn in it. */
 .intro .col { display: grid; grid-template-columns: minmax(0, 2fr) 110px minmax(0, 3fr); grid-template-rows: auto auto minmax(20px, 1fr) auto minmax(20px, 1fr) auto minmax(20px, 1fr); }
 .intro .col > .layer { grid-column: 1; margin-bottom: 0; }
 .intro .col > .layer:nth-child(1) { grid-row: 1; }
@@ -53,28 +53,15 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
 .intro .col > .pair { grid-column: 3; grid-row: 2 / 8; align-self: start; margin-top: calc(-1 * (.8 * 1.9rem + 58px) / 2); }
 /* A brace down the examples' left, in a line tone of the panel's
    blue, gathers the two as the pair the lede names, and a line runs
-   from the panel's caret to its cusp. It is drawn as borders on
-   three pieces in the gutter column, each spanning the rows beside
-   it: the top piece from the examples' top edge, which it is lifted
-   to, down to the panel's row; the middle piece the panel's row
-   alone, so its cusp, at its own middle, is at the panel's middle
-   whatever stands above; the bottom piece the rows below to the
-   examples' foot, and each reaches 10px past its edge, so the brace
-   stands a little taller than what it holds. The stem stands 40px
-   from the examples. The top and bottom pieces curl toward them. */
-.intro .col > .brace { grid-column: 2; --line: 2px solid var(--panel-line); width: 12px; }
-.intro .col > .brace.top { grid-row: 2 / 4; margin-left: 70px; margin-top: calc(-1 * (.8 * 1.9rem + 58px) / 2 - 10px); border-left: var(--line); border-top: var(--line); border-top-left-radius: 12px; }
-.intro .col > .brace.bottom { grid-row: 5 / 8; margin-left: 70px; margin-bottom: -10px; border-left: var(--line); border-bottom: var(--line); border-bottom-left-radius: 12px; }
-/* The middle piece reaches from the caret to the stem. Its cusp,
-   with the line from the caret, is one stroked path, so the curls
-   and the line meet in a single stroke drawn in one pass, with no
-   seam where separate edges would overlap. It is a fixed 26px tall,
-   centered in the piece, and the rest of the stem above and below
-   it is drawn in CSS, where a straight line lands on the same pixels
-   as the path's. */
-.intro .col > .brace.mid { grid-row: 4; margin-left: 10px; width: 62px; display: grid; grid-template-rows: 1fr 26px 1fr; }
-.intro .col > .brace.mid::before, .intro .col > .brace.mid::after { content: ""; justify-self: end; width: 12px; border-right: var(--line); }
-.intro .col > .brace.mid svg { display: block; fill: none; stroke: var(--panel-line); stroke-width: 2px; stroke-linejoin: round; }
+   from the panel's edge to its cusp. It is one SVG in the gutter
+   column, spanning the examples' rows and lifted with them, reaching
+   10px past either edge so it stands a little taller than what it
+   holds. Its path is written by brace.js from where the panel lies,
+   as one stroke, so nothing seams at any device scale. The SVG fills
+   a box that is the grid item, since a box stretches to its rows and
+   an SVG on its own would keep a default height. */
+.intro .col > .brace { grid-column: 2; grid-row: 2 / 8; margin-top: calc(-1 * (.8 * 1.9rem + 58px) / 2 - 10px); margin-bottom: -10px; }
+.intro .col > .brace svg { display: block; width: 100%; height: 100%; overflow: visible; fill: none; stroke: var(--panel-line); stroke-width: 2px; stroke-linejoin: round; }
 /* The source link keeps to the fold's upper right, on the content
    column's right edge while there is room, the page's margin after. It
    is drawn at full strength: a faded mark reads as a disabled one. */
