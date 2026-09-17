@@ -1,5 +1,5 @@
-:root { --bg: #fff; --fg: #1d1d1d; --muted: #777; --line: #e6e6e6; --accent: #b8860b; --mark: rgba(184, 134, 11, .18); --band: rgba(0, 0, 0, .05); --strong: #000; --tint: #e8f1fa; --ocean: #124a72; --on-ocean: #f4f9fd; --ocean-link: #9ad4fb; --mono: Monaco, Menlo, ui-monospace, Consolas, monospace; }
-@media (prefers-color-scheme: dark) { :root { --bg: #121214; --fg: #eaeaea; --muted: #8e8e93; --line: #2a2a2e; --accent: #daa520; --band: rgba(255, 255, 255, .06); --strong: #fff; --tint: #151a21; } }
+:root { --bg: #fff; --fg: #1d1d1d; --muted: #777; --line: #e6e6e6; --accent: #b8860b; --mark: rgba(184, 134, 11, .18); --band: rgba(0, 0, 0, .05); --strong: #000; --tint: #e8f1fa; --panel: #dae7f3; --panel-line: #8fb0cb; --mono: Monaco, Menlo, ui-monospace, Consolas, monospace; }
+@media (prefers-color-scheme: dark) { :root { --bg: #121214; --fg: #eaeaea; --muted: #8e8e93; --line: #2a2a2e; --accent: #daa520; --band: rgba(255, 255, 255, .06); --strong: #fff; --tint: #151a21; --panel: #1b2836; --panel-line: #4a6c8a; } }
 * { box-sizing: border-box; }
 html { color-scheme: light dark; }
 body { margin: 0; background: var(--bg); color: var(--fg); font: 19px/1.55 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
@@ -28,6 +28,53 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
    shrinks an item to its content, so it is held at full width and
    capped by max-width instead. */
 .intro .col { position: relative; z-index: 1; width: 100%; max-width: 1240px; }
+/* The column is two: the title, the paragraph, the lede's panel and
+   the closing line down the left, the pair of examples stacked down
+   the right, at two to three: the examples are what the fold shows,
+   so they take the larger share, and the prose is held to its
+   measure. The examples' top edge sits at the midpoint of the gap
+   between the title and the paragraph under it: they share the
+   paragraph's row and are lifted by half the gap, which is the
+   title's own margin plus its layer's. They span the rest of the
+   prose's rows. Between those rows, and under the last, is a
+   flexible one: the three share whatever height the examples have
+   over the prose, so the panel stands as far under the paragraph as
+   the line does under the panel and over the examples' foot. Each
+   keeps a floor, for when the prose is the taller. The layers'
+   common margin would count in the rows, so here they give it up.
+   The gutter between the columns is a column of the grid itself,
+   since the brace is drawn in it in pieces placed by row. */
+.intro .col { display: grid; grid-template-columns: minmax(0, 2fr) 110px minmax(0, 3fr); grid-template-rows: auto auto minmax(20px, 1fr) auto minmax(20px, 1fr) auto minmax(20px, 1fr); }
+.intro .col > .layer { grid-column: 1; margin-bottom: 0; }
+.intro .col > .layer:nth-child(1) { grid-row: 1; }
+.intro .col > .layer:nth-child(2) { grid-row: 2; }
+.intro .col > .lede { grid-row: 4; }
+.intro .col > .more { grid-row: 6; }
+.intro .col > .pair { grid-column: 3; grid-row: 2 / 8; align-self: start; margin-top: calc(-1 * (.8 * 1.9rem + 58px) / 2); }
+/* A brace down the examples' left, in a line tone of the panel's
+   blue, gathers the two as the pair the lede names, and a line runs
+   from the panel's caret to its cusp. It is drawn as borders on
+   three pieces in the gutter column, each spanning the rows beside
+   it: the top piece from the examples' top edge, which it is lifted
+   to, down to the panel's row; the middle piece the panel's row
+   alone, so its cusp, at its own middle, is at the panel's middle
+   whatever stands above; the bottom piece the rows below to the
+   examples' foot, and each reaches 10px past its edge, so the brace
+   stands a little taller than what it holds. The stem stands 40px
+   from the examples. The top and bottom pieces curl toward them. */
+.intro .col > .brace { grid-column: 2; --line: 2px solid var(--panel-line); width: 12px; }
+.intro .col > .brace.top { grid-row: 2 / 4; margin-left: 70px; margin-top: calc(-1 * (.8 * 1.9rem + 58px) / 2 - 10px); border-left: var(--line); border-top: var(--line); border-top-left-radius: 12px; }
+.intro .col > .brace.bottom { grid-row: 5 / 8; margin-left: 70px; margin-bottom: -10px; border-left: var(--line); border-bottom: var(--line); border-bottom-left-radius: 12px; }
+/* The middle piece reaches from the caret to the stem. Its cusp,
+   with the line from the caret, is one stroked path, so the curls
+   and the line meet in a single stroke drawn in one pass, with no
+   seam where separate edges would overlap. It is a fixed 26px tall,
+   centered in the piece, and the rest of the stem above and below
+   it is drawn in CSS, where a straight line lands on the same pixels
+   as the path's. */
+.intro .col > .brace.mid { grid-row: 4; margin-left: 10px; width: 62px; display: grid; grid-template-rows: 1fr 26px 1fr; }
+.intro .col > .brace.mid::before, .intro .col > .brace.mid::after { content: ""; justify-self: end; width: 12px; border-right: var(--line); }
+.intro .col > .brace.mid svg { display: block; fill: none; stroke: var(--panel-line); stroke-width: 2px; stroke-linejoin: round; }
 /* The source link keeps to the fold's upper right, on the content
    column's right edge while there is room, the page's margin after. It
    is drawn at full strength: a faded mark reads as a disabled one. */
@@ -40,34 +87,26 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
 /* The title stands clear of the examples under it. */
 .intro .col > .layer:first-child { margin-bottom: 58px; }
 /* The line that names what the examples show: a bold line in the
-   lede's own face and leading, not a heading. The lede stands as far
-   under the paragraph above as that paragraph stands under the title,
-   so the layer before it gives up its margin and its paragraph's and
-   the lede carries the whole gap itself. */
-.intro .col > .layer:has(+ .lede) { margin-bottom: 0; }
+   lede's own face and leading, not a heading, set as a panel on a
+   wash of the page's blue, a shade deeper than the band below so it
+   reads on the fold's ground. A caret made of borders, in the same
+   wash, points right from its side at the examples. The paragraph
+   above gives up its margin, so the grid sets the gap between
+   them. */
 .intro .col > .layer:has(+ .lede) p { margin-bottom: 0; }
-.intro .lede { font-size: 1.15rem; margin-top: 59px; }
+.intro .lede { position: relative; font-size: 1.15rem; background: var(--panel); border-radius: 8px; padding: 22px 20px; }
 .intro .lede p { margin: 0; }
-/* The line that opens out to the rest of the suite follows the
-   examples, set off as a panel on a deep ocean blue: the page's own
-   blue hue taken down to a quarter lightness, so it is the band's
-   color at depth rather than a second one. It is the one dark thing
-   on the fold, which is what makes it read as a door. The color runs
-   dark enough in both schemes to need no counterpart, so the panel
-   carries its own text and link colors rather than the page's. The
-   caret under it hangs outside the panel's box, so the panel keeps a
-   bottom margin of the caret's whole reach, and centering the column
-   in the fold centers the caret's tip with it. */
-.intro .more { position: relative; margin: 51px 0 20px; background: var(--ocean); color: var(--on-ocean); border-radius: 8px; padding: 14px 20px; }
-/* A small caret a little under the middle of the line points on down
-   the page, in the panel's own blue: a triangle made of borders. */
-.intro .more::after { content: ""; position: absolute; top: calc(100% + 10px); left: 50%; transform: translateX(-50%); border: 10px solid transparent; border-top: 10px solid var(--ocean); border-bottom: 0; }
+.intro .lede::after { content: ""; position: absolute; left: 100%; top: 50%; transform: translateY(-50%); border: 10px solid transparent; border-left-color: var(--panel); border-right: 0; }
+/* The line that opens out to the rest of the suite follows, in plain
+   text, and ends in a small caret pointing on down the page, a
+   triangle made of borders in the text's own color. */
 .intro .more p { margin: 0; }
-/* Each feature named in the line links to its figure below, marked
-   by color alone: a pale blue off the panel's ground, lighter on
-   hover. */
-.intro .more a { color: var(--ocean-link); text-decoration: none; }
-.intro .more a:hover { color: #cfe8fd; }
+/* The features it names link to their tiles below, in the text's
+   own color with a pale rule under them, so the line reads as a
+   sentence rather than a list of links. */
+.intro .more a { color: inherit; text-decoration-color: var(--panel-line); text-underline-offset: .15em; }
+.intro .more a:hover { text-decoration-color: var(--fg); }
+.intro .more p::after { content: ""; display: inline-block; margin-left: .45em; vertical-align: middle; border: 6px solid transparent; border-top: 8px solid var(--fg); border-bottom: 0; }
 .intro .col strong { color: var(--strong); font-weight: 600; }
 /* The description under each example reads as a caption, not body
    copy: a step smaller and muted, its label leading in bold. The pane
@@ -77,19 +116,17 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
 .intro .pair .cap .label { color: var(--strong); font-weight: 600; }
 /* A character named in the caption is set in the pane's own face, so
    the reader matches it to what is on screen above. */
-.intro .lede code, .intro .pair .cap code { font-family: var(--mono); font-size: .95em; color: var(--fg); }
-.intro .lede code { font-size: .8em; }
+.intro .pair .cap code { font-family: var(--mono); font-size: .95em; color: var(--fg); }
 /* A character quoted from the pane is set off on the accent's own
    wash, so the eye finds it in the prose and again on the stack. */
-.intro .lede code, .intro .pair .cap code { background: var(--mark); border-radius: 4px; padding: .06em .36em; }
-/* The two examples: each is its text over its example, and the cells
-   share rows, so the examples line up whatever the text's height. On a
-   narrow screen they stack. */
-.intro .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 0 30px; max-width: 1040px; }
-.intro .pair > div { display: grid; grid-template-rows: subgrid; grid-row: span 2; }
-/* Stacked, the examples no longer need their own width, so they take
-   the text measure. */
-@media (max-width: 960px) { .intro .pair { grid-template-columns: 1fr; max-width: 720px; } .intro .pair > div { display: block; } }
+.intro .pair .cap code { background: var(--mark); border-radius: 4px; padding: .06em .36em; }
+/* The two examples, one over the other, each its pane over its
+   caption. */
+.intro .pair { display: grid; gap: 34px 0; }
+/* Narrow, the column is one again: the examples follow the lede,
+   whose caret then points down at them, the brace has nothing to
+   gather them toward, and the closing line ends the fold. */
+@media (max-width: 960px) { .intro .col { grid-template-columns: 1fr; grid-template-rows: none; } .intro .col > :is(.layer, .pair, .more):nth-child(n) { grid-column: 1; grid-row: auto; } .intro .col > .pair { max-width: 720px; margin-top: 34px; } .intro .col > .brace:nth-child(n) { display: none; } .intro .col > .lede { margin-top: 40px; } .intro .col > .more { margin-top: 40px; } .intro .lede::after { left: 50%; top: 100%; transform: translateX(-50%); border: 10px solid transparent; border-top-color: var(--panel); border-bottom: 0; } }
 .examples { background: var(--tint); padding: 2.6em 0 100px; }
 .examples .col { max-width: 1560px; }
 /* The section's heading is set like the page title. */
