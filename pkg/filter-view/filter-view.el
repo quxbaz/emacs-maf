@@ -934,8 +934,16 @@ frame's."
 (defun filter-view--split-p (win)
   "Non-nil when WIN was made for the detail pane rather than borrowed.
 `display-buffer' records that in the window's `quit-restore' parameter:
-a leading `window' means it created the window."
-  (eq (car-safe (window-parameter win 'quit-restore)) 'window))
+a leading `window' means it created the window, and the fourth element
+is the buffer it created it for. Both are checked. The head alone
+served through Emacs 30, where reusing a window overwrote the
+parameter; from 31 a reuse leaves it in place and records itself in
+`quit-restore-prev' instead, so a window split for another buffer and
+then borrowed for the pane still reads as created. Created for the
+pane means created for the pane's buffer."
+  (let ((qr (window-parameter win 'quit-restore)))
+    (and (eq (car-safe qr) 'window)
+         (eq (nth 3 qr) (window-buffer win)))))
 
 (defun filter-view--fit-detail (win)
   "Fit the detail pane WIN to the height its text needs.
