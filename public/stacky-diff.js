@@ -2,14 +2,14 @@
 //
 // The data is a plain object:
 //
-//   { before: <stacky stack>, after: <stacky stack>, keys: 'x', command: 'mafcmd-expand',
+//   { before: <stacky stack>, after: <stacky stack>, keys: 'x', label: 'expand', command: 'mafcmd-expand',
 //     caption: '<b>x</b> expands only that side', reveal: false, result: false,
 //     show: { before: { cursor: true, blink: false, highlight: true, home: true, header: true, change: false },
 //             after: { cursor: false, blink: false, highlight: false, home: true, header: true, change: true } } }
 //
 // Two panes side by side, or with `result` one pane: the stack before, the
-// keys typed on a line of their own, and on a last line after "=>" the entry
-// the command produced, its changed part in the accent color (the home dot
+// keys typed on a line of their own, or `label` as one key in their
+// place, and on a last line after "=>" the entry the command produced, its changed part in the accent color (the home dot
 // hidden unless asked for). The line above is `caption`, any HTML; without one it is
 // the keys and the command's name. `show` says whether each pane draws the
 // cursor and whether it blinks, the highlight, the home line and the header
@@ -42,8 +42,8 @@ export function fromScene(scene, { caption, show = {}, reveal = false, result = 
   if (i < 0) throw new Error('stacky-diff: the scene has no keys step')
   const before = (i > 0 ? steps[i - 1] : { state: { stack: stacky.stack() } }).state.stack
   const after = steps[steps.length - 1].state.stack
-  const { keys, command = '' } = steps[i].step
-  return { before, after, keys, command, caption, show, reveal, result }
+  const { keys, label = null, command = '' } = steps[i].step
+  return { before, after, keys, label, command, caption, show, reveal, result }
 }
 
 // The part of `to` that differs from `from`, as a highlight on `to`: the
@@ -104,7 +104,7 @@ export function mount(el, ab) {
     const pane = document.createElement('div'); pane.className = 'side before'
     el.append(pane)
     const draw = stacky.pane(pane, undefined, b.show)
-    const full = stacky.setKeys(stacky.setResult(b.stack, result(ab)), ab.keys)
+    const full = stacky.setKeys(stacky.setResult(b.stack, result(ab)), ab.keys, ab.label)
     show = on => draw(on ? full : b.stack)
   } else {
     const before = document.createElement('div'); before.className = 'side before'

@@ -10,7 +10,7 @@ export const square = [
   { pause: 900 },
   { point: { level: 1, col: 6 }, highlight: { level: 1, from: 4, to: 9 } },
   { pause: 700 },
-  { keys: 'W', command: 'mafcmd-sqr' },
+  { keys: 'W', label: 'square', command: 'mafcmd-sqr' },
   { entry: { level: 1, text: 'y = (x + 1)^2' }, point: { level: 1, col: 11 }, highlight: { level: 1, from: 4, to: 13 } },
 ]
 
@@ -19,7 +19,7 @@ export const squareWhole = [
   { pause: 900 },
   { point: { level: 1, col: 2 }, highlight: { level: 1, from: 0, to: 9 } },
   { pause: 700 },
-  { keys: 'W', command: 'mafcmd-sqr' },
+  { keys: 'W', label: 'square', command: 'mafcmd-sqr' },
   { entry: { level: 1, text: 'y^2 = (x + 1)^2' }, point: { level: 1, col: 4 }, highlight: { level: 1, from: 0, to: 15 } },
 ]
 
