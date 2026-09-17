@@ -1,5 +1,5 @@
-:root { --bg: #fff; --fg: #1d1d1d; --muted: #777; --line: #e6e6e6; --accent: #b8860b; --mark: rgba(184, 134, 11, .18); --band: rgba(0, 0, 0, .05); --strong: #000; --tint: #e8f1fa; --panel: #124a72; --on-panel: #f4f9fd; --panel-link: hsl(205 73% 66%); --brace: hsl(205 67% 72%); --panel-2: hsl(45 62% 92%); --on-panel-2: var(--fg); --link-2: #124a72; --mono: Monaco, Menlo, ui-monospace, Consolas, monospace; }
-@media (prefers-color-scheme: dark) { :root { --bg: #121214; --fg: #eaeaea; --muted: #8e8e93; --line: #2a2a2e; --accent: #daa520; --band: rgba(255, 255, 255, .06); --strong: #fff; --tint: #151a21; --panel-2: hsl(42 18% 22%); --link-2: hsl(205 73% 66%); } }
+:root { --bg: #fff; --fg: #1d1d1d; --muted: #777; --line: #e6e6e6; --accent: #b8860b; --mark: rgba(184, 134, 11, .18); --band: rgba(0, 0, 0, .05); --strong: #000; --tint: #e8f1fa; --panel: #124a72; --on-panel: #f4f9fd; --panel-link: hsl(205 73% 66%); --brace: hsl(205 67% 72%); --panel-2: hsl(45 62% 92%); --on-panel-2: var(--fg); --link-2: #124a72; --grid-line: rgba(18, 74, 114, .14); --mono: Monaco, Menlo, ui-monospace, Consolas, monospace; }
+@media (prefers-color-scheme: dark) { :root { --bg: #121214; --fg: #eaeaea; --muted: #8e8e93; --line: #2a2a2e; --accent: #daa520; --band: rgba(255, 255, 255, .06); --strong: #fff; --tint: #151a21; --panel-2: hsl(42 18% 22%); --link-2: hsl(205 73% 66%); --grid-line: rgba(255, 255, 255, .09); } }
 * { box-sizing: border-box; }
 html { color-scheme: light dark; }
 body { margin: 0; background: var(--bg); color: var(--fg); font: 19px/1.55 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
@@ -212,5 +212,32 @@ h2 { font-size: 1.25rem; letter-spacing: -.01em; margin: 1.2em 0 .4em; }
 /* A figure whose picture is still to come shows a blank pane of the
    same ground, at the size of the others. */
 .shots .placeholder { width: 100%; height: 190px; border-radius: 8px; background: #121214; }
-@media (max-width: 960px) { .shots { grid-template-columns: 1fr 1fr; } }
-@media (max-width: 560px) { .shots { grid-template-columns: 1fr; } }
+/* Hairlines part the tiles, down the middle of each gap. Each tile
+   draws the line to its right and the line under it, only where a
+   neighbor is there to be parted from: a right line unless the tile
+   ends its row or the run, a bottom line unless the tile is in the
+   last row, which is the last three tiles in three columns. The
+   right line runs on through the row gap below when a row follows,
+   and the bottom line on through the column gap, so the lines
+   cross. */
+.shots figure { position: relative; }
+.shots figure::before, .shots figure::after { content: ""; position: absolute; background: var(--grid-line); }
+.shots figure:not(:nth-child(3n)):not(:last-child)::before { top: 0; bottom: 0; right: -20px; width: 1px; }
+.shots figure:not(:nth-child(3n)):not(:last-child):not(:nth-last-child(-n+3))::before { bottom: -44px; }
+.shots figure:not(:nth-last-child(-n+3))::after { left: 0; right: -40px; bottom: -22px; height: 1px; }
+.shots figure:nth-child(3n):not(:nth-last-child(-n+3))::after { right: 0; }
+/* Two across, the same with the row two tiles long; one across, the
+   bottom lines alone. */
+@media (max-width: 960px) {
+  .shots { grid-template-columns: 1fr 1fr; }
+  .shots figure::before, .shots figure::after { display: none; }
+  .shots figure:not(:nth-child(2n)):not(:last-child)::before { display: block; top: 0; bottom: 0; right: -20px; width: 1px; }
+  .shots figure:not(:nth-child(2n)):not(:last-child):not(:nth-last-child(-n+2))::before { bottom: -44px; }
+  .shots figure:not(:nth-last-child(-n+2))::after { display: block; left: 0; right: -40px; bottom: -22px; height: 1px; }
+  .shots figure:nth-child(2n):not(:nth-last-child(-n+2))::after { right: 0; }
+}
+@media (max-width: 560px) {
+  .shots { grid-template-columns: 1fr; }
+  .shots figure::before, .shots figure::after { display: none; }
+  .shots figure:not(:last-child)::after { display: block; left: 0; right: 0; bottom: -22px; height: 1px; }
+}
