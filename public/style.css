@@ -1,5 +1,5 @@
-:root { --bg: #fff; --fg: #1d1d1d; --muted: #777; --line: #e6e6e6; --accent: #b8860b; --mark: rgba(184, 134, 11, .18); --band: rgba(0, 0, 0, .05); --strong: #000; --tint: #e8f1fa; --panel: #dae7f3; --panel-line: #8fb0cb; --mono: Monaco, Menlo, ui-monospace, Consolas, monospace; }
-@media (prefers-color-scheme: dark) { :root { --bg: #121214; --fg: #eaeaea; --muted: #8e8e93; --line: #2a2a2e; --accent: #daa520; --band: rgba(255, 255, 255, .06); --strong: #fff; --tint: #151a21; --panel: #1b2836; --panel-line: #4a6c8a; } }
+:root { --bg: #fff; --fg: #1d1d1d; --muted: #777; --line: #e6e6e6; --accent: #b8860b; --mark: rgba(184, 134, 11, .18); --band: rgba(0, 0, 0, .05); --strong: #000; --tint: #e8f1fa; --panel: #124a72; --on-panel: #f4f9fd; --panel-link: hsl(205 73% 66%); --brace: hsl(205 67% 72%); --panel-2: hsl(45 62% 92%); --on-panel-2: var(--fg); --link-2: #124a72; --mono: Monaco, Menlo, ui-monospace, Consolas, monospace; }
+@media (prefers-color-scheme: dark) { :root { --bg: #121214; --fg: #eaeaea; --muted: #8e8e93; --line: #2a2a2e; --accent: #daa520; --band: rgba(255, 255, 255, .06); --strong: #fff; --tint: #151a21; --panel-2: hsl(42 18% 22%); --link-2: hsl(205 73% 66%); } }
 * { box-sizing: border-box; }
 html { color-scheme: light dark; }
 body { margin: 0; background: var(--bg); color: var(--fg); font: 19px/1.55 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
@@ -51,7 +51,7 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
 .intro .col > .lede { grid-row: 4; }
 .intro .col > .more { grid-row: 6; }
 .intro .col > .pair { grid-column: 3; grid-row: 2 / 8; align-self: start; margin-top: calc(-1 * (.8 * 1.9rem + 58px) / 2); }
-/* A brace down the examples' left, in a line tone of the panel's
+/* A brace down the examples' left, in a light tone of the panel's
    blue, gathers the two as the pair the lede names, and a line runs
    from the panel's edge to its cusp. It is one SVG in the gutter
    column, spanning the examples' rows and lifted with them, reaching
@@ -61,7 +61,7 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
    a box that is the grid item, since a box stretches to its rows and
    an SVG on its own would keep a default height. */
 .intro .col > .brace { grid-column: 2; grid-row: 2 / 8; margin-top: calc(-1 * (.8 * 1.9rem + 58px) / 2 - 10px); margin-bottom: -10px; }
-.intro .col > .brace svg { display: block; width: 100%; height: 100%; overflow: visible; fill: none; stroke: var(--panel-line); stroke-width: 2px; stroke-linejoin: round; }
+.intro .col > .brace svg { display: block; width: 100%; height: 100%; overflow: visible; fill: none; stroke: var(--brace); stroke-width: 2px; stroke-linejoin: round; }
 /* The source link keeps to the fold's upper right, on the content
    column's right edge while there is room, the page's margin after. It
    is drawn at full strength: a faded mark reads as a disabled one. */
@@ -75,26 +75,31 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
 .intro .col > .layer:first-child { margin-bottom: 58px; }
 /* The line that names what the examples show: a bold line in the
    lede's own face and leading, not a heading, set as a panel on a
-   wash of the page's blue, a shade deeper than the band below so it
-   reads on the fold's ground. A caret made of borders, in the same
-   wash, points right from its side at the examples. The paragraph
-   above gives up its margin, so the grid sets the gap between
-   them. */
+   deep ocean blue: the page's own blue hue taken down to a quarter
+   lightness, so it is the band's color at depth rather than a second
+   one. The color runs dark enough in both schemes to need no
+   counterpart, so the panel carries its own text color rather than
+   the page's. The paragraph above gives up its margin, so the grid
+   sets the gap between them. */
 .intro .col > .layer:has(+ .lede) p { margin-bottom: 0; }
-.intro .lede { position: relative; font-size: 1.15rem; background: var(--panel); border-radius: 8px; padding: 22px 20px; }
+.intro .lede { position: relative; font-size: 1.15rem; background: var(--panel); color: var(--on-panel); border-radius: 8px; padding: 22px 20px; }
 .intro .lede p { margin: 0; }
-.intro .lede::after { content: ""; position: absolute; left: 100%; top: 50%; transform: translateY(-50%); border: 10px solid transparent; border-left-color: var(--panel); border-right: 0; }
-/* The line that opens out to the rest of the suite follows, in plain
-   text, and ends in a small caret pointing on down the page, a
-   triangle made of borders in the text's own color. */
+/* The line that opens out to the rest of the suite follows, as a
+   second panel on a warm cream, the page's text on it, so the two
+   panels read as a pair rather than one block; in the dark scheme
+   the cream is taken down to a dim warm grey. It ends in a small
+   caret pointing on down the page, a triangle made of borders in
+   the panel's text color. The features it names link to their tiles
+   below, marked by the lede panel's blue, with no rule under them. */
+.intro .more { background: var(--panel-2); color: var(--on-panel-2); border-radius: 8px; padding: 18px 20px; }
 .intro .more p { margin: 0; }
-/* The features it names link to their tiles below, in the text's
-   own color with a pale rule under them, so the line reads as a
-   sentence rather than a list of links. */
-.intro .more a { color: inherit; text-decoration-color: var(--panel-line); text-underline-offset: .15em; }
-.intro .more a:hover { text-decoration-color: var(--fg); }
-.intro .more p::after { content: ""; display: inline-block; margin-left: .45em; vertical-align: middle; border: 6px solid transparent; border-top: 8px solid var(--fg); border-bottom: 0; }
+.intro .more a { color: var(--link-2); text-decoration: none; }
+.intro .more a:hover { text-decoration: underline; text-underline-offset: .15em; }
+.intro .more p::after { content: ""; display: inline-block; margin-left: .45em; vertical-align: middle; border: 6px solid transparent; border-top: 8px solid var(--on-panel-2); border-bottom: 0; }
 .intro .col strong { color: var(--strong); font-weight: 600; }
+/* On the panel the lede's first line is set apart by color alone, a
+   light blue of the panel's own hue, at the text's normal weight. */
+.intro .col > .lede strong { color: var(--panel-link); font-weight: 400; }
 /* The description under each example reads as a caption, not body
    copy: a step smaller and muted, its label leading in bold. The pane
    above drops its own bottom margin, so the two sit close. */
@@ -111,9 +116,9 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
    caption. */
 .intro .pair { display: grid; gap: 34px 0; }
 /* Narrow, the column is one again: the examples follow the lede,
-   whose caret then points down at them, the brace has nothing to
-   gather them toward, and the closing line ends the fold. */
-@media (max-width: 960px) { .intro .col { grid-template-columns: 1fr; grid-template-rows: none; } .intro .col > :is(.layer, .pair, .more):nth-child(n) { grid-column: 1; grid-row: auto; } .intro .col > .pair { max-width: 720px; margin-top: 34px; } .intro .col > .brace:nth-child(n) { display: none; } .intro .col > .lede { margin-top: 40px; } .intro .col > .more { margin-top: 40px; } .intro .lede::after { left: 50%; top: 100%; transform: translateX(-50%); border: 10px solid transparent; border-top-color: var(--panel); border-bottom: 0; } }
+   the brace has nothing to gather them toward, and the closing line
+   ends the fold. */
+@media (max-width: 960px) { .intro .col { grid-template-columns: 1fr; grid-template-rows: none; } .intro .col > :is(.layer, .pair, .more):nth-child(n) { grid-column: 1; grid-row: auto; } .intro .col > .pair { max-width: 720px; margin-top: 34px; } .intro .col > .brace:nth-child(n) { display: none; } .intro .col > .lede { margin-top: 40px; } .intro .col > .more { margin-top: 40px; } }
 .examples { background: var(--tint); padding: 2.6em 0 100px; }
 .examples .col { max-width: 1560px; }
 /* The section's heading is set like the page title. */
