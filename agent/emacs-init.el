@@ -74,3 +74,30 @@
   (let ((select-enable-clipboard nil)
         (select-enable-primary nil))
     (apply fn args)))
+
+;; The user's config keeps an override map in `emulation-mode-map-alists',
+;; ahead of every mode map, with C-k, C-y, M-k and C-M-k among its keys.
+;; In a maf buffer those keys are maf's — the calc buffer, the edit
+;; session, the history and plot panes — and the tests drive them as
+;; real keypresses, or read them off a legend. Rather than unbind them,
+;; let the override yield in every maf buffer: the mode variable is
+;; what the alist consults, and a buffer-local nil switches the map off
+;; in that buffer alone, so the keys keep their meaning in every other
+;; buffer of the instance. On hooks rather than set once, since
+;; calc-reset re-runs calc-mode, which drops buffer-local variables and
+;; re-enables maf-mode, running the hook again; and undone when a mode
+;; goes off, so the override comes back with it. A config without the
+;; map is left alone.
+(defun maf-dev--yield-override ()
+  (when (boundp 'my/override-mode)
+    (if (or (bound-and-true-p maf-mode)
+            (bound-and-true-p maf-edit-mode)
+            (string-prefix-p "maf-" (symbol-name major-mode)))
+        (setq-local my/override-mode nil)
+      (kill-local-variable 'my/override-mode))))
+;; The two minor modes by their own hooks; every maf major mode —
+;; history, plot, pretty, whatever comes — by the global one, which
+;; runs after any major mode is set, so a new mode needs no entry here.
+(add-hook 'maf-mode-hook #'maf-dev--yield-override)
+(add-hook 'maf-edit-mode-hook #'maf-dev--yield-override)
+(add-hook 'after-change-major-mode-hook #'maf-dev--yield-override)
