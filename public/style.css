@@ -221,11 +221,21 @@ h2 { font-size: 1.25rem; letter-spacing: -.01em; margin: 1.2em 0 .4em; }
 .feature-overview { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
 .feature-category { grid-column: 1 / -1; margin: 14px 0 -6px; font-size: .8rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
 .features-heading + .feature-category { margin-top: 0; }
-.feature-overview > section { display: flex; flex-direction: column; min-width: 0; scroll-margin-top: 28px; padding: 28px 24px; background: var(--bg); border: 1px solid var(--grid-line); border-radius: 8px; }
+.feature-overview > section { display: flex; flex-direction: column; min-width: 0; scroll-margin-top: 28px; background: var(--bg); border: 1px solid var(--grid-line); border-radius: 8px; overflow: hidden; }
+/* A card is a screenshot, then its title and description. The shot meets
+   the card's top and side edges and is cropped to the slot, from its top
+   left corner unless .right says otherwise. --w sets its drawn width, so
+   the text in every shot is about the same size; the plot is fitted whole. */
+.feature-shot { display: flex; height: 132px; flex-shrink: 0; overflow: hidden; background: #000; border-bottom: 1px solid var(--grid-line); }
+.feature-shot img { display: block; flex-shrink: 0; width: var(--w); max-width: none; height: auto; align-self: flex-start; }
+.feature-shot.right { justify-content: flex-end; }
+.feature-shot.right img { align-self: flex-end; }
+.feature-shot.bottom img { width: 100%; height: 100%; object-fit: cover; object-position: center bottom; }
+.feature-body { padding: 22px 24px 26px; }
 .feature-overview h4 { margin: 0 0 8px; font-size: 1rem; line-height: 24px; font-weight: 600; letter-spacing: -.01em; }
 /* A card's key binding sits across from its heading, as key caps. */
-.feature-overview section > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; height: 24px; margin-bottom: 8px; }
-.feature-overview section > header h4 { margin: 0; }
+.feature-body > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; height: 24px; margin-bottom: 8px; }
+.feature-body > header h4 { margin: 0; }
 .feature-overview .keys { flex-shrink: 0; white-space: nowrap; }
 .feature-overview .keys kbd { display: inline-block; min-width: 1.9em; padding: 1px 6px; text-align: center; font-size: .78rem; line-height: 1.4; color: var(--link-2); background: var(--tint); border-color: var(--grid-line); border-bottom-width: 2px; border-radius: 5px; }
 .feature-overview section p { margin: 0; font-size: .92rem; line-height: 22px; }
