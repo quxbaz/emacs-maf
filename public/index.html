@@ -43,71 +43,103 @@
 <div class="col">
   <h2 class="title">Features</h2>
   <div class="layer shots">
-    <figure id="contextual">
-      <div class="placeholder" role="img" aria-label="placeholder: screenshot to come"></div>
-      <h3>Contextual editing</h3>
-      <figcaption>A command acts on the expression under point: the same key squares one side of an equation with the cursor on that side, and both sides with the cursor on the equals sign.</figcaption>
-    </figure>
-    <figure class="fit" id="edit">
-      <a href="media/screens/edit.png" target="_blank" rel="noopener"><img src="media/screens/edit.png" width="500" alt="the stack opened as editable text, a new entry typed in the handwriting dialect"></a>
-      <h3>Direct stack editing</h3>
-      <figcaption><kbd>SPC</kbd> opens the stack as text. A new line is a new entry, typed the way it is written on paper: <code>3xy^2</code> is three factors, <code>{cm}</code> quotes a name that must stay whole.</figcaption>
-    </figure>
-    <figure class="fit" id="highlight">
-      <a href="media/screens/highlight.png" target="_blank" rel="noopener"><img src="media/screens/highlight.png" width="500" alt="the calc buffer with the sub-formula y + 2 highlighted under point"></a>
-      <h3>The live highlight</h3>
-      <figcaption>Point inside a formula marks the sub-formula a command will act on, here <code>y + 2</code>, and the highlight follows point as it moves.</figcaption>
-    </figure>
-    <figure class="fit" id="equation">
-      <a href="media/screens/equation.png" target="_blank" rel="noopener"><img src="media/screens/equation.png" width="500" alt="an equation with its whole left side highlighted"></a>
-      <h3>The equation target</h3>
-      <figcaption>Point on one side of an equation and that whole side is the subject; a command run at home takes each side in turn.</figcaption>
-    </figure>
-    <figure class="fit" id="preview">
-      <a href="media/screens/preview.png" target="_blank" rel="noopener"><img src="media/screens/preview.png" width="553" alt="the calc buffer with a panel showing the entry at point in two-dimensional display"></a>
-      <h3>The preview panel</h3>
-      <figcaption>The panel follows point, showing the entry it is on in Calc's two-dimensional display while the stack stays one line per entry.</figcaption>
-    </figure>
-    <figure class="fit" id="paper">
-      <a href="media/screens/paper.png" target="_blank" rel="noopener"><img src="media/screens/paper.png" width="500" alt="three entries in paper-style form: a descending polynomial, e to a power, and a collapsed log"></a>
-      <h3>Paper-style output</h3>
-      <figcaption>Three rewrite modules: a polynomial kept in descending order, <code>exp(2 x)</code> written <code>e^(2 x)</code>, and <code>3^log(x, 3)</code> collapsed to <code>x</code>.</figcaption>
-    </figure>
-    <figure id="plot">
-      <a href="media/screens/plot.png" target="_blank" rel="noopener"><img src="media/screens/plot.png" alt="a parabola plotted in a pane under the stack"></a>
-      <h3>Plotting</h3>
-      <figcaption><kbd>g</kbd> <kbd>l</kbd> plots the entry at point as an SVG under the stack, here the parabola from the example above. <kbd>g</kbd> <kbd>o</kbd> sends it to Desmos, <kbd>g</kbd> <kbd>g</kbd> to a gnuplot window.</figcaption>
-    </figure>
-    <figure id="formulas">
-      <a href="media/screens/formulas.png" target="_blank" rel="noopener"><img src="media/screens/formulas.png" alt="the formula library: a menu of formulas by category, with a detail pane typesetting the one at point"></a>
-      <h3>The formula library</h3>
-      <figcaption><kbd>s</kbd> <kbd>o</kbd> opens the shipped identities and geometry formulas by category, filtered as you type, with a pane typesetting the one at point and what each variable means. <kbd>RET</kbd> pushes it.</figcaption>
-    </figure>
-    <figure id="history">
-      <a href="media/screens/history.png" target="_blank" rel="noopener"><img src="media/screens/history.png" alt="the stack history: a log of past states beside the stack at the selected one"></a>
-      <h3>Stack history</h3>
-      <figcaption><kbd>M-h</kbd> browses every past stack state: the log on the left, one line per command that changed the stack, and on the right the stack as it stood after the selected one.</figcaption>
-    </figure>
-    <figure id="keys">
-      <a href="media/screens/keys.png" target="_blank" rel="noopener"><img src="media/screens/keys.png" alt="the bindings help: every key with its command, an example and a description, by group"></a>
-      <h3>Bindings help</h3>
-      <figcaption><kbd>l</kbd> <kbd>b</kbd> lists every bound key in the active profile with its command's proper name, an example and a description, grouped by what the commands do.</figcaption>
-    </figure>
-    <figure id="options">
-      <a href="media/screens/options.png" target="_blank" rel="noopener"><img src="media/screens/options.png" alt="every calc setting in one table, current values marked"></a>
-      <h3>The options table</h3>
-      <figcaption><kbd>?</kbd> shows every Calc setting in one table, the current value of each marked, so a setting is found by reading rather than recalled by key.</figcaption>
-    </figure>
-    <figure class="fit" id="modules">
-      <a href="media/screens/modules.png" target="_blank" rel="noopener"><img src="media/screens/modules.png" width="609" alt="the module menu: each module with on and off"></a>
-      <h3>The module menu</h3>
-      <figcaption><kbd>m</kbd> <kbd>c</kbd> lists every module in its group, toggled in place, the bindings profile among them.</figcaption>
-    </figure>
-    <figure class="fit" id="saved-stacks">
-      <a href="media/screens/saved-stacks.png" target="_blank" rel="noopener"><img src="media/screens/saved-stacks.png" width="500" alt="the saved stacks of every session, with age and size"></a>
-      <h3>Saved stacks</h3>
-      <figcaption>With persistence on, every session saves its stack under its own name and gets it back next time; this menu previews, restores, names or deletes any session's.</figcaption>
-    </figure>
+    <section class="group">
+      <header>
+        <h3>Targets</h3>
+        <p>Where the cursor sits decides what a command acts on.</p>
+      </header>
+      <div class="tiles">
+        <figure class="hero" id="contextual">
+          <div class="placeholder" role="img" aria-label="placeholder: screenshot to come"></div>
+          <h4>Contextual editing</h4>
+          <figcaption>A command acts on the expression under point: the same key squares one side of an equation with the cursor on that side, and both sides with the cursor on the equals sign.</figcaption>
+        </figure>
+        <figure class="pair" id="highlight">
+          <a href="media/screens/highlight.png" target="_blank" rel="noopener"><img src="media/screens/highlight.png" width="500" alt="the calc buffer with the sub-formula y + 2 highlighted under point"></a>
+          <h4>The live highlight</h4>
+          <figcaption>Point inside a formula marks the sub-formula a command will act on, here <code>y + 2</code>, and the highlight follows point as it moves.</figcaption>
+        </figure>
+        <figure class="pair" id="equation">
+          <a href="media/screens/equation.png" target="_blank" rel="noopener"><img src="media/screens/equation.png" width="500" alt="an equation with its whole left side highlighted"></a>
+          <h4>The equation target</h4>
+          <figcaption>Point on one side of an equation and that whole side is the subject; a command run at home takes each side in turn.</figcaption>
+        </figure>
+      </div>
+    </section>
+    <section class="group">
+      <header>
+        <h3>Editing and display</h3>
+        <p>The stack as text to edit, and results written the way they are on paper.</p>
+      </header>
+      <div class="tiles">
+        <figure class="hero flip" id="edit">
+          <a href="media/screens/edit.png" target="_blank" rel="noopener"><img src="media/screens/edit.png" width="500" alt="the stack opened as editable text, a new entry typed in the handwriting dialect"></a>
+          <h4>Direct stack editing</h4>
+          <figcaption><kbd>SPC</kbd> opens the stack as text. A new line is a new entry, typed the way it is written on paper: <code>3xy^2</code> is three factors, <code>{cm}</code> quotes a name that must stay whole.</figcaption>
+        </figure>
+        <figure class="pair" id="preview">
+          <a href="media/screens/preview.png" target="_blank" rel="noopener"><img src="media/screens/preview.png" width="553" alt="the calc buffer with a panel showing the entry at point in two-dimensional display"></a>
+          <h4>The preview panel</h4>
+          <figcaption>The panel follows point, showing the entry it is on in Calc's two-dimensional display while the stack stays one line per entry.</figcaption>
+        </figure>
+        <figure class="pair" id="paper">
+          <a href="media/screens/paper.png" target="_blank" rel="noopener"><img src="media/screens/paper.png" width="500" alt="three entries in paper-style form: a descending polynomial, e to a power, and a collapsed log"></a>
+          <h4>Paper-style output</h4>
+          <figcaption>Three rewrite modules: a polynomial kept in descending order, <code>exp(2 x)</code> written <code>e^(2 x)</code>, and <code>3^log(x, 3)</code> collapsed to <code>x</code>.</figcaption>
+        </figure>
+      </div>
+    </section>
+    <section class="group">
+      <header>
+        <h3>Tools</h3>
+        <p>Plots, formulas and the stack’s own past, each a key away.</p>
+      </header>
+      <div class="tiles">
+        <figure class="hero" id="plot">
+          <a href="media/screens/plot.png" target="_blank" rel="noopener"><img src="media/screens/plot.png" alt="a parabola plotted in a pane under the stack"></a>
+          <h4>Plotting</h4>
+          <figcaption><kbd>g</kbd> <kbd>l</kbd> plots the entry at point as an SVG under the stack, here the parabola from the example above. <kbd>g</kbd> <kbd>o</kbd> sends it to Desmos, <kbd>g</kbd> <kbd>g</kbd> to a gnuplot window.</figcaption>
+        </figure>
+        <figure class="pair crop" id="formulas">
+          <a href="media/screens/formulas.png" target="_blank" rel="noopener"><img src="media/screens/formulas.png" alt="the formula library: a menu of formulas by category, with a detail pane typesetting the one at point"></a>
+          <h4>The formula library</h4>
+          <figcaption><kbd>s</kbd> <kbd>o</kbd> opens the shipped identities and geometry formulas by category, filtered as you type, with a pane typesetting the one at point and what each variable means. <kbd>RET</kbd> pushes it.</figcaption>
+        </figure>
+        <figure class="pair crop" id="history">
+          <a href="media/screens/history.png" target="_blank" rel="noopener"><img src="media/screens/history.png" alt="the stack history: a log of past states beside the stack at the selected one"></a>
+          <h4>Stack history</h4>
+          <figcaption><kbd>M-h</kbd> browses every past stack state: the log on the left, one line per command that changed the stack, and on the right the stack as it stood after the selected one.</figcaption>
+        </figure>
+      </div>
+    </section>
+    <section class="group">
+      <header>
+        <h3>Reference</h3>
+        <p>Menus that show what is bound, what is set and what is saved.</p>
+      </header>
+      <div class="tiles">
+        <figure class="quad crop" id="keys">
+          <a href="media/screens/keys.png" target="_blank" rel="noopener"><img src="media/screens/keys.png" alt="the bindings help: every key with its command, an example and a description, by group"></a>
+          <h4>Bindings help</h4>
+          <figcaption><kbd>l</kbd> <kbd>b</kbd> lists every bound key in the active profile with its command's proper name, an example and a description, grouped by what the commands do.</figcaption>
+        </figure>
+        <figure class="quad crop" id="options">
+          <a href="media/screens/options.png" target="_blank" rel="noopener"><img src="media/screens/options.png" alt="every calc setting in one table, current values marked"></a>
+          <h4>The options table</h4>
+          <figcaption><kbd>?</kbd> shows every Calc setting in one table, the current value of each marked, so a setting is found by reading rather than recalled by key.</figcaption>
+        </figure>
+        <figure class="quad crop" id="modules">
+          <a href="media/screens/modules.png" target="_blank" rel="noopener"><img src="media/screens/modules.png" width="609" alt="the module menu: each module with on and off"></a>
+          <h4>The module menu</h4>
+          <figcaption><kbd>m</kbd> <kbd>c</kbd> lists every module in its group, toggled in place, the bindings profile among them.</figcaption>
+        </figure>
+        <figure class="quad crop" id="saved-stacks">
+          <a href="media/screens/saved-stacks.png" target="_blank" rel="noopener"><img src="media/screens/saved-stacks.png" width="500" alt="the saved stacks of every session, with age and size"></a>
+          <h4>Saved stacks</h4>
+          <figcaption>With persistence on, every session saves its stack under its own name and gets it back next time; this menu previews, restores, names or deletes any session's.</figcaption>
+        </figure>
+      </div>
+    </section>
   </div>
 </div>
 </section>

@@ -220,36 +220,64 @@ mark { background: var(--mark); color: inherit; }
 .muted { color: var(--muted); font-size: .95rem; }
 a { color: var(--accent); }
 h2 { font-size: 1.25rem; letter-spacing: -.01em; margin: 1.2em 0 .4em; }
-/* The gallery: three tiles across the whole page, each a picture of
-   one shape over its title and text. Every feature is the same size,
-   so the section is a wall of them rather than a run of rows. Two
-   across, then one, as the width goes. */
-.shots { display: grid; grid-template-columns: repeat(3, 1fr); --cols: 3; }
-.shots figure { margin: 0; padding: 40px 44px 48px; }
-.shots h3 { margin: 16px 0 4px; font-size: 1.05rem; font-weight: 600; letter-spacing: -.01em; }
+/* The gallery: four named groups, each a block of its own with clear
+   ground between it and the next, since a group is told apart by
+   what it is apart from, not by a label alone. A group is its name
+   and a line on what it holds, over a card of tiles on the page's
+   own ground, lifted off the band. A tile is a picture over its title
+   and text. The tiles are not one size, so a card has a beat: a group opens on one feature across the whole width,
+   its picture beside its text and the side alternating, then a pair
+   of halves; the last group is four quarters. The grid is twelve
+   columns so that halves, quarters and the whole share it. */
+.shots { display: grid; gap: 72px; }
+.shots .group > header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; margin: 0 0 18px; padding-left: 14px; border-left: 3px solid var(--panel); }
+.shots .group h3 { margin: 0; font-size: 1.45rem; font-weight: 600; letter-spacing: -.02em; line-height: 1.2; color: var(--strong); }
+.shots .group > header p { margin: 0; font-size: 1rem; color: var(--muted); }
+.shots .tiles { display: grid; grid-template-columns: repeat(12, 1fr); background: var(--bg); border-radius: 10px; overflow: hidden; }
+.shots figure { margin: 0; padding: 40px 44px 48px; min-width: 0; }
+.shots .hero { grid-column: span 12; }
+.shots .pair { grid-column: span 6; }
+.shots .quad { grid-column: span 3; }
+.shots h4 { margin: 16px 0 4px; font-size: 1.05rem; font-weight: 600; letter-spacing: -.01em; }
 .shots figcaption { font-size: .92rem; line-height: 1.45; color: var(--muted); }
-/* Each picture links to itself at full size, in a new tab. In the
-   tile it is cropped to its top, in a frame of one proportion at any
-   width. A short stack pane is fitted whole instead, since a crop
-   would blow it up, and the pane's own ground fills what is left. */
+/* The feature that opens a group: picture and text side by side, the
+   text centered against the picture and set a step larger. */
+.shots .hero { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); grid-template-rows: 1fr auto auto 1fr; column-gap: 48px; padding-block: 48px; }
+.shots .hero > :first-child { grid-column: 1; grid-row: 1 / 5; align-self: center; }
+.shots .hero h4 { grid-column: 2; grid-row: 2; margin: 0 0 8px; font-size: 1.4rem; letter-spacing: -.015em; }
+.shots .hero figcaption { grid-column: 2; grid-row: 3; font-size: 1rem; line-height: 1.55; }
+.shots .hero.flip { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); }
+.shots .hero.flip > :first-child { grid-column: 2; }
+.shots .hero.flip :is(h4, figcaption) { grid-column: 1; }
+/* Each picture links to itself at full size, in a new tab. A picture
+   keeps its own shape, so a strip of buffer is a strip and nothing
+   pads it out; a tall screenshot is cropped to its top instead, in a
+   frame of one proportion. */
 .shots a { display: block; }
-.shots img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 10; object-fit: cover; object-position: top left; border-radius: 8px; background: #121214; }
-.shots .fit img { object-fit: contain; }
+.shots img { display: block; width: 100%; height: auto; border-radius: 8px; background: #121214; }
+.shots .crop img { aspect-ratio: 16 / 10; object-fit: cover; object-position: top left; }
 /* A figure whose picture is still to come shows a blank pane of the
-   same ground, in the shape of the others. */
-.shots .placeholder { width: 100%; aspect-ratio: 16 / 10; border-radius: 8px; background: #121214; }
-/* Hairlines rule the wall into cells, edge to edge, and through the
-   cells a short last row leaves empty. The wall is bordered all
-   round. The lines across are each tile's bottom border, so a tile is
-   underlined whether or not one stands under it; a tile gives up a
-   pixel of its row so that the last row's line falls on the wall's
-   own. The lines down are the wall's background, one at the left of
-   every column, shifted a pixel out so the first falls on the wall's
-   left border. Lines lie over one another in places, so the color is
-   opaque: a translucent one would double there. */
-.shots { border: 1px solid var(--grid-line); background: linear-gradient(to right, var(--grid-line) 1px, transparent 1px) -1px 0 / calc(100% / var(--cols)) 100% padding-box; }
-.shots figure { border-bottom: 1px solid var(--grid-line); margin-bottom: -1px; }
-/* Two across; one across, with no lines down and the cells' side
-   padding at the page's margin. */
-@media (max-width: 960px) { .shots { grid-template-columns: 1fr 1fr; --cols: 2; } .shots figure { padding: 32px 28px 38px; } }
-@media (max-width: 560px) { .shots { grid-template-columns: 1fr; background: none; } .shots figure { padding: 30px 22px 34px; } }
+   same ground. */
+.shots .placeholder { width: 100%; aspect-ratio: 5 / 2; border-radius: 8px; background: #121214; }
+/* Hairlines rule a card into cells. The card is bordered all round,
+   and each tile draws the line to its right and the line under it,
+   giving up a pixel each way so that lines at the card's edge fall
+   on its border. Lines lie over one another there,
+   so the color is opaque: a translucent one would double. */
+.shots .tiles { border: 1px solid var(--grid-line); }
+.shots figure { border: solid var(--grid-line); border-width: 0 1px 1px 0; margin: 0 -1px -1px 0; }
+/* Narrower, the quarters become halves and the opening feature stacks
+   its picture over its text; narrowest, everything is one column. */
+@media (max-width: 960px) {
+  .shots figure { padding: 32px 28px 38px; }
+  .shots { gap: 56px; }
+  .shots .group > header { margin-inline: 22px; }
+  .shots .tiles { border-radius: 0; border-inline: 0; }
+  .shots .quad { grid-column: span 6; }
+  .shots .hero, .shots .hero.flip { display: block; padding-block: 32px 38px; }
+  .shots .hero h4 { margin: 16px 0 6px; font-size: 1.25rem; }
+}
+@media (max-width: 560px) {
+  .shots figure { padding: 30px 22px 34px; }
+  .shots .pair, .shots .quad { grid-column: span 12; }
+}
