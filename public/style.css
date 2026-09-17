@@ -8,8 +8,11 @@ body { margin: 0; background: var(--bg); color: var(--fg); font: 19px/1.55 -appl
    them. */
 main > section > .col { margin: 0 auto; padding-inline: 22px; }
 /* The intro is a fold: at least one screen tall, its column centered
-   in it. */
-.intro { position: relative; min-height: 100vh; min-height: 100svh; display: grid; align-content: center; padding: 60px 0; }
+   in it. The source link's row at the top is out of the flow, so the
+   column is centered under it rather than in the whole fold: the
+   row's reach (its offset and its height) is added to the padding
+   below, which lifts the column by half of it. */
+.intro { position: relative; min-height: 100vh; min-height: 100svh; display: grid; align-content: center; padding: 60px 0 calc(60px + 52px); }
 /* A fade over the fold's lower half, easing the white into the blue
    of the band below. It is the negative of a circle sitting on the
    seam: clear inside the circle, blue outside it, so the corners are
@@ -51,8 +54,11 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
    color at depth rather than a second one. It is the one dark thing
    on the fold, which is what makes it read as a door. The color runs
    dark enough in both schemes to need no counterpart, so the panel
-   carries its own text and link colors rather than the page's. */
-.intro .more { position: relative; margin: 51px 0 0; background: var(--ocean); color: var(--on-ocean); border-radius: 8px; padding: 14px 20px; }
+   carries its own text and link colors rather than the page's. The
+   caret under it hangs outside the panel's box, so the panel keeps a
+   bottom margin of the caret's whole reach, and centering the column
+   in the fold centers the caret's tip with it. */
+.intro .more { position: relative; margin: 51px 0 20px; background: var(--ocean); color: var(--on-ocean); border-radius: 8px; padding: 14px 20px; }
 /* A small caret a little under the middle of the line points on down
    the page, in the panel's own blue: a triangle made of borders. */
 .intro .more::after { content: ""; position: absolute; top: calc(100% + 10px); left: 50%; transform: translateX(-50%); border: 10px solid transparent; border-top: 10px solid var(--ocean); border-bottom: 0; }
