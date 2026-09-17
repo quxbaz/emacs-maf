@@ -1,5 +1,5 @@
-:root { --bg: #fff; --fg: #1d1d1d; --muted: #777; --line: #e6e6e6; --accent: #b8860b; --mark: rgba(184, 134, 11, .18); --band: rgba(0, 0, 0, .05); --strong: #000; --tint: #e8f1fa; --panel: #124a72; --on-panel: #f4f9fd; --panel-link: hsl(205 73% 66%); --brace: hsl(205 67% 72%); --panel-2: hsl(45 62% 92%); --on-panel-2: var(--fg); --link-2: #124a72; --more-lead: hsl(32 28% 50%); --grid-line: #cadae7; --draft-line: #eff4f9; --mono: Monaco, Menlo, ui-monospace, Consolas, monospace; }
-@media (prefers-color-scheme: dark) { :root { --bg: #121214; --fg: #eaeaea; --muted: #8e8e93; --line: #2a2a2e; --accent: #daa520; --band: rgba(255, 255, 255, .06); --strong: #fff; --tint: #151a21; --panel-2: hsl(42 18% 22%); --link-2: hsl(205 73% 66%); --more-lead: hsl(32 28% 66%); --grid-line: #2a2f35; --draft-line: #17191d; } }
+:root { --bg: #fff; --fg: #1d1d1d; --muted: #777; --line: #e6e6e6; --accent: #b8860b; --mark: rgba(184, 134, 11, .18); --band: rgba(0, 0, 0, .05); --strong: #000; --tint: #e8f1fa; --panel: #124a72; --on-panel: #f4f9fd; --panel-link: hsl(205 73% 66%); --brace: hsl(205 67% 72%); --panel-2: hsl(45 62% 92%); --on-panel-2: var(--fg); --link-2: #124a72; --more-lead: hsl(32 28% 50%); --grid-line: #cadae7; --mono: Monaco, Menlo, ui-monospace, Consolas, monospace; }
+@media (prefers-color-scheme: dark) { :root { --bg: #121214; --fg: #eaeaea; --muted: #8e8e93; --line: #2a2a2e; --accent: #daa520; --band: rgba(255, 255, 255, .06); --strong: #fff; --tint: #151a21; --panel-2: hsl(42 18% 22%); --link-2: hsl(205 73% 66%); --more-lead: hsl(32 28% 66%); --grid-line: #2a2f35; } }
 * { box-sizing: border-box; }
 html { color-scheme: light dark; }
 body { margin: 0; background: var(--bg); color: var(--fg); font: 19px/1.55 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
@@ -213,35 +213,17 @@ mark { background: var(--mark); color: inherit; }
 .muted { color: var(--muted); font-size: .95rem; }
 a { color: var(--accent); }
 h2 { font-size: 1.25rem; letter-spacing: -.01em; margin: 1.2em 0 .4em; }
-/* Every feature has a short summary. The box is drafting paper: a faint
-   sub-grid of --u squares on its ground, under the text. Everything in the
-   box is sized in whole squares so the cell rules fall on sub-grid lines:
-   the box's width rounds down to whole squares per column, and each cell's
-   padding, rule and line heights add up to a multiple of --u. The sub-grid
-   is shifted a pixel so its lines lie where the rules do. */
-.features-heading { grid-column: 1 / -1; }
-.features-heading h2 { margin: 0 0 10px; font-size: 2rem; letter-spacing: -.03em; line-height: calc(2 * var(--u)); }
+/* Every feature has a short summary, on a card. Only the cards are boxed:
+   each resets the palette to light text on deep blue, in either color
+   scheme, the way .calcbuf keeps its own dark ground. */
+.features-heading { grid-column: 1 / -1; margin-bottom: 6px; }
+.features-heading h2 { margin: 0 0 8px; font-size: 2rem; letter-spacing: -.03em; line-height: 1.2; }
 .features-heading p { margin: 0; color: var(--muted); font-size: 1rem; }
-.feature-overview { --u: 22px; --cols: 3; box-sizing: content-box; width: 100%; width: round(down, 100% - 2px, var(--cols) * var(--u)); margin-inline: auto; display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); border: 1px solid var(--grid-line); border-radius: 12px; overflow: hidden; background-color: var(--bg); background-image: linear-gradient(var(--draft-line) 1px, transparent 1px), linear-gradient(90deg, var(--draft-line) 1px, transparent 1px); background-size: var(--u) var(--u); background-position: -1px -1px; }
-.feature-overview > * { padding: 28px 28px 27px; border: solid var(--grid-line); border-width: 0 1px 1px 0; }
-/* The box's own border rules the last column and row. */
-.feature-overview > .features-heading, .feature-overview > section:nth-of-type(3n) { border-right-color: var(--bg); }
-.feature-overview > section:nth-last-of-type(-n+3) { border-bottom-color: var(--bg); }
-.feature-overview > section { display: flex; flex-direction: column; min-width: 0; scroll-margin-top: 28px; }
+.feature-overview { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
+.feature-overview > section { --bg: hsl(206 60% 23%); --fg: #f4f9fd; --muted: hsl(205 35% 74%); --grid-line: hsl(205 45% 38%); --link-2: hsl(205 80% 74%); display: flex; flex-direction: column; min-width: 0; scroll-margin-top: 28px; padding: 28px 24px; color: var(--fg); background: var(--bg); border: 1px solid var(--grid-line); border-radius: 8px; }
 .feature-overview h3 { margin: 0 0 8px; font-size: 1rem; line-height: 24px; font-weight: 600; letter-spacing: -.01em; color: var(--link-2); text-decoration: underline; text-underline-offset: .2em; }
-.feature-overview p { margin: 0; font-size: .92rem; line-height: var(--u); }
-.feature-overview :is(kbd, code) { line-height: 1; }
+.feature-overview section p { margin: 0; font-size: .92rem; line-height: 22px; }
 .feature-overview .key-sequence { white-space: nowrap; }
 .feature-overview code { font-family: var(--mono); font-size: .9em; }
-@media (max-width: 960px) {
-  .feature-overview { --cols: 2; }
-  .feature-overview > section:nth-of-type(n) { border-color: var(--grid-line); }
-  .feature-overview > section:nth-of-type(2n) { border-right-color: var(--bg); }
-  .feature-overview > section:nth-last-of-type(-n+2) { border-bottom-color: var(--bg); }
-}
-@media (max-width: 640px) {
-  .feature-overview { --cols: 1; }
-  .feature-overview > * { padding-inline: 22px; }
-  .feature-overview > section:nth-of-type(n) { border-color: var(--grid-line) var(--bg); }
-  .feature-overview > section:last-of-type { border-bottom-color: var(--bg); }
-}
+@media (max-width: 960px) { .feature-overview { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .feature-overview { grid-template-columns: 1fr; } }
