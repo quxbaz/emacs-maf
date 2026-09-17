@@ -93,10 +93,10 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
    below, marked by the lede panel's blue, with no rule under them. */
 .intro .more { background: var(--panel-2); color: var(--on-panel-2); border-radius: 8px; padding: 18px 20px; }
 .intro .more p { margin: 0; }
-/* Its opening line is set apart by color alone, as the lede's is: a
-   warm brown of the cream's own hue, lightened in the dark scheme to
+/* Its opening line is set apart in bold and by color, as the lede's
+   is: a warm brown of the cream's own hue, lightened in the dark scheme to
    hold against the grey. */
-.intro .more p:first-child { color: var(--more-lead); }
+.intro .more p:first-child { color: var(--more-lead); font-weight: 600; }
 .intro .more a { color: var(--link-2); text-decoration: none; }
 .intro .more a:hover { text-decoration: underline; text-underline-offset: .15em; }
 .intro .more p:last-child::after { content: ""; display: inline-block; margin-left: .45em; vertical-align: middle; border: 6px solid transparent; border-top: 8px solid var(--on-panel-2); border-bottom: 0; }
@@ -108,9 +108,9 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
 .intro .col > .trail { grid-column: 1; grid-row: 5; align-self: center; justify-self: center; display: grid; gap: 7px; padding: 12px 0; }
 .intro .trail i { display: block; width: 5px; height: 5px; border-radius: 50%; background: var(--brace); }
 .intro .col strong { color: var(--strong); font-weight: 600; }
-/* On the panel the lede's first line is set apart by color alone, a
-   light blue of the panel's own hue, at the text's normal weight. */
-.intro .col > .lede strong { color: var(--panel-link); font-weight: 400; }
+/* On the panel the lede's first line is set apart in bold and by
+   color, a light blue of the panel's own hue. */
+.intro .col > .lede strong { color: var(--panel-link); }
 /* The description under each example reads as a caption, not body
    copy: a step smaller and muted, its label leading in bold. The pane
    above drops its own bottom margin, so the two sit close. */
