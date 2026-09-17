@@ -134,16 +134,9 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
    the brace has nothing to gather them toward, and the closing line
    ends the fold. */
 @media (max-width: 960px) { .intro .col { grid-template-columns: 1fr; grid-template-rows: none; } .intro .col > :is(.layer, .pair, .more):nth-child(n) { grid-column: 1; grid-row: auto; } .intro .col > .pair { max-width: 720px; margin-top: 34px; } .intro .pair > .brace, .intro .col > .trail { display: none; } .intro .col > .lede { margin-top: 40px; } .intro .col > .more { margin-top: 40px; } }
-/* The features' wall of cells is ruled to its own edges, so the
-   column gives up its cap and its side padding and the wall sets its
-   own width: most of the page's, up to a cap, centered, and the whole
-   of it once the page is narrow. */
-.examples { background: var(--tint); padding: 2.6em 0 100px; }
-.examples .col { max-width: none; padding-inline: 0; }
-.examples .shots { width: min(92%, 1480px); margin: 0 auto; }
-@media (max-width: 960px) { .examples { padding-bottom: 0; } .examples .shots { width: 100%; } }
-/* The section's heading is set like the page title. */
-.examples .title { text-align: center; font-size: 1.9rem; letter-spacing: -.02em; line-height: 1.2; margin: 0 0 .8em; }
+/* Features share the intro’s width and keep a readable margin on phones. */
+.examples { background: var(--tint); padding: 64px 0 80px; }
+.examples .col { max-width: 1240px; }
 /* The worked examples, back on the page's ground, as wide as the
    features above. */
 .scenes { padding: 2.6em 0 100px; }
@@ -220,64 +213,42 @@ mark { background: var(--mark); color: inherit; }
 .muted { color: var(--muted); font-size: .95rem; }
 a { color: var(--accent); }
 h2 { font-size: 1.25rem; letter-spacing: -.01em; margin: 1.2em 0 .4em; }
-/* The gallery: four named groups, each a block of its own with clear
-   ground between it and the next, since a group is told apart by
-   what it is apart from, not by a label alone. A group is its name
-   and a line on what it holds, over a card of tiles on the page's
-   own ground, lifted off the band. A tile is a picture over its title
-   and text. The tiles are not one size, so a card has a beat: a group opens on one feature across the whole width,
-   its picture beside its text and the side alternating, then a pair
-   of halves; the last group is four quarters. The grid is twelve
-   columns so that halves, quarters and the whole share it. */
-.shots { display: grid; gap: 72px; }
-.shots .group > header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; margin: 0 0 18px; padding-left: 14px; border-left: 3px solid var(--panel); }
-.shots .group h3 { margin: 0; font-size: 1.45rem; font-weight: 600; letter-spacing: -.02em; line-height: 1.2; color: var(--strong); }
-.shots .group > header p { margin: 0; font-size: 1rem; color: var(--muted); }
-.shots .tiles { display: grid; grid-template-columns: repeat(12, 1fr); background: var(--bg); border-radius: 10px; overflow: hidden; }
-.shots figure { margin: 0; padding: 40px 44px 48px; min-width: 0; }
-.shots .hero { grid-column: span 12; }
-.shots .pair { grid-column: span 6; }
-.shots .quad { grid-column: span 3; }
-.shots h4 { margin: 16px 0 4px; font-size: 1.05rem; font-weight: 600; letter-spacing: -.01em; }
-.shots figcaption { font-size: .92rem; line-height: 1.45; color: var(--muted); }
-/* The feature that opens a group: picture and text side by side, the
-   text centered against the picture and set a step larger. */
-.shots .hero { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); grid-template-rows: 1fr auto auto 1fr; column-gap: 48px; padding-block: 48px; }
-.shots .hero > :first-child { grid-column: 1; grid-row: 1 / 5; align-self: center; }
-.shots .hero h4 { grid-column: 2; grid-row: 2; margin: 0 0 8px; font-size: 1.4rem; letter-spacing: -.015em; }
-.shots .hero figcaption { grid-column: 2; grid-row: 3; font-size: 1rem; line-height: 1.55; }
-.shots .hero.flip { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); }
-.shots .hero.flip > :first-child { grid-column: 2; }
-.shots .hero.flip :is(h4, figcaption) { grid-column: 1; }
-/* Each picture links to itself at full size, in a new tab. A picture
-   keeps its own shape, so a strip of buffer is a strip and nothing
-   pads it out; a tall screenshot is cropped to its top instead, in a
-   frame of one proportion. */
-.shots a { display: block; }
-.shots img { display: block; width: 100%; height: auto; border-radius: 8px; background: #121214; }
-.shots .crop img { aspect-ratio: 16 / 10; object-fit: cover; object-position: top left; }
-/* A figure whose picture is still to come shows a blank pane of the
-   same ground. */
-.shots .placeholder { width: 100%; aspect-ratio: 5 / 2; border-radius: 8px; background: #121214; }
-/* Hairlines rule a card into cells. The card is bordered all round,
-   and each tile draws the line to its right and the line under it,
-   giving up a pixel each way so that lines at the card's edge fall
-   on its border. Lines lie over one another there,
-   so the color is opaque: a translucent one would double. */
-.shots .tiles { border: 1px solid var(--grid-line); }
-.shots figure { border: solid var(--grid-line); border-width: 0 1px 1px 0; margin: 0 -1px -1px 0; }
-/* Narrower, the quarters become halves and the opening feature stacks
-   its picture over its text; narrowest, everything is one column. */
+/* Main capabilities get a demonstration; supporting tools stay compact. */
+.features-heading { padding-bottom: 32px; border-bottom: 1px solid var(--grid-line); }
+.features-heading h2 { margin: 0 0 8px; font-size: 2.5rem; letter-spacing: -.035em; line-height: 1.15; }
+.features-heading p { margin: 0; color: var(--muted); font-size: 1.1rem; }
+.feature-story { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); align-items: center; gap: 64px; padding: 48px 0; border-bottom: 1px solid var(--grid-line); }
+.feature-copy { max-width: 42ch; }
+.feature-label { margin: 0 0 12px; color: var(--link-2); font-size: .8rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+.feature-copy h3 { margin: 0 0 18px; font-size: clamp(1.6rem, 2.4vw, 2rem); line-height: 1.15; letter-spacing: -.025em; text-wrap: balance; }
+.feature-copy > p:not(.feature-label) { font-size: 1rem; line-height: 1.6; }
+.feature-copy .feature-detail { margin: 16px 0 0; color: var(--muted); }
+.feature-story figure { margin: 0; min-width: 0; }
+.feature-story figure a { display: block; border-radius: 8px; }
+.feature-story img { display: block; width: 100%; height: auto; border-radius: 8px; background: #121214; }
+.feature-story figcaption { margin-top: 12px; color: var(--muted); font-size: .85rem; }
+.examples a { color: var(--link-2); text-decoration-thickness: 1px; text-underline-offset: .2em; }
+.examples a:hover { color: var(--fg); }
+.examples .key-sequence { white-space: nowrap; }
+.examples code { font-family: var(--mono); font-size: .9em; }
+.examples :is(section, figure, span)[id] { scroll-margin-top: 28px; }
+.examples a:focus-visible { outline: 2px solid var(--link-2); outline-offset: 5px; }
+.feature-tools { margin-top: 48px; padding: 36px; background: var(--bg); border: 1px solid var(--grid-line); border-radius: 12px; }
+.feature-tools header h3 { margin: 0 0 8px; font-size: 1.5rem; letter-spacing: -.02em; }
+.feature-tools header p { margin: 0; font-size: .95rem; color: var(--muted); }
+.feature-tools-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px 36px; margin-top: 28px; }
+.feature-tools-grid > section { border-top: 1px solid var(--grid-line); padding-top: 18px; }
+.feature-tools h4 { margin: 0 0 10px; font-size: 1rem; font-weight: 600; }
+.feature-tools-grid p { margin: 0; font-size: .92rem; line-height: 1.6; }
 @media (max-width: 960px) {
-  .shots figure { padding: 32px 28px 38px; }
-  .shots { gap: 56px; }
-  .shots .group > header { margin-inline: 22px; }
-  .shots .tiles { border-radius: 0; border-inline: 0; }
-  .shots .quad { grid-column: span 6; }
-  .shots .hero, .shots .hero.flip { display: block; padding-block: 32px 38px; }
-  .shots .hero h4 { margin: 16px 0 6px; font-size: 1.25rem; }
+  .feature-story { gap: 32px; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); }
+  .feature-tools-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
-@media (max-width: 560px) {
-  .shots figure { padding: 30px 22px 34px; }
-  .shots .pair, .shots .quad { grid-column: span 12; }
+@media (max-width: 640px) {
+  .features-heading h2 { font-size: 2rem; }
+  .feature-story { grid-template-columns: 1fr; gap: 24px; padding: 32px 0; }
+  .feature-copy { max-width: none; }
+  .feature-copy h3 { font-size: 1.7rem; }
+  .feature-tools { padding: 24px; margin-top: 32px; }
+  .feature-tools-grid { grid-template-columns: 1fr; gap: 24px; }
 }
