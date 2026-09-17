@@ -37,6 +37,9 @@ from the repository root with a reloading server while working:
   with `data-diff="name"` shows the scene of that name this way.
 - `scenes.js`: the scenes the pages show, as data. An element with
   `data-scene="name"` plays the scene of that name.
+- `feature-viewer.js`: opens feature screenshots in a dialog, with Escape,
+  a close button and a link to the full-size image. Screenshot links also
+  work without JavaScript.
 - `demo.html`: every component variant on one scene, with the markup that
   produces each; the reference for choosing which fits an example.
 - `vendor/`: redux 5.0.1 (ESM) and MathJax 3.2.2.
