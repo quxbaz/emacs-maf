@@ -91,9 +91,9 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
    the text measure. */
 @media (max-width: 960px) { .intro .pair { grid-template-columns: 1fr; max-width: 720px; } .intro .pair > div { display: block; } }
 .examples { background: var(--tint); padding: 2.6em 0 100px; }
-.examples .col { max-width: 1360px; }
+.examples .col { max-width: 1560px; }
 /* The section's heading is set like the page title. */
-.examples .title { font-size: 1.9rem; letter-spacing: -.02em; line-height: 1.2; margin: 0 0 .8em; }
+.examples .title { text-align: center; font-size: 1.9rem; letter-spacing: -.02em; line-height: 1.2; margin: 0 0 .8em; }
 /* The worked examples, back on the page's ground, as wide as the
    features above. */
 .scenes { padding: 2.6em 0 100px; }
@@ -169,10 +169,10 @@ h2 { font-size: 1.25rem; letter-spacing: -.01em; margin: 1.2em 0 .4em; }
    is a wall of them rather than a run of rows, and a dozen features
    fit in a couple of screens. Two across, then one, as the width
    goes. */
-.shots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 26px 24px; }
+.shots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 44px 40px; }
 .shots figure { margin: 0; }
-.shots h3 { margin: 0 0 .25em; font-size: 1.05rem; font-weight: 600; letter-spacing: -.01em; }
-.shots figcaption { margin-bottom: 10px; font-size: .92rem; line-height: 1.45; color: var(--muted); }
+.shots h3 { margin: 12px 0 4px; font-size: 1.05rem; font-weight: 600; letter-spacing: -.01em; }
+.shots figcaption { font-size: .92rem; line-height: 1.45; color: var(--muted); }
 /* Each picture links to itself at full size, in a new tab. In the
    tile it is cropped to its top. A short stack pane is fitted whole
    instead, since a crop would blow it up, and the pane's own ground
