@@ -200,11 +200,12 @@
 ;; like calc's K/I/H, so it chains with them; M shadows
 ;; calc-more-recursion-depth. The formula-mapping commands live one
 ;; keypress behind it (`maf--map-flag-keys'): M : prompts for the
-;; formula (mafcmd-map), as : does at every maf operation prompt, and
-;; M $ takes it from the top of the stack (mafcmd-map-stack) — $ alone
-;; keeps calc's own command, : the square (M W maps it), and # its
-;; digit-starter role. Calc's a M keeps the operator prompt
-;; (mafcmd-mapeq in the table), which stays the escape hatch.
+;; formula (mafcmd-map), as : does at every maf operation prompt, M M
+;; is the same prompt on the doubled key, and M $ takes it from the
+;; top of the stack (mafcmd-map-stack) — $ alone keeps calc's own
+;; command, : the square (M W maps it), and # its digit-starter role.
+;; Calc's a M keeps the operator prompt (mafcmd-mapeq in the table),
+;; which stays the escape hatch.
 (maf-bindings-define '(ergo) "M" #'mafcmd-map-flag)
 ;; The filter pair, the map pair's sibling: f f prompts for the
 ;; predicate (mafcmd-filter), f $ takes it from the top of the stack

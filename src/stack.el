@@ -8853,7 +8853,7 @@ the other fancy prefixes chain (M I N maps the inverse), and the
 argument readers carry a prefix argument to the command they precede.")
 
 (defun maf--map-flag-entry ()
-  "Run `mafcmd-map' as \\`M :', spending the pending map flag.
+  "Run `mafcmd-map' as \\`M :' or \\`M M', spending the pending map flag.
 The flag and the prefix keymap are cleared first: the flag asks the
 next command to map, and this command is its own mapping — left set it
 would ask `mafcmd-map' to map the mapper."
@@ -8941,6 +8941,10 @@ See `maf--map-axis-entry'."
     ;; M r :). : alone is the square (mafcmd-sqr); its mapped form is
     ;; M W, as at the combinator prompts.
     (define-key map ":" #'maf--map-flag-entry)
+    ;; The doubled key is the same prompt, the chord that needs no
+    ;; reach. Without this entry the second M would re-run the flag
+    ;; setter and toggle the flag off.
+    (define-key map "M" #'maf--map-flag-entry)
     ;; The parent collects digits as a prefix argument, but maf's
     ;; digits start a numeric entry: give them the fall-through every
     ;; other key gets, so M 1 + types the 1 and adds it plainly (the
@@ -8953,7 +8957,7 @@ See `maf--map-axis-entry'."
   "Keymap live for the keypress after \\`M', over calc's fancy-prefix map.
 Its parent is `calc-fancy-prefix-map', attached in `mafcmd-map-flag'
 once calc-ext has defined it, so its changes are few: $ runs the
-stack-formula mapping, : the prompting one, r and c restate
+stack-formula mapping, : or a doubled M the prompting one, r and c restate
 the flag as an axis and read one more key in `maf--map-axis-keys', a
 digit starts a numeric entry as it does outside the flag (C-u still
 reads a prefix argument), and any other key falls to
@@ -9027,8 +9031,9 @@ once on the whole entry, so M Q on a scalar is plain Q.
 
 The flag lasts for exactly one command, like calc's K or I: it chains
 with those prefixes (M I | runs |'s inverse variant, vconcatrev, once
-per element), a second M cancels it as a doubled K or I does (so does
-C-g), and a command that has no reading of it simply drops it. It also survives a command's own prompt, so
+per element), a second M is the formula prompt, as : is, rather than
+a cancel (C-g cancels), and a command that has no reading of it simply
+drops it. It also survives a command's own prompt, so
 M i on a vector of relations solves each one for the variable typed."
   (interactive "P")
   (calc-fancy-prefix 'maf-map-flag "Map..." n)

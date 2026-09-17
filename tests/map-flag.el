@@ -188,10 +188,16 @@
                              "[1, 4, 9]")))
   (calc-pop (calc-stack-size))
 
-  ;; A doubled M is no key of its own: the second M re-runs the
-  ;; setter, which toggles the flag off as a doubled K or I does.
-  (progn (execute-kbd-macro (kbd "M M"))
-         (cl-assert (null maf-map-flag)))
+  ;; A doubled M is the same prompt as M :, not a cancel: it runs
+  ;; `mafcmd-map', and the flag is spent.
+  (maf-push "[1, 2, 3]")
+  (goto-char (point-max))
+  (progn (execute-kbd-macro (kbd "M M x ^ 2 RET"))
+         (cl-assert (null maf-map-flag))
+         (cl-assert (string= (math-format-value
+                              (maf--strip-encasing (calc-top 1 'full)))
+                             "[1, 4, 9]")))
+  (calc-pop (calc-stack-size))
 
   ;; It chains with calc's own prefixes: after M I both are pending,
   ;; and a command that reads neither clears both.
