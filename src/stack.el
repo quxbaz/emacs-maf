@@ -7617,6 +7617,33 @@ any variables is `mafcmd-let-each' (H)."
                          bindings))
     (maf--let-evaluate-subject expr bindings)))
 
+(defun maf--let-assignment-shaped-p (arg)
+  "Non-nil when ARG is written as an assignment, or a vector holding one.
+An assignment or plain equation whatever its left side, or a vector
+with any such element: what `maf--let-bindings' reads, or a malformed
+try at it — never a value for a variable to take."
+  (or (memq (car-safe arg) '(calcFunc-eq calcFunc-assign))
+      (and (eq (car-safe arg) 'vec)
+           (cl-some (lambda (e)
+                      (memq (car-safe e) '(calcFunc-eq calcFunc-assign)))
+                    (cdr arg)))))
+
+(defun maf--let-variable-for (expr)
+  "Return the variable of EXPR a plain value binds, as a var node.
+The variable under point when point rests on one — read as the
+sub-formula target would read it, whatever the command's own scope
+made of the gesture — else EXPR's sole variable. With point elsewhere
+and EXPR naming several variables, or none, signals: the variable has
+to be named, not guessed."
+  (let ((node (maf--peek-subject '((:arity . binary)))))
+    (if (eq (car-safe node) 'var)
+        node
+      (let ((vars (cl-remove-duplicates (maf--expr-vars expr)
+                                        :test #'equal)))
+        (cond ((null vars) (user-error "No variable to bind"))
+              ((cdr vars) (user-error "Point on the variable to bind"))
+              (t (car vars)))))))
+
 (maf-defcmd mafcmd-let (expr arg commit)
   "Evaluate the resolved expression under the top-of-stack assignments.
 
@@ -7652,6 +7679,19 @@ once per assignment, the results collecting in a vector —
 and the Hyperbolic flag asks for that branching explicitly, whatever
 the variables: see `mafcmd-let-each', which H M-RET runs.
 
+A top entry that is no assignment at all — a number, a formula — is a
+value, and point names the variable that takes it: point on a variable
+in the subject binds that one, and the subject is still evaluated
+whole, so every occurrence of it takes the value. With point elsewhere
+— at home, on the argument, on an operator — the subject's sole
+variable is the one meant; naming several, the command signals rather
+than guess.
+
+  |x + a / x with 42   =>  a / 42 + 42
+  |x + 1 with a + b    =>  a + b + 1
+  2 x + 1 with 3       =>  7                (from home: the sole variable)
+  x + y with 3         =>  (signals: point on the variable to bind)
+
 Like any binary command, the entry at point is the subject and the top
 of the stack is the argument, consumed on commit; at home the subject
 is stack level 2. Point inside a formula does not narrow the subject
@@ -7664,7 +7704,8 @@ a calc selection does narrow the subject to what it covers: evaluating
 one part of an entry is asked for rather than fallen into.
 
 With keep-args both operands stay and the result is pushed on top. A
-top entry that is not an assignment signals, with the stack untouched.
+vector mixing assignments with anything else is a malformed assignment
+list, not a value, and signals with the stack untouched.
 An assignment written as a plain equation stays one argument even when
 the subject is a relation: each side is evaluated under it, rather than
 its two sides pairing with the subject's as they would in equation
@@ -7682,7 +7723,12 @@ arithmetic — so the subject's operator does not have to be = either.
   :map -1
   :pair -1
   :scope explicit
-  (let ((bindings (maf--let-bindings arg)))
+  (let ((bindings (if (maf--let-assignment-shaped-p arg)
+                      (maf--let-bindings arg)
+                    ;; A value: the variable comes from point, or is
+                    ;; the subject's only one. Bound as calc reads an
+                    ;; assignment, by storage symbol.
+                    (list (cons (nth 2 (maf--let-variable-for expr)) arg)))))
     (unless bindings
       (user-error "Top of stack is not an assignment, or a vector of them"))
     (commit (maf--let-result expr bindings))))

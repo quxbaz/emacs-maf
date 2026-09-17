@@ -167,8 +167,47 @@
   (cl-assert (string= (math-format-value (calc-top 3 'full)) "2 x + 1"))
   (calc-pop (calc-stack-size))
 
-  ;; A top entry that is not an assignment signals, stack untouched.
+  ;; A top entry that is no assignment is a value, and from home the
+  ;; subject's sole variable takes it: the same evaluation as under
+  ;; x := 3, nothing stored.
   (maf-push "2 x + 1")
+  (maf-push "3")
+  (goto-char (point-max))
+  (call-interactively 'mafcmd-let)
+  (cl-assert (= (calc-stack-size) 1))
+  (cl-assert (equal (calc-top 1 'full) 7))
+  (cl-assert (not (boundp 'var-x)))
+  (calc-pop (calc-stack-size))
+
+  ;; Point on a variable names it, and the entry is still evaluated
+  ;; whole: every occurrence takes the value.
+  (maf-push "x + a / x")
+  (maf-push "42")
+  (progn (calc-cursor-stack-index 2) (search-forward "x" (line-end-position)) (backward-char 1))
+  (call-interactively 'mafcmd-let)
+  (cl-assert (= (calc-stack-size) 1))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "a / 42 + 42"))
+  (calc-pop (calc-stack-size))
+
+  ;; A symbolic value goes in the same way.
+  (maf-push "x + 1")
+  (maf-push "a + b")
+  (progn (calc-cursor-stack-index 2) (search-forward "x" (line-end-position)) (backward-char 1))
+  (call-interactively 'mafcmd-let)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "a + b + 1"))
+  (calc-pop (calc-stack-size))
+
+  ;; With several variables, point picks: on the y, the x stands.
+  (maf-push "x + y")
+  (maf-push "3")
+  (progn (calc-cursor-stack-index 2) (search-forward "+ y" (line-end-position)) (backward-char 1))
+  (call-interactively 'mafcmd-let)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "x + 3"))
+  (calc-pop (calc-stack-size))
+
+  ;; ... and with point elsewhere — home, or an operator — there is no
+  ;; sole variable to mean, so the command signals, stack untouched.
+  (maf-push "x + y")
   (maf-push "3")
   (goto-char (point-max))
   (cl-assert (eq 'user-error
@@ -176,10 +215,44 @@
                      (progn (call-interactively 'mafcmd-let) nil)
                    (user-error (car err)))))
   (cl-assert (= (calc-stack-size) 2))
-  (cl-assert (string= (math-format-value (calc-top 2 'full)) "2 x + 1"))
+  (cl-assert (string= (math-format-value (calc-top 2 'full)) "x + y"))
+  (progn (calc-cursor-stack-index 2) (search-forward "x +" (line-end-position)) (backward-char 1))
+  (cl-assert (eq 'user-error
+                 (condition-case err
+                     (progn (call-interactively 'mafcmd-let) nil)
+                   (user-error (car err)))))
+  (cl-assert (= (calc-stack-size) 2))
   (calc-pop (calc-stack-size))
 
-  ;; A vector with a non-assignment in it is not an assignment list.
+  ;; Point on the argument is the home gesture: the entry below is the
+  ;; subject and its sole variable takes the value.
+  (maf-push "x^2 + x")
+  (maf-push "3")
+  (progn (calc-cursor-stack-index 1) (end-of-line) (backward-char 1))
+  (call-interactively 'mafcmd-let)
+  (cl-assert (equal (calc-top 1 'full) 12))
+  (calc-pop (calc-stack-size))
+
+  ;; A relation subject with point on its variable: each side evaluated,
+  ;; the relation rebuilt, as under an assignment.
+  (maf-push "y = x^2 + 1")
+  (maf-push "3")
+  (progn (calc-cursor-stack-index 2) (search-forward "= x" (line-end-position)) (backward-char 1))
+  (call-interactively 'mafcmd-let)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "y = 10"))
+  (calc-pop (calc-stack-size))
+
+  ;; A vector value is one value: the variable takes the vector and
+  ;; evaluation maps over it.
+  (maf-push "x + 1")
+  (maf-push "[1, 2]")
+  (goto-char (point-max))
+  (call-interactively 'mafcmd-let)
+  (cl-assert (equal (calc-top 1 'full) '(vec 2 3)))
+  (calc-pop (calc-stack-size))
+
+  ;; A vector with a non-assignment in it is not an assignment list —
+  ;; nor a value: it is a malformed one, and signals.
   (maf-push "2 x + 1")
   (maf-push "[x := 3, 5]")
   (goto-char (point-max))
