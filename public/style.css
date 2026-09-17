@@ -1,5 +1,5 @@
-:root { --bg: #fff; --fg: #1d1d1d; --muted: #777; --line: #e6e6e6; --accent: #b8860b; --mark: rgba(184, 134, 11, .18); --band: rgba(0, 0, 0, .05); --strong: #000; --tint: #e8f1fa; --panel: #124a72; --on-panel: #f4f9fd; --panel-link: hsl(205 73% 66%); --brace: hsl(205 67% 72%); --panel-2: hsl(45 62% 92%); --on-panel-2: var(--fg); --link-2: #124a72; --grid-line: rgba(18, 74, 114, .14); --mono: Monaco, Menlo, ui-monospace, Consolas, monospace; }
-@media (prefers-color-scheme: dark) { :root { --bg: #121214; --fg: #eaeaea; --muted: #8e8e93; --line: #2a2a2e; --accent: #daa520; --band: rgba(255, 255, 255, .06); --strong: #fff; --tint: #151a21; --panel-2: hsl(42 18% 22%); --link-2: hsl(205 73% 66%); --grid-line: rgba(255, 255, 255, .09); } }
+:root { --bg: #fff; --fg: #1d1d1d; --muted: #777; --line: #e6e6e6; --accent: #b8860b; --mark: rgba(184, 134, 11, .18); --band: rgba(0, 0, 0, .05); --strong: #000; --tint: #e8f1fa; --panel: #124a72; --on-panel: #f4f9fd; --panel-link: hsl(205 73% 66%); --brace: hsl(205 67% 72%); --panel-2: hsl(45 62% 92%); --on-panel-2: var(--fg); --link-2: #124a72; --more-lead: hsl(32 28% 50%); --grid-line: rgba(18, 74, 114, .14); --mono: Monaco, Menlo, ui-monospace, Consolas, monospace; }
+@media (prefers-color-scheme: dark) { :root { --bg: #121214; --fg: #eaeaea; --muted: #8e8e93; --line: #2a2a2e; --accent: #daa520; --band: rgba(255, 255, 255, .06); --strong: #fff; --tint: #151a21; --panel-2: hsl(42 18% 22%); --link-2: hsl(205 73% 66%); --more-lead: hsl(32 28% 66%); --grid-line: rgba(255, 255, 255, .09); } }
 * { box-sizing: border-box; }
 html { color-scheme: light dark; }
 body { margin: 0; background: var(--bg); color: var(--fg); font: 19px/1.55 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
@@ -93,9 +93,13 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
    below, marked by the lede panel's blue, with no rule under them. */
 .intro .more { background: var(--panel-2); color: var(--on-panel-2); border-radius: 8px; padding: 18px 20px; }
 .intro .more p { margin: 0; }
+/* Its opening line is set apart by color alone, as the lede's is: a
+   warm brown of the cream's own hue, lightened in the dark scheme to
+   hold against the grey. */
+.intro .more p:first-child { color: var(--more-lead); }
 .intro .more a { color: var(--link-2); text-decoration: none; }
 .intro .more a:hover { text-decoration: underline; text-underline-offset: .15em; }
-.intro .more p::after { content: ""; display: inline-block; margin-left: .45em; vertical-align: middle; border: 6px solid transparent; border-top: 8px solid var(--on-panel-2); border-bottom: 0; }
+.intro .more p:last-child::after { content: ""; display: inline-block; margin-left: .45em; vertical-align: middle; border: 6px solid transparent; border-top: 8px solid var(--on-panel-2); border-bottom: 0; }
 /* Between the two panels a short trail of dots, in the brace's blue,
    leads the eye from the one down to the other. It stands in the
    flexible row between them, centered in it, and that row's floor is
