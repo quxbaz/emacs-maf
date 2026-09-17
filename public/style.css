@@ -38,13 +38,15 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
    title's own margin plus its layer's. They span the rest of the
    prose's rows. Between those rows, and under the last, is a
    flexible one: the three share whatever height the examples have
-   over the prose, so the panel stands as far under the paragraph as
-   the line does under the panel and over the examples' foot. Each
-   keeps a floor, for when the prose is the taller. The layers'
-   common margin would count in the rows, so here they give it up.
-   The gutter between the columns is a column of the grid itself,
-   since the brace is drawn in it. */
-.intro .col { display: grid; grid-template-columns: minmax(0, 2fr) 110px minmax(0, 3fr); grid-template-rows: auto auto minmax(20px, 1fr) auto minmax(53px, 1fr) auto minmax(20px, 1fr); }
+   over the prose. Each keeps a floor, for when the prose is the
+   taller. The column's height is its content's, and rows in fr are
+   then sized from the one that needs the most per fr, so the row
+   that holds the trail takes its larger floor as a larger share
+   rather than as a floor: a floor there would be every row's. The
+   layers' common margin would count in the rows, so here they give
+   it up. The gutter between the columns is a column of the grid
+   itself, since the brace is drawn in it. */
+.intro .col { display: grid; grid-template-columns: minmax(0, 2fr) 110px minmax(0, 3fr); grid-template-rows: auto auto minmax(20px, 1fr) auto minmax(53px, 2.65fr) auto minmax(20px, 1fr); }
 .intro .col > .layer { grid-column: 1; margin-bottom: 0; }
 .intro .col > .layer:nth-child(1) { grid-row: 1; }
 .intro .col > .layer:nth-child(2) { grid-row: 2; }
@@ -53,15 +55,16 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
 .intro .col > .pair { grid-column: 3; grid-row: 2 / 8; align-self: start; margin-top: calc(-1 * (.8 * 1.9rem + 58px) / 2); }
 /* A brace down the examples' left, in a light tone of the panel's
    blue, gathers the two as the pair the lede names, and a line runs
-   from the panel's edge to its cusp. It is one SVG in the gutter
-   column, spanning the examples' rows and lifted with them, reaching
-   10px past either edge so it stands a little taller than what it
-   holds. Its path is written by brace.js from where the panel lies,
-   as one stroke, so nothing seams at any device scale. The SVG fills
-   a box that is the grid item, since a box stretches to its rows and
-   an SVG on its own would keep a default height. */
-.intro .col > .brace { grid-column: 2; grid-row: 2 / 8; margin-top: calc(-1 * (.8 * 1.9rem + 58px) / 2 - 10px); margin-bottom: -10px; }
-.intro .col > .brace svg { display: block; width: 100%; height: 100%; overflow: visible; fill: none; stroke: var(--brace); stroke-width: 2px; stroke-linejoin: round; }
+   from the panel's edge to its cusp. It is one SVG hung off the
+   examples' own box, out in the gutter column, reaching 10px past
+   either edge so it stands a little taller than what it holds. It
+   is sized by the examples and not by the rows they span, since the
+   rows run on past them wherever the prose is the taller. Its path
+   is written by brace.js from where the panel lies, as one stroke,
+   so nothing seams at any device scale. */
+.intro .pair { position: relative; }
+.intro .pair > .brace { position: absolute; right: 100%; width: 110px; top: -10px; bottom: -10px; }
+.intro .pair > .brace svg { display: block; width: 100%; height: 100%; overflow: visible; fill: none; stroke: var(--brace); stroke-width: 2px; stroke-linejoin: round; }
 /* The source link keeps to the fold's upper right, on the content
    column's right edge while there is room, the page's margin after. It
    is drawn at full strength: a faded mark reads as a disabled one. */
@@ -129,7 +132,7 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
 /* Narrow, the column is one again: the examples follow the lede,
    the brace has nothing to gather them toward, and the closing line
    ends the fold. */
-@media (max-width: 960px) { .intro .col { grid-template-columns: 1fr; grid-template-rows: none; } .intro .col > :is(.layer, .pair, .more):nth-child(n) { grid-column: 1; grid-row: auto; } .intro .col > .pair { max-width: 720px; margin-top: 34px; } .intro .col > :is(.brace, .trail):nth-child(n) { display: none; } .intro .col > .lede { margin-top: 40px; } .intro .col > .more { margin-top: 40px; } }
+@media (max-width: 960px) { .intro .col { grid-template-columns: 1fr; grid-template-rows: none; } .intro .col > :is(.layer, .pair, .more):nth-child(n) { grid-column: 1; grid-row: auto; } .intro .col > .pair { max-width: 720px; margin-top: 34px; } .intro .pair > .brace, .intro .col > .trail { display: none; } .intro .col > .lede { margin-top: 40px; } .intro .col > .more { margin-top: 40px; } }
 .examples { background: var(--tint); padding: 2.6em 0 100px; }
 .examples .col { max-width: 1560px; }
 /* The section's heading is set like the page title. */

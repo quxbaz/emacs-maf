@@ -5,7 +5,8 @@
 // panel's middle, which only the layout knows, so the path is written
 // from measurement, on load and whenever anything in the column changes
 // size: the brace itself, or any layer of prose, since one growing
-// above the panel moves it without resizing it.
+// above the panel moves it without resizing it. The cusp is held within
+// the stem, for a layout where the panel's middle lies past either end.
 //
 // Coordinates are the stroke's center, in the brace's own pixels. The
 // stem stands 40px from the examples, the curls and the cusp are 11px
@@ -19,7 +20,8 @@ function draw(svg, lede) {
   if (!b.width || !b.height) return
   const w = b.width, h = b.height
   const x = Math.round(w - STEM) + 1
-  const cy = Math.round((l.top + l.bottom) / 2 - b.top)
+  const mid = Math.round((l.top + l.bottom) / 2 - b.top)
+  const cy = Math.max(1 + 2 * R, Math.min(h - 1 - 2 * R, mid))
   svg.querySelector('path').setAttribute('d', [
     `M${x + R} 1A${R} ${R} 0 0 0 ${x} ${1 + R}`,
     `V${cy - R}A${R} ${R} 0 0 1 ${x - R} ${cy}A${R} ${R} 0 0 1 ${x} ${cy + R}`,
