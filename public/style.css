@@ -98,8 +98,9 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
 .intro .more p { margin: 0; }
 /* Its opening line is set apart in bold and by color, as the lede's
    is: a warm brown of the cream's own hue, lightened in the dark scheme to
-   hold against the grey. */
-.intro .more p:first-child { color: var(--more-lead); font-weight: 600; }
+   hold against the grey. A sliver of margin under it evens the gap to
+   the eye: at the text's own leading a bold line reads as crowded. */
+.intro .more p:first-child { color: var(--more-lead); font-weight: 600; margin-bottom: 2px; }
 .intro .more a { color: var(--link-2); text-decoration: none; }
 .intro .more a:hover { text-decoration: underline; text-underline-offset: .15em; }
 .intro .more p:last-child::after { content: ""; display: inline-block; margin-left: .45em; vertical-align: middle; border: 6px solid transparent; border-top: 8px solid var(--on-panel-2); border-bottom: 0; }
