@@ -439,6 +439,17 @@ completed digit entry — t for a command-key termination (1 +), nil for
 a deliberate RET/SPC push — so it always reflects the most recent
 entry. Consumed by `maf--undo-amalgamate-digit-entry'.")
 
+(defun maf--digit-entry-handoff-p ()
+  "Non-nil when a digit entry dispatched the running command directly.
+The push's `calcDigit-start' — or `maf-digit-start' when maf's binding
+wraps it — or a later digit key is still `last-command', and the entry
+marked its termination as a handoff (`maf--digit-entry-handoff'), so
+the number typed and the command are one gesture: 1 + on an entry, or
+5 = y."
+  (and maf--digit-entry-handoff
+       (memq last-command '(calcDigit-start calcDigit-key
+                            calcDigit-nondigit maf-digit-start))))
+
 (defun maf--undo-amalgamate-digit-entry ()
   "Merge a digit-entry arg push into the command's undo group.
 Called after a binary command's `calc-wrapper' completes. When the
@@ -454,9 +465,7 @@ group.
 digit is calcDigit-start — or maf-digit-start when maf's binding wraps
 it — later ones calcDigit-key); any of them means the entry directly
 preceded this command."
-  (when (and maf--digit-entry-handoff
-             (memq last-command '(calcDigit-start calcDigit-key
-                                  calcDigit-nondigit maf-digit-start))
+  (when (and (maf--digit-entry-handoff-p)
              (cdr calc-undo-list))
     (setq calc-undo-list (cons (append (car calc-undo-list)
                                        (cadr calc-undo-list))
