@@ -359,17 +359,20 @@ superseded by the 8# prefix."
 
 (maf-bindings-digit-define "o" #'maf-digit-mod-360 #'calcDigit-key)
 
-(defun maf-digit-sqr ()
-  "End the digit entry on `:' and square the number entered.
-`:' is `mafcmd-sqr' out in the stack (see src/bindings.el); this gives
-the entry minibuffer the same key, so a square goes in as it is typed:
+(defun maf-digit-pow ()
+  "End the digit entry on `:' and raise the entry at point to the number.
+`:' is `mafcmd-pow' out in the stack (see src/bindings.el); this gives
+the entry minibuffer the same key, so a power goes in as its exponent
+is typed:
 
-  1:  |        5 :  =>  1:  25
+  1:  x|    2 :  =>  1:  x^2
 
 It is calc's own command-key termination and nothing more — the entry
 ends and the `:' re-dispatches, exactly as the `+' of 1 + does: the
 number becomes the command's argument, point stays on the entry the
-command resolves, and the push folds into the square's undo group.
+command resolves, and the push folds into the power's undo group. So
+the command's routes come with it: the entry at point is raised
+whatever its depth, and at home the top entry is, to the number.
 
 The cost is the fraction colon this key was, which `;' carries instead
 — the unshifted twin, and where fractions have been typed since (see
@@ -394,12 +397,12 @@ the key is calc's throughout, as every shortcut here is."
              (calcDigit-key))
     ;; Named as calc's own terminator for the same undo-amalgamation
     ;; reason as `maf-digit-equal-to'. The event is not exchanged: `:'
-    ;; is already the square out in the stack, so what
-    ;; `calcDigit-nondigit' unreads dispatches to `mafcmd-sqr' itself.
+    ;; is already the power out in the stack, so what
+    ;; `calcDigit-nondigit' unreads dispatches to `mafcmd-pow' itself.
     (setq this-command 'calcDigit-nondigit)
     (calcDigit-nondigit)))
 
-(maf-bindings-digit-define ":" #'maf-digit-sqr #'calcDigit-key)
+(maf-bindings-digit-define ":" #'maf-digit-pow #'calcDigit-key)
 
 (defvar maf--digit-jump-level nil
   "Stack level a finished digit entry should send point to, or nil.

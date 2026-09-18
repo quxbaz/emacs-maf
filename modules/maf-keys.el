@@ -203,7 +203,7 @@ anyone edits it in.")
          maf-edit-add-vector)
         ("Digit entry"
          maf-digit-start maf-digit-commit-here
-         maf-digit-commit-contextual maf-digit-jump maf-digit-sqr
+         maf-digit-commit-contextual maf-digit-jump maf-digit-pow
          maf-digit-mod-360 maf-digit-equal-to maf-digit-pi
          maf-digit-colon maf-digit-quit)
         ("Navigation"
@@ -311,7 +311,7 @@ which the buffer owns rather than the command.")
         (maf-digit-commit-here "commit the number, keeping point" nil)
         (maf-digit-commit-contextual "commit the number into the formula" nil)
         (maf-digit-jump "jump to the entry typed" nil)
-        (maf-digit-sqr "square the number typed" "3 : => 9")
+        (maf-digit-pow "raise to the number typed" "x, 3 : => x^3")
         (maf-digit-mod-360 "wrap the number typed" "370 o => 10")
         (maf-digit-equal-to "equate with the number typed" "x, 2 e => x = 2")
         (maf-digit-pi "multiply the number typed by pi" "2 n => 2 pi")

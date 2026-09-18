@@ -943,10 +943,11 @@ without a modifier. It is an alias, not an insertion — it re-dispatches
 calc's own =calcDigit-key= with the event spoofed to =:=, so calc's
 colon handling (the leading 1 for a bare
 =;=, mixed numbers, format validation) applies unchanged. The colon
-itself ends the entry and squares the number (=maf-digit-sqr=), the
-in-entry twin of =:= out in the stack (=mafcmd-sqr=): 5 : gives 25.
-Outside the exceptions below, =;= remains the way to enter calc's
-fraction colon while =:= takes the square command. Where the shortcuts
+itself ends the entry and raises the entry at point to the number
+(=maf-digit-pow=), the in-entry twin of =:= out in the stack
+(=mafcmd-pow=): on x, 2 : gives x^2. Outside the exceptions below,
+=;= remains the way to enter calc's fraction colon while =:= takes the
+power command. Where the shortcuts
 stand aside, both keys keep their stock meanings instead. During a
 maf-edit session =;= types =:= too (=maf-edit-insert-colon=); the
 literal semicolon — calc's row separator in matrix notation — moves to

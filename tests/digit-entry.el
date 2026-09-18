@@ -24,7 +24,7 @@
 
   ;; Replacement covers every number type the entry can produce: a
   ;; typed fraction replaces a float leaf. The fraction goes in on `;',
-  ;; the colon's key since `:' became the square (maf-digit-sqr).
+  ;; the colon's key since `:' became the power (maf-digit-pow).
   (maf-push "2.5 x")
   (progn (goto-char (point-min)) (search-forward "2.5") (backward-char 1))
   (execute-kbd-macro (kbd "1 ; 3 RET"))
