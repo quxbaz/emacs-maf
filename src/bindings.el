@@ -65,9 +65,10 @@
 ;; division, whose key this was — calc's \ is shadowed, and the idiv
 ;; row in maf-cmds.el keeps no key.
 (maf-bindings-define '(ergo) "\\" #'mafcmd-sqrt)
-;; The square on a key of its own: I Q reaches mafcmd-sqr through the
-;; inverse flag, and W is free in both maps. The next key over from
-;; Q, and the shape of the two square-root keys' inverse.
+;; The square on a key of its own, W being free in both maps: the next
+;; key over from Q, and the shape of the two square-root keys' inverse.
+;; It squares a vector element by element (mafcmd-sqr); I Q is calc's
+;; own square, the vector's product with itself (mafcmd-sqr-whole).
 (maf-bindings-define '(ergo) "W" #'mafcmd-sqr)
 ;; And : as a second key for the power beside ^, the unshifted key an
 ;; edit session already raises on (maf-edit-power). Inside digit entry

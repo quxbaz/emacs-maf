@@ -473,6 +473,59 @@ home.
             (math-simplify (math-div (math-mul expr '(var pi var-pi))
                                      180)))))
 
+(defun maf--sqr-elementwise (expr)
+  "Square EXPR, a vector element by element, nested vectors recursing.
+Anything else is squared whole through `calcFunc-sqr' and normalized."
+  (if (eq (car-safe expr) 'vec)
+      (cons 'vec (mapcar #'maf--sqr-elementwise (cdr expr)))
+    (calc-normalize (list 'calcFunc-sqr expr))))
+
+(maf-defcmd mafcmd-sqr (expr _arg commit)
+  "Square the resolved expression.
+
+  x  =>  x^2
+
+A vector squares element by element, and a matrix each of its
+elements, as commands act on vectors generally: the vector's product
+with itself — x^2 + y^2 for [x, y], the reading calc gives its own
+square — is `mafcmd-sqr-whole', the Inverse route of `mafcmd-sqrt'.
+Point picks the target as usual: a sub-formula at point, each side of
+an equation, the top entry at home.
+
+  [x, y]            =>  [x^2, y^2]
+  [[1, 2], [3, 4]]  =>  [[1, 4], [9, 16]]
+  2 x + 1           =>  (2 x + 1)^2"
+  :title "square"
+  :example "x => x^2"
+  :arity unary
+  :prefix "sqr"
+  (commit (maf--sqr-elementwise expr)))
+
+;; The operation stamp the combinators read, as every table row has:
+;; a fold or map by W squares by `calcFunc-sqr'.
+(put 'mafcmd-sqr 'maf-operation '(calcFunc-sqr . 1))
+
+(maf-defcmd mafcmd-sqr-whole (expr _arg commit)
+  "Square the resolved expression whole, a vector by its product with itself.
+
+  [x, y]  =>  x^2 + y^2
+
+The Inverse route of `mafcmd-sqrt', and calc's own square: a vector is
+multiplied by itself as calc reads a product, so a plain vector gives
+the sum of its squares and a matrix its matrix square. On anything
+else it is `mafcmd-sqr', which is the element-by-element square on a
+vector too.
+
+  [[1, 2], [3, 4]]  =>  [ [ 7,  10 ], [ 15, 22 ] ]
+  2 x + 1           =>  (2 x + 1)^2"
+  :title "square whole"
+  :example "[x, y] => x^2 + y^2"
+  :arity unary
+  :prefix "sqr"
+  (commit (calc-normalize (list 'calcFunc-sqr expr))))
+
+(put 'mafcmd-sqr-whole 'maf-operation '(calcFunc-sqr . 1))
+
 (maf-defcmd mafcmd-mod-360 (expr _arg commit)
   "Reduce the resolved expression modulo 360, wrapping an angle in degrees.
 

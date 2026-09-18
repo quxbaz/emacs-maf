@@ -39,6 +39,9 @@
 
 (require 'maf-defcmd)
 (require 'maf-math "math")   ; maf-vconcat and maf-sort, applied by the rows below
+;; The whole square is the sqrt row's Inverse route, defined with its
+;; elementwise twin in stack.el, which loads after the table.
+(declare-function mafcmd-sqr-whole "stack")
 
 ;; Also defvar'd in maf.el next to the minor mode; whichever file loads first
 ;; creates the map and the other defvar is a no-op. Declared here too so this
@@ -237,7 +240,10 @@ variant's own variable governs only its direct invocation."
   (arg unary calcFunc-arg
    :title "complex argument" :example "1 => 0"
    :doc "Take the polar angle of the resolved expression.")
-  (sqrt unary calcFunc-sqrt "Q" :inv sqr
+  ;; The square has left the table for `mafcmd-sqr' (src/stack.el, W),
+  ;; which maps a vector element by element; calc's own square — the
+  ;; vector times itself — stays the Inverse route as `mafcmd-sqr-whole'.
+  (sqrt unary calcFunc-sqrt "Q" :inv sqr-whole
    :title "square root" :example "9 => 3"
    :doc "Take the square root of the resolved expression.")
   (min binary calcFunc-min "f n"
@@ -277,9 +283,6 @@ variant's own variable governs only its direct invocation."
    :doc "Round the resolved expression up to an integer.")
   (trunc unary calcFunc-trunc
    :doc "Truncate the resolved expression toward zero, to an integer.")
-  (sqr unary calcFunc-sqr
-   :title "square" :example "x => x^2"
-   :doc "Square the resolved expression.")
   (arcsin unary calcFunc-arcsin
    :doc "Take the arcsine of the resolved expression.")
   (arccos unary calcFunc-arccos
