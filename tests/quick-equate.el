@@ -1,6 +1,6 @@
 ;; Step test for maf-quick-equate: read one character and equate the
-;; entry at point with it, the character as the right side. Run in a
-;; live Emacs (see tests/README.md).
+;; entry at point with it, the character on the side the margin names.
+;; Run in a live Emacs (see tests/README.md).
 (maf-step
   ;; = reaches the command in the ergo layout; e keeps `mafcmd-equal-to'.
   (cl-assert (eq (key-binding (kbd "=")) 'maf-quick-equate))
@@ -107,6 +107,47 @@
   (calc-clear-selections)
   (calc-pop (calc-stack-size))
 
+  ;; --- From the line-number margin the character is the left side ---
+
+  ;; Point stays in the margin, before the side it added.
+  (maf-push "a + b")
+  (progn (goto-char (point-min)) (beginning-of-line) (forward-char 1))
+  (cl-assert (maf--at-line-prefix-p))
+  (progn (setq unread-command-events (listify-key-sequence "c"))
+         (call-interactively 'maf-quick-equate))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "c = a + b"))
+  (cl-assert (maf--at-line-prefix-p))
+  (cl-assert (= (line-number-at-pos) 1))
+  (calc-pop (calc-stack-size))
+
+  ;; A digit the same, structurally.
+  (maf-push "x + 1")
+  (progn (goto-char (point-min)) (beginning-of-line))
+  (progn (setq unread-command-events (listify-key-sequence "0"))
+         (call-interactively 'maf-quick-equate))
+  (cl-assert (equal (calc-top 1 'full) '(calcFunc-eq 0 (+ (var x var-x) 1))))
+  (calc-pop (calc-stack-size))
+
+  ;; The Inverse flag from the margin.
+  (maf-push "a + b")
+  (progn (goto-char (point-min)) (beginning-of-line))
+  (progn (setq unread-command-events (listify-key-sequence "c"))
+         (let ((calc-inverse-flag t)) (call-interactively 'maf-quick-equate)))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "c != a + b"))
+  (cl-assert (maf--at-line-prefix-p))
+  (calc-pop (calc-stack-size))
+
+  ;; A deeper stack: the entry at point, from its margin.
+  (maf-push "p")
+  (maf-push "q")
+  (progn (calc-cursor-stack-index 2) (beginning-of-line))
+  (execute-kbd-macro (kbd "= r"))
+  (cl-assert (string= (math-format-value (calc-top 2 'full)) "r = p"))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "q"))
+  (cl-assert (= (line-number-at-pos) 1))
+  (cl-assert (maf--at-line-prefix-p))
+  (calc-pop (calc-stack-size))
+
   ;; --- Inverse flag builds != and is consumed ---
 
   (maf-push "a + b")
@@ -146,6 +187,18 @@
   (execute-kbd-macro (kbd "U"))
   (cl-assert (= (calc-stack-size) 1))
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "x"))
+  (calc-pop (calc-stack-size))
+
+  ;; From the margin the number typed is the right side, the
+  ;; character the left, and point sits in the top entry's margin.
+  (maf-push "x")
+  (progn (goto-char (point-min)) (beginning-of-line))
+  (execute-kbd-macro (kbd "5 = y"))
+  (cl-assert (= (calc-stack-size) 2))
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "y = 5"))
+  (cl-assert (string= (math-format-value (calc-top 2 'full)) "x"))
+  (cl-assert (= (line-number-at-pos) 2))
+  (cl-assert (maf--at-line-prefix-p))
   (calc-pop (calc-stack-size))
 
   ;; At home the same, and point stays home.

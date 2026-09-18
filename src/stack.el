@@ -3264,32 +3264,43 @@ stack had it."
       (list arg expr)
     (list expr arg)))
 
-(defvar maf--quick-equate-rhs nil
-  "Right side read by `maf-quick-equate', for the contextual body.")
+(defvar maf--quick-equate-char nil
+  "Side read by `maf-quick-equate', for the contextual body.")
+
+(defvar maf--quick-equate-left nil
+  "Non-nil when `maf--quick-equate-char' is the left side, from the margin.")
+
+(defun maf--quick-equate-sides (expr)
+  "The sides of the relation `maf-quick-equate' builds around EXPR.
+The character is the right side, or the left when it was typed from
+the line-number margin (`maf--quick-equate-left')."
+  (if maf--quick-equate-left
+      (list maf--quick-equate-char expr)
+    (list expr maf--quick-equate-char)))
 
 (maf-defcmd mafcmd--quick-equate (expr _arg commit)
-  "Equate the resolved entry with `maf--quick-equate-rhs'.
+  "Equate the resolved entry with `maf--quick-equate-char'.
 Internal: `maf-quick-equate' reads the character, binds it, and
-dispatches here. The entry is the left side and the character the
-right, always: the user chose the right side by typing it, so there
-is no definition reorder as `mafcmd-equal-to' has. Structural, no
-simplification."
+dispatches here. The entry is one side and the character the other,
+on the side the gesture named (`maf--quick-equate-sides'); there is
+no definition reorder as `mafcmd-equal-to' has, since the user chose
+the sides. Structural, no simplification."
   :arity unary
   :prefix "eq"
   :scope entry
   :map -1
   :inverse mafcmd--quick-not-equate
-  (commit (list 'calcFunc-eq expr maf--quick-equate-rhs)))
+  (commit (cons 'calcFunc-eq (maf--quick-equate-sides expr))))
 
 (maf-defcmd mafcmd--quick-not-equate (expr _arg commit)
-  "Build != between the resolved entry and `maf--quick-equate-rhs'.
+  "Build != between the resolved entry and `maf--quick-equate-char'.
 Internal: the Inverse route of `mafcmd--quick-equate', identical but
 for the relation it forms."
   :arity unary
   :prefix "neq"
   :scope entry
   :map -1
-  (commit (list 'calcFunc-neq expr maf--quick-equate-rhs)))
+  (commit (cons 'calcFunc-neq (maf--quick-equate-sides expr))))
 
 (defun maf-quick-equate ()
   "Read a character and equate the entry at point with it.
@@ -3297,18 +3308,24 @@ for the relation it forms."
   c on a |+ b  =>  a + b = c|
   0 on x| + 1  =>  x + 1 = 0|
 
+From the line-number margin the character is the left side instead,
+and point stays in the margin.
+
+  c on 1:| a + b  =>  1:| c = a + b
+
 With the Inverse flag the relation is != instead.
 
   I c on a |+ b  =>  a + b != c|
 
 A letter is a variable, a digit the number it names; anything else
-aborts. The entry is the left side whole, wherever point sits on its
-line and whatever is selected in it, and the character the right: no
-argument is taken from the stack, and the sides are never reordered.
-At home the top entry is the subject. Point lands at the end of the
-equation. Nothing simplifies or evaluates, so 3 with 3 gives 3 = 3.
-Where the right side is itself on the stack, `mafcmd-equal-to' takes
-it from there instead.
+aborts. The entry is one side whole, wherever point sits on its line
+and whatever is selected in it, and the character the other: no
+argument is taken from the stack, and the sides are never reordered,
+the margin gesture alone deciding which is left. At home the top
+entry is the subject and the character the right side. Point lands at
+the end of the equation. Nothing simplifies or evaluates, so 3 with 3
+gives 3 = 3. Where the right side is itself on the stack,
+`mafcmd-equal-to' takes it from there instead.
 
 Typed straight after a number, the number is the subject: the digit
 entry ends on the key and its push is the entry equated, wherever
@@ -3325,8 +3342,9 @@ both.
   (let* ((handoff (maf--digit-entry-handoff-p))
          (last (and handoff last-command))
          (home (maf--at-home-p))
+         (maf--quick-equate-left (maf--at-line-prefix-p))
          (char (read-char-from-minibuffer "Equate with: "))
-         (maf--quick-equate-rhs
+         (maf--quick-equate-char
           (cond ((or (<= ?a char ?z) (<= ?A char ?Z))
                  (list 'var
                        (intern (char-to-string char))
@@ -3340,10 +3358,11 @@ both.
     (let ((last-command (or last last-command)))
       (mafcmd--quick-equate))
     ;; The equation reads left to right and the new side is at its
-    ;; end; that is where writing continues. A home gesture stays home.
+    ;; end; that is where writing continues. A home gesture stays home,
+    ;; a margin gesture in the margin, before the side it added.
     (unless home
       (when handoff (calc-cursor-stack-index 1))
-      (end-of-line))))
+      (unless maf--quick-equate-left (end-of-line)))))
 
 (maf-defcmd mafcmd-remove-equal (expr _arg commit)
   "Drop the relation from the entry at point, keeping the side that matters.
