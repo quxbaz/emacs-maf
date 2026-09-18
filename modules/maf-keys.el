@@ -123,6 +123,7 @@ anyone edits it in.")
 (setq maf-keys-groups
       '(("Arithmetic"
          mafcmd-add mafcmd-sub mafcmd-mul mafcmd-div mafcmd-pow
+         mafcmd-pow-whole
          mafcmd-sqrt mafcmd-sqr mafcmd-sqr-whole mafcmd-isqrt mafcmd-inv
          mafcmd-neg
          mafcmd-negate mafcmd-mod mafcmd-abs mafcmd-abssqr mafcmd-min

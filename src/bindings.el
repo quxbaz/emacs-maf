@@ -70,12 +70,14 @@
 ;; It squares a vector element by element (mafcmd-sqr); I Q is calc's
 ;; own square, the vector's product with itself (mafcmd-sqr-whole).
 (maf-bindings-define '(ergo) "W" #'mafcmd-sqr)
-;; And : as a second key for the power beside ^, the unshifted key an
-;; edit session already raises on (maf-edit-power). Inside digit entry
-;; it reaches the same command through `maf-digit-pow'
-;; (src/minibuffer.el), the number typed becoming the exponent.
-;; Displaces calc's fraction divide, which the mafcmd table keeps no
-;; key for.
+;; The power on calc's own key in both profiles: it has left the table
+;; for a command that raises a vector element by element (src/stack.el).
+(maf-bindings-define '(calc ergo) "^" #'mafcmd-pow)
+;; And : as a second key for it in ergo, the unshifted key an edit
+;; session already raises on (maf-edit-power). Inside digit entry it
+;; reaches the same command through `maf-digit-pow' (src/minibuffer.el),
+;; the number typed becoming the exponent. Displaces calc's fraction
+;; divide, which the mafcmd table keeps no key for.
 (maf-bindings-define '(ergo) ":" #'mafcmd-pow)
 
 ;; The combinators, on calc's own keys for them: each reads its

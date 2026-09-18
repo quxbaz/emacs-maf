@@ -183,9 +183,10 @@ variant's own variable governs only its direct invocation."
   (div binary calcFunc-div "/"
    :title "divide" :example "x, 2 => x / 2"
    :doc "Divide the resolved expression by the top-of-stack argument.")
-  (pow binary calcFunc-pow "^" :inv nroot
-   :title "power" :example "x, 2 => x^2"
-   :doc "Raise the resolved expression to the top-of-stack power.")
+  ;; The power has left the table for `mafcmd-pow' (src/stack.el, ^ and
+  ;; :), which raises a vector element by element; calc's own power —
+  ;; the vector or matrix multiplied by itself — stays the Hyperbolic
+  ;; route as `mafcmd-pow-whole', and nroot below its Inverse route.
   ;; vconcat/vconcatrev use maf's own concatenation rather than
   ;; calcFunc-vconcat: | here always builds a vector, where calc leaves
   ;; it symbolic whenever an operand is not provably scalar (see

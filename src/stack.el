@@ -526,6 +526,78 @@ vector too.
 
 (put 'mafcmd-sqr-whole 'maf-operation '(calcFunc-sqr . 1))
 
+(defun maf--pow-elementwise (base exp)
+  "Raise BASE to EXP, vectors element by element.
+A vector base takes the exponent whole at each element, a vector
+exponent raises the base at each of its elements, and two vectors of
+one length pair off, position by position; nested vectors recurse, so
+a matrix is raised at each of its elements. Two vectors of different
+lengths are calc's dimension error. Anything else is one power,
+normalized under the buffer's simplification mode."
+  (let ((vbase (eq (car-safe base) 'vec))
+        (vexp (eq (car-safe exp) 'vec)))
+    (cond ((and vbase vexp)
+           (unless (= (length base) (length exp))
+             (math-dimension-error))
+           (cons 'vec (cl-mapcar #'maf--pow-elementwise (cdr base) (cdr exp))))
+          (vbase
+           (cons 'vec (mapcar (lambda (e) (maf--pow-elementwise e exp))
+                              (cdr base))))
+          (vexp
+           (cons 'vec (mapcar (lambda (e) (maf--pow-elementwise base e))
+                              (cdr exp))))
+          (t (calc-normalize (list 'calcFunc-pow base exp))))))
+
+(maf-defcmd mafcmd-pow (expr arg commit)
+  "Raise the resolved expression to the top-of-stack power.
+
+  x, 2  =>  x^2
+
+A vector is raised element by element, each to the whole exponent,
+and a matrix at each of its elements, as commands act on vectors
+generally; a vector exponent raises the base at each of its elements,
+and two vectors of one length pair off. The vector or matrix
+multiplied by itself — a^2 + b^2 for [a, b] squared, the reading calc
+gives its own power — is `mafcmd-pow-whole', the Hyperbolic route.
+With the Inverse flag, `mafcmd-nroot' takes the root instead. Point
+picks the target as usual: a sub-formula at point, each side of an
+equation, the top entry at home.
+
+  [a, b, c], 2    =>  [a^2, b^2, c^2]
+  [a, b], x       =>  [a^x, b^x]
+  2, [a, b]       =>  [2^a, 2^b]
+  [a, b], [2, 3]  =>  [a^2, b^3]"
+  :title "power"
+  :example "x, 2 => x^2"
+  :arity binary
+  :prefix "pow"
+  :inverse mafcmd-nroot
+  :hyperbolic mafcmd-pow-whole
+  (commit (maf--pow-elementwise expr arg)))
+
+(put 'mafcmd-pow 'maf-operation '(calcFunc-pow . 2))
+
+(maf-defcmd mafcmd-pow-whole (expr arg commit)
+  "Raise the resolved expression to the power whole, a vector by its own product.
+
+  [a, b], 2  =>  a^2 + b^2
+
+The Hyperbolic route of `mafcmd-pow', and calc's own power: a vector
+or matrix is multiplied by itself as many times as the exponent says,
+as calc reads a product, so a plain vector squared is the sum of its
+squares and a square matrix its matrix power. On anything else it is
+`mafcmd-pow', which raises a vector element by element instead.
+
+  [[1, 2], [3, 4]], 2  =>  [ [ 7,  10 ], [ 15, 22 ] ]
+  2 x + 1, 2           =>  (2 x + 1)^2"
+  :title "power whole"
+  :example "[a, b], 2 => a^2 + b^2"
+  :arity binary
+  :prefix "pow"
+  (commit (calc-normalize (list 'calcFunc-pow expr arg))))
+
+(put 'mafcmd-pow-whole 'maf-operation '(calcFunc-pow . 2))
+
 (maf-defcmd mafcmd-mod-360 (expr _arg commit)
   "Reduce the resolved expression modulo 360, wrapping an angle in degrees.
 
