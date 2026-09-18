@@ -3264,6 +3264,87 @@ stack had it."
       (list arg expr)
     (list expr arg)))
 
+(defvar maf--quick-equate-rhs nil
+  "Right side read by `maf-quick-equate', for the contextual body.")
+
+(maf-defcmd mafcmd--quick-equate (expr _arg commit)
+  "Equate the resolved entry with `maf--quick-equate-rhs'.
+Internal: `maf-quick-equate' reads the character, binds it, and
+dispatches here. The entry is the left side and the character the
+right, always: the user chose the right side by typing it, so there
+is no definition reorder as `mafcmd-equal-to' has. Structural, no
+simplification."
+  :arity unary
+  :prefix "eq"
+  :scope entry
+  :map -1
+  :inverse mafcmd--quick-not-equate
+  (commit (list 'calcFunc-eq expr maf--quick-equate-rhs)))
+
+(maf-defcmd mafcmd--quick-not-equate (expr _arg commit)
+  "Build != between the resolved entry and `maf--quick-equate-rhs'.
+Internal: the Inverse route of `mafcmd--quick-equate', identical but
+for the relation it forms."
+  :arity unary
+  :prefix "neq"
+  :scope entry
+  :map -1
+  (commit (list 'calcFunc-neq expr maf--quick-equate-rhs)))
+
+(defun maf-quick-equate ()
+  "Read a character and equate the entry at point with it.
+
+  c on a |+ b  =>  a + b = c|
+  0 on x| + 1  =>  x + 1 = 0|
+
+With the Inverse flag the relation is != instead.
+
+  I c on a |+ b  =>  a + b != c|
+
+A letter is a variable, a digit the number it names; anything else
+aborts. The entry is the left side whole, wherever point sits on its
+line and whatever is selected in it, and the character the right: no
+argument is taken from the stack, and the sides are never reordered.
+At home the top entry is the subject. Point lands at the end of the
+equation. Nothing simplifies or evaluates, so 3 with 3 gives 3 = 3.
+Where the right side is itself on the stack, `mafcmd-equal-to' takes
+it from there instead.
+
+Typed straight after a number, the number is the subject: the digit
+entry ends on the key and its push is the entry equated, wherever
+point was, so the equation reads as it was typed and one undo reverts
+both.
+
+  5 = y on x|  =>  2:  x
+                   1:  5 = y|"
+  (interactive)
+  ;; Read before the minibuffer clobbers `last-command': a number typed
+  ;; into this command (5 = y) sits on top, its push having kept point
+  ;; on the line the user was on; the number is what was written, so
+  ;; it is the subject.
+  (let* ((handoff (maf--digit-entry-handoff-p))
+         (last (and handoff last-command))
+         (home (maf--at-home-p))
+         (char (read-char-from-minibuffer "Equate with: "))
+         (maf--quick-equate-rhs
+          (cond ((or (<= ?a char ?z) (<= ?A char ?Z))
+                 (list 'var
+                       (intern (char-to-string char))
+                       (intern (concat "var-" (char-to-string char)))))
+                ((<= ?0 char ?9) (- char ?0))
+                (t (user-error "Invalid '%c'; must be a letter or a digit"
+                               char)))))
+    (when handoff (goto-char (point-max)))
+    ;; The handoff's `last-command' is put back for the dispatch so the
+    ;; number's push folds into this command's undo group.
+    (let ((last-command (or last last-command)))
+      (mafcmd--quick-equate))
+    ;; The equation reads left to right and the new side is at its
+    ;; end; that is where writing continues. A home gesture stays home.
+    (unless home
+      (when handoff (calc-cursor-stack-index 1))
+      (end-of-line))))
+
 (maf-defcmd mafcmd-remove-equal (expr _arg commit)
   "Drop the relation from the entry at point, keeping the side that matters.
 

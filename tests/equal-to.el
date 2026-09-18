@@ -2,9 +2,8 @@
 ;; at point with the top-of-stack argument, following the binary-command
 ;; convention.  Run in a live Emacs (see tests/README.md).
 (maf-step
-  ;; Both ergo-profile keys reach the same command.
+  ;; e reaches the command; = is `maf-quick-equate', its typed-side twin.
   (cl-assert (eq (key-binding (kbd "e")) 'mafcmd-equal-to))
-  (cl-assert (eq (key-binding (kbd "=")) 'mafcmd-equal-to))
 
   ;; --- Basic: subject = argument, argument consumed ---
 
@@ -13,7 +12,7 @@
   (maf-push "x")
   (maf-push "y")
   (goto-char (point-max))
-  (execute-kbd-macro (kbd "="))
+  (execute-kbd-macro (kbd "e"))
   (cl-assert (= (calc-stack-size) 1))
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "x = y"))
   (calc-pop (calc-stack-size))

@@ -460,14 +460,14 @@
 ;; with ` still opening at the bottom, and C-o at home still opening a
 ;; fresh entry there.
 
-;; Equate lives on e (shadowing the e-notation digit start) and its
-;; typographic twin =. The calc profile leaves = to calc-evaluate.
-;; Inside digit entry e reaches the same command through
-;; `maf-digit-equal-to' (src/minibuffer.el), which ends the entry on it
-;; and makes the number the argument; = takes calc's ordinary
-;; command-key handoff to the stack binding.
+;; Equate lives on e (shadowing the e-notation digit start). Inside
+;; digit entry e reaches the same command through `maf-digit-equal-to'
+;; (src/minibuffer.el), which ends the entry on it and makes the number
+;; the argument. Its typographic twin = takes the right side from the
+;; next key typed instead of the stack, as , does for a variable. The
+;; calc profile leaves = to calc-evaluate.
 (maf-bindings-define '(ergo) "e" #'mafcmd-equal-to)
-(maf-bindings-define '(ergo) "=" #'mafcmd-equal-to)
+(maf-bindings-define '(ergo) "=" #'maf-quick-equate)
 ;; The other direction: drop the relation, keep a side. M-. is unbound
 ;; in calc itself; a . is calc's own key for the operation, which the
 ;; table in maf-cmds.el no longer claims.

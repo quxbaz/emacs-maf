@@ -108,7 +108,8 @@ last entry — however the pointing gesture looked. Point still chooses
 /which/ entry; it just cannot narrow the subject inside it.
 
 For commands with no sub-formula meaning: building a relation between
-two entries (=mafcmd-equal-to=), removing one (=mafcmd-remove-equal=),
+two entries (=mafcmd-equal-to=) or with a typed character
+(=maf-quick-equate=), removing one (=mafcmd-remove-equal=),
 solving (=mafcmd-auto-solve=, =mafcmd-solve-for=), finding roots
 (=mafcmd-poly-roots=).
 Without it, the far more common gesture — point resting somewhere

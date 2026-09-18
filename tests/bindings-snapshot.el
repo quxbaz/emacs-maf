@@ -59,8 +59,9 @@
         (push (car row) bad)))
     (cl-assert (null bad)))
 
-  ;; The ergo layout now takes Calc's evaluation key for equating too.
-  (cl-assert (eq (key-binding "=") 'mafcmd-equal-to))
+  ;; The ergo layout takes Calc's evaluation key for equating with a
+  ;; typed character.
+  (cl-assert (eq (key-binding "=") 'maf-quick-equate))
 
   ;; Deliberate fall-throughs to calc stay calc's.
   (cl-assert (eq (key-binding "'") 'calc-algebraic-entry))
