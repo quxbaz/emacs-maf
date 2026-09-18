@@ -143,7 +143,8 @@ anyone edits it in.")
          mafcmd-unique-groups mafcmd-float-frac mafcmd-subscr)
         ("Equations & solving"
          mafcmd-eq mafcmd-neq mafcmd-lt mafcmd-gt mafcmd-leq mafcmd-geq
-         mafcmd-in mafcmd-equal-to mafcmd-remove-equal mafcmd-evalto
+         mafcmd-in mafcmd-equal-to maf-quick-equate mafcmd-remove-equal
+         mafcmd-evalto
          mafcmd-assign mafcmd-solve mafcmd-solve-for mafcmd-isolate
          mafcmd-auto-solve mafcmd-abs-ineq mafcmd-inverse-function
          mafcmd-mapeq mafcmd-roots mafcmd-roots-for mafcmd-poly-roots
@@ -265,6 +266,7 @@ which the buffer owns rather than the command.")
         (maf-goto-other-side "go to this side, then the other" nil)
         (maf-jump-equals "jump to the relation" nil)
         (maf-quick-variable "quick variable" nil)
+        (maf-quick-equate "equate with the character typed" "a + b, = c => a + b = c")
         (maf-browse-variables "browse variables" nil)
         (maf-recall-variable "recall a variable" nil)
         (maf-save-stack "save the stack" nil)
