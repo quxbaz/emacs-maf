@@ -1,7 +1,9 @@
 ;; The vector-access prefix: h h takes the head of the vector at
 ;; point (mafcmd-head), h l its last element (mafcmd-rtail), and h 1-9 the
 ;; element the digit names (mafcmd-nth-element), read off the key the
-;; way quick recall reads its digits. A step passes when it raises no
+;; way quick recall reads its digits. Under the flags h h and h l are
+;; two doors to one family: I gives the other piece of the split, H
+;; the same piece at the other end. A step passes when it raises no
 ;; error.
 
 (maf-step
@@ -23,6 +25,46 @@
          (execute-kbd-macro (kbd "h l"))
          nil)
   (cl-assert (string= (math-format-value (calc-top 1 'full)) "d"))
+  (calc-pop (calc-stack-size))
+
+  ;; The flags, from either end. I keeps the rest of the vector at
+  ;; the key's end, H takes the key's piece from the other end, I H
+  ;; both — so I H h h is h l, and I H h l is h h.
+  (maf-push "[a, b, c, d]")
+  (progn (calc-cursor-stack-index 1)
+         (execute-kbd-macro (kbd "I h h"))
+         nil)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "[b, c, d]"))
+  (calc-pop (calc-stack-size))
+  (maf-push "[a, b, c, d]")
+  (progn (calc-cursor-stack-index 1)
+         (execute-kbd-macro (kbd "H h h"))
+         nil)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "[a, b, c]"))
+  (calc-pop (calc-stack-size))
+  (maf-push "[a, b, c, d]")
+  (progn (calc-cursor-stack-index 1)
+         (execute-kbd-macro (kbd "I H h h"))
+         nil)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "d"))
+  (calc-pop (calc-stack-size))
+  (maf-push "[a, b, c, d]")
+  (progn (calc-cursor-stack-index 1)
+         (execute-kbd-macro (kbd "I h l"))
+         nil)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "[a, b, c]"))
+  (calc-pop (calc-stack-size))
+  (maf-push "[a, b, c, d]")
+  (progn (calc-cursor-stack-index 1)
+         (execute-kbd-macro (kbd "H h l"))
+         nil)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "[b, c, d]"))
+  (calc-pop (calc-stack-size))
+  (maf-push "[a, b, c, d]")
+  (progn (calc-cursor-stack-index 1)
+         (execute-kbd-macro (kbd "I H h l"))
+         nil)
+  (cl-assert (string= (math-format-value (calc-top 1 'full)) "a"))
   (calc-pop (calc-stack-size))
 
   ;; The digit names the element, 1-indexed, lifted out literally.

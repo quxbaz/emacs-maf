@@ -871,7 +871,10 @@ variant's own variable governs only its direct invocation."
    :doc "Take the resolved vector without its last element.")
   (rcons binary calcFunc-rcons
    :doc "Append the top-of-stack element to the resolved vector.")
-  (rtail unary calcFunc-rtail
+  ;; The flags mirror head's: I gives the other piece of the same
+  ;; split, H moves the split to the other end, so from either command
+  ;; the four keys reach the same four functions.
+  (rtail unary calcFunc-rtail :inv rhead :hyp tail :invhyp head
    :title "last element" :example "[1, 2, 3] => 3"
    :doc "Take the last element of the resolved vector."))
 

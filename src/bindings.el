@@ -322,8 +322,9 @@
 ;; lookups read rarely, reachable by name, the same trade precision
 ;; makes above. h h is the head of the vector at point, h l its last
 ;; element (rtail), and a digit the element it names
-;; (mafcmd-nth-element); the head family's flag variants stay on the
-;; table's v h.
+;; (mafcmd-nth-element). Both ends carry the head family's flags: I
+;; gives the other piece of the split, H the same piece at the other
+;; end, so I h h and H h l both drop an element and I H crosses over.
 (maf-bindings-define '(ergo) "h h" #'mafcmd-head)
 (maf-bindings-define '(ergo) "h l" #'mafcmd-rtail)
 (dotimes (i 9)
