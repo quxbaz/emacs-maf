@@ -1,30 +1,32 @@
 (maf-step
-  ;; L draws a separator rule under a state's row: a line dividing the
-  ;; log into stretches of work. The rule is a row of its own, given a
-  ;; background extended past the line to the window edge, so the band
-  ;; runs the log's full width and the division has a row of vertical
-  ;; margin rather than sitting glued under the text. Setting one
-  ;; prompts for text to write into the band, titling the stretch it
-  ;; closes; an empty answer is the plain rule. Browsing is by state
-  ;; rather than by line, so the extra row costs the stepping keys
-  ;; nothing, and the band carries the index of the state it sits under.
+  ;; L draws a separator rule above a state's row: a line dividing the
+  ;; log into stretches of work, the state under it being where the
+  ;; stretch ended. The rule is a row of its own, given a background
+  ;; extended past the line to the window edge, so the band runs the
+  ;; log's full width and the division has a row of vertical margin
+  ;; rather than sitting glued over the text. Setting one prompts for
+  ;; text to write into the band, titling the stretch it closes; an
+  ;; empty answer is the plain rule. Browsing is by state rather than
+  ;; by line, so the extra row costs the stepping keys nothing, and the
+  ;; band carries the index of the state it sits above.
 
-  ;; The band under the log line LINE (zero-based), if there is one:
-  ;; the row after it wearing the separator face. Its own text is not
-  ;; part of the question -- a plain band and a titled one are the same
-  ;; row -- so this reads the index it carries either way.
-  (defun maf--history-sep-band (line)
-    (goto-char (point-min))
-    (forward-line (1+ line))
-    (and (bolp)
+  ;; The band above the row of state INDEX, if there is one: the row
+  ;; before it flagged as a band and wearing the separator face. Its
+  ;; own text is not part of the question -- a plain band and a titled
+  ;; one are the same row -- so this reads the index it carries either
+  ;; way.
+  (defun maf--history-sep-band (index)
+    (maf-history--goto-index index)
+    (forward-line -1)
+    (and (get-text-property (point) 'maf-history-band)
          (memq 'maf-history-separator
                (ensure-list (get-text-property (point) 'face)))
          (get-text-property (point) 'maf-history-index)))
 
-  ;; What the band under LINE reads, as text.
-  (defun maf--history-sep-text (line)
-    (goto-char (point-min))
-    (forward-line (1+ line))
+  ;; What the band above state INDEX reads, as text.
+  (defun maf--history-sep-text (index)
+    (maf-history--goto-index index)
+    (forward-line -1)
     (buffer-substring-no-properties (point) (line-end-position)))
 
   ;; A press of L answering the prompt with TEXT. Through
@@ -53,7 +55,7 @@
   (with-current-buffer (maf-history--buffer)
     ;; Mark the middle row. Point picks the state, so put it there
     ;; first — the selection stays on the newest state throughout.
-    (progn (goto-char (point-min)) (forward-line 1))
+    (maf-history--goto-index 1)
     (cl-assert (= (get-text-property (point) 'maf-history-index) 1))
     (maf--history-sep-press "")
     (cl-assert (maf-history--separator (nth 1 maf-history--states)))
@@ -62,16 +64,18 @@
     (cl-assert (eq (maf-history--separator (nth 1 maf-history--states)) t))
     (cl-assert (null (maf-history--separator-label (nth 1 maf-history--states))))
     ;; The selection did not move, and neither did point: the command
-    ;; acted on the row under point, so that is the row it leaves it on.
+    ;; acted on the row under point, so that is the row it leaves it on
+    ;; -- the state's own row, not the band now above it.
     (cl-assert (= maf-history--index 0))
     (cl-assert (= (get-text-property (point) 'maf-history-index) 1))
+    (cl-assert (null (get-text-property (point) 'maf-history-band)))
 
-    ;; The rule is an empty row under the marked state -- no text of
+    ;; The rule is an empty row above the marked state -- no text of
     ;; the log goes to it, and the states read exactly as they did.
     (cl-assert (equal (buffer-substring-no-properties (point-min) (point-max))
                       (concat "▸ - mul (mafcmd-mul)\n"
-                              "  + entry\n"
                               "\n"
+                              "  + entry\n"
                               "  · entry\n")))
     (cl-assert (= (count-lines (point-min) (point-max)) 4))
 
@@ -86,9 +90,8 @@
     ;; the marked row keeps what it already wore -- here the marker's
     ;; own face, not the band's.
     (cl-assert (null (maf--history-sep-band 0)))
-    (cl-assert (null (maf--history-sep-band 3)))
-    (progn (goto-char (point-min)) (forward-line 1) (search-forward "+")
-           (backward-char 1))
+    (cl-assert (null (maf--history-sep-band 2)))
+    (progn (maf-history--goto-index 1) (search-forward "+") (backward-char 1))
     (cl-assert (equal (get-text-property (point) 'face) 'maf-history-added))
 
     ;; Stepping is by state rather than by line, so the extra row is
@@ -96,6 +99,7 @@
     (progn (goto-char (point-min)) (call-interactively 'maf-history-previous))
     (cl-assert (= maf-history--index 1))
     (cl-assert (= (get-text-property (point) 'maf-history-index) 1))
+    (cl-assert (null (get-text-property (point) 'maf-history-band)))
     (cl-assert (not (looking-at-p "$")))
     (progn (call-interactively 'maf-history-next))
     (cl-assert (= maf-history--index 0)))
@@ -114,17 +118,31 @@
   ;; -- `call-interactively' with no answer prepared would hang here if
   ;; it did.
   (with-current-buffer (maf-history--buffer)
-    (progn (goto-char (point-min)) (forward-line 2))
+    (maf-history--goto-index 2)
     (call-interactively 'maf-history-separate)
     (cl-assert (null (maf-history--separator (nth 2 maf-history--states))))
     (cl-assert (null (maf--history-sep-band 2))))
+
+  ;; The band names the state it is above, so L pressed on the band
+  ;; itself is the same toggle: off again from there.
+  (with-current-buffer (maf-history--buffer)
+    (maf-history--goto-index 2)
+    (maf--history-sep-press "")
+    (cl-assert (eql (maf--history-sep-band 2) 2))
+    (progn (maf-history--goto-index 2) (forward-line -1))
+    (cl-assert (get-text-property (point) 'maf-history-band))
+    (call-interactively 'maf-history-separate)
+    (cl-assert (null (maf-history--separator (nth 2 maf-history--states))))
+    ;; Point is left on the state's row, the band being gone.
+    (cl-assert (= (get-text-property (point) 'maf-history-index) 2))
+    (cl-assert (null (get-text-property (point) 'maf-history-band))))
 
   ;; Answering the prompt writes the text into the band. It is the same
   ;; row doing the same dividing -- still banded, still carrying its
   ;; state's index, so browsing over it is unchanged -- with the text
   ;; centred in the row.
   (with-current-buffer (maf-history--buffer)
-    (progn (goto-char (point-min)) (forward-line 2))
+    (maf-history--goto-index 2)
     (maf--history-sep-press "morning")
     (cl-assert (equal (maf-history--separator (nth 2 maf-history--states))
                       "morning"))
@@ -140,7 +158,7 @@
     ;; a column further left again is the optical nudge -- the log's
     ;; rows start a gutter in, so measured centre reads right of it.
     (cl-assert (equal (maf--history-sep-text 2) " morning"))
-    (progn (goto-char (point-min)) (forward-line 3))
+    (progn (maf-history--goto-index 2) (forward-line -1))
     (cl-assert (equal (get-text-property (point) 'display)
                       (list 'space :align-to
                             (list '- 'center
@@ -157,22 +175,29 @@
     (cl-assert (face-attribute 'maf-history-separator :foreground))
     ;; Off again, and the text goes with the rule: the next one asks
     ;; afresh rather than keeping what this one was called.
-    (progn (goto-char (point-min)) (forward-line 2))
+    (maf-history--goto-index 2)
     (call-interactively 'maf-history-separate)
     (cl-assert (null (maf-history--separator (nth 2 maf-history--states))))
     (maf--history-sep-press "")
     (cl-assert (eq (maf-history--separator (nth 2 maf-history--states)) t))
-    (progn (goto-char (point-min)) (forward-line 2))
+    (maf-history--goto-index 2)
     (call-interactively 'maf-history-separate))
 
   ;; Off a log row -- the stack window has none -- it marks the state
-  ;; the browser has selected, which is the one that window shows.
+  ;; the browser has selected, which is the one that window shows. On
+  ;; the newest state the band is the log's first row, and the state's
+  ;; own row is found past it.
   (with-current-buffer (maf-history--stack-buffer)
     (maf--history-sep-press "")
     (cl-assert (maf-history--separator (nth maf-history--index
                                             maf-history--states))))
   (with-current-buffer (maf-history--buffer)
-    (cl-assert (eql (maf--history-sep-band 0) 0)))
+    (cl-assert (eql (maf--history-sep-band 0) 0))
+    (progn (goto-char (point-min)))
+    (cl-assert (get-text-property (point) 'maf-history-band))
+    (maf-history--goto-index 0)
+    (cl-assert (= (line-number-at-pos) 2))
+    (cl-assert (null (get-text-property (point) 'maf-history-band))))
 
   ;; A deleted state takes its rule with it rather than leaving it on
   ;; whichever state slides into its row.

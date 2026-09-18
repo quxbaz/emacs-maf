@@ -2,7 +2,7 @@
   ;; M-n and M-p step between the rules rather than between the states:
   ;; the step keys under a modifier, moving the same way -- older down,
   ;; newer up, the log running newest-first -- but a sitting at a time.
-  ;; They land on the state a rule sits under, which is the state the
+  ;; They land on the state a rule sits above, which is the state the
   ;; rule belongs to.
 
   ;; The browser is two buffers on one selection. Stash the session's
