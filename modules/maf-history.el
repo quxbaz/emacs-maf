@@ -813,6 +813,14 @@ mean something else beside a stack — line motion and RET.")
 ;; the log rather than browses it, and out of the way of the lowercase
 ;; keys the hand rests on while stepping.
 (define-key maf-history-mode-map (kbd "L") #'maf-history-separate)
+;; The band is a row of its own, so the keys that erase a line take it
+;; off: DEL and <delete> on the band, refused anywhere else — a state
+;; row goes with D, deliberately capital.
+(define-key maf-history-mode-map (kbd "DEL") #'maf-history-delete-separator)
+(define-key maf-history-mode-map (kbd "<delete>")
+            #'maf-history-delete-separator)
+(define-key maf-history-mode-map (kbd "<deletechar>")
+            #'maf-history-delete-separator)
 ;; A deliberate chord for wiping the whole log, well out of fingerslip
 ;; range of the single-key commands.
 (define-key maf-history-mode-map (kbd "C-M-k") #'maf-history-clear)
@@ -1337,8 +1345,8 @@ newest remaining when the oldest was the one deleted."
 The log is one running record, but work comes in sittings: this draws
 a line above a state, so it and what sits below it read as their own
 stretch of work, the state being where that stretch ended. Pressing it
-again on the same state takes the line off. Point picks the state in
-the log — the band names
+again on the same state takes the line off, as does \\[maf-history-delete-separator]
+on the band itself. Point picks the state in the log — the band names
 the state it is above, so pressing on the band is pressing on that
 state; the stack window marks the state it is showing.
 
@@ -1393,6 +1401,24 @@ is the session's alone when it is not."
     (message "Separator %s %s" (if on "above" "off")
              (maf-history--label state))))
 
+(defun maf-history-delete-separator ()
+  "Take off the separator band point is on.
+The band is a row of its own in the log, so it goes the way a line
+goes: with point on it, the key that erases. It is the one-key removal
+of a mark `maf-history-separate' toggles from the state; anywhere but
+on a band it refuses and says so — a log row is a state, and a state
+is deleted with \\[maf-history-delete], deliberately capital."
+  (interactive)
+  (unless (get-text-property (point) 'maf-history-band)
+    (user-error "No separator at point"))
+  (let* ((index (get-text-property (point) 'maf-history-index))
+         (state (nth index maf-history--states)))
+    (maf-history--set-separator state nil)
+    ;; Only the log drew it, so only the log is re-rendered, and point
+    ;; goes to the row the band was above (see `maf-history-separate').
+    (maf-history--render-log)
+    (maf-history--goto-index index)
+    (message "Separator off %s" (maf-history--label state))))
 
 (defun maf-history-clear ()
   "Discard every recorded stack state, keeping the live stack.

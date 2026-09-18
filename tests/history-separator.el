@@ -8,7 +8,8 @@
   ;; text to write into the band, titling the stretch it closes; an
   ;; empty answer is the plain rule. Browsing is by state rather than
   ;; by line, so the extra row costs the stepping keys nothing, and the
-  ;; band carries the index of the state it sits above.
+  ;; band carries the index of the state it sits above. DEL on the
+  ;; band takes it off.
 
   ;; The band above the row of state INDEX, if there is one: the row
   ;; before it flagged as a band and wearing the separator face. Its
@@ -47,10 +48,15 @@
 
   ;; L is on the log, beside the D that deletes: the two keys that edit
   ;; the log rather than browse it. The stack window inherits it, so
-  ;; the mark can be set from either side.
+  ;; the mark can be set from either side. DEL and <delete> take a band
+  ;; off, the way a line is erased.
   (cl-assert (eq (lookup-key maf-history-mode-map (kbd "L")) 'maf-history-separate))
   (cl-assert (eq (lookup-key maf-history-stack-mode-map (kbd "L"))
                  'maf-history-separate))
+  (cl-assert (eq (lookup-key maf-history-mode-map (kbd "DEL"))
+                 'maf-history-delete-separator))
+  (cl-assert (eq (lookup-key maf-history-mode-map (kbd "<delete>"))
+                 'maf-history-delete-separator))
 
   (with-current-buffer (maf-history--buffer)
     ;; Mark the middle row. Point picks the state, so put it there
@@ -137,6 +143,25 @@
     (cl-assert (= (get-text-property (point) 'maf-history-index) 2))
     (cl-assert (null (get-text-property (point) 'maf-history-band))))
 
+  ;; DEL on the band erases it, as it would a line; point lands on the
+  ;; row the band was above. Off a band it refuses -- a state row is
+  ;; not deleted by a fingerslip on the erase key -- and the log is
+  ;; left as it was.
+  (with-current-buffer (maf-history--buffer)
+    (maf-history--goto-index 2)
+    (maf--history-sep-press "")
+    (progn (maf-history--goto-index 2) (forward-line -1))
+    (call-interactively 'maf-history-delete-separator)
+    (cl-assert (null (maf-history--separator (nth 2 maf-history--states))))
+    (cl-assert (= (get-text-property (point) 'maf-history-index) 2))
+    (cl-assert (null (get-text-property (point) 'maf-history-band)))
+    (cl-assert (null (maf--history-sep-band 2)))
+    (cl-assert (= (count-lines (point-min) (point-max)) 4))
+    (cl-assert (not (ignore-errors
+                      (call-interactively 'maf-history-delete-separator) t)))
+    (cl-assert (= (length maf-history--states) 4))
+    (cl-assert (= (count-lines (point-min) (point-max)) 4)))
+
   ;; Answering the prompt writes the text into the band. It is the same
   ;; row doing the same dividing -- still banded, still carrying its
   ;; state's index, so browsing over it is unchanged -- with the text
@@ -173,11 +198,13 @@
     (cl-assert (memq 'maf-history-separator
                      (ensure-list (get-text-property (point) 'face))))
     (cl-assert (face-attribute 'maf-history-separator :foreground))
-    ;; Off again, and the text goes with the rule: the next one asks
-    ;; afresh rather than keeping what this one was called.
-    (maf-history--goto-index 2)
-    (call-interactively 'maf-history-separate)
+    ;; DEL erases a titled band the same, text and all.
+    (progn (maf-history--goto-index 2) (forward-line -1))
+    (call-interactively 'maf-history-delete-separator)
     (cl-assert (null (maf-history--separator (nth 2 maf-history--states))))
+    ;; Off and on again asks afresh rather than keeping what the last
+    ;; one was called.
+    (maf-history--goto-index 2)
     (maf--history-sep-press "")
     (cl-assert (eq (maf-history--separator (nth 2 maf-history--states)) t))
     (maf-history--goto-index 2)
