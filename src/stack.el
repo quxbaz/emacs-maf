@@ -9405,14 +9405,14 @@ formula is not used to narrow it.
 
 The size comes from the prompt — or a numeric prefix, which skips it —
 never from the stack or from point; the vector simply lands on top.
-The contextual sibling is `mafcmd-index' (v x), which reads its size
-from the target. The prompt takes a formula, so 2^4 sizes as 16 and a
+The contextual sibling is `mafcmd-index' (v RET), which reads its
+size from the target. The prompt takes a formula, so 2^4 sizes as 16 and a
 symbolic size pushes the call unevaluated, ready for a value later.
 
-Ported from the legacy config's v RET, which kept calc's own
-`calc-index' there; the prompt-only reading is the part kept — the
-C-u form that reads start and increment off the stack is not, being
-the stack-reading this key exists to avoid."
+Stands on calc's own v x, whose `calc-index' also prompts; the
+prompt-only reading is the part kept — the C-u form that reads start
+and increment off the stack is not, being the stack-reading this key
+exists to avoid."
   (interactive "P")
   (let ((size
          (if n

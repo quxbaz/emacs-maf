@@ -593,10 +593,11 @@
 (maf-bindings-define '(calc ergo) "j U" #'mafcmd-unwrap)
 (maf-bindings-define '(calc ergo) "j M-U" #'mafcmd-unwrap)
 
-;; Push an index vector [1..n], the size prompted for — the legacy
-;; config's v RET. The contextual mafcmd-index keeps v x; this is the
-;; push-only sibling, and RET was free under calc's v prefix.
-(maf-bindings-define '(ergo) "v RET" #'maf-index)
+;; Push an index vector [1..n], the size prompted for — on calc's own
+;; key for that, whose calc-index also prompts. The contextual sibling
+;; mafcmd-index takes v RET (its table row in maf-cmds.el), the key
+;; calc left free under the v prefix.
+(maf-bindings-define '(calc ergo) "v x" #'maf-index)
 
 ;; Keep only the part point names: it becomes the whole entry, the
 ;; formula around it discarded. This is the one that isolates a

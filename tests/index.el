@@ -1,7 +1,7 @@
-;; maf-index (v RET): prompt for a size, push the index vector
-;; [1, 2, .., n]. Never reads the stack or point — the ported reading
-;; of the legacy config's v RET (calc-index there). The contextual
-;; sibling mafcmd-index stays on v x, untouched.
+;; maf-index (v x): prompt for a size, push the index vector
+;; [1, 2, .., n]. Never reads the stack or point — the reading calc's
+;; own calc-index gives the key. The contextual sibling mafcmd-index
+;; is on v RET, untouched.
 
 (defun maf-test-index-refused (keys)
   "Run `maf-index' with KEYS at its prompt; the message if it refused."

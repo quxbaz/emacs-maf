@@ -783,7 +783,10 @@ variant's own variable governs only its direct invocation."
   (rev unary calcFunc-rev "v v"
    :title "reverse" :example "[1, 2, 3] => [3, 2, 1]"
    :doc "Reverse the resolved vector end for end.")
-  (index unary calcFunc-index "v x"
+  ;; RET rather than calc's v x, which the prompting maf-index takes
+  ;; (src/bindings.el): the contextual reading is the one calc's key
+  ;; never had, so it goes on the key calc left free.
+  (index unary calcFunc-index "v RET"
    :title "index vector" :example "5 => [1, 2, 3, 4, 5]"
    :doc "Build the vector counting from one to the resolved number.")
   ;; The cross product takes both vectors as operands.
