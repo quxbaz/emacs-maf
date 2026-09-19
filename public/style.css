@@ -160,7 +160,7 @@ p { margin: 0 0 .8em; }
 .subtitle code { font-size: .9em; }
 pre { font-family: var(--mono); font-size: .95rem; line-height: 1.65; background: var(--line); padding: 18px 22px; border-radius: 8px; margin: .6em 0 1em; overflow-x: auto; }
 pre b { color: var(--accent); font-weight: 600; }
-.calcbuf { --bg: #121214; --fg: #eaeaea; --muted: #8e8e93; --line: #2a2a2e; --accent: #daa520; --band: rgba(255, 255, 255, .06); color: var(--fg); }
+.calcbuf { --bg: #121214; --fg: #eaeaea; --muted: #8e8e93; --line: #000; --accent: #daa520; --band: rgba(255, 255, 255, .06); color: var(--fg); }
 .calcbuf { --pad-y: 20px; --pad-x: 24px; --lh: 1.9; background: var(--line); border-radius: 8px; padding: var(--pad-y) var(--pad-x) calc(var(--pad-y) - 3px); font-family: var(--mono); font-size: 1rem; line-height: var(--lh); min-width: 0; }
 .calcbuf .header { color: var(--muted); font-size: .78em; line-height: 1.5; white-space: pre; overflow: hidden; margin: calc(-1 * var(--pad-y)) calc(-1 * var(--pad-x)) 14px; padding: 7px var(--pad-x); background: var(--band); }
 .calcbuf .buffer { background: none; padding: 0; margin: 0; border-radius: 0; font: inherit; min-height: calc(var(--rows, 2) * var(--lh) * 1em); }
@@ -267,9 +267,11 @@ h2 { font-size: 1.25rem; letter-spacing: -.01em; margin: 1.2em 0 .4em; }
 .feature-peek .slot.image img.fit { width: 100%; height: 100%; object-fit: contain; }
 .feature-peek .slot.image img.right { position: absolute; top: 0; right: 0; }
 .feature-peek .slot.scene, .feature-peek .slot.diff { background: #000; }
-.feature-peek .slot .calcbuf { --line: #000; border-radius: 0; font-size: .9rem; }
+.feature-peek .slot .calcbuf { --pad-y: 14px; --pad-x: 18px; border-radius: 0; font-size: .9rem; }
+.feature-peek .slot .calcbuf .header { margin-bottom: 12px; padding-top: 6px; padding-bottom: 6px; }
+.feature-peek .slot .calcbuf .line.keys kbd { margin: 7px .38em 5px 0; }
 .feature-peek .slot.showy { margin: 0; }
 .feature-peek .slot.showy .controls { display: none; }
-.feature-peek .slot .stacky-diff { margin: 0; gap: 0; }
+.feature-peek .slot .stacky-diff { margin: 0; gap: 5px 10px; }
 .feature-peek .slot .stacky-diff .caption { padding: 10px 18px 6px; font-size: .85rem; color: #8e8e93; }
 .feature-peek .slot .stacky-diff .caption kbd { color: #eaeaea; }
