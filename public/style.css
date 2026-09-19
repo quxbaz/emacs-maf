@@ -235,7 +235,7 @@ h2 { font-size: 1.25rem; letter-spacing: -.01em; margin: 1.2em 0 .4em; }
    showy, a stack before and after a command from stacky-diff, or a
    screenshot drawn at a fixed width (--w), tuned per image so the text
    in every shot reads at about the same size. */
-.feature-peek { position: fixed; z-index: 5; margin: 0; width: min(560px, 100vw - 24px); aspect-ratio: 16 / 10; pointer-events: none; background: #000; border: 1px solid var(--grid-line); border-radius: 8px; box-shadow: 0 14px 36px rgba(0, 0, 0, .22); overflow: hidden; opacity: .92; }
+.feature-peek { position: fixed; z-index: 5; margin: 0; width: min(560px, 100vw - 24px); aspect-ratio: 16 / 10; pointer-events: none; background: #000; border: 1px solid var(--grid-line); border-radius: 8px; box-shadow: 0 14px 36px rgba(0, 0, 0, .22); overflow: hidden; opacity: .94; }
 .feature-peek[hidden] { display: none; }
 .feature-peek .shot { position: absolute; inset: 0; }
 .feature-peek .slot { position: absolute; inset: 0; display: none; overflow: hidden; }
@@ -243,8 +243,8 @@ h2 { font-size: 1.25rem; letter-spacing: -.01em; margin: 1.2em 0 .4em; }
 .feature-peek .slot.image img { display: block; width: var(--w, 100%); max-width: none; height: auto; }
 .feature-peek .slot.image img.fit { width: 100%; height: 100%; object-fit: contain; }
 .feature-peek .slot.image img.right { position: absolute; top: 0; right: 0; }
-.feature-peek .slot.scene, .feature-peek .slot.diff { background: #2a2a2e; }
-.feature-peek .slot .calcbuf { border-radius: 0; font-size: .9rem; }
+.feature-peek .slot.scene, .feature-peek .slot.diff { background: #000; }
+.feature-peek .slot .calcbuf { --line: #000; border-radius: 0; font-size: .9rem; }
 .feature-peek .slot.showy { margin: 0; }
 .feature-peek .slot.showy .controls { display: none; }
 .feature-peek .slot .stacky-diff { margin: 0; gap: 0; }
