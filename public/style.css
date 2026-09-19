@@ -211,14 +211,16 @@ h2 { font-size: 1.25rem; letter-spacing: -.01em; margin: 1.2em 0 .4em; }
 /* Every feature has a short summary. The features stand in three
    columns, one per group: a heading over a rule, then the group's
    entries down the column, each a card, so they read as things to
-   point at; a card lights up under the pointer. */
+   point at; a card lights up under the pointer. A link to a card, as
+   the fold's are, lands it in the middle of the screen, not at the
+   top: its scroll margin is half the viewport less half a card. */
 .feature-overview { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 48px; }
 .features-heading { grid-column: 1 / -1; margin-bottom: 34px; }
 .features-heading h2 { margin: 0 0 8px; font-size: 2rem; letter-spacing: -.03em; line-height: 1.2; }
 .features-heading p { margin: 0; color: var(--muted); font-size: 1rem; }
 .feature-group { min-width: 0; }
 .feature-group h3 { margin: 0; padding-bottom: 12px; border-bottom: 2px solid var(--fg); font-size: 1.1rem; font-weight: 600; letter-spacing: -.01em; line-height: 1.3; }
-.feature-group section { padding: 14px 16px 16px; background: var(--bg); border: 1px solid var(--grid-line); border-radius: 8px; scroll-margin-top: 28px; cursor: pointer; transition: border-color .12s, background-color .12s; }
+.feature-group section { padding: 14px 16px 16px; background: var(--bg); border: 1px solid var(--grid-line); border-radius: 8px; scroll-margin-top: calc(50vh - 64px); cursor: pointer; transition: border-color .12s, background-color .12s; }
 .feature-group section + section { margin-top: 10px; }
 .feature-group h3 + section { margin-top: 14px; }
 .feature-group section:hover, .feature-group section.is-peeked { background: var(--panel-2); border-color: var(--link-2); }
