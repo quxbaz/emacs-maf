@@ -116,16 +116,18 @@ export function lineHtml(l) {
   const cursorTag = l.blink ? 'cursor' : 'cursor steady'
   // The mark and the changed span each wrap a run of characters; the mark
   // opens first and closes last, so one must contain the other if both fall
-  // on a line.
+  // on a line. A span opening on a parenthesis is flagged, so its outline
+  // can sit closer: the glyph's ink stands right of its cell.
   let inMark = false, inChanged = false
   const chars = [...l.text]
+  const paren = i => chars[i] === '(' ? ' class="lp"' : ''
   chars.forEach((c, i) => {
     const marked = l.mark && i >= l.mark.from && i < l.mark.to
     const changed = l.changed && i >= l.changed.from && i < l.changed.to
     if (!changed && inChanged) { out += '</span>'; inChanged = false }
     if (!marked && inMark) { out += '</mark>'; inMark = false }
-    if (marked && !inMark) { out += '<mark>'; inMark = true }
-    if (changed && !inChanged) { out += '<span class="changed">'; inChanged = true }
+    if (marked && !inMark) { out += `<mark${paren(i)}>`; inMark = true }
+    if (changed && !inChanged) { out += `<span class="changed${chars[i] === '(' ? ' lp' : ''}">`; inChanged = true }
     out += l.cursor === i ? `<span class="${cursorTag}">${escape(c)}</span>` : escape(c)
   })
   if (inChanged) out += '</span>'

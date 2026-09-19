@@ -47,8 +47,11 @@ export function fromScene(scene, { caption, show = {}, reveal = false, result = 
 }
 
 // The part of `to` that differs from `from`, as a highlight on `to`: the
-// changed span of the lowest level whose entry differs, or the whole top
-// entry when the stacks differ in depth. Null when nothing changed.
+// changed span of the lowest level whose entry differs, widened to take
+// in `to`'s own highlight on that level, which is what the command left
+// point on, so squaring x sets off x^2 and not the bare ^2; or the
+// whole top entry when the stacks differ in depth. Null when nothing
+// changed.
 export function change(from, to) {
   const n = Math.min(stacky.depth(from), stacky.depth(to))
   for (let level = 1; level <= n; level++) {
@@ -58,7 +61,8 @@ export function change(from, to) {
     while (pre < a.length && pre < b.length && a[pre] === b[pre]) pre++
     let suf = 0
     while (suf < a.length - pre && suf < b.length - pre && a[a.length - 1 - suf] === b[b.length - 1 - suf]) suf++
-    return { level, from: pre, to: b.length - suf }
+    const h = to.highlight && to.highlight.level === level ? to.highlight : null
+    return { level, from: h ? Math.min(pre, h.from) : pre, to: h ? Math.max(b.length - suf, h.to) : b.length - suf }
   }
   if (stacky.depth(to) > 0 && stacky.depth(from) !== stacky.depth(to)) return { level: 1, from: 0, to: stacky.entry(to, 1).length }
   return null
