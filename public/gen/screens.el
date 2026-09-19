@@ -204,6 +204,16 @@ a frame-wide picture; a second window beside it takes the rest."
     (maf-screens--stack "x^2")
     (call-interactively #'maf-keys)
     (delete-other-windows (get-buffer-window "*maf-keys*")))
+  ;; The bindings help narrowed to one group: the stack editing keys,
+  ;; where maf's layout reads most like the rest of Emacs.
+  (maf-screens--scene "bindings" '("*maf-keys*") "*maf-keys*"
+    (maf-screens--stack "x^2")
+    (call-interactively #'maf-keys)
+    (delete-other-windows (get-buffer-window "*maf-keys*"))
+    (with-selected-window (get-buffer-window "*maf-keys*")
+      (goto-char (point-min))
+      (search-forward "Stack editing")
+      (maf-screens--keys "RET")))
   ;; The options menu.
   (maf-screens--scene "options" '("*maf-options*") "*maf-options*"
     (maf-screens--stack "x^2")

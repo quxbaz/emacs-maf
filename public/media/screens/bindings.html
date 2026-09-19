@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8"/>
+    <title>*maf-keys*</title>
+<meta name="generator" content="emacs 31.1; htmlfontify" />
+<style type="text/css"><!-- 
+body, pre { text-decoration: none;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  color: #ffffff;  background: #000000;  font-size: 10pt; }
+span.default   { text-decoration: none;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  color: #ffffff;  background: #000000;  font-size: 10pt; }
+span.default a {  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  color: #ffffff;  background: #000000;  font-size: 10pt; text-decoration: underline; }
+span.maf-keys-example   { text-decoration: none;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  color: #ffffff;  background: #000000;  font-size: 10pt; }
+span.maf-keys-example a {  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  color: #ffffff;  background: #000000;  font-size: 10pt; text-decoration: underline; }
+span.maf-keys-doc   { text-decoration: none;  color: #adadad;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  background: #000000;  font-size: 10pt; }
+span.maf-keys-doc a {  color: #adadad;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  background: #000000;  font-size: 10pt; text-decoration: underline; }
+span.maf-keys-command   { text-decoration: none;  font-weight: 700;  font-family: "Monaco";  font-stretch: normal;  font-style: normal;  color: #ffffff;  background: #000000;  font-size: 10pt; }
+span.maf-keys-command a {  font-weight: 700;  font-family: "Monaco";  font-stretch: normal;  font-style: normal;  color: #ffffff;  background: #000000;  font-size: 10pt; text-decoration: underline; }
+span.shadow   { text-decoration: none;  color: #989898;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  background: #000000;  font-size: 10pt; }
+span.shadow a {  color: #989898;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  background: #000000;  font-size: 10pt; text-decoration: underline; }
+span.maf-keys-binding   { text-decoration: none;  font-weight: 700;  font-family: "Monaco";  font-stretch: normal;  font-style: normal;  color: #ffffff;  background: #000000;  font-size: 10pt; }
+span.maf-keys-binding a {  font-weight: 700;  font-family: "Monaco";  font-stretch: normal;  font-style: normal;  color: #ffffff;  background: #000000;  font-size: 10pt; text-decoration: underline; }
+span.maf-keys-title   { text-decoration: none;  color: #feacd0;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  background: #000000;  font-size: 10pt; }
+span.maf-keys-title a {  color: #feacd0;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  background: #000000;  font-size: 10pt; text-decoration: underline; }
+span.filter-view-group   { text-decoration: none;  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  color: #ffffff;  background: #000000;  font-size: 10pt; }
+span.filter-view-group a {  font-family: "Monaco";  font-stretch: normal;  font-weight: nil;  font-style: normal;  color: #ffffff;  background: #000000;  font-size: 10pt; text-decoration: underline; }
+ --></style>
+
+    <script type="text/javascript"><!--
+  // this function is needed to work around
+  // a bug in IE related to element attributes
+  function hasClass(obj)
+  {
+      var result = false;
+      if (obj.getAttributeNode("class") != null)
+      {
+          result = obj.getAttributeNode("class").value;
+      }
+      return result;
+  }
+
+  function stripe(id)
+  {
+      // the flag we'll use to keep track of
+      // whether the current row is odd or even
+      var even = false;
+
+      // if arguments are provided to specify the colors
+      // of the even & odd rows, then use them;
+      // otherwise use the following defaults:
+      var evenColor = arguments[1] ? arguments[1] : "#fff";
+      var oddColor  = arguments[2] ? arguments[2] : "#ddd";
+
+      // obtain a reference to the desired table
+      // if no such table exists, abort
+      var table = document.getElementById(id);
+      if (! table) { return; }
+
+      // by definition, tables can have more than one tbody
+      // element, so we'll have to get the list of child
+      // &lt;tbody&gt;s
+      var tbodies = table.getElementsByTagName("tbody");
+
+      // and iterate through them...
+      for (var h = 0; h < tbodies.length; h++)
+      {
+          // find all the &lt;tr&gt; elements...
+          var trs = tbodies[h].getElementsByTagName("tr");
+
+          // ... and iterate through them
+          for (var i = 0; i < trs.length; i++)
+          {
+              // avoid rows that have a class attribute
+              // or backgroundColor style
+              if (! hasClass(trs[i]) &&
+                  ! trs[i].style.backgroundColor)
+              {
+                  // get all the cells in this row...
+                  var tds = trs[i].getElementsByTagName("td");
+
+                  // and iterate through them...
+                  for (var j = 0; j < tds.length; j++)
+                  {
+                      var mytd = tds[j];
+
+                      // avoid cells that have a class attribute
+                      // or backgroundColor style
+                      if (! hasClass(mytd) &&
+                          ! mytd.style.backgroundColor)
+                      {
+                          mytd.style.backgroundColor =
+                            even ? evenColor : oddColor;
+                      }
+                  }
+              }
+              // flip from odd to even, or vice-versa
+              even =  ! even;
+          }
+      }
+  }
+
+  function toggle_invis( name )
+  {
+      var filter =
+        { acceptNode:
+          function( node )
+          { var classname = node.id;
+            if( classname )
+            { var classbase = classname.substr( 0, name.length );
+              if( classbase == name ) { return NodeFilter.FILTER_ACCEPT; } }
+            return NodeFilter.FILTER_SKIP; } };
+      var walker = document.createTreeWalker( document.body           ,
+                                              NodeFilter.SHOW_ELEMENT ,
+                                              filter                  ,
+                                              false                   );
+      while( walker.nextNode() )
+      {
+          var e = walker.currentNode;
+          if( e.style.display == "none" ) { e.style.display = "inline"; }
+          else                            { e.style.display = "none";   }
+      }
+  }
+--> </script>
+  </head>
+  <body onload="stripe('index'); return true;">
+
+<pre><span class="filter-view-group">Stack editing</span>
+
+  <span class="maf-keys-title">Undo</span> (<span class="maf-keys-binding">U</span>)<span class="shadow"> ... </span>(<span class="maf-keys-command">maf-undo</span>)
+    <span class="maf-keys-doc">Like ‘calc-undo’, but keep point in place instead of jumping home.</span>
+
+  <span class="maf-keys-title">Redo</span> (<span class="maf-keys-binding">D</span>)<span class="shadow"> ... </span>(<span class="maf-keys-command">maf-redo</span>)
+    <span class="maf-keys-doc">Like ‘calc-redo’, but keep point in place instead of jumping home.</span>
+
+  <span class="maf-keys-title">Delete</span> (<span class="maf-keys-binding">C-d</span>, <span class="maf-keys-binding">DEL</span>)<span class="shadow"> ... </span>(<span class="maf-keys-command">maf-del</span>)
+    <span class="maf-keys-doc">Delete the target at point: selection, sub-formula, entry, or top.</span>
+
+  <span class="maf-keys-title">Kill</span> (<span class="maf-keys-binding">C-k</span>)<span class="shadow"> ... </span>(<span class="maf-keys-command">maf-kill</span>)
+    <span class="maf-keys-doc">Kill the entry at point: off the stack and onto the kill ring.</span>
+
+  <span class="maf-keys-title">Copy</span> (<span class="maf-keys-binding">M-w</span>)<span class="shadow"> ... </span>(<span class="maf-keys-command">maf-copy</span>)
+    <span class="maf-keys-doc">Copy the region, the entry at point, or the top of the stack.</span>
+
+  <span class="maf-keys-title">Yank</span> (<span class="maf-keys-binding">C-y</span>)<span class="shadow"> ... </span>(<span class="maf-keys-command">maf-yank</span>)
+    <span class="maf-keys-doc">Yank from the kill ring, reading digit-grouped numbers whole.</span>
+
+  <span class="maf-keys-title">Duplicate or clear selections</span> (<span class="maf-keys-binding">RET</span>)<span class="shadow"> ... </span>(<span class="maf-keys-command">maf-dup-or-clear-selections</span>)
+    <span class="maf-keys-example">3 =&gt; 3, 3</span>
+    <span class="maf-keys-doc">Clear active selections, or duplicate the item at point.</span>
+
+  <span class="maf-keys-title">Duplicate, keeping point</span> (<span class="maf-keys-binding">C-&lt;return&gt;</span>)<span class="shadow"> ... </span>(<span class="maf-keys-command">maf-dup-here-or-clear-selections</span>)
+    <span class="maf-keys-example">3 =&gt; 3, 3</span>
+    <span class="maf-keys-doc">Clear active selections, or duplicate the item at point, keeping point.</span>
+
+  <span class="maf-keys-title">Swap up</span> (<span class="maf-keys-binding">TAB</span>, <span class="maf-keys-binding">C-t</span>)<span class="shadow"> ... </span>(<span class="maf-keys-command">maf-swap-up</span>)
+    <span class="maf-keys-doc">Swap the stack entry at point with the one above it on screen.</span>
+
+  <span class="maf-keys-title">Roll to bottom</span> (<span class="maf-keys-binding">C-M-&lt;backspace&gt;</span>, <span class="maf-keys-binding">C-M-h</span>)<span class="shadow"> ... </span>(<span class="maf-keys-command">maf-roll-to-bottom</span>)
+    <span class="maf-keys-doc">Bury the stack entry at point at the bottom of the stack.</span>
+
+  <span class="maf-keys-title">Roll to top</span> (<span class="maf-keys-binding">S-&lt;return&gt;</span>)<span class="shadow"> ... </span>(<span class="maf-keys-command">maf-roll-to-top</span>)
+    <span class="maf-keys-doc">Move the stack entry at point to the top of the stack.</span>
+
+  <span class="maf-keys-title">Carry up</span> (<span class="maf-keys-binding">M-&lt;up&gt;</span>)<span class="shadow"> ... </span>(<span class="maf-keys-command">maf-carry-up</span>)
+    <span class="maf-keys-doc">Carry the stack entry at point one line up the screen, point riding along.</span>
+
+  <span class="maf-keys-title">Carry down</span> (<span class="maf-keys-binding">M-&lt;down&gt;</span>)<span class="shadow"> ... </span>(<span class="maf-keys-command">maf-carry-down</span>)
+    <span class="maf-keys-doc">Carry the stack entry at point one line down the screen, point riding along.</span>
+
+  <span class="maf-keys-title">Edit</span> (<span class="maf-keys-binding">SPC</span>)<span class="shadow"> ... </span>(<span class="maf-keys-command">maf-edit</span>)
+    <span class="maf-keys-doc">Toggle in-place editing of the calc stack.</span>
+
+  <span class="maf-keys-title">Edit the top entry</span> (<span class="maf-keys-binding">`</span>)<span class="shadow"> ... </span>(<span class="maf-keys-command">maf-edit-entry-at-home</span>)
+    <span class="maf-keys-doc">Enter maf-edit on the entry at stack level 1, landing point home.</span>
+
+</pre>
+
+ </body>
+</html>
