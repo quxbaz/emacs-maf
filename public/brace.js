@@ -9,16 +9,15 @@
 // the stem, for a layout where the panel's middle lies past either end.
 //
 // Coordinates are the stroke's center, in the brace's own pixels. The
-// stem stands 40px from the examples, the curls and the cusp are 11px
+// stem stands 36px from the examples, the curls and the cusp are 10px
 // arcs, and the curls' tips sit 1px in from the edges so the 2px stroke
-// ends flush with them. Those lengths take the fold's scale, --fold,
-// so the brace shrinks with what it gathers.
+// ends flush with them.
+
+const STEM = 36, R = 10
 
 function draw(svg, lede) {
   const b = svg.getBoundingClientRect(), l = lede.getBoundingClientRect()
   if (!b.width || !b.height) return
-  const fold = parseFloat(getComputedStyle(svg).getPropertyValue('--fold')) || 1
-  const STEM = 40 * fold, R = 11 * fold
   const w = b.width, h = b.height
   const x = Math.round(w - STEM) + 1
   const mid = Math.round((l.top + l.bottom) / 2 - b.top)
