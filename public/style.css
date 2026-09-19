@@ -208,31 +208,18 @@ mark { background: var(--mark); color: inherit; }
 .muted { color: var(--muted); font-size: .95rem; }
 a { color: var(--accent); }
 h2 { font-size: 1.25rem; letter-spacing: -.01em; margin: 1.2em 0 .4em; }
-/* Every feature has a short summary, on a card. Only the cards are boxed.
-   The cards share one grid; a category heading is a row of its own, a
-   subheading under a rule, with room above so each group stands apart. */
-.features-heading { grid-column: 1 / -1; margin-bottom: 6px; }
+/* Every feature has a short summary. The features stand in three
+   columns, one per group: a heading over a rule, then the group's
+   entries down the column, a hairline between them. Nothing is boxed. */
+.feature-overview { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 48px; }
+.features-heading { grid-column: 1 / -1; margin-bottom: 34px; }
 .features-heading h2 { margin: 0 0 8px; font-size: 2rem; letter-spacing: -.03em; line-height: 1.2; }
 .features-heading p { margin: 0; color: var(--muted); font-size: 1rem; }
-.feature-category { grid-column: 1 / -1; margin: 30px 0 -2px; padding-top: 26px; border-top: 1px solid var(--grid-line); font-size: 1.2rem; font-weight: 600; letter-spacing: -.015em; line-height: 1.2; color: var(--fg); }
-.features-heading + .feature-category { margin-top: 6px; padding-top: 0; border-top: 0; }
-.feature-overview { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
-.feature-overview > section { display: flex; flex-direction: column; min-width: 0; scroll-margin-top: 28px; background: var(--bg); border: 1px solid var(--grid-line); border-radius: 8px; overflow: hidden; }
-/* A card is a screenshot, then its title and description. The shot meets
-   the card's top and side edges and is cropped to the slot, from its top
-   left corner unless .right says otherwise. --w sets its drawn width, so
-   the text in every shot is about the same size; the plot is fitted whole. */
-.feature-shot { display: flex; height: 132px; flex-shrink: 0; overflow: hidden; background: #000; border-bottom: 1px solid var(--grid-line); }
-.feature-shot img { display: block; flex-shrink: 0; width: var(--w); max-width: none; height: auto; align-self: flex-start; }
-.feature-shot.right { justify-content: flex-end; }
-.feature-shot.right img { align-self: flex-end; }
-.feature-shot.bottom img { width: 100%; height: 100%; object-fit: cover; object-position: center bottom; }
-.feature-body { padding: 22px 24px 26px; }
-.feature-overview h4 { margin: 0 0 8px; font-size: 1rem; line-height: 24px; font-weight: 600; letter-spacing: -.01em; }
-/* A card's heading sits in a fixed-height row above its description. */
-.feature-body > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; height: 24px; margin-bottom: 8px; }
-.feature-body > header h4 { margin: 0; }
+.feature-group { min-width: 0; }
+.feature-group h3 { margin: 0; padding-bottom: 12px; border-bottom: 2px solid var(--fg); font-size: 1.1rem; font-weight: 600; letter-spacing: -.01em; line-height: 1.3; }
+.feature-group section { padding: 16px 0 18px; border-top: 1px solid var(--grid-line); scroll-margin-top: 28px; }
+.feature-group h3 + section { border-top: 0; }
+.feature-overview h4 { margin: 0 0 4px; font-size: 1rem; line-height: 24px; font-weight: 600; letter-spacing: -.01em; }
 .feature-overview section p { margin: 0; font-size: .92rem; line-height: 22px; }
 .feature-overview code { font-family: var(--mono); font-size: .9em; }
-@media (max-width: 960px) { .feature-overview { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 640px) { .feature-overview { grid-template-columns: 1fr; } }
+@media (max-width: 960px) { .feature-overview { grid-template-columns: 1fr; row-gap: 44px; } .features-heading { margin-bottom: 0; } }

@@ -45,101 +45,67 @@
       <h2 id="features-title">Features</h2>
       <p>maf works on top of Calc as a set of optional features. Features can be toggled on or off, tailored to your preferences.</p>
     </header>
-    <h3 class="feature-category">Core – editing, interaction</h3>
-    <section id="contextual">
-      <div class="feature-shot zoom" style="--w: 700px"><img src="media/screens/highlight.png" width="1000" height="144" loading="lazy" alt="A stack entry with the cursor on a plus sign and the sum around it highlighted."></div>
-      <div class="feature-body">
+    <div class="feature-group">
+      <h3>Core – editing, interaction</h3>
+      <section id="contextual">
         <h4 id="highlight">Contextual commands</h4>
         <p>The highlight follows the cursor; commands change that expression and put the result back in place.</p>
-      </div>
-    </section>
-    <section id="edit">
-      <div class="feature-shot zoom" style="--w: 700px"><img src="media/screens/edit.png" width="1000" height="174" loading="lazy" alt="The stack opened as editable text, one entry per line, with the keys to commit or discard."></div>
-      <div class="feature-body">
-        <header><h4>Direct stack editing</h4></header>
+      </section>
+      <section id="edit">
+        <h4>Direct stack editing</h4>
         <p>Open the stack as text: edit formulas or add entries, then press <kbd>RET</kbd> to apply your changes.</p>
-      </div>
-    </section>
-    <section id="equation">
-      <div class="feature-shot zoom" style="--w: 700px"><img src="media/screens/equation.png" width="1000" height="114" loading="lazy" alt="An equation with the cursor on the left side and that side’s expression highlighted."></div>
-      <div class="feature-body">
+      </section>
+      <section id="equation">
         <h4>Always-on expression highlighting</h4>
         <p>The expression under the cursor is highlighted as you move, so you see what the next command will act on before you press it.</p>
-      </div>
-    </section>
-    <h3 class="feature-category">Rendering, output</h3>
-    <section id="plot">
-      <div class="feature-shot bottom"><img src="media/screens/plot.png" width="2426" height="1156" loading="lazy" alt="The equation (x + 1)^2 = -8 (y + 2) above a plot of its downward-opening parabola."></div>
-      <div class="feature-body">
-        <header><h4>Render plots inside Emacs</h4></header>
+      </section>
+      <section id="bindings">
+        <h4>Ergonomic bindings</h4>
+        <p>maf’s default layout keeps stack editing close to the rest of Emacs and puts common operations on single keys; calc and vim profiles are also available.</p>
+      </section>
+    </div>
+    <div class="feature-group">
+      <h3>Rendering, output</h3>
+      <section id="plot">
+        <h4>Render plots inside Emacs</h4>
         <p>Plot the current formula below the stack; Desmos and an interactive gnuplot window are also available.</p>
-      </div>
-    </section>
-    <section id="preview">
-      <div class="feature-shot zoom right" style="--w: 774px"><img src="media/screens/preview.png" width="1106" height="264" loading="lazy" alt="A single-line stack entry beside its preview with stacked fractions, a square root and a raised power."></div>
-      <div class="feature-body">
+      </section>
+      <section id="preview">
         <h4>LaTeX previews</h4>
         <p>Read fractions and powers in a panel that follows the cursor, while the stack stays one line per entry.</p>
-      </div>
-    </section>
-    <section id="rewrite">
-      <div class="feature-shot zoom" style="--w: 700px"><img src="media/screens/paper.png" width="1000" height="174" loading="lazy" alt="A polynomial in descending order, e^(2 x) and x + ln(y) on the stack."></div>
-      <div class="feature-body">
-        <header><h4>Rewrite rules</h4></header>
+      </section>
+      <section id="rewrite">
+        <h4>Rewrite rules</h4>
         <p>Optional modules keep polynomials in descending order, write <code>exp(x)</code> as <code>e^x</code> and simplify logarithm identities.</p>
-      </div>
-    </section>
-    <h3 class="feature-category">History, persistence</h3>
-    <section id="saved-stacks">
-      <div class="feature-shot zoom" style="--w: 540px"><img src="media/screens/saved-stacks.png" width="1000" height="354" loading="lazy" alt="A list of saved stacks with their entry counts and ages, and keys to restore, rename or delete."></div>
-      <div class="feature-body">
+      </section>
+      <section id="formulas">
+        <h4>Formula library</h4>
+        <p>Find identities and geometry formulas, read what their variables mean and add your choice to the stack.</p>
+      </section>
+    </div>
+    <div class="feature-group">
+      <h3>History, persistence, customization</h3>
+      <section id="saved-stacks">
         <h4>Saved sessions</h4>
         <p>Enable persistence to restore your stack next time, with a menu to preview, restore, rename or delete saved stacks.</p>
-      </div>
-    </section>
-    <section id="history">
-      <div class="feature-shot zoom" style="--w: 1213px"><img src="media/screens/history.png" width="2426" height="1020" loading="lazy" alt="A command log on the left and the stack after the selected command on the right."></div>
-      <div class="feature-body">
-        <header><h4>Trail replacement</h4></header>
+      </section>
+      <section id="history">
+        <h4>Trail replacement</h4>
         <p>Replaces <code>calc-trail</code>: see the commands that changed the stack, with the stack as it stood after the selected step.</p>
-      </div>
-    </section>
-    <section id="formulas">
-      <div class="feature-shot zoom" style="--w: 1213px"><img src="media/screens/formulas.png" width="2426" height="2035" loading="lazy" alt="The formula library with a typeset formula and variable explanations beside a list organized by category."></div>
-      <div class="feature-body">
-        <header><h4>Formula library</h4></header>
-        <p>Find identities and geometry formulas, read what their variables mean and add your choice to the stack.</p>
-      </div>
-    </section>
-    <h3 class="feature-category">Help, customization</h3>
-    <section id="modules">
-      <div class="feature-shot zoom" style="--w: 609px"><img src="media/screens/modules.png" width="1218" height="834" loading="lazy" alt="Modules grouped by purpose, with on and off controls and a choice of key binding profiles."></div>
-      <div class="feature-body">
-        <header><h4>Modules</h4></header>
+      </section>
+      <section id="modules">
+        <h4>Modules</h4>
         <p>Turn features on or off and choose the key binding profile that suits you.</p>
-      </div>
-    </section>
-    <section id="options">
-      <div class="feature-shot zoom" style="--w: 1029px"><img src="media/screens/options.png" width="2058" height="1764" loading="lazy" alt="Calc’s settings table, with the current value marked among each option’s available choices."></div>
-      <div class="feature-body">
-        <header><h4>Settings in a single buffer</h4></header>
+      </section>
+      <section id="options">
+        <h4>Settings in a single buffer</h4>
         <p>See settings and their current values in one table, ready to change without memorizing option keys.</p>
-      </div>
-    </section>
-    <section id="bindings">
-      <div class="feature-shot zoom" style="--w: 1036px"><img src="media/screens/bindings.png" width="2072" height="1524" loading="lazy" alt="The key binding help narrowed to stack editing: undo, redo, delete, kill, copy and yank on their Emacs keys."></div>
-      <div class="feature-body">
-        <header><h4>Ergonomic bindings</h4></header>
-        <p>maf’s default layout keeps stack editing close to the rest of Emacs and puts common operations on single keys; calc and vim profiles are also available.</p>
-      </div>
-    </section>
-    <section id="keys">
-      <div class="feature-shot zoom" style="--w: 875px"><img src="media/screens/keys.png" width="1750" height="2035" loading="lazy" alt="Key bindings listed by task, each with an example and a one-line description."></div>
-      <div class="feature-body">
-        <header><h4>More useful help</h4></header>
+      </section>
+      <section id="keys">
+        <h4>More useful help</h4>
         <p>List your active bindings by task, with command descriptions and examples.</p>
-      </div>
-    </section>
+      </section>
+    </div>
   </div>
 </div>
 </section>
