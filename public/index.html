@@ -45,6 +45,7 @@
       <h2 id="features-title">Features</h2>
       <p>maf works on top of Calc as a set of optional features. Features can be toggled on or off, tailored to your preferences.</p>
     </header>
+    <h3 class="feature-category">Edit</h3>
     <section id="contextual">
       <div class="feature-shot zoom" style="--w: 700px"><img src="media/screens/highlight.png" width="1000" height="144" loading="lazy" alt="A stack entry with the cursor on a plus sign and the sum around it highlighted."></div>
       <div class="feature-body">
@@ -66,25 +67,12 @@
         <p>Open the stack as text: edit formulas or add entries, then press <kbd>RET</kbd> to apply your changes.</p>
       </div>
     </section>
+    <h3 class="feature-category">See</h3>
     <section id="plot">
       <div class="feature-shot bottom"><img src="media/screens/plot.png" width="2426" height="1156" loading="lazy" alt="The equation (x + 1)^2 = -8 (y + 2) above a plot of its downward-opening parabola."></div>
       <div class="feature-body">
         <header><h4>Render plots inside Emacs</h4></header>
         <p>Plot the current formula below the stack; Desmos and an interactive gnuplot window are also available.</p>
-      </div>
-    </section>
-    <section id="history">
-      <div class="feature-shot zoom" style="--w: 1213px"><img src="media/screens/history.png" width="2426" height="1020" loading="lazy" alt="A command log on the left and the stack after the selected command on the right."></div>
-      <div class="feature-body">
-        <header><h4>calc-trail replacement</h4></header>
-        <p>Replaces <code>calc-trail</code>: see the commands that changed the stack, with the stack as it stood after the selected step.</p>
-      </div>
-    </section>
-    <section id="saved-stacks">
-      <div class="feature-shot zoom" style="--w: 540px"><img src="media/screens/saved-stacks.png" width="1000" height="354" loading="lazy" alt="A list of saved stacks with their entry counts and ages, and keys to restore, rename or delete."></div>
-      <div class="feature-body">
-        <h4>Saved sessions</h4>
-        <p>Enable persistence to restore your stack next time, with a menu to preview, restore, rename or delete saved stacks.</p>
       </div>
     </section>
     <section id="preview">
@@ -94,11 +82,26 @@
         <p>Read fractions and powers in a panel that follows the cursor, while the stack stays one line per entry.</p>
       </div>
     </section>
-    <section id="bindings">
-      <div class="feature-shot zoom" style="--w: 1036px"><img src="media/screens/bindings.png" width="2072" height="1524" loading="lazy" alt="The key binding help narrowed to stack editing: undo, redo, delete, kill, copy and yank on their Emacs keys."></div>
+    <section id="rewrite">
+      <div class="feature-shot zoom" style="--w: 700px"><img src="media/screens/paper.png" width="1000" height="174" loading="lazy" alt="A polynomial in descending order, e^(2 x) and x + ln(y) on the stack."></div>
       <div class="feature-body">
-        <header><h4>Ergonomic bindings</h4></header>
-        <p>maf’s default layout keeps stack editing close to the rest of Emacs and puts common operations on single keys; calc and vim profiles are also available.</p>
+        <header><h4>Rewrite rules</h4></header>
+        <p>Optional modules keep polynomials in descending order, write <code>exp(x)</code> as <code>e^x</code> and simplify logarithm identities.</p>
+      </div>
+    </section>
+    <h3 class="feature-category">Keep and reuse</h3>
+    <section id="saved-stacks">
+      <div class="feature-shot zoom" style="--w: 540px"><img src="media/screens/saved-stacks.png" width="1000" height="354" loading="lazy" alt="A list of saved stacks with their entry counts and ages, and keys to restore, rename or delete."></div>
+      <div class="feature-body">
+        <h4>Saved sessions</h4>
+        <p>Enable persistence to restore your stack next time, with a menu to preview, restore, rename or delete saved stacks.</p>
+      </div>
+    </section>
+    <section id="history">
+      <div class="feature-shot zoom" style="--w: 1213px"><img src="media/screens/history.png" width="2426" height="1020" loading="lazy" alt="A command log on the left and the stack after the selected command on the right."></div>
+      <div class="feature-body">
+        <header><h4>calc-trail replacement</h4></header>
+        <p>Replaces <code>calc-trail</code>: see the commands that changed the stack, with the stack as it stood after the selected step.</p>
       </div>
     </section>
     <section id="formulas">
@@ -108,11 +111,12 @@
         <p>Find identities and geometry formulas, read what their variables mean and add your choice to the stack.</p>
       </div>
     </section>
-    <section id="rewrite">
-      <div class="feature-shot zoom" style="--w: 700px"><img src="media/screens/paper.png" width="1000" height="174" loading="lazy" alt="A polynomial in descending order, e^(2 x) and x + ln(y) on the stack."></div>
+    <h3 class="feature-category">Set up</h3>
+    <section id="bindings">
+      <div class="feature-shot zoom" style="--w: 1036px"><img src="media/screens/bindings.png" width="2072" height="1524" loading="lazy" alt="The key binding help narrowed to stack editing: undo, redo, delete, kill, copy and yank on their Emacs keys."></div>
       <div class="feature-body">
-        <header><h4>Rewrite rules</h4></header>
-        <p>Optional modules keep polynomials in descending order, write <code>exp(x)</code> as <code>e^x</code> and simplify logarithm identities.</p>
+        <header><h4>Ergonomic bindings</h4></header>
+        <p>maf’s default layout keeps stack editing close to the rest of Emacs and puts common operations on single keys; calc and vim profiles are also available.</p>
       </div>
     </section>
     <section id="options">
