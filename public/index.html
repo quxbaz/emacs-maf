@@ -45,84 +45,75 @@
       <h2 id="features-title">Features</h2>
       <p>maf works on top of Calc as a set of optional features. Features can be toggled on or off, tailored to your preferences.</p>
     </header>
-    <div class="feature-panel">
-      <div class="feature-list">
-        <div class="feature-group" data-group="0">
-          <button type="button" class="cat">Editing, interaction</button>
-          <div class="entries">
-            <section id="contextual" tabindex="0">
-              <h4 id="highlight">Contextual commands</h4>
-              <p>The highlight follows the cursor; commands change that expression and put the result back in place.</p>
-            </section>
-            <section id="edit" tabindex="0">
-              <h4>Direct stack editing</h4>
-              <p>Open the stack as text: edit formulas or add entries, then press <kbd>RET</kbd> to apply your changes.</p>
-            </section>
-            <section id="equation" tabindex="0">
-              <h4>Always-on expression highlighting</h4>
-              <p>The expression under the cursor is highlighted as you move, so you see what the next command will act on before you press it.</p>
-            </section>
-            <section id="bindings" tabindex="0">
-              <h4>Ergonomic bindings</h4>
-              <p>maf’s default layout keeps stack editing close to the rest of Emacs and puts common operations on single keys; calc and vim profiles are also available.</p>
-            </section>
-          </div>
-        </div>
-        <div class="feature-group" data-group="1">
-          <button type="button" class="cat">Rendering, output</button>
-          <div class="entries">
-            <section id="plot" tabindex="0">
-              <h4>Render plots inside Emacs</h4>
-              <p>Plot the current formula below the stack; Desmos and an interactive gnuplot window are also available.</p>
-            </section>
-            <section id="preview" tabindex="0">
-              <h4>LaTeX previews</h4>
-              <p>Read fractions and powers in a panel that follows the cursor, while the stack stays one line per entry.</p>
-            </section>
-            <section id="rewrite" tabindex="0">
-              <h4>Rewrite rules</h4>
-              <p>Optional modules keep polynomials in descending order, write <code>exp(x)</code> as <code>e^x</code> and simplify logarithm identities.</p>
-            </section>
-            <section id="formulas" tabindex="0">
-              <h4>Formula library</h4>
-              <p>Find identities and geometry formulas, read what their variables mean and add your choice to the stack.</p>
-            </section>
-          </div>
-        </div>
-        <div class="feature-group" data-group="2">
-          <button type="button" class="cat">History, persistence, customization</button>
-          <div class="entries">
-            <section id="saved-stacks" tabindex="0">
-              <h4>Saved sessions</h4>
-              <p>Enable persistence to restore your stack next time, with a menu to preview, restore, rename or delete saved stacks.</p>
-            </section>
-            <section id="history" tabindex="0">
-              <h4>Trail replacement</h4>
-              <p>Replaces <code>calc-trail</code>: see the commands that changed the stack, with the stack as it stood after the selected step.</p>
-            </section>
-            <section id="modules" tabindex="0">
-              <h4>Modules</h4>
-              <p>Turn features on or off and choose the key binding profile that suits you.</p>
-            </section>
-            <section id="options" tabindex="0">
-              <h4>Settings in a single buffer</h4>
-              <p>See settings and their current values in one table, ready to change without memorizing option keys.</p>
-            </section>
-            <section id="keys" tabindex="0">
-              <h4>More useful help</h4>
-              <p>List your active bindings by task, with command descriptions and examples.</p>
-            </section>
-          </div>
-        </div>
-      </div>
-      <figure class="feature-stage">
-        <div class="shot">
+    <div class="feature-group">
+      <h3>Editing, interaction</h3>
+      <section id="contextual" tabindex="0">
+        <h4 id="highlight">Contextual commands</h4>
+        <p>The highlight follows the cursor; commands change that expression and put the result back in place.</p>
+      </section>
+      <section id="edit" tabindex="0">
+        <h4>Direct stack editing</h4>
+        <p>Open the stack as text: edit formulas or add entries, then press <kbd>RET</kbd> to apply your changes.</p>
+      </section>
+      <section id="equation" tabindex="0">
+        <h4>Always-on expression highlighting</h4>
+        <p>The expression under the cursor is highlighted as you move, so you see what the next command will act on before you press it.</p>
+      </section>
+      <section id="bindings" tabindex="0">
+        <h4>Ergonomic bindings</h4>
+        <p>maf’s default layout keeps stack editing close to the rest of Emacs and puts common operations on single keys; calc and vim profiles are also available.</p>
+      </section>
+    </div>
+    <div class="feature-group">
+      <h3>Rendering, output</h3>
+      <section id="plot" tabindex="0">
+        <h4>Render plots inside Emacs</h4>
+        <p>Plot the current formula below the stack; Desmos and an interactive gnuplot window are also available.</p>
+      </section>
+      <section id="preview" tabindex="0">
+        <h4>LaTeX previews</h4>
+        <p>Read fractions and powers in a panel that follows the cursor, while the stack stays one line per entry.</p>
+      </section>
+      <section id="rewrite" tabindex="0">
+        <h4>Rewrite rules</h4>
+        <p>Optional modules keep polynomials in descending order, write <code>exp(x)</code> as <code>e^x</code> and simplify logarithm identities.</p>
+      </section>
+      <section id="formulas" tabindex="0">
+        <h4>Formula library</h4>
+        <p>Find identities and geometry formulas, read what their variables mean and add your choice to the stack.</p>
+      </section>
+    </div>
+    <div class="feature-group">
+      <h3>History, persistence, customization</h3>
+      <section id="saved-stacks" tabindex="0">
+        <h4>Saved sessions</h4>
+        <p>Enable persistence to restore your stack next time, with a menu to preview, restore, rename or delete saved stacks.</p>
+      </section>
+      <section id="history" tabindex="0">
+        <h4>Trail replacement</h4>
+        <p>Replaces <code>calc-trail</code>: see the commands that changed the stack, with the stack as it stood after the selected step.</p>
+      </section>
+      <section id="modules" tabindex="0">
+        <h4>Modules</h4>
+        <p>Turn features on or off and choose the key binding profile that suits you.</p>
+      </section>
+      <section id="options" tabindex="0">
+        <h4>Settings in a single buffer</h4>
+        <p>See settings and their current values in one table, ready to change without memorizing option keys.</p>
+      </section>
+      <section id="keys" tabindex="0">
+        <h4>More useful help</h4>
+        <p>List your active bindings by task, with command descriptions and examples.</p>
+      </section>
+    </div>
+    <figure class="feature-peek" hidden>
+      <div class="shot">
           <div class="slot scene" data-for="contextual" data-play="expand"></div>
           <div class="slot scene" data-for="edit" data-play="edit"></div>
           <div class="slot scene" data-for="equation" data-play="highlight"></div>
           <div class="slot scene" data-for="bindings" data-play="bindings"></div>
           <div class="slot image" data-for="plot"><img data-for="plot" class="fit" src="media/screens/plot.png" width="2426" height="1156" loading="lazy" alt="The equation (x + 1)^2 = -8 (y + 2) above a plot of its downward-opening parabola."></div>
-          <div class="slot image" data-for="preview"><img data-for="preview" style="--w: 774px" src="media/screens/preview.png" width="1106" height="264" loading="lazy" alt="A single-line stack entry beside its preview with stacked fractions, a square root and a raised power."></div>
+          <div class="slot image" data-for="preview"><img data-for="preview" class="right" style="--w: 774px" src="media/screens/preview.png" width="1106" height="264" loading="lazy" alt="A single-line stack entry beside its preview with stacked fractions, a square root and a raised power."></div>
           <div class="slot diff" data-for="rewrite"><div data-diff="rewrite" data-result></div></div>
           <div class="slot image" data-for="formulas"><img data-for="formulas" style="--w: 1213px" src="media/screens/formulas.png" width="2426" height="2035" loading="lazy" alt="The formula library with a typeset formula and variable explanations beside a list organized by category."></div>
           <div class="slot image" data-for="saved-stacks"><img data-for="saved-stacks" style="--w: 540px" src="media/screens/saved-stacks.png" width="1000" height="354" loading="lazy" alt="A list of saved stacks with their entry counts and ages, and keys to restore, rename or delete."></div>
@@ -130,10 +121,8 @@
           <div class="slot image" data-for="modules"><img data-for="modules" style="--w: 609px" src="media/screens/modules.png" width="1218" height="834" loading="lazy" alt="Modules grouped by purpose, with on and off controls and a choice of key binding profiles."></div>
           <div class="slot image" data-for="options"><img data-for="options" style="--w: 1029px" src="media/screens/options.png" width="2058" height="1764" loading="lazy" alt="Calc’s settings table, with the current value marked among each option’s available choices."></div>
           <div class="slot image" data-for="keys"><img data-for="keys" style="--w: 875px" src="media/screens/keys.png" width="1750" height="2035" loading="lazy" alt="Key bindings listed by task, each with an example and a one-line description."></div>
-        </div>
-      </figure>
-      <svg class="feature-link" aria-hidden="true"><path/></svg>
-    </div>
+      </div>
+    </figure>
   </div>
 </div>
 </section>
