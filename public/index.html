@@ -63,7 +63,7 @@
     <section id="equation">
       <div class="feature-shot zoom" style="--w: 700px"><img src="media/screens/equation.png" width="1000" height="114" loading="lazy" alt="An equation with the cursor on the left side and that side’s expression highlighted."></div>
       <div class="feature-body">
-        <h4>Equation editing</h4>
+        <h4>Always-on expression highlighting</h4>
         <p>Work on an expression on either side, or put the cursor on <code>=</code> to transform both sides together.</p>
       </div>
     </section>
@@ -71,39 +71,18 @@
     <section id="preview">
       <div class="feature-shot zoom right" style="--w: 774px"><img src="media/screens/preview.png" width="1106" height="264" loading="lazy" alt="A single-line stack entry beside its preview with stacked fractions, a square root and a raised power."></div>
       <div class="feature-body">
-        <h4>Formula previews</h4>
+        <h4>LaTeX previews</h4>
         <p>Read fractions and powers in a panel that follows the cursor, while the stack stays one line per entry.</p>
-      </div>
-    </section>
-    <section id="paper">
-      <div class="feature-shot zoom" style="--w: 700px"><img src="media/screens/paper.png" width="1000" height="174" loading="lazy" alt="A polynomial in descending order, e^(2 x) and x + ln(y) on the stack."></div>
-      <div class="feature-body">
-        <h4>Paper-style output</h4>
-        <p>Optional modules keep polynomials in descending order, write <code>exp(x)</code> as <code>e^x</code> and simplify logarithm identities.</p>
       </div>
     </section>
     <section id="plot">
       <div class="feature-shot bottom"><img src="media/screens/plot.png" width="2426" height="1156" loading="lazy" alt="The equation (x + 1)^2 = -8 (y + 2) above a plot of its downward-opening parabola."></div>
       <div class="feature-body">
-        <header><h4>Embedded plots</h4></header>
+        <header><h4>Render plots inside Emacs</h4></header>
         <p>Plot the current formula below the stack; Desmos and an interactive gnuplot window are also available.</p>
       </div>
     </section>
     <h3 class="feature-category">Keep and reuse</h3>
-    <section id="formulas">
-      <div class="feature-shot zoom" style="--w: 1213px"><img src="media/screens/formulas.png" width="2426" height="2035" loading="lazy" alt="The formula library with a typeset formula and variable explanations beside a list organized by category."></div>
-      <div class="feature-body">
-        <header><h4>Formula library</h4></header>
-        <p>Find identities and geometry formulas, read what their variables mean and add your choice to the stack.</p>
-      </div>
-    </section>
-    <section id="history">
-      <div class="feature-shot zoom" style="--w: 1213px"><img src="media/screens/history.png" width="2426" height="1020" loading="lazy" alt="A command log on the left and the stack after the selected command on the right."></div>
-      <div class="feature-body">
-        <header><h4>Stack history</h4></header>
-        <p>See the commands that changed the stack, with the stack as it stood after the selected step.</p>
-      </div>
-    </section>
     <section id="saved-stacks">
       <div class="feature-shot zoom" style="--w: 540px"><img src="media/screens/saved-stacks.png" width="1000" height="354" loading="lazy" alt="A list of saved stacks with their entry counts and ages, and keys to restore, rename or delete."></div>
       <div class="feature-body">
@@ -111,25 +90,39 @@
         <p>Enable persistence to restore your stack next time, with a menu to preview, restore, rename or delete saved stacks.</p>
       </div>
     </section>
+    <section id="history">
+      <div class="feature-shot zoom" style="--w: 1213px"><img src="media/screens/history.png" width="2426" height="1020" loading="lazy" alt="A command log on the left and the stack after the selected command on the right."></div>
+      <div class="feature-body">
+        <header><h4>calc-trail replacement</h4></header>
+        <p>Replaces <code>calc-trail</code>: see the commands that changed the stack, with the stack as it stood after the selected step.</p>
+      </div>
+    </section>
+    <section id="formulas">
+      <div class="feature-shot zoom" style="--w: 1213px"><img src="media/screens/formulas.png" width="2426" height="2035" loading="lazy" alt="The formula library with a typeset formula and variable explanations beside a list organized by category."></div>
+      <div class="feature-body">
+        <header><h4>Formula library</h4></header>
+        <p>Find identities and geometry formulas, read what their variables mean and add your choice to the stack.</p>
+      </div>
+    </section>
     <h3 class="feature-category">Set up</h3>
     <section id="options">
       <div class="feature-shot zoom" style="--w: 1029px"><img src="media/screens/options.png" width="2058" height="1764" loading="lazy" alt="Calc’s settings table, with the current value marked among each option’s available choices."></div>
       <div class="feature-body">
-        <header><h4>Calc settings</h4></header>
+        <header><h4>View and modify all settings in a single buffer</h4></header>
         <p>See settings and their current values in one table, ready to change without memorizing option keys.</p>
       </div>
     </section>
     <section id="modules">
       <div class="feature-shot zoom" style="--w: 609px"><img src="media/screens/modules.png" width="1218" height="834" loading="lazy" alt="Modules grouped by purpose, with on and off controls and a choice of key binding profiles."></div>
       <div class="feature-body">
-        <header><h4>Module menu</h4></header>
+        <header><h4>Modules</h4></header>
         <p>Turn features on or off and choose the key binding profile that suits you.</p>
       </div>
     </section>
     <section id="keys">
       <div class="feature-shot zoom" style="--w: 875px"><img src="media/screens/keys.png" width="1750" height="2035" loading="lazy" alt="Key bindings listed by task, each with an example and a one-line description."></div>
       <div class="feature-body">
-        <header><h4>Key binding help</h4></header>
+        <header><h4>More useful help</h4></header>
         <p>List your active bindings by task, with command descriptions and examples.</p>
       </div>
     </section>
