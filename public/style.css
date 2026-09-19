@@ -209,12 +209,13 @@ mark { background: var(--mark); color: inherit; }
 a { color: var(--accent); }
 h2 { font-size: 1.25rem; letter-spacing: -.01em; margin: 1.2em 0 .4em; }
 /* Every feature has a short summary, on a card. Only the cards are boxed.
-   The cards share one grid; a category heading is a row of its own. */
+   The cards share one grid; a category heading is a row of its own, a
+   subheading under a rule, with room above so each group stands apart. */
 .features-heading { grid-column: 1 / -1; margin-bottom: 6px; }
 .features-heading h2 { margin: 0 0 8px; font-size: 2rem; letter-spacing: -.03em; line-height: 1.2; }
 .features-heading p { margin: 0; color: var(--muted); font-size: 1rem; }
-.feature-category { grid-column: 1 / -1; margin: 14px 0 -6px; font-size: .8rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
-.features-heading + .feature-category { margin-top: 0; }
+.feature-category { grid-column: 1 / -1; margin: 30px 0 -2px; padding-top: 26px; border-top: 1px solid var(--grid-line); font-size: 1.2rem; font-weight: 600; letter-spacing: -.015em; line-height: 1.2; color: var(--fg); }
+.features-heading + .feature-category { margin-top: 6px; padding-top: 0; border-top: 0; }
 .feature-overview { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
 .feature-overview > section { display: flex; flex-direction: column; min-width: 0; scroll-margin-top: 28px; background: var(--bg); border: 1px solid var(--grid-line); border-radius: 8px; overflow: hidden; }
 /* A card is a screenshot, then its title and description. The shot meets
