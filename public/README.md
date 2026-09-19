@@ -37,10 +37,12 @@ from the repository root with a reloading server while working:
   with `data-diff="name"` shows the scene of that name this way.
 - `scenes.js`: the scenes the pages show, as data. An element with
   `data-scene="name"` plays the scene of that name.
-- `features.js`: the feature stage. The feature clicked, stepped to with the
-  stage's buttons, chosen with the arrow keys from a focused tab, or named by
-  the page's hash has its screenshot shown on the stage with its title and
-  summary, the first feature's until then.
+- `features.js`: the feature panel. The three categories stack on the left;
+  the open one lists its entries under its heading, and the entry clicked
+  there, or named by the page's hash, has its slot shown on the stage at the
+  right: a scene played by showy (`data-play`), a stacky-diff (`data-diff`),
+  or a screenshot. A scene plays when its entry is chosen and when the stage
+  first scrolls into view.
 - `demo.html`: every component variant on one scene, with the markup that
   produces each; the reference for choosing which fits an example.
 - `vendor/`: redux 5.0.1 (ESM) and MathJax 3.2.2.
