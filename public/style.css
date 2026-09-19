@@ -129,8 +129,11 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
    the brace has nothing to gather them toward, and the closing line
    ends the fold. */
 @media (max-width: 960px) { .intro .col { grid-template-columns: 1fr; grid-template-rows: none; } .intro .col > :is(.layer, .pair, .more):nth-child(n) { grid-column: 1; grid-row: auto; } .intro .col > .pair { max-width: 720px; margin-top: 34px; } .intro .pair > .brace, .intro .col > .trail { display: none; } .intro .col > .lede { margin-top: 40px; } .intro .col > .more { margin-top: 40px; } }
-/* Features share the intro’s width and keep a readable margin on phones. */
-.examples { background: var(--tint); padding: 64px 0 80px; }
+/* Features share the intro’s width and keep a readable margin on phones.
+   They stand on a dark slate, a break from the fold's white: the page's
+   tokens are re-set for the section, so the cards, rules and text pick
+   up the scheme without their own rules. */
+.examples { --bg: #1e2937; --fg: #eef2f6; --muted: #9fadbb; --grid-line: rgba(255, 255, 255, .16); --link-2: hsl(205 73% 70%); --panel-2: #2c3b4d; background: #141b24; color: var(--fg); padding: 64px 0 80px; }
 .examples .col { max-width: 1240px; }
 /* The worked examples, back on the page's ground, as wide as the
    features above. */
