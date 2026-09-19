@@ -1,10 +1,20 @@
 // Scenes for showy: each is a list of steps, see showy.js.
 // Columns and highlight ranges are as maf places them in a live calc buffer.
 
-// The same key on the same entry, twice: where point stands decides
-// what it acts on. On the + only the side under point is squared; on
-// the = the whole equation is the target and both sides are. Entries,
-// ranges and results are as a live calc buffer gives them.
+// The same key on the same entry, three times: where point stands
+// decides what it acts on. On the x only that term is squared; on the
+// + the side under point is; on the = the whole equation is the target
+// and both sides are. Entries, ranges and results are as a live calc
+// buffer gives them: after squaring a term, point stays on it.
+export const squareTerm = [
+  { stack: ['y = x + 1'] },
+  { pause: 900 },
+  { point: { level: 1, col: 4 }, highlight: { level: 1, from: 4, to: 5 } },
+  { pause: 700 },
+  { keys: 'W', label: 'square', command: 'mafcmd-sqr' },
+  { entry: { level: 1, text: 'y = x^2 + 1' }, point: { level: 1, col: 4 }, highlight: { level: 1, from: 4, to: 5 } },
+]
+
 export const square = [
   { stack: ['y = x + 1'] },
   { pause: 900 },
