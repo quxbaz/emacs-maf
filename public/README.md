@@ -37,6 +37,10 @@ from the repository root with a reloading server while working:
   with `data-diff="name"` shows the scene of that name this way.
 - `scenes.js`: the scenes the pages show, as data. An element with
   `data-scene="name"` plays the scene of that name.
+- `features.js`: the feature stage. The feature clicked, stepped to with the
+  stage's buttons, chosen with the arrow keys from a focused tab, or named by
+  the page's hash has its screenshot shown on the stage with its title and
+  summary, the first feature's until then.
 - `demo.html`: every component variant on one scene, with the markup that
   produces each; the reference for choosing which fits an example.
 - `vendor/`: redux 5.0.1 (ESM) and MathJax 3.2.2.

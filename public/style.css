@@ -208,18 +208,42 @@ mark { background: var(--mark); color: inherit; }
 .muted { color: var(--muted); font-size: .95rem; }
 a { color: var(--accent); }
 h2 { font-size: 1.25rem; letter-spacing: -.01em; margin: 1.2em 0 .4em; }
-/* Every feature has a short summary. The features stand in three
-   columns, one per group: a heading over a rule, then the group's
-   entries down the column, a hairline between them. Nothing is boxed. */
-.feature-overview { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 48px; }
-.features-heading { grid-column: 1 / -1; margin-bottom: 34px; }
+/* Every feature has a short summary. Two columns: on the left every
+   feature by name, grouped, a menu; on the right a stage showing the
+   screenshot of the feature chosen in the menu, the first until then,
+   with the feature's title and summary in a strip over its bottom edge. */
+.feature-overview { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 0 44px; align-items: start; }
+.features-heading { grid-column: 1 / -1; margin-bottom: 30px; }
 .features-heading h2 { margin: 0 0 8px; font-size: 2rem; letter-spacing: -.03em; line-height: 1.2; }
 .features-heading p { margin: 0; color: var(--muted); font-size: 1rem; }
-.feature-group { min-width: 0; }
-.feature-group h3 { margin: 0; padding-bottom: 12px; border-bottom: 2px solid var(--fg); font-size: 1.1rem; font-weight: 600; letter-spacing: -.01em; line-height: 1.3; }
-.feature-group section { padding: 16px 0 18px; border-top: 1px solid var(--grid-line); scroll-margin-top: 28px; }
-.feature-group h3 + section { border-top: 0; }
-.feature-overview h4 { margin: 0 0 4px; font-size: 1rem; line-height: 24px; font-weight: 600; letter-spacing: -.01em; }
-.feature-overview section p { margin: 0; font-size: .92rem; line-height: 22px; }
-.feature-overview code { font-family: var(--mono); font-size: .9em; }
-@media (max-width: 960px) { .feature-overview { grid-template-columns: 1fr; row-gap: 44px; } .features-heading { margin-bottom: 0; } }
+.feature-tabs { grid-column: 1; grid-row: 2; min-width: 0; }
+.feature-tabs .row + .row { margin-top: 24px; }
+.feature-tabs .label { display: block; margin-bottom: 10px; font-size: .72rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.feature-tabs .tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+.feature-tabs section { padding: 5px 13px; background: var(--bg); border: 1px solid var(--grid-line); border-radius: 999px; scroll-margin-top: 28px; cursor: pointer; }
+.feature-tabs h4 { margin: 0; font-size: .92rem; line-height: 22px; font-weight: 500; letter-spacing: -.005em; }
+.feature-tabs section:hover:not(.is-selected) { border-color: var(--link-2); }
+.feature-tabs section:hover:not(.is-selected) h4 { color: var(--link-2); }
+.feature-tabs section.is-selected { background: var(--panel); border-color: var(--panel); }
+.feature-tabs section.is-selected h4 { color: var(--on-panel); }
+.feature-tabs section:focus-visible { outline: 2px solid var(--link-2); outline-offset: 2px; }
+/* The stage is a 16:10 screen as wide as its column. Each shot is drawn
+   at its own pixel size, no wider than the screen, centered, and cropped
+   from the top when it is taller; .fit shows the whole picture. */
+.feature-stage { grid-column: 2; grid-row: 2; position: relative; margin: 0; aspect-ratio: 16 / 10; background: #000; border: 1px solid var(--grid-line); border-radius: 8px; overflow: hidden; }
+.feature-stage .shot { position: absolute; inset: 0; display: flex; justify-content: center; overflow: hidden; }
+.feature-stage img { display: none; flex-shrink: 0; width: auto; max-width: 100%; height: auto; align-self: flex-start; }
+.feature-stage img.is-shown { display: block; }
+.feature-stage img.fit { width: auto; max-width: 100%; height: 100%; object-fit: contain; align-self: center; }
+.feature-stage figcaption { position: absolute; left: 0; right: 0; bottom: 0; padding: 10px 16px 12px; background: rgba(0, 0, 0, .7); color: #d8d8d8; font-size: .92rem; line-height: 1.45; }
+.feature-stage figcaption strong { color: #fff; font-weight: 600; }
+.feature-stage figcaption code { font-family: var(--mono); font-size: .9em; }
+.feature-stage figcaption kbd { border-color: #888; }
+/* A stepper at each side of the screen, over the picture. */
+.feature-stage .step { position: absolute; top: 50%; transform: translateY(-50%); width: 40px; height: 40px; padding: 0 0 4px; border: 1px solid rgba(255, 255, 255, .25); border-radius: 50%; background: rgba(0, 0, 0, .55); color: #eee; font: inherit; font-size: 1.7rem; line-height: 1; cursor: pointer; transition: background .15s, border-color .15s; }
+.feature-stage .step.prev { left: 12px; }
+.feature-stage .step.next { right: 12px; }
+.feature-stage .step:hover { background: rgba(0, 0, 0, .8); border-color: rgba(255, 255, 255, .6); }
+.feature-stage .step:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+@media (max-width: 960px) { .feature-overview { grid-template-columns: 1fr; } .feature-stage { grid-column: 1; grid-row: 2; margin-bottom: 26px; } .feature-tabs { grid-column: 1; grid-row: 3; } }
+@media (max-width: 640px) { .feature-stage figcaption { font-size: .85rem; } }
