@@ -42,13 +42,12 @@
    maf works on top of calc as a set of optional features. features can be
    toggled on or off tailored to your preferences
 ** major features
-   - contextualized commands (including region context)
-   - selection replacement, direct commands on subexpression
-   - passive subexpression highlighting
-   - direct stack editing instead of separate buffer
-   - embedded graphs
-   - history to replace trail
-   - session persist
+   1) contextual commands (including region context)
+   2) direct stack editing instead of separate buffer
+   4) subexpression highlighting
+   5) embedded graphs
+   6) history to replace trail
+   7) session persist
 ** minor features
    - latex rendering
    - editing shortcuts
