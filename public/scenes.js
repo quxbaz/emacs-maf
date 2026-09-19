@@ -82,3 +82,53 @@ export const hypotenuse = [
   { keys: 'i c RET', command: 'mafcmd-solve-for', note: 'Solve for c: the square root of 25 is 5. The hypotenuse is 5.' },
   { entry: { level: 1, text: 'c = 5' } },
 ]
+
+// Scenes for the feature stages: short, one idea each.
+
+// The highlight follows point: each stop shows what a command would act on.
+export const highlight = [
+  { stack: ['(x + 1)^2 = -8 (y + 2)'] },
+  { pause: 600 },
+  { point: { level: 1, col: 3 }, highlight: { level: 1, from: 1, to: 6 } },
+  { pause: 900 },
+  { point: { level: 1, col: 7 }, highlight: { level: 1, from: 0, to: 9 } },
+  { pause: 900 },
+  { point: { level: 1, col: 18 }, highlight: { level: 1, from: 16, to: 21 } },
+  { pause: 900 },
+  { point: { level: 1, col: 10 }, highlight: { level: 1, from: 0, to: 22 } },
+  { pause: 1200 },
+]
+
+// The stack edited in place: SPC, type at point, RET.
+export const edit = [
+  { stack: ['x + 1'] },
+  { pause: 600 },
+  { point: { level: 1, col: 5 } },
+  { keys: 'SPC', command: 'maf-edit' },
+  { insert: ' + y^2' },
+  { pause: 500 },
+  { keys: 'RET', command: 'maf-edit-commit' },
+  { entry: { level: 1, text: 'x + 1 + y^2' } },
+]
+
+// Single keys for the usual work: square, expand, undo.
+export const bindings = [
+  { stack: ['x + 1'] },
+  { pause: 600 },
+  { point: { level: 1, col: 2 }, highlight: { level: 1, from: 0, to: 5 } },
+  { keys: 'W', command: 'mafcmd-sqr' },
+  { entry: { level: 1, text: '(x + 1)^2' }, point: { level: 1, col: 7 }, highlight: { level: 1, from: 0, to: 9 } },
+  { pause: 500 },
+  { keys: 'x', command: 'mafcmd-expand' },
+  { entry: { level: 1, text: 'x^2 + 2 x + 1' }, point: { level: 1, col: 4 }, highlight: { level: 1, from: 0, to: 13 } },
+  { pause: 500 },
+  { keys: 'U', command: 'maf-undo' },
+  { entry: { level: 1, text: '(x + 1)^2' }, point: { level: 1, col: 7 }, highlight: { level: 1, from: 0, to: 9 } },
+]
+
+// A polynomial put in descending order by simplification.
+export const rewrite = [
+  { stack: ['1 + x + x^2'] },
+  { keys: 'k k', command: 'mafcmd-esimplify' },
+  { entry: { level: 1, text: 'x^2 + x + 1' } },
+]
