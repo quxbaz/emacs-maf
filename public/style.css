@@ -12,7 +12,11 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
    column is centered under it rather than in the whole fold: the
    row's reach (its offset and its height) is added to the padding
    below, which lifts the column by half of it. */
-.intro { position: relative; min-height: 100vh; min-height: 100svh; display: grid; align-content: center; padding: 60px 0 calc(60px + 52px); }
+/* The fold is drawn at nine tenths: --fold multiplies every size in
+   it, type, padding, gaps and the brace, as a browser zoom would, while
+   the sections below stay at full size. Shared pieces the fold holds,
+   the heading, the calc panes and the diffs, are scaled here too. */
+.intro { --fold: .9; position: relative; min-height: 100vh; min-height: 100svh; display: grid; align-content: center; padding: calc(60px * var(--fold)) 0 calc((60px + 52px) * var(--fold)); font-size: calc(19px * var(--fold)); }
 /* A fade over the fold's lower half, easing the white into the blue
    of the band below. It is the negative of a circle sitting on the
    seam: clear inside the circle, blue outside it, so the corners are
@@ -27,7 +31,7 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
    to be read. The column is a grid item, and an auto margin there
    shrinks an item to its content, so it is held at full width and
    capped by max-width instead. */
-.intro .col { position: relative; z-index: 1; width: 100%; max-width: 1240px; }
+.intro .col { position: relative; z-index: 1; width: 100%; max-width: calc(1240px * var(--fold)); }
 /* The column is two: the title, the paragraph, the lede's panel and
    the closing line down the left, the pair of examples stacked down
    the right, at two to three: the examples are what the fold shows,
@@ -46,13 +50,13 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
    layers' common margin would count in the rows, so here they give
    it up. The gutter between the columns is a column of the grid
    itself, since the brace is drawn in it. */
-.intro .col { display: grid; grid-template-columns: minmax(0, 2fr) 110px minmax(0, 3fr); grid-template-rows: auto auto minmax(20px, 1fr) auto minmax(69px, 1.5fr) auto minmax(20px, 1fr); }
+.intro .col { display: grid; grid-template-columns: minmax(0, 2fr) calc(110px * var(--fold)) minmax(0, 3fr); grid-template-rows: auto auto minmax(calc(20px * var(--fold)), 1fr) auto minmax(calc(69px * var(--fold)), 1.5fr) auto minmax(calc(20px * var(--fold)), 1fr); }
 .intro .col > .layer { grid-column: 1; margin-bottom: 0; }
 .intro .col > .layer:nth-child(1) { grid-row: 1; }
 .intro .col > .layer:nth-child(2) { grid-row: 2; }
 .intro .col > .lede { grid-row: 4; }
 .intro .col > .more { grid-row: 6; }
-.intro .col > .pair { grid-column: 3; grid-row: 2 / 8; align-self: start; margin-top: calc(-1 * (.8 * 1.9rem + 58px) / 2); }
+.intro .col > .pair { grid-column: 3; grid-row: 2 / 8; align-self: start; margin-top: calc(-1 * (.8 * 1.9rem + 58px) * var(--fold) / 2); }
 /* A brace down the examples' left, in a light tone of the panel's
    blue, gathers the two as the pair the lede names, and a line runs
    from the panel's edge to its cusp. It is one SVG hung off the
@@ -63,19 +67,19 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
    is written by brace.js from where the panel lies, as one stroke,
    so nothing seams at any device scale. */
 .intro .pair { position: relative; }
-.intro .pair > .brace { position: absolute; right: 100%; width: 110px; top: -10px; bottom: -10px; }
+.intro .pair > .brace { position: absolute; right: 100%; width: calc(110px * var(--fold)); top: calc(-10px * var(--fold)); bottom: calc(-10px * var(--fold)); }
 .intro .pair > .brace svg { display: block; width: 100%; height: 100%; overflow: visible; fill: none; stroke: var(--brace); stroke-width: 2px; stroke-linejoin: round; }
 /* The source link keeps to the fold's upper right, on the content
    column's right edge while there is room, the page's margin after. It
    is drawn at full strength: a faded mark reads as a disabled one. */
-.intro .gh { position: absolute; z-index: 2; top: 26px; right: max(22px, calc((100% - 1240px) / 2 + 22px)); display: block; line-height: 0; color: var(--fg); }
+.intro .gh { position: absolute; z-index: 2; top: 26px; right: max(22px, calc((100% - 1240px * var(--fold)) / 2 + 22px)); display: block; line-height: 0; color: var(--fg); }
 .intro .gh:hover { color: var(--strong); }
 /* The prose measure is set in characters, not pixels: 70ch of the body
    face. The line runs longer than that in practice, since the average
    letter is narrower than the zero that ch measures. */
 .intro .col > .layer:not(.pair) { max-width: 70ch; }
 /* The title stands clear of the examples under it. */
-.intro .col > .layer:first-child { margin-bottom: 58px; }
+.intro .col > .layer:first-child { margin-bottom: calc(58px * var(--fold)); }
 /* The line that names what the examples show: a bold line in the
    lede's own face and leading, not a heading, set as a panel on a
    deep ocean blue: the page's own blue hue taken down to a quarter
@@ -85,7 +89,7 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
    the page's. The paragraph above gives up its margin, so the grid
    sets the gap between them. */
 .intro .col > .layer:has(+ .lede) p { margin-bottom: 0; }
-.intro .lede { position: relative; font-size: 1.15rem; background: var(--panel); color: var(--on-panel); border-radius: 8px; padding: 22px 20px; }
+.intro .lede { position: relative; font-size: calc(1.15rem * var(--fold)); background: var(--panel); color: var(--on-panel); border-radius: 8px; padding: calc(22px * var(--fold)) calc(20px * var(--fold)); }
 .intro .lede p { margin: 0; }
 /* The line that opens out to the rest of the suite follows, as a
    second panel on a warm cream, the page's text on it, so the two
@@ -94,18 +98,18 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
    caret pointing on down the page, a triangle made of borders in
    the panel's text color. The features it names link to their tiles
    below, marked by the lede panel's blue, with no rule under them. */
-.intro .more { background: var(--panel-2); color: var(--on-panel-2); border-radius: 8px; padding: 18px 20px; }
+.intro .more { background: var(--panel-2); color: var(--on-panel-2); border-radius: 8px; padding: calc(18px * var(--fold)) calc(20px * var(--fold)); }
 .intro .more p { margin: 0; }
 .intro .more a { color: var(--link-2); text-decoration: none; }
 .intro .more a:hover { text-decoration: underline; text-underline-offset: .15em; }
-.intro .more p:last-child::after { content: ""; display: inline-block; margin-left: .45em; vertical-align: middle; border: 6px solid transparent; border-top: 8px solid var(--on-panel-2); border-bottom: 0; }
+.intro .more p:last-child::after { content: ""; display: inline-block; margin-left: .45em; vertical-align: middle; border: calc(6px * var(--fold)) solid transparent; border-top: calc(8px * var(--fold)) solid var(--on-panel-2); border-bottom: 0; }
 /* Between the two panels a trail of five dots, in the brace's blue,
    leads the eye from the one down to the other. It stands in the
    flexible row between them, centered in it, and that row's floor is
    raised so the trail keeps air on either side when the prose is the
    taller. Narrow, the examples come between the panels, so it goes. */
-.intro .col > .trail { grid-column: 1; grid-row: 5; align-self: center; justify-self: center; display: grid; gap: 14px; padding: 20px 0; }
-.intro .trail i { display: block; width: 5px; height: 5px; border-radius: 50%; background: var(--brace); }
+.intro .col > .trail { grid-column: 1; grid-row: 5; align-self: center; justify-self: center; display: grid; gap: calc(14px * var(--fold)); padding: calc(20px * var(--fold)) 0; }
+.intro .trail i { display: block; width: calc(5px * var(--fold)); height: calc(5px * var(--fold)); border-radius: 50%; background: var(--brace); }
 .intro .col strong { color: var(--strong); font-weight: 600; }
 /* On the panel the lede's first line is set apart in bold and by
    color, a light blue of the panel's own hue. */
@@ -114,7 +118,7 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
    copy: a step smaller and muted, its label leading in bold. The pane
    above drops its own bottom margin, so the two sit close. */
 .intro .pair .stacky-diff { margin-bottom: 0; }
-.intro .pair .cap { margin: 14px 0 0; font-size: .95rem; line-height: 1.5; color: var(--muted); }
+.intro .pair .cap { margin: calc(14px * var(--fold)) 0 0; font-size: calc(.95rem * var(--fold)); line-height: 1.5; color: var(--muted); }
 .intro .pair .cap .label { color: var(--strong); font-weight: 600; }
 /* A character named in the caption is set in the pane's own face, so
    the reader matches it to what is on screen above. */
@@ -124,7 +128,14 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
 .intro .pair .cap code { background: var(--mark); border-radius: 4px; padding: .06em .36em; }
 /* The two examples, one over the other, each its pane over its
    caption. */
-.intro .pair { display: grid; gap: 34px 0; }
+.intro .pair { display: grid; gap: calc(34px * var(--fold)) 0; }
+/* The shared pieces, at the fold's scale. */
+.intro h1 { font-size: calc(1.9rem * var(--fold)); }
+.intro .subtitle { font-size: calc(1.25rem * var(--fold)); }
+.intro .stacky-diff { gap: calc(6px * var(--fold)) calc(10px * var(--fold)); }
+.intro .stacky-diff .calcbuf { --pad-y: calc(16px * var(--fold)); --pad-x: calc(20px * var(--fold)); font-size: calc(1rem * var(--fold)); }
+.intro .calcbuf .header { margin-bottom: calc(14px * var(--fold)); padding-top: calc(7px * var(--fold)); padding-bottom: calc(7px * var(--fold)); }
+.intro .calcbuf .line.keys kbd { margin: calc(8px * var(--fold)) .38em calc(6px * var(--fold)) 0; }
 /* Narrow, the column is one again: the examples follow the lede,
    the brace has nothing to gather them toward, and the closing line
    ends the fold. */
