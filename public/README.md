@@ -41,6 +41,11 @@ from the repository root with a reloading server while working:
   focusing it, floats its slot beside it on the roomier side of its column: a
   scene played by showy (`data-play`), a stacky-diff (`data-diff`), or a
   screenshot. Leaving, blurring or Escape puts it away.
+- `schemes.js`: two hundred and fifty colour schemes for the features
+  section, fifty each dark, light, neutral, cards contrasting with the ground,
+  and bold grounds with light cards, to try by eye. The left and right arrow keys, anywhere on the page, step through them;
+  a badge in the section's corner names the one in force, and the pick is
+  kept in localStorage.
 - `demo.html`: every component variant on one scene, with the markup that
   produces each; the reference for choosing which fits an example.
 - `vendor/`: redux 5.0.1 (ESM) and MathJax 3.2.2.
