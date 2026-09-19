@@ -46,7 +46,7 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
    layers' common margin would count in the rows, so here they give
    it up. The gutter between the columns is a column of the grid
    itself, since the brace is drawn in it. */
-.intro .col { display: grid; grid-template-columns: minmax(0, 2fr) 110px minmax(0, 3fr); grid-template-rows: auto auto minmax(20px, 1fr) auto minmax(53px, 2.65fr) auto minmax(20px, 1fr); }
+.intro .col { display: grid; grid-template-columns: minmax(0, 2fr) 110px minmax(0, 3fr); grid-template-rows: auto auto minmax(20px, 1fr) auto minmax(69px, 1.5fr) auto minmax(20px, 1fr); }
 .intro .col > .layer { grid-column: 1; margin-bottom: 0; }
 .intro .col > .layer:nth-child(1) { grid-row: 1; }
 .intro .col > .layer:nth-child(2) { grid-row: 2; }
@@ -99,12 +99,12 @@ main > section > .col { margin: 0 auto; padding-inline: 22px; }
 .intro .more a { color: var(--link-2); text-decoration: none; }
 .intro .more a:hover { text-decoration: underline; text-underline-offset: .15em; }
 .intro .more p:last-child::after { content: ""; display: inline-block; margin-left: .45em; vertical-align: middle; border: 6px solid transparent; border-top: 8px solid var(--on-panel-2); border-bottom: 0; }
-/* Between the two panels a short trail of dots, in the brace's blue,
+/* Between the two panels a trail of five dots, in the brace's blue,
    leads the eye from the one down to the other. It stands in the
    flexible row between them, centered in it, and that row's floor is
    raised so the trail keeps air on either side when the prose is the
    taller. Narrow, the examples come between the panels, so it goes. */
-.intro .col > .trail { grid-column: 1; grid-row: 5; align-self: center; justify-self: center; display: grid; gap: 7px; padding: 12px 0; }
+.intro .col > .trail { grid-column: 1; grid-row: 5; align-self: center; justify-self: center; display: grid; gap: 14px; padding: 20px 0; }
 .intro .trail i { display: block; width: 5px; height: 5px; border-radius: 50%; background: var(--brace); }
 .intro .col strong { color: var(--strong); font-weight: 600; }
 /* On the panel the lede's first line is set apart in bold and by
