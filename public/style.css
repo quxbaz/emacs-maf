@@ -214,8 +214,6 @@ h2 { font-size: 1.25rem; letter-spacing: -.01em; margin: 1.2em 0 .4em; }
 .features-heading h2 { margin: 0 0 8px; font-size: 2rem; letter-spacing: -.03em; line-height: 1.2; }
 .features-heading p { margin: 0; color: var(--muted); font-size: 1rem; }
 .feature-overview { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
-.feature-category { grid-column: 1 / -1; margin: 14px 0 -6px; font-size: .8rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
-.features-heading + .feature-category { margin-top: 0; }
 .feature-overview > section { display: flex; flex-direction: column; min-width: 0; scroll-margin-top: 28px; background: var(--bg); border: 1px solid var(--grid-line); border-radius: 8px; overflow: hidden; }
 /* A card is a screenshot, then its title and description. The shot meets
    the card's top and side edges and is cropped to the slot, from its top
